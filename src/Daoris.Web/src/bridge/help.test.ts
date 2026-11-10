@@ -45,7 +45,7 @@ describe('how long an Apply may take', () => {
   const client = () => {
     const made = new QueryClient();
     made.setQueryData(['help-proposals', 's1'], [
-      proposal('p1', 'role'),
+      proposal('p1', 'clear'),
       proposal('p2', 'sync', { looked: false, rows: [] }),
       proposal('p3', 'sync', {
         looked: true,
@@ -160,7 +160,7 @@ describe('the proposals against an open draft', () => {
     invoke.mockImplementation(async (module: string, type: string, request: { payload: { session?: string } }) => {
       if (module !== 'DAORIS.DRIVER' || type !== 'HELP_PROPOSALS') return undefined;
       return request.payload.session === 's9'
-        ? { session: 's9', proposals: [card('p1', 'engine', sent.fingerprint), card('p2', 'docs', sent.fingerprint), card('p3', 'engine', null), { ...card('p4', 'engine', null), kind: 'role' }] }
+        ? { session: 's9', proposals: [card('p1', 'engine', sent.fingerprint), card('p2', 'docs', sent.fingerprint), card('p3', 'engine', null), { ...card('p4', 'engine', null), kind: 'clear' }] }
         : null;
     });
     const client = new QueryClient();

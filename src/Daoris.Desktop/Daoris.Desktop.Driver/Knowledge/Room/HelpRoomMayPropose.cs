@@ -83,16 +83,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  move starts. Its card shows the person the move; one the registry would refuse is answered to you at once and never shown.\n");
         text.Append("  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens\n");
         text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n");
-        // The role catalogue's change, judged by the role door's judge and applied only by
-        // the person's press, whatever access the room has (no `settings_*` grant, extended to roles).
-        text.Append("- `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →\n");
-        text.Append("  Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left\n");
-        text.Append("  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give\n");
-        text.Append("  every seeded role back its seed and keep the added ones. A removed role's work\n");
-        text.Append("  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.\n");
-        // A `set` may carry the role's policy, judged by the policy's judge and said on the card as before and after.
-        text.Append("  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section\n");
-        text.Append("  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.\n");
+        // The role catalogue's change, judged at the ask by the role door's judges (SET_ROLE's view).
+        text.Append("- A role of this machine's role catalogue is added, changed or removed by pressing, never proposed, as Agents → Roles\n");
+        text.Append("  does: `daoris role set <id> …` (its names, work, scope and choices, or a supervisor's kinds, acts, holder and window),\n");
+        text.Append("  `daoris role remove <id>`, `daoris role default <id>|--all`, a role's policy `daoris role policy <id> …` and a place's\n");
+        text.Append("  supervisor rules `daoris role rules --place <place> …`. A removed role's work waits until a role takes it; running work\n");
+        text.Append("  goes on. Its card shows the person the change; one the role door would refuse is answered to you at once and never shown.\n");
         // Sessions' Archive and Unarchive, judged as the list judges them, pressed by id. A stop is the session's own
         // conversation, which a go reaches.
         text.Append("- Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and\n");

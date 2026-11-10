@@ -75,11 +75,6 @@ public sealed record HelpProposal(
     /// <summary>The writes an <c>approve</c> accepts, each by name; null or empty accepts none, its reads only.</summary>
     public IReadOnlyList<string>? Writes { get; init; }
 
-    // The role kind's.
-
-    /// <summary>A role proposal's own <c>press</c>: its names, work, scope, choices and the revision read; null for every other kind.</summary>
-    public System.Text.Json.JsonElement? RolePress { get; init; }
-
     // The setup kind's.
 
     /// <summary>The place's quick set-up a <c>place</c> proposal asks, from the file's <c>place</c>; null for every other door and kind.</summary>
@@ -284,17 +279,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>What an approval or a withdrawal names, every tool; null for every other plan.</summary>
     public HelpGrantView? Grant { get; init; }
-
-    // The role kind's.
-
-    /// <summary>For a role change the judge takes: the change, its choices and the revision read; null for every other kind.</summary>
-    public HelpRoleChange? Role { get; init; }
-
-    /// <summary>For the supervisor's rules at a place: the rules before and after as fields, which the page words from its catalogue; null for every other plan.</summary>
-    public HelpRulesView? Rules { get; init; }
-
-    /// <summary>For a supervisor set: its kinds, acts, holder and window as fields, which the page words from its catalogue; null for every other plan.</summary>
-    public HelpSupervisorView? Supervisor { get; init; }
 
     // The setup kind's.
 

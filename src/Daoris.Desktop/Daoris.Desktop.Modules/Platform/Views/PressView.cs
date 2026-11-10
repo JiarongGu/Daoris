@@ -8,7 +8,13 @@ namespace Daoris.Desktop;
 /// the <c>daoris</c> command the press is, spelled for any shell. <see cref="Also"/> are further sentences the same press means, each worded
 /// by its own kind. The card shows it above every value the press carries.
 /// </summary>
-public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> Facts, string Command, IReadOnlyList<PressSaid>? Also = null);
+public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> Facts, string Command, IReadOnlyList<PressSaid>? Also = null)
+{
+    /// <summary>What only <c>SET_ROLE</c>'s card draws, as fields the page words: a place's rules, or a supervisor, before and after.</summary>
+    public PressRules? Rules { get; init; }
+
+    public PressSupervisor? Supervisor { get; init; }
+}
 
 /// <summary>One more sentence of a press's meaning: <c>person.view.&lt;kind&gt;</c> with the values it names.</summary>
 public sealed record PressSaid(string Kind, IReadOnlyDictionary<string, string> Facts)
@@ -78,6 +84,7 @@ public static class PressViews
         new GitUseView(),
         new BrowserFavoriteView(),
         new BrowserSettingView(),
+        new RoleChangeView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

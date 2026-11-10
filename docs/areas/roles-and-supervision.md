@@ -100,8 +100,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    three and drops `defer` in `roles` and every `role_revisions` row, and gives each decision file its `kind`. (from D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
-9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
-   applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
+9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES` and `daoris role`, Ask Daoris's press of it
+   shown on the Confirm card by `RoleChangeView`. Each answers the judge's closed codes alike. A press carries the revision it read, which the catalogue's write compares with the revision its own transaction
    reads (`RoleCatalog.WriteIn`), so two presses read at one revision cannot both write; the terminal's verb sends the revision it planned against, and `role suggested --use` is one batch. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)
@@ -204,10 +204,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     terminal say; a set-up parks at its line's rule; `STATE`'s `strikes` answers the retried quest's rule, else the machine's;
     `driver list` points to `role supervisor`. The cap stays a machine setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
-    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The terminal names a
-    rule's roles after an `@` on each `--set`, `--off` or `--clear` (`SupervisorRulesFlags`), so Ask Daoris's card twin is
-    one command that clears the place and writes the rules the judge accepted, and the card carries the place and its rules
-    before and after as fields (`HelpRulesView`) that the page words from its catalogue in both languages (`RulesChange`). The page writes
+    `supervisor` with `rules`. A rules press carrying a role's field is `mixed-shape`. The terminal names a
+    rule's roles after an `@` on each `--set`, `--off` or `--clear` (`SupervisorRulesFlags`), so the Confirm card's command is
+    one that clears the place and writes the rules the judge accepted, and the card carries the place and its rules
+    before and after as fields (`PressRules`) that the page words from its catalogue in both languages (`RulesChange`). The page writes
     them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
     at the revision read, each rule saying what it replaces and keeping its roles whole (a rule set for several roles is
     drawn with them and written back as read); a role's editor says the rules naming it and writes none,
@@ -223,15 +223,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **The supervisor and the steward**
 
 41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --decides --acts --holder --window`,
-    `role_propose`). Ask Daoris proposes a supervisor of kinds or a generic one (`HelpSupervisorProposals`): the press names
-    `kind: supervisor` beside `decides` (`[]` is the generic one), `authority`, `holder` (`rules`, `terminal`, or `agent` with its
-    choices and policy as a working role's) and `window`; a field it
-    leaves out keeps the role's own, and a new supervisor names `decides`, is held by the person's rules and is granted nothing. The
-    plan is refused `not-converted` until the home's `supervisor-kinds` step is recorded, the role door's judge refuses the rest (an
+    Ask Daoris's press of it). A supervisor of kinds or a generic one names `decides` (`[]` or `every` is the generic one),
+    `authority`, `holder` (`rules`, `terminal`, or `agent` with its choices and policy as a working role's) and `window`. A press is
+    refused `not-converted` until the home's `supervisor-kinds` step is recorded, the role door's judge refuses the rest (an
     unknown kind or act, an act of a kind not decided, an agent holder with no choices, two of a kind in one scope, choices its
-    holder walks none of, work), and
-    the card says the supervisor's kinds, holder, acts and window before and after in the catalogue's words, applied by the person's
-    press through the one door. The act judge reads the catalogue at each act, answer and admission. One resolver
+    holder walks none of, work), and the Confirm card's view (`RoleChangeView`) says the supervisor's kinds, holder, acts and window
+    before and after in the catalogue's words (`SupervisorChange`), applied by the person's press through the one door. The act judge reads the catalogue at each act, answer and admission. One resolver
     (`SupervisorResolution.Find`, `RoleCatalog.Supervising`) names who decides a decision of a kind at a place, kind first: the
     repository's, the workspace's, then the machine's supervisor deciding the kind, else the repository's, the workspace's, then
     the machine's generic one, the repository placed in the workspace `repository_workspaces` keeps. An unreadable appointed
@@ -444,15 +441,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules
     (`settings notify|cap|cooloff|quiet|keep`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
-    the terminal sends where Daoris runs and writes alone where it does not). A press of Ask Daoris's that
+    the terminal sends where Daoris runs and writes alone where it does not), and a role's change (`role set|remove|default|policy|rules`,
+    one view of `SET_ROLE`, judged by the role door's judges against the catalogue, staffing and rules held now; a supervisor's record
+    and a place's rules ride it before and after). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, agent and browser kinds are gone; the ask, plugin,
-    sync, clear, workflow, setup and role kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
+    whole, tool to card, with the change that gives its route a view (the setting, agent, browser and role kinds are gone; the ask,
+    plugin, sync, clear, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
@@ -519,15 +518,15 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
    D229 reads right.
 4. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs` (`role_staffing` alone). Code reads right.
 5. D205 points 8-9 (Settings → Actors, `driver actor`, `ACTORS`/`SET_ACTOR`, `actor_propose`) vs `driver role`,
-   `ROLES`/`SET_ROLE` and `role_propose` (`Help/Proposals/HelpRoleProposals.cs:20`). Code reads right.
+   `ROLES`/`SET_ROLE` (`Platform/Views/RoleChangeView.cs`). Code reads right.
 6. D89 (Ask Daoris's agent named under Settings → *Daoris's own AI* as a third job) vs the `ask-daoris` role's staffing
    (`Defaults/roles.json`, `Settings/ActorKey.cs:20`). Code reads right.
 7. D170 (never a shell) vs D183 full access (`Help/HelpMode.cs:17`). D183 reads right; D170 holds in restricted mode.
 8. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
     Daoris, then Agents → Roles) vs `Web/agents/modes.ts` (`AGENTS_MODES` is `agents` and `setup`: the Roles mode is retired; its sections sit under
     Agents → Setup). Code reads right.
-9. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
-   (`Help/Proposals/HelpRoleProposals.cs`, `RulesPlan`). D110 means permission rules; it should say so.
+9. D110 point 4 (a rule is never proposed by an agent) vs Ask Daoris pressing `daoris role rules`, the supervisor's rules
+   (`Platform/Views/RoleChangeView.cs`). D110 means permission rules; it should say so.
 10. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
     appointments, `Web/agents/setup/PlaceSupervisorRules.tsx`; a window of 1 to 60, `Roles/RoleHold.cs`, `RoleHold.InWindow`). Code reads right.
 

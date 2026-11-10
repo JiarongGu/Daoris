@@ -103,8 +103,7 @@
       ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "\"codex\"", "-", "permanent", "the service's call keys, one file per agent read by its one ordered list, second in it (design §3.3, §6, O1-F17), held by `callKeys` below"],
       ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "x-codex-turn-metadata", "-", "permanent", "Codex's turn header, the key its lineage is read from, in Codex's own file (design §3.3, O1-F17)"],
       ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionKeepRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
-      ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
-      ["src/Daoris.Service/Daoris.Service.Mcp/HelpRoleTool.cs", "id in a sentence", "-", "words", "the tool's description gives a staffing policy's example record, whose choice names an agent as `daoris agent` spells it"]
+      ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"]
     ],
     "callKeys": [
       ["claude-code", "claudecode/toolUseId"],
