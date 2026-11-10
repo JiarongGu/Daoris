@@ -16,7 +16,7 @@ internal static class ClaudeOwnServers
 {
     private const string Servers = "mcpServers";
 
-    /// <summary>Write the servers <paramref name="globalFile"/> holds into <paramref name="plugin"/>; whether any was written.</summary>
+    /// <summary>Write the servers <paramref name="globalFile"/> holds into <paramref name="plugin"/>; whether it wrote any.</summary>
     public static bool Write(string globalFile, string plugin)
     {
         var kept = Read(globalFile);

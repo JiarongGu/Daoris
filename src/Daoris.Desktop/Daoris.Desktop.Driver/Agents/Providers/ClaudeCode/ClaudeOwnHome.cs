@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's own tool home as the person's own run reads it, laid out for one session (D253 point 7, census row 23): the folder
+/// Claude Code's own tool home as the person's own run reads it, laid out for one session: the folder
 /// <c>CLAUDE_CONFIG_DIR</c> names, else <c>.claude</c> in the profile. Its skills, subagents and commands and its servers
 /// (<see cref="ClaudeOwnServers"/>) are one harness plugin, <c>own</c>, beside Daoris's plugins under the session's spawn folder
 /// (<see cref="ClaudeSkills"/>), named by the door's session-only way, so its pieces are named <c>own:&lt;name&gt;</c>; its enabled
@@ -39,7 +39,7 @@ internal static class ClaudeOwnHome
 
     /// <summary>
     /// The session's <c>own</c> plugin under <paramref name="home"/>'s spawn folder, then the person's enabled plugins in place
-    /// (<see cref="ClaudeOwnPlugins"/>); the folder is null where nothing was laid out in it, so a removal never reaches the person's.
+    /// (<see cref="ClaudeOwnPlugins"/>); the folder is null where nothing is laid out in it, so a removal never reaches the person's.
     /// </summary>
     public static (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, OwnTools tools)
     {

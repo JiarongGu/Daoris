@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's own tool home reaches a session (D253 point 7, census row 23): what the person's own run of Claude Code loads from its
+/// The person's own tool home reaches a session, since Daoris adds to an agent and never narrows it: what the person's own run of Claude Code loads from its
 /// home is laid out for the session as one harness plugin, <c>own</c>, under the session's spawn folder, and handed by the door's
 /// session-only way. The person's folder is read, never written; each family is the person's to switch off; nothing is laid out where
 /// the session runs in the person's own home, which loads it all by itself.

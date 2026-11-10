@@ -57,7 +57,7 @@ public interface ISpawn
     /// <summary>Hands a pipe-door spawn the harness plugins composed for it; nothing by default.</summary>
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
 
-    /// <summary>Hands a spawn the switches of the person's own tool home its program reads from its command line (D253 point 7); nothing by default.</summary>
+    /// <summary>Hands a spawn the switches of the person's own tool home its program reads from its command line; nothing by default.</summary>
     void HandOwn(ProcessStartInfo info, OwnTools own) { }
 }
 
@@ -213,9 +213,6 @@ public interface ISkillLayout
     /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>
     (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, IReadOnlyList<SkillSource> sources);
 
-    /// <summary>
-    /// What the person's own run of the agent loads from its tool home, laid out for one session in the same folder as
-    /// <see cref="Write"/>'s; none where the provider states no such home (D253 point 7).
-    /// </summary>
+    /// <summary>What the person's own run loads from its tool home, laid out beside <see cref="Write"/>'s; none by default.</summary>
     (string? Folder, IReadOnlyList<string> Plugins) Own(string home, string sessionId, OwnTools tools) => (null, []);
 }

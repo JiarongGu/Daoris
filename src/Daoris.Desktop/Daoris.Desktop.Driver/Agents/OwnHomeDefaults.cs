@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's switches over what of their own tool home a session is handed (D253 point 7): one default per family, listed and
+/// The person's switches over what of their own tool home a session is handed: one default per family, listed and
 /// switched with the rest (<see cref="PermissionRules.Defaults"/>), on until the person switches it off. Each adds and decides
 /// nothing, so it holds no rule.
 /// </summary>

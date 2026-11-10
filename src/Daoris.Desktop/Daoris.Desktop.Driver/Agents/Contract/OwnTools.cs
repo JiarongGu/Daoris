@@ -22,7 +22,7 @@ public enum OwnFamilies
 }
 
 /// <summary>
-/// Where the person's own run of an agent finds its tool home, and which of it one start is handed (D253 point 7). The person's own
+/// Where the person's own run of an agent finds its tool home, and which of it one start is handed. The person's own
 /// run reads the environment the driver inherited and the person's profile, so a provider's layout reads them so too, and never writes
 /// there.
 /// </summary>
