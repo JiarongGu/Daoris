@@ -214,7 +214,6 @@ internal sealed class RoundConsidering(PlanRound round)
                 Said = new(SittingFact.Queued) { Quest = ahead },
             };
         }
-        // A start still opening in the root holds it, as its session will once it opens.
         else if (round.Opening.FirstOrDefault(start => string.Equals(start.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                                                        && !string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
                  is { Quest: { } before })
