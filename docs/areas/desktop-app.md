@@ -177,7 +177,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **A session's page**
 
 37. A head shows the state, the title and two facts. A session's title takes one line; a quest's or an ask's takes two.
-    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162)
+    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162) Under it a *Started from* line names, each a press
+    that opens it, the quest, the ask it came from, the earlier session a hand-over or a go-on continues; a conversation names its
+    repository and Ask Daoris its room and workspace (`work/head/startedFrom.tsx`). *Details* repeats it and has *Started with*,
+    the requirement it began with, whole, said by the record it is: the quest's requirements, else the quest's words, else the
+    ask's, else a conversation's first message; the "How this came to be" fold says it where the trace draws no requirements. A
+    rail row of a line holding several quests names the quest its own session holds.
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it landed on once its tree is gone

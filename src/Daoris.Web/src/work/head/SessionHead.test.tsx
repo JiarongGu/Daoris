@@ -227,54 +227,41 @@ describe('the attended session\'s head', () => {
   it('under a header says no title at all, not even the whole one of a short-titled quest (HEAD2c)', () => {
     const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
     expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
-    expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
+    expect(screen.getAllByText('Expose a streaming budget on the chunk API')).toHaveLength(1);
     expect(screen.queryByText('working')).toBeNull();
 
     rerender(<SessionHead session={session()} quest={quest({ short: 'Streaming budget' })} headed />);
-    expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
+    expect(screen.getAllByText('Expose a streaming budget on the chunk API')).toHaveLength(1);
     expect(screen.queryByText('Streaming budget')).toBeNull();
     expect(screen.queryByText('s1a2b3c4')).toBeNull();
   });
 
-  /**
-   * The request as written is a row of *Details*, whole, with the
-   * quest's door; a conversation with no quest puts its whole opening there when the header's one line cut it.
-   */
-  it('holds the request as written in Details, with the quest’s door', () => {
+  it('holds the quest in Details as *Started from*, with its door', () => {
     const onOpenQuest = vi.fn();
     render(<SessionHead session={session()} quest={quest({ short: 'Streaming budget' })} headed onOpenQuest={onOpenQuest} />);
     details();
-    const row = screen.getByText('Request').nextElementSibling as HTMLElement;
-    expect(within(row).getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
-    fireEvent.click(within(row).getByRole('button', { name: 'Open quest #7a82cc' }));
+    const row = screen.getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement;
+    fireEvent.click(within(row).getByRole('button', { name: 'Expose a streaming budget on the chunk API' }));
     expect(onOpenQuest).toHaveBeenCalledWith(expect.objectContaining({ id: '7a82cc' }));
   });
 
-  it('draws no door where nothing can open the quest, and no Request row where the session has no quest to say', () => {
+  it('names the quest with no door where nothing can open it, and no origin where a session has none to say', () => {
     const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
     details();
-    expect(screen.getByText('Request')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Open quest/ })).toBeNull();
+    expect(screen.getAllByText('Expose a streaming budget on the chunk API').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Expose a streaming budget on the chunk API' })).toBeNull();
 
-    rerender(<SessionHead session={session({ quest: null, kind: 'chat' })} opening="Fix it" headed />);
-    expect(screen.queryByText('Request')).toBeNull();
+    rerender(<SessionHead session={session({ quest: null, kind: 'driven' })} headed />);
+    expect(screen.queryByText('Started from')).toBeNull();
   });
 
-  it('puts a conversation’s whole opening in Details where the header’s line cut it', () => {
-    const LONG = 'Walk me through why the chunk hydrator drops frames when the budget is exceeded, and then propose a fix for it';
-    render(<SessionHead session={session({ quest: null, kind: 'chat' })} opening={LONG} headed />);
-    details();
-    expect(within(screen.getByText('Request').nextElementSibling as HTMLElement).getByText(LONG)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Open quest/ })).toBeNull();
-  });
-
-  it('says the request in 中文', async () => {
+  it('says where it started from in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
       render(<SessionHead session={session()} quest={quest()} headed onOpenQuest={vi.fn()} />);
       details();
-      expect(screen.getByText('请求')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '打开委托 #7a82cc' })).toBeInTheDocument();
+      expect(screen.getByText('起点', { selector: 'dt' })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: 'Expose a streaming budget on the chunk API' }).length).toBe(2);
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -357,9 +344,9 @@ describe('the attended session\'s head', () => {
         />,
       );
       details();
-      const row = screen.getByText('Continues').nextElementSibling as HTMLElement;
-      expect(within(row).getByText('Why the hydrator drops frames')).toBeInTheDocument();
-      fireEvent.click(within(row).getByRole('button', { name: 'Open session' }));
+      const row = screen.getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement;
+      expect(within(row).getByText('Earlier session')).toBeInTheDocument();
+      fireEvent.click(within(row).getByRole('button', { name: 'Why the hydrator drops frames' }));
       expect(onOpenSession).toHaveBeenCalledWith(earlier);
       expect(screen.queryByText(/Works/)).toBeNull();
     });
@@ -385,10 +372,9 @@ describe('the attended session\'s head', () => {
         <SessionHead session={session({ quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'press', fromBy: 'person' })} headed onOpenSession={vi.fn()} />,
       );
       details();
-      const row = screen.getByText('Continues').nextElementSibling as HTMLElement;
+      const row = screen.getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement;
       expect(within(row).getByText('a1b2c3d4')).toBeInTheDocument();
-      expect(row).toHaveClass('font-mono');
-      expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
+      expect(within(row).queryByRole('button')).toBeNull();
 
       rerender(
         <SessionHead
@@ -404,7 +390,7 @@ describe('the attended session\'s head', () => {
     it('draws neither row for a session that names no link', () => {
       render(<SessionHead session={session()} continues={{ session: earlier, title: 'x' }} headed onOpenSession={vi.fn()} />);
       details();
-      expect(screen.queryByText('Continues')).toBeNull();
+      expect(screen.queryByText('Earlier session')).toBeNull();
       expect(screen.queryByText(/Works/)).toBeNull();
     });
 
@@ -420,9 +406,9 @@ describe('the attended session\'s head', () => {
           />,
         );
         details();
-        expect(screen.getByText('接续自')).toBeInTheDocument();
+        expect(screen.getAllByText('先前会话').length).toBeGreaterThan(0);
         expect(screen.getByText('为谁工作')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '打开会话' })).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: '为什么丢帧' }).length).toBeGreaterThan(0);
       } finally {
         await i18n.changeLanguage('en');
       }

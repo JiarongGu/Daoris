@@ -162,8 +162,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     copies them per session under the home's spawn folder; a provider that states none, Codex, dsh and the stand-ins, is handed none)
     and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
-15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that
-    run. No account home, vendor folder or the person's tool home is written. (from D230)
+15. A Claude session keeps the account's auto-memory, synced skills, synced plugins and connectors: its settings file says none
+    of them, so the account's own settings decide, as by hand. Daoris writes no account home, vendor folder or the person's tool
+    home. (from D230, D253)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in
     its own file and the prompt names it. (from D230)
@@ -175,7 +176,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
     defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
-    the harness's own precedence decides, and `deny` wins. (from D72)
+    the harness's own precedence decides, and `deny` wins. `tree-guard` refuses a write outside the session's tree and its declared
+    targets, but a subagent's in the worktree its harness made for it beside the repository's main checkout
+    (`.claude/worktrees/<name>`, `subagent-worktree.mjs`); the session's own agent never writes there. (from D72, D253)
 19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, its settings
     file with the tree guard's and the lineage hook's entries and the hard denials, for its two doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
@@ -382,7 +385,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
   `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
   readings and the sink, each door's event file as before, a subagent's card `think` on both doors);
-- spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `OwnContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
+- spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `AccountContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
   `StandingHandedTests`, `TargetPromptGoldenTests`;
 - accounts: `AccountRotation*Tests`, `AccountSetTests`, `AccountNextStartTests`, `SwitchDecisionTests`, `UsageCurvesTests`,
   `AccountCoolingTests`, `ModelCoolingTests`, `AccountLimitsTests`, `ResumeAccountTests`, `LineAccountTests` and its callers' census;

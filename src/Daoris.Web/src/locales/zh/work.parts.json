@@ -23,6 +23,7 @@
   "work.parts.spent.unsaid": "{{count}} 轮，未报 token 数",
   "work.parts.spent.unsaid_other": "{{count}} 轮，未报 token 数",
   "work.parts.began.asked": "由 {{repository}} 委托",
+  "work.parts.began.askedByAsk": "由本需求 #{{ask}} 委托",
   "work.parts.began.askedUnnamed": "由另一会话委托",
   "work.parts.began.recorded": "`{{began}}`，按记录显示",
   "work.parts.label": "这条工作线的各段如何接续",

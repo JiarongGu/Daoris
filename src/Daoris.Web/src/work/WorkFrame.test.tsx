@@ -783,11 +783,10 @@ describe('the Work frame', () => {
   it('is the rail and the attended session, bound by one selection', async () => {
     show('s1a2b3c4');
 
-    // The rail's row and the page header's title are the same derived identity, from one implementation; the
-    // record under the header does not say it a third time.
+    // The rail's row and the header's title are one derived identity; *Started from* names the quest once more.
     await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     await vi.waitFor(() =>
-      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(2));
+      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(3));
     expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
   });
 
