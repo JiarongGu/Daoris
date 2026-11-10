@@ -194,8 +194,7 @@ public static class ReviewGate
     /// The run a chain's work in <paramref name="repository"/> is: named by the chain's first quest there, which
     /// every later quest of the chain in that repository shares; null where the chain has none there.
     /// </summary>
-    public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
-        chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
+    public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) => QuestRuns.FirstIn(chain, repository);
 
     /// <inheritdoc cref="QuestChains.Of"/>
     public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id) => new QuestChains(quests).Of(id);

@@ -46,7 +46,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         {
             var (binding, unit, node, code) = Bind(each, governed);
             if (code is not null) done.Add(Counted(each.Plugin, new(unit, node, PerformedWhat.NotTaken, code)));
-            else bound.Add(binding!);
+            else bound.AddRange(binding);
         }
 
         if (bound.Count == 0) return done;
@@ -87,13 +87,13 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     }
 
     /// <summary>The first three rules and the second's naming: the event's sender, its unit in the frame actually sent, and its one node.</summary>
-    private (Bound? Bound, string Unit, string Node, string? Code) Bind(WorkStepHeard heard, IReadOnlyDictionary<string, GovernedUnit> governed)
+    private (IReadOnlyList<Bound> Bound, string Unit, string Node, string? Code) Bind(WorkStepHeard heard, IReadOnlyDictionary<string, GovernedUnit> governed)
     {
         var frame = heard.Step;
-        if (port.GenerationOf(heard.Plugin, heard.Generation) != heard.Generation) return (null, "", "", WorkRefusals.NotSender);
+        if (port.GenerationOf(heard.Plugin, heard.Generation) != heard.Generation) return ([], "", "", WorkRefusals.NotSender);
 
         var slash = frame.Step.LastIndexOf('/');
-        if (slash >= 0 && !string.Equals(frame.Step[..slash], heard.Plugin, StringComparison.Ordinal)) return (null, "", "", WorkRefusals.NotNamed);
+        if (slash >= 0 && !string.Equals(frame.Step[..slash], heard.Plugin, StringComparison.Ordinal)) return ([], "", "", WorkRefusals.NotNamed);
         var step = frame.Step[(slash + 1)..];
 
         // The unit this very process is told of, by the frame whose send completed, and none other.
@@ -106,16 +106,19 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         // a branch told for several units is taken by the one whose told tip is its commit; two at that tip still name neither.
         if (told.Count > 1) told = [.. told.Where(unit => string.Equals(unit.Tip, frame.Commit, StringComparison.OrdinalIgnoreCase))];
         // The unit still governed, in the repository the process is told of: a checkout moved since names another repository's identity.
-        if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var unit) || unit.Watched.Identity != told[0].Identity)
+        if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var mapped) || mapped.Watched.Identity != told[0].Identity)
         {
-            return (null, "", "", WorkRefusals.NotWatched);
+            return ([], "", "", WorkRefusals.NotWatched);
         }
 
+        // A branch two runs share is told once for both: the event is each run's whose own node awaits it there.
         var kind = heard.Plugin + "/" + step;
+        var runs = ToldRuns.Of(mapped, governed, told[0].Unit!, kind, frame.Commit, records.Read);
+        var unit = runs[0];
         var named = unit.Graph.Nodes.Where(node => node.Kind == kind && node.Reach == NodeReach.Observed).ToList();
-        if (named.Count != 1) return (null, unit.Unit.Id, "", WorkRefusals.NotNamed);
-        if (!unit.Observable.Contains(named[0].Id)) return (null, unit.Unit.Id, named[0].Id, WorkRefusals.NotDeclared);
-        return (new Bound(heard, step, told[0], unit, unit.Declared[named[0].Id]), unit.Unit.Id, named[0].Id, null);
+        if (named.Count != 1) return ([], unit.Unit.Id, "", WorkRefusals.NotNamed);
+        if (!unit.Observable.Contains(named[0].Id)) return ([], unit.Unit.Id, named[0].Id, WorkRefusals.NotDeclared);
+        return ([.. runs.Select(run => new Bound(heard, step, told[0], run, ToldRuns.Named(run, kind) ?? run.Declared[named[0].Id]))], unit.Unit.Id, named[0].Id, null);
     }
 
     /// <summary>

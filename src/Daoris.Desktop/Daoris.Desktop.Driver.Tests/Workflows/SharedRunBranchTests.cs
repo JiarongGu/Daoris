@@ -43,4 +43,40 @@ public sealed class SharedRunBranchTests : NodeRunFixture
 
         Assert.DoesNotContain(pass.Said, line => line.Contains("neither governs it", StringComparison.Ordinal));
     }
+
+    /// <summary><c>claimed</c>, then a plugin's observed deploy on the run's branch.</summary>
+    private const string ClaimedDeployed = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"deployed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"}]}
+        """;
+
+    /// <summary>
+    /// A plugin's event on a branch two runs share, told once for both, goes to the run whose own node awaits it there, never to the run the
+    /// branch maps to first: the earlier run's deploy was stopped, and the later run's is reached by the event.
+    /// </summary>
+    [Fact]
+    public async Task An_event_on_a_shared_branch_goes_to_the_run_whose_node_awaits_it()
+    {
+        var digest = RunHome.SaveGraph(_home, ClaimedDeployed);
+        RunHome.Bind(_home, RunId, digest, _now);
+        RunHome.Bind(_home, Later, digest, _now);
+        _branchTips["daoris/s1"] = Tip1;
+        _units =
+        [
+            RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.QuestUnit(RunHome.Quest(Later, "Done")),
+            RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId, Later]) with { Subject = new WorkSubject("daoris/s1", Tip1) },
+        ];
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.True(RunNodeWords.Word(Files, RunId, "deployed", NodeWordActs.Stop, "Not this one.", () => _now).Done);
+        await RunPassAsync(runtime);
+        Assert.Equal(NodeStates.Active, RunStatus("deployed", RunUnits.IdOf(Later)).State);
+
+        _port.Heard.Enqueue(new(Plugin, 1, new WorkStepFrame("deployed", new WorkOutcome(WorkStates.Reached), _now, "e-1", RunHome.Repository, "daoris/s1", Tip1)));
+        await RunPassAsync(runtime, whole: false);
+
+        Assert.Equal(NodeStates.Reached, RunStatus("deployed", RunUnits.IdOf(Later)).State);
+        Assert.Equal(NodeStates.Stopped, RunStatus("deployed").State);
+    }
 }
