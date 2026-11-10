@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>One call an Ask Daoris connector noted as naming a place: when, what it did, the workspace (or <c>all</c>) and the repository it named, and what it named of them.</summary>
-public sealed record HelpPlaceNote(DateTimeOffset At, string Act, string? Workspace, string? Repository, string? What);
+/// <summary>One call an Ask Daoris connector noted as naming a place: when, what it did, the workspace (or <c>all</c>) and repository it named, what of them, and how many a search found.</summary>
+public sealed record HelpPlaceNote(DateTimeOffset At, string Act, string? Workspace, string? Repository, string? What, int? Found = null);
 
 /// <summary>
 /// The places an Ask Daoris conversation's connector noted (the service's <c>CallPlaceFile</c>), read for its receipt.
@@ -58,7 +58,9 @@ public static class HelpPlaceNotes
             if (Json.NonEmpty(element, "act") is not { } act) return null;
             var workspace = Json.NonEmpty(element, "workspace")?.Trim();
             var repository = Json.NonEmpty(element, "repository")?.Trim();
-            return workspace is null && repository is null ? null : new(at, act, workspace, repository, Json.NonEmpty(element, "what"));
+            var found = element.TryGetProperty("found", out var count) && count.ValueKind == JsonValueKind.Number
+                && count.TryGetInt32(out var number) && number >= 0 ? number : (int?)null;
+            return workspace is null && repository is null ? null : new(at, act, workspace, repository, Json.NonEmpty(element, "what"), found);
         }
         catch (JsonException)
         {

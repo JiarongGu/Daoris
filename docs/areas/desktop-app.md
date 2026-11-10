@@ -168,7 +168,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
     in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
     window's own words, with the place it named (*outside its focus* where that was beyond its conversation's focus at the press),
-    its outcome, a press to open its conversation and a pause's *Resume*; a restart empties it. (from D196, D253)
+    its outcome, a press to open its conversation and a pause's *Resume*, and apart under *Asked you* the presses it put to the
+    person on a card in restricted mode, each with its card's state; a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
     holds a row for each session Sessions' list places to review, except one of a quest whose run the person stopped, its review
     among its steps (`StoppedRuns`, read from the node records; `StoppedReviewAttentionTests`).

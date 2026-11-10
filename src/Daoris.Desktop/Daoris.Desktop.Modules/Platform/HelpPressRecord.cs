@@ -5,9 +5,9 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One press Ask Daoris made in full access this run, run with no card: the route as the window words it
-/// (<paramref name="Module"/> and <paramref name="Route"/>), the conversation that pressed it, what the press named, when, and
-/// <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c>.
+/// One press Ask Daoris made this run: the route as the window words it (<paramref name="Module"/>, <paramref name="Route"/>), its
+/// conversation, what it named, when, and <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c> for one run with no
+/// card; for one <see cref="Asked"/> on a card its state, <c>waiting</c>, <c>allowed</c>, <c>refused</c>, <c>changed</c> or <c>unanswered</c>.
 /// </summary>
 /// <param name="Scope">The field that named what the press acted on (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), which a reverse press carries back.</param>
 /// <param name="Target">What the press named in that field.</param>
@@ -19,11 +19,14 @@ public sealed record HelpPressNow(
 
     /// <summary>Whether <see cref="Place"/> lay beyond its conversation's focus at the press.</summary>
     public bool Beyond { get; init; }
+
+    /// <summary>That it asked the person on a card in restricted mode rather than ran: the receipt's and Notifications' <i>Asked you</i>.</summary>
+    public bool Asked { get; init; }
 }
 
 /// <summary>
-/// Ask Daoris's covered presses of this run, for the window's group in Notifications: memory alone, so a restart empties it, as the
-/// steward's acts are. The newest <see cref="Kept"/> are held.
+/// Ask Daoris's presses of this run, run with no card or asked on one, for Notifications and the turns' receipts: memory alone, so a
+/// restart empties it, as the steward's acts are. The newest <see cref="Kept"/> are held.
 /// </summary>
 public sealed class HelpPressRecord(TimeProvider clock)
 {
@@ -34,15 +37,40 @@ public sealed class HelpPressRecord(TimeProvider clock)
     public const string Done = "done";
     public const string Failed = "failed";
 
+    public const string Waiting = "waiting";
+    public const string Allowed = "allowed";
+    public const string Refused = "refused";
+    public const string Changed = "changed";
+    public const string Unanswered = "unanswered";
+
     private readonly object _gate = new();
     private readonly List<HelpPressNow> _presses = [];
 
     /// <summary>A covered press begun on <paramref name="session"/>'s conversation: its id, for <see cref="Ended"/>.</summary>
-    public string Began(IpcRequest request, string session)
+    public string Began(IpcRequest request, string session) => Keep(request, session, Running, null, asked: false);
+
+    /// <summary>A press <paramref name="session"/>'s conversation asked on a card, with the place it named: its id, for <see cref="Answered"/>.</summary>
+    public string Asked(IpcRequest request, string session, HelpPressPlace? place) => Keep(request, session, Waiting, place, asked: true);
+
+    /// <summary>An asked press's card ended: its state from how.</summary>
+    public void Answered(string id, PipeConfirmationEnd end) => Settle(id, end switch
+    {
+        PipeConfirmationEnd.Confirmed => Allowed,
+        PipeConfirmationEnd.Refused => Refused,
+        PipeConfirmationEnd.Changed => Changed,
+        _ => Unanswered,
+    });
+
+    private string Keep(IpcRequest request, string session, string outcome, HelpPressPlace? place, bool asked)
     {
         var id = Guid.NewGuid().ToString("N")[..12];
         var (scope, target) = Subject(request);
-        var press = new HelpPressNow(id, request.Module ?? "", request.Type ?? "", session, scope, target, clock.GetUtcNow(), Running);
+        var press = new HelpPressNow(id, request.Module ?? "", request.Type ?? "", session, scope, target, clock.GetUtcNow(), outcome)
+        {
+            Place = place?.Place.Wire(),
+            Beyond = place?.Beyond ?? false,
+            Asked = asked,
+        };
         lock (_gate)
         {
             _presses.Add(press);
@@ -52,15 +80,17 @@ public sealed class HelpPressRecord(TimeProvider clock)
         return id;
     }
 
-    /// <summary>The press's answer came: <c>done</c> where it succeeded, else <c>failed</c>.</summary>
-    public void Ended(string id, bool succeeded)
+    private void Settle(string id, string outcome)
     {
         lock (_gate)
         {
             var at = _presses.FindIndex(each => each.Id == id);
-            if (at >= 0) _presses[at] = _presses[at] with { Outcome = succeeded ? Done : Failed };
+            if (at >= 0) _presses[at] = _presses[at] with { Outcome = outcome };
         }
     }
+
+    /// <summary>The press's answer came: <c>done</c> where it succeeded, else <c>failed</c>.</summary>
+    public void Ended(string id, bool succeeded) => Settle(id, succeeded ? Done : Failed);
 
     /// <summary>The place the press named, read against the registry and its conversation's focus once it began.</summary>
     public void Placed(string id, HelpPressPlace place)

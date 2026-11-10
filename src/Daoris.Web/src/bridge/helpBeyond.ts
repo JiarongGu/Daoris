@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { readPlace } from '../help/focus';
 import type { BeyondEntry } from '../help/focus/beyond';
+import { HELP_PRESS_OUTCOMES } from '../person/standing';
 import { call } from './call';
 
-const ACTS: readonly BeyondEntry['act'][] = ['search', 'read', 'propose', 'press'];
-const OUTCOMES: readonly NonNullable<BeyondEntry['outcome']>[] = ['running', 'done', 'failed'];
+const ACTS: readonly BeyondEntry['act'][] = ['search', 'read', 'propose', 'press', 'asked'];
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
 
 /** One `HELP_BEYOND` answer read entry by entry: one with no time, an act not known or no place is left out. */
@@ -19,7 +19,8 @@ export function beyondAnswer(raw: unknown): BeyondEntry[] {
     const act = ACTS.find((known) => known === shaped.act);
     const place = readPlace(shaped.place);
     if (at === null || !act || place === null) return [];
-    return [{ at, act, place, what: text(shaped.what), outcome: OUTCOMES.find((known) => known === shaped.outcome) ?? null }];
+    const count = typeof shaped.count === 'number' && Number.isInteger(shaped.count) && shaped.count >= 0 ? shaped.count : null;
+    return [{ at, act, place, what: text(shaped.what), outcome: HELP_PRESS_OUTCOMES.find((known) => known === shaped.outcome) ?? null, count }];
   });
 }
 

@@ -119,6 +119,27 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
         Assert.DoesNotContain("Refused", await tools.ListQuestsAsync(workspace: "all"));
     }
 
+    /// <summary>A search and the quests say how many their answer found, which the call's noting keeps for the turn's receipt.</summary>
+    [Fact]
+    public async Task A_search_and_the_quests_say_how_many_their_answer_found()
+    {
+        var searched = CallFound.Listen();
+        await Search("alpha").SearchAsync("hydration", workspace: "all");
+        Assert.Equal(2, searched.Count);
+
+        var none = CallFound.Listen();
+        await Search("alpha").SearchAsync("nothing like it", workspace: "beta");
+        Assert.Equal(0, none.Count);
+
+        var quests = CallFound.Listen();
+        await Quests("alpha").ListQuestsAsync(workspace: "beta");
+        Assert.Equal(0, quests.Count);
+
+        var registry = CallFound.Listen();
+        await Search("alpha").RegistryAsync();
+        Assert.Null(registry.Count);
+    }
+
     /// <summary><c>default</c>'s room is the whole machine: its connector is bound to none, and answers as before.</summary>
     [Fact]
     public async Task A_connector_bound_to_none_answers_as_before()
