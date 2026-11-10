@@ -89,6 +89,15 @@ public sealed class LandPresses(DriverLoop loop, IEventBus bus)
     /// Whether what holds <paramref name="gate"/> is only the review the press itself just accepted: the pass it asked had not come within
     /// its bound, so the gate is the one read before its Accept. That is no refusal, and the press goes on to the landing's wait.
     /// </summary>
+    /// <summary>
+    /// The answer to a press kept as the review's Accept on the run's way to it (<see cref="EarlyAccepts"/>, D256): accepted, and when it
+    /// lands; null where the graph is not what holds it, so the press is answered as any other.
+    /// </summary>
+    public static TreeLanding? Kept(LandingGate gate) =>
+        gate.GraphHolds && gate.GraphPart() is { State: GraphGateStates.NotJudged or GraphGateStates.Waits } graph
+            ? new TreeLanding(false, EarlyAccepts.Said(graph))
+            : null;
+
     public static bool HeldByOwnAccept(LandingGate gate, bool accepted) =>
         accepted && gate.GraphHolds && gate.GraphPart() is { State: GraphGateStates.Waits, Kind: NodeKinds.Review };
 

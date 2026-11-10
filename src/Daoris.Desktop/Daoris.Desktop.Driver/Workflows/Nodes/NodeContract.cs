@@ -311,6 +311,12 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// record, where no branch landed to open one on. Null for every other kind, which the person alone passes over. Never the person's skip: it carries no words, and its source is the record's.
     /// </summary>
     public string? SkipBy { get; init; }
+
+    /// <summary>
+    /// The source that reaches a pressed node by what it observes, beside its press: a <c>review</c> whose landing is seen made, the
+    /// landing record's (git's), so a reach nobody pressed says it was observed and is never the person's. Null for every other kind.
+    /// </summary>
+    public string? ObservedBy { get; init; }
 }
 
 /// <summary>The authority by kind: each kind's unit's (<see cref="INodeKind.Authority"/>), a plugin's own node's from its declaration.</summary>

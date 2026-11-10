@@ -114,7 +114,7 @@ public static class RunNodeWords
         var (refused, result) = records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(Ended) with { Detail = ended.Quest });
-            var standing = record.Pending.FirstOrDefault(each => each.Node == node);
+            var standing = EarlyAccepts.Standing(record, node, by);
             if (SupervisedWords.Refused(standing, by) is { } held) return (null, Refuse(held));
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
@@ -156,7 +156,8 @@ public static class RunNodeWords
 
     /// <summary>
     /// The person's words a run's record holds, applied through the one table under the run's declarations and its scope (the graph's digest and
-    /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not. Pure: the runtime writes it.
+    /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not, but an Accept kept for a
+    /// review not begun yet (<see cref="EarlyAccepts"/>). Pure: the runtime writes it.
     /// </summary>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
@@ -166,6 +167,7 @@ public static class RunNodeWords
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
         var applied = new List<(NodeWord, string?)>();
+        var waiting = new List<NodeWord>();
         foreach (var word in record.Pending)
         {
             if (!declared.TryGetValue(word.Node, out var node))
@@ -182,6 +184,13 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (EarlyAccepts.Held(word, standing) is { } early)
+            {
+                if (early == EarlyAccepts.Waiting) waiting.Add(word);
+                else applied.Add((word, early));
+                continue;
+            }
+
             if (SupervisedWords.Dropped(word, standing, landings) is { } dropped)
             {
                 applied.Add((word, dropped));
@@ -218,7 +227,8 @@ public static class RunNodeWords
             applied.Add((word, null));
         }
 
-        return (next with { Pending = [] }, applied);
+        // An Accept kept for a review not begun yet stays, and a pass that met nothing else writes nothing.
+        return applied.Count == 0 ? (null, []) : (next with { Pending = waiting }, applied);
     }
 
     /// <summary>

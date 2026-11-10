@@ -82,6 +82,34 @@ public sealed class GraphPressTests
         Assert.Equal(["answer kept"], _did);
     }
 
+    /// <summary>A press on a run still on its way to its review is kept as that review's Accept before the pass is asked (D256).</summary>
+    [Fact]
+    public async Task A_press_before_the_graph_is_judged_or_the_review_waits_is_kept_as_the_reviews_accept()
+    {
+        var kept = new List<string>();
+        Task<bool> Keep(GraphGateState graph, CancellationToken _)
+        {
+            kept.Add(graph.State);
+            _did.Add("accept kept");
+            return Task.FromResult(true);
+        }
+
+        await GraphPasses.PressAsync(_ => Answered(NotJudged), Reads(NotJudged), Passes(comes: true), CancellationToken.None, keep: Keep);
+        Assert.Equal(["answer kept", "accept kept", $"pass asked, waiting {GraphPasses.Bound.TotalSeconds:0}s", "gate read"], _did);
+
+        _did.Clear();
+        Assert.Same(Waits, await GraphPasses.PressAsync(_ => Answered(Waits), Reads(Lands), Passes(comes: true), CancellationToken.None, keep: Keep));
+        Assert.Equal(["answer kept", "accept kept", "pass asked, waiting 0s"], _did);
+        Assert.Equal([GraphGateStates.NotJudged, GraphGateStates.Waits], kept);
+
+        // A hold before the graph's, and a press with no loop to ask, keep nothing.
+        _did.Clear();
+        var opinion = Gate(NotJudged.GraphPart()!, opinionHolds: true);
+        await GraphPasses.PressAsync(_ => Answered(opinion), Reads(Lands), Passes(comes: true), CancellationToken.None, keep: Keep);
+        await GraphPasses.PressAsync(_ => Answered(NotJudged), Reads(Lands), pass: null, CancellationToken.None, keep: Keep);
+        Assert.Equal(["answer kept", "answer kept"], _did);
+    }
+
     [Fact]
     public async Task A_pass_takes_the_asks_made_before_it_began_and_one_made_while_it_runs_waits_for_the_next()
     {

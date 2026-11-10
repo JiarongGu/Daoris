@@ -226,6 +226,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Its replay onto the line conflicts and its session is told to rebase in its own tree, the refusal beneath it.
   'landing.rebase': { values: [] },
   'landing.root-dirty': { values: [] },
+  // An automatic landing that needs nothing of the person: the line already holds its branch, or the merge waits in its line's integration.
+  'landing.line-holds': { values: [] },
+  'landing.queued': { values: [] },
   // The person's Accept carried a session on: its tree's uncommitted work, or the replay's conflict beneath it, and
   // the yes that stays on it; carried on twice and still not clean it waits for review; and the landing that yes makes once it is clean.
   'landing.carried-dirty': { values: ['paths'] },
