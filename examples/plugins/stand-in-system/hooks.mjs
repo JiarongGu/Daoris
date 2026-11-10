@@ -1,15 +1,19 @@
 // The stand-in system's adapter on the hook wire: JSON-RPC 2.0, one frame per line on stdin and stdout, stderr its console.
 // It answers the two system points a plugin that declares `systems` speaks:
 //  plan/read      the intended changes read against the system as it stands, answered as typed operations with their preconditions
-//  apply/perform  a reviewed change set applied under those preconditions: `applied`, or `stale` with each refused resource's present version
-// Its store is the data folder's state.json (system.mjs); DAORIS_PLUGIN_DATA says where that is.
-import { mkdirSync } from 'node:fs';
+//  apply/perform  a reviewed change set applied under those preconditions: `applied`, `unchanged`, or `stale` with each refused
+//                 resource's present version
+// Its store is the data folder's state.json (system.mjs); DAORIS_PLUGIN_DATA says where that is. Both systems it declares are that
+// store: `stand-in` guarded by each key's etag, `stand-in-unguarded` by nothing of its own, as plugin.json says.
+import { mkdirSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { apply, keep, plan, read } from './system.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const data = process.env.DAORIS_PLUGIN_DATA;
 mkdirSync(data, { recursive: true });
+const declared = JSON.parse(readFileSync(new URL('./plugin.json', import.meta.url), 'utf8')).systems;
+const guardOf = (system) => declared.find((each) => each.id === system)?.preconditions ?? 'etag';
 
 for await (const line of createInterface({ input: process.stdin })) {
   if (!line.trim()) continue;
@@ -21,11 +25,11 @@ for await (const line of createInterface({ input: process.stdin })) {
       break;
 
     case 'hook/plan/read':
-      send({ jsonrpc: '2.0', id: frame.id, result: plan(read(data), frame.params.changes ?? []) });
+      send({ jsonrpc: '2.0', id: frame.id, result: plan(read(data), frame.params.changes ?? [], guardOf(frame.params.system)) });
       break;
 
     case 'hook/apply/perform': {
-      const { state, answer } = apply(read(data), frame.params.operations ?? []);
+      const { state, answer } = apply(read(data), frame.params.operations ?? [], { guarded: guardOf(frame.params.system) !== 'none' });
       if (answer.state === 'applied') keep(data, state);
       send({ jsonrpc: '2.0', id: frame.id, result: answer });
       break;

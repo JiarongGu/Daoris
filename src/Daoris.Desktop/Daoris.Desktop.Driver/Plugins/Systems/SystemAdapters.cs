@@ -11,4 +11,10 @@ public static class SystemAdapters
             ?? throw new DriverException($"no plugin installed and on adapts system `{place}`: install `{place.Plugin}`, or switch it on.");
         return await HookProcess.StartAsync(entry, home, onLine ?? (_ => { }), ct).ConfigureAwait(false);
     };
+
+    /// <summary>What a place's writes are guarded by, as the plugin installed in <paramref name="home"/> declares it; <c>etag</c> where none declares it.</summary>
+    public static Func<SystemPlace, string> Guard(string home) => place =>
+        PluginCatalog.Load(home).Plugins.Where(each => each.Contributes && each.Manifest.Id == place.Plugin)
+            .SelectMany(each => each.Manifest.Systems).FirstOrDefault(system => system.Id == place.System)?.Preconditions
+        ?? SystemPreconditions.Etag;
 }

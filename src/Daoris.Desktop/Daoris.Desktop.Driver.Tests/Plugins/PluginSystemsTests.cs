@@ -46,12 +46,11 @@ public sealed class PluginSystemsTests : IDisposable
     }
 
     [Fact]
-    public void The_stand_in_system_example_declares_its_store()
+    public void The_stand_in_system_example_declares_its_store_guarded_and_unguarded()
     {
         var example = Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "stand-in-system");
         var (manifest, problem) = PluginCatalog.ReadFolder(example);
         Assert.Null(problem);
-        var system = Assert.Single(manifest.Systems);
-        Assert.Equal(("stand-in", SystemPreconditions.Etag), (system.Id, system.Preconditions));
+        Assert.Equal(["stand-in etag", "stand-in-unguarded none"], manifest.Systems.Select(system => $"{system.Id} {system.Preconditions}"));
     }
 }

@@ -51,16 +51,27 @@ test('an apply writes every operation under its etag, and a plan read before a c
   assert.equal(again.state.items.release.value, '2');
 });
 
-test('an apply of what the store already holds, or of an empty plan, writes nothing and answers none', () => {
+test('an apply of what the store already holds, or of an empty plan, writes nothing and answers unchanged', () => {
   const empty = { items: {}, serial: 0 };
   const planned = plan(empty, [{ resource: 'release', value: '1' }]).operations;
   const applied = apply(empty, planned).state;
 
   const twice = apply(applied, planned);
-  assert.deepEqual(twice.answer, { state: 'none', applied: [] });
+  assert.deepEqual(twice.answer, { state: 'unchanged', applied: [] });
   assert.equal(twice.state, applied, 'nothing is written');
-  assert.deepEqual(apply(applied, []).answer, { state: 'none', applied: [] });
-  assert.equal(apply(applied, plan(applied, [{ resource: 'gone', remove: true }]).operations).answer.state, 'none');
+  assert.deepEqual(apply(applied, []).answer, { state: 'unchanged', applied: [] });
+  assert.equal(apply(applied, plan(applied, [{ resource: 'gone', remove: true }]).operations).answer.state, 'unchanged');
+});
+
+test('the unguarded store plans under no precondition and writes without checking one, Daoris reading each back', () => {
+  const first = { items: { release: { value: '1', etag: 'e1' } }, serial: 1 };
+  const planned = plan(first, [{ resource: 'release', value: '2' }], 'none');
+  assert.deepEqual(planned.operations[0].precondition, { kind: 'none', version: 'e1' });
+
+  const moved = { items: { release: { value: 'by hand', etag: 'e-hand' } }, serial: 2 };
+  const written = apply(moved, planned.operations, { guarded: false });
+  assert.deepEqual(written.answer, { state: 'applied', applied: ['release'] });
+  assert.equal(written.state.items.release.value, '2');
 });
 
 test('the adapter answers both points on the hook wire, keeping the store in its data folder', async () => {
@@ -87,11 +98,18 @@ test('the adapter answers both points on the hook wire, keeping the store in its
     assert.equal(read(data).items.release.value, '2');
 
     const twice = await ask(4, 'hook/apply/perform', { system: 'stand-in', operations: planned.result.operations });
-    assert.deepEqual(twice.result, { state: 'none', applied: [] });
+    assert.deepEqual(twice.result, { state: 'unchanged', applied: [] });
 
     keep(data, { items: { release: { value: 'by hand', etag: 'e-hand' } }, serial: 5 });
     const stale = await ask(5, 'hook/apply/perform', { system: 'stand-in', operations: planned.result.operations });
     assert.equal(stale.result.state, 'stale');
+
+    const bare = await ask(6, 'hook/plan/read', { system: 'stand-in-unguarded', changes: [{ resource: 'release', value: '3' }] });
+    assert.equal(bare.result.operations[0].precondition.kind, 'none');
+    keep(data, { items: { release: { value: 'by another', etag: 'e-other' } }, serial: 6 });
+    const unchecked = await ask(7, 'hook/apply/perform', { system: 'stand-in-unguarded', operations: bare.result.operations });
+    assert.deepEqual(unchecked.result, { state: 'applied', applied: ['release'] });
+    assert.equal(read(data).items.release.value, '3');
   } finally {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
     child.stdin.end();

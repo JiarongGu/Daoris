@@ -9,7 +9,8 @@
     "points": ["plan/read", "apply/perform"]
   },
   "systems": [
-    { "id": "stand-in", "name": "The stand-in store", "preconditions": "etag" }
+    { "id": "stand-in", "name": "The stand-in store", "preconditions": "etag" },
+    { "id": "stand-in-unguarded", "name": "The stand-in store, unguarded", "preconditions": "none" }
   ],
   "tools": [
     { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's hooks.mjs." }
