@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A place whose hand is refused (the identity serving its origin holds no API token) is not a plugin that cannot start: `plugin try`
-/// takes no hand and passes, while the loop never reaches the start. The refusal is its own kind, never counted as an exit, so it is
+/// A place whose hand is refused (the identity serving its origin holds no API token) is not a plugin that cannot start: the loop
+/// never reaches the start (`plugin try` asks the same hand, <see cref="PluginTrialHandTests"/>). The refusal is its own kind, never counted as an exit, so it is
 /// never marked unsound, is asked again once a minute and not at every look, and the process starts once the token is there.
 /// </summary>
 public sealed class RefusedHandTests : IDisposable

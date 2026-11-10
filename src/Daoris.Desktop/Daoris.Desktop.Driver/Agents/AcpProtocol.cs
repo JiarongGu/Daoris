@@ -109,9 +109,12 @@ internal static class AcpProtocol
     }
 
     /// <summary>The servers a session is handed, in the wire's own shape: on a new session and on a resumed one alike.</summary>
-    internal static object[] Offer(ConnectorPlan? plan)
+    /// <param name="plan">What the start chose.</param>
+    /// <param name="own">The person's own servers (<see cref="ISpawn.OwnServers"/>), after the plan's; a name the plan holds is the plan's.</param>
+    internal static object[] Offer(ConnectorPlan? plan, IReadOnlyList<ServerEntry>? own = null)
     {
-        var servers = plan?.Servers;
+        IReadOnlyList<ServerEntry>? servers = plan?.Servers;
+        if (own is { Count: > 0 }) servers = [.. servers ?? [], .. own.Where(server => servers is null || servers.All(held => held.Name != server.Name))];
         // 🔴 The session's VOICE. The composed target tells every session to claim and
         // close its quest over its own connector, and the pipe door only manages that because the
         // repository's own `.mcp.json` wires it — which an adopted repository may not have, and

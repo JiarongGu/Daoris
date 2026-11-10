@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <para><b>The floor</b>: nothing that signs in or picks the provider (the person's sign-in stays theirs, agents rule 28), sets the
 /// posture or the sandbox (rules 21-22) or trusts a folder (rule 24) is taken, in a profile either.</para>
 /// <para><b>Servers are not handed here</b>: the adapter replaces the configuration's <c>mcp_servers</c> with the open's whenever the
-/// open names any, and Daoris's connector always rides it.</para>
+/// open names any, and Daoris's connector always rides it; the person's go in the open (<see cref="CodexOwnServers"/>).</para>
 /// </remarks>
 internal static class CodexOwnHome
 {

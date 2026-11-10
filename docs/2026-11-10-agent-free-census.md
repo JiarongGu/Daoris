@@ -35,7 +35,7 @@ names the commit that lifts it, or the row that will where its code is another b
 | 20 | Claude, native | `ENABLE_TOOL_SEARCH=false` | the spawn shell (`Spawning.cs`) | nothing: every tool is listed at the start | D230 | narrows nothing |
 | 21 | every door | the role variables cleared | the spawn shell | the person's and the holder's keys reaching a session | D208, D253 | **keep**: the person's own keys stay the window's |
 | 22 | every door | every other provider's registered credential and home dropped | the spawn shell | another agent's key or sign-in reached from a session's shell | D49, D172 point 3, agents rule 28 | **keep**, confirmed with row 23 made: a session runs on the account the walk chose, and another agent's key in its shell would start that agent on the person's own sign-in, which Daoris never starts work on and whose limits it never reads; the harness's every tool still runs, and another agent is reached as a co-worker or a quest on an account of its own set. The person's settings and Codex's home are handed with the same floor (no sign-in, provider or home variable) |
-| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**: made (D262, D266): the account's home stays, and the person's skills, subagents, commands, servers, enabled plugins, settings, memory file and Chrome switch reach both of Claude Code's doors, and Codex's configuration, instructions, skills and prompts its door, each family the person's to switch off; Codex's own servers stay open (the design below) |
+| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**: made (D262, D266): the account's home stays, and the person's skills, subagents, commands, servers, enabled plugins, settings, memory file and Chrome switch reach both of Claude Code's doors, and Codex's configuration, instructions, skills and prompts its door, each family the person's to switch off, and Codex's own servers ride the protocol door's open beside the plan's (`CodexOwnServers`) |
 | 24 | Claude, both | a driven session's mode: `auto`, else `acceptEdits` (protocol), `acceptEdits` (pipe); `agent` on Codex | agents rule 21 | a tool call outside the mode's reach: refused on the pipe door and in the judged modes | D81, D184 | mode **keep** (the person's access setup chooses another); the refusal **lift**, held by ASKFULL1 (D253 points 5-6: held for the person, never refused) |
 | 25 | Claude, Lyntai's layer | the three flow tools a headless turn cannot answer, always denied | `ClaudeDrivenLayer` | asking the person a question, entering and leaving plan mode | AGENTLYNTAI1s-ii | open: the owner's measurement decides (that row) |
 | 26 | Codex | no rule language, so none of the person's denies | agents rule 19 | nothing; it holds fewer narrowings than Claude's doors | D72, D213 | narrows nothing |
@@ -55,7 +55,6 @@ names the commit that lifts it, or the row that will where its code is another b
 
 ## Rows for other builders
 
-- Row 23's open piece: Codex's own servers, which must join the open's connector plan as a source of their own (the design below).
 - Row 24's refusal is ASKFULL1's (D253 points 5-6).
 - Row 25 is AGENTLYNTAI1s-ii's measurement.
 
@@ -89,4 +88,5 @@ the person's home: `config.toml`'s keys where the account's sets none (`own-sett
 approval policy, the sandbox or the trusted projects, in a profile either; and `developer_instructions` holding the account's own,
 then the person's `AGENTS.md` (`own-memory`) and a sentence naming their `skills/` and `prompts/` folders (`own-skills`). Its servers
 are not handed there: the adapter replaces the configuration's `mcp_servers` with the open's whenever the open names any, and
-Daoris's connector always rides it, so they wait for a source of their own in the open's connector plan.
+Daoris's connector always rides it, so they join the open's server list instead (`CodexOwnServers`), local programs only, under the
+Claude servers' floor.

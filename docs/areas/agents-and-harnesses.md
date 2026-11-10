@@ -178,7 +178,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     on the SDK's preset on the protocol door (`own-memory`, `ClaudeOwnMemory`). A Codex session is handed the person's Codex home
     (`CODEX_HOME`, else `.codex`) as codex-acp's `CODEX_CONFIG`: its `config.toml` where the account's sets nothing, never the
     provider, sign-in, approval policy, sandbox or trusted projects, and its `AGENTS.md` and the folders of its skills and prompts in
-    `developer_instructions` after the account's own (`CodexOwnHome`); its servers are not handed. Nothing is handed to a session in
+    `developer_instructions` after the account's own (`CodexOwnHome`); its `mcp_servers` ride the open instead, since the adapter replaces
+    the configuration's with the open's: the protocol door's `session/new` lists the plan's servers and then the person's local ones,
+    but one named as Daoris's connector, one whose environment names a `DAORIS_` variable, one switched off and a plan's own name, none to
+    a pass held to Daoris's connector alone (`own-servers`, `CodexOwnServers`, `AcpProtocol.Offer`). Nothing is handed to a session in
     the person's own home, on a plugin's door or under a scratch home. (from D230, D253, D262, D266)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in

@@ -18,5 +18,8 @@ internal sealed class CodexAcpSpawn : ISpawn
         if (CodexOwnHome.Config(own) is { } config) info.Environment[CodexOwnHome.ConfigVariable] = config.ToJsonString();
     }
 
+    /// <summary>The person's own Codex servers, which the open hands <c>session/new</c> (<see cref="CodexOwnServers"/>).</summary>
+    public IReadOnlyList<ServerEntry> OwnServers(OwnTools own) => CodexOwnServers.Read(own);
+
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) => command is { Count: > 0 } ? command : Program;
 }
