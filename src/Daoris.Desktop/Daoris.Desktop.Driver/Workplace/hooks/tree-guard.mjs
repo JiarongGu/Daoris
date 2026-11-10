@@ -2,9 +2,8 @@
 // session's own tree. Shipped inside the driver and written under the Daoris home; the harness runs it as
 //  node tree-guard.mjs <tree> [<target> ...]
 // with the call as JSON on stdin. Each <target> after the tree is a checkout the person declared this
-// session's repository may also write into: a write there is let through as one in the tree is, and so is
-// a subagent's write in the worktree the harness made for it (subagent-worktree.mjs, installed beside it).
-// Zero dependencies but that module — it runs inside every session.
+// session's repository may also write into: a write there is let through as one in the tree is.
+// Zero dependencies but subagent-worktree.mjs, installed beside it — it runs inside every session.
 // It judges the tools that name a file (Write, Edit, MultiEdit, NotebookEdit) by their path fields,
 // resolved through links, and a shell's call (Bash, PowerShell) by the write targets it can READ in the
 // command: a redirect (`>`, `>>`), `tee`, `cp`, `mv`, `rm`, and PowerShell's Set-Content, Add-Content,
@@ -701,7 +700,6 @@ function shellOperands(args, takesDirectory = false) {
   return { operands, directory };
 }
 
-/** A file's text, or null where it cannot be read as one. */
 function readText(file) {
   try {
     return readFileSync(file, 'utf8');

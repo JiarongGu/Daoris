@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session Daoris runs on Claude Code keeps what the account it runs as gives the same harness run by hand (D253 point 7): its
+/// A session Daoris runs on Claude Code keeps what the account it runs as gives the same harness run by hand: its
 /// auto-memory, the skills and plugins the person synced to the account and the account's connectors. The session's settings file
 /// says none of them, so the account's own settings decide, and Daoris writes nothing in the account's home.
 /// </summary>

@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// The file says nothing of the account's auto-memory, synced skills and plugins or connectors: the account's own settings decide them,
-/// as for the same harness run by hand (D253 point 7). The account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
+/// as for the same harness run by hand. The account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
 /// </remarks>
 public sealed class ClaudeRules : IRuleLanguage
 {

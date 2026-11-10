@@ -513,9 +513,8 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>No rules to hand hands the permissions alone: no hooks, no classifier, and none of the account's own keys.</summary>
     [Fact]
-    public void Nothing_to_hand_hands_the_permissions_alone()
+    public void Nothing_to_hand_hands_the_permissions_alone_with_no_hook_classifier_or_account_key()
     {
         var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, []);
 
