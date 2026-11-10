@@ -81,7 +81,7 @@ public sealed class CapCountTickTests : IDisposable
     [Fact]
     public async Task A_conversation_in_a_repository_takes_no_slot_and_still_holds_the_place_it_works_in()
     {
-        _ledger.Working("c1", "tools", Tree("chat-tools"));
+        _ledger.Working("c1", "tools", Tree("tools-checkout"));
         _ledger.Publish("q1", "engine");
         _ledger.Publish("q2", "tools");
         var (driver, runs) = Driver(Config(cap: 1));

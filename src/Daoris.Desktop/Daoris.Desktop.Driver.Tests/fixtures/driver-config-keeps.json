@@ -470,11 +470,11 @@
       ]
     },
     {
-      "name": "a set another writer took out is made with the edit's added names alone, never the ones it read",
+      "name": "a key another writer took out stays out while the edit adds to the set beside it",
       "between": [{ "from": ["  \"holds\": [],", "  \"trees\": [", "    \"engine\"", "  ],"], "to": ["  \"holds\": [],"] }],
-      "edit": { "op": "trees", "repository": "orders", "on": true },
+      "edit": { "op": "hold", "repository": "orders", "on": true },
       "changes": [
-        { "from": ["  \"holds\": [],", "  \"trees\": [", "    \"engine\"", "  ],"], "to": ["  \"holds\": [],", "  \"trees\": [", "    \"orders\"", "  ],"] }
+        { "from": ["  \"holds\": [],", "  \"trees\": [", "    \"engine\"", "  ],"], "to": ["  \"holds\": [", "    \"orders\"", "  ],"] }
       ]
     },
     {
