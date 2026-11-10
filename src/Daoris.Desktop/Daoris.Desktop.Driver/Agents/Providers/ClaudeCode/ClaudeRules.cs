@@ -23,10 +23,7 @@ public sealed class ClaudeRules : IRuleLanguage
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// The lineage hook is Claude Code's own (<see cref="ClaudeLineageHook"/>), installed here for the file it is handed; the person's
-    /// own settings are merged beneath the file (<see cref="ClaudeOwnSettings"/>).
-    /// </remarks>
+    /// <remarks>The lineage hook is Claude Code's own (<see cref="ClaudeLineageHook"/>), installed here for the file it is handed.</remarks>
     public string Write(string home, string sessionId, HandedRules rules)
     {
         var path = Render(

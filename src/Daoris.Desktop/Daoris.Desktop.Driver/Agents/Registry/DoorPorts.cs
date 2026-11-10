@@ -27,10 +27,7 @@ public static class DoorPorts
         /// <summary>The line that stops a conversation's turn on the door's stdin, null where it has none.</summary>
         public string? FrameInterrupt() => Native(door)?.FrameInterrupt();
 
-        /// <summary>
-        /// What a protocol-door session carries on <c>session/new</c> to take its rules file, its plugins and what of the person's own tool
-        /// home its harness takes there (<paramref name="own"/>), null for none.
-        /// </summary>
+        /// <summary>What a protocol-door session carries on <c>session/new</c> to take its rules file, plugins and own tool home, null for none.</summary>
         public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string>? plugins = null, OwnTools? own = null) =>
             door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SessionMeta(settingsFile, plugins ?? [], OwnFor(door, own)) : null;
 
@@ -87,6 +84,5 @@ public static class DoorPorts
 
     private static INativeDialect? Native(AgentDoor door) => door.Dialect.IsKnown ? door.Dialect.Required as INativeDialect : null;
 
-    /// <summary>The person's own tool home for a door its provider owns; a plugin's door, its program unmeasured, takes none of it.</summary>
     private static OwnTools? OwnFor(AgentDoor door, OwnTools? own) => door.Declared ? null : own;
 }

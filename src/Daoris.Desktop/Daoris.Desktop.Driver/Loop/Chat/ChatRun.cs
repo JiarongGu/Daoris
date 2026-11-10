@@ -149,7 +149,6 @@ internal sealed class ChatRun(
                 {
                     // On a door with no wire, a call its harness would ask about is asked of the person through Daoris below full access.
                     Asked = !agent.Abilities.HeldOnWire && helpMode != HelpModes.Full,
-                    // The person's own settings beneath these, the conversation's folder's own above them.
                     Own = own,
                     Folder = workTree,
                 });

@@ -51,7 +51,6 @@ internal static class RegisteredVariables
         ];
     }
 
-    /// <summary>Whether any provider registers <paramref name="name"/>: a door's home, an account's key, a program's pin.</summary>
     public static bool Registered(string name) =>
         Built.Value.Concat(ByProvider).Any(entry => entry.Value.Contains(name, StringComparer.OrdinalIgnoreCase));
 

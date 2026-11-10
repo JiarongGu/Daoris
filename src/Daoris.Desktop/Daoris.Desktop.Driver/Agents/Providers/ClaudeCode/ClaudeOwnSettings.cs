@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// posture, rules 21-22), names plugins (their own family, <see cref="ClaudeOwnPlugins"/>) or switches the hooks off (Daoris's guard is
 /// one) is taken, nor a variable the session's process already holds, a Daoris one or any provider's home, key or pin.</para>
 /// <para><b>A session shaped for one job</b> takes the person's denies, asks and preferences but none of their allows, extra
-/// folders, hooks or project-server approvals, which would widen the shape its job was given.</para>
+/// folders, hooks or project-server approvals, which would widen the shape its job gives it.</para>
 /// </remarks>
 internal static class ClaudeOwnSettings
 {
