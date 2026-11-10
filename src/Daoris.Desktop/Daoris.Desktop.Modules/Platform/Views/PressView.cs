@@ -46,6 +46,7 @@ public static class PressViews
         new AskDeleteView(),
         new WorkPauseView(),
         new WorkResumeView(),
+        new AccountSettingsView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

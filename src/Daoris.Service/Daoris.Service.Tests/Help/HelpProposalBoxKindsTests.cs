@@ -12,13 +12,11 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed class HelpProposalBoxKindsTests
 {
-    /// <summary>The kinds, and the connector's tool that proposes each — the driver's table, line for line.</summary>
     private static readonly (string Kind, string Tool)[] Table =
     [
         ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
-        ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),

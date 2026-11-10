@@ -156,15 +156,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    // IHelpAccountDoors
-    public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort)
-    {
-        string Said(AgentSettingEdit? edit) => edit is null ? "-" : edit.Value ?? "clear";
-        Calls.Add($"SET_AGENT_SETTINGS {harness} {account} {Said(model)} {Said(effort)}");
-        return new AgentSettingsRead(model?.Value, effort?.Value, [], null);
-    }
-
-    // IHelpAgentDoors
     public Action<int, string?>? Ended { get; private set; }
 
     /// <summary>An action that ends before its start is answered: a pin already installed does.</summary>
@@ -212,7 +203,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.CompletedTask;
     }
 
-    // IHelpAskDoors
     /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
 
@@ -223,7 +213,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Asked);
     }
 
-    // IHelpBrowserDoors
     /// <summary>What the browser's door refuses with, as the Browser screen's route would; null to make the change.</summary>
     public string? BrowserRefusal { get; init; }
 
@@ -233,7 +222,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
     }
 
-    // IHelpClearDoors
     /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
     public HistoryOutcome? HistoryCleared { get; set; }
 
@@ -243,7 +231,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
     }
 
-    // IHelpPluginDoors
     /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card is drawn.</summary>
     public string? PluginRefusal { get; init; }
 
@@ -286,7 +273,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
 
-    // IHelpSettingDoors
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)
@@ -310,7 +296,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
-    // IHelpSyncDoors
     /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
     public SyncPlan Listed { get; init; } = new([], [], []);
 

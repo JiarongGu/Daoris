@@ -113,11 +113,6 @@ export const ProposingEveryKind: Story = {
               terminal: 'daoris agent update claude-code-acp', why: 'you asked for the newest',
             },
             {
-              id: 's1', kind: 'account' as const,
-              describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
-              terminal: 'daoris agent settings claude-code --account work model opus effort high', why: 'you want it to think harder',
-            },
-            {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',
             },

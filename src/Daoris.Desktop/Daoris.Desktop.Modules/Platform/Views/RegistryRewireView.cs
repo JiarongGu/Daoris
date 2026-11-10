@@ -27,7 +27,6 @@ public sealed class RegistryRewireView : IPressView
             return PressViewed.Refused($"`{named}` is not registered on this machine — use a repository's name as Repositories lists it.");
         }
 
-        // The service's own normalizing and comparing, as the route stores and the registry compares a workspace's name.
         var to = RemoteTarget.Workspace(asked);
         var from = RemoteTarget.Workspace(found.Workspace);
         if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))

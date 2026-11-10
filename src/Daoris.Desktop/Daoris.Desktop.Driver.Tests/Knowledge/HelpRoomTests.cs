@@ -160,7 +160,7 @@ public sealed class HelpRoomTests : IDisposable
         // The four further kinds, each a card the person applies.
         Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__agent_settings_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
         // Adding a landed plugin, or switching one, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);

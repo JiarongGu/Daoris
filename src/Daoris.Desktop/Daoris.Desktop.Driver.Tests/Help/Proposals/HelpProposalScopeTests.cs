@@ -47,7 +47,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
             new SessionRecord("sa2alpha", "engine", "running") { Workspace = "alpha" },
             new SessionRecord("sb2beta0", "game", "running") { Workspace = "beta" },
         ],
-        // A retry's quest, parked for alpha's repository and held for beta's.
         Parked = [new ParkedQuest("qa1alpha", "engine")],
         Held = [new HeldQuest("qb1beta0", "game", "sb1beta0")],
     };
@@ -83,7 +82,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Setting("line", workspace: "beta", value: "trunk"));
         Reaches(Setting("across", target: "engine", value: "write-to game"));
         Reaches(Setting("cap", value: "3"));
-        // A name registered nowhere is the kind's own refusal, as before.
         Assert.Contains("not registered", Refusal(Setting("drive", target: "nowhere")));
     }
 
@@ -142,7 +140,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Assert.Contains("neither parked nor held", Refusal(Setting("retry", target: "zz000000")));
     }
 
-    /// <summary>A record that is not found is its kind's own refusal, said as before.</summary>
     [Fact]
     public void A_record_not_found_is_its_kind_s_own_refusal()
     {

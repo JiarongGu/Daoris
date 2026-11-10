@@ -13,15 +13,10 @@ namespace Daoris.Knowledge;
 /// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
 /// follow them.</para>
 ///
-/// <para><b>The rule proposals' shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
-/// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
-///
 /// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
 /// accepts, a pattern that names one branch per session, a repository registered here, an agent this
 /// machine has — is the driver's, which judges each with the route's own code before the person sees
 /// it and hands a refusal back to the conversation in the route's words.</para>
-///
-/// <para><b>It never applies.</b> Every change is the person's press.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it, shares no
 /// code with this, and each side's tests hold the same shape — and the same table of kinds.</para>
@@ -38,7 +33,6 @@ public sealed class HelpProposalBox(string? home)
         ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
-        ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -80,11 +74,6 @@ public sealed class HelpProposalBox(string? home)
         new HelpAgentProposalWriter(file).Propose(
             action, agent, version, why, session, at, account, use, keep, noKeep, early, near, accounts, clear,
             switched, curve, noCurve);
-
-    /// <inheritdoc cref="HelpAccountProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAgentSettings(
-        string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at) =>
-        new HelpAccountProposalWriter(file).Propose(agent, account, model, effort, why, session, at);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(

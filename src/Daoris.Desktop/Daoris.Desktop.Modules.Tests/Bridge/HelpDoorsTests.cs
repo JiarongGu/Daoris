@@ -28,24 +28,6 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Contains("engine", DriverConfig.Load(DriverConfigPath).Drivable);
     }
 
-    [Fact]
-    public void An_accounts_settings_are_written_and_refused_as_the_agents_screens_route_writes_and_refuses_them()
-    {
-        var home = HarnessSettings.ProfileHome(Home, "claude-code", "work");
-        Directory.CreateDirectory(home);
-        var file = Path.Combine(home, AgentSettings.FileName);
-        File.WriteAllText(file, """{"theme":"dark","effortLevel":"high"}""");
-        var doors = Module().HelpDoors(null);
-
-        // A door's accounts are its owner's, and clearing removes the key.
-        doors.SetAgentSettings("claude-code-acp", "work", new AgentSettingEdit("sonnet"), new AgentSettingEdit(null));
-
-        Assert.Equal("""{"theme":"dark","model":"sonnet"}""", JsonSerializer.Serialize(JsonDocument.Parse(File.ReadAllText(file)).RootElement));
-        Assert.Contains("one session", Assert.Throws<DriverException>(() => doors.SetAgentSettings("claude-code", "work", null, new AgentSettingEdit("max"))).Message);
-        Assert.Contains("no account `play`", Assert.Throws<DriverException>(() => doors.SetAgentSettings("claude-code", "play", new AgentSettingEdit("opus"), null)).Message);
-        Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "play")));
-    }
-
     /// <summary>
     /// An update is <c>HARNESS_ACTION</c>'s own start: the agent's updater runs under its own console key,
     /// its end is the same <c>HARNESS_ENDED</c> news the Agents screen hears, and the conversation hears it too.
@@ -76,7 +58,6 @@ public sealed class HelpDoorsTests : Bridge
             && JsonSerializer.Serialize(message.Payload).Contains("updated to 9.9.10"));
     }
 
-    // No door writes a default: a stored `default` proposal is refused at its Apply (`HelpAgentProposalsTests`).
 
     /// <summary>A door with no Update is refused in the words <c>HARNESS_ACTION</c> refuses it with.</summary>
     [Fact]
@@ -96,7 +77,6 @@ public sealed class HelpDoorsTests : Bridge
     [Fact]
     public void A_plugin_is_added_by_copying_its_folder_in_and_nothing_it_declares_runs()
     {
-        // A checkout beside the home, never inside it: a folder in the home is refused.
         var checkout = Path.Combine(Path.GetDirectoryName(Home)!, "checkout-" + Path.GetFileName(Home));
         try
         {
@@ -115,7 +95,6 @@ public sealed class HelpDoorsTests : Bridge
             Assert.Equal(("acme.quiet-hours", true, (string?)null), (entry.Manifest.Id, entry.Enabled, entry.Problem));
             Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.quiet-hours", "hooks.mjs")));
             Assert.False(File.Exists(mark));
-            // Never a replace from here: that stays `daoris plugin add` at a terminal.
             Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddPlugin(source)).Message);
         }
         finally
@@ -124,7 +103,6 @@ public sealed class HelpDoorsTests : Bridge
         }
     }
 
-    /// <summary>A switch is <c>PLUGIN_ACTION</c>'s own — the same row, and the same refusal for an id not installed.</summary>
     [Fact]
     public void A_plugin_is_switched_as_the_plugins_screens_route_switches_it()
     {

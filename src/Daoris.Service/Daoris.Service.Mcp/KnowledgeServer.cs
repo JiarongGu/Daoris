@@ -32,14 +32,10 @@ public static class KnowledgeServer
         typeof(RuleProposalTools),
         typeof(ReviewTools),
         typeof(GoAheadTools),
-        // A driven session's question to the person before it parks, drawn at its conversation's end with its answers as presses.
         typeof(QuestionTools),
         typeof(HelperTools),
-        // A partner's answer for its piece, refused to every session that writes no piece.
         typeof(PartnerTools),
-        // A working session's ask to go on with another agent, settled by the person's hand-over rule.
         typeof(HandOverTools),
-        // A session's line read back from this machine's event files: what its brief's bound left out, a page at a time.
         typeof(LineTools),
         // One quest's handback read whole, by its id or its session's, in any state, from the session's own workspace.
         typeof(HandbackTools),
@@ -49,7 +45,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        typeof(HelpAccountTool),
         typeof(HelpAgentTool),
         typeof(HelpAskTool),
         typeof(HelpBrowserTool),

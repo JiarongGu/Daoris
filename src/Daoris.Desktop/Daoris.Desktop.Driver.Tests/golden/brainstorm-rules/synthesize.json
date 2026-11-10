@@ -11,7 +11,6 @@
     "WebFetch",
     "WebSearch",
     "mcp__daoris-knowledge__agent_propose",
-    "mcp__daoris-knowledge__agent_settings_propose",
     "mcp__daoris-knowledge__ask_propose",
     "mcp__daoris-knowledge__brainstorm_give",
     "mcp__daoris-knowledge__browser_propose",

@@ -25,7 +25,6 @@ public sealed partial class HelpProposalKindsTests
         ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
-        ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -145,8 +144,6 @@ public sealed partial class HelpProposalKindsTests
             new HelpSettingProposals().Doors,
             Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
 
-        // The agent kind's doors are a list on both sides too, the same list, so
-        // a door one side writes the other always judges.
         var agent = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpAgentProposalWriter.cs")));
         Assert.True(agent.Success, "the service's agent doors are a list, `Doors`.");
         Assert.Equal(

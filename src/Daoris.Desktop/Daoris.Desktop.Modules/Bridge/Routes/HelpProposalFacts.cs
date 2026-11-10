@@ -19,10 +19,6 @@ public sealed class HelpProposalFacts(DriverContext context)
     /// </summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "sessions"));
 
-    /// <summary>
-    /// Whether a pending proposal is a clear, judged by what this machine keeps of the quest, ask or workspace it names,
-    /// so the service is asked for that only then.
-    /// </summary>
     public static bool JudgedAgainstHistory(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "clear");
 
     /// <summary>

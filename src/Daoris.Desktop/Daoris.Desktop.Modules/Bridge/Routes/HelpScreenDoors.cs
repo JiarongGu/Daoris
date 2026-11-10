@@ -12,10 +12,8 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 {
     private readonly DriverLoop _loop = context.Loop;
 
-    // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
     public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
-    // GIT_USE's own write: the pointer in the identities' file, and the holds it lifts.
     public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
         ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
 
@@ -40,7 +38,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
         HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
 
-    // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
     public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -50,8 +47,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             context.Actions.Relay(harness, action), config, ended);
     }
 
-    // ACCOUNT_USE's own `use`: the same refusals and the same write, then the loop asked to look. The set has one entry,
-    // so there is no `default` door.
     public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
     {
         var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
@@ -90,8 +85,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         return Task.CompletedTask;
     }
 
-    // ACCOUNT_USE's own `ready`: *Try now*, the loop's own end of a cool-off, then the loop asked to look so an account
-    // offered again takes a waiting start now, not at the next poll.
     public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
     {
         var ended = _loop.Harnesses.Ready(harness, account);
@@ -147,10 +140,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             throw new DriverException(refused.Message);
         }
     }
-
-    // SET_AGENT_SETTINGS's own write.
-    public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
-        AccountSettings.Write(_loop.Harnesses, harness, account, () => (model, effort, null)).Read;
 
     // `daoris plugin add`'s copy, the driver's twin; the loop is asked to look, and it starts
     // what the plugin runs at that look, as it does any plugin. Nothing runs here.

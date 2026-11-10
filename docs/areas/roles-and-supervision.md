@@ -436,7 +436,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
     archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
-    pause and resume of an ask's or a quest's work. A working session's tier is its repository's access setup, read at the press from the place its key was handed for
+    pause and resume of an ask's or a quest's work, and an account's model and effort (`agent settings`). A press of Ask Daoris's that
+    no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes

@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it.</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris place`, `daoris settings`, `daoris quest` or `daoris git` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
@@ -20,17 +20,6 @@ public sealed record HelpProposal(
     /// The repository whose checkout holds a plugin to add, or null for a whole path the person gave.
     /// </summary>
     public string? Repository { get; init; }
-
-    // The account kind's.
-
-    /// <summary>An account's name, for an account's settings.</summary>
-    public string? Account { get; init; }
-
-    /// <summary>The model an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Model { get; init; }
-
-    /// <summary>The effort an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Effort { get; init; }
 
     // The agent kind's: the <c>use</c> door's fields, as <see cref="HelpAgentProposals.Read"/> reads them from a file.
 
@@ -418,7 +407,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
+    IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
     IHelpPluginDoors, IHelpSettingDoors, IHelpSyncDoors
 {
 }

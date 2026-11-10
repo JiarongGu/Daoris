@@ -14,10 +14,9 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed class McpToolRegistrationTests : McpToolsFixture
 {
-    /// <summary>Every name the host advertised before the tools left one class, in ordinal order.</summary>
     private static readonly string[] Advertised =
     [
-        "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
+        "agent_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
         "channel_read", "checkout_read", "clear_propose", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
@@ -81,7 +80,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
+                "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
                 "HelpGoTool", "HelpPluginTool", "HelpRoleTool", "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools",

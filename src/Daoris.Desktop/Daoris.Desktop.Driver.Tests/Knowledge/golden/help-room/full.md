@@ -76,10 +76,10 @@ under *Done at a terminal* (below), name its command for the person to run.
   cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
-- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and
-  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own
-  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,
-  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either
+- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:
+  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one
+  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,
+  and an effort of low, medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either
   to the tool's own default.
 - A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:
   `daoris quest delete <id>` or `daoris ask --delete <id>`, as the quest's drawer and the ask's record delete them. Only an open

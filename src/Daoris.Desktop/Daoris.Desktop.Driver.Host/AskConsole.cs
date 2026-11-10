@@ -68,7 +68,6 @@ internal static class AskConsole
                 case "--delete": delete = Value(); break;
                 case "--go-ahead": goAhead = Value(); break;
                 case "--reason": reason = Value(); break;
-                // The composer's short title.
                 case "--short": shortTitle = Value(); break;
                 // The composer's review choice, and the ask page's.
                 case "--review": review = Value(); break;

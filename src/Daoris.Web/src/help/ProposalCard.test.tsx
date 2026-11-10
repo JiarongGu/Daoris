@@ -48,13 +48,6 @@ const UPDATE: HelpProposal = {
   why: 'the person asked for the newest',
 };
 
-const ACCOUNT: HelpProposal = {
-  id: 'p3', kind: 'account',
-  describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
-  terminal: 'daoris agent settings claude-code --account work model opus effort high',
-  why: 'the person wants it to think harder',
-};
-
 const GO: HelpProposal = {
   id: 'p5', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
   why: 'the person asked where to name its agent',
@@ -174,14 +167,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
     expect(screen.getByText(code('claude-code-acp'))).toBeInTheDocument();
     expect(screen.getByText(code(UPDATE.terminal))).toBeInTheDocument();
-  });
-
-  it('an account\'s model and effort say the values in the tool\'s own words, with Apply and Not now', async () => {
-    await press(ACCOUNT, 'Apply');
-
-    expect(screen.getByText(code('opus'))).toBeInTheDocument();
-    expect(screen.getByText(code('high'))).toBeInTheDocument();
-    expect(screen.getByText(code(ACCOUNT.terminal))).toBeInTheDocument();
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
@@ -600,7 +585,7 @@ describe('the kinds that reach every door', () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={ACCOUNT} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      render(<ul><ProposalCard proposal={UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();

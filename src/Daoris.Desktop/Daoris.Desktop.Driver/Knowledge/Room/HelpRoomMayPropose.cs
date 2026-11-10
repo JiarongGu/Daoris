@@ -40,12 +40,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
-        text.Append("- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and\n");
-        text.Append("  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own\n");
-        text.Append("  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,\n");
-        text.Append("  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
+        text.Append("- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:\n");
+        text.Append("  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one\n");
+        text.Append("  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,\n");
+        text.Append("  and an effort of low, medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
         text.Append("  to the tool's own default.\n");
-        // The press is the one way to ask (D261): a delete is pressed, its card the route's view.
+        // A delete is pressed, its card the route's view.
         text.Append("- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:\n");
         text.Append("  `daoris quest delete <id>` or `daoris ask --delete <id>`, as the quest's drawer and the ask's record delete them. Only an open\n");
         text.Append("  quest nobody has started on can go, and an ask goes with every quest it became, or not at all. Never press the delete of a\n");
