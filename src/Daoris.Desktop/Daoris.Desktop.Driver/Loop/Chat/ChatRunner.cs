@@ -429,7 +429,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <inheritdoc cref="HelpAccessSwap.Chosen"/>
     public void HelpAccessChosen(string mode) => Executors.Of<HelpAccessSwap>().Chosen(mode);
 
-    /// <inheritdoc cref="HelpAccessSwap.Refocused"/>
     public void HelpFocusChosen(string sessionId, bool waiting) => Executors.Of<HelpAccessSwap>().Refocused(sessionId, waiting);
 
     /// <inheritdoc cref="HelpAccessSwap.Swapping"/>

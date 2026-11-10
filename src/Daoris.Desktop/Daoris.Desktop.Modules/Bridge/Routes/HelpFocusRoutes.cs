@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// Ask Daoris's focus, the page's `bridge/help.ts`: what a conversation is about, chosen in its composer's chip and kept on its
-/// file (ASKSCOPE2b, D253 point 3's note), and what a start is handed of it. Its reach stays every workspace whatever it is.
+/// file, and what a start is handed of it. Its reach stays every workspace whatever it is.
 /// </summary>
 public sealed class HelpFocusRoutes(DriverContext context)
 {
@@ -19,7 +19,7 @@ public sealed class HelpFocusRoutes(DriverContext context)
     // Choose what an Ask Daoris conversation is about, sent at once so a reload or another window shows it: before any words its
     // first focus, after them the one its next words take, choosing the applied one again clearing what waited.
     // `{ session, focus }` answers `{ session, focus, focusNext }`, or `{ session, refused, said }` for `unknown-place`,
-    // `not-help` or `ended`, the focus left as it was.
+    // `not-help` or `ended`, the focus left unchanged.
     [DriverRoute("HELP_FOCUS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("HELP_FOCUS", Session = "session")]
     [Timeless("HELP_FOCUS", "a conversation's focus")]

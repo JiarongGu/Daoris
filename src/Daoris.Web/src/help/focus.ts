@@ -1,5 +1,5 @@
 /**
- * What an Ask Daoris conversation is about, its focus (D253 point 3's note): this machine, a workspace, or a repository with its
+ * What an Ask Daoris conversation is about, its focus: this machine, a workspace, or a repository with its
  * workspace, since one name may stand in two. One shape on every side: the twin is the driver's `Help/HelpFocus.cs`, and
  * `focus.test.ts` and its `HelpFocusTests` hold the same spellings. Its reach stays every workspace whatever it is.
  */

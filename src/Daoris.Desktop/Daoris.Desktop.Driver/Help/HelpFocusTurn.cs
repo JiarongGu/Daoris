@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A turn's change of focus: the place it ran under before, the one it runs under now, and the place that was gone where the
-/// driver widened it (§5 of the ASKSCOPE2 design).
+/// A turn's change of focus: the place it ran under before, the one it runs under now, and the place no longer here where the
+/// driver widened it.
 /// </summary>
 /// <param name="Gone">The place chosen or held that is no longer on this machine, which <paramref name="To"/> widens; null for a change the person chose.</param>
 public sealed record HelpFocusChange(HelpFocus From, HelpFocus To, HelpFocus? Gone)
@@ -23,7 +23,7 @@ public sealed record HelpFocusChange(HelpFocus From, HelpFocus To, HelpFocus? Go
 }
 
 /// <summary>
-/// What the words that start an Ask Daoris turn take of its focus (ASKSCOPE2c): the one waiting, else the one applied, resolved
+/// What the words that start an Ask Daoris turn take of its focus: the one waiting, else the one applied, resolved
 /// against the registry now, a gone repository widened to its workspace and a gone workspace to this machine; kept as the
 /// applied focus, added to the foci, and the waiting one cleared. Its agent had ended for the change (<c>HelpAccessSwap.Refocused</c>),
 /// so these words resume the conversation, and the change is told in the line ahead of them.
@@ -56,7 +56,7 @@ public static class HelpFocusTurn
     public static IReadOnlyList<SaidWordView> Ahead(IReadOnlyList<SaidWordView> words, string line) =>
         words.Count == 0 ? words : [words[0] with { Text = $"{line}\n\n{words[0].Text}" }, .. words.Skip(1)];
 
-    /// <summary>The place as the registry holds it now, or the nearest wider one it holds with the place that was gone.</summary>
+    /// <summary>The place as the registry holds it now, or the nearest wider one it holds beside the place no longer here.</summary>
     private static (HelpFocus Place, HelpFocus? Gone) Resolved(HelpFocus wanted, IReadOnlyList<RepoView> registry)
     {
         if (HelpFocusing.Spelled(wanted, registry) is { } held) return (held, null);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { type Catalogue, type Glossary, check, load } from '../../scripts/names-check.mjs';
 
 /**
- * The glossary's *focus* / 聚焦 (ASKSCOPE2a, `docs/2026-11-11-ask-scope-ux-design.md` §0.2): what an Ask Daoris
+ * The glossary's *focus* / 聚焦 (`docs/2026-11-11-ask-scope-ux-design.md` §0.2): what an Ask Daoris
  * conversation is about. Its pattern leaves the keyboard's focus alone, and a label that calls it 焦点 or *scope* fails.
  */
 

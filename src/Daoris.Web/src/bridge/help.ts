@@ -377,15 +377,11 @@ export const useRenameHelp = () =>
       call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
   });
 
-/** What `HELP_FOCUS` answers: the applied focus and the one waiting for the next words, or the refusal's code and sentence. */
 export type HelpFocusAnswer =
   | { session: string; focus: Place; focusNext: Place | null; refused?: undefined }
   | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
 
-/**
- * Choose what an Ask Daoris conversation is about, sent at once so a reload or another window shows it (ASKSCOPE2b): before any
- * words its first focus, after them the one its next words take; the applied one chosen again clears what waited.
- */
+/** Choose a conversation's focus at once, so a reload or another window shows it; after its first words its next words take it. */
 export const useHelpFocus = () =>
   useMutation({
     mutationFn: (choice: { session: string; focus: Place }) => call('HELP_FOCUS', choice) as Promise<HelpFocusAnswer>,

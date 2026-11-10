@@ -76,10 +76,6 @@ public sealed class HelpAccessSwapTests : IDisposable
 
     private string Console(string id) => string.Join('\n', _output.Tail(id).Lines.Select(line => line.Text));
 
-    /// <summary>
-    /// ASKSCOPE2c: a focus waiting takes the next turn as an access change does: a busy conversation ends at its turn's end, never
-    /// mid-turn, and an idle one now.
-    /// </summary>
     [Fact]
     public async Task A_focus_waiting_ends_a_busy_conversation_at_its_turn_s_end_and_an_idle_one_now()
     {
@@ -97,7 +93,6 @@ public sealed class HelpAccessSwapTests : IDisposable
         await Poll.Until(() => busy.Finished == 1, () => "the turn's end never ended it");
     }
 
-    /// <summary>ASKSCOPE2c: the applied focus chosen again before the turn's end withdraws the end.</summary>
     [Fact]
     public async Task The_applied_focus_chosen_again_withdraws_the_end()
     {

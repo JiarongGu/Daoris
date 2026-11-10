@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A place an Ask Daoris conversation is about, its focus (D253 point 3's note): this machine, a workspace, or a repository
+/// A place an Ask Daoris conversation is about, its focus: this machine, a workspace, or a repository
 /// with its workspace, since one name may stand in two. One shape on every side, <c>{ kind, workspace?, repository? }</c>; the
 /// twin is the page's <c>help/focus.ts</c>, and <c>HelpFocusTests</c> and <c>focus.test.ts</c> hold the same spellings.
 /// </summary>

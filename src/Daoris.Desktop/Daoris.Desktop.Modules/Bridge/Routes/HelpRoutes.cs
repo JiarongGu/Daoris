@@ -491,7 +491,7 @@ public sealed class HelpRoutes(DriverContext context)
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
-        // `about`, a place's conversations (ASKSCOPE2b), is never asked beside a workspace.
+        // `about`, a place's conversations, is never asked beside a workspace.
         var about = HelpFocusRoutes.Place(press.About);
         if (about is not null && !string.IsNullOrWhiteSpace(press.Workspace)) throw new DriverException("both: a list is one workspace's or one place's, not both.");
 

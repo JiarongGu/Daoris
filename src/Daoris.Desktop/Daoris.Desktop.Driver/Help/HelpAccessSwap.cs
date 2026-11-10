@@ -51,8 +51,8 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The person chose another focus for a conversation running here (ASKSCOPE2c): a change of focus takes its next turn as a
-    /// change of access does, since its room was written for the focus its start had. Its agent ends at its turn's end, or now
+    /// The person chose another focus for a conversation running here: a change of focus takes its next turn as a
+    /// change of access does, since its start's room is for the focus it started under. Its agent ends at its turn's end, or now
     /// where it is idle; a choice back to the applied focus (<paramref name="waiting"/> false) withdraws an end not yet begun.
     /// </summary>
     public void Refocused(string sessionId, bool waiting)

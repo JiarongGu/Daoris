@@ -303,7 +303,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await owner.TakenBackAsync(record, ct).ConfigureAwait(false);
-        // The focus these words take (ASKSCOPE2c), a change told in one line ahead of them.
+        // The focus these words take, a change told in one line ahead of them.
         var change = HelpFocusTurn.Apply(_context.Home, sessionId, record.Workspace, await FocusRegistryAsync(ct).ConfigureAwait(false));
         var ask = new ResumeAsk(
             kept.Conversation, change is null ? words : HelpFocusTurn.Ahead(words, change.Line),

@@ -4,7 +4,7 @@ using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// An Ask Daoris conversation's focus (ASKSCOPE2b, `docs/2026-11-11-ask-scope-ux-design.md` §6): the place, one shape on every
+/// An Ask Daoris conversation's focus (`docs/2026-11-11-ask-scope-ux-design.md` §6): the place, one shape on every
 /// side (its twin is the page's `help/focus.ts`, whose `focus.test.ts` holds the same spellings), kept on the conversation's
 /// file beside its name and pin, and chosen through <see cref="HelpFocusing"/>, which <c>HELP_FOCUS</c> and
 /// <c>ask-daoris focus</c> both call. Files only.

@@ -3,7 +3,7 @@ using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The focus a turn takes (ASKSCOPE2c, `docs/2026-11-11-ask-scope-ux-design.md` §5 and §6): the next words apply the one waiting,
+/// The focus a turn takes (`docs/2026-11-11-ask-scope-ux-design.md` §5 and §6): the next words apply the one waiting,
 /// resolved against the registry then, a gone place widened, and the agent told in one line ahead of the person's words.
 /// </summary>
 public sealed class HelpFocusTurnTests : IDisposable

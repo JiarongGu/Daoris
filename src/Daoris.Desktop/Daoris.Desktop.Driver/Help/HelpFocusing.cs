@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What choosing a conversation's focus answered: its applied focus and the one waiting for its next words, or the refusal's
-/// code and sentence, the focus left as it was.
+/// code and sentence, the focus left unchanged.
 /// </summary>
 public sealed record HelpFocusAnswer(string Session, HelpFocus? Focus, HelpFocus? FocusNext, string? Refused = null, string? Said = null)
 {
@@ -18,7 +18,7 @@ public sealed record HelpFocusAnswer(string Session, HelpFocus? Focus, HelpFocus
 }
 
 /// <summary>
-/// The person's choice of what an Ask Daoris conversation is about (ASKSCOPE2b, D253 point 3's note), the one way
+/// The person's choice of what an Ask Daoris conversation is about, the one way
 /// <c>HELP_FOCUS</c> and <c>ask-daoris focus</c> take: kept on the conversation's file at once, so a reload or another window
 /// shows it. Before any words it is the conversation's first focus; after them it waits for the next words, which apply it, and
 /// choosing the applied focus again clears what waited. The place is spelled as the registry spells it now; a repository with no

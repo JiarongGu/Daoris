@@ -33,12 +33,8 @@ export type HelpConversationRow = {
    * moved, `default` for a record from before. Absent from a driver before it, which is `default`'s too (`workspaceOf`).
    */
   workspace?: string;
-  /**
-   * The place its last turn ran under (`focus.ts`), its home's until one is applied; absent from a driver before it, which reads
-   * as `homeFocus(workspace)`.
-   */
+  /** The place its last turn ran under, and the one its next words take; absent from a driver before them (`homeFocus`). */
   focus?: Place | null;
-  /** The place chosen for its next words, or null. */
   focusNext?: Place | null;
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;

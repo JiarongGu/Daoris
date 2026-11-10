@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MACHINE, holds, homeFocus, placeSaid, readPlace, samePlace } from './focus';
 
 /**
- * An Ask Daoris conversation's focus, the place (ASKSCOPE2b): one shape on every side. The spelling table is line for line the
+ * An Ask Daoris conversation's focus, the place: one shape on every side. The spelling table is line for line the
  * driver's `HelpFocusTests`, its twin `Help/HelpFocus.cs`.
  */
 describe('a place', () => {
