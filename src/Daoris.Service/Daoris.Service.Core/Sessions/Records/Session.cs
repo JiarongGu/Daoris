@@ -116,6 +116,12 @@ public sealed record Session(
     public string? Decides { get; init; }
 
     /// <summary>
+    /// The uncommitted paths of its own its last turn left in its git place, relative to the place's root, or null: while it is
+    /// parked or waiting with them it holds the place (<see cref="SessionPlaceLease"/>). This machine's own, as <see cref="Serves"/> is.
+    /// </summary>
+    public IReadOnlyList<string>? HoldsPlace { get; init; }
+
+    /// <summary>
     /// The session this one continues: a conversation handed over, a quest's session carried on
     /// after a hand-over or onto another account after a limit — null for every other session, and for a record from before.
     /// </summary>

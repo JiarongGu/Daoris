@@ -30,6 +30,16 @@ public sealed record OpenHelp(
     public static string Path => "/api/sessions/help";
 }
 
+/// <summary>
+/// Let others work in the place a parked line keeps with its uncommitted paths: the person's press, or those paths discarded. Clears
+/// the record's mark and moves nothing else.
+/// </summary>
+public sealed record ReleasePlace(string Id) : IRoute<SessionActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/sessions/{id}/release-place";
+}
+
 /// <summary>The access mode an Ask Daoris conversation going on runs under, where the person's mode changed since it last ran.</summary>
 public sealed record KeepHelpMode(string Id, string? Mode) : IRoute<SessionActionResponse>
 {

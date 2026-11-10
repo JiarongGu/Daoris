@@ -60,6 +60,7 @@ public sealed record SaidWordResponse(
 /// <param name="Piece">The piece a partner's record writes.</param>
 /// <param name="HelpMode">The access mode an Ask Daoris record's run got.</param>
 /// <param name="Resolved">The downloaded versions its starts were handed.</param>
+/// <param name="HoldsPlace">The uncommitted paths of its own a parked line keeps its git place with, on loopback alone.</param>
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Door, [property: PageType(SessionPageTypes.State)] string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
@@ -75,7 +76,7 @@ public sealed record SessionResponse(
     [property: PageType(SessionPageTypes.Override)] JsonElement? Override = null,
     [property: PageType(SessionPageTypes.Ran)] JsonElement? Ran = null,
     [property: PageType(SessionPageTypes.Chosen)] JsonElement? Chosen = null,
-    string? Work = null, string? Head = null, string? Decides = null);
+    string? Work = null, string? Head = null, string? Decides = null, IReadOnlyList<string>? HoldsPlace = null);
 
 /// <summary>
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer

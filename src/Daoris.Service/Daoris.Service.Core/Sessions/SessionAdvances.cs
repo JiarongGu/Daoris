@@ -81,7 +81,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null)
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -129,8 +129,19 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 Session: null);
         }
 
-        // A completion in the main tree is its session's commit point: the root is read before the step, as an open reads it.
-        var mainTree = target == SessionState.Completed && await sessions.FindAsync(id, ct).ConfigureAwait(false) is { } named
+        if (holdsPlace is not null && target is SessionState.Starting or SessionState.Working)
+        {
+            return new(
+                SessionAdvanceRefusal.InvalidMove,
+                $"Only a move out of a running state can mark the uncommitted paths a line keeps its place with, and session `{id}` was "
+                + $"asked to move to {Spell(target.Value)}.",
+                Session: null);
+        }
+
+        // A completion in the main tree is its session's commit point, a move into working takes the place's lease there and a park
+        // there takes none: the root is read before the step, as an open reads it.
+        var mainTree = target is SessionState.Completed or SessionState.Working or SessionState.AwaitingPerson
+                       && await sessions.FindAsync(id, ct).ConfigureAwait(false) is { } named
             ? Trees.Normalize(await holders.RootOfAsync(named.Repository, ct).ConfigureAwait(false))
             : null;
 
@@ -154,9 +165,9 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             if (!session.Active)
             {
                 return target == SessionState.Working && from is null
-                    ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, inside).ConfigureAwait(false)
+                    ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, mainTree, inside).ConfigureAwait(false)
                     : target == SessionState.AwaitingPerson && SessionHolders.WaitedOnHelper(session)
-                    ? await BackToPersonAsync(session, note, noteParts, now, inside).ConfigureAwait(false)
+                    ? await BackToPersonAsync(session, note, noteParts, now, mainTree, inside).ConfigureAwait(false)
                     : new SessionAdvanceOutcome(
                         SessionAdvanceRefusal.Terminal,
                         $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
@@ -180,11 +191,28 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                     Session: null);
             }
 
+            // A park going on in the place itself takes the writer's lease, as an open does; a pass takes none.
+            if (session.State == SessionState.AwaitingPerson && target == SessionState.Working && Writes(session)
+                && SessionHolders.InPlace(session.Tree, mainTree)
+                && await holders.PlaceHolderAsync(session.Repository, mainTree, inside, except: id).ConfigureAwait(false) is { } leased)
+            {
+                return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, SessionPlaceLease.Busy(session.Repository, leased), Session: null);
+            }
+
             // A session that parks again asks anew: the answer it went on with is not this park's.
             var moved = await sessions.SetStateAsync(
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
                     clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
                 .ConfigureAwait(false);
+
+            // A running state holds the place by itself, so its mark goes; the move out of one writes the paths it keeps, or none.
+            if (target is SessionState.Starting or SessionState.Working
+                || session.State is SessionState.Queued or SessionState.Starting or SessionState.Working)
+            {
+                var kept = target is SessionState.Starting or SessionState.Working ? null : holdsPlace;
+                await holders.MarkPlaceAsync(id, kept, inside).ConfigureAwait(false);
+                moved = moved! with { HoldsPlace = kept is { Count: > 0 } ? kept : null };
+            }
             // An ask whose earlier intake already ended transient stays bound to this failed record, so the person hears of it.
             if (unbindAsk && moved!.Ask is { } ask && asks is not null
                 && !await IntakeTransients.SecondAsync(sessions, moved, inside).ConfigureAwait(false))
@@ -210,6 +238,10 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 moved);
         }, ct).ConfigureAwait(false);
     }
+
+    /// <summary>Whether a record writes in its place and so takes its lease: a pass and an intake write nothing there.</summary>
+    private static bool Writes(Session session) =>
+        session is { Ask: null, Opinion: null, Serves: null, Decides: null } && !SessionLedger.IsHelp(session);
 
     /// <summary>
     /// Why a move to working may not carry the record's supervisor's words, or null: those waiting must be
@@ -251,7 +283,8 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     /// run takes them.</para>
     /// </remarks>
     private async Task<SessionAdvanceOutcome> GoOnAsync(
-        Session session, string? note, string? noteParts, string? evidence, string? transcript, DateTimeOffset now, CancellationToken inside)
+        Session session, string? note, string? noteParts, string? evidence, string? transcript, DateTimeOffset now, string? root,
+        CancellationToken inside)
     {
         var id = session.Id;
         var refused = session switch
@@ -273,8 +306,16 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         }
 
         // Ask Daoris's holds its own workspace's one at a time, as its start does: every workspace's runs in one room.
+        // In the place itself it takes the writer's lease, as an open does.
+        if (!SessionLedger.IsHelp(session) && SessionHolders.InPlace(session.Tree, root)
+            && await holders.PlaceHolderAsync(session.Repository, root, inside, except: session.Id).ConfigureAwait(false) is { } leased)
+        {
+            return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, SessionPlaceLease.Busy(session.Repository, leased), Session: null);
+        }
+
         var holder = SessionLedger.IsHelp(session)
             ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
+            : SessionHolders.InPlace(session.Tree, root) ? null
             : await holders.HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false);
         if (holder is not null)
         {
@@ -285,6 +326,8 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         var moved = await sessions
             .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts)
             .ConfigureAwait(false);
+        await holders.MarkPlaceAsync(id, null, inside).ConfigureAwait(false);
+        moved = moved! with { HoldsPlace = null };
 
         var with = WentOnWith(session) switch
         {
@@ -316,7 +359,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     /// <para><b>Its history stays</b> as a park's does: the note is the move's, and the evidence and the transcript are kept.</para>
     /// </remarks>
     private async Task<SessionAdvanceOutcome> BackToPersonAsync(
-        Session session, string? note, string? noteParts, DateTimeOffset now, CancellationToken inside)
+        Session session, string? note, string? noteParts, DateTimeOffset now, string? root, CancellationToken inside)
     {
         var id = session.Id;
         var refused = session switch
@@ -336,7 +379,9 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 SessionAdvanceRefusal.Terminal, $"Session `{id}`'s quest `#{session.Quest}` is no longer taken, so it has nothing to park for.", Session: null);
         }
 
-        if (await holders.HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false) is { } holder)
+        // A park in the place itself takes no lease; one in a copy keeps that copy's tree lock.
+        if (!SessionHolders.InPlace(session.Tree, root)
+            && await holders.HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false) is { } holder)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, SessionHolders.Busy(session.Repository, holder), Session: null);
         }
