@@ -90,7 +90,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         var whose = resume is null ? StartClass.Background : StartClass.Person;
 
         // What the start asked of its door's spawn, which its asked choice is read from and a go-on asks again naming its conversation.
-        var request = SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(adapter.Id.Value));
+        var request = SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(adapter.Id.Value), context.Processes.Delegates);
 
         // The run holds the process, its capture and its wait; the steps below are this hold's own, between the spawn and the open. The
         // spawn keeps the downloads the start is handed and brackets its process's lineage; it is tracked so who drives Daoris's browser

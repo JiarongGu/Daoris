@@ -139,15 +139,21 @@ public sealed class InstanceClient : IAsyncDisposable
     /// One request, and its answer's whole envelope; null where the connection is lost or nothing answers within
     /// <paramref name="within"/>. Each notification naming it on the way is handed to <paramref name="told"/>.
     /// </summary>
+    /// <param name="delegated">
+    /// The <c>delegate</c> field sent beside the envelope, made from the payload's JSON text exactly as the line carries it, which a
+    /// session's proof is over (<see cref="DelegateProof"/>); null sends none.
+    /// </param>
     public async Task<JsonElement?> RequestAsync(
         string id, string module, string type, object? payload, string? key, Action<JsonElement>? told, TimeSpan within,
-        CancellationToken ct = default)
+        CancellationToken ct = default, Func<string, object>? delegated = null)
     {
         using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct);
         wait.CancelAfter(within);
         try
         {
-            var line = key is null
+            var line = delegated is not null && key is not null
+                ? DelegatedLine(id, module, type, JsonSerializer.Serialize(payload), key, delegated)
+                : key is null
                 ? JsonSerializer.Serialize(new { id, module, type, payload })
                 : JsonSerializer.Serialize(new { id, module, type, payload, key });
             await _stream.WriteAsync(Utf8.GetBytes(line + "\n"), wait.Token).ConfigureAwait(false);
@@ -214,6 +220,30 @@ public sealed class InstanceClient : IAsyncDisposable
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// A press's line with its proof beside it: the payload written as the very text the proof was made over, never serialized again, so
+    /// the pipe reads the same bytes.
+    /// </summary>
+    private static string DelegatedLine(string id, string module, string type, string payload, string key, Func<string, object> delegated)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", id);
+            writer.WriteString("module", module);
+            writer.WriteString("type", type);
+            writer.WritePropertyName("payload");
+            writer.WriteRawValue(payload, skipInputValidation: true);
+            writer.WriteString("key", key);
+            writer.WritePropertyName(DelegateProof.Field);
+            JsonSerializer.Serialize(writer, delegated(payload));
+            writer.WriteEndObject();
+        }
+
+        return Utf8.GetString(stream.ToArray());
     }
 
     /// <summary>The string <paramref name="element"/> holds in <paramref name="field"/>, or null.</summary>

@@ -359,7 +359,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // conversation it kept.
             var prepared = !adapter.Can.ResumesByRestart
                 ? null
-                : _context.Adapters.Resume(adapter, SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value)) with { Resume = kept.Conversation });
+                : _context.Adapters.Resume(
+                    adapter, SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value), _context.Processes.Delegates) with { Resume = kept.Conversation });
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);
             // A set-up step going on with the person's words shows it again in its own tab: opened
             // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.

@@ -138,6 +138,28 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(1, chat.Finished);
     }
 
+    /// <summary>
+    /// A swap forgets the conversation's delegate key at once, so what its running turn presses is refused from then, and its next start
+    /// draws a new one; a conversation whose access did not change keeps its own.
+    /// </summary>
+    [Fact]
+    public async Task A_swap_forgets_the_conversation_s_delegate_key_and_leaves_the_others()
+    {
+        var runner = Runner();
+        var chat = Running(runner, "h1", HelpModes.Full);
+        Running(runner, "h2", HelpModes.Restricted);
+        var processes = runner.Context.Processes;
+        processes.Delegates.Draw("h1");
+        processes.Delegates.Draw("h2");
+        await Talking(chat);
+
+        runner.HelpAccessChosen(HelpModes.Restricted);
+
+        Assert.Empty(processes.Delegates.Of("h1"));
+        Assert.Single(processes.Delegates.Of("h2"));
+        chat.Turn.SetResult();
+    }
+
     /// <summary>A housekeeping grant given while a turn runs takes its next turn the same way, naming what it grants.</summary>
     [Fact]
     public async Task A_grant_given_ends_a_running_conversation_at_its_turn_s_end()
