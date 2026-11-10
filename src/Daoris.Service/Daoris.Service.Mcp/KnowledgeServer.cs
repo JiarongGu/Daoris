@@ -49,7 +49,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        // Ask Daoris's proposals, a class for each kind of proposal the box writes.
         typeof(HelpAccountTool),
         typeof(HelpAgentTool),
         typeof(HelpAskTool),

@@ -33,8 +33,6 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go.
 /// <see cref="Standing"/> the code that says why the place its terminal runs in is not told as outside, or why the standing confirmation
 /// did not cover it (<see cref="StandingWhy"/>); null where nothing is to be said, which the card's words then leave out.
-/// <see cref="View"/> is what it means as its route's view read it at the ask (<see cref="PressViews"/>); null for a route with none
-/// and for one restored, whose record keeps what it rests on, not its sentence.
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,

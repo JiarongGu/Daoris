@@ -82,7 +82,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // A quest's yes and a landed branch's hand-off stay in their own place, which a go reaches.
         text.Append("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
         text.Append("  person's own presses, on the quest's page and in the review, where `go_propose` takes them.\n");
-        // The press is the one way to ask (D261): a move is pressed, its card the route's view. Adding or importing needs a
+        // The press is the one way to ask: a move is pressed, its card the route's view. Adding or importing needs a
         // folder, which stays the person's pick, so a go opens the drawer with the workspace filled.
         text.Append("- A repository registered here is moved to a workspace by pressing, never proposed:\n");
         text.Append("  `daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name, which the\n");

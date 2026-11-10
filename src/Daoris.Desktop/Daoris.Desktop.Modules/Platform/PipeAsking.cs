@@ -56,7 +56,6 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        // The route's view refuses in the route's own words what the route would refuse, so the person never sees it (D261).
         if ((row.Refusal(asked) ?? viewed?.Refusal) is { } words)
         {
             Confirmations.Let(place);

@@ -57,7 +57,6 @@ export type Confirmation = {
   hold?: boolean;
   /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
-  /** What a terminal's press means, as its route's view read it at the ask; absent for a route with none. */
   view?: PressView | null;
 };
 

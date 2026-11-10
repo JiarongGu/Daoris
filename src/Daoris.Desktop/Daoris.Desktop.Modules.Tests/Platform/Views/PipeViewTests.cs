@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A person's press whose route has a view (D261): judged at the ask, so one its route would refuse is answered to its terminal in the
+/// A person's press whose route has a view: judged at the ask, so one its route would refuse is answered to its terminal in the
 /// route's words with no card and nothing run, and one it takes waits on a card that carries what it means beside every value it carries.
 /// </summary>
 /// <remarks>

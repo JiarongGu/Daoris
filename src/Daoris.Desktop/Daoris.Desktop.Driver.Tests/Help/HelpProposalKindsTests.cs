@@ -48,7 +48,6 @@ public sealed partial class HelpProposalKindsTests
         ["new"] = """WriteNull("base")""",
         ["edit"] = """WriteNumber("base",""",
         ["use"] = """WriteBoolean("choose",""",
-        // The draft door from the draft's fingerprint, written only with one.
         ["draft"] = """WriteString("draft",""",
     };
 

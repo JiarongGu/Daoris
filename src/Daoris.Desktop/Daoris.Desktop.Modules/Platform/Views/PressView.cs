@@ -19,7 +19,7 @@ public sealed record PressViewed(PressView? View, string? Refusal)
 
 /// <summary>
 /// One route's view of a press: judged at the ask with the route's own rules, so a press the route would refuse is answered to its
-/// terminal in those words and never put to the person, and one it takes is shown on the card as what it means (D261).
+/// terminal in those words and never put to the person, and one it takes is shown on the card as what it means.
 /// </summary>
 /// <remarks>A view is a class of its own in this folder, registered in <see cref="PressViews.All"/> by one line.</remarks>
 public interface IPressView

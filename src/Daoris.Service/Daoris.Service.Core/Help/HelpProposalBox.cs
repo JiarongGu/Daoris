@@ -13,9 +13,6 @@ namespace Daoris.Knowledge;
 /// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
 /// follow them.</para>
 ///
-/// <para><b>Not a partial type</b>: a new kind is a writer's file, a line in
-/// <see cref="Kinds"/> and a one-line <c>Propose…</c> here, so the connector's tools and the tests keep calling the box.</para>
-///
 /// <para><b>The rule proposals' shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
 ///

@@ -122,7 +122,6 @@ internal sealed class StubGrounds : IPipeGroundWorld
     /// <summary>What a name resolves to where the test says; a name only <see cref="Registered"/> resolves to itself.</summary>
     public Dictionary<string, string> Registrations { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The registry's rows a view reads: each repository by the workspace it is in.</summary>
     public Dictionary<string, string?> Placed { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);

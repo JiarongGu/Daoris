@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 /**
- * What a terminal's press means, as its route's view read it at the ask (`PressView`, D261): the kind its sentence is worded by
+ * What a terminal's press means, as its route's view read it at the ask (`PressView`): the kind its sentence is worded by
  * (`person.view.<kind>`), the values that sentence names, and the `daoris` command the press is.
  */
 export type PressView = { kind: string; facts: Record<string, string>; command: string };
