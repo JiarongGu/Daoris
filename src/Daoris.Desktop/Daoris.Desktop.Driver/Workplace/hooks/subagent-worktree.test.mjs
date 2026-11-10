@@ -50,13 +50,13 @@ test('a session in the main checkout itself already holds the folder, and is ans
 
 test('on Windows the folder is matched without case, through git\'s forward slashes', () => {
   const files = {
-    'C:\\Users\\u\\.daoris\\trees\\ws\\engine\\s1\\.git': 'gitdir: D:/Work/Engine/.git/worktrees/s1\n',
+    'X:\\daoris\\trees\\ws\\engine\\s1\\.git': 'gitdir: D:/Work/Engine/.git/worktrees/s1\n',
     'D:\\Work\\Engine\\.git\\worktrees\\s1\\commondir': '../..\n',
     'D:\\work\\engine\\.claude\\worktrees\\agent-a1\\.git': 'gitdir: D:/Work/Engine/.git/worktrees/agent-a1\n',
     'D:\\Work\\Engine\\.git\\worktrees\\agent-a1\\commondir': '../..\n',
   };
   const answer = subagentWorktree({
-    tree: 'C:\\Users\\u\\.daoris\\trees\\ws\\engine\\s1', cwd: 'd:\\work\\engine\\.claude\\worktrees\\agent-a1\\src', agentId: 'a1',
+    tree: 'X:\\daoris\\trees\\ws\\engine\\s1', cwd: 'd:\\work\\engine\\.claude\\worktrees\\agent-a1\\src', agentId: 'a1',
     platform: 'win32', read: (file) => files[Object.keys(files).find((key) => key.toLowerCase() === file.toLowerCase())] ?? null,
   });
   assert.equal(answer?.toLowerCase(), 'd:\\work\\engine\\.claude\\worktrees\\agent-a1');

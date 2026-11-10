@@ -50,7 +50,7 @@ public sealed class PlaceHoldersTests
     [Fact]
     public void A_session_in_a_tree_of_its_own_holds_no_lease_on_the_place()
     {
-        var only = Assert.Single(Plan(new SessionView("s-1a2b", "Game", "working") { Tree = "D:/home/work/trees/default/Game/s-1a2b" }));
+        var only = Assert.Single(Plan(new SessionView("s-1a2b", "Game", "working") { Tree = "X:/daoris/trees/default/Game/s-1a2b" }));
 
         Assert.Equal(StartVerdict.Start, only.Verdict);
     }
