@@ -16,7 +16,6 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
           "adapter": "claude-code-acp",
           "actors": { "build": [ { "agent": "claude-code-acp" } ] },
           "drivable": ["engine"],
-          "trees": ["engine"],
           "workspaceOpinions": { "aurora": { "reviewers": ["codex-acp"] } }
         }
         """;

@@ -17,7 +17,7 @@ public sealed class HelpRoomDoorsTests
         foreach (var command in new[]
         {
             "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
-            "daoris place trees <repository> on|off", "daoris place line <repository> <branch>|--clear",
+            "daoris place line <repository> <branch>|--clear",
             "daoris place landing <repository> merge|branch <pattern>|--clear",
             // A role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
             "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
@@ -106,7 +106,6 @@ public sealed class HelpRoomDoorsTests
 
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("drive a repository"));
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("hold one"));
-        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("give its sessions their own tree"));
         Assert.Equal(
             "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line",
             Screen("set the line"));

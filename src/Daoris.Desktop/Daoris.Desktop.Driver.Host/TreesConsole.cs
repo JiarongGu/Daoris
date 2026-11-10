@@ -7,8 +7,8 @@ namespace Daoris.Driver.Host;
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
 /// checkouts, and the CLI's discipline is that it spawns nothing but this program (`driverprogram.ts`) — so the verbs live
 /// on the binary that already owns git (parity is between surfaces, not between packages). The
-/// standing OPT-IN is the CLI's (`daoris place trees &lt;repo&gt; on|off`), because that is a file
-/// edit; the trees themselves are this side's, because they are processes and disk.</para>
+/// standing opt-in is the workflow's <c>isolate</c> step, a file edit; the trees themselves are this side's, because they
+/// are processes and disk.</para>
 ///
 /// <para>Exit codes keep the family contract: 0 clean · 1 refused (work would be lost) · 2 tool error.</para>
 /// </remarks>
@@ -96,7 +96,7 @@ internal static class TreesConsole
                 if (listed.Count == 0)
                 {
                     Console.WriteLine($"trees: none — nothing under {trees.TreesRoot}.");
-                    Console.WriteLine("  `daoris place trees <repository> on` opts a repository in;");
+                    Console.WriteLine("  a workflow that starts with an `isolate` step sets a repository's sessions apart;");
                     Console.WriteLine("  `daoris chat --own-tree` opens one for a conversation.");
                     return 0;
                 }

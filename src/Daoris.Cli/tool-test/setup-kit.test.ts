@@ -64,8 +64,8 @@ const REFUSED = [
   'changes, each said once:',
   CHANGE,
   'refused:',
-  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Give it trees under Repositories → the '
-    + 'repository\'s page → Setup → Driving, or with `daoris place trees atlas on`.',
+  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Start the workflow it follows with '
+    + '*Work apart* (its `isolate` step) in the workflow\'s editor.',
   '--plan: nothing was written, and nothing was asked.',
   '',
 ];
@@ -105,7 +105,7 @@ for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']] as const) {
 test('a refused plan is read as its refusals, each whole', () => {
   const plan = readPlace(REFUSED.join('\r\n'));
   assert.equal(plan.refusals.length, 1);
-  assert.match(plan.refusals[0] ?? '', /`daoris place trees atlas on`\.$/);
+  assert.match(plan.refusals[0] ?? '', /\(its `isolate` step\) in the workflow's editor\.$/);
   assert.equal(plan.nothingWritten, true);
   assert.deepEqual(plan.quests, []);
 });

@@ -252,7 +252,7 @@ What lanes do for the work, on a machine where the person has opted the reposito
 
 - A session of the repository can publish a quest to one of its own lanes, and the driver starts it as a further part of that
   session's line of work. Without lanes there is nothing to publish to, and a session works its rows itself.
-- **Trees.** A repository that opens a tree for each session (`daoris place trees <repository> on`) can run such a part beside the
+- **Trees.** A repository whose workflow starts with the *Work apart* (`isolate`) step opens a tree for each session and can run such a part beside the
   session that published it. One that does not runs it only after the publishing session ends, so a quest to its lanes waits.
 - **Not driven here.** A repository the person has not opted in on this machine starts nothing, lanes or not.
 

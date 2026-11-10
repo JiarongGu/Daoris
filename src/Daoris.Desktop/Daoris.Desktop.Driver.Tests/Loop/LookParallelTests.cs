@@ -413,7 +413,7 @@ public sealed class LookParallelTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}}, "trees": ["engine", "tools", "docs"] }
+            { "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}} }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

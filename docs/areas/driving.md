@@ -487,8 +487,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
 
 ## Contradictions
 
-- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `OpensOwnTree` branch) runs sessions side by
-  side, one per tree, where the repository opens its own trees. The code reads right (as D115 and D167 already say).
+- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `Isolate` branch) runs sessions side by
+  side, one per tree, where the repository's workflow starts with an `isolate` step. The code reads right (as D115 and D167 already say).
 - D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs` (`Decide`, `Account`) resumes the agent's own conversation
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed

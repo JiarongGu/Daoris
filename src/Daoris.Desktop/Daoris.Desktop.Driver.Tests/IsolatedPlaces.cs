@@ -30,6 +30,10 @@ public static class IsolatedPlaces
     public static DriverConfig Isolating(this DriverConfig config, string home, bool overlapWaits, params string[] repositories) =>
         repositories.Aggregate(config, (each, repository) => WorkflowSelection.Apply(each, new WorkflowUse(In(home, overlapWaits), repository, null, null)));
 
+    /// <summary>A watch's <c>driver.json</c> text: the engine and tools driven on the stub, every place working apart by the workflow saved in <paramref name="home"/>.</summary>
+    public static string WatchConfig(string home, int pollSeconds) =>
+        $$"""{ "drivable": ["engine", "tools"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}}, "defaultWorkflow": "{{In(home)}}" }""";
+
     /// <summary>Saves the workflow in <paramref name="home"/> and answers its id, for a config's <c>DefaultWorkflow</c>: every place it reaches works apart.</summary>
     public static string In(string home, bool overlapWaits = false, string? checks = null)
     {

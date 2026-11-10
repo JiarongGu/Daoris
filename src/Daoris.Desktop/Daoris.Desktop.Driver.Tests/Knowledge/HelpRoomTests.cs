@@ -284,7 +284,7 @@ public sealed class HelpRoomTests : IDisposable
             [
                 new SessionView("s1", "console-ui", "awaiting-person"),
                 new SessionView("s2", "reports-db", "working"),
-            ]);
+            ]).Apart("console-ui");
         IReadOnlyList<RepositoryLine> lines =
         [
             new("console-ui", "work", "feature/app", LineSource.Repository),

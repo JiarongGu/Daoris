@@ -212,7 +212,7 @@ public sealed class LookWaitTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """
-            { "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 60, "trees": ["engine"] }
+            { "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 60 }
             """);
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,

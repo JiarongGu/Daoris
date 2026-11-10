@@ -198,7 +198,7 @@ public sealed class HelpRoomMayProposeTests
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("every setting door below but the repository switches, which are pressed, never proposed", proposes);
-        Assert.Contains("`daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`", proposes);
+        Assert.Contains("`daoris place drive|undrive|hold|resume <repository>`.", proposes);
         Assert.DoesNotContain("but `retry`", proposes);
         Assert.Contains("`across` takes `read on|off|--clear` for a repository or a whole workspace", proposes);
         Assert.Contains("`write-to <other> [--clear]` for a repository", proposes);

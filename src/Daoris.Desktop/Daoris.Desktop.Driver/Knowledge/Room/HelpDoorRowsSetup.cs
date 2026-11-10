@@ -17,7 +17,6 @@ internal static class HelpDoorRowsSetup
         ("drive a repository, or stop", Setup + "Driving", "`daoris place drive|undrive <repository>`"),
         // A repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
         ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris place hold|resume <repository>`"),
-        ("give its sessions their own tree", Setup + "Driving", "`daoris place trees <repository> on|off`"),
         // One door adopts a repository: one quest to its own session, which takes up the doctrine, writes down what the repository
         // owns and its brief on its own branch. Ask Daoris's `setup` kind proposes it through its `place` door.
         new("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
