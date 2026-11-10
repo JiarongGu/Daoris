@@ -88,8 +88,6 @@ public static class GitIdentityCommand
             return 1;
         }
 
-        // Where Daoris runs a widening is pressed to it first, which judges whose terminal this is; the refusal of a session's terminal is the
-        // alone path's, the one that would change the home from this process.
         async Task<int> Alone()
         {
             if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })

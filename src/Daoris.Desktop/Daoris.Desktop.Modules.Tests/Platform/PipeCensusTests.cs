@@ -234,7 +234,6 @@ public sealed class PipeCensusTests
                 $"`{verb}` sends {route.Route} as the person's, and the census classes it {census}");
         }
 
-        // The replace is a route of its own, so no plugin verb stays alone.
         Assert.DoesNotContain(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
         Assert.Contains(Daoris.Driver.PluginRoutes.Verbs, each => each.Route?.Route == "PLUGIN_REPLACE");
     }

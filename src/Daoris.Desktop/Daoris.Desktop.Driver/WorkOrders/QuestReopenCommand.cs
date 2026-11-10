@@ -67,10 +67,6 @@ public static class QuestReopenCommand
             ask.Quest, new QuestSubmissionRef(submission.Machine, submission.Sequence), ask.Note, ct).ConfigureAwait(false), output);
     }
 
-    /// <summary>
-    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
-    /// <see cref="RunAsync"/>, the direct post.
-    /// </summary>
     public static Task<int> PressAsync(QuestReopenAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
         InstanceDoor.ThroughAsync(instance, ask.GoOn ? PersonPresses.QuestGoOn : PersonPresses.QuestReopen,
             InstanceDoor.Said(("quest", ask.Quest), ("note", ask.Note)), () => RunAsync(ask, service, output, ct), output, ct);

@@ -61,10 +61,6 @@ public static class GitAccessCommand
         }
     }
 
-    /// <summary>
-    /// A change made from this process, refused from a session's terminal: an agent changes no access, its own included, and answers no
-    /// go-ahead. Only the alone paths ask it; a press goes to Daoris first, which judges whose terminal sent it.
-    /// </summary>
     private static void NotFromSession(GitAccessWorld world)
     {
         if (world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 }) throw new DriverException(DriverChoicesCommand.SessionsTerminal);

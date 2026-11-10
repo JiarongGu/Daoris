@@ -90,10 +90,6 @@ public static class QuestWorkflowCommand
         return new QuestWorkflowAsk(id.TrimStart('#'), kind, workflow, said.Length == 0 ? null : said);
     }
 
-    /// <summary>
-    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
-    /// <see cref="RunAsync"/>, the direct post. A clear sends neither <c>kind</c> nor <c>workflow</c>.
-    /// </summary>
     public static Task<int> PressAsync(QuestWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
         InstanceDoor.ThroughAsync(instance, PersonPresses.QuestWorkflow,
             InstanceDoor.Said(("quest", ask.Quest), ("kind", ask.Kind), ("workflow", ask.Workflow), ("words", ask.Words)),

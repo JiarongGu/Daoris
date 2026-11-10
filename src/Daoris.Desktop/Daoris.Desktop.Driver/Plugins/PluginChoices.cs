@@ -63,10 +63,6 @@ public static class PluginRoutes
     /// <summary><c>plugin add --offer &lt;id&gt;</c>: the Install beside one of the install's offers.</summary>
     public static InstanceRoute Install { get; } = Person("PLUGIN_INSTALL");
 
-    /// <summary>
-    /// <c>plugin add &lt;folder&gt;</c> or <c>--offer &lt;id&gt;</c> for a plugin installed already: its files replaced wholesale, what it kept
-    /// kept, from the folder (the offer's own where <c>offer</c> names one, which records the offer as its source).
-    /// </summary>
     public static InstanceRoute Replace { get; } = Person("PLUGIN_REPLACE");
 
     /// <summary><c>plugin update &lt;id&gt; --yes</c>: the update's press, the person's with <c>apply: true</c>, the only form sent.</summary>

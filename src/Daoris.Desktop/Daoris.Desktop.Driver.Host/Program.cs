@@ -361,7 +361,6 @@ try
 
         using var client = ServiceClient.FromEnvironment();
         var questWorld = Daoris.Driver.Host.InstanceHost.World("quest");
-        // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
         return verb == "delete"
             ? await QuestDeleteCommand.PressAsync(questId, client, Console.Out, questWorld)
             : await QuestAcceptCommand.PressAsync(questId, client, Console.Out, questWorld);

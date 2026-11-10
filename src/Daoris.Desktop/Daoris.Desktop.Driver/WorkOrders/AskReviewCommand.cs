@@ -120,10 +120,6 @@ public static class AskReviewCommand
               + "Nothing was kept.";
     }
 
-    /// <summary>
-    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
-    /// <see cref="RunAsync"/>, the direct post.
-    /// </summary>
     public static Task<int> PressAsync(AskReviewAsk ask, AskReviewWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
         InstanceDoor.ThroughAsync(instance, PersonPresses.AskReview, InstanceDoor.Said(("ask", ask.Ask), ("choice", ask.Choice), ("words", ask.Words)),
             () => RunAsync(ask, world, output, ct), output, ct);

@@ -181,10 +181,6 @@ public static class QuestReviewCommand
         return 0;
     }
 
-    /// <summary>
-    /// The verb: the person's press, sent to the running Daoris and confirmed in its window, its lines the route's; else
-    /// <see cref="RunAsync"/>, the direct post. The verdict is <c>verdict</c>, the chain's environment <c>environment</c>.
-    /// </summary>
     public static Task<int> PressAsync(QuestReviewAsk ask, QuestReviewWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
         InstanceDoor.ThroughAsync(instance, PersonPresses.QuestReview,
             InstanceDoor.Said(("quest", ask.Quest), ("verdict", ask.SetUpIn is null ? ask.Said : null), ("environment", ask.SetUpIn), ("words", ask.Words)),
