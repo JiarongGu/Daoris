@@ -157,6 +157,8 @@
   "notifications.helpPressed.outcome.running": "进行中",
   "notifications.helpPressed.outcome.done": "已完成",
   "notifications.helpPressed.outcome.failed": "未完成",
+  "notifications.helpPressed.in": "在 {{place}} 中",
+  "notifications.helpPressed.beyond": "在 {{place}} 中，在其聚焦之外",
   "notifications.helpPressed.open": "打开该对话",
   "notifications.helpPressed.openLabel": "打开执行此操作的对话：{{act}}",
   "notifications.helpPressed.reverse.resume": "恢复",

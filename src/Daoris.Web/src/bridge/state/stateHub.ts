@@ -4,6 +4,7 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { readUnderWay } from '../driver';
 import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED } from '../help';
+import { HELP_BEYOND } from '../helpBeyond';
 import { ALL_HISTORY } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { notPushed } from './slices';
@@ -23,8 +24,9 @@ export type StateChanged = { scopes?: unknown; sessions?: unknown };
  * one session's own: a landing is every plan's, since each is judged against the line it moved.
  */
 const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
-  // The sessions, and each unit's milestone, which reads their records.
-  ['sessions', () => [keys.allSessions, keys.allWorkState]],
+  // The sessions, and each unit's milestone, which reads their records; and what an Ask Daoris turn looked at beyond its focus,
+  // which a turn's calls add.
+  ['sessions', () => [keys.allSessions, keys.allWorkState, HELP_BEYOND]],
   // Every plan and gate, with the second opinions and what of them waits, which sit under the landings' key; and each unit's milestone.
   ['landing', () => [keys.allLandings, keys.allWorkState]],
   ['diff', (sessions) => sessions?.map((session) => keys.diff(session)) ?? [keys.allDiffs]],
@@ -36,7 +38,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['quests', () => [keys.allQuests]],
   ['asks', () => [keys.allAsks]],
   // The driver's state and everything read under its key: its standing choices, the lines, the plans, the lists.
-  ['driver', () => [keys.driver]],
+  // And what Ask Daoris pressed beyond a conversation's focus, which the standing presses carry.
+  ['driver', () => [keys.driver, HELP_BEYOND]],
   ['rules', () => [keys.rules]],
   // Every clear's plan, whatever it is asked of.
   ['history', () => [ALL_HISTORY]],

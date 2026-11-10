@@ -35,6 +35,8 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   onGo: (door: StarterDoor) => void;
 }): {
   chip: ReactNode; crumb: ReactNode; startFocus: () => Place | undefined; inherit: () => void; take: (place: Place, into: string | null) => void;
+  /** The applied focus, the one waiting, and a choice made as the chip makes it (the receipt's *Make … the focus*). */
+  focus: Place; next: Place | null; choose: (place: Place) => void;
 } {
   const registry = useRegistry('machine');
   const press = useFocusPress();
@@ -53,6 +55,9 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   const fallback = window === null || here === undefined ? MACHINE : homeFocus(here);
   const focus = shown ? known?.focus ?? homeFocus(shownIn) : ahead ?? fallback;
   const next = shown ? known?.focusNext ?? null : null;
+  // The driver widened the shown conversation's focus from a place no longer here: said on the chip until another is chosen.
+  const last = shown ? known?.marks?.at(-1) : undefined;
+  const widened = last?.widened && samePlace(last.to, focus) ? last.from : null;
 
   // A place the registry no longer holds is gone: the next words widen it to its workspace, or to this machine.
   const holds = (place: Place) => repositories === undefined || place.kind === 'machine'
@@ -94,6 +99,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
         recent={recent}
         gone={gone}
         wider={gone ? wider : null}
+        widened={widened}
         onChoose={choose}
         reveal={reveal}
       />
@@ -116,6 +122,9 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   return {
     chip,
     crumb,
+    focus,
+    next,
+    choose,
     startFocus: () => (shown ? undefined : ahead ?? undefined),
     inherit: () => {
       if (shown) setAhead(samePlace(focus, fallback) ? null : focus);

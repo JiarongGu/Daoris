@@ -20,6 +20,13 @@ function PressLine({ press, busy, onOpen, onReverse }: {
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
         <span className="text-ink">{act}</span>
         {press.target && <span className="text-ink-soft">{press.target}</span>}
+        {press.place && press.place.kind !== 'machine' && (
+          <span data-help-place="" className="text-ink-soft">
+            {t(press.beyond ? 'notifications.helpPressed.beyond' : 'notifications.helpPressed.in', {
+              place: press.place.kind === 'workspace' ? press.place.workspace : press.place.repository,
+            })}
+          </span>
+        )}
         <time dateTime={press.at} className="text-ink-faint">{clockOf(press.at, undefined, i18n.language)}</time>
         <span data-help-outcome={press.outcome} className="text-ink-faint">{t(`notifications.helpPressed.outcome.${press.outcome}`)}</span>
       </span>
@@ -40,14 +47,17 @@ function PressLine({ press, busy, onOpen, onReverse }: {
 /**
  * What Ask Daoris pressed for the person this run, in *Notifications*' group beside the steward's line: a press its conversation made
  * in full access runs at once with no card, so it is listed here, never silent. *Ask Daoris pressed n acts for you since Daoris
- * started*, opening to the presses newest first, each in the window's own words for the act, its target, its time, whether it is done,
+ * started*, opening to the presses newest first, each in the window's own words for the act, its target, the place it named (*outside
+ * its focus* where that was beyond its conversation's focus at the press), its time, whether it is done,
  * a press to open its conversation and, where its route has one, the owner's reverse press (a pause's *Resume*). A line, not a row:
  * no notice per press, so it counts toward no group's count and never the bell's. A restart empties it.
  *
  * A molecule: drawn from props; the application holds the presses.
  */
-export function HelpPressLine({ standing, busy = false, onOpen, onReverse }: {
+export function HelpPressLine({ standing, busy = false, onOpen, onReverse, defaultOpen = false }: {
   standing: StandingConfirmationNow | null;
+  /** Drawn unfolded (a story, a test). */
+  defaultOpen?: boolean;
   /** A reverse press on its way. */
   busy?: boolean;
   /** Opens the conversation that pressed it. */
@@ -56,7 +66,7 @@ export function HelpPressLine({ standing, busy = false, onOpen, onReverse }: {
   onReverse: (press: HelpPressNow) => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const id = useId();
   const presses = standing?.helpPresses ?? [];
   if (presses.length === 0) return null;

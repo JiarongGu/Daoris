@@ -7,6 +7,7 @@ import type { PipeAsker } from '../person/askerSaid';
 import {
   type DeskRequestNow, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow, type StewardLandNow,
 } from '../person/standing';
+import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
 
 // The person's door in the window: the person
@@ -227,7 +228,10 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     const at = text(shaped.at);
     const outcome = HELP_OUTCOMES.find((known) => known === shaped.outcome);
     if (id === null || route === null || session === null || at === null || !outcome) return [];
-    return [{ id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target) }];
+    return [{
+      id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
+      place: readPlace(shaped.place), beyond: shaped.beyond === true,
+    }];
   });
 }
 

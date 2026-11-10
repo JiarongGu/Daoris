@@ -4,7 +4,7 @@ import { compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Button, Chip, Dot, Icon, Tip } from '../../design/ui';
 import { turnEnd } from '../waits/anchors';
-import { type Block, type Level, runCount, type RunningCall, runningCall, segments, type Turn } from './conversation';
+import { type Ask, type Block, type Level, runCount, type RunningCall, runningCall, segments, type Turn } from './conversation';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
 import { AskView, Attached, AUTHOR_KEYS, ChannelHomes, ChoiceWords } from './AskView';
@@ -66,10 +66,15 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath,
 }: {
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
+  /**
+   * What the host draws under a turn's answer, from its words' moment until the next turn's (Ask Daoris's receipt of what the turn
+   * looked at beyond its focus); nothing where it draws none.
+   */
+  beneath?: (ask: Ask, until: string | undefined) => ReactNode;
   /** The requests its agent made, each drawn as its card at its call, its answer folded in; none, every call is a tool card. */
   exchanges?: Exchanges;
   /**
@@ -202,6 +207,7 @@ export function ConversationView({
               reveal={reveal}
               callMark={index === turns.length - 1 ? callMark : undefined}
               divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
+              beneath={turn.ask && beneath ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at) : undefined}
             />
           ))}
         </section>
@@ -250,9 +256,10 @@ function Held({ id, reveal, children }: { id: string; reveal?: string; children?
   );
 }
 
-function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divider }: {
+function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divider, beneath }: {
   turn: Turn;
   divider?: ReactNode;
+  beneath?: ReactNode;
   callMark?: CallMark;
   tree?: string | null;
   running: boolean;
@@ -281,6 +288,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divide
       {parts.map((part) => (part.kind === 'run'
         ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} reveal={reveal} />
         : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} reveal={reveal} /></Held>))}
+      {beneath}
       {turn.waiting && <NewSessionDoor turn={turn} />}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* A resumed conversation can wait many minutes on its model before anything shows: said, with the count. */}

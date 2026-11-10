@@ -117,4 +117,13 @@ describe('the focus chip', () => {
     expect(focusChip({ focus: engine, next: null, window: 'Games', narrow: false, gone: true })).toEqual({ icon: 'gone', text, label });
     expect(focusChip({ focus: engine, next: games, window: 'Games', narrow: false, gone: true }).text).toBe(widening);
   });
+
+  it.each([
+    ['en', 'Games · this window · widened', 'Ask Daoris’s focus: workspace Games, this window’s, widened: engine is no longer on this machine'],
+    ['zh', 'Games · 此窗口 · 已放宽', '问道衍的聚焦：工作区 Games（此窗口的），已放宽：engine 已不在本机'],
+  ])('says a focus the driver widened from a place no longer here, until another is chosen (%s)', async (language, text, label) => {
+    await i18n.changeLanguage(language);
+    expect(focusChip({ focus: games, next: null, window: 'Games', narrow: false, widened: engine })).toEqual({ icon: 'workspace', text, label });
+    expect(focusChip({ focus: games, next: MACHINE, window: 'Games', narrow: false, widened: engine }).pending).toBe(true);
+  });
 });

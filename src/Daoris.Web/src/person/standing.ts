@@ -1,6 +1,8 @@
 // The roles' judge as the page shows it: its shape as the page reads it, the
 // steward's acts and desk, and the roles a terminal holds. The reader is the bridge's (`standingOf`, `bridge/person.ts`).
 
+import { type Place } from '../help/focus';
+
 /**
  * The roles' judge as `STATE`'s `standingConfirmation` says it (the modules' `StandingNow`): the terminals that hold a role this run,
  * the holders living, the steward's acts and its desk.
@@ -33,6 +35,10 @@ export type HelpPressNow = {
   target: string | null;
   at: string;
   outcome: 'running' | 'done' | 'failed';
+  /** The workspace or repository the press named; none where it named neither, or until the driver placed it. */
+  place?: Place | null;
+  /** Whether that place was beyond its conversation's focus at the press. */
+  beyond?: boolean;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */
