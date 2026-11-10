@@ -68,6 +68,21 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
         Shown = holds is { Why: WordsHold.Cooling, Until: not null } && Shown != ShownState.Limited ? ShownState.LimitWaits : Shown,
     };
 
+    /// <summary>
+    /// For the session a run stands for (<see cref="RunWaitSessions"/>): the run's steps that wait on the person, which its line says and
+    /// its run's view acts on. Null for every other row.
+    /// </summary>
+    public IReadOnlyList<PersonWait>? Waits { get; init; }
+
+    /// <summary>
+    /// This row placed by its run's <paramref name="waits"/>: To review where each waits for an Accept, with what its tree holds where it
+    /// holds any, else Waiting on you, whatever the session's own ending or archive mark.
+    /// </summary>
+    public SessionGrouping WaitedOn(IReadOnlyList<PersonWait> waits, TreeWork? work) =>
+        waits.All(wait => wait.Why == PersonWaits.Accept)
+            ? this with { Waits = waits, Group = SessionGroup.Review, Work = work }
+            : this with { Waits = waits, Group = SessionGroup.You };
+
     /// <summary>Whether *Delete…* would be taken: the ledger would delete its record, and this machine holds neither its tree nor a landing of it. The page offers the act only here.</summary>
     public bool Deletable { get; init; }
 
