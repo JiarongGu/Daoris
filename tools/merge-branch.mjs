@@ -443,6 +443,7 @@ import {
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
 import { holdBacklog } from './merge-branch/backlog-held.mjs';
+import { holderRuns, pidAlive, processStart, sameHolder } from './merge-branch/holder.mjs';
 import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 import { stepTrees } from './merge-branch/step-trees.mjs';
@@ -3984,22 +3985,13 @@ function dropBatch(root) {
 // ---------------------------------------------------------------------------------------------------
 // The full set in its own worktree, beside the merges
 
-/** Whether a process runs with this pid: signal 0 asks without sending, and EPERM is one that runs as someone else. */
-export function pidAlive(pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error?.code === 'EPERM';
-  }
-}
+export { pidAlive };
 
 /**
  * The lock a full set beside the merges holds (`GATE_TREE_LOCK`, in the main checkout): its pid, the commit it gates, since when, whether
  * that process still runs, and its `holder` (`full`, also where none is named; `ci`; `stage`, a build of `publish:desktop --from-gated`). Null when none is held.
  */
-export function readGateLock(home, alive = pidAlive) {
+export function readGateLock(home, alive = pidAlive, startOf = processStart) {
   let held;
   try {
     held = JSON.parse(readFileSync(join(home, GATE_TREE_LOCK), 'utf8'));
@@ -4009,7 +4001,7 @@ export function readGateLock(home, alive = pidAlive) {
   }
   const pid = Number(held?.pid);
   const holder = ['ci', 'stage'].includes(held?.holder) ? held.holder : 'full';
-  return { pid, commit: String(held?.commit ?? ''), at: String(held?.at ?? ''), running: alive(pid), holder };
+  return { pid, commit: String(held?.commit ?? ''), at: String(held?.at ?? ''), started: held?.started, running: alive(pid) && sameHolder(pid, held?.started, startOf), holder };
 }
 
 /** Who holds the gate tree, as a refusal or a wait says it. */
@@ -4022,25 +4014,25 @@ function holderSaid(held) {
 
 /**
  * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one
- * full set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose process
- * no longer runs is taken over, and returned as `stale` for the caller to say, with `ended`: the pids `end` ended (the dead pid's
- * direct children started since the lock's `at`, with their trees) and those `endStrays` ended (Windows only: since then, naming the
- * gate tree's folder, their parent gone). `holder` names the run; a refusal is `busy`, which the CI watch reads
- * as a tree to wait for, never a failure.
+ * full set beside the merges at a time (two would share one gate tree). A lock whose holder (pid and start) no longer runs is taken
+ * over and returned as `stale`, with `ended`: the pids `end` ended (its children born from its start until its pid was taken
+ * again, with their trees) and those `endStrays` ended (Windows only: since then, naming the gate tree's folder, their parent
+ * gone). `holder` names the run; a refusal is `busy`, which the CI watch reads as a tree to wait for, never a failure.
  */
-export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStrandedUnder } = {}) {
+export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, startOf = processStart, now = nowIso, end = endOrphans, endStrays = endStrandedUnder } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    if (!putComplete(file, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`)) {
+    if (!putComplete(file, `${JSON.stringify({ pid: process.pid, commit, at: now(), started: startOf(process.pid), holder })}\n`)) {
       const seen = lockText(file);
-      const held = readGateLock(home, alive);
+      const held = readGateLock(home, alive, startOf);
       if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
-        // A killed run's steps run on: end what its pid started since the lock's `at`, and the strays found by the gate tree's folder.
-        const since = Date.parse(held.at);
-        const ended = Number.isNaN(since) ? [] : end(held.pid, since);
+        // A killed run's steps run on.
+        const since = Number.isFinite(held.started) ? held.started : Date.parse(held.at);
+        const taken = alive(held.pid) ? startOf(held.pid) : null;
+        const ended = Number.isNaN(since) ? [] : end(held.pid, since, taken);
         if (!Number.isNaN(since)) ended.push(...endStrays(join(home, GATE_TREE), since).filter((pid) => !ended.includes(pid)));
         stale = { pid: held.pid, commit: held.commit, at: held.at, ended };
       }
@@ -5856,11 +5848,11 @@ export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, 
 }
 
 /** The CI watch's record: its pid and start, and whether it still runs; null when none is kept. */
-function readCiWatch(home, alive = pidAlive) {
+export function readCiWatch(home, alive = pidAlive, startOf = processStart) {
   try {
     const held = JSON.parse(readFileSync(join(home, CI_WATCH), 'utf8'));
     const pid = Number(held?.pid);
-    return { pid, at: String(held?.at ?? ''), running: alive(pid) };
+    return { pid, at: String(held?.at ?? ''), running: alive(pid) && sameHolder(pid, held?.started, startOf) };
   } catch {
     return null;
   }
@@ -5876,11 +5868,9 @@ async function ciWatchVerb(root, options) {
   const file = join(home, CI_WATCH);
   const stopFile = join(home, CI_STOP);
   mkdirSync(dirname(file), { recursive: true });
-  const mine = `${JSON.stringify({ pid: process.pid, at: nowIso() })}
+  const mine = `${JSON.stringify({ pid: process.pid, at: nowIso(), started: processStart(process.pid) })}
 `;
-  const { taken, held } = takeLock(file, mine, (text) => {
-    try { return pidAlive(Number(JSON.parse(text)?.pid)); } catch { return false; }
-  });
+  const { taken, held } = takeLock(file, mine, (text) => holderRuns(text, pidAlive));
   if (held !== null) {
     const { pid, at } = JSON.parse(held);
     console.log(`merge-branch: a CI watch runs here already (pid ${pid}, since ${when(String(at ?? ''))}): this one has nothing to do`);
