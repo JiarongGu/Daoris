@@ -12,9 +12,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> Lists(string agent, params string[] accounts) =>
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [agent] = accounts };
 
-    /// <summary>
-    /// A machine whose accounts need spelling: the set's order <c>work, my acct, R&amp;D</c>.
-    /// </summary>
     private static readonly HelpMachineFacts Spelled = Machine with
     {
         Workspaces = ["default", "work", "my team", "R&D", "our lab"],
@@ -55,17 +52,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     }
 
     [Theory]
-    [InlineData("my acct", "daoris agent settings claude-code --account \"my acct\" model opus")]
-    [InlineData("R&D", "daoris agent settings claude-code --account <account> model opus")]
-    public void An_account_s_settings_terminal_spells_its_account(string account, string terminal)
-    {
-        var plan = Plan(Of("account", "settings", "claude-code") with { Account = account, Model = "opus" });
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    [Theory]
     [InlineData("line", "my team", "main", "daoris place line --workspace \"my team\" main")]
     [InlineData("language", "R&D", "zh", "daoris place language --workspace <workspace> zh")]
     [InlineData("across", "my team", "read off", "daoris place across --workspace \"my team\" read off")]
@@ -83,7 +69,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]
     public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)
     {
-        // A list of steps is refused at the save, so the card carries a shipped graph.
         var graph = System.Text.Json.JsonDocument.Parse(WorkflowDefaults.Of("merge-after-accept")!.GraphJson);
         var plan = Plan(new HelpProposal("p8", "workflow", "new", null, null, null, null, "why", "h1", "proposed")
         {

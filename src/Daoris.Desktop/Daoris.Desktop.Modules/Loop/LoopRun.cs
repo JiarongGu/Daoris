@@ -240,7 +240,14 @@ internal sealed class LoopRun(
             // A press taken back after being shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
-            served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
+            var toldHooks = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
+            // One of Ask Daoris's is also said in its conversation.
+            var saidChat = SettledSaid.Of(() => loop.Chat is { } chat ? chat.Tell : null);
+            served.Confirmations.Settled = (shown, ending) =>
+            {
+                toldHooks(shown, ending);
+                saidChat(shown, ending);
+            };
             served.Grounds = new LoopGrounds(loop, served);
             served.Delegates = session => DelegateTiers.Of(loop, session);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;

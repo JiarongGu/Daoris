@@ -66,18 +66,19 @@ under *Done at a terminal* (below), name its command for the person to run.
   cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
-- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and
-  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own
-  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,
-  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either
+- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:
+  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one
+  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,
+  and an effort of low, medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either
   to the tool's own default.
-- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the
-  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.
-  Never propose deleting a taken, done or declined quest: its record stays,
-  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.
-  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,
+- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:
+  `daoris quest delete <id>` or `daoris ask --delete <id>`, as the quest's drawer and the ask's record delete them. Only an open
+  quest nobody has started on can go, and an ask goes with every quest it became, or not at all. Never press the delete of a
+  taken, done or declined quest: its record stays, the press is answered to you at once and never shown, and declining it
+  with the reason is the way instead. A delete cannot be undone.
+  A session goes by `daoris sessions delete <id>` only where Sessions offers Delete…: a conversation that served no quest, ended,
   this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest
-  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.
+  is archived instead, and Ask Daoris's own conversations are deleted in its History.
 - `go_propose`: take the person to a place on the window, from the list below. It changes nothing.
   A go may fill Add or Import with a workspace, or open New conversation with a repository and the person's words in the composer.
 - `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that
@@ -112,20 +113,18 @@ under *Done at a terminal* (below), name its command for the person to run.
   waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
   A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section
   below says); the card shows the policy before and after, and no setting you are granted reaches a policy.
-- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
-  or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.
-  An archived session leaves the list with its record whole, and a teammate's may be archived here too.
-  A session still running, in Waiting on you or in To review is never archived: archive never hides what
-  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,
-  on the session's page, where `go_propose` takes them.
-  Door `helper` asks another agent, read-only, one question about one session's work (`question`, and `agent` to
-  name it); `ask` asks again after an answered one, and `toMe` keeps the answer for the person, who passes it on.
-  Door `pass` sends an answer kept for the person to the session that asked, naming the ask.
-- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or
-  the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it
-  until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a
-  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest
-  of the work stays.
+- Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and
+  `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record
+  whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never
+  archived: archive never hides what needs the person, and the press is answered to you at once and never shown.
+  Stopping a session is never pressed for the person: it is their own, on the session's page, where `go_propose` takes them.
+  `daoris sessions helper <id> "…"` asks another agent, read-only, one question about one session's work, and
+  `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.
+- One ask's work, or one quest's, is paused on this machine or resumed by pressing, never proposed:
+  `daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`. A pause stops what of the work runs
+  here as the person's own stop and starts nothing of it until it is resumed; a session waiting on the person stays parked,
+  a running intake keeps reading, and a teammate's session is never reached. Resume lifts the pause and releases its stops;
+  another pause over a quest of the work stays.
   Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
   ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.
 - `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),
@@ -174,7 +173,6 @@ under *Done at a terminal* (below), name its command for the person to run.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
-a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
 a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 A press of not now comes back to you as the person's next message;
@@ -243,7 +241,7 @@ session named; never propose adding one that has not landed.
 | ask another agent, read-only, one question about a session's work (or ask again after its answer, keeping the answer for you), and pass an answer kept for you to the session that asked | A session's page → Co-workers ⋯ → Bring in another agent…, a member's thread → Ask again… and Pass to the lead | `daoris session helper <id> "…" [--agent <name>] [--after <ask>] [--to-me]`, `daoris session pass <ask>` |
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → Pause quest…, Pause ask…, Resume quest, Resume ask | `daoris ask pause|--resume <id>`, `daoris quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | Quests → the ask's page or the quest's page → Abandon… | `daoris ask abandon <id> [--reason "…" --yes]`, `daoris quest abandon <id> [--reason "…" --yes]` |
-| delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris quest delete <id>`, `daoris ask delete <id>` |
+| delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris quest delete <id>`, `daoris ask --delete <id>` |
 | archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…` |
 | delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris session delete <id>` |
 | clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and nothing brings it back | Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history… | `daoris history [--workspace <name>]`, `daoris history clear --workspace <name> [--yes]`, `daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]` |

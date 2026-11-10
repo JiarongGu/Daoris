@@ -1,0 +1,41 @@
+using System.Text.Json;
+using Daoris.Driver;
+
+namespace Daoris.Desktop;
+
+/// <summary>
+/// <c>daoris sessions archive|unarchive &lt;id&gt;…</c> as the card shows it: marks of this machine's list, no record changed. An archive
+/// is refused before any card for a session still running, waiting on the person or with work to review, and for an id no record here
+/// has, as the list places each; an unarchive of what is not archived changes nothing and is shown as it is.
+/// </summary>
+public sealed class SessionArchiveView : IPressView
+{
+    public string Module => DriverModule.Name;
+
+    public string Route => "SESSION_ARCHIVE";
+
+    public async Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
+    {
+        var ids = PressPayload.Words(payload, "ids");
+        if (ids.Count == 0) return PressViewed.Refused("a press names the sessions by id, as Sessions lists them.");
+        var archive = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("archived", out var flag) && flag.ValueKind == JsonValueKind.True;
+
+        var read = await world.ReadAsync(DriverModule.Name, "SESSION_GROUPS", new { ids }, cancellationToken).ConfigureAwait(false);
+        var placed = PressPayload.Rows(read, "sessions")
+            .ToDictionary(row => PressPayload.Field(row, "session"), row => PressPayload.Field(row, "group"), StringComparer.Ordinal);
+        var kept = new List<string>();
+        foreach (var id in ids)
+        {
+            if (!placed.TryGetValue(id, out var group)) kept.Add($"there is no session `{id}` on this machine");
+            else if (archive && group == SessionGroup.Working) kept.Add($"`{id}` is still running: stop it first");
+            else if (archive && group == SessionGroup.You) kept.Add($"`{id}` is waiting on you, and archive never hides what needs you");
+            else if (archive && group == SessionGroup.Review) kept.Add($"`{id}` has work to review, and archive never hides what needs you");
+        }
+
+        if (kept.Count > 0) return PressViewed.Refused($"{string.Join("; ", kept)}.");
+        return PressViewed.Shown(new PressView(
+            archive ? "session-archive" : "session-unarchive",
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["sessions"] = string.Join(", ", ids), ["count"] = ids.Count.ToString() },
+            $"daoris sessions {(archive ? "archive" : "unarchive")} {ShellWord.Words(ids, ShellWord.Name)}"));
+    }
+}

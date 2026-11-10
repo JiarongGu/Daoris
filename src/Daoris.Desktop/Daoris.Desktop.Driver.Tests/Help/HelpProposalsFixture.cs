@@ -99,8 +99,7 @@ public abstract class HelpProposalsFixture : IDisposable
     };
 
     /// <summary>
-    /// This machine's sessions as Sessions' list reads them: each record, where the list places it with its
-    /// archive mark, the one a tree or a landing keeps, and the ledger's judgement of a delete one names.
+    /// This machine's session records, as a go naming a session is judged against them.
     /// </summary>
     protected static readonly HelpMachineFacts SessionsHere = Machine with
     {
@@ -119,27 +118,6 @@ public abstract class HelpProposalsFixture : IDisposable
             new SessionRecord("c3named0", "engine", "completed") { Kind = "chat" },
             new SessionRecord("c4remote", "game", "stopped") { Kind = "chat" },
         ],
-        Placed =
-        [
-            new SessionGrouping("s4parked", SessionGroup.You, "parked"),
-            new SessionGrouping("s5review", SessionGroup.Review, "completed"),
-            new SessionGrouping("s3live00", SessionGroup.Working, "working"),
-            new SessionGrouping("s1ended0", SessionGroup.Ended, "completed"),
-            new SessionGrouping("s2ended0", SessionGroup.Ended, "failed"),
-            new SessionGrouping("h1helper", SessionGroup.Ended, "completed"),
-            new SessionGrouping("north/s7team0", SessionGroup.Ended, "completed") { Teammate = true },
-            new SessionGrouping("c1chat00", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c2tree00", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c3named0", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c4remote", SessionGroup.Ended, "stopped"),
-            new SessionGrouping("s6archiv", SessionGroup.Archived, "completed") { Archived = true },
-        ],
-        Kept = new HashSet<string>(["c2tree00"], StringComparer.Ordinal),
-        SessionDeletes = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal)
-        {
-            ["c1chat00"] = new(true, "Session `c1chat00` may be deleted."),
-            ["c3named0"] = new(false, "Session `c3named0` is named by ask `#a1b2c3d4` as its intake.") { Refusal = "named", Ask = "a1b2c3d4" },
-        },
     };
 
     protected static HelpProposal Of(string kind, string door, string? target = null, string? value = null) =>
@@ -178,15 +156,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    // IHelpAccountDoors
-    public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort)
-    {
-        string Said(AgentSettingEdit? edit) => edit is null ? "-" : edit.Value ?? "clear";
-        Calls.Add($"SET_AGENT_SETTINGS {harness} {account} {Said(model)} {Said(effort)}");
-        return new AgentSettingsRead(model?.Value, effort?.Value, [], null);
-    }
-
-    // IHelpAgentDoors
     public Action<int, string?>? Ended { get; private set; }
 
     /// <summary>An action that ends before its start is answered: a pin already installed does.</summary>
@@ -234,7 +203,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.CompletedTask;
     }
 
-    // IHelpAskDoors
     /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
 
@@ -245,7 +213,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Asked);
     }
 
-    // IHelpBrowserDoors
     /// <summary>What the browser's door refuses with, as the Browser screen's route would; null to make the change.</summary>
     public string? BrowserRefusal { get; init; }
 
@@ -255,7 +222,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
     }
 
-    // IHelpClearDoors
     /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
     public HistoryOutcome? HistoryCleared { get; set; }
 
@@ -265,45 +231,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
     }
 
-    // IHelpDeleteDoors
-    public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
-
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/quests/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/asks/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_DELETE {id}");
-        return Task.FromResult(Deleted);
-    }
-
-    // IHelpPauseDoors
-    public (bool Ok, string Message) WorkPaused { get; set; } = (true, "Paused it.");
-
-    public (bool Ok, string Message) WorkResumed { get; set; } = (true, "Resumed it.");
-
-    public Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_PAUSE {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkPaused);
-    }
-
-    public Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_RESUME {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkResumed);
-    }
-
-    // IHelpPluginDoors
     /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card is drawn.</summary>
     public string? PluginRefusal { get; init; }
 
@@ -346,30 +273,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
 
-    // IHelpSessionDoors
-    public (bool Ok, string Message) Archived { get; set; } = (true, "Archived it.");
-
-    public Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_ARCHIVE {(archived ? "archive" : "unarchive")} {string.Join(",", ids)}");
-        return Task.FromResult(Archived);
-    }
-
-    public (bool Ok, string Message) Helped { get; set; } = (true, "Asked #h1.");
-
-    public Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_HELPER_ASK {session} {question} agent={agent} after={after} toPerson={toPerson}");
-        return Task.FromResult(Helped);
-    }
-
-    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_HELPER_PASS {session} {ask}");
-        return Task.FromResult(Helped);
-    }
-
-    // IHelpSettingDoors
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)
@@ -393,7 +296,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
-    // IHelpSyncDoors
     /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
     public SyncPlan Listed { get; init; } = new([], [], []);
 
