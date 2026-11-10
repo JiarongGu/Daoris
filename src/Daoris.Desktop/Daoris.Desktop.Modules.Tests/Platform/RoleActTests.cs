@@ -10,9 +10,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's immediate acts: each admitted in its
-/// exact form and nothing else, every act of the owner's refused <c>not-role</c>, each condition refused by its code with nothing written,
-/// each effect recorded as the steward's, and the steward's Try again a release only this run's memory honours, consumed once by its start.
+/// The steward's immediate acts: each admitted in its exact form and nothing else, every act of the owner's refused <c>not-role</c>, each condition refused by its code with nothing written, each effect recorded as the steward's.
 /// </summary>
 /// <remarks>
 /// Each test has its own scratch home under the checkout's <c>_fixtures</c>, handed by path: no test sets <c>DAORIS_HOME</c>, starts a

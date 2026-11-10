@@ -70,7 +70,6 @@ export type DriverState = {
   coolOff?: number;
   /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
-  /** How many sessions Daoris starts at once on this machine; left out where none is set. */
   cap?: number;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;

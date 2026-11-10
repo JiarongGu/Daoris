@@ -62,7 +62,6 @@ export type GitAccessSetup = {
 export type HeavySetup = {
   /** In the order they run; none where none is set here. */
   gates: HeavyGate[];
-  /** Whether its own file wins, as the driver read it; none until it has answered. */
   marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
   /**

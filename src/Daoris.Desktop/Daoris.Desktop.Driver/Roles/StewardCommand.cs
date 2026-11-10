@@ -33,7 +33,6 @@ public static class StewardCommand
     /// <summary>A request filed at the desk: open, any caller's, granting nothing.</summary>
     public static InstanceRoute Request { get; } = new(TreesRoutes.DriverModule, StewardRoutes.Request, RouteClass.Open);
 
-    /// <summary>The verb's refusal where no Daoris runs: it has no alone path.</summary>
     public const string NoInstance = "no-instance";
 
     /// <summary>What the verb's usage says.</summary>

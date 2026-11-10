@@ -37,7 +37,6 @@ describe("a repository's Setup", () => {
     expect(head('Sessions')).toHaveAccessibleDescription("no session language (Daoris's default) · no standing answer");
     expect(head('Reach')).toHaveAccessibleDescription(
       "read by agents outside it (Daoris's default) · writes into nothing else · no rules of its own");
-    // The branch is code in the line, as it is everywhere a branch is named.
     expect(within(head('Line and landing')).getByText('main', { selector: 'code' })).toBeInTheDocument();
     // Folded, a section's rows are one press away and not drawn.
     expect(screen.queryByRole('checkbox')).toBeNull();

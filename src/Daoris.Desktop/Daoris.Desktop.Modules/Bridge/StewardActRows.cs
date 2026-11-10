@@ -11,7 +11,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public interface IStewardWorld
 {
-    /// <summary>The driver's file as it stands now.</summary>
     DriverConfig Config();
 
     /// <summary>An edit of the driver's file, and the loop nudged.</summary>

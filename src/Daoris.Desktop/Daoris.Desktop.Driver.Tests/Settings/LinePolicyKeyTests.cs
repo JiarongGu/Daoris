@@ -11,7 +11,6 @@ public sealed class LinePolicyKeyTests
 {
     private static readonly LandingIntegrate Declared = new(Gates: LandingIntegrate.Declared);
 
-    /// <summary>The refusals of a line's policy, each by the words its sentence says, and the policies that integrate; <c>wholeSet</c> is whether a whole-set verification runs on the line.</summary>
     public static TheoryData<string, LandingIntegrate, bool, string?> Policies() => new()
     {
         { "every absent key", new LandingIntegrate(), false, null },

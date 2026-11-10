@@ -21,7 +21,6 @@ public sealed class StartWithTests : IDisposable
 
     private static Task<ChatStart> Opened(CancellationToken _) => Task.FromResult(new ChatStart("c9", "Conversation `c9` opened in `engine`."));
 
-    /// <summary>The words are the conversation's first message, with the files as said, and no preface.</summary>
     [Fact]
     public async Task The_words_and_files_are_the_first_message()
     {

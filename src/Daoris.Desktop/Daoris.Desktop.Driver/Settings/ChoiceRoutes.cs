@@ -32,7 +32,6 @@ public static class ChoiceRoutes
     public static InstanceRoute WorkflowKind { get; } = Person("WORKFLOW_KIND");
     public static InstanceRoute WorkflowLanded { get; } = Person("WORKFLOW_LANDED");
 
-    /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("driver drive|undrive <repo>", Drivable, "the window's drive switch"),

@@ -2,7 +2,6 @@ using System.Text.Json;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>A repository's drive, hold and own-tree switches as their presses' cards show them: refused with no card where it is not registered, and the command that sets it.</summary>
 public sealed class PlaceSwitchViewTests
 {
     private static StubGrounds Grounds()

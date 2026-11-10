@@ -22,7 +22,6 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, IsolateStep> Isolations { get; init; } = new Dictionary<string, IsolateStep>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The isolate step <paramref name="repository"/>'s work starts under, or null where it works in place.</summary>
     public IsolateStep? IsolationOf(string repository) => Isolations.GetValueOrDefault(repository);
 
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
@@ -34,7 +33,6 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, StaffMoving> PolicyMoving { get; init; } = new Dictionary<string, StaffMoving>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The failures in a row each quest's last choice made (<see cref="ServiceClient.ReadFailedRuns"/>): what a <c>failed</c> move's <c>after</c> is weighed against.</summary>
     public IReadOnlyDictionary<string, int> FailedRuns { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The quests a role's policy holds for the person's yes, by quest: <c>policy-ask</c> or <c>moves-bound</c>.</summary>

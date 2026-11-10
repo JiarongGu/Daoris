@@ -90,7 +90,6 @@ describe('the place page', () => {
     draw();
     await userEvent.click(screen.getByRole('button', { name: 'Roles' }));
     expect(SECTIONS[1]!.onOpenChange).toHaveBeenCalledWith(true);
-    // The holder has not opened it, so it stays folded.
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'false');
   });
 

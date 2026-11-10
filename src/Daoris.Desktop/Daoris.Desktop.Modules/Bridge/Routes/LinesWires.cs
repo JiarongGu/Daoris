@@ -17,7 +17,6 @@ internal static class LinesWires
         var gitLevels = GitLevelsOf(config);
         return new
         {
-            // The policy that reaches each line (the Line row): its own, else its workspace's; left out where none is set.
             Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
             // What each one's sessions are asked to write to the person in, and where that is set: the driver's
             // resolution, read rather than recomputed by the page. None leaves the language and its source out.

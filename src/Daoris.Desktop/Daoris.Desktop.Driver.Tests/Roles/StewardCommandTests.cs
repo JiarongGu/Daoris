@@ -83,7 +83,6 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Contains($"({StewardCommand.NoInstance})", output.ToString(), StringComparison.Ordinal);
     }
 
-    // ——— The desk.
 
     [Theory]
     [InlineData("request|drive|engine|the next row is for engine", "request", """{"act":"drive","target":"engine","why":"the next row is for engine"}""")]

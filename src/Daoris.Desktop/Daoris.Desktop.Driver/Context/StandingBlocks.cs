@@ -12,10 +12,8 @@ public static class StandingBlocks
     /// <summary>The folder the repository's rules are kept in, each its own row in the knowledge.</summary>
     private const string RulesFolder = ".claude/rules";
 
-    /// <summary>The instruction file a harness may cut.</summary>
     private const string InstructionFile = "AGENTS.md";
 
-    /// <summary>The name of the session's block file in its folder.</summary>
     private const string FileName = "block.md";
 
     /// <summary>The facts a session working in <paramref name="repository"/> reads from its <paramref name="tree"/>: its indexes and code map.</summary>

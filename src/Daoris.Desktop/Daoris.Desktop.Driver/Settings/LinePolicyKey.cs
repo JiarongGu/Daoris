@@ -117,7 +117,6 @@ public static class LinePolicyKey
         return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
     }
 
-    /// <summary>A map of names to line policies; one that does not read, or that <see cref="PolicyProblem"/> refuses, is not read.</summary>
     internal static IReadOnlyDictionary<string, LandingIntegrate> PolicyMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, LandingIntegrate>(StringComparer.OrdinalIgnoreCase);

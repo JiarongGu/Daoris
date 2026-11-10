@@ -47,7 +47,6 @@ export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; 
       retry.mutate({ quest }, { onSuccess: (state) => notify(t(...retryNotice(quest, state))), onError });
     }
   };
-  /** The reverse of a press Ask Daoris made: a pause's own *Resume*, sent as the work pages send it. */
   const reverseHelp = (press: HelpPressNow) => {
     if (helpReverse(press) === 'resume' && press.scope && press.target) {
       resumeWork.mutate({ scope: press.scope as WorkScopeName, id: press.target }, { onError: failure(notify) });

@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// <para><b>Never Daoris writing into the repository</b>: a set-up is the repository's own session's work, on its
 /// branch, landed by the workspace's rule. The press only asks, and adds a rule, and where the repository is not driven its quest's
 /// admission, in Daoris's own files.</para>
-///
 /// <para><b>The rule is exact verbs</b>, never a runner, since a session on the protocol door cannot ask for
 /// another: no <c>upstream</c> for a set-up, and only <c>upstream --all</c> for a reconcile, which outside the canon's
 /// own checkout composes a request's words and writes nothing; and no management verb, since a set-up registers
@@ -27,7 +26,6 @@ namespace Daoris.Driver;
 public static class SetupPress
 {
     /// <summary>What a press on <paramref name="repository"/> would do today. Reads, and writes nothing.</summary>
-    /// <param name="unadopted">Whether this machine's driven sessions may drive a repository that has not adopted (<see cref="Adoption"/>).</param>
     public static Task<SetupPlan> PlanAsync(
         ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, CancellationToken ct = default) =>
         PlanAsync(world, config, unadopted, repository, day, builds: null, ct);

@@ -13,8 +13,7 @@ import type { PlaceDriving } from './PlacePage';
  * the driver's own (`SET_DRIVABLE`, `SET_HOLD`), the terminal's `daoris place …` twin beside. It reads the driver's state and
  * the roster, which the application holds, and nothing a section reads; what it shows of the place is the row `PLACES` answered.
  *
- * An organism holding the bridge's hooks, handed in by the application so the place imports none of them. Driving is set only by these
- * presses, never by editing the place's configuration.
+ * An organism holding the bridge's hooks, handed in by the application so the place imports none of them.
  */
 export function PlaceDrivingScope({ row, notify, onOpenAppointed, onOpenRepositories, children }: {
   row: PlaceRow;

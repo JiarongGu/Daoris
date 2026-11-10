@@ -30,7 +30,6 @@ describe("the steward's acts", () => {
     expect(stewardReverse(act('a', 'finish', '', { quest: 'q1', session: 's1' }))).toBeNull();
     expect(stewardReverse(act('a', 'retry', '', { quest: 'q1' }))).toBeNull();
     expect(stewardReverse(act('a', 'drive', '', { repository: 'engine', standing: false }))).toBeNull();
-    // An act naming nothing its press could carry offers none.
     expect(stewardReverse(act('a', 'drive', ''))).toBeNull();
     expect(stewardReverse(act('a', 'stop', '', { session: 's1' }))).toBeNull();
   });

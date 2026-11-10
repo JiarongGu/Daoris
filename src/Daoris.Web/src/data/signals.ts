@@ -104,11 +104,9 @@ export interface AccountWaitTick {
   account?: string | null;
   /** The name the person gave it, null where none. */
   name?: string | null;
-  /** The workspace the held starts belong to, where they share one. */
   workspace?: string | null;
   /** When that account is offered again; absent or null where none cools and a sign-in is the wait. */
   until?: string | null;
-  /** Whether the agent named that time; false where there is none. */
   stated: boolean;
   /** The quests held. */
   quests?: string[];

@@ -74,7 +74,6 @@ public static class DriverChoicesCommand
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
-    /// <summary>The marker a shell Daoris started carries: its session's record id.</summary>
     public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>
@@ -456,7 +455,6 @@ public static class DriverChoicesCommand
         }
     }
 
-    /// <summary><c>list</c>: what this machine drives, as <c>daoris place list</c> always said it.</summary>
     private static int List(DriverConfig choices, DriverChoicesWorld world) => DriverChoicesList.List(choices, world);
 
     /// <summary><c>across</c>: whether a checkout is read by agents outside it, and the writes declared into another.</summary>

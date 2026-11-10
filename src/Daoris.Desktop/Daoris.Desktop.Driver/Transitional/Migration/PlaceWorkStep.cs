@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The per-repository trees switch and the line policies' <c>overlap</c> as an <c>isolate</c> step (D254, D258): each saved workflow whose
+/// The per-repository trees switch and the line policies' <c>overlap</c> as an <c>isolate</c> step: each saved workflow whose
 /// followers all had trees on, under one overlap, gains a version that starts with the step; where its followers differ, a copy with the
 /// step is saved for those with trees on (one per overlap) and chosen as each one's own; then <c>trees</c> and every <c>overlap</c> leave
 /// <c>driver.json</c>. The workflows and the file are copied to the salvage first; run again over what it converted, it changes nothing.

@@ -18,7 +18,6 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
     /// </summary>
     public int? AtOnce { get; init; }
 
-    /// <summary>How many adoptions go alone before the paced plan pauses itself; none said is the workspace plan's default.</summary>
     public int? Pilot { get; init; }
 }
 
@@ -77,13 +76,10 @@ public sealed record PlaceRepository(
 public sealed record PlacePlanned(
     PlaceAsk Asked, IReadOnlyList<PlaceRepository> Repositories, IReadOnlyList<PlaceChanged> Changes, IReadOnlyList<PlaceRefusal> Refusals, string Terminal)
 {
-    /// <summary>The copies of shipped defaults the home saves first, each once, however many repositories choose it.</summary>
     public IReadOnlyList<PlaceSave> Saves { get; init; } = [];
 
-    /// <summary>Whether nothing is refused: an apply could take it.</summary>
     public bool Applies => Refusals.Count == 0;
 
-    /// <summary>What an apply is pinned to (<see cref="PlaceDigests.Of"/>): the plan's changes and declarations, said once.</summary>
     public string Digest => PlaceDigests.Of(this);
 }
 

@@ -19,7 +19,6 @@ const TWO_COLUMNS = 64 * 16;
 export type PlaceDriving = {
   drivable: boolean;
   held: boolean;
-  /** A change on its way: every press waits for it. */
   busy: boolean;
   /** What driving here does that the choice alone does not say. */
   note?: string;

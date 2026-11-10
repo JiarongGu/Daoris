@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <b>The judge</b>, the first that holds: not driven on this machine, whether or not it declares lanes; driven and no lanes declared,
 /// whether or not it opens trees; driven with lanes and no trees of its own, so a quest waits for the session; else open. Open says the
-/// way is available, never that an account or an agent can run the quest at once (the planner decides when it starts).
 /// </remarks>
 public sealed record RoutingStanding(string Standing, IReadOnlyList<string> Lanes)
 {
@@ -19,7 +18,6 @@ public sealed record RoutingStanding(string Standing, IReadOnlyList<string> Lane
     public const string Open = "open";
 
     /// <summary>The standing of <paramref name="repository"/> on this machine, from its drive and trees in <paramref name="config"/> and its lanes.</summary>
-    /// <param name="apart">Whether its workflow sets its sessions apart (<see cref="PlaceIsolates"/>), so they work side by side.</param>
     public static RoutingStanding Of(DriverConfig config, RepoView repository, bool apart)
     {
         var lanes = repository.Lanes;

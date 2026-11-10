@@ -11,7 +11,6 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
     public static bool Isolates(bool? ownTree, IsolateStep? apart) => ownTree ?? apart is not null;
 
     /// <summary>Open a chat and put a harness behind it.</summary>
-    /// <param name="onEnded">Called when the conversation ends, with the state the record took. The caller decides what that becomes.</param>
     /// <param name="profile">The credential profile this conversation runs as. Null takes the workspace's default, then the machine's, then the harness's own.</param>
     /// <param name="picked">
     /// The person named <paramref name="profile"/> for this start: the page's picker, the terminal's account or their hand-over press's. The

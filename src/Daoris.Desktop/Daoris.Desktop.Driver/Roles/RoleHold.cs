@@ -12,7 +12,6 @@ public static class AppointedRoles
     public const string Supervisor = "supervisor";
     public const string Steward = "steward";
 
-    /// <summary>Both kinds, in the screen's order.</summary>
     public static IReadOnlyList<string> Kinds { get; } = [Steward, Supervisor];
 
     /// <summary>The catalogue's one steward among <paramref name="appointed"/>, which works for the machine alone; null where none reads.</summary>

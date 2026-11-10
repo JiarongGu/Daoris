@@ -80,7 +80,6 @@ describe("Notifications' steward line", () => {
   it("says the steward's terminal and its acts since Daoris started, and offers no Turn off, which is its role's", () => {
     render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
     expect(line().getByText("Steward's terminal · 8 acts since Daoris started")).toBeInTheDocument();
-    // Folded until opened: the acts are one press away.
     expect(screen.queryByRole('list', { name: "The steward's acts" })).toBeNull();
     expect(line().queryByRole('button', { name: 'Turn off' })).toBeNull();
   });
