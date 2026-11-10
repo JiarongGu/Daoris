@@ -47,7 +47,6 @@ public sealed class HelpProposalBox(string? home)
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
@@ -125,10 +124,6 @@ public sealed class HelpProposalBox(string? home)
         long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
         string? place = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null) =>
         new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision, supervisor);
-
-    /// <inheritdoc cref="HelpRepositoryProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeRepository(string repository, string workspace, string why, string? session, DateTimeOffset at) =>
-        new HelpRepositoryProposalWriter(file).Propose(repository, workspace, why, session, at);
 
     /// <inheritdoc cref="HelpSessionProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeSession(

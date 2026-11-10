@@ -31,7 +31,6 @@ public sealed partial class HelpProposalKindsTests
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),

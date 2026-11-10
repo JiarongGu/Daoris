@@ -105,7 +105,6 @@ internal static class HelpProposalKinds
         new HelpPluginProposals(),
         new HelpBrowserProposals(),
         new HelpSyncProposals(),
-        new HelpRepositoryProposals(),
         new HelpSessionProposals(),
         new HelpPauseProposals(),
         new HelpClearProposals(),

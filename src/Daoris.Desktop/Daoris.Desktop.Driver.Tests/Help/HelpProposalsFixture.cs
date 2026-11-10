@@ -346,14 +346,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         if (GrantsHome is { } home) HelpGrants.Withdraw(home, plugin, server);
     }
 
-    // IHelpRepositoryDoors
-    public (bool Ok, string Message) Wired { get; set; } = (true, "`engine` is now in workspace `studio`.");
-
-    public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/registry/{repository}/workspace {workspace}");
-        return Task.FromResult(Wired);
-    }
 
     // IHelpSessionDoors
     public (bool Ok, string Message) Archived { get; set; } = (true, "Archived it.");
