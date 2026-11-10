@@ -124,7 +124,7 @@ internal static class AgentListCommand
         var kept = new HarnessReport(name, true, null, null, null, null,
             [.. reads.Accounts.Select(read => new ProfileReport(read.Key, "", read.Value.Login, Read: read.Value.At))]);
         var report = await HarnessProbe.ProbeAsync(
-            name, toolchain, command: null, settings, home, ct, accountOf: owner, prior: kept, again: again,
+            name, toolchain, command: AgentsCommand.ConfiguredCommand(home, name), settings, home, ct, accountOf: owner, prior: kept, again: again,
             // A door asks no account: its list is its owner's, said under the owner.
             asks: again && owner == name ? null : _ => false,
             clock: () => now,

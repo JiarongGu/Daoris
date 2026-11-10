@@ -63,7 +63,7 @@ internal static class AgentLoginCommand
         // The binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
         // installed at it; the sign-in and its end's question both run it.
         var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
-        var binary = HarnessProbe.CommandOf(name, toolchain, command: null, settings, home);
+        var binary = HarnessProbe.CommandOf(name, toolchain, AgentsCommand.ConfiguredCommand(home, name), settings, home);
         if (binary.Missing)
         {
             throw new AgentWords(
@@ -253,7 +253,7 @@ internal static class AgentLoginCommand
         /// </summary>
         private async Task<HarnessProbe.LoginAnswer> AskAsync(string where, string account) =>
             await HarnessProbe.AskAccountAsync(
-                agent, toolchain, command: null, before, home, where, CancellationToken.None, ProbeLock.PathOf(home, agent, account), key: null)
+                agent, toolchain, command: AgentsCommand.ConfiguredCommand(home, agent), before, home, where, CancellationToken.None, ProbeLock.PathOf(home, agent, account), key: null)
                 .ConfigureAwait(false);
 
         /// <summary>
