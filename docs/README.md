@@ -31,6 +31,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/README.md`|Plugin examples
 |`../examples/plugins/local-release/README.md`|Release steps plugin
 |`../examples/plugins/hold-by-title/README.md`|Rehearsal plugin fixture
+|`../examples/plugins/stand-in-system/README.md`|Stand-in system adapter
 |`../examples/plugins/browser/README.md`|Browser plugin
 |`../examples/plugins/in-app-browser/README.md`|Browser connection plugin
 |`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin

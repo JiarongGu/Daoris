@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1h (part) — a system reached through a console: plan, review, apply (2026-11-11)
+
+> **PLACEWORK1h, part** (driver, modules, web, examples): Outcome: a plugin declares `systems` and answers `plan/read` and `apply/perform` (`Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/`); a session's plans are kept per record as numbered files under the home's work folder and its Review shows the newest one resource by resource, before and after, in the diff pane (`Departments/Systems/`, `SESSION_DIFF`); the workflow's `apply` step runs one apply at a time through its door, and an apply whose resources moved since the plan fails with words naming each one's present version, which the way back hands the work (`Workflows/Kinds/Apply/`); `examples/plugins/stand-in-system/` is a system to try it on. Proof: `PluginSystemsTests`, `SystemPlanTests`, `ApplyDoorTests`, `NodeKitTests`, each seen failing first, and `SystemPlanProcessTests` (plan, review, apply, stale, plan again) on the stand-in's real process.
+
+---
+
 ## PLACEWORK1d — the isolate step, its count, and the trees switch converted (2026-11-11)
 
 > **PLACEWORK1d** (driver, modules, web, tools): Outcome: a workflow that starts with an `isolate` step (*Work apart* in its editor) gives each of a repository's sessions a tree of its own, and its `at-once` says how many run at once; without one they work in the checkout one at a time under the writer's lease. The planner reads the count; the work order carries the step's value through its Workflows port; `daoris place trees` and its press are gone, answering `TreesMoved` with where the step is; the tests, fixtures and the family rehearsal (`tools/rehearsal-apart.mjs`) bind the step in its place. Proof: the converted planner, tick, standing and setup tests, the text fixtures, `HelpRoomTests` and the driver build; the censuses run at the CI boundary.

@@ -109,8 +109,9 @@ public sealed class HookPeer(
                         + "a manifest is what a person reads before enabling a plugin, so the process may not exceed it.");
                 }
 
-                // The work points are this build's too, spoken only by the lease's loop.
-                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal))
+                // The work points are this build's too, spoken only by the lease's loop; the system points, by a system's apply and plan.
+                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal)
+                    && !HookPoints.System.Contains(name, StringComparer.Ordinal))
                 {
                     // A point is additive, so a plugin that grew one keeps the points this build has; refusing it whole
                     // would make an older build lose the plugin's landing. Said once, and never asked there.
@@ -187,6 +188,17 @@ public sealed class HookPeer(
             $"plugin `{plugin}` answered {Raw(answer)}, which is not a pull request's state — "
             + "`{ \"state\": \"open\" | \"completed\" | \"abandoned\" | \"unknown\", … }`, a completed one naming its "
             + "`mergeCommit` and `sourceCommit` in full.");
+    }
+
+    /// <summary>A system point's request, asked only where the plugin listens; <see cref="SystemWire"/> reads its answer by shape.</summary>
+    public async Task<JsonElement> SystemAsync(string point, object payload, CancellationToken ct)
+    {
+        if (!HookPoints.System.Contains(point, StringComparer.Ordinal) || !Points.Contains(point, StringComparer.Ordinal))
+        {
+            throw Unreadable($"plugin `{plugin}` does not listen on `{point}`, so it is not asked there.");
+        }
+
+        return await InFlightAsync($"hook/{point}", payload, ct).ConfigureAwait(false);
     }
 
     public IReadOnlyList<string> Capabilities { get; private set; } = [];
