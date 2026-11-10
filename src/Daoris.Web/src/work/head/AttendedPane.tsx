@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import type { TFunction } from 'i18next';
 import type { useSessionAtWork } from '../../bridge/sessions/atWork';
+import { useSessionBrief } from '../../bridge/sessions/sessions';
 import { buildChain } from '../../map/chain';
 import { sentence } from '../../locales/format';
 import type { Notify } from '../../design/ui';
@@ -62,6 +63,7 @@ export function AttendedPane({
   const { waits, pieceSection, toEvent, ruleAskAt, seekAt } = waitsState;
   const { continues, helps, originAsk } = headState;
   const { taking, lastTurns } = boxState;
+  const brief = useSessionBrief(attended?.id);
   if (!attended || !waits) return null;
   const attendedParts = entryOfSession(entries, attended.id);
 
@@ -88,6 +90,7 @@ export function AttendedPane({
       quest={quest}
       ask={originAsk}
       opening={openings[attended.id]}
+      brief={brief}
       taking={taking[attended.id]}
       lastTurn={lastTurns[attended.id]}
       // The page header above carries its state, its id and its stop: said once.

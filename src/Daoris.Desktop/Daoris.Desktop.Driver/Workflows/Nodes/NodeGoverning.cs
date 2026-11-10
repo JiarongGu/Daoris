@@ -61,7 +61,7 @@ internal static class NodeGoverning
             if (!closes && unit.Kind == WorkUnitKind.Quest && versionOf?.Invoke(unit, quests.Values) is not null) continue;
 
             // A quest of a run bound to a graph version is that run's, read from the home's own runs, and a branch its quests produced is its
-            // graph's; one two runs produced, one a graph run's, is held, said; and one whose attribution is not read, in a repository holding
+            // graph's, each run's where graph runs alone produced it; one Current's work shares with a graph run's is held, said; and one whose attribution is not read, in a repository holding
             // an open graph run, is governed by nobody, never handed to Current on a guess.
             if (!closes && unit.Records.Quest is { } own && owners.Of(own) is not null) continue;
             if (owners.Keeps(unit) is { } keeps)
@@ -169,7 +169,8 @@ internal static class NodeGoverning
             Quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
             Chains = new QuestChains(Quests);
             var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch).ToList();
-            BranchesOf = branches.ToLookup(unit => owners.Owns(unit)?.Run, StringComparer.Ordinal);
+            BranchesOf = branches.SelectMany(unit => owners.Governing(unit).Select(run => (run.Run, Unit: unit)))
+                .ToLookup(pair => pair.Run, pair => pair.Unit, StringComparer.Ordinal);
             foreach (var branch in branches)
             {
                 foreach (var link in branch.Links.Where(link => link.Relation == WorkRelation.ProducedBy).Distinct())
@@ -252,8 +253,8 @@ internal static class NodeGoverning
             return null;
         }
 
-        // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not; one held
-        // between two runs is no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
+        // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not, another
+        // graph run's work on it too; one Current's work is on is held, and no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
         var branches = reads.BranchesOf[binding.Run].ToList();
         var produced = newest is null ? null : new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(newest.Id));
         var newestBranch = chat is not null ? branches.FirstOrDefault() : produced is null ? null

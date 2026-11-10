@@ -19,13 +19,13 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
             await wire.ReadAsync(
                 incoming,
                 DispatchAsync,
-                raw: line =>
+                raw: line => Kept(() =>
                 {
                     wiring.Console.End();
                     wiring.Say(line);
                     wiring.Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
-                },
-                unreadable: (error, frame) =>
+                }),
+                unreadable: (error, frame) => Kept(() =>
                 {
                     wiring.Console.End();
                     wiring.Say($"[unreadable frame: {error.Message}] {AcpRender.Compact(frame)}");
@@ -33,7 +33,7 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
                     {
                         Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = AcpRender.Compact(frame),
                     });
-                },
+                }),
                 ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -57,6 +57,18 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
             wire.Fail(wiring.StreamEnded(
                 "the ACP agent's stream ended before it answered — the agent exited, or it is not "
                 + "speaking ACP on stdout."));
+        }
+    }
+
+    /// <summary>A line the transcript cannot keep is lost, not the reader, whose end would say the agent's stream ended.</summary>
+    private static void Kept(Action keep)
+    {
+        try
+        {
+            keep();
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
         }
     }
 

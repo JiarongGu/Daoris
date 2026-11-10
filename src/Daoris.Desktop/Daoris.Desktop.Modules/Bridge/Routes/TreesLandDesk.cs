@@ -89,14 +89,14 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         // Said to every window while the press is under way; a plan is no press and says it to nobody.
         PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken, run: chatRun);
-        // Named for the chain's first quest, and a part of an entry with others for its entry's first part, on the entry's one
+        // Named for the chain's first quest, and a part of an entry with others of its run for the run's first part, on the entry's one
         // branch: the call every door that lands one session makes.
         // A name the person entered still lands as entered. Its quests read once, the press made on its own.
         var quests = new PressQuests(service.FindQuestAsync);
         var subject = Entering(await trees.OwnSubjectAsync(
             tree, id, questId, records, quest => quests.FindAsync(quest, cancellationToken),
             named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), asked.Branch);
-        var lead = EntryLead(records, id);
+        var lead = await RunParts.LeadOfAsync(records, id, quest => quests.FindAsync(quest, cancellationToken));
 
         if (!press)
         {

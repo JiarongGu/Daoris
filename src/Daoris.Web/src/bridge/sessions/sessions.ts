@@ -221,6 +221,24 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
 };
 
 /**
+ * The brief a session's start is given (a go-on's or a hand-over's first message, bounded, its cut said), from the same
+ * answer as the openings and this machine's own record; null where its start carried none.
+ */
+export const useSessionBrief = (session: string | undefined): string | null => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = keys.openings(session ? [session] : []);
+  const answer = useQuery({
+    queryKey,
+    queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids: session ? [session] : [] }, (answer) => answer as { briefs?: Record<string, string> }),
+    enabled: isAvailable && !!session,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  return (session ? answer.data?.briefs?.[session] : null) ?? null;
+};
+
+/**
  * What each part spent, from this machine's own record as the openings are: the *Parts* strip says it on each part's own row, and
  * the rail on a helper's and a continuing part's. Asked again when one of them ends a turn, and only for `least` ids or more.
  * Nothing in a browser, which holds no record.

@@ -129,8 +129,16 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
         }
 
         var raw = call is { } shown ? AcpRender.Compact(shown) : "a tool call";
-        Said($"  permission held for the person's answer: {raw}",
-            Noted.Of(HeldNoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+        try
+        {
+            Said($"  permission held for the person's answer: {raw}",
+                Noted.Of(HeldNoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // The console that would say it is gone; the hold stands and its answer still goes, as AnswerAsync's does.
+        }
+
         var answering = AnsweredAsync(id, raw, callId, title, held, holds.Bound);
         lock (_answering)
         {

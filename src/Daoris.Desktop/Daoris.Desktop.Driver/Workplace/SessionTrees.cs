@@ -270,8 +270,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <summary>
     /// What one session's landing is named for, at every door that lands one session: the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
-    /// landing at done. A part of an entry with others (<see cref="EntryLandings.LeadOf"/>) is its entry's Accept for that part alone:
-    /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
+    /// landing at done. A part of an entry with others of its run (<see cref="RunParts.LeadOfAsync"/>) is its entry's Accept for that part alone:
+    /// named for the run's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
     /// chain's first quest, as before. A merge rule makes no branch to join; a tree its agent moved onto a branch of its own still lands as that branch, and
     /// is named for its own quest and title.
@@ -285,7 +285,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string path, string session, string? quest, IReadOnlyList<SessionRecord> records, Func<string, Task<QuestView?>> find,
         Func<string, string?> opening, IWorkplaceProcess? process, CancellationToken ct = default)
     {
-        var lead = EntryLandings.LeadOf(records, session);
+        var lead = await RunParts.LeadOfAsync(records, session, find).ConfigureAwait(false);
         var named = lead?.Id ?? session;
         var subject = await BranchPatterns.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
         // Whatever it is named for, the quest this session served and the submission its landing is

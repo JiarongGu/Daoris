@@ -5,7 +5,7 @@ import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import type { PipeAsker } from '../person/askerSaid';
 import {
-  type DeskRequestNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow, type StewardLandNow,
+  type DeskRequestNow, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow, type StewardLandNow,
 } from '../person/standing';
 import { call, confirmBound } from './call';
 
@@ -209,7 +209,26 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     // A missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
     stewardLands: stewardLandsOf(shaped.stewardLands),
+    helpPresses: helpPressesOf(shaped.helpPresses),
   };
+}
+
+const HELP_OUTCOMES: readonly HelpPressNow['outcome'][] = ['running', 'done', 'failed'];
+
+/** The presses Ask Daoris made, each read field by field; one with no id, route, conversation or time, or an outcome not known, is left out. */
+function helpPressesOf(raw: unknown): HelpPressNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): HelpPressNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    const id = text(shaped.id);
+    const route = text(shaped.route);
+    const session = text(shaped.session);
+    const at = text(shaped.at);
+    const outcome = HELP_OUTCOMES.find((known) => known === shaped.outcome);
+    if (id === null || route === null || session === null || at === null || !outcome) return [];
+    return [{ id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target) }];
+  });
 }
 
 /** The allowed lands waiting their window, each read field by field; one with no id, act, session or time is left out. */

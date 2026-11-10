@@ -55,6 +55,22 @@ describe('announcing a press', () => {
     expect(result.current.toasts).toHaveLength(0);
   });
 
+  it("says a terminal's press heard out of focus once the window comes in front, while it waits unshown", () => {
+    focused.mockReturnValue(false);
+    const shown: Confirmation = { ...PIPE, id: 'c3', shown: true };
+    const { result, rerender } = announce({ presses: [PIPE, { ...PIPE, id: 'c2' }, shown], viewOpen: false });
+    act(() => { result.current.heard('c1'); result.current.heard('c2'); result.current.heard('c3'); });
+    expect(result.current.toasts).toHaveLength(0);
+
+    rerender({ presses: [PIPE, shown], viewOpen: false });
+    focused.mockReturnValue(true);
+    act(() => { window.dispatchEvent(new Event('focus')); });
+    expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: c1']);
+
+    act(() => { window.dispatchEvent(new Event('focus')); });
+    expect(result.current.toasts).toHaveLength(1);
+  });
+
   it('takes the toast away when its press ends, or the person closes it', () => {
     const { result, rerender } = announce({ presses: [PIPE, { ...PIPE, id: 'c2' }], viewOpen: false });
     act(() => { result.current.heard('c1'); });

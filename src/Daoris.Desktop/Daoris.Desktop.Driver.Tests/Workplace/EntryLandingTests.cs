@@ -159,8 +159,8 @@ public sealed class EntryLandingTests : LandedFixture
 
     /// <summary>
     /// Every door that lands one session (the review's, the terminal's <c>trees land</c>, the look's
-    /// at done) names it by <see cref="SessionTrees.OwnSubjectAsync"/> over the service's records. Pressed in either order, an entry's
-    /// parts land on its one branch: the later part, pressed first, makes it under the first part's name, and the first part's own
+    /// at done) names it by <see cref="SessionTrees.OwnSubjectAsync"/> over the service's records. Pressed in either order, the parts of an
+    /// entry's one run (here a chain's next step) land on its one branch: the later part, pressed first, makes it under the first part's name, and the first part's own
     /// landing joins it; each landing records its own session.
     /// </summary>
     [Fact]
@@ -180,7 +180,7 @@ public sealed class EntryLandingTests : LandedFixture
         static Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id switch
         {
             "0fda18" => new QuestView("0fda18", "game", "engine", "Fix the gap", "Fix it.", "Done"),
-            "1b2c3d" => new QuestView("1b2c3d", "game", "engine", "Check the gap", "Check it.", "Done"),
+            "1b2c3d" => new QuestView("1b2c3d", "game", "engine", "Check the gap", "Check it.", "Done") { Parent = "0fda18" },
             _ => null,
         });
         Task<LandingSubject> OwnAsync(string tree, string session, string quest) =>

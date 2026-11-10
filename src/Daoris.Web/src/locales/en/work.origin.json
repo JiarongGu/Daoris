@@ -10,5 +10,6 @@
   "work.origin.with.requirements": "The quest's requirements",
   "work.origin.with.questWords": "The quest's words, which has no requirements",
   "work.origin.with.askWords": "The ask's words",
-  "work.origin.with.firstMessage": "The first message"
+  "work.origin.with.firstMessage": "The first message",
+  "work.origin.with.handedBrief": "Handed brief"
 }

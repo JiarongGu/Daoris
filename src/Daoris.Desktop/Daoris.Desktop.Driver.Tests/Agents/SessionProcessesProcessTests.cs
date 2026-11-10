@@ -47,6 +47,24 @@ public sealed class SessionProcessesProcessTests : IDisposable
 
     private string MarkedProcess() => File.ReadAllText(Path.Combine(Markers, Session + ".pid")).Split(' ')[0];
 
+    /// <summary>A stop pressed after a process exited and before its retry is tracked goes on, with its reason, to the retry.</summary>
+    [Fact]
+    public async Task A_stop_pressed_between_a_process_s_exit_and_its_retry_is_carried_onto_the_retry()
+    {
+        var processes = new SessionProcesses(Markers);
+        var first = Process.Start(new ProcessStartInfo("node", ["-e", "process.exit(1)"]) { UseShellExecute = false, CreateNoWindow = true })!;
+        _spawned.Add(first);
+        await first.WaitForExitAsync();
+        processes.Track(Session, first);
+
+        var reason = new Noted("stopped for the test", []);
+        Assert.True(processes.Stop(Session, reason));
+        processes.Track(Session, Holding());
+
+        Assert.True(processes.WasStopRequested(Session));
+        Assert.Same(reason, processes.StopReason(Session));
+    }
+
     /// <summary>One track and its end, as before: running and marked while it lasts, gone and unmarked once it ends.</summary>
     [Fact]
     public void One_track_and_its_end_leave_the_session_unrun_and_unmarked()

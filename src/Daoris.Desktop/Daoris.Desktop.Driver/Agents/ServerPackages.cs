@@ -81,7 +81,12 @@ public static class ServerPackages
             .FirstOrDefault(script => script is not null);
     }
 
-    private static string? Exact(NpxCommand npx) => npx.Version is { } version && Tools.IsExactVersion(version) ? version : null;
+    private static string? Exact(NpxCommand npx) => npx.Version is { } version && IsExact(version) ? version : null;
+
+    private static readonly System.Text.RegularExpressions.Regex Semver = new(
+        @"^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    internal static bool IsExact(string version) => Tools.IsExactVersion(version) || Semver.IsMatch(version);
 
     private static async Task<string> InstallAsync(
         string home, NpxCommand npx, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm, Action<string, string>? publish)
@@ -140,7 +145,7 @@ public static class ServerPackages
         {
             using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifest));
             return document.RootElement.TryGetProperty("version", out var version)
-                && version.GetString() is { } named && Tools.IsExactVersion(named)
+                && version.GetString() is { } named && IsExact(named)
                 ? named
                 : null;
         }

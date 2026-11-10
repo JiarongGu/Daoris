@@ -109,10 +109,10 @@ public sealed class PipeDelegate(InstancePipe pipe)
     }
 
     /// <summary>
-    /// A press run with no card, in the machine log by its codes: Ask Daoris's as the person's, said once on its conversation's console; a
-    /// working session's as its own (<c>by: session &lt;id&gt;</c>).
+    /// A press run with no card, in the machine log by its codes: Ask Daoris's as the person's, said once on its conversation's console
+    /// and kept for the window's list; a working session's as its own (<c>by: session &lt;id&gt;</c>).
     /// </summary>
-    internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request)
+    internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request, Task<string> answer)
     {
         var route = $"{request.Module}.{request.Type}";
         if (judgement.Own)
@@ -123,6 +123,15 @@ public sealed class PipeDelegate(InstancePipe pipe)
 
         pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
         judgement.Say?.Invoke(route);
+        // Kept for the window's list, which is told at the press and again at its answer.
+        var presses = pipe.StandingConfirmation.HelpPresses;
+        var kept = presses.Began(request, judgement.Session ?? "");
+        pipe.TellDriverState();
+        _ = answer.ContinueWith(done =>
+        {
+            presses.Ended(kept, done.IsCompletedSuccessfully && HelpPressRecord.Succeeded(done.Result));
+            pipe.TellDriverState();
+        }, TaskScheduler.Default);
     }
 
     /// <summary>Whose a working session's own press is, as its log and its record say it: <c>session &lt;id&gt;</c>.</summary>

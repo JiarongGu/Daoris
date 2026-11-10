@@ -123,8 +123,25 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
         static async Task<bool> AfterAsync(Task before, IAgentWord words, Func<Task<IReadOnlyList<string>>> attempting)
         {
             await Task.WhenAny(before).ConfigureAwait(false);
-            var marked = await attempting().ConfigureAwait(false);
+            var marked = await MarkAsync(attempting).ConfigureAwait(false);
             return words.Id is not { } id || marked.Contains(id, StringComparer.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// A record's mark, asked. Any failure of it but a cancellation is a record that did not name the words marked: they wait on it,
+    /// said, and no other failure leaves the run.
+    /// </summary>
+    /// <exception cref="AcpWordsUnmarked">The mark failed.</exception>
+    public static async Task<IReadOnlyList<string>> MarkAsync(Func<Task<IReadOnlyList<string>>> attempting)
+    {
+        try
+        {
+            return await attempting().ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not (OperationCanceledException or AcpWordsUnmarked))
+        {
+            throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
         }
     }
 

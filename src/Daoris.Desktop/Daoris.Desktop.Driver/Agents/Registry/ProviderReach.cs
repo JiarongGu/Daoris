@@ -44,10 +44,8 @@ public sealed class ProviderReach(ProviderRegistry registry, IReachOpenings? ope
     /// <summary>Nothing opened: every place is closed to an <see cref="Reach.Opened"/> provider.</summary>
     public static IReachOpenings Closed { get; } = new NothingOpened();
 
-    /// <summary>The provider a door or an agent's id names, or null for a name the registry does not know.</summary>
     public Provider? ProviderOf(string name) =>
-        registry.Providers.FirstOrDefault(provider => provider.Doors.Any(door => Ids.Same(door.Id.Value, name.Trim())))
-        ?? registry.Providers.FirstOrDefault(provider => Ids.Same(provider.Id.Value, name.Trim()));
+        registry.ProviderNamed(name);
 
     /// <summary>
     /// Null where <paramref name="name"/>'s provider may work at <paramref name="place"/>; else the sentence saying it is not opened there.

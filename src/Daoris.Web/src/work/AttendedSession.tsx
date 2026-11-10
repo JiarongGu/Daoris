@@ -72,7 +72,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
 
 export function AttendedSession({
-  session, quest, ask, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
+  session, quest, ask, opening, brief, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
@@ -230,6 +230,8 @@ export function AttendedSession({
   ask?: AskOrigin | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
+  /** The brief its start is given, where its record keeps one: *Started with* shows it beside the quest's or ask's words. */
+  brief?: string | null;
   /** Whether a turn is in flight, as the driver says — the head reads a chat between turns as idle. */
   taking?: boolean;
   /** When its last turn ended here, for the head's *moved*. */
@@ -283,6 +285,7 @@ export function AttendedSession({
         quest={quest}
         ask={ask}
         opening={opening}
+        brief={brief}
         taking={taking}
         lastTurn={lastTurn}
         resolving={resolving}
@@ -370,7 +373,7 @@ export function AttendedSession({
       {/* What the service kept of its finished tree, shown once the tree is let go. */}
       {record && <FinishedRecord record={record} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it. */}
-      {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} started={startingOf(quest, ask, session, opening)} />}
+      {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} started={startingOf(quest, ask, session, opening, brief)} />}
       {/* The timeline lives in the right dock, which is there at every width, so a copy here
           would draw it twice. Only a window with no dock carries it. */}
       {timeline === 'always' && (

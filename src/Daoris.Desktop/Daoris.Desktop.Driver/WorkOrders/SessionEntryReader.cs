@@ -78,6 +78,11 @@ public static class SessionEntries
         return (entries, SessionGroups.Read(look, ids));
     }
 
+    /// <summary>A quest its line's own ask's intake published: the line's own work, not a sibling's request.</summary>
+    private static bool LinesOwn(SessionRecord record, QuestView quest) =>
+        quest.From.StartsWith("ask #", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(EntryKey.Parse(record.EntryKey).Origin, "ask:" + quest.From[5..], StringComparison.OrdinalIgnoreCase);
+
     /// <summary>An ask's intake: the conversation that answers it.</summary>
     private static bool Intake(SessionRecord record) =>
         (record.Ask is not null && record.Quest is null) || record.Entry?.EndsWith("/intake", StringComparison.Ordinal) == true;
@@ -122,7 +127,7 @@ public static class SessionEntries
                     },
                     After = prior.Id,
                 },
-                _ when quest?.PublishedBy is { Length: > 0 } => part with { Began = PartBegan.Asked, AskedBy = quest.From },
+                _ when quest?.PublishedBy is { Length: > 0 } && !LinesOwn(record, quest) => part with { Began = PartBegan.Asked, AskedBy = quest.From },
                 _ when quest?.Parent is { Length: > 0 } => part with { Began = PartBegan.CarriedOn },
                 _ => part,
             });

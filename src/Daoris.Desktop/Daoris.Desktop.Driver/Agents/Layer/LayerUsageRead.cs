@@ -7,11 +7,9 @@ using Lyntai.Processes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The usage port's layer implementation: one read through the layer's
-/// <see cref="IAgentUsageSource"/>, in a spawn's container of its own over <see cref="LauncherRunner"/>'s live stdin. It states the
-/// question (the harness, the command, the recorded answers, the freshness) and names itself in the history's source. The spawn is the roster's:
-/// the command and toolchain the roster resolved, composed by the one shell into the program, its prefix and its environment; the version
-/// read on any binary as the usage reader reads it, with no probe; the patience the reader's.
+/// The usage port's layer implementation: one read through the layer's <see cref="IAgentUsageSource"/>, in a spawn's container of its own
+/// over <see cref="LauncherRunner"/>'s live stdin, named in the history's source. The spawn is the roster's: its resolved command and
+/// toolchain composed by the one shell, the version read on any binary as the usage reader reads it, the patience the reader's.
 /// </summary>
 /// <param name="runner">The runner a read's container spawns through; a test's stands in. Null is Daoris's launcher.</param>
 internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendor, Func<LauncherSeat, TimeSpan, IProcessRunner>? runner = null)
@@ -35,7 +33,7 @@ internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendo
     {
         var info = Composed(ask);
         if (CommandOf(info) is not { } command) return null;
-        var seat = new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null) { Environment = EnvironmentOf(info) };
+        var seat = new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null) { Environment = LayerEnvironment.Of(info) };
         var spawner = runner?.Invoke(seat, vendor.Patience) ?? new LauncherRunner(seat, vendor.Patience);
         await using var container = LayerContainer.ForSpawn(Registration(command), spawner);
         if (container.Registry.Get(vendor.Door) is not IAgentUsageSource source) return null;
@@ -87,16 +85,4 @@ internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendo
             : string.Join(' ', words.Select(word => $"\"{word}\""));
     }
 
-    /// <summary>The start's environment as the shell composed it, a variable the shell removed handed as null.</summary>
-    private static Dictionary<string, string?> EnvironmentOf(ProcessStartInfo info)
-    {
-        var composed = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (name, value) in info.Environment) composed[name] = value;
-        foreach (DictionaryEntry inherited in System.Environment.GetEnvironmentVariables())
-        {
-            if (inherited.Key is string name && !info.Environment.ContainsKey(name)) composed[name] = null;
-        }
-
-        return composed;
-    }
 }

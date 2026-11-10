@@ -26,6 +26,9 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
             : null;
     }
 
+    public Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct) =>
+        AbandonRuns.EndAsync(new NodeRecordFiles(home), run => of(run.Run, run.Binding.Ask), words, clock, ct);
+
     public (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
         string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds)
     {

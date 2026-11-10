@@ -232,6 +232,8 @@ public sealed class InstancePipe : IDisposable
 
     internal PipeDelegate Delegate { get; }
 
+    internal void TellDriverState() => StatePublisher.Publish(_bus, StateScopes.Driver);
+
     internal PipeState State { get; } = new();
 
     internal PipeWaitingKeep Keep { get; }

@@ -38,7 +38,7 @@ const ACTS: StewardActNow[] = [
   act('a1', 'drive', '2026-10-25T10:01:00Z', { repository: 'engine' }),
 ];
 const STANDING: StandingConfirmationNow = {
-  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [], stewardLands: [],
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [], stewardLands: [], helpPresses: [],
 };
 /** A landing a supervisor allowed, waiting its window. */
 const LAND: StewardLandNow = { ask: 'k1', act: 'land', repository: null, quest: null, session: 's9', landsAt: '2026-10-25T10:20:00Z' };
@@ -268,7 +268,7 @@ describe("Notifications' steward line", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} />
+        <NotificationsStanding notify={() => {}} onOpenHelp={() => {}} />
       </QueryClientProvider>);
 
     await userEvent.click(await screen.findByRole('button', { name: "Show the steward's acts" }));
@@ -318,7 +318,7 @@ describe("Notifications' steward line", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} />
+        <NotificationsStanding notify={() => {}} onOpenHelp={() => {}} />
       </QueryClientProvider>);
 
     await userEvent.click(await screen.findByRole('button', { name: 'Overrule the landing of session s9' }));
@@ -336,7 +336,7 @@ describe("Notifications' steward line", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} />
+        <NotificationsStanding notify={() => {}} onOpenHelp={() => {}} />
       </QueryClientProvider>);
     await userEvent.click(await screen.findByRole('button', { name: "Show the steward's acts" }));
     await userEvent.click(screen.getByRole('button', { name: 'Resume' }));
