@@ -178,6 +178,8 @@ export type CommandDoors = {
   questAct: (act: string) => void;
   help: () => void;
   quickAsk: () => void;
+  /** Ask Daoris opened with its focus picker open. */
+  changeFocus: () => void;
   setup: () => void;
   shortcuts: () => void;
   update: () => void;
@@ -523,6 +525,10 @@ export const COMMANDS: readonly CommandSpec[] = [
     // By the key's place, since what `key` says under Shift and Alt differs by layout.
     id: 'help.quickAsk', menu: 'help', group: 'ask', label: 'menu.help.quickAsk', icon: 'help', keys: ['Ctrl+Shift+Alt+L'], shell: true,
     keywords: 'quick ask chat question daoris 快速 提问 问道衍', run: (doors) => doors.quickAsk(),
+  },
+  {
+    id: 'help.changeFocus', menu: 'help', group: 'ask', label: 'help.focus.change', icon: 'help', shell: true,
+    keywords: 'focus change scope ask daoris about workspace repository machine 聚焦 更改 范围 问道衍', run: (doors) => doors.changeFocus(),
   },
   {
     id: 'help.setup', menu: 'help', group: 'learn', label: 'menu.setup', icon: 'plan',

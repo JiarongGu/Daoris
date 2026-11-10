@@ -158,7 +158,9 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
       chip={(
         <>
           <Icon name={FOCUS_ICON[words.icon]} size={13} className={cn('shrink-0', words.icon === 'gone' ? 'text-warn' : 'text-ink-faint')} />
-          <span className="min-w-0 truncate">{words.text}</span>
+          {words.short
+            ? <><span className="min-w-0 truncate @max-[24rem]:hidden">{words.text}</span><span aria-hidden className="hidden min-w-0 truncate @max-[24rem]:inline">{words.short}</span></>
+            : <span className="min-w-0 truncate">{words.text}</span>}
           <Icon name="chevronUp" size={12} className="shrink-0 text-ink-faint" />
         </>
       )}

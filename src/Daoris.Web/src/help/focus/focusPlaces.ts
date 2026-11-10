@@ -22,6 +22,9 @@ export type FocusRow = {
 /** The workspace `default`, whose room is the whole machine's. */
 const DEFAULT = 'default';
 
+export const repositoriesOf = (rows: readonly { repository: string; workspace?: string | null; root?: string | null }[]): PlaceRepository[] =>
+  rows.map((row) => ({ name: row.repository, workspace: row.workspace || DEFAULT, checkout: Boolean(row.root) }));
+
 const lower = (text: string) => text.toLowerCase();
 
 /**

@@ -78,7 +78,7 @@ public static class HelpCommand
     /// </summary>
     public static IReadOnlyList<string> JsonFields { get; } =
     [
-        "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "focus", "focusNext",
+        "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "focus", "focusNext", "marks",
         "resumable", "from", "handed", "found", "foundLine", "parts",
     ];
 
@@ -442,6 +442,9 @@ public static class HelpCommand
                 writer.WritePropertyName("focusNext");
                 if (row.FocusNext is { } waiting) waiting.Write(writer);
                 else writer.WriteNullValue();
+                writer.WriteStartArray("marks");
+                foreach (var mark in row.Marks) mark.Write(writer);
+                writer.WriteEndArray();
                 writer.WriteBoolean("resumable", row.Resumable);
                 Text(writer, "from", row.From);
                 Text(writer, "handed", row.Handed);

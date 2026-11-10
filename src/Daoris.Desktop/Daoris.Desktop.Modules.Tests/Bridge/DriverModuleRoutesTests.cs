@@ -197,7 +197,8 @@ public sealed partial class DriverModuleRoutesTests
             .Where(call => call.File != "shell.ts")
             .Where(call => fileOf.TryGetValue(call.Route, out var file)
                 && !string.Equals($"{DomainOf(file)}.ts", call.File, StringComparison.OrdinalIgnoreCase)
-                && !(BridgeSplits.TryGetValue(call.File, out var split) && string.Equals(split, DomainOf(file), StringComparison.OrdinalIgnoreCase)))
+                && !(BridgeSplits.TryGetValue(call.File, out var split) && string.Equals(split, DomainOf(file), StringComparison.OrdinalIgnoreCase))
+                && !(call.File == "help.ts" && string.Equals(DomainOf(file), "HelpFocus", StringComparison.OrdinalIgnoreCase)))
             .Select(call => $"bridge/{call.File} sends `{call.Route}`, answered in {fileOf[call.Route]}");
         Assert.Empty(astray);
     }

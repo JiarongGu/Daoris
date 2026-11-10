@@ -1,5 +1,7 @@
 import type { Place } from './focus';
 
+export type FocusMark = { word: string | null; at: string | null; from: Place; to: Place; widened: boolean };
+
 /**
  * One of Ask Daoris's conversations as its history lists it: the driver's `HELP_CONVERSATIONS` row, field for
  * field what `daoris ask-daoris list --json` prints. Kept on this machine only: its words are this machine's record, and its
@@ -36,6 +38,7 @@ export type HelpConversationRow = {
   /** The place its last turn ran under, and the one its next words take; absent from a driver before them (`homeFocus`). */
   focus?: Place | null;
   focusNext?: Place | null;
+  marks?: FocusMark[];
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;
   /** The earlier conversation it started from, and what it is handed of it. */

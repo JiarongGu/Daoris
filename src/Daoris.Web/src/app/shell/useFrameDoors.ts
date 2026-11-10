@@ -21,6 +21,12 @@ export function useFrameDoors() {
   // Its doors open it, never close it — `F1`, `Ctrl+Alt+I`, the palette, Quick Ask's *Open in the side
   // bar*; the region's own close and toggle are what close it, on every view alike.
   const openHelp = useCallback(() => setHelpFocus((was) => was + 1), []);
+  // The palette's *Change focus…*: Ask Daoris opens with its picker open, one number per ask.
+  const [focusAsk, setFocusAsk] = useState(0);
+  const changeFocus = useCallback(() => {
+    setFocusAsk((was) => was + 1);
+    setHelpFocus((was) => was + 1);
+  }, []);
   const onSessions = useRef(false);
   // A question handed to Ask Daoris gets an id no earlier one had, whichever door handed it: each is let
   // go once sent, so an id counted from the last one held would repeat.
@@ -48,5 +54,5 @@ export function useFrameDoors() {
     // frame instead of its message box.
     window.setTimeout(() => setQuick(true), 0);
   };
-  return { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening };
+  return { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, focusAsk, changeFocus, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening };
 }
