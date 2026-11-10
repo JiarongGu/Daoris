@@ -1,6 +1,6 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type BeyondEntry } from '../../bridge/helpBeyond';
+import { type BeyondEntry } from './beyond';
 import { Button, Icon } from '../../design/ui';
 import { routeKey } from '../../person/Confirmations';
 import { type Place, placeSaid, samePlace } from '../focus';

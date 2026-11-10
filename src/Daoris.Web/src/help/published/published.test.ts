@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Ask, Quest, Session } from '../data/api';
-import { PUBLISHED } from '../asks/fixtures';
-import { DONE, OPEN, TAKEN, WORKING } from '../quests/fixtures';
+import type { Ask, Quest, Session } from '../../data/api';
+import { PUBLISHED } from '../../asks/fixtures';
+import { DONE, OPEN, TAKEN, WORKING } from '../../quests/fixtures';
 import { type HelpPublishedEntry, publishedCounts, publishedItems } from './published';
 
 // What a conversation published, each with its live state read from the lists the

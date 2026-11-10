@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BUDGET_LEFT, STRAY_AUDITED } from './namesAudit';
 import {
   type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, validate, verdict,
 } from '../../scripts/names-check.mjs';
@@ -458,16 +459,7 @@ describe('the real glossary and catalogues', () => {
 
   it('leave on the report only the budget judgements the window must make', () => {
     const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
-    expect(left).toEqual([
-      'help.setup:en', 'help.setup:zh',
-      // The chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
-      'review.act.withoutLook:en',
-      'scope.every:en', 'scope.every:zh',
-      'signin.titleNew:en', 'signin.titleNew:zh',
-      // The owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
-      'work.act.handOver:en',
-      'work.group.noCheckout:en',
-    ]);
+    expect(left).toEqual(BUDGET_LEFT);
   });
 
   /**
@@ -658,16 +650,7 @@ describe('the real glossary and catalogues', () => {
     const stray = check(glossary, en, zh, { all: true })
       .filter((finding) => finding.rule === 'glossary' && finding.kind === 'sentence')
       .map(({ key, language }) => `${key}:${language}`).sort();
-    expect(stray).toEqual([
-      'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
-      // 远程 here is the act's own: a git act on a git remote, which is no Daoris remote.
-      'person.route.GIT_ANSWER:zh',
-      // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
-      'projects.workspace.machines.none:zh',
-      'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
-      // A subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
-      'work.atWork.child.finished:zh',
-    ]);
+    expect(stray).toEqual(STRAY_AUDITED);
   });
 });
 

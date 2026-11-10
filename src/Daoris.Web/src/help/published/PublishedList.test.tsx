@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
-import type { Ask, Quest, Session } from '../data/api';
-import { PUBLISHED } from '../asks/fixtures';
-import { DONE, OPEN, TAKEN, WORKING } from '../quests/fixtures';
+import i18n from '../../locales/i18n';
+import type { Ask, Quest, Session } from '../../data/api';
+import { PUBLISHED } from '../../asks/fixtures';
+import { DONE, OPEN, TAKEN, WORKING } from '../../quests/fixtures';
 import { type HelpPublishedEntry, publishedCounts, publishedItems, type PublishedLists } from './published';
 import { PublishedList } from './PublishedList';
 

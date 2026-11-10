@@ -67,7 +67,7 @@
   "harness.settings.perModel": "按模型设置——对该模型，工具会先读这里：",
   "harness.settings.perModelLabel": "按模型设置",
   "harness.settings.notSet": "未设置",
-  "harness.settings.hint": "保存在这个账户目录里、工具自己的设置文件中，会话开始时由工具读取。仓库自己的 .claude/settings.json 和 ANTHROPIC_MODEL 变量对模型的设定优先于这里。",
+  "harness.settings.hint": "保存在这个账户的文件夹里、工具自己的设置文件中，会话开始时由工具读取。仓库自己的 .claude/settings.json 和 ANTHROPIC_MODEL 变量对模型的设定优先于这里。",
   "harness.settings.terminal": "在终端里做同一件事：",
   "harness.settings.save": "保存",
   "harness.settings.saved": "{{account}}：已保存——下一个会话会读取它。",

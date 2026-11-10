@@ -308,7 +308,7 @@ export const tool = await import(
   verdictsHome: (root: string) => string;
   readVerdicts: (root: string) => { schema: number; verdicts: Verdict[] };
   addVerdicts: (root: string, entries: Verdict[], options?: { keep?: number }) => void;
-  readGateLock: (home: string, alive?: (pid: number) => boolean, startOf?: (pid: number) => number | null) => { pid: number; commit: string; at: string; running: boolean; holder: string } | null;
+  readGateLock: (home: string, alive?: (pid: number) => boolean, startOf?: (pid: number) => number | null) => { pid: number; commit: string; at: string; started?: number | null; running: boolean; holder: string } | null;
   readCiWatch: (home: string, alive?: (pid: number) => boolean, startOf?: (pid: number) => number | null) => { pid: number; at: string; running: boolean } | null;
   takeGateLock: (home: string, options: {
     commit: string; holder?: string; alive?: (pid: number) => boolean; startOf?: (pid: number) => number | null; now?: () => string;
