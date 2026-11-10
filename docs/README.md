@@ -247,6 +247,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-05-merge-tool-design.md`|Proposed design: MERGETOOL1 (D237)
 |`2026-11-06-terminal-conversation-design.md`|Proposed design: RPC1g (D238)
 |`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
+|`2026-11-10-isolation-beyond-git-survey.md`|Survey: PLACEWORK1a, parallel work beyond git (D254)
 |`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
