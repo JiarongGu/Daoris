@@ -86,10 +86,19 @@ public sealed class PipeDelegate(InstancePipe pipe)
     }
 
     /// <summary>A press run with no card, said as the person's: in the machine log by its codes, and once on its conversation's console.</summary>
-    internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request)
+    internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request, Task<string> answer)
     {
         var route = $"{request.Module}.{request.Type}";
         pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
         judgement.Say?.Invoke(route);
+        // Kept for the window's list, which is told at the press and again at its answer.
+        var presses = pipe.StandingConfirmation.HelpPresses;
+        var kept = presses.Began(request, judgement.Session ?? "");
+        pipe.TellDriverState();
+        _ = answer.ContinueWith(done =>
+        {
+            presses.Ended(kept, done.IsCompletedSuccessfully && HelpPressRecord.Succeeded(done.Result));
+            pipe.TellDriverState();
+        }, TaskScheduler.Default);
     }
 }
