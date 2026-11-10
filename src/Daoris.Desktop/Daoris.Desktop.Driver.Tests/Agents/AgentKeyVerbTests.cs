@@ -99,4 +99,19 @@ public sealed class AgentKeyVerbTests : IDisposable
         Assert.Null(HarnessKeys.Of(Home, "dsh", "acct-00000000"));
         Assert.Contains("acct-00000000", HarnessSettings.Profiles(Home, "dsh"));
     }
+
+    [Fact]
+    public async Task A_removal_whose_file_is_locked_by_another_writer_says_so_and_exits_two_instead_of_throwing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
+        var keys = DaorisHome.Entry(Home, HomeEntry.Keys);
+        File.WriteAllText(keys, "{\"claude-code\":{\"work\":\"" + KeySeal.Prefix + "AAAAAAAA\"}}");
+
+        using var another = KeepLock.Take(keys);
+        var exit = await AgentsCommand.RunAsync(["key", "claude-code", "--account", "work", "--remove"], World(), CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Contains("edit lock", _error.ToString());
+    }
 }
