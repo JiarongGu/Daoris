@@ -31,11 +31,13 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var id = request.Id;
         IReadOnlyList<PipeReading> asked;
         PressViewed? viewed;
+        HelpPressPlace? placed;
         try
         {
             using var reading = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, reserved.Reading.Token);
             asked = await row.ReadAsync(pipe.Grounds, request.Payload, _clock, reading.Token).ConfigureAwait(false);
             viewed = await PressViews.ReadAsync(pipe.Grounds, request.Module, request.Type, request.Payload, reading.Token).ConfigureAwait(false);
+            placed = await PipeDelegate.ReadPlaceAsync(reserved.PlaceOf, request, reading.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -98,12 +100,14 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var shown = Confirmations.Ask(
             place, request.Module, request.Type, fields, reserved.Asker, why,
             judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold, View: viewed?.View));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold, View: viewed?.View, Placed: placed));
         lock (_state.Gate)
         {
             _state.WaitingFor[id] = shown.Shown.Id;
             _state.Lines[id] = mine;
         }
+
+        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Ended);
 
         // A close that began after the claim keeps it as any press waiting: its record kept and its line answered. The close
         // alone: a drain answers no waiting line, and the close it ends in keeps this one when it begins.

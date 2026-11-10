@@ -7,6 +7,7 @@ import { useNow } from '../work/useNow';
 import { askerSaid, type PipeAsker } from './askerSaid';
 import { type PressView, PressViewLine } from './PressViewLine';
 import { standingSaid } from './standingSaid';
+import { type HelpCardPlace, helpPlaceSaid } from './helpPlaceSaid';
 import { useFollowedAgentPress } from './useFollowedAgentPress';
 
 /**
@@ -58,6 +59,8 @@ export type Confirmation = {
   hold?: boolean;
   /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
+  /** The place an Ask Daoris press named and its conversation's focus; null or absent for any other press. */
+  helpPlace?: HelpCardPlace | null;
   view?: PressView | null;
 };
 
@@ -417,6 +420,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
             : null}
         </p>
         {standingSaid(t, waiting.standing) && <p data-standing className="m-0 text-small text-warn">{standingSaid(t, waiting.standing)}</p>}
+        {helpPlaceSaid(t, waiting.helpPlace) && <p data-help-beyond="" className="m-0 text-small text-ink-soft">{helpPlaceSaid(t, waiting.helpPlace)}</p>}
         {/* One request row, the host's and a terminal's alike, waiting until the person answers or its asker takes it back. */}
         <p className="m-0 text-small text-warn">
           {t('person.waits')}

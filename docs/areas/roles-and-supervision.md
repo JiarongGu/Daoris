@@ -431,7 +431,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
-    the default, it reads and presses, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. The press
+    the default, it reads and presses, and a proved press waits on a card naming Ask Daoris and runs on the person's yes; the card
+    names the place the press named where that lies outside the conversation's focus (`HelpCardPlace`, judged as rule 58's
+    `HelpPressPlace`), and the press is kept in rule 58's record as asked, with its card's state (`HelpAskedPress`). The press
     is the one way to ask the person: a route with a view (`PressViews`, one unit per route) judges the press at the ask with the
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
@@ -461,8 +463,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console, logged `help.pressed` and kept in this run's memory (`HelpPressRecord`: route, conversation,
     when, outcome, and the workspace or repository it named, or for a press naming only a quest the repository that quest asks,
-    with whether that was beyond its conversation's focus at the press, `HelpPressPlace`; the newest 100, a restart empties it) and told to the windows, which list it in *Notifications* beside the
-    steward's line, each row opening its conversation and offering a pause's *Resume*. A proof that does not hold, a nonce used already or a session
+    with whether that was beyond its conversation's focus at the press, `HelpPressPlace`; a restricted press asked on a card is
+    kept there too, marked asked, its outcome its card's state: waiting, allowed, refused, changed or unanswered; the newest 100, a
+    restart empties it) and told to the windows, which list it in *Notifications* beside the steward's line, the asked apart
+    under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
     Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)

@@ -232,6 +232,7 @@
   "help.beyond.propose": "在{{place}}中提出了更改",
   "help.beyond.did": "已执行：{{place}} 中的{{act}} · {{outcome}}",
   "help.beyond.didNow": "已执行：{{place}} 中的{{act}}",
+  "help.beyond.asked": "已请你确认：{{place}} 中的{{act}} · {{state}}",
   "help.beyond.make": "改为聚焦 {{place}}",
   "help.beyond.already": "已是聚焦",
   "help.introAgentFull": "在下方询问本机上的道衍：某个界面、一次拒绝、如何驱动仓库或开始一项任务。问道衍以完全访问运行在 {{agent}} 上：它会自己在本机运行命令、编辑文件，无需应用。先列出本机所缺的东西，每条附上能解决它的界面和效果相同的命令。",

@@ -30,6 +30,7 @@
   "person.asker.pid": "Sent by process {{pid}}.",
   "person.asker.unknown": "Daoris could not name what sent it.",
   "person.asker.help": "Ask Daoris asks for this, with the key Daoris handed its conversation.",
+  "person.helpBeyond": "In {{place}}, outside this conversation's focus ({{focus}})",
   "person.asker.session": "Session {{session}} asks for this, with the key Daoris handed it.",
   "person.restored": "The record says it was sent by {{process}}, process {{pid}}, before Daoris restarted.",
   "person.restoredPid": "The record says it was sent by process {{pid}} before Daoris restarted.",

@@ -232,6 +232,7 @@
   "help.beyond.propose": "Proposed a change in {{place}}",
   "help.beyond.did": "Did: {{act}} in {{place}} · {{outcome}}",
   "help.beyond.didNow": "Did: {{act}} in {{place}}",
+  "help.beyond.asked": "Asked you: {{act}} in {{place}} · {{state}}",
   "help.beyond.make": "Make {{place}} the focus",
   "help.beyond.already": "Already the focus",
   "help.introAgentFull": "Ask below about Daoris on this machine: a screen, a refusal, how to drive a repository or start a task. Ask Daoris runs on {{agent}} with full access: it runs commands and edits files on this machine itself, without Apply. What this machine lacks comes first, each with the screen that fixes it and the command that does the same.",

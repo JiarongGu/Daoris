@@ -1,0 +1,21 @@
+namespace Daoris.Desktop;
+
+/// <summary>
+/// An Ask Daoris press put to the person on a card in restricted mode, kept in the run's record of Ask Daoris's presses apart from
+/// those that ran (`docs/2026-11-11-ask-scope-ux-design.md` §4, <i>Asked you</i>): with the place it named, waiting from its card's
+/// asking, then its card's end as its state. The windows are told at each.
+/// </summary>
+internal static class HelpAskedPress
+{
+    public static void Kept(InstancePipe pipe, PipeReserved reserved, Daoris.Driver.HelpPressPlace? place, Task<PipeEnding> ended)
+    {
+        var presses = pipe.StandingConfirmation.HelpPresses;
+        var kept = presses.Asked(reserved.Request, reserved.Asker.Session ?? "", place);
+        pipe.TellDriverState();
+        _ = ended.ContinueWith(done =>
+        {
+            presses.Answered(kept, done.IsCompletedSuccessfully ? done.Result.End : PipeConfirmationEnd.Lost);
+            pipe.TellDriverState();
+        }, TaskScheduler.Default);
+    }
+}

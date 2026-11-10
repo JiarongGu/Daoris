@@ -12,6 +12,9 @@ internal sealed class PipeReserved(
 
     public PipeAsker Asker { get; } = asker ?? connection.Asker;
 
+    /// <summary>The place an Ask Daoris press named, read before its card; null for every other press.</summary>
+    public Func<IpcRequest, CancellationToken, Task<Daoris.Driver.HelpPressPlace?>>? PlaceOf { get; init; }
+
     public IpcRequest Request { get; } = request;
 
     public PipeBinding Binding { get; } = binding;

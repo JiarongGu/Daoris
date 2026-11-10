@@ -33,6 +33,9 @@ const sentenceOf = (t: Say, entry: BeyondEntry) => {
   if (entry.act === 'read') return entry.what ? t('help.beyond.read', { place, what: entry.what }) : t('help.beyond.readPlace', { place });
   if (entry.act === 'propose') return t('help.beyond.propose', { place });
   const act = actOf(t, entry.what);
+  if (entry.act === 'asked') {
+    return t('help.beyond.asked', { act, place, state: t(`notifications.helpPressed.outcome.${entry.outcome ?? 'waiting'}`) });
+  }
   return entry.outcome
     ? t('help.beyond.did', { act, place, outcome: t(`notifications.helpPressed.outcome.${entry.outcome}`) })
     : t('help.beyond.didNow', { act, place });

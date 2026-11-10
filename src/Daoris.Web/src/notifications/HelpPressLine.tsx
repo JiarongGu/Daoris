@@ -14,7 +14,7 @@ function PressLine({ press, busy, onOpen, onReverse }: {
 }) {
   const { t, i18n } = useTranslation();
   const act = t(routeKey(press.module, press.route), { defaultValue: press.route });
-  const reverse = helpReverse(press);
+  const reverse = press.asked ? null : helpReverse(press);
   return (
     <li data-help-press={press.id} className="flex flex-wrap items-center justify-between gap-2 text-small">
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
@@ -49,8 +49,10 @@ function PressLine({ press, busy, onOpen, onReverse }: {
  * in full access runs at once with no card, so it is listed here, never silent. *Ask Daoris pressed n acts for you since Daoris
  * started*, opening to the presses newest first, each in the window's own words for the act, its target, the place it named (*outside
  * its focus* where it lay beyond its conversation's focus at the press), its time, whether it is done,
- * a press to open its conversation and, where its route has one, the owner's reverse press (a pause's *Resume*). A line, not a row:
- * no notice per press, so it counts toward no group's count and never the bell's. A restart empties it.
+ * a press to open its conversation and, where its route has one, the owner's reverse press (a pause's *Resume*). The presses it asked
+ * the person on a card in restricted mode stand apart under *Asked you*, each with its card's state and no reverse, the person's
+ * answer being theirs. A line, not a row: no notice per press, so it counts toward no group's count and never the bell's. A restart
+ * empties it.
  *
  * A molecule: drawn from props; the application holds the presses.
  */
@@ -69,18 +71,35 @@ export function HelpPressLine({ standing, busy = false, onOpen, onReverse, defau
   const id = useId();
   const presses = standing?.helpPresses ?? [];
   if (presses.length === 0) return null;
+  const ran = presses.filter((each) => !each.asked);
+  const asked = presses.filter((each) => each.asked);
   return (
     <section data-help-press-line="" aria-label={t('notifications.helpPressed.label')} className="grid gap-2 rounded-control border border-line border-l-[3px] border-l-warn bg-sunken px-3 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="m-0 min-w-0 text-small text-ink-soft">{t('notifications.helpPressed.line', { count: presses.length })}</p>
+        <div className="grid min-w-0 gap-0.5">
+          {ran.length > 0 && <p className="m-0 min-w-0 text-small text-ink-soft">{t('notifications.helpPressed.line', { count: ran.length })}</p>}
+          {asked.length > 0 && <p className="m-0 min-w-0 text-small text-ink-soft">{t('notifications.helpPressed.askedLine', { count: asked.length })}</p>}
+        </div>
         <Button variant="ghost" aria-expanded={open} aria-controls={`${id}-presses`} onClick={() => setOpen((was) => !was)}>
           {t(open ? 'notifications.helpPressed.hide' : 'notifications.helpPressed.show')}
         </Button>
       </div>
       {open && (
-        <ul id={`${id}-presses`} aria-label={t('notifications.helpPressed.list')} className="m-0 grid list-none gap-1 p-0">
-          {presses.map((each) => <PressLine key={each.id} press={each} busy={busy} onOpen={onOpen} onReverse={onReverse} />)}
-        </ul>
+        <div id={`${id}-presses`} className="grid gap-2">
+          {ran.length > 0 && (
+            <ul aria-label={t('notifications.helpPressed.list')} className="m-0 grid list-none gap-1 p-0">
+              {ran.map((each) => <PressLine key={each.id} press={each} busy={busy} onOpen={onOpen} onReverse={onReverse} />)}
+            </ul>
+          )}
+          {asked.length > 0 && (
+            <div className="grid gap-1">
+              <p id={`${id}-asked`} className="m-0 text-meta text-ink-faint">{t('notifications.helpPressed.askedList')}</p>
+              <ul aria-labelledby={`${id}-asked`} className="m-0 grid list-none gap-1 p-0">
+                {asked.map((each) => <PressLine key={each.id} press={each} busy={busy} onOpen={onOpen} onReverse={onReverse} />)}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </section>
   );
