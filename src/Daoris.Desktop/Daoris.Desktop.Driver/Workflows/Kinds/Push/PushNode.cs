@@ -9,8 +9,12 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 {
     public PassRead Asks => PassRead.Remote;
 
-    /// <summary>Failed by the push act's refusal. Never skipped, since a skip would read as pushed where nothing pushed; the person's doors are stop and Try again.</summary>
-    public override NodeAuthority Row { get; } = new(NodeKinds.Push, NodeReach.Performed, NodeSource.Git, NodeSource.Git, false, PersonSkips: false, true, true);
+    /// <summary>
+    /// Failed by the push act's refusal. The person never skips it, since a skip would read as pushed where nothing pushed; the person's doors
+    /// are stop and Try again. The landing record passes it over where the landing made no branch (<see cref="NothingToDeliver"/>).
+    /// </summary>
+    public override NodeAuthority Row { get; } =
+        new(NodeKinds.Push, NodeReach.Performed, NodeSource.Git, NodeSource.Git, false, PersonSkips: false, true, true) { SkipBy = NodeSource.Landing };
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Landing;
 
