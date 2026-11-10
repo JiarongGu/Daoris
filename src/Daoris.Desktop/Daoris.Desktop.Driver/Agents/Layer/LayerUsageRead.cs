@@ -35,7 +35,7 @@ internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendo
     {
         var info = Composed(ask);
         if (CommandOf(info) is not { } command) return null;
-        var seat = new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null) { Environment = EnvironmentOf(info) };
+        var seat = new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null) { Environment = LayerEnvironment.Of(info) };
         var spawner = runner?.Invoke(seat, vendor.Patience) ?? new LauncherRunner(seat, vendor.Patience);
         await using var container = LayerContainer.ForSpawn(Registration(command), spawner);
         if (container.Registry.Get(vendor.Door) is not IAgentUsageSource source) return null;
@@ -87,16 +87,4 @@ internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendo
             : string.Join(' ', words.Select(word => $"\"{word}\""));
     }
 
-    /// <summary>The start's environment as the shell composed it, a variable the shell removed handed as null.</summary>
-    private static Dictionary<string, string?> EnvironmentOf(ProcessStartInfo info)
-    {
-        var composed = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (name, value) in info.Environment) composed[name] = value;
-        foreach (DictionaryEntry inherited in System.Environment.GetEnvironmentVariables())
-        {
-            if (inherited.Key is string name && !info.Environment.ContainsKey(name)) composed[name] = null;
-        }
-
-        return composed;
-    }
 }
