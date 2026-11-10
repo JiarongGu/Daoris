@@ -42,6 +42,22 @@ public sealed class QuestHoldsNodeTests
         Assert.Contains("taken back", back.Said);
     }
 
+    [Fact]
+    public void A_done_of_an_asks_quest_with_no_requirement_waits_unchecked_with_its_handback_to_read()
+    {
+        var asked = Quest("Done") with { From = "ask #a1b2c3" };
+
+        var waits = Observe(QuestUnit(asked), Hold(NodeKinds.QuestHolds), "q-rev");
+        Assert.Null(waits.Outcome);
+        Assert.Contains("unchecked", waits.Said);
+        Assert.Contains("handback", waits.Said);
+        Assert.Contains("unchecked", waits.Holds);
+
+        var required = asked with { Requirements = [new QuestRequirementView("use the media config", "the name is read from it")] };
+        Assert.Equal(NodeStates.Reached, Observe(QuestUnit(required), Hold(NodeKinds.QuestHolds), "q-rev").Outcome);
+        Assert.Equal(NodeStates.Reached, Observe(QuestUnit(asked), Hold(NodeKinds.QuestHolds, """{"yes":false}"""), "q-rev").Outcome);
+    }
+
     /// <summary>A version that no longer holds a done for your yes, by its `quest.holds` taken away or its `yes` off, asks less of you, and says so.</summary>
     [Fact]
     public void Taking_the_quests_holds_away_or_their_yes_off_lowers_your_part()

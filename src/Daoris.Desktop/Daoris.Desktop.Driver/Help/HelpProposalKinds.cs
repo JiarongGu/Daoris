@@ -83,6 +83,7 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
     {
         if (applied && published is { Names: true }) HelpProposals.KeepPublished(home, proposal, published);
         HelpProposals.Settle(home, proposal.Id, applied ? "applied" : "refused", note);
+        HelpAppliedAgain.Keep(home, proposal.Id, told);
         return new HelpApplied(applied, told);
     }
 }

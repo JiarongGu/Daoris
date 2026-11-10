@@ -25,6 +25,8 @@ internal static class NodeWordFiles
 
         if (word.Attempt is { } attempt) writer.WriteNumber("attempt", attempt);
         if (word.Supersedes is { } supersedes) writer.WriteString("supersedes", supersedes);
+        if (word.Kept) writer.WriteBoolean("kept", true);
+        if (word.Tip is { } tip) writer.WriteString("tip", tip);
         writer.WriteEndObject();
     }
 
@@ -53,7 +55,11 @@ internal static class NodeWordFiles
             attempt = value;
         }
 
-        return new NodeWord(node, act, Text(each, "words"), at) { By = by, Attempt = attempt, Supersedes = Text(each, "supersedes") };
+        var kept = each.TryGetProperty("kept", out var flag) && flag.ValueKind == JsonValueKind.True;
+        return new NodeWord(node, act, Text(each, "words"), at)
+        {
+            By = by, Attempt = attempt, Supersedes = Text(each, "supersedes"), Kept = kept, Tip = Text(each, "tip"),
+        };
     }
 
     private static string? Text(JsonElement element, string name) =>

@@ -23,6 +23,9 @@ public enum AskRefusal
     /// <summary>The quest it is to become is refused by the exchange — the ask itself is kept.</summary>
     QuestRefused,
 
+    /// <summary>A session's publish beside the ask's intake, which alone publishes it while it answers or before any has served it.</summary>
+    IntakeAnswering,
+
     /// <summary>
     /// A delete that would remove a record something stands on — a quest asked by it that somebody took
     /// or answered, or that a session started for — so the ask stays whole.

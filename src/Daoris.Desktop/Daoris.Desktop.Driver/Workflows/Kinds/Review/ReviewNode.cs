@@ -12,7 +12,10 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
     /// means on Accept and a <c>rejected</c> or <c>back on: rejected</c> wire is the changes route.
     /// </summary>
     public override NodeAuthority Row { get; } =
-        new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, true, PersonSkips: false, MayEnd: false, Evidenced: false);
+        new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, true, PersonSkips: false, MayEnd: false, Evidenced: false)
+        {
+            ObservedBy = NodeSource.Git,
+        };
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
 
@@ -29,8 +32,8 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 
     public override IReadOnlyList<string> LandingActs(NodeDeclaration node) => [NodeWordActs.Accept];
 
-    /// <summary>Reached by the person's Accept, read from the landing it made as a <c>land</c>'s reach is.</summary>
-    public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Person);
+    /// <summary>Reached where its landing is seen made, as a <c>land</c>'s reach is, as the landing record's: a landing seen is not a press.</summary>
+    public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading, NodeSource.Git);
 
     /// <summary>The person's Accept, and their changes with their words.</summary>
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Accept, NodeWordActs.Changes];

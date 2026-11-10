@@ -513,17 +513,13 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>No rules to hand still hands the session its own context, and nothing else: no hooks, no classifier.</summary>
     [Fact]
-    public void Nothing_to_hand_still_hands_the_sessions_own_context()
+    public void Nothing_to_hand_hands_the_permissions_alone_with_no_hook_classifier_or_account_key()
     {
         var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, []);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
-        Assert.Equal(
-            ["permissions", .. ClaudeRules.OwnContext.Select(pair => pair.Key)],
-            document.RootElement.EnumerateObject().Select(property => property.Name));
-        Assert.All(ClaudeRules.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
+        Assert.Equal(["permissions"], document.RootElement.EnumerateObject().Select(property => property.Name));
     }
 
     // ——— A driven session may commit.
