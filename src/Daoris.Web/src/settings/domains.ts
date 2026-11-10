@@ -67,7 +67,7 @@ export const SETTINGS_DOMAINS = [
   // place of its own (an agent is a product with accounts, and its page holds them), Plugins for its place.
   {
     id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain,
-    rows: ['settings.notify.label', 'settings.cap.label', 'settings.quiet.label', 'settings.cooloff.label', 'projects.setup.section.access', 'plugin.folder'],
+    rows: ['settings.notify.label', 'settings.cap.label', 'settings.quiet.label', 'settings.manifest.label', 'settings.cooloff.label', 'projects.setup.section.access', 'plugin.folder'],
   },
   {
     id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain,
