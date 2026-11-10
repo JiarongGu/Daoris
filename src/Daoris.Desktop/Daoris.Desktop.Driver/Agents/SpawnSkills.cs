@@ -24,14 +24,18 @@ public static class SpawnSkills
     /// Lay out the skills <paramref name="catalog"/> hands <paramref name="to"/> in the door's provider's layout and hand them by the
     /// door's spawn; a protocol door carries them in its <c>session/new</c> meta instead
     /// (<see cref="AgentDoor.AcpSessionMeta(string, IReadOnlyList{string})"/>), so the plugins are answered for the caller to put
-    /// there. A door whose provider lays out none is handed none.
+    /// there. A door whose provider lays out none is handed none. What the person's own tool home holds (<paramref name="own"/>) is laid
+    /// out after, in the same folder, on a door its provider owns; a plugin's door, its program unmeasured, is handed none of it.
     /// </summary>
     public static (string? Folder, IReadOnlyList<string> Plugins) Hand(
-        ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to)
+        ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to,
+        OwnTools? own = null)
     {
         if (adapters.SkillLayout(adapter) is not { } layout) return (null, []);
         var (folder, plugins) = layout.Write(home, sessionId, catalog.Skills(to));
-        if (plugins.Count > 0) adapter.Spawned().HandPlugins(info, plugins);
-        return (folder, plugins);
+        var (ownFolder, ownPlugins) = own is null || adapter.Declared ? (null, []) : layout.Own(home, sessionId, own);
+        IReadOnlyList<string> all = [.. plugins, .. ownPlugins];
+        if (all.Count > 0) adapter.Spawned().HandPlugins(info, all);
+        return (folder ?? ownFolder, all);
     }
 }

@@ -209,4 +209,10 @@ public interface ISkillLayout
 {
     /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>
     (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, IReadOnlyList<SkillSource> sources);
+
+    /// <summary>
+    /// What the person's own run of the agent loads from its tool home, laid out for one session in the same folder as
+    /// <see cref="Write"/>'s; none where the provider states no such home (D253 point 7).
+    /// </summary>
+    (string? Folder, IReadOnlyList<string> Plugins) Own(string home, string sessionId, OwnTools tools) => (null, []);
 }
