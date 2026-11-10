@@ -101,6 +101,23 @@ export function OriginLinks({ origins, t }: { origins: readonly Origin[]; t: TFu
   );
 }
 
+/** The head's one line of origins: the label and each kind and name, never wrapped, a long name cut with an ellipsis. */
+export function OriginLine({ origins, t }: { origins: readonly Origin[]; t: TFunction }): ReactNode {
+  return (
+    <span className="flex min-w-0 items-baseline gap-x-3 whitespace-nowrap">
+      <span className="shrink-0 text-ink-faint">{t('work.origin.from')}</span>
+      {origins.map((origin) => (
+        <span key={`${origin.kind}:${origin.text}`} className="flex min-w-0 items-baseline gap-x-1.5">
+          <span className="shrink-0 text-ink-faint">{t(`work.origin.kind.${origin.kind}`)}</span>
+          {origin.open
+            ? <button type="button" onClick={origin.open} title={origin.text} className={`${DOOR} min-w-0 truncate`}>{origin.text}</button>
+            : <span className="min-w-0 truncate" title={origin.text}>{origin.text}</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** The requirement whole, under the words that say which record it is: a list of requirements, or the words as written. */
 export function StartingWords({ starting, t }: { starting: Starting; t: TFunction }): ReactNode {
   return (
