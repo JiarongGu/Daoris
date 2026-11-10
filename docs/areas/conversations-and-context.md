@@ -226,7 +226,10 @@ of everything it handed, section by section.
 **Ask Daoris**
 
 42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
-    change. A limit move opens it again in its room. (from D89, D170, D183, D158)
+    change. A limit move opens it again in its room. Its room, first lines, history and the one running are its
+    workspace's own, and its tools start there: it reads another workspace by naming it, or every workspace with `all`,
+    and proposes, inspects, reads checkouts and sets settings in any workspace's repositories, each judged by its own
+    judge and none refused for the workspace it names. (from D89, D170, D183, D158, D253)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
     They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead

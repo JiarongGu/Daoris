@@ -25,6 +25,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         Write("game", "README.md", "# Game\n");
         Write("game", ".git/HEAD", "ref: refs/heads/main\n");
         Write("rival", "README.md", "# Rival\n");
+        Write("rival", ".git/HEAD", "ref: refs/heads/main\n");
     }
 
     public void Dispose()
@@ -322,22 +323,25 @@ public sealed class HelpCheckoutsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Only the conversation's own: a session that is not Ask Daoris's, a repository of another workspace, one not registered and
-    /// one with no checkout here are each refused, the workspace read from the conversation's record and never from the request.
+    /// 🔴 A session that is not Ask Daoris's, a repository not registered and one with no checkout here are each refused; a
+    /// repository of another workspace is read, as its own is.
     /// </summary>
     [Fact]
-    public async Task Another_session_another_workspace_and_no_checkout_are_refused()
+    public async Task Another_session_and_no_checkout_are_refused_and_another_workspace_is_read()
     {
         var ledger = Granted();
+        Handed("h1", "engine", "game", "rival");
         Handed("s1", "engine");
+        Git();
 
         var driven = await AnswerAsync(ledger, Request(HelpCheckouts.Read, "engine", "README.md") with { Session = "s1" });
         Assert.Equal(CheckoutAnswer.NotHelp, driven.Code);
         Assert.Contains("`s1`", driven.Said);
 
         var rival = await AnswerAsync(ledger, Request(HelpCheckouts.Read, "rival", "README.md"));
-        Assert.Equal(CheckoutAnswer.Outside, rival.Code);
-        Assert.Contains("`aurora`", rival.Said);
+        Assert.Null(rival.Code);
+        Assert.Equal("# Rival\n", rival.Text);
+        _asked.Clear();
 
         Assert.Equal(CheckoutAnswer.Unknown, (await AnswerAsync(ledger, Request(HelpCheckouts.Read, "nobody"))).Code);
         Assert.Equal(CheckoutAnswer.NoCheckout, (await AnswerAsync(ledger, Request(HelpCheckouts.Read, "ghost"))).Code);

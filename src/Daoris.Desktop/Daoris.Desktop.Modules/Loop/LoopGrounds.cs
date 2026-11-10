@@ -227,6 +227,11 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
 
             case "file":
                 return Hash(Rooted(PipeGround.Text(payload, "file")));
+            case "import-folder":
+                return PipeGround.Text(payload, "folder") is not { Length: > 0 } ? "root"
+                    : Rooted(PipeGround.Text(payload, "folder")) is { } folder && Directory.Exists(folder)
+                        ? PipeGround.Fingerprint(Directory.EnumerateDirectories(folder).Select(Path.GetFileName).Order(StringComparer.Ordinal))
+                        : "none";
             case "declaration":
                 return Rooted(PipeGround.Text(payload, "path")) is { } repository ? Hash(Path.Combine(repository, DeclarationNames.Manifest)) : "none";
             case "notices":

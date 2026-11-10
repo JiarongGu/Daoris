@@ -209,11 +209,11 @@ public sealed class PipeCensusTests
 
     /// <summary>
     /// The plugins' presses <c>daoris plugin</c> sends: each a route of the driver's module the census
-    /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), and the replace no route
-    /// takes says why it acts alone.
+    /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), the replace's own route
+    /// among them.
     /// </summary>
     [Fact]
-    public void Each_plugin_press_names_a_route_the_census_classes_as_the_person_s_and_the_replace_says_why_it_is_alone()
+    public void Each_plugin_press_names_a_route_the_census_classes_as_the_person_s_and_the_replace_has_its_own()
     {
         Assert.NotEmpty(Daoris.Driver.PluginRoutes.Verbs);
         Assert.Equal(Daoris.Driver.PluginRoutes.Verbs.Count, Daoris.Driver.PluginRoutes.Verbs.Select(each => each.Verb).Distinct().Count());
@@ -234,7 +234,8 @@ public sealed class PipeCensusTests
                 $"`{verb}` sends {route.Route} as the person's, and the census classes it {census}");
         }
 
-        Assert.Single(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
+        Assert.DoesNotContain(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
+        Assert.Contains(Daoris.Driver.PluginRoutes.Verbs, each => each.Route?.Route == "PLUGIN_REPLACE");
     }
 
     /// <summary>
@@ -276,7 +277,7 @@ public sealed class PipeCensusTests
         string[] off =
         [
             "drive", "update",
-            "quest delete|accept|done|reopen|go-on|check|review", "ask \"…\"", "sync status", "ask channel <id>",
+            "quest check", "ask \"…\"", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
             // The bench's verb times the git its own process starts.
             "git review <session>",

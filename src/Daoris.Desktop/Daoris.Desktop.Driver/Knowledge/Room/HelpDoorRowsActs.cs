@@ -156,6 +156,11 @@ internal static class HelpDoorRowsActs
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
             "`daoris workflow skip <run> <node> \"…\"`, `daoris workflow stop <run> <node> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
+        // The person's Accept of a run's review. Never proposed: the press is theirs.
+        new("accept a run's review, with a note if you like: what it holds lands (kept on the run's record, and Daoris's next look applies it)",
+            "Sessions → the session's *Workflow* view, *Accept* under the review",
+            "`daoris workflow accept <run> <node> [\"…\"]`",
+            new HelpDoorAsk.Never("it is yours alone")),
         // The person's changes on a run's review, its rejection with their words. Never proposed, as skip and stop never are.
         new("ask for changes on a run's review in place of your Accept, with your words: the work's session is told them as its next "
             + "turn, and what it commits is reviewed again before anything lands (kept on the run's record, and Daoris's next look "

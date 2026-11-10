@@ -424,7 +424,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
     quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
-    handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
+    handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
+    verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
@@ -433,7 +434,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     person's *Apply* through that route. (from D89, D170, D253)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet) and checkouts, each request
-    judged at the call by the door's own judges. No settings grant reaches a role. (from D183, D205)
+    judged at the call by the door's own judges, in any workspace's repositories; the checkouts it is handed are every
+    readable one on the machine, its own workspace's first. No settings grant reaches a role. (from D183, D205, D253)
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console and logged `help.pressed`. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never

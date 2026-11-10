@@ -181,6 +181,11 @@ public static class QuestReviewCommand
         return 0;
     }
 
+    public static Task<int> PressAsync(QuestReviewAsk ask, QuestReviewWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.QuestReview,
+            InstanceDoor.Said(("quest", ask.Quest), ("verdict", ask.SetUpIn is null ? ask.Said : null), ("environment", ask.SetUpIn), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
+
     /// <summary>
     /// <i>Set it up in <c>environment</c></i> from a terminal: the environment judged against the rule standing
     /// for the quest's repository, <c>on</c> read as its default, then the set-up step's door the gate's press calls, whose sentence is

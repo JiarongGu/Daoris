@@ -22,9 +22,6 @@ public sealed record CheckoutAnswer(string Operation, bool Done, string? Code, s
     /// <summary>No repository of that name is registered here.</summary>
     public const string Unknown = "unknown";
 
-    /// <summary>The repository is registered in another workspace than the conversation's.</summary>
-    public const string Outside = "outside";
-
     /// <summary>The repository has no checkout on this machine.</summary>
     public const string NoCheckout = "no-checkout";
 
@@ -37,10 +34,7 @@ public sealed record CheckoutAnswer(string Operation, bool Done, string? Code, s
     /// <summary>Not handed at this conversation's start: it holds from its next turn.</summary>
     public const string NotHanded = "not-handed";
 
-    /// <summary>
-    /// A path that is no path inside the checkout: <c>..</c>, an absolute path, a drive or a stream, a wildcard, git's own folder, or
-    /// a link leading out of it.
-    /// </summary>
+    /// <summary>A path that is no path inside the checkout: <c>..</c>, an absolute path, a drive or a stream, a wildcard, git's own folder, or a link out of it.</summary>
     public const string Escapes = "escapes";
 
     /// <summary>Git ignores it, or a folder it lies in (<c>local/</c>, build output, secrets kept ignored).</summary>

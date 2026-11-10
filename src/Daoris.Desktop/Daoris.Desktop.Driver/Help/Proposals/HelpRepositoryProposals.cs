@@ -27,14 +27,9 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 {
     public string Kind => "repository";
 
-    // A move to a workspace, by name; adding or importing needs a folder and is never this.
     public string Tool => "repository_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["wire"];
-
-    /// <summary>Its target is the repository it moves, and its value the workspace it moves it to.</summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
-        new([proposal.Workspace, proposal.Value], [proposal.Target, proposal.Repository]);
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {

@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words);
 
 /// <summary>
-/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
+/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> and <c>workflow accept &lt;run&gt; &lt;node&gt; ["…"]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
 /// version, kept on the run's record by <see cref="RunNodeWords.Word"/>, which the page's <c>WORKFLOW_NODE</c> calls too, and applied by
 /// Daoris's next look.
 /// </summary>
@@ -23,8 +23,8 @@ public static class WorkflowNodeCommand
 {
     public const string Usage = RunNodeWords.Usage;
 
-    /// <summary>Whether the words after <c>workflow</c> ask for a word on a run's node, rightly or not: every act the node door takes but an Accept.</summary>
-    public static bool Asks(IReadOnlyList<string> args) => args is [var act, ..] && act != NodeWordActs.Accept && NodeWordActs.All.Contains(act, StringComparer.Ordinal);
+    /// <summary>Whether the words after <c>workflow</c> ask for a word on a run's node, rightly or not: every act the node door takes.</summary>
+    public static bool Asks(IReadOnlyList<string> args) => args is [var act, ..] && NodeWordActs.All.Contains(act, StringComparer.Ordinal);
 
     /// <summary>The words after <c>workflow</c> read, or null with what is wrong with them.</summary>
     public static WorkflowNodeAsk? Read(IReadOnlyList<string> args, out string? problem)

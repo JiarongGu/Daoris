@@ -22,9 +22,9 @@ namespace Daoris.Knowledge;
 /// home, never registered, and the circle is its ASK's — so the host names it here, from the ask, and
 /// the room's path is never asked.</para>
 ///
-/// <para><b>One session is BOUND to its circle: Ask Daoris in a workspace's room</b>.
+/// <para><b>One session has a default workspace from its record: Ask Daoris in a workspace's room</b>.
 /// Its record keeps the workspace it is started in, and the driver hands that to its connector; what it asks is answered from
-/// that workspace alone, and naming another, or <c>all</c>, is refused (<see cref="Bound"/>).</para>
+/// that workspace unless it names another, or <c>all</c> (<see cref="Bound"/>).</para>
 /// </remarks>
 public sealed class AmbientWorkspace(string workingDirectory, string? circle = null)
 {
@@ -35,8 +35,8 @@ public sealed class AmbientWorkspace(string workingDirectory, string? circle = n
     public const string BoundVariable = "DAORIS_SESSION_WORKSPACE";
 
     /// <summary>
-    /// The workspace this session is bound to by its record: every answer is that workspace's, whatever a call names.
-    /// Null for every other session, which answers from its own circle unless a call deliberately names another.
+    /// The default workspace this session's record gives it: an answer is that workspace's unless a call names another, or
+    /// <c>all</c>. Null for every other session, which answers from its own circle.
     /// </summary>
     public string? Bound { get; init; }
 

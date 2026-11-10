@@ -119,14 +119,14 @@ internal static class AskConsole
                     return Usage(workflowProblem!);
                 }
 
-                return await AskWorkflowCommand.RunAsync(set, workflows, Console.Out).ConfigureAwait(false);
+                return await AskWorkflowCommand.PressAsync(set, workflows, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
             if (setReview is not null)
             {
                 if (AskReviewCommand.Read(setReview, words, out var setProblem) is not { } chosen) return Usage(setProblem!);
                 // The ask page's twin: its *Set*, and *Apply* on an intake's proposal.
-                return await AskReviewCommand.RunAsync(chosen, reviews, Console.Out).ConfigureAwait(false);
+                return await AskReviewCommand.PressAsync(chosen, reviews, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
             if (publish is not null)

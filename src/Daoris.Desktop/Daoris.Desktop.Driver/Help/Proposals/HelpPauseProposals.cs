@@ -25,31 +25,9 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
 {
     public string Kind => "pause";
 
-    // Pause and resume; abandon is the person's own.
     public string Tool => "pause_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["pause", "resume"];
-
-    /// <summary>
-    /// The ask or the quest it names by id, filed under the workspace its work's record says: the ask as the service
-    /// answered it, or the quest named. A pause whose work has gone names none.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var id = proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
-        var records = new List<(string Said, string? Workspace)>();
-        foreach (var scope in Kinds(proposal))
-        {
-            var work = WorkOf(facts, scope, id);
-            if (scope == WorkScope.Ask && work?.Ask is { } ask) records.Add(HelpNames.Ask(ask.Id, ask.Workspace));
-            if (scope == WorkScope.Quest && work?.Pieces.Quests.FirstOrDefault(quest => quest.Joined == WorkJoin.Named) is { } named)
-            {
-                records.Add(HelpNames.Quest(named.Quest.Id, named.Quest.Workspace));
-            }
-        }
-
-        return new([proposal.Workspace], [proposal.Repository]) { Records = records };
-    }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
