@@ -38,7 +38,7 @@ export type DriverState = {
   retried?: Retried | null;
   drivable: string[];
   holds: string[];
-  /** Repositories whose sessions open their own worktree instead of the registered root. */
+  /** Repositories whose workflow sets their sessions apart, each in a worktree of its own (its `isolate` step). */
   trees: string[];
   /**
    * Repositories whose checkout the person let Daoris change the files of: off where absent.
@@ -70,7 +70,6 @@ export type DriverState = {
   coolOff?: number;
   /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
-  /** How many sessions Daoris starts at once on this machine; left out where none is set. */
   cap?: number;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;
@@ -577,8 +576,6 @@ export const useSyncNow = () => {
 
 export const useSetDrivable = () => useDriverChange('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange('SET_HOLD');
-/** Session trees: the same file `daoris place trees <repo> on|off` edits — two editors, one truth. */
-export const useSetTrees = () => useDriverChange('SET_TREES');
 /** The switch *Daoris may change this checkout's files*: off by default, writes nothing to the repository itself. */
 export const useSetCheckoutWrites = () => useDriverChange('SET_CHECKOUT_WRITES');
 /**

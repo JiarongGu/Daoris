@@ -362,7 +362,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             "acp-turns", prompts, service, new SessionProcesses(),
             configure: config => config with
             {
-                Trees = ownTree ? ["engine"] : [],
+                DefaultWorkflow = ownTree ? IsolatedPlaces.In(_home) : null,
                 Commits = new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["engine"] = new(CommitRules.Ask, "Subject in the imperative."),

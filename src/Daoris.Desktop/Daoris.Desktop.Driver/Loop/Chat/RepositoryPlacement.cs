@@ -27,7 +27,8 @@ internal static class RepositoryPlacement
             Also = [.. across.Writes.Select(target => target.Path)],
             Keeps = true,
             // Its standing block: its tree's facts with its repository's routing and the person's choices on this machine.
-            Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(known.Repository, workTree), ParticipantWork.Chat, config, registry, known.Workspace),
+            Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(known.Repository, workTree), ParticipantWork.Chat, config, registry, known.Workspace,
+                apart: known.Root is not { } root || !string.Equals(Path.GetFullPath(workTree), Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase)),
         };
     }
 

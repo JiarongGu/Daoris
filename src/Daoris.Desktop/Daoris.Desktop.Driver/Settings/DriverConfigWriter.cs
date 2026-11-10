@@ -18,11 +18,7 @@ internal static class DriverConfigWriter
             writer.WriteStartArray("holds");
             foreach (var name in config.Holds) writer.WriteStringValue(name);
             writer.WriteEndArray();
-            writer.WriteStartArray("trees");
-            foreach (var name in config.Trees) writer.WriteStringValue(name);
-            writer.WriteEndArray();
             writer.WriteNumber("cap", config.Cap);
-            // Written only when an actor is set, as the file held it where the store filled the record (AsFile).
             ActorKey.Write(writer, asFile?.Actors ?? config.Actors);
             // Written only while full: absent is restricted, and the CLI twin writes it the same way.
             if (config.HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", config.HelpMode);

@@ -140,7 +140,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
         var adapters = ProviderRegistry.Built();
-        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] };
+        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1 };
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
@@ -279,7 +279,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var service = _ledger.Client();
         var runs = new GoOnRuns(service);
         var adapters = ProviderRegistry.Built();
-        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] };
+        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1 };
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {

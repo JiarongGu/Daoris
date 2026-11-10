@@ -445,7 +445,7 @@ try
         return await Daoris.Driver.Host.HistoryConsole.RunAsync(historyArgs, log);
     }
 
-    // The tree lifecycle from a terminal: `daoris place trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
+    // The tree lifecycle from a terminal: a workflow's isolate step opts a repository in; these are disk.
     if (args is ["trees", .. var treesArgs])
     {
         return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);

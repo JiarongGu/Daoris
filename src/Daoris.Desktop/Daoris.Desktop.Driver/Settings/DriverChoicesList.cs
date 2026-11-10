@@ -17,7 +17,6 @@ internal static class DriverChoicesList
         foreach (var (quest, mark) in choices.Forgiven) Say($"  retried    #{quest}  (counting from {mark} failure(s))");
         foreach (var (quest, session) in choices.Released) Say($"  released   #{quest}  (your stop of session {session})");
 
-        // Each pause this machine keeps, said as paused, never held, with the door that resumes it.
         foreach (var (scope, pauses) in new[] { ("ask", choices.PausedAsks), ("quest", choices.PausedQuests) })
         {
             foreach (var (id, pause) in pauses)
@@ -48,13 +47,7 @@ internal static class DriverChoicesList
         foreach (var repository in choices.Drivable)
         {
             var held = FindName(choices.Holds, repository) is not null;
-            var trees = FindName(choices.Trees, repository) is not null;
-            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}{(trees ? "  (sessions open their own tree — D51)" : "")}");
-        }
-
-        foreach (var repository in choices.Trees.Where(each => FindName(choices.Drivable, each) is null))
-        {
-            Say($"  trees      {repository}  (sessions there open their own tree when anything spawns one)");
+            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}");
         }
 
         foreach (var (repository, branch) in choices.Lines) Say($"  line       {repository}  {branch}");

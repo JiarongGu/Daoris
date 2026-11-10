@@ -17,7 +17,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("## What you may propose\n\n");
         // Every setting is pressed, never proposed, its card the press's own sentence and command.
         text.Append("- Every setting is pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
-        text.Append("  `daoris place trees <repository> on|off`, `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
+        text.Append("  `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
         text.Append("  `daoris place review|opinion|helpers|commits <repository> …`, `daoris place standing <repository> …`,\n");
         text.Append("  `daoris place across <repository> read|write-to …`, `daoris quest retry <quest>`, `daoris git use …` and\n");
         text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");

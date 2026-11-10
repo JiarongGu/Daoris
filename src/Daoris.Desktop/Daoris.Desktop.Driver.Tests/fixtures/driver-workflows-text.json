@@ -4203,7 +4203,7 @@
         "daoris: `frobnicate` is not a verb of this program's.",
         "usage: daoris place list",
         "       daoris place drive|undrive|hold|resume <repository>",
-        "       daoris place trees <repository> on|off · notify on|off",
+        "       daoris place notify on|off · trees (gone: a workflow's `isolate` step)",
         "       daoris settings cap <n> · cooloff <minutes> · quiet <minutes>",
         "       daoris quest retry <quest> [--at <n> | --session <id>]",
         "       daoris place line <repository>|--workspace <name> <branch>|--clear",

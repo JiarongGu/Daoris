@@ -16,7 +16,6 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
           "adapter": "claude-code-acp",
           "actors": { "build": [ { "agent": "claude-code-acp" } ] },
           "drivable": ["engine"],
-          "trees": ["engine"],
           "workspaceOpinions": { "aurora": { "reviewers": ["codex-acp"] } }
         }
         """;
@@ -72,7 +71,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
             .Select(each => (each.GetProperty("change").GetProperty("key").GetString(), string.Join(",", each.GetProperty("repositories").EnumerateArray().Select(name => name.GetString()))))
             .ToList();
         Assert.Equal(
-            [("SET_TREES", "atlas,tools"), ("WORKFLOW_SAVE", "atlas,tools"), ("WORKFLOW_USE", "atlas,tools"), ("SET_DRIVABLE", "atlas,tools"), ("SETUP_PRESS", "atlas,tools")],
+            [("WORKFLOW_SAVE", "atlas,tools"), ("WORKFLOW_USE", "atlas,tools"), ("SET_DRIVABLE", "atlas,tools"), ("SETUP_PRESS", "atlas,tools")],
             changes);
         Assert.Equal(
             "daoris place atlas tools --preset merge-after-accept --with opinion --adoption --what-it-builds library --drive --plan",

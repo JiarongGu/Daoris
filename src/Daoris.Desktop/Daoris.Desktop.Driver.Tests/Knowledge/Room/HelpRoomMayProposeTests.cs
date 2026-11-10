@@ -198,7 +198,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("`daoris place review|opinion|helpers|commits <repository> …`", proposes);
         Assert.DoesNotContain("setting_propose", proposes);
         Assert.Contains("`daoris place drive|undrive|hold|resume <repository>`", proposes);
-        Assert.Contains("`daoris place trees <repository> on|off`", proposes);
+        Assert.DoesNotContain("place trees", proposes);
         Assert.Contains("`daoris place across <repository> read|write-to …`", proposes);
         Assert.Contains("`daoris settings notify|cap|cooloff|quiet|keep …`", proposes);
         Assert.DoesNotContain("`across` takes", proposes);

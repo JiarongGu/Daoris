@@ -152,7 +152,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     order, oldest open first. (from D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
-12. In a repository without its own trees, one writer works in its own place at a time, under the ledger's lease: the record
+12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
+    graph's one entry wired into its work: its `kind` (`auto`, `worktree`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
+    alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
+    into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
+    which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
+    converted the old per-repository trees switch and the line policies' `overlap` into the step; `daoris place trees` answers where
+    the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
     whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
     there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
@@ -167,14 +173,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
     A git place's first in-place start marks its common git directory with its home, and another home on
     this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
-    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. With trees on, sessions run side by
+    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
     D258, D260)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
-14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
+14. Under the isolate step's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
     repository waits until that work is integrated, a done unit's open integration request included, whose quest the look reads
     where the open list lacks it. A quest that goes back into a tree (a retry or a limit carry-on of
     an open quest) is no first start and does not wait. (from D215)
@@ -486,8 +492,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
 
 ## Contradictions
 
-- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `OpensOwnTree` branch) runs sessions side by
-  side, one per tree, where the repository opens its own trees. The code reads right (as D115 and D167 already say).
+- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `Isolate` branch) runs sessions side by
+  side, one per tree, where the repository's workflow starts with an `isolate` step. The code reads right (as D115 and D167 already say).
 - D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs` (`Decide`, `Account`) resumes the agent's own conversation
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed

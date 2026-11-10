@@ -21,10 +21,10 @@ public sealed class SetupPressTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>Drivable here, its sessions in trees of their own, on an agent that rides the protocol door.</summary>
+    /// <summary>Drivable here, on an agent that rides the protocol door; the world says which sessions work apart.</summary>
     private static readonly DriverConfig Driven = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
-        .WithDrivable("reports", true).WithTrees("reports", true)
-        .WithDrivable("billing", true).WithTrees("billing", true);
+        .WithDrivable("reports", true)
+        .WithDrivable("billing", true);
 
     /// <summary>Exact verbs, never a runner, never `upstream`, `connect` or any management verb.</summary>
     [Fact]
@@ -333,11 +333,10 @@ public sealed class SetupPressTests : IDisposable
     [Fact]
     public async Task A_repository_whose_sessions_run_in_its_checkout_is_refused_naming_trees()
     {
-        var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
+        var plan = await PlanAsync(new World { Apart = ["billing"] });
 
-        Refused(plan, SetupRefusals.NoOwnTree, "`daoris place trees reports on`");
-        // A tree per session is on the repository's Setup.
-        Assert.Contains("Repositories → the repository's page → Setup → Driving", Find(plan, SetupRefusals.NoOwnTree).Sentence);
+        Refused(plan, SetupRefusals.NoOwnTree, "*Work apart*");
+        Assert.Contains("its `isolate` step", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
 
     [Fact]
@@ -401,7 +400,7 @@ public sealed class SetupPressTests : IDisposable
     [Fact]
     public async Task Every_refusal_that_applies_is_said_together()
     {
-        var plan = await PlanAsync(new World { Tools = Tools() with { Daoris = null } }, config: Driven.WithDrivable("reports", false).WithTrees("reports", false));
+        var plan = await PlanAsync(new World { Tools = Tools() with { Daoris = null }, Apart = [] }, config: Driven.WithDrivable("reports", false));
 
         Assert.Equal([SetupRefusals.NoOwnTree, SetupRefusals.NoTool], plan.Refusals.Select(refusal => refusal.Code));
         Assert.False(plan.Pressable);
@@ -499,10 +498,10 @@ public sealed class SetupPressTests : IDisposable
     [Fact]
     public async Task A_refused_plan_says_why()
     {
-        var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
+        var plan = await PlanAsync(new World { Apart = [] });
 
         Assert.False(plan.Pressable);
-        Assert.Contains("`daoris place trees reports on`", plan.Refusals[0].Sentence);
+        Assert.Contains("*Work apart*", plan.Refusals[0].Sentence);
     }
 
     private Task<SetupPlan> PlanAsync(
@@ -549,6 +548,12 @@ public sealed class SetupPressTests : IDisposable
             new("reports", false, "/fixture/reports", "work"),
             new("billing", true, "/fixture/billing", "work"),
         ];
+
+        /// <summary>The repositories whose workflow starts with the isolate step.</summary>
+        public IReadOnlyList<string> Apart { get; init; } = ["reports", "billing"];
+
+        public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) =>
+            Apart.Contains(repository.Repository, StringComparer.OrdinalIgnoreCase) ? IsolateStep.Trees : null;
 
         public LayoutFacts Facts { get; init; } = new LayoutReaderTests.Scratch().File("README.md", "# Reports\n").Read();
 

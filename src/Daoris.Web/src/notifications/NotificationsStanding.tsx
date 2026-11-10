@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  retryNotice, standingOf, useDriver, useResumeWork, useRetryQuest, useSetDrivable, useSetHold, useSetTrees,
+  retryNotice, standingOf, useDriver, useResumeWork, useRetryQuest, useSetDrivable, useSetHold,
 } from '../bridge/shell';
 import type { WorkScopeName } from '../work/pausing/pausing';
 import { HelpPressLine } from './HelpPressLine';
@@ -12,7 +12,7 @@ import { StewardLine } from './StewardLine';
 
 /**
  * The steward's line as *Notifications* holds it: each act's reverse press sent as the window sends
- * the owner's ordinary press today: `SET_DRIVABLE`, `SET_TREES`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
+ * the owner's ordinary press today: `SET_DRIVABLE`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
  * it. Who holds the supervisor and the steward is their roles'. The view draws it in its slot (`NotificationsView`'s
  * `standing`), so the view presses no hook itself.
  */
@@ -20,7 +20,6 @@ export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; 
   const { t } = useTranslation();
   const standing = standingOf(useDriver().data?.standingConfirmation);
   const setDrivable = useSetDrivable();
-  const setTrees = useSetTrees();
   const setHold = useSetHold();
   const retry = useRetryQuest();
   const overruleLand = useOverruleStewardLand();
@@ -42,14 +41,12 @@ export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; 
     setStewardRefused(null);
     const onError = failure(notify);
     if (press === 'stopDriving' || press === 'drive') setDrivable.mutate({ repository, drivable: press === 'drive' }, { onError });
-    else if (press === 'treesOff') setTrees.mutate({ repository, ownTree: false }, { onError });
     else if (press === 'resume' || press === 'hold') setHold.mutate({ repository, held: press === 'hold' }, { onError });
     else if (press === 'retry' && act.quest) {
       const quest = act.quest;
       retry.mutate({ quest }, { onSuccess: (state) => notify(t(...retryNotice(quest, state))), onError });
     }
   };
-  /** The reverse of a press Ask Daoris made: a pause's own *Resume*, sent as the work pages send it. */
   const reverseHelp = (press: HelpPressNow) => {
     if (helpReverse(press) === 'resume' && press.scope && press.target) {
       resumeWork.mutate({ scope: press.scope as WorkScopeName, id: press.target }, { onError: failure(notify) });

@@ -21,9 +21,9 @@ internal static class DriveUsagePlace
               writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
               once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
               --resume (which judges the skipped again) and --stop steer a plan already made.
-          place list  ·  place drive|undrive|hold|resume <repository>  ·  place trees <repository> on|off
+          place list  ·  place drive|undrive|hold|resume <repository>
           place line|landing|work-cycle|across|standing|language|review|opinion|helpers|commits <repository> …
-              each place's standing choices: what is driven and held, its trees, its line and how work lands there, its
+              each place's standing choices: what is driven and held, its line and how work lands there, its
               work's cycle, what agents outside it read, its standing answer, its language, where its work is shown to you,
               its second opinion (--agents <a,b>), its helpers and how it commits; a change a route takes goes to the
               running Daoris's window to confirm where one runs, and is written here where none does.

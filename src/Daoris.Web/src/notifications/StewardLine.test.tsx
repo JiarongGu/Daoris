@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // The steward's line in *Notifications*: *Steward appointed · n acts since
 // Daoris started · Turn off*, opening to the run's acts newest first, each its act in words, its target, its time and the mark *By the
 // steward, on your behalf*, and only while it stands, the owner's own reverse press: *Stop driving* for a drive, *Drive* for an undrive,
-// *Trees off* for trees, *Resume* for a hold, *Hold* for a resume, *Try again* for a stop; none for a finish or a Try again. A stop whose
+// *Resume* for a hold, *Hold* for a resume, *Try again* for a stop; none for a workflow chosen, a finish or a Try again. A stop whose
 // quest still waits on a Try again is said as *Stopped by the steward*, with its press. A line, not a row: no notice per act, no count.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -33,7 +33,7 @@ const ACTS: StewardActNow[] = [
   act('a6', 'stop', '2026-10-25T10:06:00Z', { quest: 'q1', session: 's1', waiting: true }),
   act('a5', 'resume', '2026-10-25T10:05:00Z', { repository: 'atlas' }),
   act('a4', 'hold', '2026-10-25T10:04:00Z', { repository: 'atlas', standing: false }),
-  act('a3', 'trees', '2026-10-25T10:03:00Z', { repository: 'engine' }),
+  act('a3', 'workflow', '2026-10-25T10:03:00Z', { repository: 'engine' }),
   act('a2', 'undrive', '2026-10-25T10:02:00Z', { repository: 'atlas' }),
   act('a1', 'drive', '2026-10-25T10:01:00Z', { repository: 'engine' }),
 ];
@@ -53,7 +53,7 @@ const DESK: DeskRequestNow[] = [
     closed: '2026-10-25T10:06:00Z', answeredBy: null, reason: 'the owner holds atlas during a release',
   },
   {
-    id: 'r1', act: 'trees', target: 'engine', why: 'engine needs trees', filed: '2026-10-25T10:02:00Z', state: 'answered',
+    id: 'r1', act: 'workflow', target: 'engine', why: 'engine needs its work apart', filed: '2026-10-25T10:02:00Z', state: 'answered',
     closed: '2026-10-25T10:03:00Z', answeredBy: 'a3', reason: null,
   },
 ];
@@ -80,7 +80,6 @@ describe("Notifications' steward line", () => {
   it("says the steward's terminal and its acts since Daoris started, and offers no Turn off, which is its role's", () => {
     render(<StewardLine standing={STANDING} onReverse={vi.fn()} />);
     expect(line().getByText("Steward's terminal · 8 acts since Daoris started")).toBeInTheDocument();
-    // Folded until opened: the acts are one press away.
     expect(screen.queryByRole('list', { name: "The steward's acts" })).toBeNull();
     expect(line().queryByRole('button', { name: 'Turn off' })).toBeNull();
   });
@@ -91,7 +90,7 @@ describe("Notifications' steward line", () => {
 
     const rows = acts();
     expect(rows.map((row) => row.querySelector('[data-steward-act]')?.textContent)).toEqual([
-      'Tried again', 'Finished', 'Stopped', 'Resumed', 'Held', 'Gave trees', 'Stopped driving', 'Drove',
+      'Tried again', 'Finished', 'Stopped', 'Resumed', 'Held', 'Chose the workflow of', 'Stopped driving', 'Drove',
     ]);
     expect(within(rows[0]!).getByText('#q3')).toBeInTheDocument();
     expect(within(rows[1]!).getByText('session s2 of #q2')).toBeInTheDocument();
@@ -163,7 +162,7 @@ describe("Notifications' steward line", () => {
 
     const rows = acts();
     const presses = rows.map((row) => within(row).queryAllByRole('button').map((button) => button.textContent));
-    expect(presses).toEqual([[], [], ['Try again'], ['Hold'], [], ['Trees off'], ['Drive'], ['Stop driving']]);
+    expect(presses).toEqual([[], [], ['Try again'], ['Hold'], [], [], ['Drive'], ['Stop driving']]);
 
     await userEvent.click(within(rows[7]!).getByRole('button', { name: 'Stop driving' }));
     expect(onReverse).toHaveBeenCalledWith(ACTS[7]);
@@ -273,14 +272,13 @@ describe("Notifications' steward line", () => {
 
     await userEvent.click(await screen.findByRole('button', { name: "Show the steward's acts" }));
     const rows = acts();
-    for (const [row, press] of [[7, 'Stop driving'], [6, 'Drive'], [5, 'Trees off'], [3, 'Hold'], [2, 'Try again']] as const) {
+    for (const [row, press] of [[7, 'Stop driving'], [6, 'Drive'], [3, 'Hold'], [2, 'Try again']] as const) {
       await userEvent.click(within(rows[row]!).getByRole('button', { name: press }));
     }
     const sent = () => invoke.mock.calls.filter(([, type]) => type !== 'STATE_SLICE').map(([, type, request]) => [type, request?.payload]);
     await vi.waitFor(() => expect(sent()).toEqual([
       ['SET_DRIVABLE', { repository: 'engine', drivable: false }],
       ['SET_DRIVABLE', { repository: 'atlas', drivable: true }],
-      ['SET_TREES', { repository: 'engine', ownTree: false }],
       ['SET_HOLD', { repository: 'atlas', held: true }],
       ['RETRY_QUEST', { quest: 'q1' }],
     ]));

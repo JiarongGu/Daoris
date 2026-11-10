@@ -56,7 +56,7 @@ public sealed class StartGitCountTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             PollSeconds = 1,

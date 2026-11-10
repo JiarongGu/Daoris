@@ -15,8 +15,6 @@ internal static class DriverConfigReader
         // the text read stays as written, and no edit is written over it (Save).
         using var document = JsonDocument.Parse(JsonKeeping.Once(json));
         var root = document.RootElement;
-        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind:
-        // said here, so the reader can say it with its file.
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
         var (actors, actorErrors) = ActorKey.Read(root);
         var empty = DriverConfig.Empty;
@@ -27,7 +25,6 @@ internal static class DriverConfigReader
             Cap: Math.Max(1, Int(root, "cap") ?? empty.Cap),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? empty.PollSeconds),
             Commands: CommandMap(root),
-            Trees: Json.Strings(root,"trees"),
             // Absent means ON: every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.

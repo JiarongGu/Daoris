@@ -8,6 +8,9 @@ namespace Daoris.Driver;
 public sealed record Consideration(
     QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null) : IPlannedStart
 {
+    /// <summary>The isolate step the start performs (a tree of its own), carried so a save between the plan and the start never changes where it works; null where it works in place.</summary>
+    public IsolateStep? Isolate { get; init; }
+
     /// <summary>
     /// For a start that RESUMES a waiting quest: the session that asked and waited, whose tree the resume carries on in. Null for
     /// every first start.

@@ -17,7 +17,6 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("STATE", PipeClass.Open)]
     private object? GetState(NoPayload _) => State(_loop);
 
-    /// <summary>What is under way, numbered as the last <c>UNDER_WAY</c> telling, for a window opened mid-press.</summary>
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
     private object? GetUnderWay(NoPayload _) => _loop.UnderWay.Now();
 
@@ -52,19 +51,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    [DriverRoute("SET_TREES", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("SET_TREES", Repository = "repository")]
-    [GroundRepository("SET_TREES", "repository")]
-    [GroundListed("SET_TREES", "trees", "ownTree")]
-    [Says("SET_TREES", "repository:repository")]
-    [Publishes("SET_TREES", StateScopes.Driver)]
-    private object? SetTrees(SetTrees press)
-    {
-        _context.Change(config => config.WithTrees(press.Repository, press.OwnTree));
-        return State(_loop);
-    }
-
-    // *Daoris may change this checkout's files*, off by default: it writes nothing to a repository, it lets the Changes tab's acts be offered.
     [DriverRoute("SET_CHECKOUT_WRITES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
     [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
@@ -77,7 +63,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // A repository's standing answer, the person's words handed to every session there; no words clears it.
     [DriverRoute("SET_STANDING", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_STANDING", Repository = "repository")]
     [GroundRepository("SET_STANDING", "repository")]

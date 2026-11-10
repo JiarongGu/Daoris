@@ -104,11 +104,9 @@ export interface AccountWaitTick {
   account?: string | null;
   /** The name the person gave it, null where none. */
   name?: string | null;
-  /** The workspace the held starts belong to, where they share one. */
   workspace?: string | null;
   /** When that account is offered again; absent or null where none cools and a sign-in is the wait. */
   until?: string | null;
-  /** Whether the agent named that time; false where there is none. */
   stated: boolean;
   /** The quests held. */
   quests?: string[];
@@ -262,7 +260,8 @@ const SAID: Record<string, readonly string[]> = {
   AtCapacity: ['cap'],
   // `overlaps`: a start held under `overlap: wait` until the earlier quest's work is integrated.
   // `place`: the place's writer holds it, its turn running or, with paths, parked with uncommitted paths of its own.
-  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'place', 'queued', 'repositoryOpening', 'overlaps'],
+  // `apart`: the place's isolate step's count of sessions working apart is full.
+  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'place', 'apart', 'queued', 'repositoryOpening', 'overlaps'],
   Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],

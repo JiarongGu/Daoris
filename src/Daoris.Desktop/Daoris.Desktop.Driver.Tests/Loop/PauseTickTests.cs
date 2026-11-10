@@ -132,9 +132,7 @@ public sealed class PauseTickTests : IDisposable
 
     private DriverConfig Config(string log, string first) => DriverConfig.Empty with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Actors = StaffedRoles.On("stub"),
+        Drivable = ["engine"],        Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), log, first] },

@@ -19,7 +19,6 @@ public sealed record PressSaid(string Kind, IReadOnlyDictionary<string, string> 
     }
 }
 
-/// <summary>A press's view, or the sentence its route refuses it with, which ends the press before any card.</summary>
 public sealed record PressViewed(PressView? View, string? Refusal)
 {
     public static PressViewed Refused(string why) => new(null, why);
@@ -61,7 +60,6 @@ public static class PressViews
         new AgentUpdateView(),
         PlaceSwitchView.Drivable(),
         PlaceSwitchView.Hold(),
-        PlaceSwitchView.Trees(),
         MachineSettingView.Notify(),
         MachineSettingView.Cap(),
         MachineSettingView.CoolOff(),

@@ -28,11 +28,17 @@ public static class DriverChoicesCommand
         "brainstorms", "workflow", "keep", "role",
     ];
 
+    /// <summary>What the gone <c>trees</c> verb answers: where a place's sessions are set apart now.</summary>
+    public const string TreesMoved =
+        "`place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an "
+        + "`isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its "
+        + "checkout one at a time. `daoris workflow show <workflow>` names the step.";
+
     public const string Usage =
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris place trees <repository> on|off · notify on|off
+               daoris place notify on|off · trees (gone: a workflow's `isolate` step)
                daoris settings cap <n> · cooloff <minutes> · quiet <minutes>
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
@@ -68,7 +74,6 @@ public static class DriverChoicesCommand
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
-    /// <summary>The marker a shell Daoris started carries: its session's record id.</summary>
     public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>
@@ -238,28 +243,7 @@ public static class DriverChoicesCommand
             }
 
             case "trees":
-            {
-                var repository = Named(args, verb);
-                var direction = args.Skip(1).FirstOrDefault(token => token is "on" or "off")
-                    ?? throw new ChoiceWords("`driver trees` needs on|off — e.g. `daoris place trees aurora-engine on`.");
-                var on = direction == "on";
-                return Change(ChoiceRoutes.Trees, new JsonObject { ["repository"] = repository, ["ownTree"] = on },
-                    config => config.WithTrees(repository, on), () =>
-                    {
-                        Say(on ? $"daoris: sessions in `{repository}` open their own worktree (D51)." : $"daoris: sessions in `{repository}` run in its registered root again.");
-                        if (on)
-                        {
-                            // npm's dependencies are copied in where the tree's lockfile matches the checkout's.
-                            Say("  A fresh tree holds nothing git does not track but the npm dependencies copied");
-                            Say("  from your checkout where the tree's lockfile matches — no build outputs, no other");
-                            Say("  installs — so a session pays the rest of that repository's own setup cost per tree.");
-                            Say("  In exchange, your uncommitted work in the root no longer holds the driver.");
-                        }
-
-                        Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-                        return 0;
-                    });
-            }
+                throw new ChoiceWords(TreesMoved, exit: 1);
 
             case "notify":
             {
@@ -471,7 +455,6 @@ public static class DriverChoicesCommand
         }
     }
 
-    /// <summary><c>list</c>: what this machine drives, as <c>daoris place list</c> always said it.</summary>
     private static int List(DriverConfig choices, DriverChoicesWorld world) => DriverChoicesList.List(choices, world);
 
     /// <summary><c>across</c>: whether a checkout is read by agents outside it, and the writes declared into another.</summary>

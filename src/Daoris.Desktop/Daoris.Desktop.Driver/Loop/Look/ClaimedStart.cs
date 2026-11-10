@@ -59,7 +59,7 @@ internal sealed class ClaimedStart(IStartsWiring wiring, IReadOnlyList<RepoView>
 
     /// <summary>The reservation that keeps a look from planning a quest again between a start's refused end and its move to another account.</summary>
     public static StartReservation Moving(DriverConfig config, Consideration start) =>
-        new(start.Quest.Id, null, start.Quest.To, config.OpensOwnTree(start.Quest.To) ? start.Entry?.Into?.Tree : null);
+        new(start.Quest.Id, null, start.Quest.To, start.Isolate is not null ? start.Entry?.Into?.Tree : null);
 
     private FreshTree NewTree() => new(path => wiring.Context.Trees.RemoveAsync(path));
 

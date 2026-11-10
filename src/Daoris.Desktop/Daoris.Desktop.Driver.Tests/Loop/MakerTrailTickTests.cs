@@ -126,9 +126,7 @@ public sealed class MakerTrailTickTests : IDisposable
     {
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On(adapter),
+            Drivable = ["engine"],            Actors = StaffedRoles.On(adapter),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

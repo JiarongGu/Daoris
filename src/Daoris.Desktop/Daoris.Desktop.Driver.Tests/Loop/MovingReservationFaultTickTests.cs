@@ -47,9 +47,7 @@ public sealed class MovingReservationFaultTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null, new HttpClient(refusing, disposeHandler: false));
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent()] },

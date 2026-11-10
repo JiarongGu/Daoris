@@ -79,9 +79,7 @@ public sealed class WalkAgentTickTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Drivable = ["engine"],
-                Trees = ["engine"],
-                Actors = StaffedRoles.On("acp-stub"),
+                Drivable = ["engine"],                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>>

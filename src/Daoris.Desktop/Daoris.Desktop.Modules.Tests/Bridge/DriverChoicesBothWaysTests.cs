@@ -18,7 +18,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
 
     /// <summary>The choices every case starts from: something of each, so an edit meets a rule already set.</summary>
     private static DriverConfig Before() =>
-        DriverConfig.Empty.WithDrivable("engine", true).WithDrivable("game", true).WithHold("game", true).WithTrees("docs", true)
+        DriverConfig.Empty.WithDrivable("engine", true).WithDrivable("game", true).WithHold("game", true)
             .WithLine("engine", "main").WithWorkspaceLine("aurora", "main")
             .WithReadAcross("engine", true).WithWorkspaceReadAcross("aurora", false).WithWriteAcross("game", "tools", true)
             .WithStanding("engine", "the old words", Moment).WithLanguage("engine", "en").WithWorkspaceLanguage("aurora", "zh")
@@ -92,8 +92,6 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("undrive game")]
     [InlineData("hold engine")]
     [InlineData("resume game")]
-    [InlineData("trees engine on")]
-    [InlineData("trees docs off")]
     [InlineData("notify off")]
     [InlineData("cap 4")]
     [InlineData("cooloff 30")]

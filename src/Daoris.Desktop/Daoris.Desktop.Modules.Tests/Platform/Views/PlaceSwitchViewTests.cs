@@ -2,7 +2,6 @@ using System.Text.Json;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>A repository's drive, hold and own-tree switches as their presses' cards show them: refused with no card where it is not registered, and the command that sets it.</summary>
 public sealed class PlaceSwitchViewTests
 {
     private static StubGrounds Grounds()
@@ -33,16 +32,6 @@ public sealed class PlaceSwitchViewTests
     public async Task A_hold_and_its_release_are_shown_with_their_commands(bool held, string kind, string command)
     {
         var viewed = await View(PlaceSwitchView.Hold(), new { repository = "engine", held });
-
-        Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
-    }
-
-    [Theory]
-    [InlineData(true, "place-trees-on", "daoris place trees engine on")]
-    [InlineData(false, "place-trees-off", "daoris place trees engine off")]
-    public async Task Own_trees_are_shown_with_their_command(bool ownTree, string kind, string command)
-    {
-        var viewed = await View(PlaceSwitchView.Trees(), new { repository = "engine", ownTree });
 
         Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
     }

@@ -17,9 +17,9 @@ public sealed class PlacePlanTests
     private const string Plugin = "example.github-pull-request";
 
     private static readonly DriverConfig Config = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
-        .WithDrivable("engine", true).WithTrees("engine", true)
-        .WithDrivable("web", true).WithTrees("web", true)
-        .WithDrivable("docs", true).WithTrees("docs", true);
+        .WithDrivable("engine", true)
+        .WithDrivable("web", true)
+        .WithDrivable("docs", true);
 
     private static readonly SetupPresetsTests.Catalog Plugins = new(new SetupPresetsTests.Entry(Plugin, [HookPoints.Perform]));
 
@@ -41,7 +41,7 @@ public sealed class PlacePlanTests
         Assert.Equal(new SetupMatch(SetupPresets.NotDriven, []), solo.Before.Match);
         Assert.Equal(new SetupMatch(SetupPresets.Merge, []), solo.After.Match);
         // The delivery is a saved copy of the shipped workflow, saved and chosen; no landing rule is written.
-        Assert.Equal(["SET_TREES", "WORKFLOW_SAVE", "WORKFLOW_USE", "SET_DRIVABLE"], solo.Changes.Select(change => change.Key));
+        Assert.Equal(["WORKFLOW_SAVE", "WORKFLOW_USE", "SET_DRIVABLE"], solo.Changes.Select(change => change.Key));
         Assert.Equal([new PlaceSave("merge-after-accept", "merge-after-accept", false, false)], plan.Saves);
         Assert.True(plan.Applies);
         Assert.Empty(solo.Lowers);
@@ -140,7 +140,7 @@ public sealed class PlacePlanTests
 
         Assert.Equal(["solo", "atlas"], plan.Repositories.Select(row => row.Repository));
         Assert.Equal(
-            [("SET_TREES", "solo,atlas"), ("WORKFLOW_SAVE", "solo,atlas"), ("WORKFLOW_USE", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
+            [("WORKFLOW_SAVE", "solo,atlas"), ("WORKFLOW_USE", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
             plan.Changes.Select(each => (each.Change.Key, string.Join(",", each.Repositories))));
     }
 
@@ -248,7 +248,9 @@ public sealed class PlacePlanTests
         var chosen = WorkflowSelection.Apply(reviewed.WithDrivable("atlas", false), new WorkflowUse("kept", "atlas", null, null));
         try
         {
-            var kept = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Drive = true, Adoption = true }, chosen);
+            // The adoption is judged on the workflow the place follows, which must work apart: one the person chose, kept as it is.
+            var apart = WorkflowSelection.Apply(chosen, new WorkflowUse(IsolatedPlaces.In(_home), "atlas", null, null));
+            var kept = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Drive = true, Adoption = true }, apart);
             var replaced = await PlanAsync(new World(), Ask(SetupPresets.Integrated, "atlas") with { Drive = true }, chosen);
 
             Assert.Contains("WORKFLOW_USE", replaced.Changes.Select(each => each.Change.Key));
@@ -257,7 +259,7 @@ public sealed class PlacePlanTests
             Assert.DoesNotContain("WORKFLOW_SAVE", Assert.Single(same.Repositories).Changes.Select(change => change.Key));
             Assert.True(kept.Applies, string.Join(" | ", kept.Refusals.Select(each => each.Code + ": " + each.Sentence)));
             var atlas = Assert.Single(kept.Repositories);
-            Assert.Equal(["SET_TREES", "SET_DRIVABLE", "SETUP_PRESS"], atlas.Changes.Select(change => change.Key));
+            Assert.Equal(["SET_DRIVABLE", "SETUP_PRESS"], atlas.Changes.Select(change => change.Key));
             Assert.Equal(atlas.Before.Values.Landing, atlas.After.Values.Landing);
             Assert.Equal(atlas.Before.Values.Workflow, atlas.After.Values.Workflow);
             Assert.Equal("kept", WorkflowSelection.Resolve(chosen, "atlas", "aurora", task: null).Workflow);
@@ -277,11 +279,18 @@ public sealed class PlacePlanTests
     [Fact]
     public async Task Keep_how_it_lands_leaves_a_not_driven_repository_not_driven_unless_driving_is_asked()
     {
-        var plan = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Adoption = true }, Config.WithTrees("atlas", true));
+        try
+        {
+            var plan = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Adoption = true }, Config.Isolating(_home, "atlas"));
 
-        Assert.True(plan.Applies, string.Join(" | ", plan.Refusals.Select(each => each.Code + ": " + each.Sentence)));
-        Assert.Equal(["SETUP_PRESS", "SETUP_PRESS"], Assert.Single(plan.Repositories).Changes.Select(change => change.Key));
-        Assert.False(Assert.Single(plan.Repositories).After.Driven);
+            Assert.True(plan.Applies, string.Join(" | ", plan.Refusals.Select(each => each.Code + ": " + each.Sentence)));
+            Assert.Equal(["SETUP_PRESS", "SETUP_PRESS"], Assert.Single(plan.Repositories).Changes.Select(change => change.Key));
+            Assert.False(Assert.Single(plan.Repositories).After.Driven);
+        }
+        finally
+        {
+            GitSeed.Discard(_home);
+        }
     }
 
     /// <summary>The verb's words, case by case, held to <c>fixtures/place-plan.json</c>: the same plan from the same code, and the usage.</summary>

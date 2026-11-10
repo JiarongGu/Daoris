@@ -68,23 +68,6 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Session trees: the desktop half of the standing opt-in, over the same file the CLI's
-    /// `daoris place trees <repo> on|off` edits — two editors, one truth.
-    /// </summary>
-    [Fact]
-    public async Task Opting_a_repository_into_session_trees_writes_the_same_file()
-    {
-        var module = Module();
-        var state = await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = true });
-
-        Assert.Equal("engine", state.GetProperty("trees")[0].GetString());
-        Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("engine"));
-
-        var off = await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = false });
-        Assert.Equal(0, off.GetProperty("trees").GetArrayLength());
-    }
-
-    /// <summary>
     /// The switch <c>Daoris may change this checkout's files</c>, off by default, kept by
     /// repository in <c>driver.json</c> and answered in <c>STATE</c> as the repositories it is on for.
     /// </summary>
@@ -294,13 +277,13 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     {
         var module = Module();
         await AnswerAsync(module, "SET_DRIVABLE", new { repository = "engine", drivable = true });
-        await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = true });
+        await AnswerAsync(module, "SET_HOLD", new { repository = "engine", held = true });
 
         await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
 
         var config = DriverConfig.Load(DriverConfigPath);
         Assert.Contains("engine", config.Drivable);
-        Assert.True(config.OpensOwnTree("engine"));
+        Assert.Contains("engine", config.Holds);
         Assert.False(config.Notify);
     }
 

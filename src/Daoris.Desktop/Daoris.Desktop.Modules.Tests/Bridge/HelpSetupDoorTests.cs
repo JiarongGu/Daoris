@@ -17,7 +17,7 @@ public sealed class HelpSetupDoorTests : DriverModuleBridge
     [Fact]
     public async Task The_setup_door_is_refused_naming_the_place_door()
     {
-        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
+        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).Save(DriverConfigPath);
         var module = await UpAsync();
         Proposal(Setup);
 

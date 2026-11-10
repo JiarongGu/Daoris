@@ -370,8 +370,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eighteen with no card: drive, undrive,
-    trees, hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of seventeen with no card: drive, undrive,
+    hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
     session's tree land and clean, a staged update's now and cancel, and a session's hand-over, each one exact form over
     `ROLE_ACT`, logged `role.act` and said on its line; `setup` only where the person lists it. A route act (`StewardRouteAct`:
     workflow, done, delete, land, clean; `StewardHandOverAct`) runs its person's route inside the role's door, a refusal of the
@@ -437,8 +437,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
     archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
     pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
-    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), a repository's drive, hold and
-    own-tree switches (`place drive|undrive|hold|resume|trees`), a line, a session language, a standing answer and reading and
+    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), a repository's drive and hold
+    switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
     held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules

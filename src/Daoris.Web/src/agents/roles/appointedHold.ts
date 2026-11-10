@@ -17,7 +17,7 @@ export const AT_ONCE: readonly string[] = ['allow', 'files'];
 /** The acts each kind may hold, as the driver's vocabulary has them (`AppointedRoles`). */
 export const ACTS: Readonly<Record<RoleHoldRead['kind'], readonly string[]>> = {
   supervisor: Object.values(DECISION_KINDS).flat(),
-  steward: ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover', 'setup'],
+  steward: ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover', 'setup'],
 };
 
 /** The holders a kind takes: the supervisor's rules alone, with a terminal or with an agent, the steward's terminal; none is a role not staffed. */

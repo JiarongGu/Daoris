@@ -61,7 +61,7 @@ under *Done at a terminal* (below), name its command for the person to run.
 ## What you may propose
 
 - Every setting is pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,
-  `daoris place trees <repository> on|off`, `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),
+  `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),
   `daoris place review|opinion|helpers|commits <repository> …`, `daoris place standing <repository> …`,
   `daoris place across <repository> read|write-to …`, `daoris quest retry <quest>`, `daoris git use …` and
   `daoris settings notify|cap|cooloff|quiet|keep …`.
@@ -222,7 +222,6 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, setting a place up, what agents may do | Settings → Get started (Help → *Get started*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris place drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris place hold|resume <repository>` |
-| give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris place trees <repository> on|off` |
 | set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing) (Ask Daoris proposes it) | Agents → Setup → *Set up…* (adoption ticked) | `daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply` |
 | set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris place --workspace <name> --pause|--resume|--stop` |
 | register a repository from what its line declares, as `connect` would, without running it: after a set-up's branch is merged and brought up to date, or a declaration changed outside Daoris | (no screen yet) | `daoris repository register [--repository <name>]` |

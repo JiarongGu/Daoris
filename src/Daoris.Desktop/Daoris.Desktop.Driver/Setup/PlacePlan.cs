@@ -18,7 +18,6 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
     /// </summary>
     public int? AtOnce { get; init; }
 
-    /// <summary>How many adoptions go alone before the paced plan pauses itself; none said is the workspace plan's default.</summary>
     public int? Pilot { get; init; }
 }
 
@@ -77,13 +76,10 @@ public sealed record PlaceRepository(
 public sealed record PlacePlanned(
     PlaceAsk Asked, IReadOnlyList<PlaceRepository> Repositories, IReadOnlyList<PlaceChanged> Changes, IReadOnlyList<PlaceRefusal> Refusals, string Terminal)
 {
-    /// <summary>The copies of shipped defaults the home saves first, each once, however many repositories choose it.</summary>
     public IReadOnlyList<PlaceSave> Saves { get; init; } = [];
 
-    /// <summary>Whether nothing is refused: an apply could take it.</summary>
     public bool Applies => Refusals.Count == 0;
 
-    /// <summary>What an apply is pinned to (<see cref="PlaceDigests.Of"/>): the plan's changes and declarations, said once.</summary>
     public string Digest => PlaceDigests.Of(this);
 }
 
@@ -216,12 +212,6 @@ public static class PlacePlans
         if (ask.Preset == SetupPresets.Keep)
         {
             // Keeping how it lands is a subset of a delivery: no landing and no workflow choice is written, so a saved workflow survives.
-            if ((ask.Drive || Driven(after)) && !after.OpensOwnTree(name))
-            {
-                after = after.WithTrees(name, true);
-                changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
-            }
-
             // A step is the workflow's, edited at its one door: the ticks choose a copy's variant, and none is kept.
             if (ask.Opinion || ask.Look) Refuse(Delivery, "keeps-workflow", KeepsSteps);
             if (ask.Drive && !Driven(after))
@@ -237,12 +227,6 @@ public static class PlacePlans
         }
         else if (preset?.Land is { } land)
         {
-            if (!after.OpensOwnTree(name))
-            {
-                after = after.WithTrees(name, true);
-                changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
-            }
-
             after = Workflow(after, name, workspace, ask, land, tip, plugins, planned, saves, changes, Refuse);
             if (ask.Drive && !Driven(after))
             {
@@ -254,7 +238,9 @@ public static class PlacePlans
         if (ask.Adoption)
         {
             // The press's own rules over the configuration the plan would leave, so the two refuse alike.
-            foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row)) Refuse(Adoption, refusal.Code, refusal.Sentence);
+            // A landing preset's shipped workflow sets its sessions apart; otherwise the workflow the repository follows says.
+            var apart = preset?.Land is not null || (home is not null && PlaceIsolates.Of(home, after, name, workspace) is not null);
+            foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row, apart)) Refuse(Adoption, refusal.Code, refusal.Sentence);
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
@@ -435,7 +421,7 @@ public static class PlacePlans
             }
         }).ToList();
         return new PlaceSide(
-            driven, config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase), config.OpensOwnTree(repository), land,
+            driven, config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase), PlaceIsolates.Of(store, config, repository, workspace) is not null, land,
             steps?.Any(step => step.Kind == WorkflowKinds.Opinion) == true, steps?.Any(step => step.Kind == WorkflowKinds.Look) == true, match,
             PlaceProjection.ValuesAt(config, repository, workspace, PlaceSource.RepositoryLevel), policies);
     }

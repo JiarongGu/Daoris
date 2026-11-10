@@ -12,10 +12,8 @@ public static class StandingBlocks
     /// <summary>The folder the repository's rules are kept in, each its own row in the knowledge.</summary>
     private const string RulesFolder = ".claude/rules";
 
-    /// <summary>The instruction file a harness may cut.</summary>
     private const string InstructionFile = "AGENTS.md";
 
-    /// <summary>The name of the session's block file in its folder.</summary>
     private const string FileName = "block.md";
 
     /// <summary>The facts a session working in <paramref name="repository"/> reads from its <paramref name="tree"/>: its indexes and code map.</summary>
@@ -30,12 +28,14 @@ public static class StandingBlocks
     /// <paramref name="facts"/> with this machine's for its repository and <paramref name="workspace"/>: the routing standing, for a
     /// <paramref name="work"/> that may publish (<see cref="RoutingStanding.Told"/>), and the person's choices.
     /// </summary>
-    public static StandingFacts OnMachine(StandingFacts facts, string work, DriverConfig config, IReadOnlyList<RepoView> registry, string? workspace)
+    /// <param name="apart">Whether the work runs apart from its place's other sessions, in a tree of its own, so its routing is open.</param>
+    public static StandingFacts OnMachine(
+        StandingFacts facts, string work, DriverConfig config, IReadOnlyList<RepoView> registry, string? workspace, bool apart = false)
     {
         var known = facts.Repository is { } repository
             ? registry.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))
             : null;
-        var routing = RoutingStanding.Told(work, config, known);
+        var routing = RoutingStanding.Told(work, config, known, apart);
         return facts with
         {
             Workspace = workspace,

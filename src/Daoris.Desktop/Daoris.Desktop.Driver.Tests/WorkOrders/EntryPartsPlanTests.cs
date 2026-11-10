@@ -17,7 +17,7 @@ public sealed class EntryPartsPlanTests
     private static readonly RepoView[] Repos = [new("app", true, "D:/fam/app"), new("db", true, "D:/fam/db")];
 
     private static DriverConfig Config(int cap = 4) =>
-        DriverConfig.Empty with { Drivable = ["app", "db"], Trees = ["app", "db"], Cap = cap };
+        DriverConfig.Empty with { Drivable = ["app", "db"], Cap = cap };
 
     /// <summary>B's first part: `283ef343` took `3068f747`, asked `711d2524` of the app at 06:58, and ended completed.</summary>
     private static readonly PriorSession B1 = new("283ef343", "D:/trees/db/s-283e", "completed", "asked #711d2524 and waits.", "db")
@@ -41,6 +41,7 @@ public sealed class EntryPartsPlanTests
             Repos,
             [new SessionView("62c005bc", "app", "working") { Tree = A2.Tree, Quest = "28b052ac" }])
         {
+            Isolations = IsolatedPlaces.Of("app", "db"),
             LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["28b052ac"] = A2, ["3068f747"] = B1 },
             Entries = new Dictionary<string, string>(StringComparer.Ordinal) { ["283ef343"] = DbEntry, ["62c005bc"] = AppEntry },
         };
@@ -76,6 +77,7 @@ public sealed class EntryPartsPlanTests
             Repos,
             [new SessionView("8eba4af2", "app", "working") { Tree = a3.Tree, Quest = "711d2524" }])
         {
+            Isolations = IsolatedPlaces.Of("app", "db"),
             LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
             {
                 ["28b052ac"] = A2 with { State = "completed" }, ["3068f747"] = B1, ["711d2524"] = a3,
@@ -299,7 +301,7 @@ public sealed class EntryPartsPlanTests
     {
         var snapshot = At0759();
         var started = Assert.Single(
-            Planner.Plan(snapshot with { Quests = [snapshot.Quests[2]] }, Config() with { Trees = ["app"] }));
+            Planner.Plan((snapshot with { Quests = [snapshot.Quests[2]] }).Apart("app"), Config()));
 
         Assert.Equal(StartVerdict.Start, started.Verdict);
         Assert.Null(started.Entry);

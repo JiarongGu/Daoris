@@ -51,7 +51,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Null(result.Refused);
         Assert.Equal("workflow `merge-after-accept` saved; configuration applied; adoption asked.", result.Message);
         Assert.Equal(1, stand.Changes);
-        Assert.True(stand.Config.OpensOwnTree("atlas"));
+        Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
         var published = Assert.Single(stand.Setup.Published);
         Assert.EndsWith($"{PlaceApplies.KeyOf(digest)}\n", published.Sentence);
         var kept = new PlaceReceipts(_home).Read(digest)!;
@@ -148,8 +148,8 @@ public sealed class PlaceApplyTests : IDisposable
     [Fact]
     public async Task Keep_how_it_lands_applies_driving_and_adoption_and_leaves_a_saved_workflow_and_its_landing_as_chosen()
     {
-        PlacePlanTests.SaveWorkflow(_home, "kept");
-        var stand = Make(each => each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse("kept", "atlas", null, null)));
+        var kept = IsolatedPlaces.In(_home);
+        var stand = Make(each => each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse(kept, "atlas", null, null)));
         var ask = new PlaceAsk(["atlas"], SetupPresets.Keep) { Drive = true, Adoption = true, Builds = SetupBuilds.Library };
         var digest = await DigestOf(stand, ask);
 
@@ -157,18 +157,17 @@ public sealed class PlaceApplyTests : IDisposable
 
         Assert.True(result.Done);
         Assert.True(stand.Config.Drivable.Contains("atlas"));
-        Assert.True(stand.Config.OpensOwnTree("atlas"));
-        Assert.Equal("kept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
+        Assert.Equal(kept, WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
         Assert.Single(stand.Setup.Published);
     }
 
     [Fact]
     public async Task A_restart_settles_a_kept_plans_configuration_by_its_values_as_it_does_any_plans()
     {
-        PlacePlanTests.SaveWorkflow(_home, "kept");
+        var kept = IsolatedPlaces.In(_home);
         var stand = Make(each =>
         {
-            each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse("kept", "atlas", null, null));
+            each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse(kept, "atlas", null, null));
             each.LandThenFail = true;
         });
         var ask = new PlaceAsk(["atlas"], SetupPresets.Keep) { Drive = true, Adoption = true, Builds = SetupBuilds.Library };
@@ -252,7 +251,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stand = Make();
         var ask = Adopt("atlas");
         var digest = await DigestOf(stand, ask);
-        stand.OnChange = () => stand.Config = stand.Config.WithTrees("atlas", true);
+        stand.OnChange = () => stand.Config = WorkflowSelection.Apply(stand.Config, new WorkflowUse("merge-after-accept", "atlas", null, null));
 
         var result = await Apply(stand, ask, digest);
 
@@ -271,7 +270,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stand = Make();
         var ask = Adopt("atlas");
         var digest = await DigestOf(stand, ask);
-        stand.Config = stand.Config.WithTrees("atlas", true);
+        stand.Config = stand.Config.WithDrivable("atlas", true);
 
         var result = await Apply(stand, ask, digest);
 
@@ -489,7 +488,7 @@ public sealed class PlaceApplyTests : IDisposable
         var one = await DigestOf(stand, Adopt("atlas"));
         var same = await DigestOf(stand, Adopt("atlas"));
         var other = await DigestOf(stand, new PlaceAsk(["atlas"], SetupPresets.Merge));
-        var moved = (await PlacePlans.PlanAsync(stand.Place, stand.Config.WithTrees("atlas", true), _home, Plugins, true, Adopt("atlas"))).Digest;
+        var moved = (await PlacePlans.PlanAsync(stand.Place, stand.Config.WithDrivable("atlas", true), _home, Plugins, true, Adopt("atlas"))).Digest;
 
         Assert.Equal(one, same);
         Assert.True(PlaceDigests.Is(one));
@@ -610,8 +609,8 @@ public sealed class PlaceApplyTests : IDisposable
         public SetupWorld Setup { get; }
 
         public DriverConfig Config { get; set; } = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
-            .WithDrivable("engine", true).WithTrees("engine", true)
-            .WithDrivable("docs", true).WithTrees("docs", true);
+            .WithDrivable("engine", true)
+            .WithDrivable("docs", true);
 
         public int Changes { get; private set; }
 
@@ -662,6 +661,9 @@ public sealed class PlaceApplyTests : IDisposable
     /// <summary>The set-up press's world: its registry, line, tools and quests, and an ask door that keeps what it is asked.</summary>
     private sealed class SetupWorld : ISetupWorld
     {
+        /// <summary>A landing preset's workflow sets its sessions apart, as its plan says; the press reads the same.</summary>
+        public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => IsolateStep.Trees;
+
         private readonly LayoutFacts _facts = new LayoutReaderTests.Scratch().File("README.md", "# Atlas\n").Read();
 
         public List<RepoView> Registry { get; } = [new("atlas", false, "/fixture/atlas", "aurora"), new("engine", true, "/fixture/engine", "aurora")];

@@ -18,7 +18,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         var start = run.Start;
         var quest = run.Quest;
         var root = start.Root!;
-        var isolated = context.Config.OpensOwnTree(quest.To);
+        var isolated = start.Isolate is not null;
 
         var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && context.Trees.Holds(resumesIn) ? resumesIn : null;
         var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;

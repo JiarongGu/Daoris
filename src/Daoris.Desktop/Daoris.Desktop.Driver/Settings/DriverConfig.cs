@@ -10,10 +10,6 @@ namespace Daoris.Driver;
 /// Repositories the person holds: drivable, and nothing new starts there until they resume it, while what runs goes on.
 /// A hold, never a pause: a pause is an ask's or a quest's, and stops what runs.
 /// </param>
-/// <param name="Cap">Concurrent sessions across all repositories.</param>
-/// <param name="PollSeconds">How often the watch loop ticks.</param>
-/// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
-/// <param name="Trees">Repositories whose sessions open their OWN worktree instead of the registered root. Empty is the default.</param>
 /// <param name="Notify">
 /// Whether this machine interrupts the person when a session parks or ends unasked. <b>On by default</b>: a driver that ran
 /// silently would leave parked sessions sitting until somebody thinks to look.
@@ -24,7 +20,6 @@ public sealed record DriverConfig(
     int Cap,
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
-    IReadOnlyList<string> Trees,
     bool Notify = true,
     IReadOnlyDictionary<string, int>? Forgiven = null)
 {
@@ -35,27 +30,20 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, int> Forgiven { get; init; } =
         Forgiven ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>How long a session may be quiet before Daoris looks in, as the file sets it; null is the default (<see cref="QuietSetting"/>).</summary>
     public int? QuietMinutes { get; init; }
 
-    /// <summary>Whether an update drains the look: set only by <see cref="InstallUpdate.Drained"/>, never read or written.</summary>
     public bool Draining { get; init; }
 
-    /// <summary>The tests' one bound on a driven run, in minutes, so a hung stand-in fails fast; never read or written.</summary>
     internal int? TestBound { get; init; }
 
-    /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
         Drivable: [], Holds: [], Cap: 2,
         PollSeconds: 15,
-        Commands: new Dictionary<string, IReadOnlyList<string>>(),
-        Trees: []);
+        Commands: new Dictionary<string, IReadOnlyList<string>>());
 
-    /// <summary>The failure count at this quest's last restart — zero when it has not been restarted.</summary>
     public int ForgivenAt(string questId) =>
         Forgiven.TryGetValue(questId, out var mark) ? mark : 0;
 
-    /// <summary>Let this quest run again, counting from where it stands now.</summary>
     public DriverConfig WithForgiven(string questId, int at)
     {
         var next = new Dictionary<string, int>(Forgiven, StringComparer.OrdinalIgnoreCase)
@@ -557,7 +545,7 @@ public sealed record DriverConfig(
     /// stands, so two writers each adding a repository keep both. Each is a key path, <c>*</c> any one name. Duplicated deliberately as
     /// the CLI's <c>DRIVER_SETS</c>; held to the tests' <c>fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
     /// </summary>
-    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
+    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "writeAcross.*"];
 
     /// <summary>Write the choices back, the edit made onto the file as it stands and under its lock (<see cref="DriverConfigDisk.Save"/>).</summary>
     /// <exception cref="DriverConfigUnreadableException">The file now does not read, holds a key twice, or no longer holds an object this edit changes inside; nothing is written.</exception>
@@ -585,16 +573,6 @@ public sealed record DriverConfig(
     {
         Holds = DriverConfigEdits.Toggle(Holds, repository, held),
     };
-
-    /// <summary>Whether this repository's sessions open their own worktree.</summary>
-    public DriverConfig WithTrees(string repository, bool ownTree) => this with
-    {
-        Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree),
-    };
-
-    /// <summary>The read side of <see cref="WithTrees"/> — one comparison rule for both.</summary>
-    public bool OpensOwnTree(string repository) =>
-        Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The choices read from <c>driver.json</c>'s text.</summary>
     public static DriverConfig Parse(string json) => DriverConfigReader.Parse(json);

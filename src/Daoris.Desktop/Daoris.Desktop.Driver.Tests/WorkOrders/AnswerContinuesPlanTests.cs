@@ -24,11 +24,11 @@ public sealed class AnswerContinuesPlanTests
     /// <summary>The park as the active list answers it: its record, its repository, its tree and its quest.</summary>
     private static readonly SessionView Parked = new("s1", "Game", "awaiting-person") { Tree = "D:/trees/s-1", Quest = "q1" };
 
-    private static DriverConfig Config(bool trees = true, int cap = 2) =>
-        DriverConfig.Empty with { Drivable = ["Game"], Trees = trees ? ["Game"] : [], Cap = cap };
+    private static DriverConfig Config(int cap = 2) =>
+        DriverConfig.Empty with { Drivable = ["Game"], Cap = cap };
 
     private static Snapshot With(params SessionView[] active) =>
-        new([Taken()], [Repo], active) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park } };
+        new Snapshot([Taken()], [Repo], active) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park } }.Apart("Game");
 
     [Fact]
     public void An_answered_park_is_started_from_itself_saying_the_answer()
@@ -45,7 +45,7 @@ public sealed class AnswerContinuesPlanTests
     [Fact]
     public void The_park_is_not_busy_with_its_own_tree_or_quest()
     {
-        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(With(Parked), Config(trees: true))).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(With(Parked), Config())).Verdict);
     }
 
     /// <summary>Where the repository's root is its one tree, the park holding it is still not busy with itself.</summary>
@@ -58,7 +58,7 @@ public sealed class AnswerContinuesPlanTests
             LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park with { Tree = "D:/fam/Game" } },
         };
 
-        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config(trees: false))).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>The park already holds a slot of the cap; continuing it starts no second session.</summary>
@@ -91,7 +91,7 @@ public sealed class AnswerContinuesPlanTests
             LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park with { Tree = "D:/fam/Game" } },
         };
 
-        var only = Assert.Single(Planner.Plan(snapshot, Config(trees: false, cap: 5)));
+        var only = Assert.Single(Planner.Plan(snapshot, Config(cap: 5)));
 
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
         Assert.Contains("c1", only.Reason);

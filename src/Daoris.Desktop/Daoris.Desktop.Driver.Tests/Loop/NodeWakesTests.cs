@@ -36,7 +36,7 @@ public sealed class NodeWakesTests : IDisposable
     public async Task A_nodes_wake_runs_the_runtimes_pass_and_no_plan()
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine"] }""");
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": 600 }""");
         // A run bound to a saved graph version arms the runtime; no plugin declares a step of it here, so nothing is ever sent.
         RunHome.Bind(_home, "q7", RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"land",

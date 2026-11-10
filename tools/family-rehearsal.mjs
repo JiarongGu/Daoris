@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
+import { apartVerbs } from './rehearsal-apart.mjs';
 // Every home place is asked of the home table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import {
@@ -3937,6 +3938,7 @@ check(
 // And the driving choices themselves, from a terminal: the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
 const cliDriver = (args) => runOn(driverConfig, `node "${cliBin}" place ${args}`, PERSON);
+const { writeApartConfig, workApartOn, workApartOff } = apartVerbs({ runOn, cliBin, scratch, person: PERSON, defaultConfig: driverConfig });
 const held = cliDriver('hold newcomer');
 check(
   '`daoris place hold` pauses a repository from a terminal',
@@ -3981,19 +3983,18 @@ check(
 
 section('16. The tree is the unit of exclusion (D51/SURF3)');
 
-// The standing opt-in, from a terminal — and the price stated where the choice is made: a fresh tree
-// holds nothing git does not track. The verb is an EDITOR over the same file the loop reads, so the
-// adapter command that makes the stub run must survive the edit.
-const treesOn = cliDriver('trees newcomer on');
+// The standing opt-in, from a terminal: the workflow the repository follows starts with the `isolate` step. The verb is
+// an EDITOR over the same file the loop reads, so the adapter command that makes the stub run must survive the edit.
+const treesOn = workApartOn('newcomer');
 check(
-  '`daoris place trees on` opts the repository in and states the price',
-  treesOn.code === 0 && /nothing git does not track/.test(treesOn.out),
+  '`daoris workflow use` of a workflow that starts with the isolate step sets the repository\'s sessions apart',
+  treesOn.code === 0,
   treesOn.out,
 );
 const editedConfig = JSON.parse(readFileSync(driverConfig, 'utf8'));
 check(
   '…and the edit preserved the adapter command the loop needs',
-  editedConfig.trees?.includes('newcomer') && editedConfig.commands?.stub?.[0] === 'node',
+  JSON.stringify(editedConfig).includes('apart') && editedConfig.commands?.stub?.[0] === 'node',
   JSON.stringify(editedConfig),
 );
 
@@ -4256,7 +4257,7 @@ check(
 runOn(driverConfig, `dotnet "${driverDll}" tree remove "${syncTree}" --force`);
 run('git remote remove origin', newcomer);
 cliDriver('landing newcomer --clear');
-cliDriver('trees newcomer off');
+workApartOff('newcomer');
 
 // -------------------------------------------------- 16a. abandon
 
@@ -4273,7 +4274,7 @@ section('16a. An ask abandoned: listed first, then declined with the reason, dis
 // stub made. No remote is wired here, so the abandon's pass has nothing to carry: the race a `whileOpen` decline loses is
 // the pause suite's, over the real wire. Whatever else sits in newcomer from earlier phases (a quest parked on its strikes)
 // is not asked by this ask, and a check below holds that nothing of it moves.
-cliDriver('trees newcomer on');
+workApartOn('newcomer');
 const abandonAsk = askVerb('--workspace default --to newcomer "abandon rehearsal: build the widget"');
 const abandonAskId = /ask\s+#([0-9a-f]{6})/.exec(abandonAsk.out)?.[1] ?? '';
 const abandonFirstId = /quest\s+#([0-9a-f]{12})/.exec(abandonAsk.out)?.[1] ?? '';
@@ -4445,7 +4446,7 @@ if (abandonSecondTree) {
   runOn(driverConfig, `dotnet "${driverDll}" tree remove "${abandonSecondTree}" --force`);
 }
 run('git remote remove origin', newcomer);
-cliDriver('trees newcomer off');
+workApartOff('newcomer');
 
 // -------------------------------------------------- 17. the protocol door
 
@@ -4915,10 +4916,9 @@ const SETUP_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: setupHome 
 
 // The set-up machine's home is the one its config sits in (`onHome`): its records, its rules and its usage, apart from the rest.
 const setupConfig = join(setupHome, 'driver-setup.json');
-writeFileSync(setupConfig, `${JSON.stringify({
-  drivable: ['atlas'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, trees: ['atlas'],
-  commands: { 'acp-stub': ['node', acpAgent] },
-}, null, 2)}\n`);
+writeApartConfig(setupConfig, {
+  drivable: ['atlas'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
+});
 const onSetupMachine = (mode, { config = setupConfig, env = {} } = {}) =>
   driver({ serviceUrl: BASE, config, mode, env: { ...SETUP_MACHINE, ...env } });
 const atlasQuests = async () => (await api('GET', '/api/quests?repository=atlas&includeClosed=true')).json ?? [];
@@ -4948,7 +4948,7 @@ const unreadyRead = readPlace(unready.out);
 check(
   '`daoris place --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
   atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
-    && /`daoris place trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
+    && /\*Work apart\* \(its `isolate` step\)/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
     && unreadyRead.nothingWritten && unreadyRead.quests.length === 0,
   `${atlasAdded.text}\n${unready.out}`,
 );
@@ -5229,10 +5229,9 @@ const planHome = join(scratch, 'plan-home');
 mkdirSync(planHome, { recursive: true });
 const PLAN_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: planHome };
 const planConfig = join(planHome, 'driver-plan.json');
-writeFileSync(planConfig, `${JSON.stringify({
-  drivable: PLANNED, adapter: 'acp-stub', cap: 2, timeoutMinutes: 2, trees: PLANNED,
-  commands: { 'acp-stub': ['node', acpAgent] },
-}, null, 2)}\n`);
+writeApartConfig(planConfig, {
+  drivable: PLANNED, adapter: 'acp-stub', cap: 2, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
+});
 const onPlanMachine = (mode, env = {}) => driver({ serviceUrl: BASE, config: planConfig, mode, env: { ...PLAN_MACHINE, ...env } });
 // The plan is the driver's file under the home its choices sit in (`<home>/setup/<workspace>.json`), the plan machine's;
 // the press's rule lands beside it in `permissions.json`, under the workspace's key.
@@ -5413,7 +5412,7 @@ const REVIEW_DEV = 'https://dev.example.test';
 const reviewHome = join(scratch, 'review-home');
 mkdirSync(reviewHome, { recursive: true });
 const reviewConfig = join(reviewHome, 'driver.json');
-writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), trees: ['newcomer'] }, null, 2)}\n`);
+writeApartConfig(reviewConfig, JSON.parse(readFileSync(acpConfig, 'utf8')));
 // The connector a session is handed opens the store this rehearsal's host keeps, so what the stub says through it is what the host
 // reads: the driver passes these two through to it, as an install's environment does (KnowledgeConnector).
 const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };

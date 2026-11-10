@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class HelpDraftDoorTests : DriverModuleBridge
 {
-    private const string Config = """{ "adapter": "claude-code-acp", "drivable": ["engine"], "trees": ["engine"] }""";
+    private const string Config = """{ "adapter": "claude-code-acp", "drivable": ["engine"] }""";
 
     private const string Fingerprint = "g1-0123456789abcdef";
 

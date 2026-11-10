@@ -20,6 +20,9 @@ internal sealed class SetupStandIn : ISetupWorld
     /// <summary>Each ask the press published: its workspace, its words and its receiver.</summary>
     public List<(string Workspace, string Sentence, string To)> Published { get; } = [];
 
+    /// <summary>Its sessions work apart, as a landing preset's workflow sets them.</summary>
+    public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => IsolateStep.Trees;
+
     public Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<RepoView>>(Registry);
 
     public Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct) =>

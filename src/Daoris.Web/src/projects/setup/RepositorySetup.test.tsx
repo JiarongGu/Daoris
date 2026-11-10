@@ -37,7 +37,6 @@ describe("a repository's Setup", () => {
     expect(head('Sessions')).toHaveAccessibleDescription("no session language (Daoris's default) · no standing answer");
     expect(head('Reach')).toHaveAccessibleDescription(
       "read by agents outside it (Daoris's default) · writes into nothing else · no rules of its own");
-    // The branch is code in the line, as it is everywhere a branch is named.
     expect(within(head('Line and landing')).getByText('main', { selector: 'code' })).toBeInTheDocument();
     // Folded, a section's rows are one press away and not drawn.
     expect(screen.queryByRole('checkbox')).toBeNull();
@@ -99,7 +98,7 @@ describe("a repository's Setup", () => {
     await userEvent.click(head('Driving'));
 
     for (const twin of [
-      'daoris place drive|undrive engine', 'daoris place hold|resume engine', 'daoris place trees engine on|off',
+      'daoris place drive|undrive engine', 'daoris place hold|resume engine',
       'daoris place line engine <branch>|--clear',
       'daoris place language engine en|zh|--clear', 'daoris place standing engine "…"|--clear',
       'daoris place across engine read on|off|--clear', 'daoris place across engine write-to <other> [--clear]',
@@ -118,11 +117,10 @@ describe("a repository's Setup", () => {
 });
 
 describe("Setup's Driving", () => {
-  it('drives, holds and gives each session its own tree, a hold only once it is driven', async () => {
+  it('drives and holds, a hold only once it is driven, and offers no tree switch', async () => {
     const onDrive = vi.fn();
     const onHold = vi.fn();
-    const onTrees = vi.fn();
-    const driving = { drivable: false, held: false, ownTree: false, onDrive, onHold, onTrees };
+    const driving = { drivable: false, held: false, ownTree: false, onDrive, onHold };
     const { rerender } = draw({ ...SETUP_DEFAULTS, driving });
     expect(head('Driving')).toHaveAccessibleDescription('not driven here · sessions in its checkout');
 
@@ -130,8 +128,7 @@ describe("Setup's Driving", () => {
     expect(screen.queryByLabelText('Hold')).toBeNull();
     await userEvent.click(screen.getByLabelText('Drive on this machine'));
     expect(onDrive).toHaveBeenCalledWith(true);
-    await userEvent.click(screen.getByLabelText('A tree per session'));
-    expect(onTrees).toHaveBeenCalledWith(true);
+    expect(screen.queryByLabelText('A tree per session')).toBeNull();
 
     rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={{ ...driving, drivable: true }} /></Tooltip.Provider>);
     await userEvent.click(screen.getByLabelText('Hold'));

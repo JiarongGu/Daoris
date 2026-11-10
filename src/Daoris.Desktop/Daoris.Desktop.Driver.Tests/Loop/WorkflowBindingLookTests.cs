@@ -140,7 +140,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { {{more}} "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1, "trees": ["engine"] }
+            { {{more}} "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1 }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

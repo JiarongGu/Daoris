@@ -164,7 +164,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
@@ -219,7 +219,7 @@ public sealed class StartInSyncTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(checkout);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
+            Drivable = ["engine"], DefaultWorkflow = IsolatedPlaces.In(_home), Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, "ask"] },
         };
         var adapters = ProviderRegistry.Built();
@@ -237,7 +237,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             PollSeconds = 1,

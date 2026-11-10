@@ -7,11 +7,9 @@ public sealed record SetDrivable(string Repository, bool Drivable);
 
 public sealed record SetHold(string Repository, bool Held);
 
-public sealed record SetTrees(string Repository, bool OwnTree);
 
 public sealed record SetCheckoutWrites(string Repository, bool Allow);
 
-/// <summary>No words clear the repository's standing answer.</summary>
 public sealed record SetStanding(string Repository, string? Says);
 
 /// <summary>No repository is read as an empty name, and no checks clear them.</summary>
@@ -32,7 +30,6 @@ public sealed record SetCap(long? Cap);
 public sealed record SetKeep(
     string Kind, long? Days, bool Never = false, bool? Whole = null, bool Default = false, long? Gb = null, long? Percent = null, bool Off = false);
 
-/// <summary>No mode is the driver's refusal.</summary>
 public sealed record SetHelpMode(string? Mode);
 
 /// <summary>No grant is housekeeping's, and no operation is the driver's refusal.</summary>

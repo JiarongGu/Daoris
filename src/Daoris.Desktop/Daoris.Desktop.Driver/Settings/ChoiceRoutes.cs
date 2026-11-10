@@ -10,7 +10,6 @@ public static class ChoiceRoutes
 
     public static InstanceRoute Drivable { get; } = Person("SET_DRIVABLE");
     public static InstanceRoute Hold { get; } = Person("SET_HOLD");
-    public static InstanceRoute Trees { get; } = Person("SET_TREES");
     public static InstanceRoute Notify { get; } = Person("SET_NOTIFY");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
     public static InstanceRoute Quiet { get; } = Person("SET_QUIET");
@@ -33,12 +32,10 @@ public static class ChoiceRoutes
     public static InstanceRoute WorkflowKind { get; } = Person("WORKFLOW_KIND");
     public static InstanceRoute WorkflowLanded { get; } = Person("WORKFLOW_LANDED");
 
-    /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("driver drive|undrive <repo>", Drivable, "the window's drive switch"),
         ("driver hold|resume <repo>", Hold, "the window's hold"),
-        ("driver trees <repo> on|off", Trees, "the window's own-tree switch"),
         ("driver notify on|off", Notify, "the window's notify switch"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver quiet <minutes>", Quiet, "the window's quiet bound"),

@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1d — the isolate step, its count, and the trees switch converted (2026-11-11)
+
+> **PLACEWORK1d** (driver, modules, web, tools): Outcome: a workflow that starts with an `isolate` step (*Work apart* in its editor) gives each of a repository's sessions a tree of its own, and its `at-once` says how many run at once; without one they work in the checkout one at a time under the writer's lease. The planner reads the count; the work order carries the step's value through its Workflows port; `daoris place trees` and its press are gone, answering `TreesMoved` with where the step is; the tests, fixtures and the family rehearsal (`tools/rehearsal-apart.mjs`) bind the step in its place. Proof: the converted planner, tick, standing and setup tests, the text fixtures, `HelpRoomTests` and the driver build; the censuses run at the CI boundary.
+
+---
+
 ## The service, driver and modules reds after the place work, and the session head's height (2026-11-11)
 
 > **CI reds, part B** (service, driver, modules, web): Outcome: the route-view press tests' grounds hold the sessions, registry and quests their presses name, the shared cause of the two-minute timeouts; the sessions slice pushes `holdsPlace` again, so the work page's place-hold line shows (FIX-LOG); the release-place door is classed Person; the home tables name `places`, read by the manifest and turn stores; the place tests use neutral tree paths; the scope door tests read D253's rule. `CapCountTickTests` stays with the process-half reds. Proof: the censuses, `StructureTests`, the CLI home census and `npm run quick`, green.

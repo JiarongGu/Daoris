@@ -172,26 +172,7 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// Session trees: whose sessions open their own worktree. The same standing-flag shape as
-    /// drivable, round-tripping through the same file both editors share.
-    /// </summary>
-    [Fact]
-    public void The_trees_opt_in_round_trips_and_toggles_like_the_others()
-    {
-        var config = DriverConfig.Empty.WithTrees("Game", true).WithTrees("game", true);
-        Assert.Single(config.Trees);
-
-        var read = DriverConfig.Parse(config.ToJson());
-        Assert.Equal(["game"], read.Trees);
-        Assert.True(read.OpensOwnTree("GAME"));
-        Assert.False(read.OpensOwnTree("Tools"));
-
-        Assert.Empty(config.WithTrees("GAME", false).Trees);
-        Assert.Empty(DriverConfig.Parse("{}").Trees);
-    }
-
-    /// <summary>
-    /// A repository opted in, held or given trees is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
+    /// A repository opted in or held is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
     /// to its one capital: a name full case
     /// mapping would widen or lower to the same letters is another repository.
     /// </summary>
@@ -205,14 +186,10 @@ public sealed class ConfigTests
             config = config.WithDrivable(name, true).WithHold(name, true);
         }
 
-        config = config.WithTrees("İzmir", true).WithTrees(dotted, true).WithTrees(dotted, false);
         var read = DriverConfig.Parse(config.ToJson());
 
         Assert.Equal(["İzmir", dotted, "straße", "STRASSE"], read.Drivable);
         Assert.Equal(["İzmir", dotted, "straße", "STRASSE"], read.Holds);
-        Assert.Equal(["İzmir"], read.Trees);
-        Assert.True(read.OpensOwnTree("İzmir"));
-        Assert.False(read.OpensOwnTree(dotted));
     }
 
     [Fact]

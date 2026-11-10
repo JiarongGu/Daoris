@@ -33,16 +33,15 @@ public sealed class CapCountTickTests : IDisposable
 
     private string Tree(string name) => Path.Combine(_home, name);
 
-    private static DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
+    private DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
 
-    private static DriverConfig Config(int cap) => DriverConfig.Empty with
+    private DriverConfig Config(int cap) => (DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
         Actors = StaffedRoles.On("stub"),
         Cap = cap,
         PollSeconds = 1,
-        Trees = ["engine"],
-    };
+    }).Isolating(_home, "engine");
 
     private (Daoris.Driver.Driver Driver, StandInRuns Runs) Driver(DriverConfig config)
     {
@@ -82,14 +81,13 @@ public sealed class CapCountTickTests : IDisposable
     [Fact]
     public async Task A_conversation_in_a_repository_takes_no_slot_and_still_holds_the_place_it_works_in()
     {
-        _ledger.Working("c1", "tools", Tree("chat-tools"));
+        _ledger.Working("c1", "tools", Tree("tools-checkout"));
         _ledger.Publish("q1", "engine");
         _ledger.Publish("q2", "tools");
         var (driver, runs) = Driver(Config(cap: 1));
 
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
 
-        // The cap of one is free for q1, and the conversation in `tools` holds that root (no tree of its own opens there), so q2 waits for it.
         Assert.Equal(StartVerdict.Start, look.Considerations.Single(c => c.Quest.Id == "q1").Verdict);
         var waits = look.Considerations.Single(c => c.Quest.Id == "q2");
         Assert.Equal(StartVerdict.RepositoryBusy, waits.Verdict);

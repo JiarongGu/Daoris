@@ -146,7 +146,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 Place = place,
                 // Its standing block, its tree's facts with its repository's routing and the person's choices on this machine, the
                 // memory a carry-on's line read, and the file it goes through where the whole first prompt cannot carry it.
-                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace) with
+                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace,
+                    apart: start.Isolate is not null) with
                 {
                     Checkouts = across.Reads.Count > 0,
                     Memory = brief?.Memory ?? [],

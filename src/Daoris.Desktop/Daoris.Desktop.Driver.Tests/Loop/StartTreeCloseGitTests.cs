@@ -32,7 +32,7 @@ public sealed class StartTreeCloseGitTests : LandedFixture
                 DriverConfig.Empty with
                 {
                     Drivable = ["engine"],
-                    Trees = ["engine"],
+                    DefaultWorkflow = IsolatedPlaces.In(Home),
                     Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [agent] },
                 },
                 "build", [new ActorChoice("acp-stub")]),
