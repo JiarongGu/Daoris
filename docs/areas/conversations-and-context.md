@@ -242,9 +242,15 @@ of everything it handed, section by section.
     repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
     the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
     workspace by naming it, or every workspace with `all`, and proposes, inspects, reads checkouts and sets settings in any
-    workspace's repositories, each judged by its own judge and none refused for the workspace it names. The focus is chosen
+    workspace's repositories, each judged by its own judge and none refused for the workspace it names. What a turn looked at
+    or did beyond its focus is one folded receipt under that turn (`help/focus/BeyondReceipt.tsx`, `HELP_BEYOND`), only as
+    Daoris's doors saw it: each call its connector answered naming a workspace or a repository, noted in the session's
+    `places.jsonl` (`CallPlaceFilter`), and each press it made in full access whose place was beyond, judged against the focus
+    held then (`HelpBeyond`: nothing is beyond this machine, a repository's own workspace is near), each row offering *Make …
+    the focus*; a shell command is never parsed. The focus is chosen
     in the chip that leads the panel's composer bar, a picker of the window's place, *Recent*, this machine and the other
-    workspaces with their repositories (`help/focus/FocusPicker.tsx`), and named under the conversation's title as a
+    workspaces with their repositories (`help/focus/FocusPicker.tsx`), the chip saying a focus the driver widened from a place
+    gone until another is chosen, and named under the conversation's title as a
     breadcrumb marking a focus outside the window's workspace, a home that is not the window's, a change waiting and a place
     gone (`FocusCrumb.tsx`). A choice is sent at once (`HELP_FOCUS`). Chosen before its first words the focus is its first,
     carried by the start where none was opened ahead, and an agent opened ahead under another place ends at once so the page
@@ -255,7 +261,8 @@ of everything it handed, section by section.
     another home goes on where it is shown, the window unmoved. (from D89, D170, D183, D158, D253)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
     every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there. The
-    panel's *Showing* chip chooses among them: this workspace's by day, the others grouped by home with the window's first,
+    panel's *Showing* chip chooses among them, *This workspace* marked as the window's and each workspace unfolding onto its
+    repositories by the focus picker's keys (`useFolds`): this workspace's by day, the others grouped by home with the window's first,
     a row's focus chip only where its focus is not its home. A row carries the messages that changed its focus (`marks`),
     and the transcript draws a divider above each from them, *Focus widened* where the driver widened it. The palette's
     *Change focus…* opens the picker. They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)

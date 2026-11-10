@@ -5,6 +5,8 @@ import { NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued,
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { focusDividers } from './focus/FocusDivider';
+import { beyondBeneath } from './focus/BeyondReceipt';
+import { useHelpBeyond } from '../bridge/helpBeyond';
 import { BackToBottom, SessionConversation, type TailState } from '../work/conversation/SessionConversation';
 import { AskHistory } from './AskHistory';
 import { type AskConversationSlot } from './AskPanel';
@@ -228,6 +230,8 @@ export function useAskConversation(
   startFocus.current = focusing.startFocus;
   takeFocus.current = focusing.take;
 
+  // What each turn of the one shown looked at beyond its focus, drawn under that turn.
+  const beyond = useHelpBeyond(shown?.id ?? null);
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   const conversation = shown ? (<>
     {earlierParts.map((id) => (
@@ -244,6 +248,7 @@ export function useAskConversation(
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
       dividers={focusDividers(shownRow?.marks)}
+      beneath={beyondBeneath(beyond.data, { focus: focusing.focus, next: focusing.next, onFocus: focusing.choose })}
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}

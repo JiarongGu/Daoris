@@ -157,6 +157,8 @@
   "notifications.helpPressed.outcome.running": "Under way",
   "notifications.helpPressed.outcome.done": "Done",
   "notifications.helpPressed.outcome.failed": "Not done",
+  "notifications.helpPressed.in": "in {{place}}",
+  "notifications.helpPressed.beyond": "in {{place}}, outside its focus",
   "notifications.helpPressed.open": "Open the conversation",
   "notifications.helpPressed.openLabel": "Open the conversation that pressed: {{act}}",
   "notifications.helpPressed.reverse.resume": "Resume",

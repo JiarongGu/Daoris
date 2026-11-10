@@ -24,9 +24,10 @@ const labelOf = (place: Place, window: string | null) => {
  *
  * @param window The window's workspace; null for a window on every workspace.
  * @param gone Whether the focus is no longer on this machine; `next` is then the wider place the driver widens it to.
+ * @param widened The place no longer here the driver widened the shown conversation's focus from, said until another is chosen.
  */
-export function focusChip({ focus, next, window, narrow, gone }: {
-  focus: Place; next: Place | null; window: string | null; narrow: boolean; gone?: boolean;
+export function focusChip({ focus, next, window, narrow, gone, widened }: {
+  focus: Place; next: Place | null; window: string | null; narrow: boolean; gone?: boolean; widened?: Place | null;
 }): FocusChipWords {
   const here = window !== null && focus.kind === 'workspace' && samePlace(focus, { kind: 'workspace', workspace: window });
   const name = nameOf(focus);
@@ -40,6 +41,13 @@ export function focusChip({ focus, next, window, narrow, gone }: {
 
   const shown = here ? `${name} · ${i18n.t('help.focus.thisWindow')}` : name;
   const label = labelOf(focus, window);
+  if (!next && widened) {
+    return {
+      icon: focus.kind,
+      text: i18n.t('help.focus.widened', { place: shown }),
+      label: i18n.t('help.focus.label.widened', { label, from: nameOf(widened) }),
+    };
+  }
   if (!next) return { icon: focus.kind, text: shown, label };
   const waiting = i18n.t('help.focus.label.next', { label, place: nameOf(next) });
   const short = i18n.t('help.focus.nextShort', { place: nameOf(next) });

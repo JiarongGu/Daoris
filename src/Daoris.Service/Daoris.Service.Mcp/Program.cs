@@ -175,6 +175,7 @@ builder.Services
     // Every call's lineage, as its harness wrote it in `_meta`, written for the driver to bind a native child to the session's
     // part: a child calls with this process's session, so the environment cannot tell it apart.
     .RecordCallLineage(LineageFile.FromEnvironment())
+    .NoteCallPlaces(CallPlaceFile.FromEnvironment())
     // Every call judged by the session's work before its tool runs (the call layer's table), whatever rules its agent
     // takes: a brainstorm pass is placed first by the turn named on this connector, else the work is its record's.
     .RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)

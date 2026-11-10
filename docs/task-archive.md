@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSCOPE2's receipt — what a turn reached beyond its focus (2026-11-11)
+
+> **ASKSCOPE2's receipt** (service, driver, modules, web): Outcome: a connector bound to a workspace notes each answered call that names a workspace or repository in the session's `places.jsonl` (Service `Mcp/CallPlace*`); the driver judges each against the focus held then, from the marks, and a full-access press keeps its place and whether it lay beyond (`Help/HelpPlaceNotes.cs`, `HelpBeyond.cs`, `HelpPressPlace.cs`); `HELP_BEYOND` answers it (told by event); the page folds one receipt under each turn with *Make … the focus* through the chip's choice (`help/focus/BeyondReceipt.tsx`), and Notifications says *in X, outside its focus*; the Showing picker marks *this window* and unfolds workspaces (`useFolds`), and the chip says when the driver widened the focus. Proof: `CallPlaceFilterTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `BeyondReceipt.test`, `ShowingPicker.test`, `focusPlaces.test`, `HelpPressLine.test`, each seen failing first.
+
+---
+
 ## PLACEWORK1e (part) and ASKSCOPE2's history and divider (2026-11-11)
 
 > **PLACEWORK1e (part)** (service, driver, modules, web): Outcome: a plain folder registers as a `folder` place (`PlaceKinds`, the registry's `kind` column; the window's Add drawer shows its kind) and is worked in place under the lease with its own manifest and content store (`FolderManifestReader`, `FolderExcludes`, `ManifestBounds`, `FolderChanges`, `FolderTurns`, `FolderPrompt`); its review lists the files a turn changed against its start's manifest with text diffs (`Departments/Review/PlaceChanges.cs`, `TextPatch.cs`; `SESSION_DIFF` answering `source: place`); its Branches, History and Integration tabs say only git offers them. Proof: `FolderPlaceTests`, `PlaceChangesTests`, `RegistrationFollowTests`, `RegistrationStoreTests`, `RegistryImportTests`, `DriverModuleTreesTests`, `PlaceNote.test.tsx` (not seen failing first).
