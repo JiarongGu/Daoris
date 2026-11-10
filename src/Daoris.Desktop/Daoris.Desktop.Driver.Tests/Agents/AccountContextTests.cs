@@ -7,19 +7,21 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session Daoris runs on Claude Code holds the tree's skills and Daoris's
-/// per-session plugin copy, and none of the vendor's account-synced skills, plugins or connectors, with its auto-memory off, all through
-/// the session's own settings file. Which account runs it changes none of that, and its home is never written.
+/// A session Daoris runs on Claude Code keeps what the account it runs as gives the same harness run by hand (D253 point 7): its
+/// auto-memory, the skills and plugins the person synced to the account and the account's connectors. The session's settings file
+/// says none of them, so the account's own settings decide, and Daoris writes nothing in the account's home.
 /// </summary>
-public sealed class OwnContextTests : IDisposable
+public sealed class AccountContextTests : IDisposable
 {
-    private readonly string _root = Path.GetFullPath(Path.Combine("_fixtures", "owncontext-" + Guid.NewGuid().ToString("N")[..8]));
+    private static readonly string[] AccountKeys = ["autoMemoryEnabled", "syncClaudeAiSkills", "syncClaudeAiPlugins", "disableClaudeAiConnectors"];
+
+    private readonly string _root = Path.GetFullPath(Path.Combine("_fixtures", "accountcontext-" + Guid.NewGuid().ToString("N")[..8]));
 
     private string Home => Path.Combine(_root, "home");
 
     private string Tree => Path.Combine(_root, "engine");
 
-    public OwnContextTests()
+    public AccountContextTests()
     {
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Tree);
@@ -27,27 +29,27 @@ public sealed class OwnContextTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_root);
 
-    /// <summary>🔴 Every session's settings file says the four keys, whatever else it hands or does not.</summary>
+    /// <summary>No settings file a session is handed turns the account's memory, synced set or connectors off.</summary>
     [Fact]
-    public void Every_settings_file_hides_the_account_synced_set_and_turns_auto_memory_off()
+    public void No_settings_file_turns_the_accounts_memory_synced_set_or_connectors_off()
     {
         var bare = ClaudeRules.Render(Home, "s-bare", RuleLists.Empty, []);
         var ruled = ClaudeRules.Render(Home, "s-ruled", new RuleLists(["Read"], [], ["Bash(git push*)"]), ["Bash(rm -rf*)"]);
 
         foreach (var file in new[] { bare, ruled })
         {
-            AssertOwnContext(JsonNode.Parse(File.ReadAllText(file))!);
+            AssertLeavesTheAccount(JsonNode.Parse(File.ReadAllText(file))!);
         }
     }
 
     /// <summary>
-    /// 🔴 The design's proof: two accounts' spawns, on either Claude door, are handed the same skills, connectors and settings, their
-    /// auto-memory off, and differ only in which account home they name; both homes are byte-identical before and after.
+    /// Two accounts' spawns, on either Claude door, are handed the same settings and arguments, none of which names an account's home
+    /// or says the account's keys; both homes are byte-identical before and after.
     /// </summary>
     [Theory]
     [InlineData("claude-code")]
     [InlineData("claude-code-acp")]
-    public void Two_accounts_spawns_hold_the_same_context_and_leave_both_homes_as_they_were(string name)
+    public void Two_accounts_spawns_leave_each_accounts_context_to_it_and_both_homes_as_they_were(string name)
     {
         var adapters = ProviderRegistry.Built();
         var adapter = adapters.Door(name);
@@ -68,10 +70,8 @@ public sealed class OwnContextTests : IDisposable
 
         foreach (var (info, settings, meta) in spawns)
         {
-            AssertOwnContext(settings);
-            Assert.False(info.Environment.TryGetValue("CLAUDE_CODE_DISABLE_AUTO_MEMORY", out var forced) && forced is "0" or "false",
-                "an account's own variables cannot turn auto-memory back on");
-            // The skills a spawn is handed are the tree's and its own plugin copy's: none points into an account's home.
+            AssertLeavesTheAccount(settings);
+            Assert.False(info.Environment.ContainsKey("CLAUDE_CODE_DISABLE_AUTO_MEMORY"), "no variable turns the account's auto-memory off");
             Assert.All(accounts, account => Assert.DoesNotContain(info.ArgumentList, argument => argument.Contains(account, StringComparison.OrdinalIgnoreCase)));
             if (meta is not null) Assert.All(accounts, account => Assert.DoesNotContain(account.Replace("\\", "\\\\"), meta));
         }
@@ -81,13 +81,8 @@ public sealed class OwnContextTests : IDisposable
         Assert.Equal(before, accounts.Select(Snapshot).ToList());
     }
 
-    private static void AssertOwnContext(JsonNode settings)
-    {
-        Assert.False(settings["autoMemoryEnabled"]!.GetValue<bool>());
-        Assert.False(settings["syncClaudeAiSkills"]!.GetValue<bool>());
-        Assert.False(settings["syncClaudeAiPlugins"]!.GetValue<bool>());
-        Assert.True(settings["disableClaudeAiConnectors"]!.GetValue<bool>());
-    }
+    private static void AssertLeavesTheAccount(JsonNode settings) =>
+        Assert.All(AccountKeys, key => Assert.False(settings.AsObject().ContainsKey(key), $"the session's settings say `{key}`"));
 
     /// <summary>An account's home as the vendor leaves one: its sign-in, its own settings, synced skills and plugins, and a memory.</summary>
     private string Account(string name)
