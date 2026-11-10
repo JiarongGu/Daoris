@@ -41,6 +41,9 @@ public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? H
 
     /// <summary>The repository a working session's start serves, whose allow supervisor may answer its asked press.</summary>
     public string? Repository { get; init; }
+
+    /// <summary>The place an Ask Daoris press named, against its conversation's focus now; null for every other kind.</summary>
+    public Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf { get; init; }
 }
 
 /// <summary>How a proved press is taken: run as the person's own with no card, put to the person on a card, or refused.</summary>
@@ -54,7 +57,7 @@ internal enum PipeDelegateTier
 /// <summary>A proved press's tier, who its card names as asking, and, for one run with no card, its session and where it is said; <paramref name="Own"/> is a working session's.</summary>
 internal sealed record PipeDelegateJudgement(
     PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false,
-    string? Repository = null);
+    string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null);
 
 /// <summary>
 /// A person's press a session's verb sends with the proof of the delegate key handed to its start (<see cref="DelegateKey"/>), judged
@@ -98,8 +101,8 @@ public sealed class PipeDelegate(InstancePipe pipe)
             && ActFamilies.Covers(session.Families, request.Type);
         return session.HelpMode switch
         {
-            HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say),
-            HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say),
+            HelpModes.Full => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
+            HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say, PlaceOf: session.PlaceOf),
             HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }),
             null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true),
             null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository),
@@ -123,11 +126,27 @@ public sealed class PipeDelegate(InstancePipe pipe)
         var presses = pipe.StandingConfirmation.HelpPresses;
         var kept = presses.Began(request, judgement.Session ?? "");
         pipe.TellDriverState();
+        if (judgement.PlaceOf is { } placeOf) _ = PlaceAsync(placeOf, request, kept);
         _ = answer.ContinueWith(done =>
         {
             presses.Ended(kept, done.IsCompletedSuccessfully && HelpPressRecord.Succeeded(done.Result));
             pipe.TellDriverState();
         }, TaskScheduler.Default);
+    }
+
+    /// <summary>The press's place, read beside its run: one that cannot be read is a press that names no place.</summary>
+    private async Task PlaceAsync(Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>> placeOf, IpcRequest request, string kept)
+    {
+        try
+        {
+            if (await placeOf(request, CancellationToken.None).ConfigureAwait(false) is not { } place) return;
+            pipe.StandingConfirmation.HelpPresses.Placed(kept, place);
+            pipe.TellDriverState();
+        }
+        catch (Exception error) when (error is DriverException or IOException or InvalidOperationException or HttpRequestException)
+        {
+            // Said as no place; the press itself ran.
+        }
     }
 
     /// <summary>Whose a working session's own press is, as its log and its record say it: <c>session &lt;id&gt;</c>.</summary>

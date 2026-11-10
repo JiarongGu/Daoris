@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
@@ -11,7 +12,14 @@ namespace Daoris.Desktop;
 /// <param name="Scope">The field that named what the press acted on (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), which a reverse press carries back.</param>
 /// <param name="Target">What the press named in that field.</param>
 public sealed record HelpPressNow(
-    string Id, string Module, string Route, string Session, string? Scope, string? Target, DateTimeOffset At, string Outcome);
+    string Id, string Module, string Route, string Session, string? Scope, string? Target, DateTimeOffset At, string Outcome)
+{
+    /// <summary>The workspace or repository the press named (<see cref="HelpPressPlace"/>); null where it named none, or until placed.</summary>
+    public IReadOnlyDictionary<string, string>? Place { get; init; }
+
+    /// <summary>Whether <see cref="Place"/> was beyond its conversation's focus at the press.</summary>
+    public bool Beyond { get; init; }
+}
 
 /// <summary>
 /// Ask Daoris's covered presses of this run, for the window's group in Notifications: memory alone, so a restart empties it, as the
@@ -51,6 +59,16 @@ public sealed class HelpPressRecord(TimeProvider clock)
         {
             var at = _presses.FindIndex(each => each.Id == id);
             if (at >= 0) _presses[at] = _presses[at] with { Outcome = succeeded ? Done : Failed };
+        }
+    }
+
+    /// <summary>The place the press named, read against the registry and its conversation's focus once it began.</summary>
+    public void Placed(string id, HelpPressPlace place)
+    {
+        lock (_gate)
+        {
+            var at = _presses.FindIndex(each => each.Id == id);
+            if (at >= 0) _presses[at] = _presses[at] with { Place = place.Place.Wire(), Beyond = place.Beyond };
         }
     }
 
