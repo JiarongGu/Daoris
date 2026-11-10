@@ -52,6 +52,9 @@ namespace Daoris.Knowledge;
 /// and it always says (`[]` for none), while the page's add and an import say nothing of lanes. Read
 /// through <see cref="DeclaredLanes"/>, which holds the rule its CLI twin (`lanes.ts`) holds too.
 /// </param>
+/// <param name="Kind">Its kind (<see cref="PlaceKinds"/>): <b>null is unstated</b>, preserved on upsert as the line is, and read through
+/// <see cref="PlaceKind"/>.</param>
+/// <param name="Excludes">A folder's own globs its manifest passes by: <b>null is unstated</b> and preserved, empty clears.</param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -66,10 +69,15 @@ public sealed record Registration(
     string? Workspace = null,
     string? DefaultBranch = null,
     IReadOnlyList<string>? Uses = null,
-    IReadOnlyList<DeclaredLane>? Lanes = null)
+    IReadOnlyList<DeclaredLane>? Lanes = null,
+    string? Kind = null,
+    IReadOnlyList<string>? Excludes = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);
+
+    /// <summary>Its kind, with silence read as a repository's.</summary>
+    public string PlaceKind => PlaceKinds.Of(Kind) ?? PlaceKinds.Git;
 
     /// <summary>What it says it uses, as the rule reads the declaration.</summary>
     public IReadOnlyList<string> DependsOn => Declared.Uses(Uses, Repository);

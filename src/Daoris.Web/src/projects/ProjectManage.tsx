@@ -4,6 +4,7 @@ import type { api, Registration } from '../data/api';
 import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
+import { FolderExcludesField, parseExcludes } from './FolderExcludesField';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
@@ -46,6 +47,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
   const register = useRegisterRepository();
   const [found, setFound] = useState<FolderInspection | null>(null);
   const [workspace, setWorkspace] = useState(initialWorkspace ?? '');
+  const [excludes, setExcludes] = useState('');
   const filled = Boolean(initialWorkspace);
 
   const choose = () => pick.mutate(undefined, {
@@ -62,6 +64,8 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
       // What the shell found there, stated: registered is addressable, adopted is disciplined —
       // and a row that said adopted without a manifest would be driven with no connector.
       adopted: found.adopted,
+      kind: found.git ? 'git' : 'folder',
+      ...(!found.git && parseExcludes(excludes).length > 0 ? { excludes: parseExcludes(excludes) } : {}),
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted
         ? {
@@ -130,7 +134,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
             <Chip accent>{found.name}</Chip>
             <Chip>{found.adopted ? t('projects.manage.adopted') : t('projects.manage.notAdopted')}</Chip>
-            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.noGit')}</Chip>
+            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.folder')}</Chip>
           </p>
           {found.summary && <p className="mt-2 text-body text-ink-soft">{found.summary}</p>}
 
@@ -144,10 +148,12 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-              {t('projects.manage.noGitWarning')}
+            <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">
+              {t('projects.manage.folderNote')}
             </p>
           )}
+
+          {!found.git && <FolderExcludesField value={excludes} onChange={setExcludes} />}
 
           {field}
         </div>

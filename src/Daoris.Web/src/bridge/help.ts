@@ -8,7 +8,7 @@ import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help
 import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
-import type { Place } from '../help/focus';
+import { type Place, placeSaid } from '../help/focus';
 import type { HelpPublishedEntry } from '../help/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
@@ -237,13 +237,14 @@ const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPag
  * driver before it takes a page, or every workspace's for null. It is part of the key, so one scope's pages never answer
  * another's.
  */
-export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null) => {
+export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null, about: Place | null = null) => {
   const { isAvailable } = useShenora();
   const words = search.trim();
   return useInfiniteQuery({
-    queryKey: [...HISTORY, workspace ?? '*', words],
+    queryKey: [...HISTORY, workspace ?? '*', about ? placeSaid(about) : '', words],
     queryFn: async ({ pageParam }) => listingPage(await call('HELP_CONVERSATIONS', {
       ...(workspace ? { workspace } : {}),
+      ...(about ? { about } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
     })),

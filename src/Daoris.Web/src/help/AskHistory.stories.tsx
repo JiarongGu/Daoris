@@ -162,6 +162,31 @@ export const Empty: Story = { args: { rows: [] } };
 
 export const EmptyChinese: Story = { args: { rows: [] }, decorators: [chinese] };
 
+const SHOWING = {
+  window: 'Games', workspace: null, recent: [], onShowing: () => {},
+  repositories: [{ name: 'engine', workspace: 'Games', checkout: true }, { name: 'api', workspace: 'Work', checkout: true }],
+};
+const HOMED: HelpConversationRow[] = [
+  row({ session: 'g1', title: 'Release checklist', last: minutesAgo(120), workspace: 'Games', focus: { kind: 'repository', workspace: 'Games', repository: 'engine' }, pinned: minutesAgo(300) }),
+  row({ session: 'g2', title: 'Why does the release wait?', last: minutesAgo(30), workspace: 'Games' }),
+  row({ session: 'w1', title: 'Fix the site deploy', last: daysAgo(2), workspace: 'Work', focus: { kind: 'repository', workspace: 'Work', repository: 'api' } }),
+  row({ session: 'm1', title: 'Clean the old trees', last: daysAgo(1) }),
+];
+
+/** *All workspaces*: grouped by home, the window's first, a row's focus chip only where it is not its home. */
+export const ByHome: Story = { args: { rows: HOMED, scope: { ...SHOWING, showing: { kind: 'all' } } } };
+
+export const ByHomeChinese: Story = { args: { rows: HOMED, scope: { ...SHOWING, showing: { kind: 'all' } } }, decorators: [chinese] };
+
+/** *About engine*: the conversations whose home or any focus held is there. */
+export const AboutAPlace: Story = {
+  args: { rows: HOMED.slice(0, 2), scope: { ...SHOWING, showing: { kind: 'about', place: { kind: 'repository', workspace: 'Games', repository: 'engine' } } } },
+};
+
+export const AboutNothing: Story = {
+  args: { rows: [], scope: { ...SHOWING, showing: { kind: 'about', place: { kind: 'repository', workspace: 'Games', repository: 'engine' } } } },
+};
+
 /** More than a page: how many of how many are listed, and *Show more* for the next page. */
 export const More: Story = { args: { total: 457, onMore: () => {} } };
 

@@ -10,7 +10,7 @@ import { type HelpConversationRow, sameWorkspace } from '../history';
 import { type StarterDoor } from '../starters';
 import { FocusCrumb } from './FocusCrumb';
 import { FocusPicker } from './FocusPicker';
-import { type PlaceRepository } from './focusPlaces';
+import { type PlaceRepository, repositoriesOf } from './focusPlaces';
 import { keepFocusRecent, readFocusRecent } from './focusRecent';
 
 /**
@@ -23,7 +23,8 @@ import { keepFocusRecent, readFocusRecent } from './focusRecent';
  * @param window The window's workspace; null for a window on every workspace.
  * @param readied The conversation opened ahead that nobody has spoken in, while it runs.
  */
-export function useHelpFocus({ shown, known, shownIn, here, window, readied, setRound, onGo }: {
+export function useHelpFocus({ shown, known, shownIn, here, window, readied, setRound, onGo, reveal }: {
+  reveal?: number;
   shown: Session | null;
   known: HelpConversationRow | null;
   shownIn: string | null;
@@ -47,7 +48,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   }, [shown?.id]);
 
   const repositories: PlaceRepository[] | undefined = Array.isArray(registry.data)
-    ? registry.data.map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
+    ? repositoriesOf(registry.data)
     : registry.isError ? [] : undefined;
   const fallback = window === null || here === undefined ? MACHINE : homeFocus(here);
   const focus = shown ? known?.focus ?? homeFocus(shownIn) : ahead ?? fallback;
@@ -94,6 +95,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
         gone={gone}
         wider={gone ? wider : null}
         onChoose={choose}
+        reveal={reveal}
       />
       {refused && <p role="alert" className="m-0 text-small text-danger wrap-anywhere">{refused}</p>}
     </div>

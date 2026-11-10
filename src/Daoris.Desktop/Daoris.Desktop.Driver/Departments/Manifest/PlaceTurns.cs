@@ -1,20 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A turn in a git place under the writer's lease, read at its start and its end. The start is kept under the record with the paths
-/// the line carried in, and compared with the place's last manifest of any line; the end is kept once, and what of the turn's change
-/// set and of what it carried in is still uncommitted is the record's <c>holds_place</c> mark. A place that is not a git checkout, or
-/// whose status cannot be read, reads none and is told nothing.
+/// A turn in a git place under the writer's lease: its start kept with the paths the line carried in and compared with the place's
+/// last manifest, its end kept once, and what of its own stays uncommitted the record's <c>holds_place</c> mark. A folder is read by
+/// <see cref="FolderTurns"/>; a git place whose status cannot be read reads none and is told nothing.
 /// </summary>
 public static class PlaceTurns
 {
     /// <summary>Read and keep the start's manifest of <paramref name="record"/> working in <paramref name="root"/>, and what it is told.</summary>
-    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>
-    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
+    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
     public static async Task<PlaceTold?> StartAsync(
-        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct)
+        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct,
+        PlaceExcludes? excludes = null)
     {
-        if (!IsGit(root)) return null;
+        if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes);
         var store = new ManifestStore(home, workspace, department);
         var last = store.Last();
         RunManifest start;
@@ -45,6 +44,7 @@ public static class PlaceTurns
         if (Find(home, record) is not { } found || found.Start.Root is not { } root) return null;
         var (store, start) = found;
         if (store.Read(record, ManifestMoment.End) is { } read && read.At >= start.At) return read.Own ?? [];
+        if (start.Kind == PlaceKind.Folder) return FolderTurns.End(store, record, start);
         RunManifest end;
         try
         {
@@ -64,13 +64,13 @@ public static class PlaceTurns
 
     /// <summary>The uncommitted paths <paramref name="record"/>'s start found that are not its line's own: what its denies guard.</summary>
     public static IReadOnlyList<string> Others(string home, string record) =>
-        Find(home, record) is { } found ? Others(found.Start, found.Start.Own ?? []) : [];
+        Find(home, record) is { Start.Kind: PlaceKind.Git } found ? Others(found.Start, found.Start.Own ?? []) : [];
 
     private static List<string> Others(RunManifest start, IReadOnlyCollection<string> own) =>
         [.. start.Entries.Select(entry => entry.Path).Where(path => !own.Contains(path))];
 
     /// <summary>The store holding <paramref name="record"/>'s start, and that start, wherever under the home its place is.</summary>
-    private static (ManifestStore Store, RunManifest Start)? Find(string home, string record)
+    internal static (ManifestStore Store, RunManifest Start)? Find(string home, string record)
     {
         var places = Path.Combine(home, "work", "places");
         if (!Directory.Exists(places)) return null;
@@ -86,7 +86,4 @@ public static class PlaceTurns
 
         return null;
     }
-
-    private static bool IsGit(string root) =>
-        Directory.Exists(Path.Combine(root, ".git")) || File.Exists(Path.Combine(root, ".git"));
 }

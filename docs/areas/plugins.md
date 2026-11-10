@@ -88,7 +88,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
     serves origin, the identity is read only, Write denies, no API token) is not started: the refusal is logged as `refused`, never as a
     start that failed (`unstartable`), counts as no exit toward unsound, and the hand is asked again a minute later (`HandRefusals`), so a
-    token set later starts the process with no press. `plugin try` takes no hand, so it passes a plugin the loop refuses. They run no git, `gh` or `az`, and declare
+    token set later starts the process with no press. `plugin try` asks the same question of the checkout it is run in, through `PluginHostToken` (`PluginTrialHand`, the step `host-token`): a plugin that takes the token fails it, saying "this plugin's start needs an API token on identity X; set it in Settings → Git", where the start would be refused; with no origin to ask it says so and passes. They run no git, `gh` or `az`, and declare
     node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
     unsound mark and idle stop are its place's own, and `PlaceHostTokens` (given to `HookSet` by the loop and the headless host) reads

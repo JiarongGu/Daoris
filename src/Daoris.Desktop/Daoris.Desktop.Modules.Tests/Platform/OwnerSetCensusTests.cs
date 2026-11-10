@@ -25,7 +25,8 @@ public sealed class OwnerSetCensusTests
     internal static readonly IReadOnlyDictionary<string, string> Exemptions = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["SESSION_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // opens the session's folder in the file manager; changes nothing
-        ["NOTICE_DISMISS"] = OwnerNone.ActsOnNothing, // the owner's news dismissed, by its id or a workspace's
+        ["REGISTRY_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // opens a department's folder in the file manager; changes nothing
+        ["NOTICE_DISMISS"] =OwnerNone.ActsOnNothing, // the owner's news dismissed, by its id or a workspace's
         ["NOTICES_READ"] = OwnerNone.ActsOnNothing, // the owner's news marked read by their ids
         ["HELP_DISMISS"] = OwnerNone.ActsOnNothing, // a proposal set aside by its id; the Apply is what acts
         ["CHANNEL_MARK"] = OwnerNone.ActsOnNothing, // a read mark on an ask's channel, which never moves back

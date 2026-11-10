@@ -102,12 +102,12 @@ public sealed class PlaceTurnsTests : IDisposable
     }
 
     [Fact]
-    public async Task A_folder_that_is_not_a_git_place_reads_no_manifest()
+    public async Task A_folder_that_is_not_a_git_place_is_read_as_a_folder()
     {
         Directory.CreateDirectory(Place);
 
-        Assert.Null(await StartAsync("s-aaaaaaaa"));
-        Assert.Null(await EndAsync("s-aaaaaaaa"));
+        Assert.Equal(PlaceKind.Folder, (await StartAsync("s-aaaaaaaa"))!.Kind);
+        Assert.Empty((await EndAsync("s-aaaaaaaa"))!);
     }
 
     [Fact]

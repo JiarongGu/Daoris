@@ -392,7 +392,7 @@ public sealed class HelpRoomDoorsTests
             "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris session say <id> \"…\"`, "
             + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             history.Terminal);
-        Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
-        Assert.Contains("[--workspace <name> | --all]", HelpCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all | --about <place>]", DriverCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all | --about <place>]", HelpCommand.Usage);
     }
 }

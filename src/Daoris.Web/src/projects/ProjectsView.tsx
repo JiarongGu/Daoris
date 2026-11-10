@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration } from '../data/api';
+import { isFolder, type Registration } from '../data/api';
+import { FolderNoGit } from './FolderNoGit';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
@@ -17,7 +18,8 @@ import { useScope } from '../data/scope';
 import {
   useDriver, useLines, useHeavySlot, useSweepPlan,
 } from '../bridge/shell';
-import { type Notify, useErrorNotify } from '../design/ui';
+import { useOpenDepartmentFolder } from '../bridge/repositories/registry';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
@@ -149,6 +151,7 @@ export function useProjectsView({
   // Session branches holding work no branch of the person's holds — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one.
   const sweep = useSweepPlan();
+  const openFolder = useOpenDepartmentFolder();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
   // And every branch of Daoris's it holds, sessions' and landings' (§4.1): its row says how many. Absent where the driver
@@ -289,7 +292,9 @@ export function useProjectsView({
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
           // Its branches and its line's history: a shell's, each read only while its tab shows.
-          branches={attached
+          branches={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached
             ? (
               <RepositoryBranches
                 repository={shown.repository}
@@ -301,7 +306,9 @@ export function useProjectsView({
               />
             )
             : undefined}
-          history={attached
+          history={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
@@ -309,13 +316,16 @@ export function useProjectsView({
             ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its queue, candidates and history, read while its tab shows.
-          integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
+          integration={attached && isFolder(shown)
+            ? <FolderNoGit />
+            : attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           files={attached && Boolean(shown.root) ? <RepositoryFiles repository={shown.repository} /> : undefined}
           tab={tab}
           onTab={onTab}
           // Adoption's own acts are an adopter's: managing writes its declaration into it.
           onManage={attached && shown.adopted ? () => setManaging(shown) : undefined}
           onOpenCode={onOpenCode ? () => onOpenCode(shown.repository) : undefined}
+          onOpenFolder={attached && Boolean(shown.root) ? () => openFolder.mutate(shown.repository, { onError: failure(notify) }) : undefined}
         />
       )
       : goneOrLoading('repository')

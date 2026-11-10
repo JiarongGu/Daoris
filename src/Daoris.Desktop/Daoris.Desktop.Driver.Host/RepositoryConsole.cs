@@ -10,6 +10,7 @@ internal static class RepositoryConsole
 {
     private const string Usage =
         "usage: daoris repository connect [--workspace <name>] [--dry-run]  ·  daoris repository retire [<name>] [--dry-run]\n"
+        + "       daoris repository add <folder> [--workspace <name>] [--exclude <glob>]... [--dry-run]\n"
         + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]";
 
     public static async Task<int> RunAsync(string[] args)
@@ -34,6 +35,28 @@ internal static class RepositoryConsole
 
                     foreach (var line in RegistryWords.Connected(await service.ConnectAsync(root, workspace).ConfigureAwait(false))) Console.WriteLine(line);
                     return 0;
+                case "add" when operands.Count == 1:
+                {
+                    var folder = Path.GetFullPath(operands[0], root);
+                    var excludes = Flags(words, "--exclude");
+                    if (dry)
+                    {
+                        Console.WriteLine(RegistryWords.AddDry(folder, workspace));
+                        return 0;
+                    }
+
+                    var added = await service.AddFolderAsync(folder, workspace, excludes).ConfigureAwait(false);
+                    var followed = RegistryConnect.IsLocal(service.BaseUrl);
+                    if (followed)
+                    {
+                        FolderFirstManifest.Keep(
+                            DriverConfig.HomeOf(DriverConfig.ResolvePath()), RemoteTarget.Workspace(added.Workspace ?? workspace), added.Plan.Repository, folder, excludes);
+                    }
+
+                    foreach (var line in RegistryWords.FolderAdded(added, followed)) Console.WriteLine(line);
+                    return 0;
+                }
+
                 case "retire" when operands.Count <= 1:
                 {
                     var repository = operands.Count == 1 ? operands[0] : Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
@@ -93,13 +116,17 @@ internal static class RepositoryConsole
         return at >= 0 && at + 1 < words.Length ? words[at + 1] : null;
     }
 
-    /// <summary>The words that are neither a flag nor <c>--workspace</c>'s value.</summary>
+    /// <summary>Every value given to a repeated flag.</summary>
+    private static List<string> Flags(string[] words, string name) =>
+        [.. words.Select((word, at) => (word, at)).Where(each => each.word == name && each.at + 1 < words.Length).Select(each => words[each.at + 1])];
+
+    /// <summary>The words that are neither a flag nor a value of <c>--workspace</c> or <c>--exclude</c>.</summary>
     private static List<string> Operands(string[] words)
     {
         List<string> found = [];
         for (var at = 0; at < words.Length; at++)
         {
-            if (words[at] == "--workspace") at++;
+            if (words[at] is "--workspace" or "--exclude") at++;
             else if (!words[at].StartsWith('-')) found.Add(words[at]);
         }
 

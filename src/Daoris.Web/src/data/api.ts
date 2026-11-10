@@ -166,10 +166,12 @@ export type GoAhead = GoAheadResponse;
 export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
 /**
  * A registered repository as the service declares it (`generated/service.ts`); `root` is the checkout on this machine, answered to it
- * alone. The fields left out read as none.
+ * alone. The fields left out read as none; a `kind` left out is a repository's.
  */
-export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>
-  & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>>;
+export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>
+  & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>>;
+
+export const isFolder = (registration: Registration): boolean => registration.kind === 'folder';
 
 /** Whether a repository can be asked — the host's answer, or adoption where it gives none. */
 export const canBeAsked = (registration: Registration): boolean =>

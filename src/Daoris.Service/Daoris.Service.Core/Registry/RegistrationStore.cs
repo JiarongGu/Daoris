@@ -140,6 +140,10 @@ public sealed class RegistrationStore
             // The lanes it declares, as their words. NULL is unstated, which is every row
             // from before it and what a registration that says nothing of lanes preserves.
             ("lanes", "lanes TEXT NULL"),
+            // The place's kind. NULL is unstated, every row from before it, which reads as a repository.
+            ("kind", "kind TEXT NULL"),
+            // The person's own excludes, a JSON list. NULL is unstated and preserved; `[]` clears.
+            ("excludes", "excludes TEXT NULL"),
         })
         {
             await SchemaColumns.EnsureAsync(_db, "registrations", column, definition, ct).ConfigureAwait(false);
@@ -211,9 +215,9 @@ public sealed class RegistrationStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes, kind, excludes)
             VALUES ({RegistrationKey.Held("registrations")}, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes)
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes, $kind, $excludes)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated, uses = $uses,
               root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
@@ -224,9 +228,14 @@ public sealed class RegistrationStore
               default_branch = COALESCE($default_branch, default_branch),
               -- The lanes too (D115 §2.2): only `connect` reads the repository's file, and it always
               -- says; the page's add and an import say nothing, and must not erase what it said.
-              lanes = COALESCE($lanes, lanes)
-            RETURNING workspace, default_branch, lanes
+              lanes = COALESCE($lanes, lanes),
+              -- The kind too: `connect` says nothing of it, and must not erase what an import or a follow said.
+              kind = COALESCE($kind, kind),
+              excludes = COALESCE($excludes, excludes)
+            RETURNING workspace, default_branch, lanes, kind, excludes
             """;
+        command.Parameters.AddWithValue("$excludes", registration.Excludes is null ? DBNull.Value : ToJson(registration.Excludes));
+        command.Parameters.AddWithValue("$kind", (object?)PlaceKinds.Of(registration.Kind) ?? DBNull.Value);
         command.Parameters.AddWithValue("$adopted", registration.Adopted ? 1 : 0);
         command.Parameters.AddWithValue(
             "$workspace",
@@ -263,6 +272,8 @@ public sealed class RegistrationStore
             Workspace = Workspaces.Normalize(reader.IsDBNull(0) ? null : reader.GetString(0)),
             DefaultBranch = reader.IsDBNull(1) ? null : reader.GetString(1),
             Lanes = reader.IsDBNull(2) ? null : LanesFromJson(reader.GetString(2)),
+            Kind = reader.IsDBNull(3) ? null : reader.GetString(3),
+            Excludes = reader.IsDBNull(4) ? null : FromJson(reader.GetString(4)),
         };
     }, ct);
 
@@ -532,7 +543,7 @@ public sealed class RegistrationStore
         await using var command = _db.Command();
         command.CommandText =
             "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
-            + "default_branch, uses, lanes FROM registrations";
+            + "default_branch, uses, lanes, kind, excludes FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -552,7 +563,9 @@ public sealed class RegistrationStore
                 Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8)),
                 DefaultBranch: reader.IsDBNull(10) ? null : reader.GetString(10),
                 Uses: FromJson(reader.GetString(11)),
-                Lanes: reader.IsDBNull(12) ? null : LanesFromJson(reader.GetString(12))));
+                Lanes: reader.IsDBNull(12) ? null : LanesFromJson(reader.GetString(12)),
+                Kind: reader.IsDBNull(13) ? null : reader.GetString(13),
+                Excludes: reader.IsDBNull(14) ? null : FromJson(reader.GetString(14))));
         }
 
         return registrations;

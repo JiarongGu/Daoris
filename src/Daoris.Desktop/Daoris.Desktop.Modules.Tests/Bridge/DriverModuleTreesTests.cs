@@ -179,6 +179,23 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal("src/chunk.ts", answer.GetProperty("files")[0].GetProperty("path").GetString());
     }
 
+    /// <summary>A folder's review is its change set, read from its manifests: no base, nothing of git's, a file not text with no patch.</summary>
+    [Fact]
+    public void A_folder_s_review_is_its_change_set_with_nothing_of_git_s()
+    {
+        var changes = new TreeDiff([new DiffFile("picture.png", "added", null, null, null)], null, "");
+
+        var answer = JsonSerializer.SerializeToElement(
+            TreesReviewWires.ReviewAnswer("s1a2b3c4", changes, TreesReviewWires.ReviewSource.Place, null, treeGone: false), Camel);
+
+        Assert.Equal("place", answer.GetProperty("source").GetString());
+        Assert.Equal("", answer.GetProperty("base").GetString());
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("files")[0].GetProperty("patch").ValueKind);
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("offer").ValueKind);
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("behind").ValueKind);
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("treeBranch").ValueKind);
+    }
+
     /// <summary>A tree's uncommitted work rides beside the committed list, in its shape, and says when it is cut.</summary>
     [Fact]
     public void A_trees_uncommitted_work_is_answered_beside_the_committed_files()

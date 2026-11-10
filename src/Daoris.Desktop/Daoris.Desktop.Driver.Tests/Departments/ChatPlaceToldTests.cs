@@ -26,7 +26,7 @@ public sealed class ChatPlaceToldTests : IDisposable
     }
 
     [Fact]
-    public async Task A_conversation_is_told_the_person_s_uncommitted_paths_and_a_non_git_folder_says_nothing()
+    public async Task A_conversation_is_told_the_person_s_uncommitted_paths_and_a_non_git_folder_that_it_is_one()
     {
         await RepositoryAsync();
         Assert.Null(await ChatPlaceTold.ToldAsync(Home, "default", "reports", Place, "c-aaaaaaaa", null, CancellationToken.None));
@@ -40,7 +40,7 @@ public sealed class ChatPlaceToldTests : IDisposable
 
         var folder = Path.Combine(_scratch, "plain");
         Directory.CreateDirectory(folder);
-        Assert.Null(await ChatPlaceTold.ToldAsync(Home, "default", "plain", folder, "c-cccccccc", null, CancellationToken.None));
+        Assert.Contains("It is not a git repository", await ChatPlaceTold.ToldAsync(Home, "default", "plain", folder, "c-cccccccc", null, CancellationToken.None));
     }
 
     [Fact]

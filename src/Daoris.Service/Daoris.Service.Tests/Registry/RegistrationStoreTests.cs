@@ -182,6 +182,42 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Equal("trunk", Assert.Single(await _store.AllAsync()).DefaultBranch);
     }
 
+    /// <summary>The person's own excludes on a registration round-trip, silence preserves them, and an empty list clears them.</summary>
+    [Fact]
+    public async Task A_place_s_excludes_round_trip_silence_preserves_them_and_an_empty_list_clears_them()
+    {
+        Assert.Empty((await _store.UpsertAsync(Declared(), Now)).Excludes ?? []);
+
+        await _store.UpsertAsync(Declared() with { Excludes = ["build/**", "*.log"] }, Now);
+        Assert.Equal(["build/**", "*.log"], Assert.Single(await _store.AllAsync()).Excludes);
+
+        var kept = await _store.UpsertAsync(Declared() with { Excludes = null }, Now.AddDays(1));
+        Assert.Equal(["build/**", "*.log"], kept.Excludes);
+
+        await _store.UpsertAsync(Declared() with { Excludes = [] }, Now.AddDays(2));
+        Assert.Empty(Assert.Single(await _store.AllAsync()).Excludes ?? []);
+    }
+
+    /// <summary>
+    /// A place's kind round-trips, silence preserves it as it does the line, and a row that never said reads as a repository.
+    /// </summary>
+    [Fact]
+    public async Task A_place_s_kind_round_trips_and_silence_preserves_it()
+    {
+        Assert.Equal(PlaceKinds.Git, (await _store.UpsertAsync(Declared(), Now)).PlaceKind);
+
+        await _store.UpsertAsync(Declared() with { Kind = PlaceKinds.Folder }, Now);
+        Assert.Equal(PlaceKinds.Folder, Assert.Single(await _store.AllAsync()).Kind);
+
+        var kept = await _store.UpsertAsync(Declared() with { Kind = null }, Now.AddDays(1));
+        Assert.Equal(PlaceKinds.Folder, kept.Kind);
+        Assert.Equal(PlaceKinds.Folder, Assert.Single(await _store.AllAsync()).PlaceKind);
+
+        await _store.UpsertAsync(Declared() with { Kind = PlaceKinds.Git }, Now.AddDays(2));
+        Assert.Equal(PlaceKinds.Git, Assert.Single(await _store.AllAsync()).Kind);
+        Assert.Null(PlaceKinds.Of("a system"));
+    }
+
     /// <summary>
     /// What commit this deployment's copy stands on, kept beside the registrations and gone with them.
     /// A leftover row would refuse the first feed after a repository re-joined, as though a commit it
