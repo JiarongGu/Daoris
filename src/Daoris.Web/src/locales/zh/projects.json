@@ -17,6 +17,8 @@
   "projects.row.bench": "工位",
   "projects.row.branches": "{{count}} 条 Daoris 的分支",
   "projects.row.branches_other": "{{count}} 条 Daoris 的分支",
+  "projects.row.unguarded": "无防护",
+  "projects.row.unguardedTip": "它的系统本身不防护任何写入：一次只运行一个应用，每项改动在写入前读一次、写入后再读回；应用期间被别的写入者改动时会说明，并重新规划。",
   "projects.none.headline": "请选择仓库",
   "projects.none.body": "谁在家族之中，各自拥有什么、接受什么，以及谁还没有采用。工作区那一行打开它的页面：它的默认值、同步去处和清理。仓库的页面会列出它的声明和索引收录的内容，并能打开它的代码地图。",
   "projects.gone.headline": "此仓库已不在这里",

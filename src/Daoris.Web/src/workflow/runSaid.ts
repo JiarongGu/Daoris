@@ -223,6 +223,7 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
     // A declined request is the person's to ask again or go on without.
     case 'failed':
       if (node === 'request' && step.code === DECLINED) return t('workflow.run.graph.said.requestDeclined');
+      if (node === 'apply' && step.code === 'changed-while-applying') return t('workflow.run.graph.said.applyChanged');
       return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
     // A review's rejection is the person's changes, which go to the work.
     case 'rejected': return t(node === 'review' ? 'workflow.run.graph.said.changes' : 'workflow.run.graph.said.rejected');

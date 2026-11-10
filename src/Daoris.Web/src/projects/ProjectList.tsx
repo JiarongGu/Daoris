@@ -43,6 +43,8 @@ export type RepositoryRowFacts = RepositoryStanding & {
   entries?: number | null;
   /** How many of Daoris's branches it holds on this machine (§4.1): a shell's, absent in a browser. */
   branches?: number;
+  /** A system department whose adapter declares its precondition `none`: the lease and a read-back alone guard its apply. */
+  unguarded?: boolean;
 };
 
 /** One workspace's group: its adopted repositories, then those registered and not adopted. */
@@ -124,6 +126,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
           <span className="flex min-w-0 items-baseline gap-2">
             <span className={cn('min-w-0 truncate text-body', faint ? 'text-ink-soft' : 'text-ink')}>{repository}</span>
             <span className="ml-auto flex shrink-0 items-baseline gap-1.5">
+              {facts.unguarded && <span title={t('projects.row.unguardedTip')}><Pill>{t('projects.row.unguarded')}</Pill></span>}
               <RepositoryMarks drivable={facts.drivable} held={facts.held} here={facts.here} />
             </span>
           </span>
