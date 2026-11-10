@@ -24,6 +24,12 @@ public enum AskRefusal
     QuestRefused,
 
     /// <summary>
+    /// A session's publish beside the ask's intake: while the intake answers the ask, or before any intake has served it, only the intake
+    /// publishes it, so no receiver is asked twice. The person's own press is never refused for it.
+    /// </summary>
+    IntakeAnswering,
+
+    /// <summary>
     /// A delete that would remove a record something stands on — a quest asked by it that somebody took
     /// or answered, or that a session started for — so the ask stays whole.
     /// </summary>

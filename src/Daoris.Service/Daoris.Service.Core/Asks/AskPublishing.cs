@@ -2,7 +2,8 @@ namespace Daoris.Knowledge;
 
 /// <summary>Recording an ask, becoming quests, and closing it.</summary>
 internal sealed class AskPublishing(
-    KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? askFiles, AskStandings standings, AskQuests askQuests)
+    KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? askFiles, AskStandings standings, AskQuests askQuests,
+    AskPublishGuard guard)
 {
     /// <summary>
     /// Record an ask, and answer it: a named receiver is published to at once; otherwise the
@@ -97,7 +98,7 @@ internal sealed class AskPublishing(
             {
                 var took = ask with { State = AskState.Published, Tier = AskDesk.ByName, Quests = [published.Quest.Id] };
                 if (await LostAsync(took, published.Quest.Id, workspace, now, ct).ConfigureAwait(false) is { } first) return first;
-                return new(AskRefusal.None, $"Asked as `#{id}` in `{workspace}`.\n\n{published.Message}", took, published.Quest);
+                return new(AskRefusal.None, $"Asked as `#{id}` in `{workspace}`.\n\n{published.Message}{AskPublishGuard.Unrequired}", took, published.Quest);
             }
 
             // The receiver the person named could not be asked. The ask is still what they meant, so
@@ -153,6 +154,8 @@ internal sealed class AskPublishing(
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}) — it becomes nothing more.", ask);
         }
 
+        if (await guard.JudgeAsync(ask, to, session, ct).ConfigureAwait(false) is { } once) return once;
+
         // An intake's review proposal, judged before anything is published, so a refused one leaves nothing behind.
         var agent = byAgent || !string.IsNullOrWhiteSpace(session);
         var (proposed, unfitProposal) = AskChoices.JudgeProposal(draft, session, agent, now);
@@ -167,7 +170,7 @@ internal sealed class AskPublishing(
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
         await asks.RecordPublishedAsync(ask.Id, published.Quest.Id, byIntake ? AskDesk.ByIntake : null, now, ct)
             .ConfigureAwait(false);
-        var message = published.Message;
+        var message = published.Quest.Requirements.Count == 0 ? published.Message + AskPublishGuard.Unrequired : published.Message;
         if (proposed is not null)
         {
             await asks.RecordReviewProposalAsync(ask.Id, proposed with { Quest = published.Quest.Id }, now, ct).ConfigureAwait(false);
@@ -217,11 +220,14 @@ internal sealed class AskPublishing(
         _ when ask.Intake is { } intake =>
             $"intake session `{intake}` is answering it: it publishes where the declarations settle it, "
             + "and asks you where they do not.",
+        // Said before the driver's next look, which starts the intake where one is set: never as if nothing would publish it.
         _ when ask.Proposal.Count == 0 =>
-            "by declarations only; no intake agent ran — and no repository's declarations share its words. "
-            + "Nothing was published. Name the receiver, or declare what the owner owns and ask again.",
+            "by declarations only; no intake agent ran — and no repository's declarations share its words. Where Intake is set on this "
+            + "machine, the intake publishes it at the driver's next look, or asks you where it cannot tell; where none is, name the "
+            + "receiver, or declare what the owner owns and ask again.",
         _ => "by declarations only; no intake agent ran — proposed, best first: "
              + string.Join("; ", ask.Proposal.Select(m => $"`{m.Repository}` ({string.Join(", ", m.Matched)})"))
-             + ". Nothing was published: a proposal is a person's to accept.",
+             + ". Where Intake is set on this machine, the intake publishes it at the driver's next look, so leave it to the intake; "
+             + "where none is, a proposal is a person's to accept.",
     };
 }
