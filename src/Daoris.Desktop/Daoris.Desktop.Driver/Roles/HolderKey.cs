@@ -41,32 +41,39 @@ public static class HolderKey
 
     /// <summary>
     /// A Daoris executable's first act: the variable taken out of this process's environment, so no start it builds afterwards
-    /// copies it, whatever that start does with its own block. The inbox's two messaging variables leave with it
-    /// (<see cref="ChildMarks.MessagingVariables"/>).
+    /// copies it, whatever that start does with its own block. A session's delegate key (<see cref="DelegateKey.Variable"/>) and the
+    /// inbox's two messaging variables leave with it (<see cref="ChildMarks.MessagingVariables"/>).
     /// </summary>
     public static void Strip()
     {
         Environment.SetEnvironmentVariable(Variable, null);
+        Environment.SetEnvironmentVariable(DelegateKey.Variable, null);
         foreach (var name in ChildMarks.MessagingVariables) Environment.SetEnvironmentVariable(name, null);
     }
 
     /// <summary>
-    /// The verb's first act: the variable read into memory, then removed from the environment as <see cref="Strip"/> removes it. Only
-    /// <c>sessions supervise</c> asks for what is taken (<see cref="Taken"/>).
+    /// The verb's first act: the variable read into memory, and a session's delegate key with it (<see cref="DelegateKey.Take"/>), then
+    /// both removed from the environment as <see cref="Strip"/> removes them. Only <c>sessions supervise</c> asks for what is taken
+    /// (<see cref="Taken"/>).
     /// </summary>
     public static void Take()
     {
         _taken = Environment.GetEnvironmentVariable(Variable);
         // Present at the entry, whatever its value and whether or not it is a key.
         TerminalRole.Held = _taken is not null;
+        DelegateKey.Take();
         Strip();
     }
 
     /// <summary>
-    /// What <see cref="Take"/> read, let go by a verb that holds no key for its life (the events relay); the entry's
+    /// What <see cref="Take"/> read, the delegate key's too, let go by a verb that holds no key for its life (the events relay); the entry's
     /// marker stays, so a role's terminal is still known as one.
     /// </summary>
-    public static void Drop() => _taken = null;
+    public static void Drop()
+    {
+        _taken = null;
+        DelegateKey.Drop();
+    }
 
     /// <summary>What <see cref="Take"/> read, or null where the variable is not set.</summary>
     public static string? Taken => _taken;

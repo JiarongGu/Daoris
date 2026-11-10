@@ -435,6 +435,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <inheritdoc cref="HelpAccessSwap.GrantPending"/>
     public bool GrantPending(string grant, ConfiguredAccess chosen) => Executors.Of<HelpAccessSwap>().GrantPending(grant, chosen);
 
+    /// <summary>The mode a running Ask Daoris conversation's start got; null for any other session, or one not running here.</summary>
+    public string? HelpModeOf(string sessionId) => _context.HelpModes.GetValueOrDefault(sessionId);
+
     /// <inheritdoc cref="HelpAccessSwap.TurnChanged"/>
     internal void HelpTurnChanged(string sessionId, ChatQueue queue) => Executors.Of<HelpAccessSwap>().TurnChanged(sessionId, queue);
 

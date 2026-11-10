@@ -60,7 +60,13 @@ public sealed class SessionProcesses(string? markers = null)
         /// never held over the start, which would race the launcher's joins.
         /// </summary>
         public bool Launched;
+
+        /// <summary>How many delegate keys were drawn as it was tracked: its session's last process ending forgets those.</summary>
+        public long Drawn;
     }
+
+    /// <summary>The delegate keys of the sessions started here, each forgotten as its session's last process here ends.</summary>
+    public SessionDelegates Delegates { get; } = new();
 
     private readonly object _gate = new();
 
@@ -456,7 +462,10 @@ public sealed class SessionProcesses(string? markers = null)
     {
         var launched = ThroughLauncher(process);
         var job = launched ? null : ProcessJob.Hold(process);
-        var entry = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job, Launched = launched };
+        var entry = new Entry
+        {
+            Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job, Launched = launched, Drawn = Delegates.Drawn,
+        };
         lock (_marks)
         {
             lock (_gate)
@@ -761,8 +770,15 @@ public sealed class SessionProcesses(string? markers = null)
                     if (owner._running.TryGetValue(sessionId, out var held) && held.Remove(entry))
                     {
                         removed = true;
-                        if (held.Count == 0) owner._running.Remove(sessionId);
-                        else kept = Answered(held);
+                        if (held.Count == 0)
+                        {
+                            owner._running.Remove(sessionId);
+                            owner.Delegates.Forget(sessionId, entry.Drawn);
+                        }
+                        else
+                        {
+                            kept = Answered(held);
+                        }
                     }
 
                     // Taken under the gate, so no JobOf opens a launcher's job again after this.
