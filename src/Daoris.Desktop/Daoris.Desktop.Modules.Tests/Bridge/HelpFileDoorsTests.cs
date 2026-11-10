@@ -12,53 +12,6 @@ public sealed class HelpFileDoorsTests : Bridge
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));
 
     /// <summary>
-    /// An order is <c>ACCOUNT_USE</c>'s own <c>order</c> — the set's order written whole as its owner's
-    /// (the accounts named first, the rest after), refused in the screen's words where an account is none, and cleared back to
-    /// the ids' order with no setting cleared. The door takes no workspace.
-    /// </summary>
-    [Fact]
-    public async Task An_order_is_written_and_refused_as_the_accounts_screens_route_writes_and_refuses_it()
-    {
-        foreach (var account in new[] { "work", "play", "spare" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", account));
-        var doors = Module().HelpDoors(null);
-
-        await doors.SetAccountOrderAsync("claude-code-acp", ["work", "play"], false, CancellationToken.None);
-        await doors.SetAccountUseAsync("claude-code", new UseChange(Use: "order"), CancellationToken.None);
-
-        Assert.Equal(["work", "play", "spare"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
-        Assert.Contains("no account `gone`", (await Assert.ThrowsAsync<DriverException>(() =>
-            doors.SetAccountOrderAsync("claude-code", ["work", "gone"], false, CancellationToken.None))).Message);
-
-        await doors.SetAccountOrderAsync("claude-code", ["spare"], false, CancellationToken.None);
-        Assert.Equal(["spare", "work", "play"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
-
-        await doors.SetAccountOrderAsync("claude-code", [], true, CancellationToken.None);
-
-        var back = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal(["play", "spare", "work"], back.Rotation["claude-code"]);
-        Assert.Equal("order", HarnessSettings.LoadSet(HarnessSettingsPath).Set("claude-code").Use.Use);
-    }
-
-    /// <summary>
-    /// A ready is <c>ACCOUNT_USE</c>'s own <c>ready</c> — <i>Try now</i>, an account's cool-off ended as its owner's,
-    /// the tool's own sign-in's where none is named; one that is not cooling is told so and nothing changes.
-    /// </summary>
-    [Fact]
-    public async Task A_ready_ends_the_cool_off_as_the_accounts_screens_try_now_does()
-    {
-        var now = DateTimeOffset.UtcNow;
-        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "play", now.AddHours(2), true, "weekly", now, "s1a2b3c4"), now);
-        AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, now.AddHours(1), false, null, now, null), now);
-        var doors = Module().HelpDoors(null);
-
-        Assert.True(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
-        Assert.False(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
-        Assert.Equal([null], AccountCooling.Read(Home, now).Select(entry => entry.Account));
-        Assert.True(await doors.ReadyAccountAsync("claude-code", null, CancellationToken.None));
-        Assert.Empty(AccountCooling.Read(Home, now));
-    }
-
-    /// <summary>
     /// The browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
     /// <c>daoris browser</c> write, and read by <c>daoris-browser</c> at its next start.
     /// </summary>

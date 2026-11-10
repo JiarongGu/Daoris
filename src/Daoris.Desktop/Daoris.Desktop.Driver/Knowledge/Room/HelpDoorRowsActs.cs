@@ -17,12 +17,12 @@ internal static class HelpDoorRowsActs
         // An account's name is the person's, its id the folder's. Daoris's accounts are one set, and its order says where starts begin.
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
             "`daoris agent account rename <agent> <account> <name>`"),
-        // The order and *Try now*, the terminal's doors, with Ask Daoris's `order` and `ready`; one set's.
+        // The order and *Try now*, the terminal's doors; one set's.
         ("choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie "
             + "otherwise", Agent + "How accounts are used → Use, up and down",
             "`daoris agent account order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` "
             + "returns to the ids' order)"),
-        // How the accounts are used, the terminal's door; it judges Ask Daoris's `use` door (`use`, `keep`, `switch` and `curve`).
+        // How the accounts are used, the terminal's door.
         ("choose how Daoris's accounts are used, for every workspace: make the most of them (`goal`) or one by one "
             + "in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, "
             + "or not while a session runs",

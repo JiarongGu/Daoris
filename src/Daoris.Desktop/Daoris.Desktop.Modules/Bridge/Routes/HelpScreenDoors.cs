@@ -17,9 +17,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
         ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
 
-    // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words. A named
-    // environment the workspace does not declare is refused before anything is sent, as `daoris ask --review` refuses
-    // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
+    // The ask composer's door, `POST /api/asks`, with its review choice and words; an environment the workspace does not declare is refused first.
     public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {
         var asks = service ?? throw NotReady();
@@ -47,54 +45,8 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             context.Actions.Relay(harness, action), config, ended);
     }
 
-    public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
-    {
-        var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
-        try
-        {
-            HarnessSettings.Change(
-                _loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null), agents: _loop.Harnesses.Agents);
-        }
-        catch (ShenoraException refused)
-        {
-            throw new DriverException(refused.Message);
-        }
-
-        _loop.Nudge();
-        return Task.CompletedTask;
-    }
-
-    // ACCOUNT_USE's own `order`: the set's order through the screen's own edit, the accounts named first,
-    // or the ids' order again where cleared, written whole by the change and clearing no setting; then the loop asked to look.
-    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
-    {
-        var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
-        try
-        {
-            HarnessSettings.Change(_loop.Harnesses.SettingsPath, clear
-                ? read => read.WithRotation(owner, null)
-                : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null),
-                agents: _loop.Harnesses.Agents);
-        }
-        catch (ShenoraException refused)
-        {
-            throw new DriverException(refused.Message);
-        }
-
-        _loop.Nudge();
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
-    {
-        var ended = _loop.Harnesses.Ready(harness, account);
-        _loop.Nudge();
-        return Task.FromResult(ended);
-    }
-
     // TREES_SYNC_PLAN's own list: the same checkouts and sessions, and each line fetched as the person,
-    // whose press this is — the look on Ask Daoris's card, never its proposal.
-    // It takes what the screen's look takes: the repositories holding Daoris's branches, and the one a card names.
+    // whose press this is, over the repositories holding Daoris's branches and the one a card names.
     public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
@@ -102,8 +54,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             .ConfigureAwait(false);
     }
 
-    // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look. The
-    // sessions in use are asked again inside each repository's hold, as the screen's press asks them.
+    // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look.
     public async Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
     {
         var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
@@ -118,8 +69,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     /// <summary>A card naming a repository includes it, as `--repository` does; none, and the default.</summary>
     private static SyncScope? Named(string? repository) => repository is null ? null : SyncScope.Named([repository]);
 
-    // BrowserModule's own edits: the same check, the same refusal for a file it could not read, the
-    // same write. A route's refusal is its words as the driver's, so the card settles refused with them.
+    // BrowserModule's own edits: the same check, refusal and write, so a route's refusal settles the card in its words.
     public void ChangeBrowser(string setting, string value, string? address, string? title)
     {
         var home = BrowserModule.Home;
@@ -141,8 +91,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         }
     }
 
-    // `daoris plugin add`'s copy, the driver's twin; the loop is asked to look, and it starts
-    // what the plugin runs at that look, as it does any plugin. Nothing runs here.
+    // `daoris plugin add`'s copy; the loop is asked to look and starts what the plugin runs there. Nothing runs here.
     public void AddPlugin(string folder)
     {
         PluginInstall.Add(_loop.Home, folder, ProviderRegistry.Built().Names);
