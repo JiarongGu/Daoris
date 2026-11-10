@@ -10,6 +10,9 @@ public enum OwnFamilies
 
     /// <summary>Its skills, subagent definitions and commands.</summary>
     Skills = 1,
+
+    /// <summary>Its user-scope servers.</summary>
+    Servers = 2,
 }
 
 /// <summary>

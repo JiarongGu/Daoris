@@ -30,7 +30,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         Assert.Equal(PermissionRules.PathOf(Home), answered.GetProperty("path").GetString());
         var defaults = answered.GetProperty("defaults").EnumerateArray().ToList();
         Assert.Equal(
-            ["connector", "commit", "no-push", "no-publish", "tree-guard", OwnHomeDefaults.SkillsId],
+            ["connector", "commit", "no-push", "no-publish", "tree-guard", OwnHomeDefaults.SkillsId, OwnHomeDefaults.ServersId],
             defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
         // No-push is fixed on, its switch git access's Write; no-publish is switched alone.

@@ -10,12 +10,19 @@ public static class OwnHomeDefaults
     /// <summary>The skills, subagent definitions and commands of the person's own tool home.</summary>
     public const string SkillsId = "own-skills";
 
+    /// <summary>The user-scope servers of the person's own tool home.</summary>
+    public const string ServersId = "own-servers";
+
     /// <summary>The defaults, in the order the rules list them after Daoris's own.</summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
         new(
             SkillsId, RuleList.Allow, [],
             "A session is handed the skills, subagents and commands of your own tool home, as your own run of the agent loads them."),
+        new(
+            ServersId, RuleList.Allow, [],
+            "A session is handed the servers of your own tool home, but one named as Daoris's connector or carrying a Daoris key; "
+            + "a review, helper or partner pass is handed none."),
     ];
 
     /// <summary>The families <paramref name="rules"/> leave on.</summary>
@@ -24,6 +31,7 @@ public static class OwnHomeDefaults
     {
         var families = OwnFamilies.None;
         if (On(rules, SkillsId)) families |= OwnFamilies.Skills;
+        if (!connectorOnly && On(rules, ServersId)) families |= OwnFamilies.Servers;
         return families;
     }
 

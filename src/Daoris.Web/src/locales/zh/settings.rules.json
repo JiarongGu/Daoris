@@ -11,6 +11,7 @@
   "settings.rules.fixed": "由 Git 访问权限的写入级别决定",
   "settings.rules.defaultWhy.tree-guard": "会话只在自己的工作树里写文件：在别处编辑、写入，或由 shell 命令写入，都会被拒绝，经由链接也一样。别处需要的改动是一项委托。",
   "settings.rules.defaultWhy.own-skills": "会话会拿到你自己工具目录里的技能、子代理和命令，和你自己运行这个代理时加载的一样。",
+  "settings.rules.defaultWhy.own-servers": "会话会拿到你自己工具目录里的服务器，但与 Daoris 连接器同名或带有 Daoris 密钥的除外；评审、助手或搭档这类单项任务一个也拿不到。",
   "settings.rules.hook": "钩子，作用于 {{tools}}",
   "settings.rules.list.allow": "允许",
   "settings.rules.list.ask": "询问",

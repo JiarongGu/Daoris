@@ -108,6 +108,56 @@ public sealed class OwnToolHomeTests : IDisposable
         }
     }
 
+    private const string Servers = """
+        { "oauthAccount": { "emailAddress": "someone@example.invalid" },
+          "mcpServers": {
+            "notes": { "type": "stdio", "command": "node", "args": ["notes.js"], "env": { "NOTES_DIR": "n" } },
+            "remote": { "type": "http", "url": "https://example.invalid/mcp" },
+            "daoris-knowledge": { "type": "stdio", "command": "daoris", "args": ["mcp"] },
+            "keyed": { "type": "stdio", "command": "node", "args": ["k.js"], "env": { "DAORIS_SERVICE_KEY": "secret" } } },
+          "projects": { "somewhere": { "mcpServers": { "local": { "command": "x" } } } } }
+        """;
+
+    /// <summary>
+    /// The person's user-scope servers ride the same plugin's <c>.mcp.json</c>, as written. The floor keeps two out: one named as
+    /// Daoris's connector, which every session is handed with its own identity, and one whose environment names a Daoris variable, which
+    /// would act as the person on Daoris's records. Nothing else of the global file is read: not its sign-in, not a project's servers.
+    /// </summary>
+    [Fact]
+    public void The_persons_servers_ride_the_plugins_mcp_file_but_daoris_named_or_keyed_ones()
+    {
+        Put(Path.Combine(Person, ".claude.json"), Servers);
+        Directory.CreateDirectory(ToolHome);
+
+        var (_, plugins) = ClaudeSkills.Layout.Own(Home, "s5", Tools(OwnFamilies.Servers));
+
+        var plugin = Assert.Single(plugins);
+        using var file = JsonDocument.Parse(File.ReadAllText(Path.Combine(plugin, ".mcp.json")));
+        var servers = file.RootElement.GetProperty("mcpServers");
+        Assert.Equal(["notes", "remote"], servers.EnumerateObject().Select(server => server.Name));
+        Assert.Equal("n", servers.GetProperty("notes").GetProperty("env").GetProperty("NOTES_DIR").GetString());
+        Assert.DoesNotContain("someone@", File.ReadAllText(Path.Combine(plugin, ".mcp.json")), StringComparison.Ordinal);
+
+        Assert.False(OwnHomeDefaults.Families(PermissionFile.Empty, connectorOnly: true).HasFlag(OwnFamilies.Servers));
+        Assert.True(OwnHomeDefaults.Families(PermissionFile.Empty, connectorOnly: false).HasFlag(OwnFamilies.Servers));
+        var off = PermissionRules.SwitchDefault(PermissionFile.Empty, OwnHomeDefaults.ServersId, on: false);
+        Assert.False(OwnHomeDefaults.Families(off, connectorOnly: false).HasFlag(OwnFamilies.Servers));
+    }
+
+    [Fact]
+    public void Under_the_persons_variable_the_global_file_is_the_one_inside_it_and_skills_alone_write_no_server_file()
+    {
+        var elsewhere = Path.Combine(_root, "elsewhere");
+        Put(Path.Combine(elsewhere, ".claude.json"), Servers);
+        Put(Path.Combine(elsewhere, "skills", "mine", "SKILL.md"), "---\nname: mine\n---\n");
+
+        var (_, both) = ClaudeSkills.Layout.Own(Home, "s6", Tools(OwnFamilies.Skills | OwnFamilies.Servers, ownVariable: elsewhere));
+        Assert.True(File.Exists(Path.Combine(Assert.Single(both), ".mcp.json")));
+
+        var (_, skills) = ClaudeSkills.Layout.Own(Home, "s7", Tools(OwnFamilies.Skills, ownVariable: elsewhere));
+        Assert.False(File.Exists(Path.Combine(Assert.Single(skills), ".mcp.json")));
+    }
+
     [Fact]
     public void Both_claude_doors_are_handed_the_own_plugin_beside_daoris_plugins_and_it_goes_with_the_session()
     {
