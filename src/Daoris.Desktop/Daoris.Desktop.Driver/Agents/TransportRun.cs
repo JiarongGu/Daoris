@@ -260,6 +260,8 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         var (process, proc) = await StartProcessAsync(
                 sessionId, _start.Info, host.Bracketed(sessionId, _start.Info, moved: null), StartClass.Person, piece: null, ct)
             .ConfigureAwait(false);
+        // A stop pressed while this process was starting rides its tracking (SessionProcesses.Track) and ends it here.
+        if (host.Processes.WasStopRequested(sessionId)) host.Processes.Stop(sessionId);
         var leg = Captured(process, proc, append: true, opening: null, preamble: null, Told, ct);
         // The retry is the run's own and the last: a word the new process cannot take is no longer kept for another. It is handed every word
         // written to the process that ended, in order, then those said while this one started.
