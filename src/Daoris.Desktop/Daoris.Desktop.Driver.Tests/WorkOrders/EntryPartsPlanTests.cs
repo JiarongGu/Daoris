@@ -36,8 +36,8 @@ public sealed class EntryPartsPlanTests
     /// <summary>B's request of A, `711d2524`, published by `283ef343` at 06:58, while `62c005bc` still works in A's tree.</summary>
     private static Snapshot At0658() =>
         new(
-            [Quest("28b052ac", "app", "Taken"), Quest("3068f747", "db", "Taken") with { Awaits = "711d2524" },
-                new QuestView("711d2524", "db", "app", "Ask 711d2524", "Why.", "Open") { PublishedBy = "283ef343" }],
+            [Quest("28b052ac", "app", "Taken"), Quest("3068f747", "db", "Taken") with { Awaits = "711d2524", Parent = "28b052ac" },
+                new QuestView("711d2524", "db", "app", "Ask 711d2524", "Why.", "Open") { PublishedBy = "283ef343", Parent = "3068f747" }],
             Repos,
             [new SessionView("62c005bc", "app", "working") { Tree = A2.Tree, Quest = "28b052ac" }])
         {
@@ -71,8 +71,8 @@ public sealed class EntryPartsPlanTests
         };
         return new Snapshot(
             [Quest("3068f747", "db", "Taken") with { Awaits = "711d2524" },
-                new QuestView("711d2524", "db", "app", "Ask 711d2524", "Why.", "Taken") { PublishedBy = "283ef343", Awaits = "01ba2c71" },
-                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2" }],
+                new QuestView("711d2524", "db", "app", "Ask 711d2524", "Why.", "Taken") { PublishedBy = "283ef343", Awaits = "01ba2c71", Parent = "3068f747" },
+                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2", Parent = "711d2524" }],
             Repos,
             [new SessionView("8eba4af2", "app", "working") { Tree = a3.Tree, Quest = "711d2524" }])
         {
@@ -94,7 +94,6 @@ public sealed class EntryPartsPlanTests
 
         var started = Assert.Single(plan, c => c.Quest.Id == "01ba2c71");
         Assert.Equal(StartVerdict.Start, started.Verdict);
-        // A new part, not a carry-on: it takes its own quest, in the tree of the part before it.
         Assert.Null(started.Resumes);
         var entry = Assert.IsType<EntryParts>(started.Entry);
         Assert.Equal(DbEntry, entry.Key);
@@ -102,8 +101,48 @@ public sealed class EntryPartsPlanTests
         Assert.Equal("D:/trees/db/s-283e", entry.Into?.Tree);
         Assert.Null(entry.HeldBy);
         Assert.Contains("`283ef343`", started.Reason);
-        // B's own first quest still waits on its question, in the same tree, once it is answered.
         Assert.Equal(StartVerdict.Waiting, Assert.Single(plan, c => c.Quest.Id == "3068f747").Verdict);
+    }
+
+    /// <summary>The parts a start reads its landing branch from are its own run's, never a newer part of another run of the line.</summary>
+    [Fact]
+    public void A_start_names_its_own_runs_parts_among_the_lines()
+    {
+        var snapshot = At0759();
+        var other = new PriorSession("77aa77aa", "D:/trees/db/s-77aa", "completed", Repository: "db")
+        {
+            Entry = DbEntry, Quest = "9d9d9d9d", Created = At.AddHours(2),
+        };
+        var last = new Dictionary<string, PriorSession>(snapshot.LastRun, StringComparer.OrdinalIgnoreCase) { ["9d9d9d9d"] = other };
+
+        var started = Assert.Single(
+            Planner.Plan(snapshot with { LastRun = last, Quests = [.. snapshot.Quests, Quest("9d9d9d9d", "db", "Done")] }, Config()),
+            c => c.Quest.Id == "01ba2c71");
+
+        var entry = Assert.IsType<EntryParts>(started.Entry);
+        Assert.Equal(["77aa77aa", "283ef343"], entry.Parts.Select(part => part.Session));
+        Assert.Equal(["283ef343"], entry.Run.Select(part => part.Session));
+    }
+
+    /// <summary>
+    /// A request of the line that is a run of its own never goes into another run's tree, free or not: it starts in a tree and on a branch
+    /// of its own, a further part of the line, so no two runs work one branch.
+    /// </summary>
+    [Fact]
+    public void A_request_of_its_own_run_starts_in_a_tree_of_its_own_beside_the_lines_free_tree()
+    {
+        var snapshot = At0759();
+        var own = snapshot.Quests[2] with { Parent = null };
+
+        var started = Assert.Single(
+            Planner.Plan(snapshot with { Quests = [snapshot.Quests[0], snapshot.Quests[1], own] }, Config()), c => c.Quest.Id == "01ba2c71");
+
+        Assert.Equal(StartVerdict.Start, started.Verdict);
+        var entry = Assert.IsType<EntryParts>(started.Entry);
+        Assert.Equal(DbEntry, entry.Key);
+        Assert.Null(entry.Into);
+        Assert.Null(entry.HeldBy);
+        Assert.Contains("its own run's branch", started.Reason);
     }
 
     /// <summary>
@@ -122,7 +161,8 @@ public sealed class EntryPartsPlanTests
             Quests =
             [
                 Quest("3068f747", "db", status),
-                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2" },
+                At0759().Quests[1],
+                At0759().Quests[2],
             ],
             Active = [],
             LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["3068f747"] = waiting },
@@ -157,7 +197,7 @@ public sealed class EntryPartsPlanTests
     public void Two_requests_of_one_entry_at_one_look_take_its_tree_once()
     {
         var snapshot = At0759();
-        var second = new QuestView("7c2b9e10", "app", "db", "Ask 7c2b9e10", "Why.", "Open") { PublishedBy = "8eba4af2" };
+        var second = new QuestView("7c2b9e10", "app", "db", "Ask 7c2b9e10", "Why.", "Open") { PublishedBy = "8eba4af2", Parent = "711d2524" };
 
         var plan = Planner.Plan(snapshot with { Quests = [.. snapshot.Quests, second] }, Config());
 
@@ -176,7 +216,6 @@ public sealed class EntryPartsPlanTests
     public void A_resume_planned_first_keeps_its_tree_from_a_request_of_its_entry()
     {
         var snapshot = At0759();
-        // `711d2524` is answered: B's first quest resumes in `283ef343`'s tree.
         var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[0], snapshot.Quests[2]] }, Config());
 
         var resumed = Assert.Single(plan, c => c.Quest.Id == "3068f747");
@@ -192,7 +231,7 @@ public sealed class EntryPartsPlanTests
     public void A_resume_into_a_tree_a_request_took_at_this_look_waits()
     {
         var snapshot = At0759();
-        var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[2], snapshot.Quests[0]] }, Config());
+        var plan = Planner.Plan(snapshot with { Quests = [snapshot.Quests[2], snapshot.Quests[0]], Closed = [snapshot.Quests[1] with { Status = "Done" }] }, Config());
 
         Assert.Equal("283ef343", Assert.Single(plan, c => c.Quest.Id == "01ba2c71").Entry?.Into?.Session);
         var resume = Assert.Single(plan, c => c.Quest.Id == "3068f747");
@@ -221,7 +260,7 @@ public sealed class EntryPartsPlanTests
         var entries = new Dictionary<string, string>(StringComparer.Ordinal) { ["laptop/8eba4af2"] = AppEntry };
 
         var started = Assert.Single(
-            Planner.Plan(snapshot with { Quests = [snapshot.Quests[2]], Entries = entries }, Config()));
+            Planner.Plan(snapshot with { Quests = [snapshot.Quests[2]], Closed = [snapshot.Quests[0], snapshot.Quests[1]], Entries = entries }, Config()));
 
         Assert.Equal("283ef343", started.Entry?.Into?.Session);
     }
