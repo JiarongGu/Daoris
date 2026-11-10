@@ -12,6 +12,7 @@ internal static class PlacePrompt
     /// <summary>The section, or empty where the place found nothing to tell.</summary>
     public static string Told(PlaceTold? told)
     {
+        if (told is { Kind: PlaceKind.Folder }) return FolderPrompt.Told(told);
         if (told is null || told.Outside.Count + told.Others.Count == 0) return "";
         var text = "\n\n## Your place\n";
         if (told.Outside.Count > 0)
@@ -34,6 +35,6 @@ internal static class PlacePrompt
     public static int Left(PlaceTold? told) =>
         told is null ? 0 : Math.Max(0, told.Outside.Count - Limit) + Math.Max(0, told.Others.Count - Limit);
 
-    private static string Listed(IReadOnlyList<string> paths) =>
+    internal static string Listed(IReadOnlyList<string> paths) =>
         string.Join(", ", paths.Take(Limit).Select(path => $"`{path}`")) + (paths.Count > Limit ? $" and {paths.Count - Limit} more" : "");
 }

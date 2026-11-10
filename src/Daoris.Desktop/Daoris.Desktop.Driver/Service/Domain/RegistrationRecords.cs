@@ -39,11 +39,14 @@ public static class RegistryOutcome
     /// <summary>The service refused the registration.</summary>
     public const string Refused = "refused";
 
+    /// <summary>A folder driven in place: it has no line to register from, and its row keeps what its add said.</summary>
+    public const string Folder = "folder";
+
     public static IReadOnlyList<string> All { get; } =
-        [Registered, Unchanged, DeclaresNothing, NotSetUp, NoLine, Unreadable, LanesUnreadable, Worktree, NoCheckout, NotOnRegistry, Refused];
+        [Registered, Unchanged, DeclaresNothing, NotSetUp, NoLine, Unreadable, LanesUnreadable, Worktree, NoCheckout, NotOnRegistry, Refused, Folder];
 
     /// <summary>Whether an outcome registered nothing because something is in the way.</summary>
-    public static bool IsRefusal(string outcome) => outcome is not (Registered or Unchanged or DeclaresNothing);
+    public static bool IsRefusal(string outcome) => outcome is not (Registered or Unchanged or DeclaresNothing or Folder);
 }
 
 /// <summary>A registry row as the service answers it, with the declaration it holds (the registry door).</summary>
@@ -62,6 +65,9 @@ public sealed record RegistrationRow(
     /// false: a host that does not say it is not taken to have said yes.
     /// </summary>
     public bool Registered { get; init; }
+
+    /// <summary>Its kind as the service holds it (<see cref="PlaceKind"/>); absent from an older host, which is git.</summary>
+    public string? Kind { get; init; }
 }
 
 /// <summary>What a repository's line holds of the two files a registration reads, read as git objects.</summary>

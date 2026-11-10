@@ -6,8 +6,15 @@ namespace Daoris.Driver;
 /// <param name="Others">Uncommitted at the start and not the line's own: the person's, or those of a line the person let go.</param>
 public sealed record PlaceTold(IReadOnlyList<string> Outside, IReadOnlyList<string> Others)
 {
-    public bool Equals(PlaceTold? other) =>
-        other is not null && Outside.SequenceEqual(other.Outside, StringComparer.Ordinal) && Others.SequenceEqual(other.Others, StringComparer.Ordinal);
+    /// <summary>The place's kind (<see cref="PlaceKind"/>), which the words it is told follow.</summary>
+    public string Kind { get; init; } = PlaceKind.Git;
 
-    public override int GetHashCode() => HashCode.Combine(Outside.Count, Others.Count);
+    /// <summary>A folder past the manifest's bounds, whose changes are not followed.</summary>
+    public bool TooLarge { get; init; }
+
+    public bool Equals(PlaceTold? other) =>
+        other is not null && Outside.SequenceEqual(other.Outside, StringComparer.Ordinal) && Others.SequenceEqual(other.Others, StringComparer.Ordinal)
+        && Kind == other.Kind && TooLarge == other.TooLarge;
+
+    public override int GetHashCode() => HashCode.Combine(Outside.Count, Others.Count, Kind, TooLarge);
 }

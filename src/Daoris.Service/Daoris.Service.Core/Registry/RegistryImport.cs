@@ -39,12 +39,13 @@ public static class RegistryImport
         var name = new DirectoryInfo(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)).Name;
         var manifest = Path.Combine(directory, "daoris.json");
 
-        return File.Exists(manifest)
+        // Proposed with its kind: a folder that is no git checkout is driven in place by its manifest.
+        return (File.Exists(manifest)
             ? ReadManifest(name, manifest, directory)
             // Present in the family, not adopted. Worth proposing rather than hiding: "who could I
             // ask, and who cannot be asked yet" is the same question, and a silent omission reads
             // as the repository not existing.
-            : new Registration(name, false, null, [], [], [], Entries: 0, Root: directory);
+            : new Registration(name, false, null, [], [], [], Entries: 0, Root: directory)) with { Kind = PlaceKinds.At(directory) };
     }
 
     private static Registration ReadManifest(string name, string manifest, string directory)

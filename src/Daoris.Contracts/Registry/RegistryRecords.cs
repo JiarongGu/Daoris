@@ -41,4 +41,8 @@ public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable,
-    IReadOnlyList<string> Uses, IReadOnlyList<LaneWire>? Lanes = null);
+    IReadOnlyList<string> Uses, IReadOnlyList<LaneWire>? Lanes = null)
+{
+    /// <summary>The place's kind: <c>git</c>, or <c>folder</c> for one driven in place by its manifest. Absent from an older host, which is git.</summary>
+    public string? Kind { get; init; }
+}

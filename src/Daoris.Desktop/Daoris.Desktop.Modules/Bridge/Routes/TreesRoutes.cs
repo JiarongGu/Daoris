@@ -40,6 +40,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     private async Task<object?> DiffAsync(SessionDiff press, CancellationToken cancellationToken)
     {
         var id = press.Id;
+        // A turn in a folder is reviewed by its manifests, file by file, where a git place's review reads the tree.
+        if (PlaceChanges.Of(_loop.Home, id) is { } placed) return TreesReviewWires.ReviewAnswer(id, placed, TreesReviewWires.ReviewSource.Place, null, treeGone: false);
 
         var service = _loop.Service ?? throw NotReady();
 
