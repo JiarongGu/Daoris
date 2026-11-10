@@ -28,16 +28,15 @@ public sealed class DriverRunPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home);
 
         var order = driver.RunStages.Order;
-        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "files", "hand"], order.Select(part => part.Name));
+        Assert.Equal(["agent", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "files", "hand"], order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Opened, RunPhase.Handed],
+            [.. Enumerable.Repeat(RunPhase.Choose, 3), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Opened, RunPhase.Handed],
             order.Select(part => (RunPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
         Assert.Collection(
             driver.RunStages.In(RunPhase.Choose),
             stage => Assert.IsType<StartAgent>(stage),
-            stage => Assert.IsType<CleanCheckout>(stage),
             stage => Assert.IsType<AccountWalk>(stage),
             stage => Assert.IsType<StartAccess>(stage));
         Assert.Collection(driver.RunStages.In(RunPhase.Grown), stage => Assert.IsType<GrowTree>(stage));
@@ -92,9 +91,9 @@ public sealed class DriverRunPartsTests : IDisposable
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
                 [Declared("agent", typeof(StartAgent)), Declared("agent", typeof(AccountWalk))])).Message);
         Assert.Equal(
-            "the parts account → clean → account come after each other, so none of them can run first",
+            "the parts access → account → access come after each other, so none of them can run first",
             Assert.Throws<PartOrderException>(() => PartOrder.Of(
-                [Declared("clean", typeof(CleanCheckout), "account"), Declared("account", typeof(AccountWalk), "clean")])).Message);
+                [Declared("access", typeof(StartAccess), "account"), Declared("account", typeof(AccountWalk), "access")])).Message);
 
         var unbuilt = Assert.Throws<PartOrderException>(() => Parts.Build<IRunStage>(
             [Declared("agent", typeof(StartAgent))], type => (IRunStage)Activator.CreateInstance(type, new object())!));

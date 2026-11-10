@@ -196,16 +196,15 @@ internal sealed class RoundConsidering(PlanRound round)
                 };
             }
         }
-        else if ((continuing
-                     ? snapshot.Active.FirstOrDefault(s =>
-                         string.Equals(s.Repository, quest.To, StringComparison.OrdinalIgnoreCase) && !Itself(s))?.Id
-                     : round.BlockedBy.GetValueOrDefault(quest.To)) is { } session)
+        // The place's writer holds it: a running turn, or a parked line with uncommitted paths of its own.
+        else if (PlaceHolders.Of(snapshot, quest.To, repo.Root, Itself) is { } holder)
         {
-            return new(quest, StartVerdict.RepositoryBusy,
-                $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
-                + "is its one tree. Sessions there run side by side once they open trees of their own.")
+            return new(quest, StartVerdict.RepositoryBusy, PlaceHolders.Said(holder, quest.To))
             {
-                Said = new(SittingFact.InRepository) { Session = session },
+                Said = new(SittingFact.Place)
+                {
+                    Session = holder.Id, Repository = quest.To, Paths = SessionStates.IsParked(holder.State) ? holder.HoldsPlace : null,
+                },
             };
         }
         else if (round.StartedThisTick.TryGetValue(quest.To, out var ahead))

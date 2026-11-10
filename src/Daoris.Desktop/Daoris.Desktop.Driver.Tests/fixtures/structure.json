@@ -10,6 +10,7 @@
     { "name": "Knowledge", "folder": "Knowledge", "domain": true },
     { "name": "Agents", "folder": "Agents", "domain": true },
     { "name": "Workplace", "folder": "Workplace", "domain": true },
+    { "name": "Departments", "folder": "Departments", "domain": false },
     { "name": "Roles", "folder": "Roles", "domain": true },
     { "name": "Participants", "folder": "Participants", "domain": true },
     { "name": "Context", "folder": "Context", "domain": true },
