@@ -26,7 +26,6 @@ public sealed class LinePolicyKeyTests
         { "an order neither build knows", new LandingIntegrate(Order: "random"), false, "`integrate.order` is" },
         { "gates neither build knows", new LandingIntegrate(Gates: "reached"), false, "`integrate.gates` is" },
         { "an unconfirmed failure's way neither build knows", new LandingIntegrate(Reached: "retry"), false, "`integrate.unconfirmed.reached` is" },
-        { "an overlap's way neither build knows", new LandingIntegrate(Overlap: "block"), false, "`integrate.overlap` is" },
         { "no member in a candidate", new LandingIntegrate(Batch: 0), false, "`integrate.batch`" },
         { "more members than a candidate holds", new LandingIntegrate(Batch: 9), false, "`integrate.batch`" },
         { "the most members a candidate holds", Declared with { Batch = 8 }, false, null },
@@ -69,7 +68,7 @@ public sealed class LinePolicyKeyTests
 
         var map = LinePolicyKey.PolicyMap(document.RootElement, "linePolicies");
 
-        Assert.Equal(new LandingIntegrate(Gates: LandingIntegrate.Declared, Reached: LandingIntegrate.Hold, Overlap: LandingIntegrate.Wait), map["web"]);
+        Assert.Equal(new LandingIntegrate(Gates: LandingIntegrate.Declared, Reached: LandingIntegrate.Hold), map["web"]);
         using var buffer = new MemoryStream();
         using (var writer = new Utf8JsonWriter(buffer))
         {
@@ -78,7 +77,7 @@ public sealed class LinePolicyKeyTests
             writer.WriteEndObject();
         }
 
-        Assert.Equal("""{"linePolicies":{"web":{"gates":"declared","unconfirmed":{"reached":"hold"},"overlap":"wait"}}}""",
+        Assert.Equal("""{"linePolicies":{"web":{"gates":"declared","unconfirmed":{"reached":"hold"}}}}""",
             System.Text.Encoding.UTF8.GetString(buffer.ToArray()));
     }
 

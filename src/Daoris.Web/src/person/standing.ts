@@ -92,16 +92,16 @@ export type StewardActNow = {
 };
 
 /** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */
-export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
+export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
 
 /** Whether the page has words for this act. */
 export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);
 
 /** The acts that set a repository's driving, which Setup → Driving says the steward set (§5.1's last rows). */
-const SETS_DRIVING = new Set(['drive', 'undrive', 'trees', 'hold', 'resume']);
+const SETS_DRIVING = new Set(['drive', 'undrive', 'hold', 'resume']);
 
 /**
- * When the steward last set this repository's driving, from this run's memory: the newest act among drive, undrive, trees, hold and
+ * When the steward last set this repository's driving, from this run's memory: the newest act among drive, undrive, hold and
  * resume naming it, matched without case as the driver matches a repository, that still stands; null where none does.
  */
 export function stewardSetAt(acts: readonly StewardActNow[], repository: string): string | null {
@@ -112,10 +112,10 @@ export function stewardSetAt(acts: readonly StewardActNow[], repository: string)
 }
 
 /** The owner's own press that reverses a steward's act, each a press the window already sends. */
-export type StewardReverse = 'stopDriving' | 'drive' | 'treesOff' | 'resume' | 'hold' | 'retry';
+export type StewardReverse = 'stopDriving' | 'drive' | 'resume' | 'hold' | 'retry';
 
 const REVERSES: Readonly<Record<string, StewardReverse>> = {
-  drive: 'stopDriving', undrive: 'drive', trees: 'treesOff', hold: 'resume', resume: 'hold', stop: 'retry',
+  drive: 'stopDriving', undrive: 'drive', hold: 'resume', resume: 'hold', stop: 'retry',
 };
 
 /**

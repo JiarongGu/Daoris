@@ -19,7 +19,7 @@ const act = (id: string, kind: string, at: number, more: Partial<StewardActNow> 
 const ACTS: StewardActNow[] = [
   act('a4', 'stop', 2, { quest: '7a82cc', session: 's1a2b3c4', waiting: true }),
   act('a3', 'finish', 6, { quest: '7a82cd', session: 's5e6f7a8' }),
-  act('a2', 'trees', 9, { repository: 'engine' }),
+  act('a2', 'workflow', 9, { repository: 'engine' }),
   act('a1', 'drive', 10, { repository: 'engine', standing: false }),
 ];
 const DESK: DeskRequestNow[] = [
@@ -32,7 +32,7 @@ const DESK: DeskRequestNow[] = [
     closed: minutesAgo(4), answeredBy: null, reason: 'The owner holds atlas during a release.',
   },
   {
-    id: 'r1', act: 'trees', target: 'engine', why: 'Engine sessions should work in trees of their own.', filed: minutesAgo(12), state: 'answered',
+    id: 'r1', act: 'workflow', target: 'engine', why: 'Engine sessions should work apart, each in a tree of its own.', filed: minutesAgo(12), state: 'answered',
     closed: minutesAgo(9), answeredBy: 'a2', reason: null,
   },
 ];

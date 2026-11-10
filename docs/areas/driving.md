@@ -153,7 +153,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
     graph's one entry wired into its work: its `kind` (`auto`, `worktree`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
     alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
-    into the snapshot (`PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
+    into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
     which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
     converted the old per-repository trees switch and the line policies' `overlap` into the step; `daoris place trees` answers where
     the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
@@ -168,7 +168,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     orphan sweep's stop included, reads the turn's end once and sends what of its own stays uncommitted as the mark, so a
     commit clears it. A git place's first in-place start marks its common git directory with its home, and another home on
     this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
-    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. With trees on, sessions run side by
+    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,

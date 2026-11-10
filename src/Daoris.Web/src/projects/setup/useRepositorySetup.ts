@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
   useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanguage, useSetLine,
-  useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetWriteAcross, useWorkflowCurrent, standingOf,
+  useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetWriteAcross, useWorkflowCurrent, standingOf,
   useGitRemotes, useSetGitAccess, useSetGitUse, useTools,
 } from '../../bridge/shell';
 import { type GitAccessEdit, type RepositoryGitAccess, resolveGitAccess } from '../../settings/repository/GitAccess';
@@ -52,7 +52,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const roster = useHarnesses();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
-  const setTrees = useSetTrees();
   const setCheckoutWrites = useSetCheckoutWrites();
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
@@ -125,7 +124,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       ownTree: named(state.trees, name),
       onDrive: (next) => setDrivable.mutate({ repository: name, drivable: next }, { onError: onDriverError }),
       onHold: (next) => setHold.mutate({ repository: name, held: next }, { onError: onDriverError }),
-      onTrees: (next) => setTrees.mutate({ repository: name, ownTree: next }, { onError: onDriverError }),
       note: !registration.adopted && door === 'native' ? t('projects.outside.directDoor') : undefined,
       // What the steward set here, from this run's memory.
       stewardSet: stewardSetOf(),

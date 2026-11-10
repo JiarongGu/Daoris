@@ -15,11 +15,10 @@ const TWO_COLUMNS = 64 * 16;
 // A place page's shell: the head, and three sections folded to the line that names their values.
 // Molecules: the page's state and every press arrive as props.
 
-/** A repository's driving as the head presses it: the hold, and the ⋯'s driving and trees. */
+/** A repository's driving as the head presses it: the hold, and the ⋯'s driving. */
 export type PlaceDriving = {
   drivable: boolean;
   held: boolean;
-  ownTree: boolean;
   /** A change on its way: every press waits for it. */
   busy: boolean;
   /** What driving here does that the choice alone does not say. */
@@ -31,7 +30,6 @@ export type PlaceDriving = {
   /** Drive or stop driving, told back to the ask that confirmed it. */
   onDrive: (drivable: boolean, answered: Answered) => void;
   onHold: (held: boolean) => void;
-  onTrees: (ownTree: boolean) => void;
   onOpenAppointed?: () => void;
   onOpenRepositories?: () => void;
 };
@@ -108,9 +106,6 @@ function HeadMenu({ driving, onAsk }: { driving: PlaceDriving; onAsk: (act: 'dri
         <Menu.Item disabled={driving.busy} onSelect={() => onAsk(driving.drivable ? 'stop' : 'drive')}>
           {t(driving.drivable ? 'agents.setup.page.more.stop' : 'agents.setup.page.more.drive')}
         </Menu.Item>
-        <Menu.CheckboxItem checked={driving.ownTree} disabled={driving.busy} onCheckedChange={driving.onTrees}>
-          {t('agents.setup.page.more.trees')}
-        </Menu.CheckboxItem>
         {(driving.onOpenAppointed || driving.onOpenRepositories) && <Menu.Separator />}
         {driving.onOpenAppointed && (
           <Menu.Item onSelect={driving.onOpenAppointed}>{t('agents.setup.page.more.supervisor')}</Menu.Item>

@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <c>steward request &lt;act&gt; &lt;target&gt; "&lt;why&gt;"</c> files a request at the desk from any terminal, with no key and no
 /// proof, granting nothing.</para>
 /// </remarks>
-[CommandGroup("steward", "acts", "drive", "undrive", "hold", "resume", "trees", "stop", "finish", "retry", "desk", "request", Whole = true)]
+[CommandGroup("steward", "acts", "drive", "undrive", "hold", "resume", "stop", "finish", "retry", "desk", "request", Whole = true)]
 public static class StewardCommand
 {
     /// <summary>The steward's acts as the pipe's census classes them: one route for every act.</summary>
@@ -38,12 +38,12 @@ public static class StewardCommand
 
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
-        "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
+        "usage: daoris steward acts | drive <repo> | undrive <repo> | hold <repo> | resume <repo> | stop <id> | "
         + "finish <id> | retry <quest> | workflow <repo> <workflow> | pause <quest> | unpause <quest> | done <quest> | delete <quest> | land <id> | clean <id> | update now | update cancel | "
         + "hand-over <id> --agent <agent> [--account <account>] | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>
-    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow", "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"];
+    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "hold", "resume", "stop", "finish", "retry", "workflow", "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"];
 
     /// <summary>The one line the desk's print says before its first fence.</summary>
     public const string Header =
@@ -59,7 +59,6 @@ public static class StewardCommand
         ["request", var act, var target, var why] when Requestable.Contains(act) && Named(target) && Said(why) => ("request", new { act, target, why }),
         ["drive", var repo] when Named(repo) => ("drive", new { repository = repo, drivable = true }),
         ["undrive", var repo] when Named(repo) => ("undrive", new { repository = repo, drivable = false }),
-        ["trees", var repo, "on"] when Named(repo) => ("trees", new { repository = repo, ownTree = true }),
         ["hold", var repo] when Named(repo) => ("hold", new { repository = repo, held = true }),
         ["resume", var repo] when Named(repo) => ("resume", new { repository = repo, held = false }),
         ["stop", var id] when Named(id) => ("stop", new { id, said = true }),

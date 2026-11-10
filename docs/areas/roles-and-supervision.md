@@ -370,8 +370,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eighteen with no card: drive, undrive,
-    trees, hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of seventeen with no card: drive, undrive,
+    hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
     session's tree land and clean, a staged update's now and cancel, and a session's hand-over, each one exact form over
     `ROLE_ACT`, logged `role.act` and said on its line; `setup` only where the person lists it. A route act (`StewardRouteAct`:
     workflow, done, delete, land, clean; `StewardHandOverAct`) runs its person's route inside the role's door, a refusal of the
@@ -437,8 +437,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
     archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
     pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
-    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), and a repository's drive, hold and
-    own-tree switches (`place drive|undrive|hold|resume|trees`). A press of Ask Daoris's that
+    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), and a repository's drive and hold
+    switches (`place drive|undrive|hold|resume`). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged

@@ -37,16 +37,6 @@ public sealed class PlaceSwitchViewTests
         Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
     }
 
-    [Theory]
-    [InlineData(true, "place-trees-on", "daoris place trees engine on")]
-    [InlineData(false, "place-trees-off", "daoris place trees engine off")]
-    public async Task Own_trees_are_shown_with_their_command(bool ownTree, string kind, string command)
-    {
-        var viewed = await View(PlaceSwitchView.Trees(), new { repository = "engine", ownTree });
-
-        Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
-    }
-
     [Fact]
     public async Task A_repository_is_spelled_for_any_shell()
     {

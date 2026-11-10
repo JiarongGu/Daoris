@@ -100,7 +100,6 @@ internal static class LinesWires
         integrate.Gates,
         Unconfirmed = integrate.Unreached is null && integrate.Reached is null ? null : new { integrate.Unreached, integrate.Reached },
         integrate.Conflicts,
-        integrate.Overlap,
         integrate.Line,
     };
 

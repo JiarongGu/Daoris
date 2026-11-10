@@ -7,7 +7,7 @@ import { Button, SelectField } from '../../design/ui';
 export type LandingIntegrate = {
   request?: string | null; commit?: string | null; batch?: number | string | null; order?: string | null; gates?: string | null;
   unconfirmed?: { unreached?: string | null; reached?: string | null } | null;
-  conflicts?: string | null; overlap?: string | null; line?: string | null;
+  conflicts?: string | null; line?: string | null;
 };
 
 /** The chooser's value for "left to the default": never a value any choice or plugin takes. */
@@ -22,13 +22,12 @@ export const INTEGRATE_CHOICES = {
   unreached: ['split', 'hold', 'land'],
   reached: ['split', 'hold', 'land'],
   conflicts: ['session', 'hold'],
-  overlap: ['warn', 'wait'],
 } as const;
 
 export type IntegrateChoice = keyof typeof INTEGRATE_CHOICES;
 
 /** The choices that are a line's policy; `request` and `conflicts` are the integrate step's own options. */
-const POLICY_CHOICES: readonly IntegrateChoice[] = ['commit', 'order', 'gates', 'unreached', 'reached', 'overlap'];
+const POLICY_CHOICES: readonly IntegrateChoice[] = ['commit', 'order', 'gates', 'unreached', 'reached'];
 
 /** The integrate choices as the draft holds them: text, empty where unset. */
 export type IntegrateDraft = Record<IntegrateChoice | 'batch' | 'line', string>;
@@ -37,7 +36,7 @@ export const integrateDraft = (integrate?: LandingIntegrate | null): IntegrateDr
   request: integrate?.request ?? '', commit: integrate?.commit ?? '', batch: integrate?.batch == null ? '' : String(integrate.batch),
   order: integrate?.order ?? '', gates: integrate?.gates ?? '',
   unreached: integrate?.unconfirmed?.unreached ?? '', reached: integrate?.unconfirmed?.reached ?? '',
-  conflicts: integrate?.conflicts ?? '', overlap: integrate?.overlap ?? '', line: integrate?.line ?? '',
+  conflicts: integrate?.conflicts ?? '', line: integrate?.line ?? '',
 });
 
 /** The draft as a press sends it: only the keys set, the batch a number where it reads as one, anything else left for the driver to refuse. */
@@ -53,7 +52,6 @@ export const integrateOf = (draft: IntegrateDraft): LandingIntegrate => {
       ? { unconfirmed: { ...(draft.unreached ? { unreached: draft.unreached } : {}), ...(draft.reached ? { reached: draft.reached } : {}) } }
       : {}),
     ...(draft.conflicts ? { conflicts: draft.conflicts } : {}),
-    ...(draft.overlap ? { overlap: draft.overlap } : {}),
     ...(draft.line.trim() ? { line: draft.line.trim() } : {}),
   };
 };
@@ -63,7 +61,7 @@ export const integrateKey = (integrate?: LandingIntegrate | null) => {
   if (!integrate) return '';
   const { unreached, reached } = integrate.unconfirmed ?? {};
   const keys = [integrate.request, integrate.commit, integrate.batch, integrate.order, integrate.gates, unreached, reached,
-    integrate.conflicts, integrate.overlap, integrate.line];
+    integrate.conflicts, integrate.line];
   return JSON.stringify(keys.map((value) => (value === null || value === undefined || value === '' ? null : String(value))));
 };
 
