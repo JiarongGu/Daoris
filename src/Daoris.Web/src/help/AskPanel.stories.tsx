@@ -11,8 +11,8 @@ import { AskHistory } from './AskHistory';
 import { type AskConversationSlot, AskPanel } from './AskPanel';
 import type { HelpConversationRow } from './history';
 import { ProposalCard } from './ProposalCard';
-import { publishedCounts, publishedItems } from './published';
-import { PublishedList } from './PublishedList';
+import { publishedCounts, publishedItems } from './published/published';
+import { PublishedList } from './published/PublishedList';
 import { starters } from './starters';
 import { TAKEN, WORKING } from '../quests/fixtures';
 

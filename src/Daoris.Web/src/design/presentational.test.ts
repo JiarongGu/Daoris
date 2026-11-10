@@ -94,6 +94,7 @@ const ORGANISMS = new Set<string>([
   './work/head/SessionTerminalHold.tsx',
   // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
+  './work/head/SessionPlaceHold.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',
   './work/conversation/AttendedBoxes.tsx',
@@ -123,6 +124,8 @@ const ORGANISMS = new Set<string>([
   './help/ask/useHelpMode.tsx',
   './help/ask/useHelpFollow.tsx',
   './help/ask/useHelpSlotParts.tsx',
+  './help/focus/useHelpFocus.tsx',
+  './help/ask/AskHeld.tsx',
   // The machine as the queries answer it: one reading for the starters and the setup
   // guide, so the panel, the guide and the steps below them hold no query.
   './help/useMachine.ts',
