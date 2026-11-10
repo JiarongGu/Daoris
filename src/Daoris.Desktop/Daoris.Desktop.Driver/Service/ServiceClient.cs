@@ -393,6 +393,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
 
+    public Func<string, CancellationToken, Task<IReadOnlyList<string>?>>? PlaceEnds { get; init; }
+
     /// <summary>One turn line as the service is handed it: the fields its memory rows' models are read from.</summary>
     public sealed record TurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset Ended, string Model);
 

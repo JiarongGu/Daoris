@@ -226,16 +226,28 @@ of everything it handed, section by section.
     account rides the event of the instruction or first message. A section that could have been handed and was not is
     said, with why. The words themselves of a go-on's or hand-over's first message stay on its event, and the openings route
     answers them as `briefs`, bounded (`StartBrief`, 4000 characters, the cut said with the full length), for the head's
-    *Started with*; they are no session's opening. (from D143, D189)
+    *Started with*; they are no session's opening. A session working in its place is handed `place` where its start's
+    manifest found any: what changed there outside Daoris since the last session, and the uncommitted paths that are not its
+    own with how to leave them out of its commits, 30 of each named and the rest counted (`PlacePrompt`). (from D143, D189, D254)
 
 **Ask Daoris**
 
 42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
-    change. A limit move opens it again in its room. Its room, first lines, history and the one running are its
-    workspace's own, and its tools start there: it reads another workspace by naming it, or every workspace with `all`,
-    and proposes, inspects, reads checkouts and sets settings in any workspace's repositories, each judged by its own
-    judge and none refused for the workspace it names. (from D89, D170, D183, D158, D253)
-43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
+    change. A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
+    its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository
+    (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its name and pin with the one
+    waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for the focus
+    (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
+    repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
+    the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
+    workspace by naming it, or every workspace with `all`, and proposes, inspects, reads checkouts and sets settings in any
+    workspace's repositories, each judged by its own judge and none refused for the workspace it names. Chosen before its
+    first words the focus is its first, and an agent opened ahead under another place ends at once so the page opens it ahead
+    again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or now if idle, as for
+    an access change, and the words resume it under the new focus, a gone place widened, the agent told in one line ahead of
+    them. (from D89, D170, D183, D158, D253)
+43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
+    every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there.
     They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these

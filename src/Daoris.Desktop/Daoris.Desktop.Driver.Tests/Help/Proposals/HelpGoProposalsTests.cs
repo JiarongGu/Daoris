@@ -77,7 +77,6 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     // Knowledge is a place, its parts its two modes; Knowledge alone opens as left.
     [InlineData("knowledge", null, null, "Open Knowledge.")]
     [InlineData("knowledge", null, "convergence", "Open Knowledge → Convergence.")]
-    // Plugins is a place, and Settings holds none of it.
     [InlineData("plugins", null, null, "Open Plugins.")]
     public void A_screen_is_a_go_that_changes_nothing(string view, string? domain, string? part, string says)
     {
@@ -519,7 +518,6 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
         Assert.Equal(("start", "helper"), (go.Domain, go.Part));
         Assert.Null(go.Item);
-        Assert.Null(go.Account);
     }
 
     /// <summary>A go's item, read from the file as the service's box writes it, spelled as named.</summary>

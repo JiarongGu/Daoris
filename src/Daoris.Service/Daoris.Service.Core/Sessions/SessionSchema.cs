@@ -136,6 +136,8 @@ internal static class SessionSchema
         await SchemaColumns.EnsureAsync(db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(db, "sessions", "decides", "decides TEXT NULL", ct).ConfigureAwait(false);
 
+        await SchemaColumns.EnsureAsync(db, "sessions", "holds_place", "holds_place TEXT NULL", ct).ConfigureAwait(false);
+
         // The session a record continues, why and who asked. This machine's own, as `opinion` is,
         // and a record from before says none. `from_session`, since FROM is SQL's own word (as `limited`).
         await SchemaColumns.EnsureAsync(db, "sessions", "from_session", "from_session TEXT NULL", ct).ConfigureAwait(false);

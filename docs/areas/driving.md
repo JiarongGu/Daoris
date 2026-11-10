@@ -22,7 +22,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | A run's stages | `Loop/Run/`, listed in `docs/index/registered.md` | Each stage a module registers (`[RunStage(name, phase, after)]`, `IRunStage`), run at its phase's anchor in `RunAsync` in the kit's order and built with the driver as its `IRunWiring`; a stage that returns a `StartRun` holds the start there, and no stage after it runs |
 | `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree and the repository's trees held until the record is open, the binding, the set-up step, what the continue stage settled and the opened record; a member read before the stage that writes it throws, naming that stage; the state lets go of the held trees and the carry-on's move record with the run |
 | `GrowTree` | `Loop/Run/Tree/` | The `Grown` phase: the tree the session runs in, found where an earlier session worked or grown from the line, with the repository's trees held until the record is open; a hold lets the fresh tree go |
-| `StartAgent`, `CleanCheckout`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, a clean checkout, the account the walk or a resume takes, the access setup |
+| `StartAgent`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, the account the walk or a resume takes, the access setup |
+| `RunManifest`, `ManifestReader`, `ManifestStore`, `ContentStore`, `PlaceChangesSince`, `PlaceTurns` | `Departments/Manifest/` | A git place's manifest (its status with each listed path's hash) kept at `<home>/work/places/<workspace>/<department>/manifests/`, the newest 20 and every named one; each new text file's blob beside it, the store bounded at 1 GB; the paths changed between two manifests, the turn's own still uncommitted and those not its own; a turn's start and end in its place (`PlaceTurns`: the start kept with its root and the paths its line carried in, the end read once, a record's found under any place of the home) |
+| `PlaceHomeMarker`, `PlaceHome` | `Departments/`, `Loop/Run/Choose/` | The marker in a git place's common git directory naming the home that works it in place, and the start's stage that holds another home's start there |
+| `PlacePrompt`, `PlaceTold`, `PlaceDenies`, `PlaceAccount` | `Agents/`, `Context/` | What a start in its place is told of it (the `place` section, bounded at 30 paths a list), the denies its rules take where it found paths not its own, and the section's account |
+| `PlaceHolders` | `WorkOrders/Domain/` | The place's holder at a look, as the ledger's lease reads it, and the sentence a start sits with |
 | `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
 | `TrustedTree`, `GoOnRecord` | `Loop/Run/Trust/`, `Loop/Run/Continue/` | The `Cleared` phase: whether the harness trusts the tree (`TrustAsk`, asked again of an account a resume's words walk to), then the record the person's words wait on, continued or handed on in a new session |
 | `OpenRecord` | `Loop/Run/Open/` | The `Opened` phase: the record opened through the ledger, the carry-on's move record fenced before it, and how the account was chosen said on it |
@@ -112,7 +116,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
 | The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
 | The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades, each alter with its backfill and the rebuild one transaction), `SessionColumnNames` (a table's `adapter` and `harness_version` renamed `door` and `door_version` as it opens), `SessionIndexes` (the indexes each record a list answers is read by: who continues it, a quest's last run, the conversation that took a quest, a mirror's id), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
-| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
+| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a copy's tree, the busy sentence) and `SessionPlaceLease` (the writer's lease on the place itself, its `holds_place` mark and its busy sentence; `ReleasePlace` clears the mark), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
 | `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
 | The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
 | The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskPublishGuard` (each receiver asked once, and no session's publish beside the ask's intake), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
@@ -146,10 +150,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     order, oldest open first. (from D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
-12. In a repository without its own trees, one session runs at a time, in the root. With trees on, sessions run side by
+12. In a repository without its own trees, one writer works in its own place at a time, under the ledger's lease: the record
+    whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
+    uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
+    there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
+    one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
+    (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
+    and is told what changed there outside Daoris since the last session and the uncommitted paths not its own, whose
+    add-all, commit-all and stash its rules then deny (`PlaceTurns`, `PlaceDenies`); every move out of a running state, the
+    orphan sweep's stop included, reads the turn's end once and sends what of its own stays uncommitted as the mark, so a
+    commit clears it. A git place's first in-place start marks its common git directory with its home, and another home on
+    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
+    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. With trees on, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
-    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D260)
+    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
+    D258, D260)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
 14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
@@ -163,9 +179,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *Resume*. Another machine may still take an open one. Neither is a strike. (from D126, D132)
 17. A taken quest whose take is not this machine's sits. Nothing carries it on or resumes it here; the ledger refuses the
     open as `TakenElsewhere`. (from D80, D178)
-18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a dirty root, a
-    harness absent or signed out, a tree that would not grow, trust not given) reports its sentence as the quest's
-    reason. (from D64, D73)
+18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or
+    signed out, a tree that would not grow, trust not given) reports its sentence as the quest's reason. Uncommitted work
+    in the place does not hold a start: the lease and the manifest say whose it is. A start in a checkout another Daoris home
+    on this machine works in place is held, naming no path (`PlaceHome`). (from D64, D73, D254)
 
 ### Start, tree and resume
 
@@ -404,7 +421,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     publish names the session that made it (a session's terminal names its own) and says when it carries no requirement. (from D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards
     only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
-    landing of it stays offered. (from D132)
+    landing of it stays offered; the home migration's `abandoned-runs` step does the same once for the runs of a declined quest or a
+    closed ask that an older build left live. A run with a step waiting on the person (an Accept, a task or approval, a
+    go-ahead, a held attempt) lists its newest session here in To review for an Accept and in Waiting on you otherwise, whatever
+    that session's own ending or archive mark, in the window and in `daoris session list` alike. (from D132)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
     forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
 

@@ -40,28 +40,12 @@ describe('a proposal of Ask Daoris\'s', () => {
   });
 });
 
-// Every door built since, a card of its own kind — each with Apply (or its kind's word for it) and
-// Not now, since every one is the person's press.
 
 const UPDATE: HelpProposal = {
   id: 'p2', kind: 'agent',
   describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
   terminal: 'daoris agent update claude-code-acp',
   why: 'the person asked for the newest',
-};
-
-const ACCOUNT: HelpProposal = {
-  id: 'p3', kind: 'account',
-  describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
-  terminal: 'daoris agent settings claude-code --account work model opus effort high',
-  why: 'the person wants it to think harder',
-};
-
-const DELETE: HelpProposal = {
-  id: 'p4', kind: 'delete',
-  describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-  terminal: 'daoris ask delete a1b2c3d4',
-  why: 'it was a test',
 };
 
 const GO: HelpProposal = {
@@ -185,23 +169,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code(UPDATE.terminal))).toBeInTheDocument();
   });
 
-  it('an account\'s model and effort say the values in the tool\'s own words, with Apply and Not now', async () => {
-    await press(ACCOUNT, 'Apply');
-
-    expect(screen.getByText(code('opus'))).toBeInTheDocument();
-    expect(screen.getByText(code('high'))).toBeInTheDocument();
-    expect(screen.getByText(code(ACCOUNT.terminal))).toBeInTheDocument();
-  });
-
-  it('a delete says what goes and that it cannot be undone, and its Apply is a delete', async () => {
-    await press(DELETE, 'Delete');
-
-    expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
-    expect(screen.getByText(code('#q1a2b3c4'))).toBeInTheDocument();
-    expect(screen.getByText(/cannot be undone/)).toBeInTheDocument();
-    expect(screen.getByText(code(DELETE.terminal))).toBeInTheDocument();
-  });
-
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
     await press(GO, 'Go there', 'Dismiss');
 
@@ -225,33 +192,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/, taken\.$/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Not now' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
-  });
-
-  // Archiving sessions is the generic card, with its command; a session delete is the delete kind's.
-  it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
-    const archive: HelpProposal = {
-      id: 'p14', kind: 'session', terminal: 'daoris session archive s1 s2', why: 'the person is done with them',
-      describe: 'Archive 2 sessions: `s1`, `s2`. They leave the rail and keep their record.',
-    };
-
-    await press(archive, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('s1'))).toBeInTheDocument();
-    expect(screen.getByText(/the same at a terminal/)).toBeInTheDocument();
-  });
-
-  // Pausing or resuming is the generic card, its sentence the driver's describe.
-  it('a pause card is the generic one, with Apply and Not now', async () => {
-    const pause: HelpProposal = {
-      id: 'p16', kind: 'pause', terminal: 'daoris quests pause q1', why: 'the person asked to stop it',
-      describe: 'Pause quest `q1`: its running sessions stop, and nothing starts until it is resumed.',
-    };
-
-    await press(pause, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
   // Clearing finished history is the generic card too, its sentence the driver's describe.
@@ -457,18 +397,6 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  it('a session delete card is the delete kind\'s, naming the session', async () => {
-    const remove: HelpProposal = {
-      id: 'p15', kind: 'delete', terminal: 'daoris session delete s9', why: 'a test run',
-      describe: 'Delete session `s9` and its transcript.',
-    };
-
-    await press(remove, 'Delete');
-
-    expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
-    expect(screen.getByText(code('s9'))).toBeInTheDocument();
-  });
-
   it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
     await press(PLUGIN_ADD, 'Apply');
 
@@ -657,12 +585,11 @@ describe('the kinds that reach every door', () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={DELETE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议删除')).toBeInTheDocument();
+      render(<ul><ProposalCard proposal={UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
-      // The go card's dismiss takes it out of the list, as a notice's does; the delete card keeps its 暂不.
+      // The go card's dismiss takes it out of the list, as a notice's does; the account card keeps its 暂不.
       expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(2);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();

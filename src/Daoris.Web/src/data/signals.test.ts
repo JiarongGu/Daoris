@@ -416,7 +416,8 @@ describe('sittingSentence', () => {
       ['RepositoryBusy', { code: 'tree', session: 's1' }, 'Session `s1` is active in the tree `#9a9492` goes back into — one session per tree.', /会话 `s1` 正在 `#9a9492` 要回到的工作树中运行/],
       ['RepositoryBusy', { code: 'treeOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the tree `#9a9492` goes back into — one session per tree.', /排在委托 `#q7` 之后：它正在 `#9a9492` 要回到的工作树中启动/],
       ['RepositoryBusy', { code: 'treeThisLook', quest: 'q7' }, 'Queued behind quest `#q7`, which goes into the tree `#9a9492` goes back into at this look — one session per tree.', /这一轮查看中，它会进入 `#9a9492` 要回到的工作树/],
-      ['RepositoryBusy', { code: 'repository', session: 's1' }, 'Session `s1` is active in the receiver\'s repository — one session per repository, whose root is its one tree. Sessions there run side by side once they open trees of their own.', /会话 `s1` 正在受托方的仓库中运行/],
+      ['RepositoryBusy', { code: 'place', session: 's1', repository: 'reports' }, 'Session `s1` is working in reports; this starts when its turn ends.', /会话 `s1` 正在 reports 中工作/],
+      ['RepositoryBusy', { code: 'place', session: 's1', repository: 'reports', paths: ['a.md'] }, 'Session `s1` holds the checkout of reports with uncommitted paths of its own (`a.md`); this starts once they are committed, discarded, or the person lets others work here.', /会话 `s1` 以自己未提交的路径/],
       ['RepositoryBusy', { code: 'queued', quest: 'q7' }, 'Queued behind quest `#q7` in the receiver\'s repository — oldest first, one at a time.', /排在委托 `#q7` 之后——先到先办/],
       ['RepositoryBusy', { code: 'repositoryOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the receiver\'s repository — one session per repository, whose root is its one tree.', /排在委托 `#q7` 之后：它正在受托方的仓库中启动/],
       // A start held under `overlap: wait`, its meeting paths said.

@@ -114,6 +114,8 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         if (placed is not { SessionId: { } sessionId, Adapter: { } resolved, Selection: { } selection }) return new(null, placed.Message);
 
         var context = wiring.Context;
+        // The focus its press or the earlier conversation gave it, kept before this run; else its home's.
+        var focus = new HelpFocusing(context.Home).Applied(sessionId, placed.Workspace);
         // A start being made, as a start from a conversation's words is: no go-on takes it up meanwhile, and a closing waits for it.
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         context.GoingOn.TryAdd(sessionId, going.Task);
@@ -145,7 +147,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
                 {
                     // Its workspace's room, the facts projected to it, so what is not read yet is its own.
                     var machineRead = (read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet"))
-                        .Within(placed.Workspace);
+                        .Within(placed.Workspace, focus);
                     (room, reads) = (HelpRoom.Prepare(context.Home, machineRead), machineRead.Reads);
                     // What the facts had not read yet is said first, so the person knows the room may name less than there is.
                     if (machineRead.NotReadYet.Any) context.Note(sessionId, NotReadYet());
@@ -173,7 +175,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             // A replacement of this start runs as this run does, on the machine's reading, its end told to the same listener.
             if (placed.Pending is { } pending) pending.Open = (owner, token) => RunReplacementAsync(owner, config, machine, onEnded, token);
             return await wiring.RunAsync(
-                    "ask-daoris", sessionId, placed.Message, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace), onEnded, ct,
+                    "ask-daoris", sessionId, placed.Message, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace, focus), onEnded, ct,
                     chosen: placed.Chosen, pending: placed.Pending)
                 .ConfigureAwait(false);
         }
@@ -320,7 +322,10 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         try
         {
             var context = wiring.Context;
-            if (await reading.ConfigureAwait(false) is { } read && !context.Closing) HelpRoom.Prepare(context.Home, read.Within(workspace));
+            if (await reading.ConfigureAwait(false) is { } read && !context.Closing)
+            {
+                HelpRoom.Prepare(context.Home, read.Within(workspace, HelpRoom.FocusWritten(context.Home, workspace)));
+            }
         }
         catch (Exception)
         {

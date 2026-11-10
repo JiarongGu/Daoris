@@ -83,6 +83,7 @@ public static class TargetPrompt
         new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
         // A start's line's course, counted in the brief's own section; a carry-on's brief carries it among its own.
         .. (target.Course?.Pieces ?? []).Select(piece => new Piece(piece.Section, piece.Text)),
+        new(HandedSections.Place, PlacePrompt.Told(target.Place)),
     ];
 
     /// <summary>

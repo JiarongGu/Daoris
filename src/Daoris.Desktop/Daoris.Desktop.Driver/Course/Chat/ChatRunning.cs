@@ -37,7 +37,7 @@ internal interface IChatRunning
         IReadOnlyList<string>? continued = null, bool answers = false);
 
     /// <summary>What differs about Ask Daoris's conversation in its room.</summary>
-    ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null);
+    ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null);
 
     /// <summary>Whether a chat run's process names a second opinion for a conversation's tree.</summary>
     Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config);

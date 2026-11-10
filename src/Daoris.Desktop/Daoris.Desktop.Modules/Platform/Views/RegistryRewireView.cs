@@ -27,7 +27,6 @@ public sealed class RegistryRewireView : IPressView
             return PressViewed.Refused($"`{named}` is not registered on this machine — use a repository's name as Repositories lists it.");
         }
 
-        // The service's own normalizing and comparing, as the route stores and the registry compares a workspace's name.
         var to = RemoteTarget.Workspace(asked);
         var from = RemoteTarget.Workspace(found.Workspace);
         if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
@@ -42,8 +41,5 @@ public sealed class RegistryRewireView : IPressView
             $"daoris repository wire {ShellWord.Of(found.Repository, ShellWord.Name)} --workspace {ShellWord.Of(to, ShellWord.Workspace)}"));
     }
 
-    private static string Text(JsonElement? payload, string name) =>
-        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()!.Trim()
-            : "";
+    private static string Text(JsonElement? payload, string name) => PressPayload.Text(payload, name);
 }

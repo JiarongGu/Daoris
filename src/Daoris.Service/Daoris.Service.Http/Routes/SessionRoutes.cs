@@ -129,7 +129,8 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
             // The note's lines by code, kept only as what a part is; none with no note.
             noteParts: request.Note is null ? null : NoteParts.Normalize(request.NoteParts), expected: request.Expected,
             unbindAsk: request.UnbindAsk == true, expect: request.Expect?.OfType<string>().ToList(),
-            turns: SessionAnswers.TurnsOf(request.Turns));
+            turns: SessionAnswers.TurnsOf(request.Turns),
+            holdsPlace: request.HoldsPlace?.OfType<string>().Where(path => path.Length > 0).ToList());
 
         return outcome.Refusal switch
         {

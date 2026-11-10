@@ -2,8 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
-import { SessionHelperFacts } from './proposal/SessionHelperFacts';
-import { sessionHelperDoor } from './proposal/sessionHelperDoor';
 import { type HelpRulesShown, RulesChange } from './proposal/RulesChange';
 import { type HelpSupervisorShown, SupervisorChange } from './proposal/SupervisorChange';
 import type { StarterDoor } from './starters';
@@ -33,8 +31,7 @@ export type HelpPluginShown = {
 
 /**
  * A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same.
- * A kind for each door: an agent's update or pin, an account's model and effort, a
- * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
+ * A kind for each door: an agent's update or pin, and a go to a screen, which has no command since it changes nothing.
  * A plugin that has landed, added from its folder, or one switched on or off, with what it runs.
  * A branch a landing made, handed to a landing plugin, which pushes it. Daoris's
  * browser's settings, a card as a setting's is, and bringing repositories up to date, which is looked at first.
@@ -44,9 +41,8 @@ export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  /** Archiving or unarchiving sessions (`session`) is the generic card, with its command. */
   /** A change of the role catalogue (`role`) is the generic card: its sentence, its `daoris role` command, Apply. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'browser' | 'sync' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
+  kind: 'setting' | 'ask' | 'agent' | 'go' | 'plugin' | 'browser' | 'sync' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;
@@ -265,8 +261,6 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
       </ul>
     </section>
   );
-  // A route with no version saves nothing, a verification pipeline's lines are its graph's nodes, and what the
-  // change asks less of the person leads, since only their Apply makes it.
   const kind = workflow.route?.startsWith('kind:') ? workflow.route.slice('kind:'.length) : null;
   const lowers = workflow.lowers ?? [];
   const noGates = workflow.noGates ?? [];
@@ -430,7 +424,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
   onGo?: (door: StarterDoor) => void;
 }) {
   const { t } = useTranslation();
-  const deleting = proposal.kind === 'delete';
   const going = proposal.kind === 'go';
   const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
   const grant = proposal.kind === 'plugin' ? proposal.grant ?? null : null;
@@ -438,26 +431,18 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
   const looking = syncing !== null && !syncing.looked;
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
-  const helper = proposal.kind === 'session' ? sessionHelperDoor(proposal.terminal) : null;
-  // A draft: what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
-  // A change to the draft open in the editor: its press opens the editor, and settles nothing.
   const composing = workflow !== null && typeof workflow.draft === 'string';
 
   return (
-    <li className={deleting
-      ? 'rounded-control border border-st-declined/50 bg-raised px-3 py-2.5'
-      : 'rounded-control border border-accent/50 bg-raised px-3 py-2.5'}
-    >
-      <p className={deleting ? 'm-0 text-small font-semibold text-ink-danger' : 'm-0 text-small font-semibold text-accent'}>
-        {t(deleting ? 'help.proposal.titleDelete'
-          : going ? 'help.proposal.titleGo'
-            : grant ? (grant.withdraw ? 'help.proposal.titleWithdraw' : 'help.proposal.titleGrant')
+    <li className="rounded-control border border-accent/50 bg-raised px-3 py-2.5">
+      <p className="m-0 text-small font-semibold text-accent">
+        {t(going ? 'help.proposal.titleGo'
+          : grant ? (grant.withdraw ? 'help.proposal.titleWithdraw' : 'help.proposal.titleGrant')
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : syncing ? 'help.proposal.titleSync'
                 : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup'
-                    : helper ? (helper.door === 'pass' ? 'help.proposal.titlePass' : 'help.proposal.titleHelper') : 'help.proposal.title')}
+                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
@@ -467,7 +452,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
       {place && <PlaceChanges place={place} />}
-      {helper && <SessionHelperFacts door={helper} />}
       {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
       {syncing?.looked && (
         <>
@@ -496,7 +480,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       {plugin?.problem && (
         <p className="m-0 mt-1 text-meta text-ink-danger"><Inline text={t('help.proposal.plugin.problem', { problem: plugin.problem })} /></p>
       )}
-      {deleting && <p className="m-0 mt-1 text-meta text-ink-danger">{t('help.proposal.deleteNote')}</p>}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
       {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}
       {proposal.terminal && (
@@ -506,10 +489,9 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       {proposal.why && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={t('help.proposal.why', { why: proposal.why })} /></p>}
       <div className="mt-2 flex flex-wrap gap-2">
         {!draft && (
-          <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
-            {t(deleting ? 'help.proposal.delete'
-              : going ? 'help.proposal.go'
-                : place ? 'help.proposal.place.open'
+          <Button variant="primary" disabled={pending} onClick={() => onApply(proposal.id)}>
+            {t(going ? 'help.proposal.go'
+              : place ? 'help.proposal.place.open'
                 : composing ? 'help.proposal.workflow.openEditor'
                 : looking ? 'help.proposal.look' : 'help.proposal.apply')}
           </Button>

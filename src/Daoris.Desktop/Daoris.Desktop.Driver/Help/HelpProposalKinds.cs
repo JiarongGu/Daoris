@@ -26,10 +26,6 @@ internal interface IHelpProposalKind
     /// <summary>
     /// The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.
     /// </summary>
-    /// <remarks>
-    /// What the service's writer of the same kind spells, which the kinds' structural test reads, and what the room's doors table
-    /// names where a row proposes (a door only where one is wanted).
-    /// </remarks>
     IReadOnlyList<string> Doors { get; }
 
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
@@ -98,14 +94,10 @@ internal static class HelpProposalKinds
         new HelpSettingProposals(),
         new HelpAskProposals(),
         new HelpAgentProposals(),
-        new HelpDeleteProposals(),
-        new HelpAccountProposals(),
         new HelpGoProposals(),
         new HelpPluginProposals(),
         new HelpBrowserProposals(),
         new HelpSyncProposals(),
-        new HelpSessionProposals(),
-        new HelpPauseProposals(),
         new HelpClearProposals(),
         new HelpWorkflowProposals(),
         new HelpSetupProposals(),
