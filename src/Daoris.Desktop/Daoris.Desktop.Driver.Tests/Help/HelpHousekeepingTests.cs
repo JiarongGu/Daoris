@@ -191,11 +191,10 @@ public sealed class HelpHousekeepingTests : IDisposable
 
     /// <summary>
     /// 🔴 A request for a session that is not an Ask Daoris conversation is refused (a driven session shares the connector), and
-    /// so is one for a repository outside the conversation's workspace, read from its record and never from the request; a
-    /// repository nobody registered, or one with no checkout here, is said so.
+    /// a repository nobody registered, or one with no checkout here, is said so; another workspace's is judged as any.
     /// </summary>
     [Fact]
-    public async Task Another_session_and_a_repository_outside_the_workspace_are_refused()
+    public async Task Another_session_is_refused_and_a_repository_of_another_workspace_is_judged_as_any()
     {
         var ledger = Ledger();
         Choose("""{ "housekeeping": ["inspect", "clean-up", "discard-branch"] }""");
@@ -206,10 +205,10 @@ public sealed class HelpHousekeepingTests : IDisposable
         Assert.Equal(HousekeepingAnswer.NotHelp, driven.Code);
         Assert.Contains("`s1`", driven.Said);
 
-        var outside = await AnswerAsync(ledger, Request(ConfiguredAccess.CleanUp, "rival", Branch));
-        Assert.Equal(HousekeepingAnswer.Outside, outside.Code);
-        Assert.Contains("`aurora`", outside.Said);
-        Assert.Contains("`rival`", outside.Said);
+        var other = await AnswerAsync(ledger, Request(ConfiguredAccess.CleanUp, "rival", Branch));
+        Assert.DoesNotContain("another workspace", other.Said);
+        Assert.NotEqual(HousekeepingAnswer.Unknown, other.Code);
+        Assert.NotEqual(HousekeepingAnswer.NoCheckout, other.Code);
 
         Assert.Equal(HousekeepingAnswer.Unknown, (await AnswerAsync(ledger, Request(ConfiguredAccess.CleanUp, "nowhere", Branch))).Code);
         Directory.Delete(Path.Combine(_home, "checkouts", "engine"));

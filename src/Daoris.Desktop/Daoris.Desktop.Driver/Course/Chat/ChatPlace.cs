@@ -43,8 +43,8 @@ internal sealed record ChatPlace(
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// The workspace its tools are bound to (<see cref="HelpCircle"/>): Ask Daoris's room's, under either mode, so its
-    /// connector answers from that workspace alone. Null for <c>default</c>'s room, the whole machine, and for a repository's.
+    /// The workspace its tools default to (<see cref="HelpCircle"/>): Ask Daoris's room's, under either mode, so its
+    /// connector answers from that workspace unless a call names another. Null for <c>default</c>'s room, the whole machine, and for a repository's.
     /// </summary>
     public string? Circle { get; init; }
 

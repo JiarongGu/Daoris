@@ -213,12 +213,9 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Assert.False(File.Exists(ConfigPath));
     }
 
-    /// <summary>
-    /// 🔴 A request for a session that is not an Ask Daoris conversation is refused (a driven session shares the connector), and so
-    /// is a language for a repository or a workspace outside the conversation's, read from its record and never from the request.
-    /// </summary>
+    /// <summary>🔴 A request for a session that is not an Ask Daoris conversation is refused (a driven session shares the connector); a language for another workspace's repository or a workspace is set.</summary>
     [Fact]
-    public async Task Another_session_and_a_language_outside_the_workspace_are_refused()
+    public async Task Another_session_is_refused_and_a_language_in_another_workspace_is_set()
     {
         Choose("""{ "settings": ["language", "notify"] }""");
         Handed("h1", ConfiguredAccess.Language, ConfiguredAccess.Notify);
@@ -230,10 +227,9 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Assert.Contains("`s1`", driven.Said);
 
         var rival = await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "zh", repository: "rival"));
-        Assert.Equal(SettingAnswer.Outside, rival.Code);
-        Assert.Contains("`aurora`", rival.Said);
+        Assert.Null(rival.Code);
         var borealis = await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "zh", workspace: "borealis"));
-        Assert.Equal(SettingAnswer.Outside, borealis.Code);
-        Assert.False(File.Exists(ConfigPath));
+        Assert.Null(borealis.Code);
+        Assert.True(File.Exists(ConfigPath));
     }
 }

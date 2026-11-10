@@ -170,9 +170,6 @@ public sealed record SettingAnswer(string Setting, bool Done, string? Code, stri
     /// <summary>Chosen after this conversation's start, which is not handed it: it holds from its next turn.</summary>
     public const string NotHanded = "not-handed";
 
-    /// <summary>A language for a repository or a workspace outside the conversation's.</summary>
-    public const string Outside = "outside";
-
     /// <summary>The request names no setting of the five.</summary>
     public const string Named = "named";
 
@@ -204,9 +201,6 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
 
     /// <summary>Chosen after this conversation's start, which is not handed it: it holds from the next start.</summary>
     public const string NotHanded = "not-handed";
-
-    /// <summary>The repository is registered in another workspace than the conversation's.</summary>
-    public const string Outside = "outside";
 
     /// <summary>No repository of that name is registered here.</summary>
     public const string Unknown = "unknown";

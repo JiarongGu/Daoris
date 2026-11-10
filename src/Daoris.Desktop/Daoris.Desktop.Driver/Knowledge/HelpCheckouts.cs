@@ -12,9 +12,9 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Judged at every call, whatever the agent</b>, in housekeeping's order (<see cref="HelpHousekeeping"/>): the record named is an
-/// Ask Daoris conversation's; the repository is registered in the conversation's workspace, read from its record
-/// (<see cref="HelpCircle.OfRecord"/>), with a checkout here; the repository lets agents outside it read that checkout; the person has not
-/// turned it off in <see cref="ConfiguredAccess"/> now, so a narrowing refuses the next call; and it is handed at this start (its newest
+/// Ask Daoris conversation's; the repository is registered, in any workspace, with a checkout here; the repository lets agents outside it
+/// read that checkout; the person has not turned it off in <see cref="ConfiguredAccess"/> now, so a narrowing refuses the next call;
+/// and it is handed at this start (its newest
 /// receipt, <see cref="HelpWired"/>), so one turned on since takes the conversation's next turn.</para>
 ///
 /// <para><b>Never a path beyond the checkout</b> (the trap of a typed tool that takes a path): the tool takes a repository and a
@@ -82,7 +82,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
         }
 
         var registry = await ledger.RegistryAsync(ct).ConfigureAwait(false);
-        var (row, refused) = Place(operation, request.Repository.Trim(), registry, HelpCircle.OfRecord(home, record));
+        var (row, refused) = Place(operation, request.Repository.Trim(), registry);
         if (refused is not null) return refused;
         if (Granted(operation, row!, request.Session) is { } ungranted) return ungranted;
 
@@ -109,8 +109,8 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
         };
     }
 
-    /// <summary>The registry's row a request names, or the refusal: none registered, another workspace's, no checkout here.</summary>
-    private static (RepoView? Row, CheckoutAnswer? Refusal) Place(string operation, string repository, IReadOnlyList<RepoView> registry, string? circle)
+    /// <summary>The registry's row a request names, in any workspace, or the refusal: none registered, no checkout here.</summary>
+    private static (RepoView? Row, CheckoutAnswer? Refusal) Place(string operation, string repository, IReadOnlyList<RepoView> registry)
     {
         var named = registry.Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase)).ToList();
         if (named.Count == 0)
@@ -118,13 +118,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
             return (null, CheckoutAnswer.Refusal(operation, CheckoutAnswer.Unknown, $"`{repository}` is no repository registered here."));
         }
 
-        if (named.FirstOrDefault(row => Within(row.Workspace, circle)) is not { } row)
-        {
-            return (null, CheckoutAnswer.Refusal(operation, CheckoutAnswer.Outside,
-                $"This conversation is workspace `{circle}`'s, and `{named[0].Repository}` is a repository of another workspace: its checkout is "
-                + "read from a conversation started from a window on that workspace."));
-        }
-
+        var row = named[0];
         return string.IsNullOrWhiteSpace(row.Root) || !Directory.Exists(row.Root)
             ? (null, CheckoutAnswer.Refusal(operation, CheckoutAnswer.NoCheckout, $"`{row.Repository}` has no checkout on this machine, so there is nothing of it to read here."))
             : (row, null);
@@ -238,7 +232,6 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
         var start = got >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
         var decoder = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false).GetDecoder();
         var chars = new char[got];
-        // Not flushed where it is cut, so a character whose bytes run past the bound is left out whole, never half of it.
         var count = decoder.GetChars(bytes, start, got - start, chars, 0, flush: !cut);
         var said = cut
             ? $"{where}, the first 200 KB of {Size(length)}: the rest is cut, so say so where it matters."
@@ -261,7 +254,6 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
         var cut = Encoding.UTF8.GetByteCount(text) > Bound;
         if (cut)
         {
-            // Cut between characters, as a file is.
             var bytes = Encoding.UTF8.GetBytes(text);
             var chars = new char[Bound];
             text = new string(chars, 0, Encoding.UTF8.GetDecoder().GetChars(bytes, 0, Bound, chars, 0, flush: false));
@@ -288,11 +280,6 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
 
     /// <summary>Whether the checkout has a git of its own: its <c>.git</c> folder, or the file a worktree has there. Never one above it.</summary>
     private static bool OwnGit(string root) => Directory.Exists(Path.Combine(root, ".git")) || File.Exists(Path.Combine(root, ".git"));
-
-    /// <summary>Whether a registration's workspace is the conversation's; every one where it has none (<c>default</c>'s room, the whole machine).</summary>
-    private static bool Within(string? workspace, string? circle) =>
-        circle is not { Length: > 0 }
-        || string.Equals(RemoteTarget.Workspace(workspace), RemoteTarget.Workspace(circle), StringComparison.OrdinalIgnoreCase);
 
     private static string Size(long bytes) => bytes switch
     {

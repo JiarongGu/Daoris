@@ -5,10 +5,7 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// The quest tools: <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent
-/// writes them with. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
-/// </summary>
+/// <summary>The quest tools: <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent writes them with; their words are said on <see cref="KnowledgeServer"/>.</summary>
 /// <param name="quests">What <c>quest_list</c> reads.</param>
 /// <param name="exchange">What judges a publish and an answer, shared with the HTTP host.</param>
 /// <param name="circle">Which workspace <c>quest_list</c> answers from.</param>
@@ -233,7 +230,6 @@ public sealed class QuestTools(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var found = await quests.ListAsync(repository, includeClosed, scope, ct).ConfigureAwait(false);
         if (found.Count == 0)
