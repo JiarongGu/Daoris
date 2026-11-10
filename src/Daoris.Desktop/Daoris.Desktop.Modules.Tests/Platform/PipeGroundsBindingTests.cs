@@ -148,9 +148,9 @@ public sealed class PipeGroundsBindingTests
     {
         var world = new StubGrounds();
         world.Registrations["Lyntai"] = @"Lyntai|games|True|C:\checkouts\Lyntai";
-        var row = Row("SET_TREES");
-        var press = Payload(new { repository = "Lyntai", ownTree = true });
-        world.Reads["STATE"] = _ => new { trees = Array.Empty<string>() };
+        var row = Row("SET_HOLD");
+        var press = Payload(new { repository = "Lyntai", held = true });
+        world.Reads["STATE"] = _ => new { holds = Array.Empty<string>() };
 
         var then = await ReadAsync(row, world, press);
         world.Registrations["Lyntai"] = @"Lyntai|games|True|D:\elsewhere\Lyntai";

@@ -543,7 +543,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [Theory]
     [InlineData("SET_DRIVABLE", "driver", null)]
     [InlineData("SET_HOLD", "driver", null)]
-    [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
     [InlineData("GIT_REF_CREATE", "driver", null)]
     [InlineData("GIT_REF_UNDO", "driver", null)]

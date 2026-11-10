@@ -237,7 +237,7 @@ public sealed class PipeConfirmTests : Bridge
             "session" => ("SESSION_INPUT", new { id = "s1a2b3c4", text = "go on" }, () => grounds.Session("s1a2b3c4", "completed", minute: 5),
                 "it was awaiting-person, it is completed"),
             "setting" => ("SET_DRIVABLE", new { repository = "Lyntai", drivable = true }, () => drivable.Add("Lyntai"), null),
-            "repository" => ("SET_TREES", new { repository = "Lyntai", ownTree = true }, () => grounds.Registered.Remove("Lyntai"),
+            "repository" => ("SET_HOLD", new { repository = "Lyntai", held = true }, () => grounds.Registered.Remove("Lyntai"),
                 "the repository Lyntai is no longer registered on this machine"),
             "quest" => ("RETRY_QUEST", new { quest = "q1" }, () => grounds.Quests["q1"] = "Taken", "it was Open, it is Taken"),
             "ask" => ("LAND_ASK", new { ask = "a1" }, () => grounds.Asks["a1"] = "closed", null),
