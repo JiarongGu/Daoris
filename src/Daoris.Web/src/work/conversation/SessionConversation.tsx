@@ -91,7 +91,6 @@ export function SessionConversation({
   waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath,
 }: {
   dividers?: Readonly<Record<string, ReactNode>>;
-  /** What the host draws under a turn's answer — `ConversationView`'s, the attended session's alone. */
   beneath?: ComponentProps<typeof ConversationView>['beneath'];
   /** The home of the channel messages its turns took, the attended session's alone — `ConversationView`'s. */
   channel?: ChannelHome;

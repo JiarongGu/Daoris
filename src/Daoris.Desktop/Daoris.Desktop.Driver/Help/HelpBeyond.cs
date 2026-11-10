@@ -16,7 +16,7 @@ public sealed record HelpBeyondEntry(DateTimeOffset At, string Act, HelpFocus Pl
 
 /// <summary>
 /// What an Ask Daoris conversation looked at beyond its focus (`docs/2026-11-11-ask-scope-ux-design.md` §4), composed from the places
-/// its connector noted (<see cref="HelpPlaceNotes"/>), each judged against the focus the conversation held when it was noted: its first,
+/// its connector noted (<see cref="HelpPlaceNotes"/>), each judged against the focus the conversation held at its moment: its first,
 /// then each change's from the message that carried it (<see cref="HelpFocusMark"/>). The focus fences nothing; this only says.
 /// </summary>
 public static class HelpBeyond

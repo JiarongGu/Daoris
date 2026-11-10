@@ -70,10 +70,7 @@ export function ConversationView({
 }: {
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
-  /**
-   * What the host draws under a turn's answer, from its words' moment until the next turn's (Ask Daoris's receipt of what the turn
-   * looked at beyond its focus); nothing where it draws none.
-   */
+  /** What the host draws under a turn's answer, from its words until the next turn's (Ask Daoris's receipt). */
   beneath?: (ask: Ask, until: string | undefined) => ReactNode;
   /** The requests its agent made, each drawn as its card at its call, its answer folded in; none, every call is a tool card. */
   exchanges?: Exchanges;

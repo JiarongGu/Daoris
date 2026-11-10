@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The place a press Ask Daoris made named, and whether it was beyond its conversation's focus at the press
+/// The place a press Ask Daoris made named, and whether it lay beyond its conversation's focus at the press
 /// (`docs/2026-11-11-ask-scope-ux-design.md` §4): what Notifications' Ask Daoris line and the turn's receipt say of it. The focus
 /// fences nothing, so no tier asks because of it.
 /// </summary>

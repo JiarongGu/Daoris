@@ -48,7 +48,7 @@ function PressLine({ press, busy, onOpen, onReverse }: {
  * What Ask Daoris pressed for the person this run, in *Notifications*' group beside the steward's line: a press its conversation made
  * in full access runs at once with no card, so it is listed here, never silent. *Ask Daoris pressed n acts for you since Daoris
  * started*, opening to the presses newest first, each in the window's own words for the act, its target, the place it named (*outside
- * its focus* where that was beyond its conversation's focus at the press), its time, whether it is done,
+ * its focus* where it lay beyond its conversation's focus at the press), its time, whether it is done,
  * a press to open its conversation and, where its route has one, the owner's reverse press (a pause's *Resume*). A line, not a row:
  * no notice per press, so it counts toward no group's count and never the bell's. A restart empties it.
  *
@@ -56,7 +56,6 @@ function PressLine({ press, busy, onOpen, onReverse }: {
  */
 export function HelpPressLine({ standing, busy = false, onOpen, onReverse, defaultOpen = false }: {
   standing: StandingConfirmationNow | null;
-  /** Drawn unfolded (a story, a test). */
   defaultOpen?: boolean;
   /** A reverse press on its way. */
   busy?: boolean;

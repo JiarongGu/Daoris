@@ -37,7 +37,7 @@ export type HelpPressNow = {
   outcome: 'running' | 'done' | 'failed';
   /** The workspace or repository the press named; none where it named neither, or until the driver placed it. */
   place?: Place | null;
-  /** Whether that place was beyond its conversation's focus at the press. */
+  /** Whether that place lay beyond its conversation's focus at the press. */
   beyond?: boolean;
 };
 

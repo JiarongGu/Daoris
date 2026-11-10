@@ -30,7 +30,6 @@ const nameOf = (place: Place, machine: string) => (place.kind === 'machine' ? ma
 export function FocusPicker({ focus, next, window, repositories, recent, onChoose, narrow = false, gone = false, wider = null, widened = null, reveal, defaultOpen }: {
   focus: Place;
   next: Place | null;
-  /** The place no longer here the driver widened the shown conversation's focus from. */
   widened?: Place | null;
   window: string | null;
   repositories: readonly PlaceRepository[] | undefined;

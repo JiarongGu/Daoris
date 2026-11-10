@@ -9,7 +9,7 @@ public sealed record HelpBeyondRead(string Session);
 /// <summary>
 /// What an Ask Daoris conversation looked at and did beyond its focus, the page's `bridge/helpBeyond.ts`
 /// (`docs/2026-11-11-ask-scope-ux-design.md` §4): the places its connector noted (<see cref="HelpBeyond"/>) and the presses it made in
-/// full access this run whose place was beyond its focus at the press (<see cref="HelpPressRecord"/>). The page draws one receipt under
+/// full access this run whose place lay beyond its focus at the press (<see cref="HelpPressRecord"/>). The page draws one receipt under
 /// each turn from them, by time. Only what passes Daoris's own doors is listed; a shell command is never parsed.
 /// </summary>
 public sealed class HelpBeyondRoutes(DriverContext context)
@@ -19,6 +19,7 @@ public sealed class HelpBeyondRoutes(DriverContext context)
     // `{ session }` answers `{ session, entries: [{ at, act, place, what, outcome }] }`, first to last: a press's `what` is its
     // module and route, `MODULE.ROUTE`. A read: it declares nothing. Desktop-only: the notes are this machine's.
     [DriverRoute("HELP_BEYOND", PipeClass.Open)]
+    [ByEvent("HELP_BEYOND", Untold = "the places a conversation's connector notes in its session folder as its turn runs, which no scope or slice tells")]
     private async Task<object?> HelpBeyondAsync(HelpBeyondRead press, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();

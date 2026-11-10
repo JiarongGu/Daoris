@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A press Ask Daoris made in full access keeps the place it named and whether that was beyond its conversation's focus at the press
+/// A press Ask Daoris made in full access keeps the place it named and whether that lay beyond its conversation's focus at the press
 /// (`docs/2026-11-11-ask-scope-ux-design.md` §4), which Notifications' line and the turn's receipt say; <c>HELP_BEYOND</c> answers a
 /// conversation's receipt from what its connector noted and those presses.
 /// </summary>

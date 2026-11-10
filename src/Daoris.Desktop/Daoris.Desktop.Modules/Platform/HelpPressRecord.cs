@@ -17,7 +17,7 @@ public sealed record HelpPressNow(
     /// <summary>The workspace or repository the press named (<see cref="HelpPressPlace"/>); null where it named none, or until placed.</summary>
     public IReadOnlyDictionary<string, string>? Place { get; init; }
 
-    /// <summary>Whether <see cref="Place"/> was beyond its conversation's focus at the press.</summary>
+    /// <summary>Whether <see cref="Place"/> lay beyond its conversation's focus at the press.</summary>
     public bool Beyond { get; init; }
 }
 

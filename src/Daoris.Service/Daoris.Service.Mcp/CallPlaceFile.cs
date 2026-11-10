@@ -7,7 +7,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// Where an Ask Daoris connector notes each call that named a place (<see cref="CallPlace"/>), for the driver to compose each turn's
-/// receipt of what was looked at beyond the conversation's focus.
+/// receipt of what each turn looked at beyond the conversation's focus.
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;session&gt;/places.jsonl</c>,

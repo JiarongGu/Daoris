@@ -4,7 +4,7 @@ namespace Daoris.Driver.Tests;
 
 /// <summary>
 /// What an Ask Daoris turn looked at beyond its focus (`docs/2026-11-11-ask-scope-ux-design.md` §4): the places its connector noted,
-/// as Daoris's doors saw them, judged against the focus the conversation held when each was noted. This machine holds every place;
+/// as Daoris's doors saw them, judged against the focus the conversation held at each one's moment. This machine holds every place;
 /// a workspace its repositories; a repository nothing else but its own workspace's shared records, which are near.
 /// </summary>
 public sealed class HelpBeyondTests : IDisposable
