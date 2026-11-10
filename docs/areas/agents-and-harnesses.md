@@ -176,7 +176,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
     defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
-    the harness's own precedence decides, and `deny` wins. (from D72)
+    the harness's own precedence decides, and `deny` wins. `tree-guard` refuses a write outside the session's tree and its declared
+    targets, but a subagent's in the worktree its harness made for it beside the repository's main checkout
+    (`.claude/worktrees/<name>`, `subagent-worktree.mjs`); the session's own agent never writes there. (from D72, D253)
 19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, its settings
     file with the tree guard's and the lineage hook's entries and the hard denials, for its two doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its

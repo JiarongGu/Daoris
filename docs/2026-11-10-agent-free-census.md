@@ -3,7 +3,8 @@
 D253 point 7: a session's agent keeps every ability its harness has when a person runs it by hand. Daoris narrows only
 through the person's own rules, a workflow's step and the floor that keeps work from being lost. This census lists every
 flag, rule, deny, hook, environment strip and tool narrowing a start composes on the doors Daoris drives (Claude Code's
-native pipe door, Claude Code's protocol door, Codex's protocol door), what each stops, why it exists, and its verdict.
+native pipe door, Claude Code's protocol door, Codex's protocol door), what each stops, why it exists, and its verdict. It was
+taken at main `e3c6a88b87`; the places named are that commit's.
 
 A row Daoris adds (a tool, a hook that decides nothing, a rule that allows) narrows nothing and is said so. A `lift` row
 names the commit that lifts it, or the row that will where its code is another builder's.

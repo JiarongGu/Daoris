@@ -2,8 +2,9 @@
 // session's own tree. Shipped inside the driver and written under the Daoris home; the harness runs it as
 //  node tree-guard.mjs <tree> [<target> ...]
 // with the call as JSON on stdin. Each <target> after the tree is a checkout the person declared this
-// session's repository may also write into: a write there is let through as one in the tree is.
-// Zero dependencies — it runs inside every session.
+// session's repository may also write into: a write there is let through as one in the tree is, and so is
+// a subagent's write in the worktree the harness made for it (subagent-worktree.mjs, installed beside it).
+// Zero dependencies but that module — it runs inside every session.
 // It judges the tools that name a file (Write, Edit, MultiEdit, NotebookEdit) by their path fields,
 // resolved through links, and a shell's call (Bash, PowerShell) by the write targets it can READ in the
 // command: a redirect (`>`, `>>`), `tee`, `cp`, `mv`, `rm`, and PowerShell's Set-Content, Add-Content,
@@ -15,10 +16,12 @@
 // but 2 as a non-blocking error, so a guard that failed by exiting would let the write through. Inside
 // the tree it says NOTHING — never "allow", which would lift the harness's own asking.
 
-import { lstatSync, readlinkSync, realpathSync } from 'node:fs';
+import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { subagentWorktree } from './subagent-worktree.mjs';
 
 /**
  * Whether `target` is outside `tree`. Pure: the platform is an argument, and so is the resolution of
@@ -698,6 +701,15 @@ function shellOperands(args, takesDirectory = false) {
   return { operands, directory };
 }
 
+/** A file's text, or null where it cannot be read as one. */
+function readText(file) {
+  try {
+    return readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
 function deny(reason) {
   process.stdout.write(`${JSON.stringify({
     hookSpecificOutput: {
@@ -739,10 +751,14 @@ async function main() {
     return;
   }
 
+  // A subagent's call is let through in the worktree the harness made for it, beside the main checkout.
+  const own = subagentWorktree({ tree, cwd, agentId: call?.agent_id, read: readText });
+  const roots = own === null ? [tree, ...declared] : [tree, ...declared, own];
+
   for (const { target, cwd: base } of found) {
     let judged;
     try {
-      judged = [tree, ...declared].map((root) => judge({ tree: root, target, cwd: base, realpath: resolveThroughLinks }));
+      judged = roots.map((root) => judge({ tree: root, target, cwd: base, realpath: resolveThroughLinks }));
     } catch (error) {
       // Fail closed: a path this guard cannot resolve is not one it lets through.
       deny(`it could not resolve \`${target}\` (${error instanceof Error ? error.message : error}), so it refuses the write.`);
