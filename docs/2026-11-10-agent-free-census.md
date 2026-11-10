@@ -35,7 +35,7 @@ names the commit that lifts it, or the row that will where its code is another b
 | 20 | Claude, native | `ENABLE_TOOL_SEARCH=false` | the spawn shell (`Spawning.cs`) | nothing: every tool is listed at the start | D230 | narrows nothing |
 | 21 | every door | the role variables cleared | the spawn shell | the person's and the holder's keys reaching a session | D208, D253 | **keep**: the person's own keys stay the window's |
 | 22 | every door | every other provider's registered credential and home dropped | the spawn shell | another agent's key or sign-in reached from a session's shell | D49, D172 point 3, agents rule 28 | **keep**: the person's own sign-ins stay the person's; a session reaches another agent through a co-worker or a quest |
-| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**, not made here: the account's home stays; what the person's own tool home holds is handed to the session (a design: which pieces, and how, on each door) |
+| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**: made for Claude Code (D262): the account's home stays, and the person's skills, subagents, commands, servers and enabled plugins reach both doors and the Chrome switch the native door, each family the person's to switch off; its settings file, its memory file and Codex's home stay open (the design below) |
 | 24 | Claude, both | a driven session's mode: `auto`, else `acceptEdits` (protocol), `acceptEdits` (pipe); `agent` on Codex | agents rule 21 | a tool call outside the mode's reach: refused on the pipe door and in the judged modes | D81, D184 | mode **keep** (the person's access setup chooses another); the refusal **lift**, held by ASKFULL1 (D253 points 5-6: held for the person, never refused) |
 | 25 | Claude, Lyntai's layer | the three flow tools a headless turn cannot answer, always denied | `ClaudeDrivenLayer` | asking the person a question, entering and leaving plan mode | AGENTLYNTAI1s-ii | open: the owner's measurement decides (that row) |
 | 26 | Codex | no rule language, so none of the person's denies | agents rule 19 | nothing; it holds fewer narrowings than Claude's doors | D72, D213 | narrows nothing |
@@ -50,11 +50,12 @@ names the commit that lifts it, or the row that will where its code is another b
 - Row 5: the tree guard lets a write through when the call is a subagent's (`agent_id` present), its working directory is
   a worktree under the harness's own subagent folder (`.claude/worktrees/<name>`) of the session tree's main checkout, and
   that worktree's git directory is the session's repository's. The session's own agent still writes only in its tree.
+- Row 23: a Claude session is handed what the person's own run reads from its tool home, family by family, as the design below
+  says; nothing of it is written, and each family is a default of the person's rules.
 
 ## Rows for other builders
 
-- Row 23 (the person's own tool home handed to a session) composes a spawn's home and environment, which the spawn shell
-  owns; it needs a design before code.
+- Row 23's open pieces: the person's settings file and memory file, the Chrome switch on the protocol door, and Codex's home.
 - Row 24's refusal is ASKFULL1's (D253 points 5-6).
 - Row 25 is AGENTLYNTAI1s-ii's measurement.
 - Row 29 is measured with row 23.
