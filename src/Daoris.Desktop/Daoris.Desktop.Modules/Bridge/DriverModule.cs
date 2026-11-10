@@ -465,6 +465,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new TreesRoutes(context.Loop, context.Reads, context.Presses)),
         Domain.Of(context => new WorkRoutes(context)),
         Domain.Of(context => new QuestEndRoutes(context)),
+        Domain.Of(context => new AskEndRoutes(context)),
         Domain.Of(context => new QuestVerdictRoutes(context)),
         Domain.Of(context => new AskChoiceRoutes(context)),
         Domain.Of(context => new RegistryPersonRoutes(context)),

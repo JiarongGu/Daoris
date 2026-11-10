@@ -88,30 +88,6 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Contains("declares no updater", refused.Message);
     }
 
-    /// <summary>A delete is the local host's own route, the one the quest drawer and the ask's record call.</summary>
-    [Fact]
-    public async Task A_delete_goes_through_the_local_hosts_own_route()
-    {
-        var host = new StandInHost();
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(host));
-        var doors = Module().HelpDoors(service);
-
-        var quest = await doors.DeleteQuestAsync("q1a2b3c4", CancellationToken.None);
-        var ask = await doors.DeleteAskAsync("a1b2c3d4", CancellationToken.None);
-
-        Assert.Equal(["DELETE /api/quests/q1a2b3c4", "DELETE /api/asks/a1b2c3d4"], host.Asked);
-        Assert.Equal((true, "Deleted quest #q1a2b3c4."), quest);
-        Assert.Equal((true, "Deleted ask #a1b2c3d4."), ask);
-    }
-
-    [Fact]
-    public async Task A_delete_before_the_driver_is_up_is_the_cold_start_sentence()
-    {
-        var refused = await Assert.ThrowsAnyAsync<Exception>(() => Module().HelpDoors(null).DeleteQuestAsync("q1", CancellationToken.None));
-
-        Assert.Contains("still coming up", refused.Message);
-    }
-
     /// <summary>
     /// An add is <c>daoris plugin add</c>'s copy (the driver's twin): the folder copied into the home
     /// under its id, the catalogue reading it there. 🔴 Nothing it declares runs at the press — its hook

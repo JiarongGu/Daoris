@@ -42,8 +42,5 @@ public sealed class RegistryRewireView : IPressView
             $"daoris repository wire {ShellWord.Of(found.Repository, ShellWord.Name)} --workspace {ShellWord.Of(to, ShellWord.Workspace)}"));
     }
 
-    private static string Text(JsonElement? payload, string name) =>
-        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()!.Trim()
-            : "";
+    private static string Text(JsonElement? payload, string name) => PressPayload.Text(payload, name);
 }

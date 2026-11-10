@@ -30,7 +30,6 @@ type Story = StoryObj<typeof meta>;
 
 export const LacksEverything: Story = {
   args: {
-    // The setup guide's standing: the starters lead to it while it is not done.
     setup: { done: 0, of: 5 },
     starters: starters({
       repositories: [], drivable: [], waiting: 2, unnamedLines: [], helper: null,
@@ -119,11 +118,6 @@ export const ProposingEveryKind: Story = {
               terminal: 'daoris agent settings claude-code --account work model opus effort high', why: 'you want it to think harder',
             },
             {
-              id: 'd1', kind: 'delete' as const,
-              describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-              terminal: 'daoris ask delete a1b2c3d4', why: 'it was a test',
-            },
-            {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',
             },
@@ -180,17 +174,6 @@ export const ProposingEveryKind: Story = {
                 }],
                 apart: ['docs', 'site', 'tools'],
               },
-            },
-            // The helper and pass doors of a session proposal.
-            {
-              id: 'y4', kind: 'session' as const,
-              describe: 'Ask agent `codex`, read-only, a question about session `s1`\'s work at the driver\'s next look. Its answer comes to you, and reaches that session only once you pass it to the lead.',
-              terminal: 'daoris session helper s1 "does the retry loop stop?" --agent codex --after a7 --to-me', why: 'you want a second look',
-            },
-            {
-              id: 'y5', kind: 'session' as const,
-              describe: 'Pass the answer to ask `#a7`, kept for you, to session `s1`.',
-              terminal: 'daoris session pass a7', why: 'the answer reads right',
             },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>

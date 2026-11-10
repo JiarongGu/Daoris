@@ -21,14 +21,6 @@ public sealed record HelpProposal(
     /// </summary>
     public string? Repository { get; init; }
 
-    // The session kind's.
-
-    /// <summary>
-    /// The <c>helper</c> and <c>pass</c> doors' fields: the agent, the ask it asks again after or the answer to pass, and
-    /// that the answer is the person's; null for every other door and kind.
-    /// </summary>
-    public HelperProposalFields? Helper { get; init; }
-
     // The account kind's.
 
     /// <summary>An account's name, for an account's settings.</summary>
@@ -221,49 +213,19 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public IReadOnlyList<HistoryPlan> History { get; init; } = [];
 
-    // The delete kind's.
+    // The go kind's.
 
-    /// <summary>The quests, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
+    /// <summary>The quests, closed ones included, which a go naming one is judged against; read only for one.</summary>
     public IReadOnlyList<HelpQuestFacts> Quests { get; init; } = [];
 
-    /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
+    /// <summary>The asks, closed ones included, which a go naming one is judged against; read only for one.</summary>
     public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
 
     /// <summary>
-    /// The sessions the ledger would delete whose tree or landing this machine still holds: the
-    /// machine's half, as <see cref="SessionDeletion.Kept"/> reads it. Read only for a session's delete.
-    /// </summary>
-    public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
-
-    /// <summary>
-    /// The ledger's judgement of deleting each session a delete names, by id: the record's half, its
-    /// refusal in its own sentence, as <see cref="ServiceClient.JudgeSessionDeleteAsync"/> answers it. Read only for one.
-    /// </summary>
-    public IReadOnlyDictionary<string, SessionDeleteAnswer> SessionDeletes { get; init; } = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
-
-    // The go kind's.
-
-    /// <summary>
     /// This machine's own session records, closed ones included, as the Sessions list reads them: what a go naming a session
-    /// is judged against, and a session proposal and a session's delete; read only for those.
+    /// is judged against; read only for one.
     /// </summary>
     public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
-
-    // The pause kind's.
-
-    /// <summary>
-    /// The work of each ask and quest a pause proposal names, with what a pause would do with each piece:
-    /// <see cref="WorkPausing.PlanAsync"/>'s answer for the id read as an ask's and as a quest's, each that this machine has.
-    /// What a pause proposal is judged by, beside the pauses <c>driver.json</c> keeps. Read only for one.
-    /// </summary>
-    public IReadOnlyList<WorkPlan> Work { get; init; } = [];
-
-    /// <summary>
-    /// The workspaces whose quests this machine syncs with a remote, every one where the environment names the remote
-    /// whole: where another machine may still take an open quest a pause holds here, as the page's
-    /// <c>wiredFor</c> reads the wiring. Read only for a pause proposal.
-    /// </summary>
-    public IReadOnlyCollection<string> Wired { get; init; } = [];
 
     // The plugin kind's.
 
@@ -281,14 +243,6 @@ public sealed record HelpMachineFacts(
 
     /// <summary>The install's offers, as the Plugins place lists them under Daoris's own plugins.</summary>
     public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
-
-    // The session kind's.
-
-    /// <summary>
-    /// Where Sessions' list places each of this machine's sessions, with its archive mark: what a
-    /// session proposal is judged by, as <see cref="SessionArchive"/> judges an archive. Read only for one.
-    /// </summary>
-    public IReadOnlyList<SessionGrouping> Placed { get; init; } = [];
 
     // The setting kind's.
 
@@ -403,14 +357,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The pause kind's.
-
-    /// <summary>
-    /// The pause a pause proposal's Apply makes or lifts: its scope and id as this machine spells them. Null where the
-    /// card changes nothing, and for every other kind.
-    /// </summary>
-    public PausedBy? Pause { get; init; }
-
     // The plugin kind's.
 
     /// <summary>What a plugin proposal's plugin runs, as its manifest writes it; null for every other kind.</summary>
@@ -432,14 +378,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>For a supervisor set: its kinds, acts, holder and window as fields, which the page words from its catalogue; null for every other plan.</summary>
     public HelpSupervisorView? Supervisor { get; init; }
-
-    // The session kind's.
-
-    /// <summary>
-    /// The sessions a session proposal's Apply archives or unarchives, or a delete's one session, as this machine's
-    /// records spell them; empty where the card changes nothing, null for every other kind.
-    /// </summary>
-    public IReadOnlyList<string>? Sessions { get; init; }
 
     // The setup kind's.
 
@@ -481,8 +419,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
     IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpSessionDoors,
-    IHelpSettingDoors, IHelpSyncDoors
+    IHelpPluginDoors, IHelpSettingDoors, IHelpSyncDoors
 {
 }
 

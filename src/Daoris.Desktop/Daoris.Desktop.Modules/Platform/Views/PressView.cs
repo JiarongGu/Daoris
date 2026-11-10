@@ -40,6 +40,12 @@ public static class PressViews
     public static readonly IReadOnlyList<IPressView> All =
     [
         new RegistryRewireView(),
+        new SessionArchiveView(),
+        new SessionDeleteView(),
+        new QuestDeleteView(),
+        new AskDeleteView(),
+        new WorkPauseView(),
+        new WorkResumeView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

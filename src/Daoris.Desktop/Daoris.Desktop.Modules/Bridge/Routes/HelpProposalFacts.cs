@@ -10,30 +10,14 @@ public sealed class HelpProposalFacts(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
 
-    /// <summary>
-    /// Whether a pending proposal is judged against every quest and ask: a delete, and a go naming
-    /// one on Quests, so the service is asked for the records only then.
-    /// </summary>
-    public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => proposal.Kind == "delete" || ItemOn(proposal, "quests"));
+    /// <summary>Whether a pending proposal is a go naming a quest or an ask on Quests, judged against every one, so the service is asked for the records only then.</summary>
+    public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "quests"));
 
     /// <summary>
     /// Whether a pending proposal is judged against this machine's session records, closed ones included: a go naming a
     /// session on Sessions, so the service is asked for them only then.
     /// </summary>
-    public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => ItemOn(proposal, "sessions") || SessionKind(proposal));
-
-    // An archive or unarchive (kind `session`) and a delete naming a session: judged against where the list places
-    // each session, which the records alone do not say.
-    private static bool SessionKind(HelpProposal proposal) =>
-        proposal.Kind == "session" || (proposal.Kind == "delete" && proposal.Door == "session");
-
-    /// <summary>
-    /// Whether a pending proposal is a pause or a resume, judged by the work of the ask and the quest it names, so
-    /// the service is asked for that only then.
-    /// </summary>
-    public static bool JudgedAgainstWork(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "pause");
+    public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "sessions"));
 
     /// <summary>
     /// Whether a pending proposal is a clear, judged by what this machine keeps of the quest, ask or workspace it names,
@@ -159,7 +143,7 @@ public sealed class HelpProposalFacts(DriverContext context)
 
         if (JudgedAgainstRecords(proposals))
         {
-            var (quests, asks) = await HelpDeleteProposals.RecordsAsync(service, ct).ConfigureAwait(false);
+            var (quests, asks) = await HelpRecordFacts.ReadAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
         }
 
@@ -167,58 +151,6 @@ public sealed class HelpProposalFacts(DriverContext context)
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
-        }
-
-        // A session proposal is judged by where the list places each session, and a delete by what this machine keeps and the
-        // ledger's own answer: the one look the Sessions screen takes, read only for those.
-        if (proposals.Any(SessionKind))
-        {
-            var look = await SessionGroups.LookAsync(service, config, context.Unadopted(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
-            look = look with { Waits = _loop.Look.Waits };
-            var judged = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
-            foreach (var proposal in proposals.Where(each => each.Kind == "delete" && each.Door == "session"))
-            {
-                var target = proposal.Target?.Trim().TrimStart('#') ?? "";
-                // Only a record the ledger can be asked of: a teammate's, a live one and Ask Daoris's own are refused before it.
-                if (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, target, StringComparison.OrdinalIgnoreCase)) is
-                    { Teammate: false, Live: false } record && !WordsNever.IsHelp(record))
-                {
-                    judged[record.Id] = await service.JudgeSessionDeleteAsync(record.Id, ct).ConfigureAwait(false);
-                }
-            }
-
-            facts = facts with
-            {
-                Placed = SessionGroups.Read(look, null),
-                Kept = new SessionDeletion(_loop.Home).Kept(facts.Sessions),
-                SessionDeletes = judged,
-            };
-        }
-
-        // A pause proposal is judged by what a pause would do with each piece of the work, read as the pages' plan reads it for
-        // the id as an ask's and as a quest's, and by which workspaces sync with a remote.
-        if (JudgedAgainstWork(proposals))
-        {
-            var world = WorkRoutes.WorldOf(context);
-            var plans = new List<WorkPlan>();
-            foreach (var proposal in proposals.Where(each => each.Kind == "pause"))
-            {
-                var target = proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
-                if (target.Length == 0) continue;
-                foreach (var scope in new[] { WorkScope.Ask, WorkScope.Quest })
-                {
-                    if (await WorkPausing.PlanAsync(world, scope, target, ct).ConfigureAwait(false) is { } plan) plans.Add(plan);
-                }
-            }
-
-            // As the REMOTES module reads the wiring: the environment names the machine's remote whole, else the file's workspaces.
-            var fromEnvironment = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(RemoteTarget.UrlVariable))
-                || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(RemoteTarget.KeyVariable));
-            facts = facts with
-            {
-                Work = plans,
-                Wired = fromEnvironment ? facts.Workspaces : [.. RemoteTarget.Load().Keys],
-            };
         }
 
         // A clear proposal is judged by what this machine keeps of the work it names, as HISTORY_PLAN reads it.

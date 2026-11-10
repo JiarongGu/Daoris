@@ -159,7 +159,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
         // The four further kinds, each a card the person applies.
         Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__delete_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
         // Adding a landed plugin, or switching one, a card the person applies like the rest.
@@ -169,8 +169,9 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
         // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
         Assert.DoesNotContain("mcp__daoris-knowledge__repository_propose", allowed);
-        // Archiving or unarchiving sessions, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
+        // Archiving or unarchiving sessions, and pausing work, are pressed, never proposed.
+        Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));

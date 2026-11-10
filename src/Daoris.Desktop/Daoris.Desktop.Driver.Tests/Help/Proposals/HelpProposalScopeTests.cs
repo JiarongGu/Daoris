@@ -11,16 +11,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
 {
     private static readonly DateTimeOffset At = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly IReadOnlyDictionary<string, PausedBy> NonePaused = new Dictionary<string, PausedBy>();
-
-    private static readonly AskView AskOfBeta = new("ab1beta0", "beta", "fix the stall", "Open", "full");
-
-    private static QuestView Quest(string id, string workspace, string repository) =>
-        new(id, "ask #a0", repository, "a quest", "", "Open") { Workspace = workspace };
-
-    private static WorkPlan QuestWork(QuestView quest) => WorkPausing.Plan(
-        new WorkPieces(WorkScope.Quest, quest.Id, [new WorkQuest(quest, WorkJoin.Named)], [], [], []), DriverConfig.Empty, NonePaused, null);
-
     private static HistoryPlan History(HistoryScope scope, string kind, string id, string workspace) =>
         new(scope, id, [new HistoryUnitPlan(kind, id, workspace) { Quests = [id], Bytes = new HistoryBytes(1024, 0, 0, 0, 0) }]);
 
@@ -43,16 +33,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
             new HelpAskFacts("aa1alpha", "stream the tiles", "alpha", "Open", [], Deletable: true),
             new HelpAskFacts("ab1beta0", "fix the stall", "beta", "Open", [], Deletable: true),
         ],
-        Work =
-        [
-            QuestWork(Quest("qa1alpha", "alpha", "engine")),
-            QuestWork(Quest("qb1beta0", "beta", "game")),
-            // As WorkPausing.PlanAsync reads an ask's work: the ask as the service answered it, beside its pieces.
-            WorkPausing.Plan(new WorkPieces(WorkScope.Ask, "ab1beta0", [], [], [], []), DriverConfig.Empty, NonePaused, AskOfBeta) with
-            {
-                Ask = AskOfBeta,
-            },
-        ],
         History =
         [
             History(HistoryScope.Quest, HistoryKinds.Quest, "qa1alpha", "alpha"),
@@ -66,14 +46,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
             new SessionRecord("sb1beta0", "game", "completed") { Workspace = "beta", Deletable = true },
             new SessionRecord("sa2alpha", "engine", "running") { Workspace = "alpha" },
             new SessionRecord("sb2beta0", "game", "running") { Workspace = "beta" },
-        ],
-        Placed =
-        [
-            new SessionGrouping("sa1alpha", SessionGroup.Ended, "completed"),
-            new SessionGrouping("sb1beta0", SessionGroup.Ended, "completed"),
-            new SessionGrouping("sa2alpha", SessionGroup.You, "waiting"),
-            new SessionGrouping("sb2beta0", SessionGroup.Review, "review"),
-            new SessionGrouping("sx9nowhere", SessionGroup.Ended, "completed"),
         ],
         // A retry's quest, parked for alpha's repository and held for beta's.
         Parked = [new ParkedQuest("qa1alpha", "engine")],
@@ -150,41 +122,14 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     [Fact]
     public void A_proposal_naming_another_workspace_s_record_by_id_is_judged_by_its_kind()
     {
-        Reaches(Of("delete", "quest", "qb1beta0"));
-        Reaches(Of("delete", "ask", "#AB1BETA0"));
-        Reaches(Of("delete", "session", "sb1beta0"));
-        Reaches(Of("pause", "pause", "qb1beta0"));
-        Reaches(Of("pause", "pause", "ab1beta0", value: "ask"));
         Reaches(Of("clear", "quest", "qb1beta0"));
         Reaches(Of("clear", "ask", "ab1beta0"));
         Reaches(Of("clear", "failed", "qb1beta0"));
-        Reaches(Of("session", "archive", "sa1alpha, sb1beta0"));
-        Reaches(Of("session", "unarchive", "sb1beta0"));
         Reaches(Of("go", "go", "quests") with { Item = "qb1beta0" });
         Reaches(Of("go", "go", "quests") with { Item = "ask:ab1beta0" });
         Reaches(Of("go", "go", "sessions") with { Item = "#sb1beta0" });
 
-        Assert.Null(Refusal(Of("delete", "quest", "qb1beta0")));
-        Assert.Null(Refusal(Of("session", "archive", "sb1beta0")));
         Assert.Null(Refusal(Of("go", "go", "sessions") with { Item = "sb1beta0" }));
-    }
-
-    /// <summary>
-    /// <c>ended</c> archives the conversation's workspace's ended sessions alone, and the list's kept counts are its
-    /// own; a placed row no record files is excluded under a circle, and nothing is filtered under none.
-    /// </summary>
-    [Fact]
-    public void Archive_what_ended_takes_only_the_conversation_s_workspace_s_sessions()
-    {
-        var own = HelpProposals.Plan(Of("session", "archive", value: "ended"), DriverConfig.Empty, Bound("alpha"));
-        Assert.Equal(["sa1alpha"], own.Sessions);
-        Assert.Contains("Archives 1 session that ended.", own.Describe);
-        Assert.Contains("Kept in the list: 1 waiting on you.", own.Describe);
-        Assert.DoesNotContain("to review", own.Describe);
-
-        var whole = HelpProposals.Plan(Of("session", "archive", value: "ended"), DriverConfig.Empty, Bound(null));
-        Assert.Equal(["sa1alpha", "sb1beta0", "sx9nowhere"], whole.Sessions);
-        Assert.Contains("Kept in the list: 1 waiting on you, 1 to review.", whole.Describe);
     }
 
     /// <summary>A retry of a quest of another workspace is judged as its own is; a quest in neither list is its kind's own refusal.</summary>
@@ -201,10 +146,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     [Fact]
     public void A_record_not_found_is_its_kind_s_own_refusal()
     {
-        Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("delete", "quest", "zz000000")));
         Assert.Equal("there is no ask `#zz000000` on this machine.", Refusal(Of("go", "go", "quests") with { Item = "ask:zz000000" }));
-        Assert.Equal("there is no session `zz000000` on this machine.", Refusal(Of("session", "archive", "zz000000")));
-        Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("pause", "pause", "zz000000", value: "quest")));
         Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("clear", "quest", "zz000000")));
     }
 

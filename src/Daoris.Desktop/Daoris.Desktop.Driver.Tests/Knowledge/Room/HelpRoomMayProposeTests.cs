@@ -20,8 +20,8 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
-        // A delete's press is its own word, as its card labels it, and a bring-up-to-date card's first is the look.
-        Assert.Contains("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**)", agents);
+        // A bring-up-to-date card's first press is the look; a delete has no card of its own, being pressed.
+        Assert.DoesNotContain("a delete card", agents);
         Assert.Contains("a bring-up-to-date card **look for updates** until the person has looked, then **apply**", agents);
         Assert.Contains("**查看更新**", agents);
     }
@@ -109,37 +109,40 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// Sessions are archived or unarchived by id, or every one that ended archived, and a
-    /// conversation that served no quest deleted, each judged as Sessions' own press is; a stop is no proposal, since a session's
-    /// stop is its own conversation.
+    /// Sessions are archived or unarchived by id and a conversation that served no quest deleted, each by the press whose card is
+    /// the route's view; a stop is the person's own, since a session's stop is its own conversation.
     /// </summary>
     [Fact]
-    public void The_room_says_how_sessions_are_archived_and_a_conversation_deleted()
+    public void The_room_says_how_sessions_are_archived_and_a_conversation_deleted_by_pressing()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the", proposes);
-        Assert.Contains("  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,", proposes);
-        Assert.Contains("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,", proposes);
-        Assert.Contains("or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.", proposes);
-        Assert.Contains("A session still running, in Waiting on you or in To review is never archived: archive never hides what", proposes);
-        Assert.Contains("Stopping a session is never proposed: it is the person's own,\n  on the session's page, where `go_propose` takes them.", proposes);
-        Assert.Contains("is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.", proposes);
+        Assert.Contains("- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:", proposes);
+        Assert.Contains("`daoris quest delete <id>` or `daoris ask --delete <id>`", proposes);
+        Assert.Contains("  A session goes by `daoris sessions delete <id>` only where Sessions offers Delete…: a conversation that served no quest, ended,", proposes);
+        Assert.Contains("- Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and", proposes);
+        Assert.Contains("A session still running, in Waiting on you or in To review is never", proposes);
+        Assert.Contains("Stopping a session is never pressed for the person: it is their own, on the session's page, where `go_propose` takes them.", proposes);
+        Assert.Contains("is archived instead, and Ask Daoris's own conversations are deleted in its History.", proposes);
+        Assert.DoesNotContain("session_propose", proposes);
+        Assert.DoesNotContain("delete_propose", proposes);
     }
 
     /// <summary>
-    /// An ask's work or one quest's is paused or resumed by its id, the room saying what a pause stops
+    /// An ask's work or one quest's is paused or resumed by its id by pressing, the room saying what a pause stops
     /// and what it leaves; abandon is never proposed, since its reason is the person's answer.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_pause_is_proposed_and_that_abandon_is_the_persons_own()
+    public void The_room_says_how_a_pause_is_pressed_and_that_abandon_is_the_persons_own()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or", proposes);
-        Assert.Contains("A pause stops what of the work runs here as the person's own stop and starts nothing of it", proposes);
-        Assert.Contains("a session waiting on the person stays parked, a running intake keeps reading, and a\n  teammate's session is never reached.", proposes);
+        Assert.Contains("- One ask's work, or one quest's, is paused on this machine or resumed by pressing, never proposed:", proposes);
+        Assert.Contains("`daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`.", proposes);
+        Assert.Contains("A pause stops what of the work runs", proposes);
+        Assert.Contains("a session waiting on the person stays parked,\n  a running intake keeps reading, and a teammate's session is never reached.", proposes);
         Assert.Contains("Resume lifts the pause and releases its stops", proposes);
+        Assert.DoesNotContain("pause_propose", proposes);
         Assert.Contains("Abandoning is never proposed: it declines quests with the person's reason, which is their answer,", proposes);
         Assert.Contains("`daoris ask abandon <id>`", proposes);
     }
@@ -154,14 +157,14 @@ public sealed class HelpRoomMayProposeTests
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        foreach (var tool in new[] { "`agent_propose`", "`delete_propose`", "`agent_settings_propose`", "`go_propose`" })
+        foreach (var tool in new[] { "`agent_propose`", "`agent_settings_propose`", "`go_propose`" })
         {
             Assert.Contains(tool, agents);
         }
 
         // A delete: only what nobody has started on, and never a taken, done or declined quest.
-        Assert.Contains("Never propose deleting a taken, done or declined quest", agents);
-        Assert.Contains("the route refuses it, and declining it with the reason is the way instead", agents);
+        Assert.Contains("Never press the delete of a", agents);
+        Assert.Contains("and declining it\n  with the reason is the way instead", agents);
         Assert.Contains("an ask goes with every quest it became, or not at all", agents);
         // An agent: Update where the Agents screen offers it, a pin to one exact release.
         Assert.Contains("a pin names one exact release, like 2.1.300, never `latest`", agents);
@@ -176,7 +179,7 @@ public sealed class HelpRoomMayProposeTests
         {
             "daoris agent update <agent>", "daoris agent pin <agent> <version>",
             "daoris agent settings <agent> --account <name> model <model> effort <effort>",
-            "daoris quest delete <id>", "daoris ask delete <id>",
+            "daoris quest delete <id>", "daoris ask --delete <id>",
         })
         {
             Assert.Contains(command, agents);

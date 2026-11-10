@@ -38,14 +38,11 @@ public sealed class HelpProposalBox(string? home)
         ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
-        ("delete", "delete_propose"),
         ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("session", "session_propose"),
-        ("pause", "pause_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
@@ -84,10 +81,6 @@ public sealed class HelpProposalBox(string? home)
             action, agent, version, why, session, at, account, use, keep, noKeep, early, near, accounts, clear,
             switched, curve, noCurve);
 
-    /// <inheritdoc cref="HelpDeleteProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeDelete(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at) =>
-        new HelpDeleteProposalWriter(file).Propose(quest, ask, deleteSession, why, session, at);
-
     /// <inheritdoc cref="HelpAccountProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeAgentSettings(
         string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at) =>
@@ -121,15 +114,6 @@ public sealed class HelpProposalBox(string? home)
         long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
         string? place = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null) =>
         new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision, supervisor);
-
-    /// <inheritdoc cref="HelpSessionProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSession(
-        string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at, SessionHelperProposal? helper = null) =>
-        new HelpSessionProposalWriter(file).Propose(door, sessions, ended, why, session, at, helper);
-
-    /// <inheritdoc cref="HelpPauseProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposePause(string door, string? quest, string? ask, string why, string? session, DateTimeOffset at) =>
-        new HelpPauseProposalWriter(file).Propose(door, quest, ask, why, session, at);
 
     /// <inheritdoc cref="HelpClearProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeClear(

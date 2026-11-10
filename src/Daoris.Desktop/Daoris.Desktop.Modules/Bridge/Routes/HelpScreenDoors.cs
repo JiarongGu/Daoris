@@ -35,98 +35,10 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords, shortTitle: shortTitle).ConfigureAwait(false);
     }
 
-    // The quest drawer's Delete: the local host's `DELETE /api/quests/{id}`.
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct) =>
-        (service ?? throw NotReady()).DeleteQuestAsync(id, ct);
-
-    // The ask's record's Delete: the local host's `DELETE /api/asks/{id}`.
-    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct) =>
-        (service ?? throw NotReady()).DeleteAskAsync(id, ct);
-
-    // SESSION_ARCHIVE's own marks: each judged again by where the list places it as it goes, counted in the
-    // machine log as the screen's. The service is the one this Apply is handed, as the other doors use it.
-    public async Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
-    {
-        var marks = new SessionArchive(_loop.Home);
-        static string Listed(IEnumerable<string> each) => string.Join(", ", each.Select(id => $"`{id}`"));
-        static string Count(int n) => $"{n} session{(n == 1 ? "" : "s")}";
-        if (!archived)
-        {
-            var back = marks.Unarchive(ids);
-            var undone = back.NotArchived.Count == 0 ? "" : $" Not archived, so left as they were: {Listed(back.NotArchived)}.";
-            return (true, $"Unarchived {Count(ids.Count - back.NotArchived.Count)}.{undone}");
-        }
-
-        var asked = service ?? throw NotReady();
-        var config = DriverConfig.Load(_loop.ConfigPath);
-        var look = await SessionGroups.LookAsync(asked, config, context.Unadopted(config), _loop.Look.Latest, _loop.Home, ids, ct)
-            .ConfigureAwait(false);
-        look = look with { Waits = _loop.Look.Waits };
-        var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
-        var done = answer.Outcomes.Where(outcome => outcome.Verdict == ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
-        var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
-        SessionArchive.Said(_loop.Log, done.Count, PluginEvents.Screen);
-        var left = kept.Count == 0 ? "" : $" Kept in the list, as archive never hides what needs you or stops what runs: {Listed(kept)}.";
-        return done.Count == 0
-            ? (false, $"Nothing was archived.{left}")
-            : (true, $"Archived {Count(done.Count)}: {Listed(done)}.{left}");
-    }
-
-    // SESSION_HELPER_ASK's own ask, judged and written by the library both the page and the terminal share.
-    public async Task<(bool Ok, string Message)> AskHelperAsync(
-        string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
-    {
-        var asked = await HelperPersonAskDoor.AskAsync(
-            service ?? throw NotReady(), new HelperFiles(_loop.Home), _loop.Events, session, question, agent, after, toPerson, ct).ConfigureAwait(false);
-        if (asked.Asked is not null) _loop.Nudge();
-        return (asked.Asked is not null, asked.Message);
-    }
-
-    // SESSION_HELPER_PASS's own pass: the library's judge marks the state for the look to hand.
-    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
-    {
-        var answer = HelperPassToLead.Pass(new HelperFiles(_loop.Home), session, ask, DateTimeOffset.UtcNow);
-        if (answer.Wrote) _loop.Nudge();
-        return Task.FromResult((answer.Stands, answer.Message));
-    }
-
-    // WORK_PAUSE's own pause as the screen's, then the loop asked to look: only an id this machine does not
-    // have is not applied; a pause that finds nothing to hold is said, as the route says it.
-    public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
-        if (outcome.Verdict == PauseVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
-
-        _loop.Nudge();
-        return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
-    }
-
-    // WORK_RESUME's own resume, the same way.
-    public async Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
-        if (outcome.Verdict == ResumeVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
-
-        _loop.Nudge();
-        return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
-    }
-
     // HISTORY_CLEAR's own clear of exactly the units the card listed: the driver library's one owner, each unit judged
     // again as it goes; the outcome comes back whole, and a service that does not answer throws before anything is removed.
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
         HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
-
-    // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look.
-    public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
-    {
-        var outcome = await new SessionDeletion(_loop.Home)
-            .DeleteAsync(service ?? throw NotReady(), id, PluginEvents.Screen, _loop.Log, _loop.Events, ct)
-            .ConfigureAwait(false);
-        if (outcome.Verdict != DeleteVerdict.Deleted) return (false, outcome.Message);
-
-        _loop.Nudge();
-        return (true, outcome.Message);
-    }
 
     // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
     public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)

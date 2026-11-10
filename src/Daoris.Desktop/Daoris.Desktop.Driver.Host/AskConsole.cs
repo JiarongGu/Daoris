@@ -149,9 +149,7 @@ internal static class AskConsole
 
             if (delete is not null)
             {
-                var (ok, message) = await service.DeleteAskAsync(delete).ConfigureAwait(false);
-                Console.WriteLine(message);
-                return ok ? 0 : 1;
+                return await AskDeleteCommand.PressAsync(delete, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
             if (goAhead is not null)
