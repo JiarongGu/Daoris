@@ -37,6 +37,8 @@
   "person.keyed": "它带有密钥，因此不会在 Daoris 重启后继续等待。",
   "person.hold": "确认后，这个终端还能在这段对话中代你发言，直到它放开。",
   "person.values": "它携带的值",
+  "person.view.repository-move": "把 {{repository}} 从工作区 {{from}} 移到工作区 {{to}}：只改本机注册表的一行，不碰任何文件。",
+  "person.view.repository-move-starts": "把 {{repository}} 从工作区 {{from}} 移到工作区 {{to}}：只改本机注册表的一行，不碰任何文件。{{to}} 里还没有仓库，这次移动会在本机建立它。",
   "person.cannotTell": "Daoris 无法分辨这是你运行的还是智能体运行的。只确认你自己运行的。",
   "person.refuse": "拒绝",
   "person.confirm": "确认",
