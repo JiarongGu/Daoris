@@ -93,6 +93,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     public string? Briefing { get; init; }
 
+    /// <summary>What a conversation working in place is told of its place with its first message, after <see cref="Briefing"/>.</summary>
+    public string? Place { get; init; }
+
     /// <summary>
     /// Daoris's brief of the line a handed-over conversation continues (<see cref="ContextBrief"/>), handed first, ahead of
     /// what <see cref="Briefing"/> tells; the record keeps it as the conversation's first prompt with its account.
@@ -209,7 +212,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     internal bool Said { get; init; }
 
-    /// <summary>What the agent is handed: the brief, the briefing, the process, the preface, the draft, the person's words, then the standing block, each after a blank line.</summary>
+    /// <summary>What the agent is handed: the brief, the briefing, the place, the process, the preface, the draft, the person's words, then the standing block, each after a blank line.</summary>
     public string Prompt => Composed("");
 
     /// <summary>
@@ -223,7 +226,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
 
     private string Composed(string afterWords) => string.Join(
         "\n\n",
-        new[] { Brief?.Text, Briefing, Process?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part))
+        new[] { Brief?.Text, Briefing, Place, Process?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part))
             .Append(Text + afterWords)
             .Concat(string.IsNullOrEmpty(Block?.Text) ? [] : [Block!.Text]));
 

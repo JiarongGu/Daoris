@@ -274,6 +274,7 @@
   "note.chat.option-set": "你已将这次对话的 {{option}} 设为 {{chosen}}。",
   "note.chat.told-where": "已告知智能体你所在的位置：",
   "note.chat.told-browser": "已告知智能体它拥有 Daoris 的浏览器：",
+  "note.chat.told-place": "已告知智能体它工作的位置：",
   "note.chat.told-process": "已告知智能体这个仓库的流程，提交规则 `{{mode}}`（{{source}}）：",
   "note.chat.told-block": "已告知智能体 Daoris 的常驻说明：",
   "note.chat.told-draft": "已告知智能体你在编辑器里打开的工作流草稿：",
