@@ -66,7 +66,7 @@
   "projects.manage.system": "系统",
   "projects.manage.systemPick": "选择系统…",
   "projects.manage.systemName": "名称",
-  "projects.manage.systemNote": "只能通过控制台访问的系统：会话通过适配它的插件读取它并规划更改，自身不做任何更改。你审阅每个计划，逐项查看每个资源的前后，接受后才会应用；系统在此期间有变动的计划会重新规划。",
+  "projects.manage.systemNote": "只能通过控制台访问的系统：会话通过适配它的插件读取它并规划更改，自身不做任何更改。你审阅每个计划，逐项比对每个资源的前后，接受后才会应用；系统在此期间有变动的计划会重新规划。",
   "projects.manage.systemNone": "没有已安装的插件适配系统。请先在插件页安装一个声明了系统的插件，再在这里添加。",
   "projects.manage.excludes": "不跟踪的文件",
   "projects.manage.excludesPlaceholder": "build/**\n*.log",
