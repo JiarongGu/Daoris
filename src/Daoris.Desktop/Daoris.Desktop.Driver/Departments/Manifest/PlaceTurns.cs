@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A turn in a git place under the writer's lease, read at its start and its end. The start is kept under the record with the paths
-/// the line carried in, and compared with the place's last manifest of any line; the end is kept once, and what of the turn's change
-/// set and of what it carried in is still uncommitted is the record's <c>holds_place</c> mark. A folder that is no git checkout is read
-/// as a folder (<see cref="FolderTurns"/>); a git place whose status cannot be read reads none and is told nothing.
+/// A turn in a git place under the writer's lease: its start kept with the paths the line carried in and compared with the place's
+/// last manifest, its end kept once, and what of its own stays uncommitted the record's <c>holds_place</c> mark. A folder is read by
+/// <see cref="FolderTurns"/>; a git place whose status cannot be read reads none and is told nothing.
 /// </summary>
 public static class PlaceTurns
 {

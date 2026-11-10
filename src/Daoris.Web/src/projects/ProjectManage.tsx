@@ -62,7 +62,6 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
       // What the shell found there, stated: registered is addressable, adopted is disciplined —
       // and a row that said adopted without a manifest would be driven with no connector.
       adopted: found.adopted,
-      // A folder that is no git checkout is a department of its own kind, worked in place by its manifest.
       kind: found.git ? 'git' : 'folder',
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted

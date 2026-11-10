@@ -66,7 +66,6 @@ public sealed record RegistrationRow(
     /// </summary>
     public bool Registered { get; init; }
 
-    /// <summary>Its kind as the service holds it (<see cref="PlaceKind"/>); absent from an older host, which is git.</summary>
     public string? Kind { get; init; }
 }
 

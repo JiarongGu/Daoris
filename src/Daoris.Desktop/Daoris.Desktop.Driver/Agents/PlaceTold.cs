@@ -6,10 +6,9 @@ namespace Daoris.Driver;
 /// <param name="Others">Uncommitted at the start and not the line's own: the person's, or those of a line the person let go.</param>
 public sealed record PlaceTold(IReadOnlyList<string> Outside, IReadOnlyList<string> Others)
 {
-    /// <summary>The place's kind (<see cref="PlaceKind"/>), which the words it is told follow.</summary>
+    /// <summary>The place's kind (<see cref="PlaceKind"/>), and whether a folder is past the manifest's bounds.</summary>
     public string Kind { get; init; } = PlaceKind.Git;
 
-    /// <summary>A folder past the manifest's bounds, whose changes are not followed.</summary>
     public bool TooLarge { get; init; }
 
     public bool Equals(PlaceTold? other) =>

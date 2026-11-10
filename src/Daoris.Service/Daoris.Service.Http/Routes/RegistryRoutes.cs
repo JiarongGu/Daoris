@@ -80,7 +80,6 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
                 : Declared.Lanes(body.Lanes.Select(lane => lane is null
                     ? null
                     : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))),
-            // Its kind, a repository or a folder; unstated preserves what the row holds.
             Kind: PlaceKinds.Of(body.Kind));
 
         // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each carries, as it

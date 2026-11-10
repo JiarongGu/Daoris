@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What changed in a folder between two of its manifests, each of which lists every file: a path on the later side alone was added, on
-/// the earlier alone removed, and on both changed where its hash differs, or, where either could not be read, its size or time. A
-/// manifest too large to follow gives nothing.
+/// What changed in a folder between two of its manifests, each of which lists every file: a path only the later lists is added, one
+/// only the earlier lists removed, and one both list changed where its hash differs, or, where either could not be read, its size or
+/// time. A manifest too large to follow gives nothing.
 /// </summary>
 public static class FolderChanges
 {

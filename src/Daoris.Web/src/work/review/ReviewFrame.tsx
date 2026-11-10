@@ -128,7 +128,6 @@ export function NothingToLand({ line }: { line: string }) {
  * is open and which viewed are the pane's, kept per session and never written down.
  */
 export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, onViewed, onPreview, truncated, uncommitted, place = false }: {
-  /** A folder's change set, whose file without a patch is one that is not text. */
   place?: boolean;
   files: DiffFile[];
   open: Record<string, boolean>;

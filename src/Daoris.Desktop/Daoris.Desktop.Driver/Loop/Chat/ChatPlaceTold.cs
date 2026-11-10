@@ -6,10 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class ChatPlaceTold
 {
-    /// <summary>
-    /// The words of what changed in the place outside Daoris and which uncommitted paths are not the conversation's own, or in a folder
-    /// that it is one; null where a git place has none to tell or the place reads no manifest.
-    /// </summary>
+    /// <summary>The words its place tells it (what changed outside Daoris, paths not its own, a folder's); null where there are none.</summary>
     /// <param name="continues">The record a hand-over or carry-on continues, whose own paths the conversation carries in.</param>
     public static async Task<string?> ToldAsync(
         string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct)

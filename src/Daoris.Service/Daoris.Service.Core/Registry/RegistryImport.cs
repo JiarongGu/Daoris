@@ -39,7 +39,6 @@ public static class RegistryImport
         var name = new DirectoryInfo(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)).Name;
         var manifest = Path.Combine(directory, "daoris.json");
 
-        // Proposed with its kind: a folder that is no git checkout is driven in place by its manifest.
         return (File.Exists(manifest)
             ? ReadManifest(name, manifest, directory)
             // Present in the family, not adopted. Worth proposing rather than hiding: "who could I

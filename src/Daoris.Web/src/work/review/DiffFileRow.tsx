@@ -35,7 +35,6 @@ const MARK: Record<string, { letter: string; tone: string }> = {
  * in the layout the pane chose — unified, or the old side beside the new.
  */
 export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed, onPreview, uncommitted = false, place = false }: {
-  /** A file of a folder's change set: with no patch, it is not text, and is compared by its size and hash. */
   place?: boolean;
   file: DiffFile;
   /** An uncommitted file: when it has no patch, the words say why, since `git diff` does not list it. */

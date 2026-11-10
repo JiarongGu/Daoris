@@ -171,7 +171,6 @@ export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; q
 export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>
   & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>>;
 
-/** Whether a department is a folder worked in place, where what only git offers (branches, history, a landing) is absent. */
 export const isFolder = (registration: Registration): boolean => registration.kind === 'folder';
 
 /** Whether a repository can be asked — the host's answer, or adoption where it gives none. */
