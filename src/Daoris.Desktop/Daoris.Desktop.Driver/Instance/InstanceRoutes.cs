@@ -299,6 +299,9 @@ public static class PersonPresses
     /// <summary><c>quest delete &lt;id&gt;</c>: a quest made by mistake deleted.</summary>
     public static InstanceRoute QuestDelete { get; } = Person("QUEST_DELETE");
 
+    /// <summary><c>ask --delete &lt;id&gt;</c>: an ask made by mistake deleted with every quest it became.</summary>
+    public static InstanceRoute AskDelete { get; } = Person("ASK_DELETE");
+
     /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>
     public static InstanceRoute QuestAccept { get; } = Person("QUEST_ACCEPT");
 
@@ -379,6 +382,7 @@ public static class PersonPresses
         ("workflow fix <run> [<node>]", WorkHeld),
         ("quest done <id> [--note \"…\"]", QuestDone),
         ("quest delete <id>", QuestDelete),
+        ("ask --delete <id>", AskDelete),
         ("quest accept <id>", QuestAccept),
         ("quest reopen <id> [--note \"…\"]", QuestReopen),
         ("quest go-on <id>", QuestGoOn),

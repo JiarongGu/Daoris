@@ -114,6 +114,27 @@ internal static class SessionsJson
                     writer.WriteNull("calling");
                 }
 
+                // The steps of the run it stands for that wait on the person, by which it is placed.
+                if (row.Waits is { } waits)
+                {
+                    writer.WriteStartArray("waits");
+                    foreach (var wait in waits)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("run", wait.Run);
+                        writer.WriteString("node", wait.Node);
+                        writer.WriteString("why", wait.Why);
+                        if (wait.Since is { } since) writer.WriteString("since", since); else writer.WriteNull("since");
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    writer.WriteNull("waits");
+                }
+
                 writer.WriteEndObject();
             }
 

@@ -11,7 +11,6 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
-  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -64,7 +63,6 @@ const asked = {
 };
 
 function respond(url: string): Response {
-  // As the ledger answers: an ended session only to a caller that asks for closed ones.
   if (url.startsWith('/api/sessions')) {
     return Response.json(url.includes('includeClosed=true') ? SESSIONS
       : SESSIONS.filter((row) => ['queued', 'starting', 'working', 'awaiting-person'].includes((row as { state: string }).state)));
@@ -1259,28 +1257,6 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /** A delete is applied through the driver's Apply, like every card, and opens nothing. */
-  it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'd1e2l3e4', kind: 'delete', describe: 'Delete ask `#a2none00` “a test ask”: it became no quest, so it goes alone.',
-      terminal: 'daoris ask delete a2none00', why: 'it was a test',
-    }];
-    APPLIED = { message: 'Applied: `#d1e2l3e4` — Deleted ask #a2none00.', applied: true, go: null, harnessAction: null };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(/cannot be undone/)).toBeInTheDocument();
-    await userEvent.click(within(cards).getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'd1e2l3e4' } }));
-    expect(onGo).not.toHaveBeenCalled();
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
   });

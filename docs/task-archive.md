@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## APPROVE1o, p — a run's steps that wait on the person in the groups, abandoned runs swept once (2026-11-11)
+
+> **APPROVE1o, p** (driver, modules, web): Outcome: every step only the person can move (an active review, task or approval, an active go-ahead, a step held `unknown`; `Workflows/Nodes/PersonWaits.cs`) places its run's newest session in *To review* (an Accept) or *Waiting on you* (anything else), ended or archived, with a `waits` field on the row; Accept waits show in *What needs you* as review rows opening the run, and `session list` names each waiting step with `daoris workflow run --session <id>` (`WorkOrders/Sessions/RunWaitSessions.cs`, `RunWaitWords.cs`, the page's `runWaitFact.ts`). The `abandoned-runs` home step records a stop on each open step of a run whose quest is Declined or whose ask is Closed, once (`Transitional/Migration/AbandonedRunsStep.cs`). Proof: `RunWaitGroupsTests`, `PersonWaitsTests`, `AbandonedRunsStepTests`, `runWaitFact.test.ts`, each seen failing first. Left: the sweep reads a run's first quest only; a go-ahead nobody raised shows in the group alone.
+
+---
+
 ## APPROVE1q, r, s, t — every node word routed, nothing to deliver ends a run, a stopped step drawn stopped (2026-11-11)
 
 > **APPROVE1q, r, s, t** (driver, web): Outcome: the `workflow` group's verb list lacked `accept`, `send`, `ask-again` and `go-on`, and routed `done`, `approve` and `reject` to the driver's own command, which refused them; every node word now routes to `WorkflowNodeCommand` and the usage names each (`Loop/CommandTree.cs`, `DriveUsageMachine.cs`, `DriverWorkflowsCommand.cs`). After a `land` on an empty landing every step not yet started is skipped as nothing to deliver, an active push through the landing record (`Workflows/Nodes/NothingToDeliver.cs`, `PushNode`, `PushReading`); once the line holds the landed branch, push and pull-request steps not yet started are skipped, the monitor reading no plugin answer as merged (`PullRequestReading`): the pull-request plugin had failed to start all day, so the step was never sent. A stopped step is no longer drawn as the live current one (`WorkflowRunView.tsx`). Proof: `WorkflowNodeWordsRouteTests`, `NothingToDeliverTests`, `RunViewStopped.test.tsx`, each seen failing first. Left: a pull-request step already sent to a plugin is not closed when the line holds the branch.

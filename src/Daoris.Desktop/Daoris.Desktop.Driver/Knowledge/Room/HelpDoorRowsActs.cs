@@ -37,12 +37,12 @@ internal static class HelpDoorRowsActs
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
         ("set an account's own model and effort", Agent + "Model and effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
-        // The `session` kind's helper doors.
+        // A session's helper doors.
         ("ask another agent, read-only, one question about a session's work (or ask again after its answer, keeping the answer for "
             + "you), and pass an answer kept for you to the session that asked",
             "A session's page → Co-workers ⋯ → Bring in another agent…, a member's thread → Ask again… and Pass to the lead",
             "`daoris session helper <id> \"…\" [--agent <name>] [--after <ask>] [--to-me]`, `daoris session pass <ask>`"),
-        // The terminal's doors, the pages' and a session's acts, and Ask Daoris's `pause` kind, its `pause` and `resume` doors.
+        // The terminal's doors, the pages' and a session's acts: the pause and the resume.
         ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
             + "starts until you resume it, which carries it on where it stood",
             "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
@@ -56,14 +56,13 @@ internal static class HelpDoorRowsActs
             "`daoris ask abandon <id> [--reason \"…\" --yes]`, `daoris quest abandon <id> [--reason \"…\" --yes]`",
             new HelpDoorAsk.Never("the reason is your answer")),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
-            "`daoris quest delete <id>`, `daoris ask delete <id>`"),
-        // Sessions' archive, archive what ended and unarchive, the `session` kind's doors; a session's stop is its own conversation,
-        // named on its page.
+            "`daoris quest delete <id>`, `daoris ask --delete <id>`"),
+        // Sessions' archive, archive what ended and unarchive; a session's stop is its own conversation, named on its page.
         ("archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed "
             + "first; or unarchive one (a session running, waiting on you or to review is never archived)",
             "Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived",
             "`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`"),
-        // The `delete` kind's `session` door.
+        // A session's delete.
         ("delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its "
             + "files (one that worked on a quest is archived instead)",
             "Sessions → a session's ⋯ → Delete…", "`daoris session delete <id>`"),

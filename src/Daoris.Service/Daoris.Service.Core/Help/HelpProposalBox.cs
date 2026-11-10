@@ -13,15 +13,10 @@ namespace Daoris.Knowledge;
 /// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
 /// follow them.</para>
 ///
-/// <para><b>The rule proposals' shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
-/// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
-///
 /// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
 /// accepts, a pattern that names one branch per session, a repository registered here, an agent this
 /// machine has — is the driver's, which judges each with the route's own code before the person sees
 /// it and hands a refusal back to the conversation in the route's words.</para>
-///
-/// <para><b>It never applies.</b> Every change is the person's press.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it, shares no
 /// code with this, and each side's tests hold the same shape — and the same table of kinds.</para>
@@ -38,14 +33,10 @@ public sealed class HelpProposalBox(string? home)
         ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
-        ("delete", "delete_propose"),
-        ("account", "agent_settings_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("session", "session_propose"),
-        ("pause", "pause_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
@@ -84,15 +75,6 @@ public sealed class HelpProposalBox(string? home)
             action, agent, version, why, session, at, account, use, keep, noKeep, early, near, accounts, clear,
             switched, curve, noCurve);
 
-    /// <inheritdoc cref="HelpDeleteProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeDelete(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at) =>
-        new HelpDeleteProposalWriter(file).Propose(quest, ask, deleteSession, why, session, at);
-
-    /// <inheritdoc cref="HelpAccountProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAgentSettings(
-        string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at) =>
-        new HelpAccountProposalWriter(file).Propose(agent, account, model, effort, why, session, at);
-
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(
         string view, string? domain, string? part, string? item, string why, string? session, DateTimeOffset at, string? workspace = null,
@@ -121,15 +103,6 @@ public sealed class HelpProposalBox(string? home)
         long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
         string? place = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null) =>
         new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision, supervisor);
-
-    /// <inheritdoc cref="HelpSessionProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSession(
-        string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at, SessionHelperProposal? helper = null) =>
-        new HelpSessionProposalWriter(file).Propose(door, sessions, ended, why, session, at, helper);
-
-    /// <inheritdoc cref="HelpPauseProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposePause(string door, string? quest, string? ask, string why, string? session, DateTimeOffset at) =>
-        new HelpPauseProposalWriter(file).Propose(door, quest, ask, why, session, at);
 
     /// <inheritdoc cref="HelpClearProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeClear(
