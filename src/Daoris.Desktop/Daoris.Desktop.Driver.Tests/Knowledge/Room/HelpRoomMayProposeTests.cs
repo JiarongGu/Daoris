@@ -167,7 +167,7 @@ public sealed class HelpRoomMayProposeTests
         // An agent: Update where the Agents screen offers it, a pin to one exact release.
         Assert.Contains("exact release, like 2.1.300, never `latest`", agents);
         // UX6e2: both are said where they are made now, the agent's page in the Agents place.
-        Assert.Contains("an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them", agents);
+        Assert.Contains("agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them", agents);
         Assert.Contains("An account's own model and effort are pressed, never proposed", agents);
         Assert.DoesNotContain("`agent_settings_propose`", agents);
         Assert.DoesNotContain("Settings → Agents", agents);
