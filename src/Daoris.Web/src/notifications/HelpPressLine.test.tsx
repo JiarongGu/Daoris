@@ -45,8 +45,25 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
 
   it('reads the presses field by field and leaves out one it cannot read', () => {
     expect(standingOf({ helpPresses: [{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest' }, { id: 'b' }, 'x'] })?.helpPresses)
-      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest' }]);
+      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false }]);
+    expect(standingOf({ helpPresses: [{ id: 'a', route: 'SET_HOLD', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', place: { kind: 'workspace', workspace: 'Work' }, beyond: true }] })?.helpPresses[0])
+      .toMatchObject({ place: { kind: 'workspace', workspace: 'Work' }, beyond: true });
     expect(standingOf({})?.helpPresses).toEqual([]);
+  });
+
+  it.each([
+    ['en', 'in api, outside its focus', 'in engine'],
+    ['zh', '在 api 中，在其聚焦之外', '在 engine 中'],
+  ])('names each press\'s place, and one beyond its conversation\'s focus at the press (%s)', async (language, beyond, within_) => {
+    await i18n.changeLanguage(language);
+    const placed = [
+      press('h3', 'SET_HOLD', { target: 'api', place: { kind: 'repository', workspace: 'Work', repository: 'api' }, beyond: true }),
+      press('h4', 'SET_HOLD', { target: 'engine', place: { kind: 'repository', workspace: 'Games', repository: 'engine' }, beyond: false }),
+    ];
+    render(<HelpPressLine standing={{ ...STANDING, helpPresses: placed }} onOpen={vi.fn()} onReverse={vi.fn()} defaultOpen />);
+    const list = screen.getAllByRole('listitem');
+    expect(list[0]!.querySelector('[data-help-place]')?.textContent).toBe(beyond);
+    expect(list[1]!.querySelector('[data-help-place]')?.textContent).toBe(within_);
   });
 
   it('offers a reverse press only for a pause that was done', () => {
