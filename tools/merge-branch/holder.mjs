@@ -1,7 +1,6 @@
 /**
- * Who holds a lock, by pid and creation time: a pid alone is taken again by any later process once its holder is gone, so a
- * lock whose holder was killed outright would read as held for as long as the machine runs. The creation time is the holder's
- * identity beside its pid.
+ * Who holds a lock, by pid and creation time: any later process may take a pid once its holder is gone, so a lock whose holder
+ * is killed outright would read as held for as long as the machine runs. The creation time is the identity beside the pid.
  */
 import { spawnSync } from 'node:child_process';
 
@@ -46,8 +45,8 @@ export function holderRuns(text, alive) {
 }
 
 /**
- * Whether the process now holding `pid` is the one that began at `started`. A record with no start (one written before it was
- * kept) and a machine that will not say are taken as the same, so the pid alone decides there.
+ * Whether the process now holding `pid` is the one that began at `started`. A record with no start and a machine that will not
+ * say are taken as the same, so the pid alone decides there.
  */
 export function sameHolder(pid, started, startOf = processStart) {
   if (!Number.isFinite(started)) return true;

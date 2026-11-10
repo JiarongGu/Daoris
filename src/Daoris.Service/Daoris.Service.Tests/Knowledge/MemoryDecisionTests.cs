@@ -196,10 +196,7 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
         Assert.Empty(await _machine.Memory.WaitsAsync());
     }
 
-    /// <summary>
-    /// 🔴 KNOWREV3a: deleting a session drops its staged rows (nothing staged applies by itself, and no session is left for the person to
-    /// Keep), and its awaiting replacement is a wait of its own, decided through its row as a deleted session's end is.
-    /// </summary>
+    /// <summary>🔴 Deleting a session drops its staged rows, and its awaiting replacement is a wait of its own, decided through its row.</summary>
     [Fact]
     public async Task A_deleted_sessions_staged_rows_are_dropped_and_its_awaiting_replacement_is_a_wait_of_its_own()
     {

@@ -4015,8 +4015,8 @@ function holderSaid(held) {
 /**
  * The lock taken for `commit`, put in place complete where none is (`putComplete`), or a refusal naming the run that holds it: one
  * full set beside the merges at a time (two would share one gate tree). A lock whose holder (pid and start) no longer runs is taken
- * over and returned as `stale`, with `ended`: the pids `end` ended (its children born from its start until its pid was taken
- * again, with their trees) and those `endStrays` ended (Windows only: since then, naming the gate tree's folder, their parent
+ * over and returned as `stale`, with `ended`: the pids `end` ended (its children born from its start until another process took
+ * its pid, with their trees) and those `endStrays` ended (Windows only: since then, naming the gate tree's folder, their parent
  * gone). `holder` names the run; a refusal is `busy`, which the CI watch reads as a tree to wait for, never a failure.
  */
 export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, startOf = processStart, now = nowIso, end = endOrphans, endStrays = endStrandedUnder } = {}) {
@@ -4029,7 +4029,6 @@ export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, 
       const held = readGateLock(home, alive, startOf);
       if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
-        // A killed run's steps run on.
         const since = Number.isFinite(held.started) ? held.started : Date.parse(held.at);
         const taken = alive(held.pid) ? startOf(held.pid) : null;
         const ended = Number.isNaN(since) ? [] : end(held.pid, since, taken);

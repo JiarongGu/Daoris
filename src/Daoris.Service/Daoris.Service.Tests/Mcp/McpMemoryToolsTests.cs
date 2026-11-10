@@ -99,10 +99,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Equal(before, _memory.State());
     }
 
-    /// <summary>
-    /// 🔴 KNOWREV3b: a search across a workspace's repositories gives each a fair share of its ten places, round-robin with each
-    /// engine's own order within, so a repository first by name that matches ten entries does not crowd out the others.
-    /// </summary>
+    /// <summary>🔴 A search shares its ten places round-robin, so a repository first by name does not crowd out the others.</summary>
     [Fact]
     public async Task A_search_shares_its_ten_places_among_the_repositories()
     {

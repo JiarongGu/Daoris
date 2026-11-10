@@ -74,7 +74,6 @@ public sealed class MemoryTools(
             perRepository.Add(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)).ToList());
         }
 
-        // The engines give no score to merge by, so each repository takes a turn at the ten places, its own order kept within.
         var found = Enumerable.Range(0, perRepository.Count == 0 ? 0 : perRepository.Max(list => list.Count))
             .SelectMany(round => perRepository.Where(list => round < list.Count).Select(list => list[round]))
             .Take(Limit)
