@@ -162,6 +162,9 @@ public sealed class DriverLoop(
 
     private NoticesStateSlice? _notices;
 
+    /// <summary>The updates and pins Ask Daoris pressed, whose ends are said in its conversation.</summary>
+    public PressedEnds PressedEnds { get; } = new();
+
     /// <summary>
     /// Each move the change sources heard, as the watch tells the machine's facts: its topic and subject, a ledger family
     /// the change stream named among them, so a slice judged from the service's answers hears a connector's write with no desktop
