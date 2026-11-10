@@ -923,7 +923,7 @@ describe('Ask Daoris, with an agent named', () => {
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'p1a2b3c4', kind: 'setting', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
+      id: 'p1a2b3c4', kind: 'role', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
       terminal: 'daoris place drive engine', why: 'the person asked for engine to be driven',
     }];
     bridge();
@@ -1257,31 +1257,6 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /**
-   * An update the person applied is followed by the Agents screen where the application holds its
-   * running action; drawn alone, with nothing holding one, the card still applies.
-   */
-  it('applies an agent\'s update with nothing above to follow it', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'u1p2d3a4', kind: 'agent', describe: 'Update `claude-code` with its own updater.',
-      terminal: 'daoris agent update claude-code', why: 'the person asked for the newest',
-    }];
-    APPLIED = {
-      message: 'Started: `#u1p2d3a4` — Update `claude-code` with its own updater.', applied: true,
-      harnessAction: { harness: 'claude-code', action: 'update' },
-    };
-    bridge();
-    show();
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'u1p2d3a4' } }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
   });

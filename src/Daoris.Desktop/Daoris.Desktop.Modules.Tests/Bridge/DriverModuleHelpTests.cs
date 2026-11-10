@@ -128,29 +128,20 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Null(HelpRoutes.SyncShown(null));
     }
 
-    /// <summary>
-    /// An Apply names an agent action for the Agents screen to follow only where one started,
-    /// an update's or a pin's. A default is a file edit that starts nothing, so an applied one names none, and nor does
-    /// an update the route refused.
-    /// </summary>
     [Theory]
-    [InlineData("update", true, "update")]
-    [InlineData("pin", true, "pin")]
-    [InlineData("default", true, null)]
-    [InlineData("update", false, null)]
-    public void An_applied_agent_proposal_names_an_action_to_follow_only_where_one_started(string door, bool applied, string? followed)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void An_applied_proposal_answers_its_message_and_that_it_no_longer_stands(bool applied)
     {
-        var proposal = new HelpProposal("p1", "agent", door, " claude-code ", null, "work", null, "why", "h1", "proposed");
+        var proposal = new HelpProposal("p1", "ask", "ask", null, null, "work", null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
             HelpRoutes.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
-        var action = answer.GetProperty("harnessAction");
-        Assert.Equal(followed, action.ValueKind == JsonValueKind.Null ? null : action.GetProperty("action").GetString());
-        if (followed is not null) Assert.Equal("claude-code", action.GetProperty("harness").GetString());
         Assert.Equal(("told", applied), (answer.GetProperty("message").GetString(), answer.GetProperty("applied").GetBoolean()));
         Assert.False(answer.GetProperty("stands").GetBoolean());
+        Assert.False(answer.TryGetProperty("harnessAction", out _));
     }
 
     /// <summary>
@@ -230,13 +221,13 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The quests and asks are read from the service only while a proposal is judged against them, a delete or
-    /// a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
+    /// The quests and asks are read from the service only while a proposal is judged against them, a go naming an item on
+    /// Quests; a go to a place alone, or any other kind (a delete is a press now), asks the service for none.
     /// A go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
     /// that holds none reads neither, since the judge refuses it unread.
     /// </summary>
     [Theory]
-    [InlineData("delete", "quests", null, true, false)]
+    [InlineData("delete", "quests", null, false, false)]
     [InlineData("go", "quests", "q1a2b3c4", true, false)]
     [InlineData("go", "Quests ", "ask:a1", true, false)]
     [InlineData("go", "sessions", "s1a2b3c4", false, true)]

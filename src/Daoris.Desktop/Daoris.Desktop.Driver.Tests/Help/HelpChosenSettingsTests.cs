@@ -131,7 +131,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
         Assert.Equal((setting, false, SettingAnswer.NotGranted), (answer.Setting, answer.Done, answer.Code));
         Assert.Contains("configured access", answer.Said);
-        Assert.Contains("setting_propose", answer.Said);
+        Assert.Contains("its `daoris` verb for their Confirm", answer.Said);
         Assert.Contains("Nothing was changed", answer.Said);
         Assert.False(File.Exists(ConfigPath));
     }

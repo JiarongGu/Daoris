@@ -43,16 +43,13 @@ public static class KnowledgeServer
         typeof(MemoryTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
-        // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        typeof(HelpAgentTool),
         typeof(HelpAskTool),
         typeof(HelpBrowserTool),
         typeof(HelpClearTool),
         typeof(HelpGoTool),
         typeof(HelpPluginTool),
         typeof(HelpRoleTool),
-        typeof(HelpSettingTool),
         typeof(HelpSetupTool),
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
@@ -60,7 +57,6 @@ public static class KnowledgeServer
         typeof(HousekeepingTools),
         // And its chosen settings (HELPMODE1c3): the same kind of request, each setting refused unless the person granted it.
         typeof(ChosenSettingsTools),
-        // And its reading of the checkouts (HELPMODE1c4): one read the driver judges at every call, for every agent.
         typeof(CheckoutTools),
     ];
 

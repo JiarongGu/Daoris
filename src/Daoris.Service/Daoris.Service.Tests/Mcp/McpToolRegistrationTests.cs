@@ -16,14 +16,14 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
 {
     private static readonly string[] Advertised =
     [
-        "agent_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
+        "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
         "channel_read", "checkout_read", "clear_propose", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
-        "review_ready", "review_serve", "role_propose", "setting_propose", "settings_cap", "settings_cooloff",
+        "review_ready", "review_serve", "role_propose", "settings_cap", "settings_cooloff",
         "settings_language", "settings_notify", "settings_quiet", "setup_propose", "sync_propose",
         "workflow_propose",
     ];
@@ -80,8 +80,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
-                "HelpGoTool", "HelpPluginTool", "HelpRoleTool", "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
+                "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
+                "HelpGoTool", "HelpPluginTool", "HelpRoleTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools",
             ],

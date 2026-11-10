@@ -55,7 +55,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     private static string? Refusal(HelpProposal proposal, string? circle = "alpha") =>
         HelpProposals.Plan(proposal, DriverConfig.Empty, Bound(circle)).Refusal;
 
-    /// <summary>The conversation of <c>alpha</c> proposes it as the whole machine's does: no refusal names a workspace it is bound to.</summary>
     private static void Reaches(HelpProposal proposal)
     {
         Assert.DoesNotContain("this conversation is workspace", Refusal(proposal) ?? "");
@@ -72,15 +71,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Ask("default"));
         Reaches(Ask("alpha"));
         Assert.Null(Refusal(Ask("beta")));
-    }
-
-    [Fact]
-    public void A_setting_naming_another_workspace_s_repository_is_judged_by_its_kind()
-    {
-        Reaches(Setting("drive", target: "game"));
-        Reaches(Setting("helpers", workspace: "beta", value: "--mode on"));
-        Reaches(Setting("commits", target: "engine", value: "--mode ask"));
-        Assert.Contains("not registered", Refusal(Setting("drive", target: "nowhere")));
     }
 
     [Fact]
@@ -102,7 +92,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("clear", "workspace", "beta"));
     }
 
-    /// <summary>A look and a press over every workspace at once, or another workspace's, are judged by the sync's own kind.</summary>
     [Fact]
     public void A_sync_over_every_workspace_or_another_is_judged_by_its_kind()
     {
@@ -126,16 +115,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("go", "go", "sessions") with { Item = "#sb1beta0" });
 
         Assert.Null(Refusal(Of("go", "go", "sessions") with { Item = "sb1beta0" }));
-    }
-
-    /// <summary>A retry of a quest of another workspace is judged as its own is; a quest in neither list is its kind's own refusal.</summary>
-    [Fact]
-    public void A_retry_of_another_workspace_s_quest_is_judged_as_its_own_is()
-    {
-        Reaches(Setting("retry", target: "qb1beta0"));
-        Reaches(Setting("retry", target: "#QB1BETA0"));
-        Reaches(Setting("retry", target: "qa1alpha"));
-        Assert.Contains("neither parked nor held", Refusal(Setting("retry", target: "zz000000")));
     }
 
     [Fact]

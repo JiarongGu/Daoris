@@ -355,6 +355,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             try
             {
                 ended?.Invoke(exit, problem);
+                _loop.PressedEnds.Ended(harness, action, exit, problem, _loop.Chat is { } chat ? chat.Tell : null);
             }
             catch (Exception)
             {

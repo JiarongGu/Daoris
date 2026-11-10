@@ -80,7 +80,7 @@ public static class OpinionRules
     /// Said by each door after the sentences of a rule that reads at <see cref="Landing"/> (through <see cref="Gate"/>):
     /// what the landing's gate does with work that waits for another agent's reading, and the person's two
     /// terminal doors that answer it. The CLI's <c>OPINION_WAITING</c>, the page's <c>settings.opinion.says.waiting</c> and
-    /// <c>setting_propose</c>'s copy, held to the shared table's <c>gate</c> rows: the doors' words change together.
+    /// <c>PlaceOpinionView</c>'s card, held to the shared table's <c>gate</c> rows: the doors' words change together.
     /// </summary>
     public const string Waiting = "Where work here waits for another agent's reading, it lands only once that reading is settled, "
         + "or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, "

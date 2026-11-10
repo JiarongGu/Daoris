@@ -116,5 +116,4 @@ null out of what it serializes. Answer the reader's own JSON as a `JsonElement`,
 
 A press the page sends the service over HTTP (`data/queries.ts`): no bridge middleware sees it, so it declares nothing and
 reaches other windows by the tick (D169's STATEHUB1d note), though its hook is still a coverage row. The browser module's
-presses (`DAORIS.BROWSER`, `BrowserModule.Declared`) are another module's, read by the publisher beside the driver's. A
-`setting` door that makes a press something Ask Daoris proposes is `setting-doors`.
+presses (`DAORIS.BROWSER`, `BrowserModule.Declared`) are another module's, read by the publisher beside the driver's.

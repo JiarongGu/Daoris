@@ -15,23 +15,22 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // Every door, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        // The doors still proposed: the rules (review, opinion, helpers, commits), a git identity, and a retry of a quest the driver
-        // parked, named from the list, or one the person's stop holds, released from that stop.
-        text.Append("- `setting_propose`: a review, a second opinion, a helpers rule, a commit rule, a retry and a git identity. Every other setting is\n");
-        text.Append("  pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
+        // Every setting is pressed, never proposed, its card the press's own sentence and command.
+        text.Append("- Every setting is pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
         text.Append("  `daoris place trees <repository> on|off`, `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
-        text.Append("  `daoris place standing <repository> …`, `daoris place across <repository> read|write-to …` and\n");
+        text.Append("  `daoris place review|opinion|helpers|commits <repository> …`, `daoris place standing <repository> …`,\n");
+        text.Append("  `daoris place across <repository> read|write-to …`, `daoris quest retry <quest>`, `daoris git use …` and\n");
         text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");
-        text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
-        text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
+        text.Append("  `daoris quest retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
+        text.Append("  as its page's *Try again* does; a quest on neither list is refused.\n");
         // An ask's short title, at most 40, the person's own where they gave one (the card says it).
         text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
         text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
         text.Append(RoomsProposal.Ask());
-        // Each is on the agent's page; there is no `default` door.
-        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.\n");
-        text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
-        text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
+        text.Append("- An agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them:\n");
+        text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");
+        text.Append("  release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one\n");
+        text.Append("  exact release, like 2.1.300, never `latest`.\n");
         // Daoris's accounts for an agent are one set that serves every workspace, so these name none.
         text.Append("- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:\n");
         text.Append("  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`\n");

@@ -1,19 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { type Place, readPlace } from '../help/focus';
+import { readPlace } from '../help/focus';
+import type { BeyondEntry } from '../help/focus/beyond';
 import { call } from './call';
-
-/** What one Ask Daoris turn did beyond its conversation's focus, as Daoris's doors saw it (the driver's `HelpBeyondEntry`). */
-export type BeyondEntry = {
-  at: string;
-  act: 'search' | 'read' | 'propose' | 'press';
-  /** The place; this machine for every workspace. */
-  place: Place;
-  /** A search's words, a read's path, a proposal's kind; a press's `MODULE.ROUTE`, or the connector's tool. */
-  what: string | null;
-  /** A full-access press's outcome; none for what the connector noted, which it noted once answered. */
-  outcome: 'running' | 'done' | 'failed' | null;
-};
 
 const ACTS: readonly BeyondEntry['act'][] = ['search', 'read', 'propose', 'press'];
 const OUTCOMES: readonly NonNullable<BeyondEntry['outcome']>[] = ['running', 'done', 'failed'];

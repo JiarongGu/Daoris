@@ -9,7 +9,7 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 // A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
-  id: 'p1a2b3c4', kind: 'setting' as const,
+  id: 'p1a2b3c4', kind: 'role' as const,
   describe: 'Land workspace `work`\'s accepted work on a branch `feature/{quest}-{slug}`.',
   terminal: 'daoris place landing --workspace work branch feature/{quest}-{slug}',
   why: 'the person asked for feature branches',
@@ -41,11 +41,11 @@ describe('a proposal of Ask Daoris\'s', () => {
 });
 
 
-const UPDATE: HelpProposal = {
-  id: 'p2', kind: 'agent',
-  describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
-  terminal: 'daoris agent update claude-code-acp',
-  why: 'the person asked for the newest',
+const ASKED: HelpProposal = {
+  id: 'p2', kind: 'ask',
+  describe: 'Start an ask at `work`: tidy the docs.',
+  terminal: 'daoris ask work "tidy the docs"',
+  why: 'the person asked for it',
 };
 
 const GO: HelpProposal = {
@@ -68,7 +68,6 @@ const PLUGIN_ADD: HelpProposal = {
   },
 };
 
-// The bridge leaves a null out, so a switch's view arrives with no command and no `copied`.
 const PLUGIN_ON: HelpProposal = {
   id: 'p7', kind: 'plugin', describe: 'Switch plugin `example.lands` on.', terminal: 'daoris plugin enable example.lands',
   why: 'the person wants it on',
@@ -161,12 +160,11 @@ describe('an approval of what a plugin offers Ask Daoris', () => {
 });
 
 describe('the kinds that reach every door', () => {
-  it('an agent\'s update says what moves and the command, with Apply and Not now', async () => {
-    await press(UPDATE, 'Apply');
+  it('an ask says what starts and the command, with Apply and Not now', async () => {
+    await press(ASKED, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('claude-code-acp'))).toBeInTheDocument();
-    expect(screen.getByText(code(UPDATE.terminal))).toBeInTheDocument();
+    expect(screen.getByText(code(ASKED.terminal))).toBeInTheDocument();
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
@@ -585,7 +583,7 @@ describe('the kinds that reach every door', () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      render(<ul><ProposalCard proposal={ASKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();

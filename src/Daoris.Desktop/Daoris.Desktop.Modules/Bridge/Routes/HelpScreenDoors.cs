@@ -14,9 +14,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 
     public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
-    public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
-        ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
-
     // The ask composer's door, `POST /api/asks`, with its review choice and words; an environment the workspace does not declare is refused first.
     public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {
@@ -35,15 +32,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     // again as it goes; the outcome comes back whole, and a service that does not answer throws before anything is removed.
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
         HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
-
-    public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
-    {
-        var config = DriverConfig.Load(_loop.ConfigPath);
-        var toolchain = ManagedAgents.Of(_loop.Harnesses, harness);
-        return context.Actions.StartProcessActionAsync(
-            harness, action, profile: null, version, toolchain, config.Commands.GetValueOrDefault(harness),
-            context.Actions.Relay(harness, action), config, ended);
-    }
 
     // TREES_SYNC_PLAN's own list: the same checkouts and sessions, and each line fetched as the person,
     // whose press this is, over the repositories holding Daoris's branches and the one a card names.
@@ -98,14 +86,12 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         _loop.Nudge();
     }
 
-    // PLUGIN_ACTION's own enable|disable: the same lookup, the same row, the same nudge.
     public void SwitchPlugin(string id, bool on)
     {
         PluginsRoutes.SwitchPlugin(_loop, PluginsRoutes.InstalledPlugin(_loop, id), on);
         _loop.Nudge();
     }
 
-    // PLUGIN_INSTALL's own copy of one of the install's offers; nothing runs here.
     public void AddOffer(string id)
     {
         PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, ProviderRegistry.Built().Names);

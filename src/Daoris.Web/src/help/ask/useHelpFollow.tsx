@@ -3,11 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { sentence } from '../../locales/format';
 import { useEveryAsk, useEveryQuest, useEverySession, useStandingsMark } from '../../data/queries';
 import { type HelpSettled, useHelpProposals, useHelpPublished, useSettleHelp } from '../../bridge/shell';
-import { useHeldHarnessRun } from '../../agents/harnessRuns';
 import { draftDoor, placeDoor } from '../places';
 import { type HelpProposal, ProposalCard } from '../ProposalCard';
-import { publishedCounts, publishedItems } from '../published';
-import { PublishedList } from '../PublishedList';
+import { publishedCounts, publishedItems } from '../published/published';
+import { PublishedList } from '../published/PublishedList';
 import { type StarterDoor } from '../starters';
 import { type Session } from '../../data/api';
 import { type TFunction } from 'i18next';
@@ -23,11 +22,9 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   // Apply or Not now goes back into the conversation as the person's next message.
   const proposals = useHelpProposals(shown?.id ?? null, live);
   const settle = useSettleHelp();
-  // The Agents screen's running action, where the application holds one.
-  const runs = useHeldHarnessRun();
   const cards = proposals.data ?? [];
   // What an Apply did beyond the driver's sentence: a go opens its place through the starters'
-  // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
+  // door.
   const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
     // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
@@ -35,7 +32,6 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
     const draft = proposal?.kind === 'workflow' && proposal.workflow && answer.go ? draftDoor(proposal.workflow, answer.go) : null;
     const door = draft ?? (answer.go ? placeDoor(answer.go) : null);
     if (door) onGo?.(door);
-    if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
   };
   // A go card's sentence says where its quest, ask or session stands, so the plan its Apply judges
   // moves with them. While one is shown it is drawn again at each push that moves a standing, never on a clock, so its Apply finds

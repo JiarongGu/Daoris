@@ -7,6 +7,7 @@ import { useNow } from '../work/useNow';
 import { askerSaid, type PipeAsker } from './askerSaid';
 import { type PressView, PressViewLine } from './PressViewLine';
 import { standingSaid } from './standingSaid';
+import { useFollowedAgentPress } from './useFollowedAgentPress';
 
 /**
  * One value a press carries, as the card shows it: its JSON pointer, its JSON type, and a string as it is
@@ -188,13 +189,14 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpe
   update?: UpdateState;
   onSayUpdate?: (mode: UpdateMode) => void;
 }) {
+  const answering = useFollowedAgentPress(onAnswer);
   if (waiting.length === 0) return null;
   // No landmark of its own: *Notifications*' group is the region these cards are drawn in.
   return (
     <div className="grid gap-2">
       {waiting.map((each) => (
         <Card
-          key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names}
+          key={`${each.source}:${each.id}`} waiting={each} onAnswer={answering} notify={notify} onShown={onShown} names={names}
           onOpenPlan={onOpenPlan} update={update} onSayUpdate={onSayUpdate}
         />
       ))}

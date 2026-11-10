@@ -250,18 +250,18 @@ test('the gate tree, its lock and its record are under local/, and the publish n
 test('one full set beside at a time: a second is refused naming the run that holds the lock; one whose process ended is taken over', () => {
   const fx = makeFixture('merge-branch-gate-lock');
   const sha = 'a'.repeat(40);
-  const first = tool.takeGateLock(fx.root, { commit: sha, alive: () => true, now: () => '2026-10-18T10:00:00Z' });
+  const first = tool.takeGateLock(fx.root, { commit: sha, alive: () => true, startOf: () => null, now: () => '2026-10-18T10:00:00Z' });
   assert.equal(first.stale, null);
   const held = tool.readGateLock(fx.root, () => true);
-  assert.deepEqual(held, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', running: true, holder: 'full' });
+  assert.deepEqual(held, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', started: null, running: true, holder: 'full' });
 
   const error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true }));
   assert.equal(error.exitCode, 2);
   assert.match(error.message, new RegExp(`a full set beside the merges is running already: on aaaaaaa since 2026-10-18 10:00 UTC \\(pid ${process.pid}, local/gate-tree\\); one runs at a time`));
   assert.equal(tool.readGateLock(fx.root, () => true)!.commit, sha, 'a refusal leaves the lock as it was');
 
-  // Its process ended without letting go (a window closed on it): the lock is taken over, and the caller says so.
-  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, now: () => '2026-10-18T11:00:00Z', end: () => [] });
+  // Its process ended without letting go: the lock is taken over, and the caller says so.
+  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, end: () => [] });
   assert.deepEqual(taken.stale, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', ended: [] });
   assert.equal(tool.readGateLock(fx.root, () => true)!.commit, 'b'.repeat(40));
   tool.releaseGateLock(fx.root);
@@ -276,7 +276,7 @@ test('a taken-over lock ends what its dead pid started since the lock\'s at, and
   const end = (pid: number, since: number): number[] => { calls.push([pid, since]); return [7, 8]; };
   const strays: [string, number][] = [];
   const endStrays = (folder: string, since: number): number[] => { strays.push([folder, since]); return [8, 9]; };
-  tool.takeGateLock(fx.root, { commit: 'a'.repeat(40), alive: () => true, now: () => '2026-10-18T10:00:00Z', end, endStrays });
+  tool.takeGateLock(fx.root, { commit: 'a'.repeat(40), alive: () => true, startOf: () => null, now: () => '2026-10-18T10:00:00Z', end, endStrays });
   assert.deepEqual(calls, [], 'a first take has no dead run to end');
   refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true, end, endStrays }));
   assert.deepEqual(calls, [], 'a refusal ends nothing: the run holding the lock runs');

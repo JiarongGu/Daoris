@@ -9,7 +9,7 @@ import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { type Place, placeSaid } from '../help/focus';
-import type { HelpPublishedEntry } from '../help/published';
+import type { HelpPublishedEntry } from '../help/published/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';
@@ -91,8 +91,7 @@ export const useHelpReadied = () => {
     ready: (id: string, workspace?: string) => change((was) => (was.spoken.includes(id) ? was : {
       ...was, readied: id, ...(workspace === undefined ? {} : { workspaces: { ...was.workspaces, [id]: workspace } }),
     })),
-    /** The person's words went to it: seen from now on. */
-    spoke: (id: string) => change((was) => ({
+      spoke: (id: string) => change((was) => ({
       readied: was.readied === id ? null : was.readied,
       spoken: was.spoken.includes(id) ? was.spoken : [...was.spoken, id],
     })),
@@ -186,7 +185,6 @@ export type HelpSettled = {
    * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
    */
   go?: HelpPlace | null;
-  harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
   /** The card still stands for another press: a sync card's look, which settles nothing. A host without it answers none. */
   stands?: boolean;
   /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */

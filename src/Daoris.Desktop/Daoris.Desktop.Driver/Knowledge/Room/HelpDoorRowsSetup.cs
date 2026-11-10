@@ -46,25 +46,20 @@ internal static class HelpDoorRowsSetup
             + "`--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the "
             + "pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: "
             + "Accept makes the pull request's branch one commit of the session's work)"),
-        // How work is committed; Ask Daoris proposes it as the `setting` kind's `commits` door, its convention seeded from the
-        // repository's own instructions where the person asks.
-        new("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
+        // How work is committed, pressed; its convention may be seeded from the repository's own instructions where the person asks.
+        ("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
             + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "
             + "message is written",
             Setup + "Line and landing → Commits; a workspace's, " + Ws + "Setup → Defaults → Commits",
             "`daoris place commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]` "
-            + "(`--workspace <name>` for a whole workspace), `daoris place commits <repository> --clear`",
-            new HelpDoorAsk.Proposes("setting", "commits", "and may quote the convention from the repository's own instructions for you to apply")),
-        // What a helper an agent asks for does; Ask Daoris proposes it as the `setting` kind's `helpers` door. Before the review and
-        // the opinion, whose rows the workflow's follows.
-        new("set what a helper a repository's agent asks for does, or a workspace's: wait for your yes (the default), start at once "
+            + "(`--workspace <name>` for a whole workspace), `daoris place commits <repository> --clear`"),
+        // What a helper an agent asks for does, pressed. Before the review and the opinion, whose rows the workflow's follows.
+        ("set what a helper a repository's agent asks for does, or a workspace's: wait for your yes (the default), start at once "
             + "within the limits, or not be offered, and the other agents it may ask, in the order they are tried",
             Setup + "Sessions → Helpers; a workspace's, " + Ws + "Setup → Defaults → Helpers",
             "`daoris place helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]` (`--workspace <name>` for a "
-            + "whole workspace), `daoris place helpers <repository> --clear`",
-            new HelpDoorAsk.Proposes("setting", "helpers")),
-        // Where work is shown to the person before it is offered to land; Ask Daoris proposes it as the `setting` kind's `review`
-        // door. The landing's gate reads it, and the room says what lets work that waits go, and that the intake composes no set-up
+            + "whole workspace), `daoris place helpers <repository> --clear`"),
+        // Where work is shown to the person before it is offered to land, pressed. The landing's gate reads it, and the room says what lets work that waits go, and that the intake composes no set-up
         // step yet, as every door does.
         ("declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review "
             + "environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the "
@@ -75,7 +70,7 @@ internal static class HelpDoorRowsSetup
             "`daoris place review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] "
             + "[--run \"<command>\"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), "
             + "`daoris place review <repository> none|--drop <environment>|--clear`"),
-        // Which other agent reads work before it lands; Ask Daoris proposes it as the `setting` kind's `opinion` door. The room says
+        // Which other agent reads work before it lands, pressed. The room says
         // what the gate does in the sentences every door says after a rule's own, read from the twin, as the review's row says its gate's.
         ("declare which other agent reads a repository's work before it lands, or a workspace's: reviewers named in the order "
             + "they are tried, another maker's agent by your naming, each reading in a copy of its own that nothing is taken back "

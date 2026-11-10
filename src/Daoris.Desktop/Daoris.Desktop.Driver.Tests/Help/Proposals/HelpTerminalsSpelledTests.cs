@@ -13,19 +13,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
 
     [Theory]
-    [InlineData("helpers", "my team", "--mode on", "daoris place helpers --workspace \"my team\" --mode on")]
-    [InlineData("commits", "R&D", "--mode at-end", "daoris place commits --workspace <workspace> --mode at-end")]
-    [InlineData("helpers", "our lab", "--clear", "daoris place helpers --workspace \"our lab\" --clear")]
-    public void A_workspace_setting_s_terminal_spells_its_workspace(string door, string workspace, string value, string terminal)
-    {
-        var plan = Plan(Setting(door, workspace: workspace, value: value));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    /// <summary>A workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
-    [Theory]
     [InlineData("my team", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace \"my team\"")]
     [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]
     public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)

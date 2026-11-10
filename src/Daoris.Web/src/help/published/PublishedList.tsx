@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { askItem } from '../app/opener';
-import { ASK_TONE } from '../asks/AskRow';
-import { Icon, Pill, QUEST_TONE, SESSION_TONE } from '../design/ui';
-import { heldWord } from '../quests/questLife';
-import { askName, questName } from '../work/identity';
+import { askItem } from '../../app/opener';
+import { ASK_TONE } from '../../asks/AskRow';
+import { Icon, Pill, QUEST_TONE, SESSION_TONE } from '../../design/ui';
+import { heldWord } from '../../quests/questLife';
+import { askName, questName } from '../../work/identity';
 import type { PublishedCounts, PublishedItem, PublishedQuest } from './published';
 
 /** Where a row's press takes the person: its record on Quests, a quest by its id and an ask as Quests' list names one. */

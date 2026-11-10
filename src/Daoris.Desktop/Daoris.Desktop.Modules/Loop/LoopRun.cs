@@ -247,7 +247,7 @@ internal sealed class LoopRun(
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
             var toldHooks = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             // One of Ask Daoris's is also said in its conversation.
-            var saidChat = SettledSaid.Of(() => loop.Chat is { } chat ? chat.Tell : null);
+            var saidChat = SettledSaid.Of(() => loop.Chat is { } chat ? chat.Tell : null, loop.PressedEnds);
             served.Confirmations.Settled = (shown, ending) =>
             {
                 toldHooks(shown, ending);
