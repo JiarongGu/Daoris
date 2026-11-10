@@ -69,10 +69,9 @@ public static class PluginEvents
 
     public const string AtProcess = "process";
 
-    /// <summary>What kind of failure: it did not start, it exited, it answered late, unreadably, or with an error.</summary>
+    /// <summary>What kind of failure: it did not start, its place's hand is refused, it exited, it answered late, unreadably, or with an error.</summary>
     public const string Unstartable = "unstartable";
 
-    /// <summary>Not started because its place's hand was refused (<see cref="PluginHostToken"/>): nothing was started, so nothing failed to start.</summary>
     public const string Refused = "refused";
 
     public const string Exited = "exited";

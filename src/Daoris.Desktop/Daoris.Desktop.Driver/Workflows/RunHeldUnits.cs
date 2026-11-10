@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The units a run whose work is still going is bound on: every subject a node of its record observes, while any node is ready, active
-/// or unknown. A run's landing binds its branch unit only after the person's review, so a session branch whose trace was forgotten before
-/// then left the landing ready with no subject for good; held here, the trace stays, and the landing finds the branch it lands. A run
+/// or unknown. A run's landing binds its branch unit only after the person's review, and a session branch whose trace is forgotten before
+/// then leaves the landing ready with no subject for good; held here, the trace stays, and the landing finds the branch it lands. A run
 /// whose steps have all settled holds nothing. Read-only and pure over the record.
 /// </summary>
 internal static class RunHeldUnits

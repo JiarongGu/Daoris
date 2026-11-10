@@ -49,7 +49,6 @@ public static class WorkflowObligations
             var nodes = new NodeRecordFiles(home, () => false);
             var records = nodes.All().Records;
             foreach (var record in records.Where(record => record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled))) owing.Add(record.Unit);
-            // The branch a run's live work is bound on: its landing still needs the trace that names it.
             foreach (var held in records.SelectMany(RunHeldUnits.Of)) owing.Add(held);
             foreach (var unread in nodes.Unread()) if (unread.Unit is { } unit) owing.Add(unit);
         }
