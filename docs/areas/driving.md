@@ -162,7 +162,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
     whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
-    there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
+    there. The person's commit or stash in the checkout releases from the mark each path it took out (`PlaceMarkDiscards`,
+    `ReleasePlace` with its paths), the place going once none is left; the person's acts there are refused only while a turn
+    runs. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
     one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
     (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
     (a driven turn and a conversation alike), and is told what changed there outside Daoris since the last session, commits

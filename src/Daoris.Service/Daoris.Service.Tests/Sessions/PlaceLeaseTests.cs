@@ -102,6 +102,21 @@ public sealed class PlaceLeaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_discard_clears_the_mark_on_the_paths_it_discarded_and_the_place_goes_once_none_is_left()
+    {
+        var first = await Running("First");
+        await _ledger.AdvanceAsync(first.Id, "awaiting-person", "Q.", null, null, Now.AddMinutes(1), holdsPlace: ["a.txt", "notes/b.md"]);
+
+        var some = await _ledger.ReleasePlaceAsync(first.Id, ["a.txt", "never-marked.txt"]);
+        Assert.Equal(["notes/b.md"], some!.HoldsPlace);
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, (await _ledger.OpenChatAsync("Reports", "stub", Now.AddMinutes(2))).Refusal);
+
+        var rest = await _ledger.ReleasePlaceAsync(first.Id, ["notes/b.md"]);
+        Assert.Null(rest!.HoldsPlace);
+        Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenChatAsync("Reports", "stub", Now.AddMinutes(3))).Refusal);
+    }
+
+    [Fact]
     public async Task A_park_going_on_waits_for_the_place_another_turn_holds()
     {
         var first = await Running("First");
