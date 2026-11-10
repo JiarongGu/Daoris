@@ -168,7 +168,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
         // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__repository_propose", allowed);
         // Archiving or unarchiving sessions, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);

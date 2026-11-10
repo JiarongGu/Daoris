@@ -89,8 +89,7 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
 }
 
 /// <summary>
-/// The kinds Ask Daoris proposes, one line each, in the order the room allows their tools. A new kind
-/// is a file under <c>Help/Proposals/</c> and a line here.
+/// The kinds Ask Daoris still proposes, one line each, in the order the room allows their tools.
 /// </summary>
 internal static class HelpProposalKinds
 {
@@ -105,7 +104,6 @@ internal static class HelpProposalKinds
         new HelpPluginProposals(),
         new HelpBrowserProposals(),
         new HelpSyncProposals(),
-        new HelpRepositoryProposals(),
         new HelpSessionProposals(),
         new HelpPauseProposals(),
         new HelpClearProposals(),

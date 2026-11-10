@@ -128,11 +128,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         return (true, outcome.Message);
     }
 
-    // The Manage drawer's Move to workspace: the local host's `POST /api/registry/{repository}/workspace`, one
-    // field of the row. The loop's registry watch tells the page what moved.
-    public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct) =>
-        (service ?? throw NotReady()).WireRepositoryAsync(repository, workspace, ct);
-
     // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
     public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
     {

@@ -5,6 +5,7 @@ import { ago, clockOf, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
 import { askerSaid, type PipeAsker } from './askerSaid';
+import { type PressView, PressViewLine } from './PressViewLine';
 import { standingSaid } from './standingSaid';
 
 /**
@@ -56,6 +57,7 @@ export type Confirmation = {
   hold?: boolean;
   /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
+  view?: PressView | null;
 };
 
 /**
@@ -368,6 +370,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
       {/* The decision region (§3.4): its head through its buttons, bounded whatever the press carries. */}
       <div ref={region} data-press-region="" className="grid gap-1.5">
         <p className="m-0">{head.text}</p>
+        {waiting.view && <PressViewLine view={waiting.view} />}
         {others.length > 0 && (
           <dl className="m-0 grid gap-y-0.5 text-small">
             {others.map((each) => (

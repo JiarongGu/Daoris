@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTFREE1b — the person's own tool home reaches a Claude session (2026-11-11)
+
+> **AGENTFREE1b** (driver; D262): Outcome: a Claude session is handed the person's own skills, subagents, commands and servers, copied from their tool home into one plugin, `own`, removed with the session (`OwnTools`, `ClaudeOwnHome`, `ClaudeOwnServers`); their enabled plugins where installed (`ClaudeOwnPlugins`); `--chrome` on the native door (`ClaudeOwnChrome`); each family a rule default (`own-*`) the person can switch off; a server named `daoris-knowledge` or carrying a `DAORIS_` variable left out, review and helper passes handed none, nothing handed in the person's own home or a scratch home. Proof: `OwnToolHomeTests` (8), `DriverModuleRulesTests`. Not proved in a real session.
+
+---
+
 ## AGENTREV3o and the merges' reds — test declarations brought to the merged code (2026-11-11)
 
 > **AGENTREV3o** (driver tests): Outcome: `TransportRunProcessTests` holds a run let go while its retry hangs (`againhangs`), whose retry's process exits and whose lineage end is unclean (19 of 19 with the process settings; not seen failing first). The unit half's reds from this session's merges were test declarations, never product code: `course-cases.txt`'s row for the new `AgentOfDoorTests` case; `LayerHoldProcessTests` alone in its collection and kept in the environment census; `HelpRoleProposalsTests` asserting no workspace refusal (D253); `DriverCommandTests` reading `PressAsync`. Left red then: three `StructureTests` on `Workplace/RunParts.cs` (fixed with APPROVE1k-m) and one load flake in `DesktopStoreTests`.
