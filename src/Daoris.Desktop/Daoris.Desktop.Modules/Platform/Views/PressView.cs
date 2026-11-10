@@ -14,6 +14,11 @@ public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> 
     public PressRules? Rules { get; init; }
 
     public PressSupervisor? Supervisor { get; init; }
+
+    /// <summary>What only a plugin's card draws: what it runs, as its manifest writes it, or what an approval of its server names.</summary>
+    public PressPlugin? Plugin { get; init; }
+
+    public PressGrant? Grant { get; init; }
 }
 
 /// <summary>One more sentence of a press's meaning: <c>person.view.&lt;kind&gt;</c> with the values it names.</summary>
@@ -85,6 +90,10 @@ public static class PressViews
         new BrowserFavoriteView(),
         new BrowserSettingView(),
         new RoleChangeView(),
+        new PluginAddView(),
+        new PluginInstallView(),
+        new PluginUpdateView(),
+        new PluginActionView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

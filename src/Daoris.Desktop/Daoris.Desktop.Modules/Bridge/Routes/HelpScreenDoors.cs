@@ -4,10 +4,7 @@ using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// The doors Ask Daoris's Apply goes through: each the code a screen's own route runs, so an Apply is what the screen would have done.
-/// <paramref name="service"/> is the loop's, or null before it is up, when an ask or a delete is the cold-start sentence.
-/// </summary>
+/// <summary>The doors Ask Daoris's Apply goes through, each the code a screen's own route runs; <paramref name="service"/> is null before the loop's is up.</summary>
 internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? service) : IHelpDoors
 {
     private readonly DriverLoop _loop = context.Loop;
@@ -54,32 +51,4 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 
     /// <summary>A card naming a repository includes it, as `--repository` does; none, and the default.</summary>
     private static SyncScope? Named(string? repository) => repository is null ? null : SyncScope.Named([repository]);
-
-    public void AddPlugin(string folder)
-    {
-        PluginInstall.Add(_loop.Home, folder, ProviderRegistry.Built().Names);
-        _loop.Nudge();
-    }
-
-    public void SwitchPlugin(string id, bool on)
-    {
-        PluginsRoutes.SwitchPlugin(_loop, PluginsRoutes.InstalledPlugin(_loop, id), on);
-        _loop.Nudge();
-    }
-
-    public void AddOffer(string id)
-    {
-        PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, ProviderRegistry.Built().Names);
-        _loop.Nudge();
-    }
-
-    // PLUGIN_UPDATE's own apply: the hook stopped, the folder swapped, the loop asked to look.
-    public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
-        await PluginsRoutes.UpdatePluginAsync(context, id).ConfigureAwait(false);
-
-    // PLUGIN_ACTION's own help-approve and help-withdraw: the person's approval, written as the page writes it.
-    public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes) =>
-        HelpGrants.Approve(_loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), plugin, server, writes);
-
-    public void WithdrawHelp(string plugin, string server) => HelpGrants.Withdraw(_loop.Home, plugin, server);
 }

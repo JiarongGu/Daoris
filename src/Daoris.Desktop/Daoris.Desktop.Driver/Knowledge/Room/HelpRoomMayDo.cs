@@ -138,15 +138,15 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             foreach (var offered in machine.PluginServersOffered)
             {
                 text.Append($"- `{offered.Server}` (plugin `{offered.Plugin}`): this install's own `{offered.Plugin}` {offered.Shipped} offers it you, ");
-                text.Append($"and the {offered.Installed} installed here does not, so it is updated first (`plugin_propose`, `update`), then approved\n");
+                text.Append($"and the {offered.Installed} installed here does not, so it is updated first (`daoris plugin update {offered.Plugin} --yes`), then approved\n");
             }
 
             text.Append('\n');
             text.Append("Say so once, at the start of your first answer in a conversation, in a sentence: what you do not have yet\n");
             text.Append("and where it is approved, so nothing the person relied on is taken away in silence. The person approves one\n");
             text.Append("on its page (Plugins → the plugin's page → Ask Daoris → Approve). When they ask for what one does,\n");
-            text.Append("propose the approval with `plugin_propose` (`approve`, the plugin's `id` and its `server`, and in `writes`\n");
-            text.Append("only the writes they said they accept), rather than only taking them to the page.\n\n");
+            text.Append("press `daoris plugins approve <id> <server>` (with `--writes` naming only the writes they said they accept,\n");
+            text.Append("or `--reads-only`), rather than only taking them to the page.\n\n");
         }
 
         // The skills a plugin hands it, by the names the harness gives them.

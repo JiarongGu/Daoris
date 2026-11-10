@@ -8,10 +8,7 @@ namespace Daoris.Driver.Tests;
 /// Every kind of Ask Daoris's proposal is whole: a class here, the service's writer, the connector's tool and its card on the
 /// page — so a new kind cannot be half-added, and none is left behind when one is removed.
 /// </summary>
-/// <remarks>
-/// The three share no code (<c>.claude/knowledge/twins.md</c>): this reads the service's and the page's source
-/// as text, the way a reviewer would, and the service's own test holds the same table.
-/// </remarks>
+/// <remarks>The three share no code (<c>.claude/knowledge/twins.md</c>): this reads the service's and the page's source as text.</remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class HelpProposalKindsTests
 {
@@ -20,7 +17,6 @@ public sealed partial class HelpProposalKindsTests
     [
         ("ask", "ask_propose"),
         ("go", "go_propose"),
-        ("plugin", "plugin_propose"),
         ("sync", "sync_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),

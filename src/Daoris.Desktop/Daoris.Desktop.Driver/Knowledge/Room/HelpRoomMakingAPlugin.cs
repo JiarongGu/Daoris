@@ -38,8 +38,8 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         text.Append("The session there makes it with its tests, and the person reviews and lands it. Find that repository\n");
         text.Append("in `registry` by what it says it owns. If none says so,\n");
         text.Append("the person decides where plugins live (a repository of their own, connected like any other), so ask\n");
-        text.Append("rather than pick one. Once it has landed, propose adding it with `plugin_propose`, from the folder the\n");
-        text.Append("session named; never propose adding one that has not landed.\n\n");
+        text.Append("rather than pick one. Once it has landed, press `daoris plugin add <folder>` with the folder the session\n");
+        text.Append("named, in that repository's checkout; never add one that has not landed.\n\n");
         return text.ToString();
     }
 }

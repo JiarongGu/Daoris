@@ -4,11 +4,8 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// <para><b>One writer per kind</b>, <c>Help&lt;Kind&gt;ProposalWriter</c>, listed in <see cref="Kinds"/>: the box's <c>Propose…</c>,
 /// which the connector's tool calls, hands the kind's checked fields to <see cref="HelpProposalFile.Write"/>.</para>
-/// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
-/// accepts, a pattern that names one branch per session, a repository registered here, an agent this
-/// machine has — is the driver's, which judges each with the route's own code before the person sees
-/// it and hands a refusal back to the conversation in the route's words.</para>
-///
+/// <para><b>This checks the shape and nothing more.</b> Whether the route would take it is the driver's, which judges each with
+/// the route's own code before the person sees it and hands a refusal back to the conversation in the route's words.</para>
 /// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it, shares no
 /// code with this, and each side's tests hold the same shape — and the same table of kinds.</para>
 /// </remarks>
@@ -19,7 +16,6 @@ public sealed class HelpProposalBox(string? home)
     [
         ("ask", "ask_propose"),
         ("go", "go_propose"),
-        ("plugin", "plugin_propose"),
         ("sync", "sync_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
@@ -45,12 +41,6 @@ public sealed class HelpProposalBox(string? home)
         string view, string? domain, string? part, string? item, string why, string? session, DateTimeOffset at, string? workspace = null,
         string? repository = null, string? sentence = null) =>
         new HelpGoProposalWriter(file).Propose(view, domain, part, item, why, session, at, workspace, repository, sentence);
-
-    /// <inheritdoc cref="HelpPluginProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposePlugin(
-        string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
-        string? offer = null, string? server = null, IReadOnlyList<string>? writes = null) =>
-        new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer, server, writes);
 
     /// <inheritdoc cref="HelpSyncProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeSync(

@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-v's plugin half — `daoris plugin` pressed, the plugin kind gone (2026-11-11)
+
+> **ASKFULL1g-v, plugin** (modules, service, driver, web): Outcome: `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` and `PLUGIN_ACTION` each judge a press as the Plugins place does, refuse to the terminal with no card, and otherwise put what the plugin runs, or every tool an approval names, on the Confirm card (`Platform/Views/Plugin*View`, `PluginGrantJudge`, `PluginShown`, web `person/view/PluginRuns`); the room names the verbs; the plugin proposal kind, `plugin_propose` and its writer, the screen doors, the box row, the call-table entries and the card's plugin and grant parts are gone whole. Proof: `PluginViewsTests`, `PluginRuns.test` in both languages, the room, kinds, tool-registration and call-table tests.
+
+---
+
 ## PLACEWORK1h (part) — an unguarded system read back, and the kit's system plugin (2026-11-11)
 
 > **PLACEWORK1h, third part** (driver, web, examples): Outcome: a system declaring its precondition `none` is read before each write (`plan/read` for that one change) and read back after it (`Plugins/Systems/SystemReadBack.cs`): a moved version is `stale` and nothing is written, a read-back that differs is `changed`, set by Daoris alone, and fails the node with *changed while applying* naming what the resource holds now; the department's row says *unguarded*; the "nothing to write" answer is `unchanged`, so `none` is only the precondition; `daoris plugin new` scaffolds a system adapter and `plugin try` checks `plan/read` and `apply/perform` (both in `HookPoints.All`), the examples' tests regenerated from the kit; the stand-in declares `stand-in-unguarded`. Proof: `SystemReadBackTests`, `SystemReadBackProcessTests` (stale, changed while applying, applied), `PluginKitSystemTests`, the stand-in's own tests and the web tests, each seen failing first.

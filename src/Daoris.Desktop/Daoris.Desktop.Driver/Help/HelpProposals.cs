@@ -16,11 +16,8 @@ public sealed record HelpProposal(
     string Id, string Kind, string Door, string? Target, string? Workspace, string? Value, string? Sentence,
     string Why, string? Session, string State)
 {
-    /// <summary>
-    /// The repository whose checkout holds a plugin to add, or null for a whole path the person gave.
-    /// </summary>
+    /// <summary>The repository a go starts a conversation in; null for every other.</summary>
     public string? Repository { get; init; }
-
 
     /// <summary>
     /// The review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
@@ -57,23 +54,6 @@ public sealed record HelpProposal(
 
     /// <summary>A go's one quest or ask or session, as the service's box wrote it, or null.</summary>
     public string? Item { get; init; }
-
-    // The plugin kind's.
-
-    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path.</summary>
-    public string? Folder { get; init; }
-
-    /// <summary>One of the install's own plugins to add, by its id — never a path on this machine.</summary>
-    public string? Offer { get; init; }
-
-    /// <summary>
-    /// The server an <c>approve</c> or a <c>withdraw</c> names, as the plugin declares it for Ask Daoris; null where
-    /// the plugin offers it one only.
-    /// </summary>
-    public string? Server { get; init; }
-
-    /// <summary>The writes an <c>approve</c> accepts, each by name; null or empty accepts none, its reads only.</summary>
-    public IReadOnlyList<string>? Writes { get; init; }
 
     // The setup kind's.
 
@@ -152,7 +132,7 @@ public sealed record HelpMachineFacts(
     /// <summary>The git identities on this machine (labels and hosts, never a key or a token), for a <c>git-use</c> door's judge.</summary>
     public IReadOnlyList<HelpGitIdentity> GitIdentities { get; init; } = [];
 
-    /// <summary>This machine's plugins, for a landing rule that names one and a plugin proposal.</summary>
+    /// <summary>This machine's plugins, for a landing rule that names one and a plugin's press.</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
 
     // The clear kind's.
@@ -177,13 +157,10 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
 
-    // The plugin kind's.
+    // The plugin views'.
 
     /// <summary>The Daoris home, which a plugin is never added from; null where none is named.</summary>
     public string? Home { get; init; }
-
-    /// <summary>Each registered repository's checkout on this machine, or null where it has none.</summary>
-    public IReadOnlyDictionary<string, string?> Checkouts { get; init; } = new Dictionary<string, string?>();
 
     /// <summary>The harness names this build carries, which a plugin may not declare.</summary>
     public IReadOnlyCollection<string> Reserved { get; init; } = [];
@@ -269,17 +246,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The plugin kind's.
-
-    /// <summary>What a plugin proposal's plugin runs, as its manifest writes it; null for every other kind.</summary>
-    public HelpPluginView? Plugin { get; init; }
-
-    /// <summary>The folder a plugin is added from, resolved on this machine; null for every other plan.</summary>
-    public string? Source { get; init; }
-
-    /// <summary>What an approval or a withdrawal names, every tool; null for every other plan.</summary>
-    public HelpGrantView? Grant { get; init; }
-
     // The setup kind's.
 
     /// <summary>For a <c>place</c> the plan allows: the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
@@ -320,7 +286,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
     IHelpAskDoors, IHelpClearDoors,
-    IHelpPluginDoors, IHelpConfigDoors, IHelpSyncDoors
+    IHelpConfigDoors, IHelpSyncDoors
 {
 }
 

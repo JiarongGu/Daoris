@@ -78,12 +78,7 @@ public sealed class HelpProposalFacts(DriverContext context)
         {
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
             Plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names),
-            // A plugin is added from a registered checkout, never from the home, and may not shadow a
-            // harness this build carries — what `daoris plugin add` refuses.
             Home = _loop.Home,
-            Checkouts = snapshot.Repositories
-                .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = ProviderRegistry.Built().Names,
             OffersFolder = context.OffersFolder,
             Offers = PluginOffers.Load(context.OffersFolder, _loop.Home, ProviderRegistry.Built().Names),

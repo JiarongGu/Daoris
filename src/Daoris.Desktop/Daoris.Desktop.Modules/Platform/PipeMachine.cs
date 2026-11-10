@@ -18,6 +18,8 @@ public sealed record PipeMachine(DriverConfig Config, HelpMachineFacts Facts)
         {
             Home = loop.Home,
             Plugins = PluginCatalog.Load(loop.Home, ProviderRegistry.Built().Names),
+            Reserved = ProviderRegistry.Built().Names,
+            OffersFolder = PluginOffers.FolderFor(loop.Home, AppContext.BaseDirectory),
             GitIdentities = [.. GitIdentities.Read(loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             Parked = loop.Parked.Latest,
             Held = HeldQuest.From(loop.Look.Latest),

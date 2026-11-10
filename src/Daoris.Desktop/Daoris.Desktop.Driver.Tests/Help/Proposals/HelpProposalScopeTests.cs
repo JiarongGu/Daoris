@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// A proposal is never refused for the workspace it names: its conversation's workspace is its focus, and one naming another
-/// workspace, a repository of another, a record of another or every workspace at once is judged by its kind alone, as the
-/// whole machine's conversation's is. A list of the machine's sessions leads with the conversation's workspace's.
+/// A proposal is never refused for the workspace it names: its conversation's workspace is its focus, and one naming another,
+/// or every workspace at once, is judged by its kind alone. A list of the machine's sessions leads with the conversation's workspace's.
 /// </summary>
 public sealed class HelpProposalScopeTests : HelpProposalsFixture
 {
@@ -84,11 +83,10 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_go_a_plugin_and_a_clear_of_another_workspace_are_judged_by_their_kinds()
+    public void A_go_and_a_clear_of_another_workspace_are_judged_by_their_kinds()
     {
         Reaches(Of("go", "go", "repositories") with { Repository = "game" });
         Reaches(Of("go", "go", "repositories") with { Workspace = "beta" });
-        Reaches(Of("plugin", "add", "x") with { Repository = "game", Folder = "plugins/x" });
         Reaches(Of("clear", "workspace", "beta"));
     }
 

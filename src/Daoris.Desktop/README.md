@@ -1209,8 +1209,10 @@ handed to the hook set and to every landing the routes build. `daoris plugin sho
 `plugin activity <id>` read through `PluginPage.Read` and `PluginActivity.Read`, the readers the page's routes
 call; a terminal reads a plugin's health from the machine log's last word, and says so. `plugin approve <id> <server>
 [--reads-only | --writes <tool,…>]` and `plugin withdraw <id> <server>` write the person's approval of what a server offers
-Ask Daoris through `HelpGrants`, as the page's `PLUGIN_ACTION` does and Ask Daoris's `plugin` proposal's `approve` and
-`withdraw` do (D170's notes): its spawn is handed only approved servers and their tools.
+Ask Daoris through `HelpGrants`, as the page's `PLUGIN_ACTION` does (D170's notes): its spawn is handed only approved servers
+and their tools. A person's press of `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` or `PLUGIN_ACTION` is judged at the ask by its
+route's view (`PluginAddView`, `PluginInstallView`, `PluginUpdateView`, `PluginActionView`), whose card says what the plugin runs or
+every tool an approval names.
 
 **The host answers the Plugins view** (PLUGUI1e, D119 §4.1). `PLUGINS` carries, per plugin, its `servers`, its
 `hook` (the command as its manifest writes it, and its points), `listening`, `health` (`state`, `since`, `failure`)
@@ -1220,8 +1222,7 @@ checks (nothing finds or runs a tool at a look), and `PLUGIN_TOOL_FIX` {id, tool
 command for a check in a console the person sees, then reads the tool again. `PLUGIN` {id} is
 `PluginPage.Read` with the loop's health, and `PLUGIN_ACTIVITY` {id, since?} is `PluginActivity.Read` over a span
 such as `1d`, `7d` or `30d` (7 days without one); both refuse an id no longer here as `PLUGIN_UNKNOWN`.
-`PLUGIN_READ` {folder} answers what a folder's plugin would run, or the refusal as an answer, judged as Ask
-Daoris's judge judges a folder and refusing an id already installed; `PLUGIN_ADD` {folder} copies it in, never
+`PLUGIN_READ` {folder} answers what a folder's plugin would run, or the refusal as an answer, refusing an id already installed; `PLUGIN_ADD` {folder} copies it in, never
 over one installed. `PLUGIN_OPEN_FOLDER` {id?, which: install|data|plugins} opens the folder the module names
 through the window kit's launcher (`PLUGIN_NOTHING_KEPT` for a data folder never made, `PLUGIN_FOLDER_NOT_OPENED`
 when the system will not). The screen's trial of an installed plugin is a `plugin.tried` line from the `screen`

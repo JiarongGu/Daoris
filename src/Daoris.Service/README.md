@@ -546,11 +546,8 @@ such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes
 way to take a person to the place, and since ENTRY1f1 one quest or ask on Quests as its `item`, which the driver judges
 against the machine's records, and since ENTRY1f2 one session on Sessions, judged against the machine's own; since ENTRY1d2a
 Repositories' Add repository or Import a folder may carry the `workspace` the drawer opens with, a name and never a folder; since NEW1d-a Sessions' New conversation, the part `new`,
-may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder), and since PLUG9
-`plugin_propose` (a plugin that has landed, added from its folder in a repository's checkout, or one
-installed here switched on or off; since D103 also one of the install's own plugins by its id in
-`offer`, or an `update` of an installed one from where it came from; since HELPPLUG1c an `approve` of what a
-plugin's server offers Ask Daoris, with its `server` and the `writes` the person accepts, or a `withdraw`), and since
+may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder); a
+plugin's add, update, switch and approval are pressed with `daoris plugin` and `daoris plugins approve|withdraw`, never proposed; and since
 HELP10 `sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
 fetches, and only then offers the press; since BRSCOPE1b an optional one-word `workspace` scopes the look and the press), and since SESSUX1h2a `session_propose` (sessions archived or unarchived by id, or every
 ended one archived; and `delete_propose` takes a `session`, one bare id), and since PAUSE1f-a `pause_propose` (one ask's or quest's work paused or resumed, by id; abandon is
