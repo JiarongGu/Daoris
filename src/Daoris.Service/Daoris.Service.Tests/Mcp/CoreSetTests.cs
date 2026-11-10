@@ -76,7 +76,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
 
     /// <summary>
     /// The measure (CONTEXTONE1d2): each kind's served definitions, as <c>tools/list</c> answers them, against every tool's. The core set
-    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 28,341 and at most 39,229, of 102,191 for
+    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 29,042 and at most 39,962, of 93,693 for
     /// every tool); the sizes are written to the test's output and recorded in the changelog, so a description grown past the budget is
     /// seen here.
     /// </summary>
@@ -91,8 +91,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
         {
             var served = sizes.Keys.Where(tool => CallTable.Served(column, tool)).ToList();
             var size = served.Sum(tool => sizes[tool]);
-            output.WriteLine($"{column}: {served.Count} tools, {size} characters");
-            if (column.Work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake
+            output.WriteLine($"{column}: {served.Count} tools, {size} characters");            if (column.Work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake
                 or ParticipantWork.Help)
             {
                 Assert.True(size <= 40_000, $"{column} is served {size} characters of definitions");
