@@ -91,7 +91,7 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, spent, taking, lastTurn, grouping, place, archived = false,
-  selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind, limitWait,
+  selected = false, onSelect, acts = [], onAct, name, parts, quests, heavy, heavyBehind, limitWait,
 }: {
   /** What a helper, or a part that continues another, spent: never zero, and said where its door said none. Absent where none answered. */
   spent?: PartSpent | null;
@@ -115,6 +115,7 @@ export function SessionRow({
   name?: string | null;
   /** How many parts the entry this row stands for holds: said where there is more than one. */
   parts?: number;
+  quests?: number;
   /**
    * Whether a turn is in flight, as the driver says. A live chat between turns reads idle, a quiet
    * mark and the word; absent, the record's word stands.
@@ -204,6 +205,8 @@ export function SessionRow({
     place ?? null,
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
+    // A line holding several quests: this row's session's own, so a duplicate or a sibling's is told apart.
+    quests && quests > 1 && session.quest ? t('work.rail.holds', { quest: quest?.title ?? `#${session.quest}` }) : null,
     placed ? t(placed.line, placed.values) : null,
     limitWait ?? null,
     // A record ended before anything ran says why in place of a failure, its account only here.

@@ -29,6 +29,7 @@
   "work.rail.moved": "moved {{ago}}",
   "work.rail.parts": "{{count}} part",
   "work.rail.parts_other": "{{count}} parts",
+  "work.rail.holds": "holds {{quest}}",
   "work.rail.continues": "continues {{title}}",
   "work.rail.helps": "helps {{title}}",
   "work.rail.under": "Working for {{title}}",
