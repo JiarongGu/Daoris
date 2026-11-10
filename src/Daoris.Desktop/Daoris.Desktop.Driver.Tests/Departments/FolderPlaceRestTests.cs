@@ -124,7 +124,7 @@ public sealed class FolderPlaceRestTests : IDisposable
     public async Task The_manifest_read_at_the_add_is_the_first_turn_s_base()
     {
         Write("notes.md", "first\n");
-        FolderAdd.FirstManifest(Home, "default", "designs", Place, null);
+        FolderFirstManifest.Keep(Home, "default", "designs", Place, null);
         Write("notes.md", "the person's, before any session\n");
         Write("new.md", "new\n");
 

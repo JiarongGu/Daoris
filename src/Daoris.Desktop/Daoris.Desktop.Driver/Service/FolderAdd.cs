@@ -4,14 +4,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Adding a folder that is no git checkout as a department, from the terminal: the registration the window's add sends (its kind, its
-/// root to a service on this machine only, the person's own excludes and what the folder's own <c>daoris.json</c> declares), and the
-/// manifest read at the add, so the first turn has a base to find what changed since.
+/// root to a service on this machine only, the person's own excludes and what the folder's own <c>daoris.json</c> declares).
 /// </summary>
 public static class FolderAdd
 {
-    /// <summary>The record the manifest read at the add is kept as.</summary>
-    private const string Record = "added";
-
     /// <summary>What the add would send for the folder at <paramref name="root"/> to <paramref name="service"/>.</summary>
     /// <exception cref="RegistryRefusal">The folder is a git checkout, which <c>connect</c> registers, or its declaration does not read.</exception>
     public static ConnectPlan Plan(string root, string? workspace, IReadOnlyList<string> excludes, string service)
@@ -32,14 +28,6 @@ public static class FolderAdd
         if (!string.IsNullOrEmpty(workspace)) body["workspace"] = workspace;
         if (excludes.Count > 0) body["excludes"] = new JsonArray([.. excludes.Select(glob => (JsonNode)JsonValue.Create(glob))]);
         return new ConnectPlan(name, service, body);
-    }
-
-    /// <summary>Read the folder's manifest and keep it as the place's last, so the first turn is told what changed since the add.</summary>
-    public static void FirstManifest(string home, string workspace, string department, string root, IReadOnlyList<string>? excludes)
-    {
-        var store = new ManifestStore(home, workspace, department);
-        store.Keep(Record, ManifestMoment.End,
-            FolderManifestReader.Read(root, store.Content, null, ManifestBounds.Default, PlaceExcludes.Of(excludes)) with { Own = [] });
     }
 
     private static JsonObject Declared(string name, LineFiles files, string? root)

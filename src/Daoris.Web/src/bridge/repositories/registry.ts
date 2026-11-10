@@ -27,10 +27,7 @@ export type FolderInspection = {
   uses: string[];
 };
 
-/**
- * *Open*: a department's folder in the system's file manager, by the registered name alone: the module names the folder from the
- * registry, and the page never prints a path. It changes nothing, so nothing is asked again.
- */
+/** *Open*: a department's folder in the file manager, by its registered name; the module names the folder, never the page. */
 export const useOpenDepartmentFolder = () => useMutation({
   mutationFn: (repository: string) => call('REGISTRY_OPEN_FOLDER', { repository }) as Promise<{ opened: boolean }>,
 });

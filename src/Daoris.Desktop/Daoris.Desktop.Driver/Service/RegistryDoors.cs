@@ -125,11 +125,7 @@ public sealed class RegistryDoors
         return new ConnectDone(plan, sent.Answer?.Workspace);
     }
 
-    /// <summary>
-    /// A folder that is no git checkout, registered as <c>folder</c> with the registration <see cref="FolderAdd.Plan"/> composes: the
-    /// window's add through its route. The workspace the service says it took is read back.
-    /// </summary>
-    /// <exception cref="RegistryRefusal">A git checkout, a declaration that does not read, or the service's refusal; nothing is registered.</exception>
+    /// <summary>A folder that is no git checkout, registered as <see cref="FolderAdd.Plan"/> composes it: the window's add through its route.</summary>
     public async Task<ConnectDone> AddFolderAsync(string root, string? workspace, IReadOnlyList<string> excludes, CancellationToken ct = default)
     {
         var plan = FolderAdd.Plan(root, workspace, excludes, _service.BaseUrl);

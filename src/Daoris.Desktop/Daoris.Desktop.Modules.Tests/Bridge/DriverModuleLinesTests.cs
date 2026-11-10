@@ -336,10 +336,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False((await AnswerAsync(module, "WORK_RECORDS_FOLDER", new { })).GetProperty("opened").GetBoolean());
     }
 
-    /// <summary>
-    /// A department's folder is opened from its page by the name the registry holds, never a path from the page: refused and said where the
-    /// registry names no folder here, or the folder is gone, and opening nothing without the window's launcher.
-    /// </summary>
+    /// <summary>A department's folder opens by its registered name, refused and said where none is here.</summary>
     [Fact]
     public async Task A_department_s_folder_is_opened_by_its_registered_name_and_only_where_it_is_here()
     {

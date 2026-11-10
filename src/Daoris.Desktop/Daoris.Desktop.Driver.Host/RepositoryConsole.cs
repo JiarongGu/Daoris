@@ -49,7 +49,7 @@ internal static class RepositoryConsole
                     var followed = RegistryConnect.IsLocal(service.BaseUrl);
                     if (followed)
                     {
-                        FolderAdd.FirstManifest(
+                        FolderFirstManifest.Keep(
                             DriverConfig.HomeOf(DriverConfig.ResolvePath()), RemoteTarget.Workspace(added.Workspace ?? workspace), added.Plan.Repository, folder, excludes);
                     }
 

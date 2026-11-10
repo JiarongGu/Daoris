@@ -81,7 +81,6 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
                     ? null
                     : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))),
             Kind: PlaceKinds.Of(body.Kind),
-            // The person's own excludes on a folder; unstated preserves, an empty list clears.
             Excludes: body.Excludes is null ? null : [.. body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim())]);
 
         // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each carries, as it

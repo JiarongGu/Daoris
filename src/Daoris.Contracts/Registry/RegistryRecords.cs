@@ -46,6 +46,5 @@ public sealed record RegistrationResponse(
     /// <summary>The place's kind: <c>git</c>, or <c>folder</c> for one driven in place by its manifest. Absent from an older host, which is git.</summary>
     public string? Kind { get; init; }
 
-    /// <summary>The person's own globs a folder's manifest passes by, beside its defaults; absent from an older host, which has none.</summary>
     public IReadOnlyList<string>? Excludes { get; init; }
 }
