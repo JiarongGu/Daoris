@@ -216,7 +216,7 @@
   "person.route.REGISTRY_REWIRE": "move a repository to another workspace",
   "person.route.ASK_REVIEW": "choose how an ask's work is reviewed",
   "person.route.ASK_WORKFLOW": "choose an ask's kind of task and workflow",
-  "person.route.QUEST_ACCEPT": "accept where a done quest departs from what you required",
+  "person.route.QUEST_ACCEPT": "accept a quest's done departing from what you required",
   "person.route.QUEST_GO_ON": "let a step a reopen held go on with the new work",
   "person.route.QUEST_REOPEN": "reopen a quest's submission",
   "person.route.QUEST_REVIEW": "give your verdict on a quest's review",

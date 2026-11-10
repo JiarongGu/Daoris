@@ -216,7 +216,7 @@
   "person.route.REGISTRY_REWIRE": "将一个仓库移到另一个工作区",
   "person.route.ASK_REVIEW": "选择一个需求的工作如何审阅",
   "person.route.ASK_WORKFLOW": "选择一个需求的工作类型和工作流",
-  "person.route.QUEST_ACCEPT": "接受一个已完成的委托与你的要求不符之处",
+  "person.route.QUEST_ACCEPT": "采纳一个委托的完成对你的要求的偏离",
   "person.route.QUEST_GO_ON": "让一个因重开而暂停的步骤继续新的工作",
   "person.route.QUEST_REOPEN": "重开一个委托的交付",
   "person.route.QUEST_REVIEW": "对一个委托的审阅给出你的结论",
