@@ -32,7 +32,7 @@ import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
 import { type HeadLink, linkRow } from './headRows';
-import { type AskOrigin, originsOf, OriginLinks, startedRows, startingOf } from './startedFrom';
+import { type AskOrigin, originsOf, OriginLine, startedRows, startingOf } from './startedFrom';
 import type { HelperWaits } from '../waits/HelperAsks';
 import { CoWorkers } from '../team/CoWorkers';
 import { MemberThread } from '../team/MemberThread';
@@ -561,16 +561,8 @@ export function SessionHead({
         </p>
       ) : null}
 
-      {/* The reference, a folded *Details*, its line naming the quest,
-          the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
-          path is the repository's on hover; an intake names its ask, never `repository: ask #…`. */}
-      {origins.length > 0 && (
-        <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1 text-small text-ink-soft">
-          <span className="text-ink-faint">{t('work.origin.from')}</span>
-          <OriginLinks origins={origins} t={t} />
-        </p>
-      )}
       <DetailsFold
+        aside={origins.length > 0 ? <OriginLine origins={origins} t={t} /> : undefined}
         summary={[
           intake ? t('work.scope.ask', { id: session.ask }) : session.quest ? t('work.scope.quest', { id: session.quest }) : null,
           sessionTool({ door: session.door, doorVersion: session.doorVersion }),
@@ -580,9 +572,7 @@ export function SessionHead({
           intake
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
-          // Where it came from and the requirement it started with, each said by the record that holds it.
           ...startedRows(t, origins, startingOf(quest, ask, session, opening, brief)),
-          // Whom it helps, the record's own link, a door where the frame holds it.
           linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
           // Its heavy run: the head's line opens to its gates here, or its wait with the holder a door.
           ...(heavy ? [heavy] : []),

@@ -308,7 +308,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     const chip = within(history()).getByRole('button', { name: i18n.t('help.history.showingIs', { value: i18n.t('help.history.every') }) });
     await userEvent.click(chip);
     const options = screen.getAllByRole('option').map((option) => option.textContent);
-    expect(options.slice(0, 2)).toEqual([i18n.t('help.history.showingHere', { workspace: 'games' }), i18n.t('help.history.every')]);
+    expect(options.slice(0, 2)).toEqual([`${i18n.t('help.history.showingHere', { workspace: 'games' })} ${i18n.t('help.focus.thisWindow')}`,i18n.t('help.history.every')]);
     await userEvent.keyboard('eng');
     await userEvent.click(screen.getByRole('option', { name: /^engine/ }));
     expect(onShowing).toHaveBeenCalledWith({ kind: 'about', place: engine });
