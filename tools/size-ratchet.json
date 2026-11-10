@@ -104,7 +104,7 @@
   "src/Daoris.Web/src/work/conversation/ConversationView.test.tsx": 78009,
   "src/Daoris.Web/src/work/conversation/conversation.test.ts": 76960,
   "src/Daoris.Web/src/work/head/SessionHead.test.tsx": 71859,
-  "src/Daoris.Web/src/work/noteLines.test.ts": 106008,
+  "src/Daoris.Web/src/work/noteLines.test.ts": 106005,
   "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": 56972,
   "src/Daoris.Web/src/work/rail/SessionRow.test.tsx": 47197,
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 62910,

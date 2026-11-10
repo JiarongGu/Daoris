@@ -1,0 +1,92 @@
+// The kit's half of a system adapter (README.md, "A system"): `plan/read` and `apply/perform` answered over the two calls its author
+// writes in plugin.mjs, read() and write(). Under the kit's stand-in world (DAORIS_PLUGIN_WORLD, which its tests and `plugins try`
+// set), a store kept in that file answers in the system's place, so a trial writes to no system. Written by the kit, not by hand.
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const manifest = JSON.parse(readFileSync(new URL('./plugin.json', import.meta.url), 'utf8'));
+
+/** What a system's writes are guarded by, as plugin.json declares it: `etag`, `serial`, `changeset` or `none`. */
+const guardOf = (system) => (manifest.systems ?? []).find((each) => each.id === system)?.preconditions ?? 'etag';
+
+const presentOf = (resource, present) => (present
+  ? { resource, exists: true, value: present.value, version: present.version }
+  : { resource, exists: false, value: null, version: null });
+
+const holds = (present, operation) => (operation.op === 'delete' ? present === null : present?.value === operation.after);
+
+/**
+ * The system points over `read(system, resource)`, answering `{ value, version }` or null where it is absent, and
+ * `write(system, operation)`, answering 'written', or 'stale' where the system refused the version the plan read.
+ */
+export function adapter({ read, write }) {
+  const calls = process.env.DAORIS_PLUGIN_WORLD ? standIn(process.env.DAORIS_PLUGIN_WORLD) : { read, write };
+  return {
+    points: {
+      // Each intended change typed against the system as it stands, with the version read; one it already holds is left out.
+      'plan/read': async ({ system, changes = [] }) => {
+        const operations = [];
+        for (const change of changes) {
+          const present = await calls.read(system, change.resource);
+          const remove = change.remove === true;
+          if (remove ? present === null : present?.value === change.value) continue;
+          operations.push({
+            resource: change.resource,
+            op: remove ? 'delete' : present ? 'update' : 'create',
+            before: present?.value ?? null,
+            after: remove ? null : change.value,
+            precondition: { kind: guardOf(system), version: present?.version ?? null },
+          });
+        }
+        return { operations };
+      },
+      // A reviewed change set: unchanged where the system holds it all; under a guard, every version checked before any write.
+      // A system guarding nothing (`none`) is sent one operation at a time, and Daoris reads each back.
+      'apply/perform': async ({ system, operations = [] }) => {
+        const present = new Map();
+        for (const operation of operations) present.set(operation.resource, await calls.read(system, operation.resource));
+        if (operations.every((operation) => holds(present.get(operation.resource), operation))) return { state: 'unchanged', applied: [] };
+        const stale = guardOf(system) === 'none' ? [] : operations.filter((operation) =>
+          (present.get(operation.resource)?.version ?? null) !== (operation.precondition?.version ?? null));
+        if (stale.length > 0) {
+          return { state: 'stale', applied: [], refused: stale[0].resource, present: stale.map(({ resource }) => presentOf(resource, present.get(resource))) };
+        }
+        const applied = [];
+        for (const operation of operations) {
+          try {
+            if (await calls.write(system, operation) === 'stale') {
+              return { state: 'stale', applied, refused: operation.resource, present: [presentOf(operation.resource, await calls.read(system, operation.resource))] };
+            }
+          } catch (error) {
+            return { state: 'failed', applied, refused: operation.resource, message: String(error?.message ?? error) };
+          }
+          applied.push(operation.resource);
+        }
+        return { state: 'applied', applied };
+      },
+    },
+  };
+}
+
+/** The kit's stand-in system: `{ "<system>": { "<resource>": { value, version } } }` in the world file, read again at every call. */
+function standIn(file) {
+  writeFileSync(`${file}.taken`, `${process.pid}\n`);
+  const load = () => {
+    try {
+      return JSON.parse(readFileSync(file, 'utf8'));
+    } catch {
+      return {};
+    }
+  };
+  let written = 0;
+  return {
+    read: async (system, resource) => load()[system]?.[resource] ?? null,
+    write: async (system, operation) => {
+      const world = load();
+      const store = (world[system] ??= {});
+      if (operation.op === 'delete') delete store[operation.resource];
+      else store[operation.resource] = { value: operation.after, version: `${process.pid}-${(written += 1)}` };
+      writeFileSync(file, `${JSON.stringify(world, null, 2)}\n`);
+      return 'written';
+    },
+  };
+}

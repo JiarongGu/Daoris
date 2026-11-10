@@ -68,7 +68,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     IconProblem = icon.Problem,
                     Harnesses = plugin.Manifest.Harnesses.Select(h => h.Name).ToArray(),
                     Points = plugin.Manifest.Hooks?.Points ?? [],
-                    Systems = plugin.Manifest.Systems.Select(system => new { system.Id, system.Name }).ToArray(),
+                    Systems = plugin.Manifest.Systems.Select(system => new { system.Id, system.Name, system.Preconditions }).ToArray(),
                     // What the catalogue takes, as the rows above: a refused plugin hands nothing and speaks nowhere.
                     Servers = plugin.Manifest.Servers.Select(s => s.Name).ToArray(),
                     // What it hands Ask Daoris, and the tools it may call there, which its page says.

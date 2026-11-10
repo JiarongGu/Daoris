@@ -24,7 +24,7 @@ public sealed class WorkWireTests
         Assert.Equal(["work/watch", "work/step", "work/perform"], HookPoints.Work);
         // They follow the kit's earlier points in their order, and work/event follows them,
         // so every earlier point keeps its place.
-        Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.TakeLast(4));
+        Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.Skip(4).Take(4));
         Assert.Equal(("hook/work/watch", "hook/work/perform", "hook/work/reconcile", "work/step"),
             (WorkWire.WatchMethod, WorkWire.PerformMethod, WorkWire.ReconcileMethod, WorkWire.StepMethod));
         Assert.Equal("work.perform@1", WorkWire.Capability);
