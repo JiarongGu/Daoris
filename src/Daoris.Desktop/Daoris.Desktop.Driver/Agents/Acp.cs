@@ -67,7 +67,6 @@ public sealed class AcpSession(
     /// </summary>
     public Func<string, string, string>? Unoffered { get; set; }
 
-    /// <summary>The person's own servers the open hands beside the plan's, given that plan; null hands none.</summary>
     public Func<ConnectorPlan?, IReadOnlyList<ServerEntry>>? OwnServers { get; set; }
 
     /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>

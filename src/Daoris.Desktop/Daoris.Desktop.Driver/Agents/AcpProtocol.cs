@@ -109,8 +109,6 @@ internal static class AcpProtocol
     }
 
     /// <summary>The servers a session is handed, in the wire's own shape: on a new session and on a resumed one alike.</summary>
-    /// <param name="plan">What the start chose.</param>
-    /// <param name="own">The person's own servers (<see cref="ISpawn.OwnServers"/>), after the plan's; a name the plan holds is the plan's.</param>
     internal static object[] Offer(ConnectorPlan? plan, IReadOnlyList<ServerEntry>? own = null)
     {
         IReadOnlyList<ServerEntry>? servers = plan?.Servers;

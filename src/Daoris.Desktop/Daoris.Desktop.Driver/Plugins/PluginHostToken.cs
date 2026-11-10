@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
 /// <summary>What a plugin's start is told of the API token it may carry: the token, or the words that refuse the start.</summary>
-/// <param name="Token">The token to hand, or null.</param>
-/// <param name="Refusal">The words that refuse the start, or null.</param>
-/// <param name="NeedsToken">The label of the serving identity where the refusal is that it holds no API token.</param>
 public sealed record HostTokenHand(string? Token, string? Refusal, string? NeedsToken = null);
 
 /// <summary>

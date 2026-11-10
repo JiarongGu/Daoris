@@ -513,10 +513,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         return new Leg(process, proc, drive) { Drive = drive };
     }
 
-    /// <summary>
-    /// The person's own servers for a protocol door whose adapter keeps none of its own, none to a pass held to Daoris's connector alone
-    /// (its plan permits no plugin's servers), read from the session's own process as it was equipped.
-    /// </summary>
+    /// <summary>None to a pass held to Daoris's connector alone: its plan permits no plugin's servers.</summary>
     private IReadOnlyList<ServerEntry> OwnServersOf(Process process, ConnectorPlan? plan)
     {
         if (plan?.Permitted is { } permitted && !permitted.Contains(ConnectorSource.Plugin)) return [];

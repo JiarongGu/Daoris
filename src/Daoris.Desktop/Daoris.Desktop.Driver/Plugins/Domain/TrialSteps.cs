@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// How long each point's call waits; absent, as long as the driver waits at the points tried. The handshake always waits
 /// that long, as the driver's does.
 /// </param>
-/// <param name="Origin">The push address of the checkout the start would be asked about; absent, the token's step says it asked none.</param>
 public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null, string? Origin = null);
 
 /// <summary>
