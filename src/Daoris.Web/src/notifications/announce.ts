@@ -2,14 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { type MessageArrived, messageOf, type Notice } from '../bridge/notices';
 import type { ToastItem } from '../design/ui';
 import type { Confirmation } from '../person/Confirmations';
+import { looking, useInFront } from './inFront';
 
 /** A press's key across its two sources: a terminal's and the service's ids are not one space. */
 const keyOf = (press: Pick<Confirmation, 'source' | 'id'>) => `${press.source}:${press.id}`;
-
-/** Whether this window is the one in front of the person: visible and focused, so it, and no other, speaks (§5). */
-function looking(): boolean {
-  return typeof document !== 'undefined' && document.visibilityState === 'visible' && document.hasFocus();
-}
 
 /**
  * The toasts that say a press came: a toast with *Open*
@@ -20,8 +16,8 @@ function looking(): boolean {
  * told once at its ask), keyed by its id, so an event heard twice is said once; a service's press the first time the list this
  * window is told holds its id (the shell tells every window the one list at once, so only the focused one says it), and
  * never one already waiting at this window's first read of the list, which arrived before the window did, as a terminal's does.
- * A window not focused as it hears it says nothing, and the press is counted in its bell; an arrival missed is never said later,
- * which a press may accept only because the bell's warning hue stays while it waits unshown.
+ * A window not focused as it hears a service's press says nothing, and the press is counted in its bell. A terminal's press is asked
+ * while the person is at the terminal, so one heard out of focus is said once the window comes in front, where it still waits unshown.
  *
  * **Never over the view**: a press heard while *Notifications* is open says no toast, and the view's opening takes every one away.
  * Nothing here moves the focus, opens the view or confirms anything: the door shows the card, where only the person answers.
@@ -54,8 +50,14 @@ export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, w
   const open = useRef(viewOpen);
   open.current = viewOpen;
 
+  // A terminal's press heard while the person was elsewhere, said once this window comes in front.
+  const missed = useRef(new Set<string>());
   const say = useCallback((key: string) => {
     if (decided.current.has(key)) return;
+    if (!open.current && !looking() && key.startsWith('pipe:')) {
+      missed.current.add(key);
+      return;
+    }
     decided.current.add(key);
     if (open.current || !looking()) return;
     const id = next.current;
@@ -64,6 +66,14 @@ export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, w
   }, []);
 
   const heard = useCallback((id: string) => say(keyOf({ source: 'pipe', id })), [say]);
+  const current = useRef(presses);
+  current.current = presses;
+  useInFront(() => {
+    for (const key of [...missed.current]) {
+      missed.current.delete(key);
+      if (current.current.some((press) => keyOf(press) === key && press.shown !== true)) say(key);
+    }
+  });
 
   // A service's press is said the first time the list this window is told holds it, after its first read, which is a baseline; a
   // terminal's is decided by its event alone.
