@@ -61,6 +61,8 @@ internal static class ClaudeDrivenLayer
     {
         if (start.Piece is not null) return null;
         var args = start.Info.ArgumentList;
+        // A supervisor's turn composes the sources-alone flags, which the layer's start has no field for: they stay on the transport.
+        if (args.Contains("--setting-sources") || args.Contains("--strict-mcp-config")) return null;
         var plugins = args.Select((arg, at) => (arg, at)).Where(each => each.arg == "--plugin-dir" && each.at + 1 < args.Count)
             .Select(each => args[each.at + 1]).ToList();
         return new LayerRun(

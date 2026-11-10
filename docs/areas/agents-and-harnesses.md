@@ -582,7 +582,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   door over the program the start resolved (its file and the arguments before `-p`, the launcher's seat starting it in the door's
   command's place) and the environment its shell composed, its two refused-model entries, a tool call read by Claude Code's own
   vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and servers files (a door's
-  `Options`) carried as today's spawn carries them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
+  `Options`) carried as today's spawn carries them; a start that hands the sources alone (a supervisor's turn) stays on `TransportRun`,
+  the layer's start having no field for them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
   on the run its door's binding answers (`DrivenRuns`, bound when the driver loads), today's `TransportRun` otherwise; both are a
   `HeldRun`, the run and the hold's own steps around it, and a partner's piece stays on today's. A held `LayerRun` is one turn per
   process, the first's, the native resume's one retry's and each go-on's, and takes today's steps through the same host
