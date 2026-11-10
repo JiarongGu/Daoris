@@ -459,7 +459,7 @@ try
 
     if (args is ["browser", .. var browserArgs])
     {
-        return Daoris.Driver.Host.BrowserConsole.Run(browserArgs);
+        return await Daoris.Driver.Host.BrowserConsole.RunAsync(browserArgs);
     }
 
     if (args is ["files", .. var filesArgs])

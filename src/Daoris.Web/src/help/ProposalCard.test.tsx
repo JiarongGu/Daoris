@@ -423,22 +423,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
   });
 
-  // Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
-  const BROWSER: HelpProposal = {
-    id: 'p10', kind: 'browser',
-    describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
-    terminal: 'daoris browser links daoris',
-    why: 'the person wants tickets opened where their sign-ins are',
-  };
-
-  it('a browser setting says what changes and the command that does the same, with Apply and Not now', async () => {
-    await press(BROWSER, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(BROWSER.describe)).toBeInTheDocument();
-    expect(screen.getByText(code(BROWSER.terminal))).toBeInTheDocument();
-  });
-
   // Bringing up to date, the screen's two presses on one card: the look, which fetches and so is
   // the person's, then Apply on the rows the look listed.
   const SYNC: HelpProposal = {

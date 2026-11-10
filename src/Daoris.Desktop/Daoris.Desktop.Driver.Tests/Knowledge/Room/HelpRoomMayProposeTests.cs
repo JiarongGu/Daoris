@@ -221,16 +221,17 @@ public sealed class HelpRoomMayProposeTests
         Assert.DoesNotContain("this machine's accounts", agents);
     }
 
-    /// <summary>The browser's settings, each named as the terminal spells it, and when each holds.</summary>
+    /// <summary>The browser's settings, each named as the terminal spells it, and when each holds; none is proposed.</summary>
     [Fact]
-    public void The_room_says_how_the_browsers_settings_are_proposed()
+    public void The_room_says_how_the_browsers_settings_are_pressed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them", proposes);
-        Assert.Contains("`use` `daoris` or `edge`", proposes);
-        Assert.Contains("a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps)", proposes);
+        Assert.Contains("- Daoris's browser's settings are pressed, never proposed, as Settings → Browser sets them", proposes);
+        Assert.Contains("`daoris browser use daoris|edge`", proposes);
+        Assert.Contains("`daoris browser favorite add|remove <address>`", proposes);
         Assert.Contains("Each but `links` holds from the browser's next start.", proposes);
+        Assert.DoesNotContain("browser_propose", proposes);
     }
 
     /// <summary>

@@ -45,7 +45,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         typeof(BrainstormTools),
         typeof(HelpAskTool),
-        typeof(HelpBrowserTool),
         typeof(HelpClearTool),
         typeof(HelpGoTool),
         typeof(HelpPluginTool),

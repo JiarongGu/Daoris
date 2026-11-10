@@ -92,7 +92,6 @@ internal static class HelpProposalKinds
         new HelpAskProposals(),
         new HelpGoProposals(),
         new HelpPluginProposals(),
-        new HelpBrowserProposals(),
         new HelpSyncProposals(),
         new HelpClearProposals(),
         new HelpWorkflowProposals(),

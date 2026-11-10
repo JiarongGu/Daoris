@@ -343,7 +343,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// Daoris's browser as its two files hold it, so a browser proposal names a favorite kept; said only where
+    /// Daoris's browser as its two files hold it, so a press names a favorite kept; said only where
     /// the desktop reads them, since the files are its own.
     /// </summary>
     [Fact]

@@ -12,43 +12,6 @@ public sealed class HelpFileDoorsTests : Bridge
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));
 
     /// <summary>
-    /// The browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
-    /// <c>daoris browser</c> write, and read by <c>daoris-browser</c> at its next start.
-    /// </summary>
-    [Fact]
-    public void The_browsers_settings_are_the_browser_screens_own_edits()
-    {
-        var doors = Module().HelpDoors(null);
-
-        doors.ChangeBrowser("use", "edge", null, null);
-        doors.ChangeBrowser("links", "daoris", null, null);
-        doors.ChangeBrowser("extensions", "refuse", null, null);
-        doors.ChangeBrowser("favorite", "add", "site.example/board", "Board");
-
-        var settings = BrowserSettings.Read(Home);
-        Assert.Equal((BrowserChoice.Edge, LinksSetting.Daoris, ExtensionsSetting.Refuse), (settings.Browser, settings.Links, settings.Extensions));
-        Assert.Equal([new Favorite("https://site.example/board", "Board")], BrowserFavorites.Read(Home).Favorites);
-
-        doors.ChangeBrowser("favorite", "remove", "https://site.example/board", null);
-        Assert.Empty(BrowserFavorites.Read(Home).Favorites);
-    }
-
-    /// <summary>What the Browser screen's route refuses is refused here in its words, as the driver's refusal, so the card settles refused.</summary>
-    [Fact]
-    public void A_browser_change_the_screens_route_refuses_is_refused_in_its_words()
-    {
-        var doors = Module().HelpDoors(null);
-        Directory.CreateDirectory(Path.GetDirectoryName(BrowserSettings.FilePath(Home))!);
-        File.WriteAllText(BrowserSettings.FilePath(Home), "{ not json");
-
-        Assert.Contains("Daoris will not write over a file it could not read",
-            Assert.Throws<DriverException>(() => doors.ChangeBrowser("links", "daoris", null, null)).Message);
-        Assert.Contains("is not a web page, so it cannot be a favorite",
-            Assert.Throws<DriverException>(() => doors.ChangeBrowser("favorite", "add", "javascript:alert(1)", null)).Message);
-        Assert.Equal("{ not json", File.ReadAllText(BrowserSettings.FilePath(Home)));
-    }
-
-    /// <summary>
     /// Bringing up to date is <c>TREES_SYNC_PLAN</c>'s list and <c>TREES_SYNC</c>'s press, which read the
     /// registry and the running sessions, so before the driver is up both are the cold-start sentence and nothing is fetched.
     /// </summary>
@@ -62,7 +25,7 @@ public sealed class HelpFileDoorsTests : Bridge
             (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", null, new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
     }
 
-    /// <summary>What a browser proposal is judged against is the files as the Browser screen reads them.</summary>
+    /// <summary>What the room says of the browser is the files as the Browser screen reads them.</summary>
     [Fact]
     public void The_browsers_facts_are_its_files_as_the_screen_reads_them()
     {

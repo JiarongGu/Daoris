@@ -255,6 +255,11 @@ internal static class PipeReads
     public static PipeGround RemoteWiring() => Setting("STATE", ["workspace"], _ => null,
         (a, p) => Text(At(Named(At(a, "remotes"), "workspace", Text(p, "workspace")), "url")) ?? "").Of("DAORIS.REMOTES");
 
+    /// <summary>Daoris's browser's two files as the Browser screen reads them: the three settings, why either could not be read, and the favorites.</summary>
+    public static PipeGround BrowserFiles() => Setting("STATE", [], _ => null,
+        (a, _) => Fp(Pick(a, "browser", "links", "extensions", "settingsProblem", "favoritesProblem"), Rows(At(a, "favorites"), ["url"], "title")))
+        .Of("DAORIS.BROWSER");
+
     public static PipeGround HarnessToAct() => Plan("HARNESSES", ["door", "profile"], _ => null, (a, p) => Harness(a, Text(p, "door")));
 
     public static PipeGround HarnessToRefresh() => Plan("HARNESSES", ["agent", "profile"], _ => null, (a, p) => Harness(a, Text(p, "agent")));

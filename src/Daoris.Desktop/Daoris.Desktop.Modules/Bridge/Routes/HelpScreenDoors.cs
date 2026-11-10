@@ -57,28 +57,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     /// <summary>A card naming a repository includes it, as `--repository` does; none, and the default.</summary>
     private static SyncScope? Named(string? repository) => repository is null ? null : SyncScope.Named([repository]);
 
-    // BrowserModule's own edits: the same check, refusal and write, so a route's refusal settles the card in its words.
-    public void ChangeBrowser(string setting, string value, string? address, string? title)
-    {
-        var home = BrowserModule.Home;
-        try
-        {
-            switch (setting, value)
-            {
-                case ("use", _): BrowserModule.SetBrowser(home, value); break;
-                case ("links", _): BrowserModule.SetLinks(home, value); break;
-                case ("extensions", _): BrowserModule.SetExtensions(home, value); break;
-                case ("favorite", "add"): BrowserModule.AddFavorite(home, address ?? "", title); break;
-                case ("favorite", "remove"): BrowserModule.RemoveFavorite(home, address ?? ""); break;
-                default: throw new DriverException($"`{setting} {value}` is not a change the Browser screen makes.");
-            }
-        }
-        catch (ShenoraException refused)
-        {
-            throw new DriverException(refused.Message);
-        }
-    }
-
     // `daoris plugin add`'s copy; the loop is asked to look and starts what the plugin runs there. Nothing runs here.
     public void AddPlugin(string folder)
     {

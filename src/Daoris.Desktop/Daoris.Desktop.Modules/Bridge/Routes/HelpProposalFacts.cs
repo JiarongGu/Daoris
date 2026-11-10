@@ -160,11 +160,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             facts = facts with { Places = places };
         }
 
-        if (proposals.Any(proposal => proposal.Kind == "browser"))
-        {
-            facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };
-        }
-
         return (config, facts);
     }
 }
