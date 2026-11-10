@@ -73,7 +73,9 @@ public sealed class ReviewStepTests : ReviewStepFixture
     public async Task A_chains_choice_is_the_persons_or_quotes_them_and_every_step_inherits_it()
     {
         var ask = await Asked();
-        var persons = await Publish(ask, [], new QuestReview("local", "please look"), title: "Person's");
+        // The person's quests go to `checker`: an ask asks each receiver once, so a second hand's publish to `reports` would be answered
+        // with the first's quest before its choice is judged.
+        var persons = await Publish(ask, [], new QuestReview("local", "please look"), title: "Person's", to: "checker");
         Assert.Equal(AskRefusal.None, persons.Refusal);
         Assert.Equal(new QuestReview("local", "please look"), persons.Quest!.Review);
 
@@ -96,7 +98,7 @@ public sealed class ReviewStepTests : ReviewStepFixture
         await _exchange.RespondAsync(quoted.Quest.Id, "done", "Built.", Now, answers: [Met]);
         Assert.Equal(quoted.Quest.Review, (await FollowUps(ask, quoted.Quest)).Single().Review);
 
-        var badChoice = await Publish(ask, [], new QuestReview("production"), title: "Bad");
+        var badChoice = await Publish(ask, [], new QuestReview("production"), title: "Bad", to: "checker");
         Assert.Equal(AskRefusal.QuestRefused, badChoice.Refusal);
         Assert.Contains("production", badChoice.Message);
         Assert.Equal([persons.Quest.Id, quoted.Quest.Id], (await _desk.FindAsync(ask.Id))!.Quests);
@@ -167,7 +169,8 @@ public sealed class ReviewStepTests : ReviewStepFixture
             (new ReviewProposed("off", "Why."), null, null, "the person sets their own choice"),
         })
         {
-            var refused = await Publish(ask, [], review, session, "Refused", proposal);
+            // The person's own publish goes to another receiver than the session's, which an ask asks only once.
+            var refused = await Publish(ask, [], review, session, "Refused", proposal, to: session is null ? "checker" : "reports");
             Assert.Equal(AskRefusal.BadReview, refused.Refusal);
             Assert.Contains(said, refused.Message);
         }

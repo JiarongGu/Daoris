@@ -77,8 +77,8 @@ public abstract class ReviewStepFixture : IAsyncLifetime
 
     protected Task<AskOutcome> Publish(
         Ask ask, IReadOnlyList<QuestStep> then, QuestReview? review = null, string? session = null, string title = "Add the compare setting",
-        ReviewProposed? proposal = null) =>
-        _desk.PublishAsync(ask.Id, "reports", Now, draft: new AskDraft(title, "The report gains a setting.")
+        ReviewProposed? proposal = null, string to = "reports") =>
+        _desk.PublishAsync(ask.Id, to, Now, draft: new AskDraft(title, "The report gains a setting.")
         {
             Requirements = [Setting], Then = then, Review = review, ReviewProposal = proposal,
         }, session: session);
