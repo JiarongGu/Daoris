@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTREV3n — the third cycle's hardening (2026-11-11)
+
+> **AGENTREV3n** (driver): Outcome: a retry leg is the opened one once captured (`TransportRun.RetriedAsync`); the layer run's retry is stopped after its spawn when a stop was asked, as the transport's is (`LayerRun.EndAsync`); `RosterWalk.Unready`'s kept-account `Before` passes the account's facts, so a spent kept account is not kept for conversations; the process cases for a sources-alone start and for stripped variables written. Proof: `KeptAsideSpentTests` and the retry-stop case seen failing first; `LayerHoldProcessTests` and `ClaudeDrivenSpawnParityProcessTests` run filtered. The retry leg's opening has no test: AGENTREV3o.
+
+---
+
 ## AGENTREV3a-m — the agents review's third cycle, its thirteen defects fixed (2026-11-11)
 
 > **AGENTREV3a-m** (driver): Outcome, one commit each: a layer-held Claude start carrying `--setting-sources` or `--strict-mcp-config` stays on its transport (a); one `LayerEnvironment.Of` hands every stripped name as null, for `LayerHold` and `LayerUsageRead` (b); a layer start's stdin closes in a `finally` (c); a stop between a native resume's failed exit and its retry is carried onto the new entry and re-stopped after the retry's spawn (d); the reader's line writers and the held-permission line are guarded (e); any non-cancellation mark failure is `AcpWordsUnmarked`, faulting its own word (f); `agent list`, `login` and `update` read `driver.json`'s `commands` (`AgentsCommand.ConfiguredCommand`, g); an exact prerelease pin starts (h); a scope held in two spellings is edited and judged in both (i); `agent key --remove` says a lock's refusal (j); a resume of a non-picked account and `ReadyAsync` pass the account's facts, D206 exempting no resume (k); an account's cooling lines are grouped and distinct (l); one `ProviderRegistry.ProviderNamed` answers the door-to-provider lookup (m). Proof: `ClaudeDrivenLayerRunTests`, `LayerEnvironmentTests`, `AgentConfiguredCommandTests`, `ServerPrereleaseTests`, `RuleScopeSpellingsTests`, `AgentCoolingLinesTests`, `ResumeSpentTests` and extended classes; a, c, d, e, f, i, j, k seen failing first. The hardening left is AGENTREV3n.

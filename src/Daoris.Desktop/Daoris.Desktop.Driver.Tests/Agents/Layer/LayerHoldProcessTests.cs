@@ -142,6 +142,49 @@ public sealed class LayerHoldProcessTests : IDisposable
         Assert.Equal(3, end.Exit);
     }
 
+    [Fact]
+    public async Task A_stop_asked_while_the_retry_starts_stops_the_retry_as_the_transport_s_does()
+    {
+        var (run, host, _) = Held(new { echo = true, @out = Array.Empty<object>(), exit = 3 });
+        await using var _ = run;
+        host.OnBracket = proc => { if (proc == "p2") _processes.Stop("s1"); };
+
+        await run.ResumeAsync("conv-1", _bound.Token, new ResumeState());
+        await run.EndAsync(_bound.Token);
+
+        Assert.True(run.Stopped);
+    }
+
+    [Fact]
+    public async Task A_run_s_process_does_not_inherit_the_variables_its_shell_removed()
+    {
+        const string Stripped = "DAORIS_LAYER_TEST_STRIPPED";
+        Environment.SetEnvironmentVariable(Stripped, "inherited");
+        try
+        {
+            var (run, _, said) = Held(
+                new { echo = true, env = Stripped, @out = Answered },
+                start => start with { Info = Removing(start.Info, Stripped) });
+            await using var _ = run;
+
+            await run.OpenAsync(_bound.Token);
+            await run.EndAsync(_bound.Token);
+
+            Assert.Contains(said, each => each.StartsWith("env", StringComparison.Ordinal));
+            Assert.DoesNotContain("env inherited", said);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Stripped, null);
+        }
+    }
+
+    private static ProcessStartInfo Removing(ProcessStartInfo info, string name)
+    {
+        info.Environment.Remove(name);
+        return info;
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -212,6 +255,8 @@ public sealed class LayerHoldProcessTests : IDisposable
 
         public int Heard => _heard;
 
+        public Action<string>? OnBracket { get; set; }
+
         public string Home => "unused";
 
         public SessionProcesses Processes => processes;
@@ -235,6 +280,7 @@ public sealed class LayerHoldProcessTests : IDisposable
             var proc = $"p{Interlocked.Increment(ref _tokens)}";
             info.Environment[Token] = proc;
             Steps.Enqueue($"bracket {proc}");
+            OnBracket?.Invoke(proc);
             return proc;
         }
 
