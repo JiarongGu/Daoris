@@ -111,7 +111,7 @@ public sealed class SystemPlanToolProcessTests : IDisposable
         var status = await ApplyAsync(new ApplyDoor(_home, SystemAdapters.Starter(_home), _said.Add, holdsLease: () => true), "run:a", "rec-1");
 
         Assert.Equal(NodeStates.Reached, status.State);
-        Assert.Equal(SystemApplyStates.None, new SystemPlans(_home).AppliedOf("rec-1", 1)!.State);
+        Assert.Equal(SystemApplyStates.Unchanged, new SystemPlans(_home).AppliedOf("rec-1", 1)!.State);
         Assert.Contains(_said, line => line.Contains("nothing to change", StringComparison.Ordinal));
         Assert.Equal("""{ "items": { "release": { "value": "2", "etag": "e1" } }, "serial": 9 }""", File.ReadAllText(State));
     }

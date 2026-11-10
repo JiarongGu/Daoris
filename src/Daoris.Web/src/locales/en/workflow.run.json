@@ -208,6 +208,7 @@
   "workflow.run.graph.said.invalidated": "What it rested on moved, so Daoris judges it again at its next look.",
   "workflow.run.graph.said.requests": "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
   "workflow.run.graph.said.requestDeclined": "The repository it asked declined the quest: ask again, or go on without it with your words.",
+  "workflow.run.graph.said.applyChanged": "Changed while applying: something else wrote to the system as it applied, so the work plans again from the system as it stands.",
   "workflow.run.graph.said.requestsDeclined": "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on.",
   "workflow.run.graph.said.holds": "Holds the work: {{why}}.",
   "workflow.run.requests.title": "Requests the work made",

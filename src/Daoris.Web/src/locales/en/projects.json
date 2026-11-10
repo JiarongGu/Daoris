@@ -17,6 +17,8 @@
   "projects.row.bench": "bench",
   "projects.row.branches": "{{count}} branch of Daoris's",
   "projects.row.branches_other": "{{count}} branches of Daoris's",
+  "projects.row.unguarded": "unguarded",
+  "projects.row.unguardedTip": "Its system guards no write of its own: one apply runs at a time, each change is read just before it is written and read back after, and a change made by something else while it applies is said and planned again.",
   "projects.none.headline": "Choose a repository",
   "projects.none.body": "Who is in the family, what each owns and accepts, and who has not adopted yet. A workspace's row opens its page: its defaults, where it syncs, and its clean-up. A repository's page says what it declares and what the index holds of it, and opens its code map.",
   "projects.gone.headline": "This repository is no longer here",

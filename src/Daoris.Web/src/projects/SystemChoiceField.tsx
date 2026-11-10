@@ -10,6 +10,9 @@ export const systemsOffered = (plugins: readonly PluginEntry[]): SystemOffered[]
     .filter((plugin) => plugin.enabled && !plugin.problem)
     .flatMap((plugin) => (plugin.systems ?? []).map((each) => ({ system: `${plugin.id}/${each.id}`, name: each.name, plugin: plugin.name })));
 
+export const unguardedSystems = (plugins: readonly PluginEntry[]): ReadonlySet<string> =>
+  new Set(plugins.flatMap((plugin) => (plugin.systems ?? []).filter((each) => each.preconditions === 'none').map((each) => `${plugin.id}/${each.id}`)));
+
 /**
  * Adding a system reached only through its console: which installed adapter's system it is, and the department's name, the
  * system's id unless the person names it. A session there plans and changes nothing; the plan is applied after its review.

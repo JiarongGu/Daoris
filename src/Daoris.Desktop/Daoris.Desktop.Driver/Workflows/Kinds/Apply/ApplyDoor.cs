@@ -1,17 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Performs a run's <c>apply</c>: the newest change set its work planned handed to the system's adapter, applied under each operation's
-/// precondition, and what it came to kept beside the plan and written on the node. Applied reaches it; stale fails it with words naming
-/// each stale resource's present version, which its way back tells the work; any other refusal fails it in the adapter's words. One apply
-/// runs at a time in this door, so one applier writes to a system.
+/// Performs a run's <c>apply</c>: the newest plan its work made, applied by the system's adapter under each precondition (or read
+/// before and after each write where it declares none) and what it came to written on the node. Applied and unchanged reach it; stale
+/// and changed while applying fail it naming each such resource's present version, which its way back tells the work; any other
+/// refusal fails it in the adapter's words. One apply runs at a time in this door, so one applier writes to a system.
 /// </summary>
 public sealed class ApplyDoor(
     string home, Func<SystemPlace, CancellationToken, Task<IHookChannel>> adapters, Action<string>? log = null, Func<bool>? runs = null,
-    Func<bool>? holdsLease = null, Func<DateTimeOffset>? clock = null) : IApplyDoor, IDoorRuns
+    Func<bool>? holdsLease = null, Func<DateTimeOffset>? clock = null, Func<SystemPlace, string>? guards = null) : IApplyDoor, IDoorRuns
 {
     /// <summary>The code a stale plan fails its node with.</summary>
     public const string Stale = "stale";
+
+    public const string ChangedWhileApplying = "changed-while-applying";
 
     /// <summary>The code an apply the adapter refused otherwise fails its node with.</summary>
     public const string Refused = "apply-refused";
@@ -19,6 +21,7 @@ public sealed class ApplyDoor(
     private readonly NodeDoorRuns _runs = new(runs);
     private readonly SemaphoreSlim _one = new(1, 1);
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
+    private readonly Func<SystemPlace, string> _guards = guards ?? SystemAdapters.Guard(home);
 
     NodeDoorRuns IDoorRuns.Runs => _runs;
 
@@ -51,7 +54,7 @@ public sealed class ApplyDoor(
             if (applied is null)
             {
                 await using var channel = await adapters(place, ct).ConfigureAwait(false);
-                applied = await new SystemAdapter(channel, place, plans, _clock).ApplyAsync(record!, plan, ct).ConfigureAwait(false);
+                applied = await new SystemAdapter(channel, place, plans, _clock, _guards(place)).ApplyAsync(record!, plan, ct).ConfigureAwait(false);
             }
 
             Settle(start, plan, applied);
@@ -68,8 +71,9 @@ public sealed class ApplyDoor(
         log?.Invoke(applied.State switch
         {
             SystemApplyStates.Applied => $"apply  {start.Unit.Id}: plan {plan.Plan} applied to `{plan.Place}`: {applied.Applied.Count} operation(s).",
-            SystemApplyStates.None => $"apply  {start.Unit.Id}: plan {plan.Plan} had nothing to change in `{plan.Place}`: every resource already held what it asks, so nothing was written.",
+            SystemApplyStates.Unchanged => $"apply  {start.Unit.Id}: plan {plan.Plan} had nothing to change in `{plan.Place}`: every resource already held what it asks, so nothing was written.",
             SystemApplyStates.Stale => $"apply  {start.Unit.Id}: plan {plan.Plan} was stale at `{applied.Refused}`, so the work plans again.",
+            SystemApplyStates.Changed => $"apply  {start.Unit.Id}: plan {plan.Plan}'s `{applied.Refused}` changed while applying, so the work plans again.",
             _ => $"apply  {start.Unit.Id}: plan {plan.Plan} was refused: {applied.Message}",
         });
         var records = new NodeRecordFiles(home, holdsLease);
@@ -77,12 +81,17 @@ public sealed class ApplyDoor(
         {
             var status = WorkPerformer.StatusOf(record, start.Node.Id);
             if (status.State != NodeStates.Active || status.Attempt != start.Attempt || status.Binding is not { } binding) return (null, false);
-            var move = applied.State is SystemApplyStates.Applied or SystemApplyStates.None
+            var move = applied.State is SystemApplyStates.Applied or SystemApplyStates.Unchanged
                 ? NodeObserving.Reached(new NodeReading(start.Unit, start.Node, binding), NodeSource.Plugin, binding.SubjectRevision,
-                    $"plan-{plan.Plan}.json", plan.Place, applied.State == SystemApplyStates.None ? $"plan {plan.Plan} had nothing to change" : $"plan {plan.Plan} applied").Move!
+                    $"plan-{plan.Plan}.json", plan.Place, applied.State == SystemApplyStates.Unchanged ? $"plan {plan.Plan} had nothing to change" : $"plan {plan.Plan} applied").Move!
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
-                    Source = NodeSource.Plugin, Attempt = status.Attempt, Code = applied.State == SystemApplyStates.Stale ? Stale : Refused,
+                    Source = NodeSource.Plugin, Attempt = status.Attempt, Code = applied.State switch
+                    {
+                        SystemApplyStates.Stale => Stale,
+                        SystemApplyStates.Changed => ChangedWhileApplying,
+                        _ => Refused,
+                    },
                 };
             var moved = NodeLifecycle.Apply(start.Node, status, move);
             if (!moved.Moved) return (null, false);
@@ -90,7 +99,7 @@ public sealed class ApplyDoor(
             // The failure's own words go on its status, so the way back tells the work what is in the system now.
             if (move.To == NodeStates.Failed)
             {
-                var words = applied.State == SystemApplyStates.Stale ? SystemStaleWords.Of(start.Node.Id, plan.Plan, applied) : applied.Message;
+                var words = applied.State is SystemApplyStates.Stale or SystemApplyStates.Changed ? SystemStaleWords.Of(start.Node.Id, plan.Plan, applied) : applied.Message;
                 moved = moved with { Status = moved.Status with { Words = words } };
             }
 

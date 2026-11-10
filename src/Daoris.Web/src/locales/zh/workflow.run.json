@@ -208,6 +208,7 @@
   "workflow.run.graph.said.invalidated": "它所依据的已变动，所以 Daoris 会在下次查看时重新判断它。",
   "workflow.run.graph.said.requests": "等工作的会话在此发布的委托：每一个都要完成，被谢绝的由你选择略过。",
   "workflow.run.graph.said.requestDeclined": "它委托的仓库谢绝了这个委托：你可以再次委托，或写下理由不等它而继续。",
+  "workflow.run.graph.said.applyChanged": "应用时被改动：应用的同时有别的写入者改了这个系统，所以这项工作会按系统现在的样子重新规划。",
   "workflow.run.graph.said.requestsDeclined": "工作的会话发布的一个委托被谢绝了：它等你处理，你选择略过它，工作才会继续。",
   "workflow.run.graph.said.holds": "暂不放行这项工作：{{why}}。",
   "workflow.run.requests.title": "工作发出的请求",

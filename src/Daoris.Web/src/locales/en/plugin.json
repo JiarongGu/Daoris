@@ -54,6 +54,8 @@
   "plugin.kit.kind.workStep": "An event it sends, saying what became of a step",
   "plugin.kit.kind.workPerform": "An act, once a step it performs is due",
   "plugin.kit.kind.workEvent": "An observation, once something moves in the work cycle",
+  "plugin.kit.kind.planRead": "A query, once a session plans changes to the system it adapts",
+  "plugin.kit.kind.applyPerform": "An act, once a reviewed plan is applied to the system it adapts",
   "plugin.kit.folder": "Make it in",
   "plugin.kit.folderPlaceholder": "a folder in your plugins repository",
   "plugin.kit.folderHint": "The plugin's own folder is made inside this one and named by its id. A folder that already holds anything is refused, never written over.",

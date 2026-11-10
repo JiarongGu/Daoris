@@ -33,6 +33,9 @@ const CAPABILITY = 'work.perform@1';
 /** A sample frame's step, which is this plugin's own: its first declared step. */
 const STEP = '{step}';
 
+/** A system point's sample system, which is this plugin's own: the first system it declares. */
+const SYSTEM = '{system}';
+
 /** Every point: what kind it is, how long the driver waits for its answer in milliseconds, and its frame. */
 const POINTS = {
   "quest/consider": {
@@ -166,6 +169,39 @@ const POINTS = {
       "session": "4b62a9fe",
       "quest": "0fda18"
     }
+  },
+  "plan/read": {
+    "kind": "query",
+    "patience": 10000,
+    "frame": {
+      "system": "{system}",
+      "changes": [
+        {
+          "resource": "release",
+          "value": "2"
+        }
+      ]
+    }
+  },
+  "apply/perform": {
+    "kind": "act",
+    "patience": 10000,
+    "frame": {
+      "system": "{system}",
+      "plan": 1,
+      "operations": [
+        {
+          "resource": "release",
+          "op": "create",
+          "before": null,
+          "after": "2",
+          "precondition": {
+            "kind": "etag",
+            "version": null
+          }
+        }
+      ]
+    }
   }
 };
 
@@ -215,11 +251,23 @@ const ANSWERS = {
   'work/perform': (answer, frame) => (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && answer.invocation === frame.invocation
     ? null
     : `${JSON.stringify(answer)}, which does not acknowledge \`${frame.invocation}\` — { "invocation": "${frame.invocation}" }`),
+  'plan/read': (answer) => (answer !== null && typeof answer === 'object' && Array.isArray(answer.operations)
+    && answer.operations.every((op) => op !== null && typeof op === 'object' && typeof op.resource === 'string' && op.resource.length > 0
+      && ['create', 'update', 'delete'].includes(op.op) && typeof op.precondition?.kind === 'string' && op.precondition.kind.length > 0)
+    ? null
+    : `${JSON.stringify(answer)}, which is not a change set — { "operations": [{ "resource", "op": "create" | "update" | "delete", "before", "after", "precondition": { "kind", "version" } }] }`),
+  'apply/perform': (answer) => (answer !== null && typeof answer === 'object' && ['applied', 'unchanged', 'stale', 'failed'].includes(answer.state)
+    && (answer.applied === undefined || (Array.isArray(answer.applied) && answer.applied.every((each) => typeof each === 'string')))
+    && (answer.state !== 'unchanged' || !(answer.applied?.length > 0))
+    && (answer.state !== 'stale' || (typeof answer.refused === 'string' && answer.refused.length > 0 && Array.isArray(answer.present)))
+    ? null
+    : `${JSON.stringify(answer)}, which is not what an apply came to — { "state": "applied" | "unchanged" | "stale" | "failed", "applied": [ … ] }`),
 };
 
-/** A sample frame made this plugin's: its repository the scratch root, its step the plugin's own. */
+/** A sample frame made this plugin's: its repository the scratch root, its step and its system the plugin's own. */
 function own(frame, root) {
   if (Object.hasOwn(frame, 'root')) frame.root = root;
+  if (frame.system === SYSTEM && Array.isArray(manifest.systems) && typeof manifest.systems[0]?.id === 'string') frame.system = manifest.systems[0].id;
   const steps = Array.isArray(manifest.steps) ? manifest.steps.filter((step) => typeof step?.id === 'string') : [];
   if (steps.length === 0) return frame;
   if (frame.step === STEP) frame.step = `${manifest.id}/${(steps.find((step) => step.reach === 'performed') ?? steps[0]).id}`;
@@ -377,6 +425,10 @@ test('it answers the handshake, one frame at every point it declares, and leaves
     if (point === 'work/perform') {
       assert.ok(existsSync(`${world}.taken`),
         "`work/perform`: it did not take the kit's stand-in world (DAORIS_PLUGIN_WORLD), so an attempt would reach its platform; none was sent");
+    }
+    if (point === 'apply/perform') {
+      assert.ok(existsSync(`${world}.taken`),
+        "`apply/perform`: it did not take the kit's stand-in world (DAORIS_PLUGIN_WORLD), so an apply would write to its system; none was sent");
     }
     const frame = own(structuredClone(POINTS[point].frame), root);
     const answer = await ask(`hook/${point}`, frame, POINTS[point].patience);

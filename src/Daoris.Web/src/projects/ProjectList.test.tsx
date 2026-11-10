@@ -111,6 +111,15 @@ describe("Repositories' list", () => {
     expect(within(screen.getByRole('listitem', { name: 'elsewhere' })).getByText('nothing indexed yet')).toBeInTheDocument();
   });
 
+  it('says a system department whose adapter guards no write is unguarded, and no other row', () => {
+    list({
+      groups: [{ workspace: 'default', adopted: [{ registration: ENGINE }, { registration: GAME, unguarded: true }], outside: [] }],
+    });
+
+    expect(within(screen.getByRole('listitem', { name: 'game' })).getByText('unguarded')).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'engine' })).queryByText('unguarded')).toBeNull();
+  });
+
   it('says its standing as the session list does: held outranks drives here', () => {
     list({
       groups: [{ workspace: 'default', adopted: [{ registration: ENGINE, drivable: true }, { registration: GAME, drivable: true, held: true }], outside: [] }],

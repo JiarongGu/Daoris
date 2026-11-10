@@ -30,10 +30,10 @@ export function etagOf(key, value, serial) {
 }
 
 /**
- * The typed operations a set of intended changes comes to, each with the precondition it is applied under: `create` where the key
- * is absent (it must still be absent), `update` and `delete` under the etag read now. A change that changes nothing is left out.
+ * The typed operations intended changes come to, under the system's declared precondition `kind`: `create` where the key is absent,
+ * `update` and `delete` under the etag read now. A change that changes nothing is left out, so a change planned alone is a read.
  */
-export function plan(state, changes) {
+export function plan(state, changes, kind = 'etag') {
   const operations = [];
   for (const change of changes) {
     const present = state.items[change.resource];
@@ -45,7 +45,7 @@ export function plan(state, changes) {
       op: remove ? 'delete' : present ? 'update' : 'create',
       before: present ? present.value : null,
       after: remove ? null : change.value,
-      precondition: { kind: 'etag', version: present ? present.etag : null },
+      precondition: { kind, version: present ? present.etag : null },
     });
   }
   return { operations };
@@ -70,12 +70,12 @@ function inPlace(state, operation) {
 }
 
 /**
- * Apply `operations` in order under their preconditions, or answer `none` where the store already holds what each asks. A stale plan
- * changes nothing and is answered `stale` with what each stale resource is now; otherwise each is written and its new etag minted.
+ * Apply `operations` in order, or answer `unchanged` where the store holds each. Guarded, a stale plan changes nothing and is answered
+ * `stale` with each stale resource now; unguarded (`none`), nothing is checked, and Daoris reads each key before and after its write.
  */
-export function apply(state, operations) {
-  if (operations.every((operation) => inPlace(state, operation))) return { state, answer: { state: 'none', applied: [] } };
-  const stale = operations.filter((operation) => !holds(state, operation));
+export function apply(state, operations, { guarded = true } = {}) {
+  if (operations.every((operation) => inPlace(state, operation))) return { state, answer: { state: 'unchanged', applied: [] } };
+  const stale = guarded ? operations.filter((operation) => !holds(state, operation)) : [];
   if (stale.length > 0) {
     return { state, answer: { state: 'stale', applied: [], refused: stale[0].resource, present: stale.map((operation) => presentOf(state, operation.resource)) } };
   }

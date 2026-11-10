@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isFolder, type Registration } from '../data/api';
 import { FolderNoGit } from './FolderNoGit';
+import { unguardedSystems } from './SystemChoiceField';
+import { usePlugins } from '../bridge/plugins';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
@@ -195,6 +197,8 @@ export function useProjectsView({
   };
 
   const rows = registry.data ?? [];
+  // Only a system department asks the plugins, to say whether its adapter guards its writes.
+  const plugins = usePlugins({ enabled: rows.some((row) => row.kind === 'system') });
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
   const named = (names: string[] | undefined, repository: string) =>
     (names ?? []).some((name) => name.toLowerCase() === repository.toLowerCase());
@@ -205,11 +209,13 @@ export function useProjectsView({
     // Only a local host names a checkout, and only to its own page.
     here: Boolean(registration.root),
   };
+  const unguarded = unguardedSystems(plugins.data?.plugins ?? []);
   const facts = (registration: Registration): RepositoryRowFacts => ({
     registration,
     ...standing(registration),
     entries: indexed(registration.repository)?.total ?? null,
     branches: branchesIn(registration.repository),
+    unguarded: registration.kind === 'system' && unguarded.has(registration.system ?? ''),
   });
   /** The list's groups: a workspace each, by name, its adopted repositories then those not adopted. */
   const groups: WorkspaceGroup[] = workspacesOf(rows).map((name) => {
