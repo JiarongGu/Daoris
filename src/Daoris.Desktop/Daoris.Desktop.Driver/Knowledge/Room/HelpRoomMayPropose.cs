@@ -82,11 +82,11 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // A quest's yes and a landed branch's hand-off stay in their own place, which a go reaches.
         text.Append("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
         text.Append("  person's own presses, on the quest's page and in the review, where `go_propose` takes them.\n");
-        // A move needs no path, so it is proposed by name; adding or importing needs a
+        // The press is the one way to ask: a move is pressed, its card the route's view. Adding or importing needs a
         // folder, which stays the person's pick, so a go opens the drawer with the workspace filled.
-        text.Append("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →\n");
-        text.Append("  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,\n");
-        text.Append("  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.\n");
+        text.Append("- A repository registered here is moved to a workspace by pressing, never proposed:\n");
+        text.Append("  `daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name, which the\n");
+        text.Append("  move starts. Its card shows the person the move; one the registry would refuse is answered to you at once and never shown.\n");
         text.Append("  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens\n");
         text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n");
         // The role catalogue's change, judged by the role door's judge and applied only by

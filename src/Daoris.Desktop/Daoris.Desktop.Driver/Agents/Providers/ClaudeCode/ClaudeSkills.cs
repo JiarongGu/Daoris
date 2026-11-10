@@ -50,4 +50,8 @@ public sealed class ClaudeSkills : ISkillLayout
 
         return plugins.Count > 0 ? (folder, plugins) : (null, []);
     }
+
+    /// <inheritdoc/>
+    public (string? Folder, IReadOnlyList<string> Plugins) Own(string home, string sessionId, OwnTools tools) =>
+        ClaudeOwnHome.Write(home, sessionId, tools);
 }

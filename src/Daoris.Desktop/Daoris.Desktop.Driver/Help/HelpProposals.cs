@@ -422,11 +422,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>What an approval or a withdrawal names, every tool; null for every other plan.</summary>
     public HelpGrantView? Grant { get; init; }
 
-    // The repository kind's.
-
-    /// <summary>For a move the route takes: what moves, and where to; null for every other kind.</summary>
-    public HelpRepositoryMove? Move { get; init; }
-
     // The role kind's.
 
     /// <summary>For a role change the judge takes: the change, its choices and the revision read; null for every other kind.</summary>
@@ -486,7 +481,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
     IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
+    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpSessionDoors,
     IHelpSettingDoors, IHelpSyncDoors
 {
 }

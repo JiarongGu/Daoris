@@ -133,6 +133,12 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         }
     }
 
+    /// <summary><c>--chrome</c> where the person's own run turns Claude in Chrome on (<see cref="ClaudeOwnChrome"/>).</summary>
+    public void HandOwn(ProcessStartInfo info, OwnTools own)
+    {
+        if (ClaudeOwnChrome.On(own)) info.ArgumentList.Add(ClaudeOwnChrome.Flag);
+    }
+
     /// <summary>
     /// The prompt goes on stdin under a bare <c>-p</c> (<see cref="NativePrompt"/>), as BOM-less UTF-8: a process's
     /// arguments are readable machine-wide.

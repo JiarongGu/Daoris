@@ -97,9 +97,10 @@ public sealed class HelpRoomMayProposeTests
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →", proposes);
-        Assert.Contains("or a new name, which the move starts", proposes);
-        Assert.Contains("It changes one row of this machine's registry and touches no file.", proposes);
+        Assert.Contains("- A repository registered here is moved to a workspace by pressing, never proposed:", proposes);
+        Assert.Contains("`daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name", proposes);
+        Assert.Contains("one the registry would refuse is answered to you at once and never shown.", proposes);
+        Assert.DoesNotContain("repository_propose", proposes);
         Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens", proposes);
         Assert.Contains("Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.", proposes);
         // A go may open New conversation with a repository and words.

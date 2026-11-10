@@ -431,12 +431,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
-    the default, it reads and proposes, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. A
+    the default, it reads and presses, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. The press
+    is the one way to ask the person: a route with a view (`PressViews`, one unit per route) judges the press at the ask with the
+    route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
+    means and the command it is, above every value it carries; a repository's move (`repository wire`) is the first. A
     working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
-    judged default put it on a card naming the session. Each
-    proposal is a kind under `Help/Proposals/`, judged by its route's own code against the machine now, and applied only by the
-    person's *Apply* through that route. (from D89, D170, D253)
+    judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
+    by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
+    whole, tool to card, with the change that gives its route a view. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
     judged at the call by the door's own judges, in any workspace's repositories; the checkouts it is handed are every
@@ -451,9 +454,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
     Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
-60. A proposal kind, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
-    action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
-    door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233)
+60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
+    of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
+    door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233, D261)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person
     in restricted mode. A plugin changes Daoris only through the proposal doors. (from D170, D183)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from

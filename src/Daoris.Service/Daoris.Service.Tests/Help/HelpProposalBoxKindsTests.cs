@@ -24,7 +24,6 @@ public sealed class HelpProposalBoxKindsTests
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
-        ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
@@ -74,7 +73,6 @@ public sealed class HelpProposalBoxKindsTests
     [Fact]
     public void Every_kind_has_its_connectors_tool()
     {
-        // Every class the host registers, so a kind's tool is found whichever class holds it.
         var tools = KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
             .OfType<string>()

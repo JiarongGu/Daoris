@@ -40,7 +40,7 @@ public abstract class NodeRuntimeFixture : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    /// <summary>The plugins' work processes as the runtime sees them: each call counted.</summary>
+    /// <summary>The plugins' work processes as the runtime sees them: each call counted, each set told sent whole to the current generation.</summary>
     protected sealed class Port : IWorkRuntimePort
     {
         public int? Generation { get; set; } = 1;
@@ -100,6 +100,14 @@ public abstract class NodeRuntimeFixture : IDisposable
         public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
         {
             lock (Told) Told.Add(awaited);
+        }
+
+        public WorkWatchFrame? SentTo(string plugin, int generation)
+        {
+            lock (Told)
+            {
+                return Generation != generation || Told.Count == 0 ? null : new WorkWatchFrame(generation, false, Told[^1].GetValueOrDefault(plugin) ?? []);
+            }
         }
 
         public IReadOnlyList<WorkStepHeard> TakeSteps()

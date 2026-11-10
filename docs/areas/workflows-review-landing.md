@@ -125,7 +125,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     while nothing it feeds is active or reached (`WireTargets`). A ref the run's own step moved reads at its `from` while it stands at
     its `to` (`RunMoves`, on the run's record). A node whose input only a skipped producer feeds is skipped with it, naming it
     (`WireSkips`). A step's commits stay on `refs/daoris/steps/<run>/<node>/<attempt>` until the run ends with no attempt unsettled
-    (`StepRefs`). (from D190, D259)
+    (`StepRefs`). Where a pass does not read the run's branch tip, a step after the review not bound yet binds the commit the
+    reached review accepted on that branch (`ReviewedTip`), so an accepted landing begins rather than standing ready with no subject.
+    A branch two runs worked before each run had its own tree is told once for both, and a plugin's event on it goes to each run
+    whose own node awaits it there at the event's commit, else to each run whose graph names its step (`ToldRuns`). (from D190, D259, D260)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes, done, approve, reject) on the
     record, and the next pass applies it; a run does not end while a word waits on that pass. The terminal says each of those words as
     `daoris workflow <act> <run> <node>`, every act of `NodeWordActs` a verb of the group the tree routes to the host's `WorkflowNodeCommand`,

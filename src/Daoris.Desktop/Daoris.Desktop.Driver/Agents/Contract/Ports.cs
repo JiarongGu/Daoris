@@ -56,6 +56,9 @@ public interface ISpawn
 
     /// <summary>Hands a pipe-door spawn the harness plugins composed for it; nothing by default.</summary>
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
+
+    /// <summary>Hands a spawn the switches of the person's own tool home its program reads from its command line; nothing by default.</summary>
+    void HandOwn(ProcessStartInfo info, OwnTools own) { }
 }
 
 /// <summary>What a door reads of its program's wire beyond the transport's: a native door's lines, or a protocol door's frames.</summary>
@@ -209,4 +212,7 @@ public interface ISkillLayout
 {
     /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>
     (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, IReadOnlyList<SkillSource> sources);
+
+    /// <summary>What the person's own run loads from its tool home, laid out beside <see cref="Write"/>'s; none by default.</summary>
+    (string? Folder, IReadOnlyList<string> Plugins) Own(string home, string sessionId, OwnTools tools) => (null, []);
 }

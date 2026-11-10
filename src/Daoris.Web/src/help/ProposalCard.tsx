@@ -44,10 +44,9 @@ export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  /** A move to a workspace (`repository`) has no card of its own: its sentence, Apply and Not now. */
-  /** Archiving or unarchiving sessions (`session`) is the generic card too, with its command. */
+  /** Archiving or unarchiving sessions (`session`) is the generic card, with its command. */
   /** A change of the role catalogue (`role`) is the generic card: its sentence, its `daoris role` command, Apply. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'browser' | 'sync' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'browser' | 'sync' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;

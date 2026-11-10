@@ -147,7 +147,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
 12. In a repository without its own trees, one session runs at a time, in the root. With trees on, sessions run side by
-    side, one per tree; only a resume or a carry-on goes back into an existing tree. (from D51, D167)
+    side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
+    existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
+    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D260)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
 14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
