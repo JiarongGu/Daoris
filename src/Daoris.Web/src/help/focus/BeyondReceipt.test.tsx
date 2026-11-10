@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
-import { type BeyondEntry } from '../../bridge/helpBeyond';
+import { type BeyondEntry } from './beyond';
 import { routeKey } from '../../person/Confirmations';
 import { type Place } from '../focus';
 import { BeyondReceipt, beyondBeneath, entriesOfTurn } from './BeyondReceipt';
