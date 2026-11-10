@@ -138,7 +138,7 @@
   "person.view.commits-mode-as-you-go": "Each piece that passes its checks is committed as the work goes.",
   "person.view.commits-mode-ask": "Each commit waits for your yes before it is made.",
   "person.view.commits-mode-at-end": "One commit is made when the work is done.",
-  "person.view.retry-parked": "Quest #{{quest}} may be started again, counting from {{failures}} failure(s): what already happened stays in the records, and {{more}} more failure(s) will park it again.",
+  "person.view.retry-parked": "Quest #{{quest}} may be started again, its failures counted on from {{failures}}: what already happened stays in the records, and it parks again after {{more}} more.",
   "person.view.retry-held": "Quest #{{quest}} is released from your stop of session {{session}}: the driver takes it up again at its next look, and a later stop holds it again.",
   "person.view.git-use": "Signs in as git identity {{identity}} for {{where}}.",
   "person.view.git-use-own": "Uses your own git sign-ins for {{where}}, which widens what Daoris's git may use there.",

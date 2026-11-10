@@ -44,17 +44,24 @@ public sealed class ChatPlaceToldTests : IDisposable
     }
 
     [Fact]
-    public void The_first_message_carries_what_the_place_told_ahead_of_the_browser_line_and_once()
+    public void The_first_message_carries_what_the_place_told_after_the_browser_line_and_once_under_a_note_of_its_own()
     {
         using var runner = new ChatRunner(
             new ChatLedger().Client(), ProviderRegistry.Built(), Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)));
         var told = new ChatTold(runner.Context, runner.Context.ChatRuns);
-        told.HoldPlace("c1a2b3c4", "## Your place\nthe person changed `notes.md`");
+        const string place = "## Your place\nthe person changed `notes.md`";
+        told.HoldPlace("c1a2b3c4", place);
 
         var first = told.With("c1a2b3c4", new ChatMessage("hello", []) { Briefing = "the browser line" });
         var second = told.With("c1a2b3c4", new ChatMessage("again", []));
 
-        Assert.Equal("the browser line\n\n## Your place\nthe person changed `notes.md`", first.Briefing);
-        Assert.Null(second.Briefing);
+        Assert.Equal($"the browser line\n\n{place}\n\nhello", first.Prompt);
+        Assert.Equal(("the browser line", place), (first.Briefing, first.Place));
+        Assert.Null(second.Place);
+        var note = ChatRecorded.ToldPlace(first)!;
+        Assert.Equal(["chat.told-place", null], note.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal((place, NoteBy.Program), (note.Parts![1].Words, note.Parts![1].By));
+        Assert.DoesNotContain(place, ChatRecorded.ToldBrowser(first)!.Text);
+        Assert.Null(ChatRecorded.ToldPlace(second));
     }
 }

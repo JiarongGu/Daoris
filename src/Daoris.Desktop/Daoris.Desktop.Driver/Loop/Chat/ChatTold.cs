@@ -50,10 +50,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
         if (_checksKept.TryRemove(sessionId, out var kept)) SessionChecks.LetGo(kept);
     }
 
-    /// <summary>
-    /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
-    /// memory its brief hands on.
-    /// </summary>
+    /// <summary>The start's process, maker, place and standing block, taken by the first ordinary or handed-over message.</summary>
     public ChatMessage With(string sessionId, ChatMessage message) => With(sessionId, message, out _);
 
     /// <inheritdoc cref="With(string, ChatMessage)"/>
@@ -69,8 +66,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
 
         if (_place.TryRemove(sessionId, out var place))
         {
-            var before = message.Briefing;
-            message = message with { Briefing = before is { Length: > 0 } ? $"{before}\n\n{place}" : place };
+            message = message with { Place = place };
             restore += () => _place.TryAdd(sessionId, place);
         }
 

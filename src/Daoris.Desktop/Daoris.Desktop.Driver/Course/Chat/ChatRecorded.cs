@@ -74,6 +74,7 @@ internal static class ChatRecorded
         // An Ask Daoris conversation started from an earlier one is handed that line's brief ahead of the person's first words.
         if (Briefed(message) is { } brief) yield return brief;
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
+        if (ToldPlace(message) is { } toldPlace) yield return toldPlace;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (ToldBlock(message.Block) is { } toldBlock) yield return toldBlock;
         if (Told(message) is { } told) yield return told;
@@ -131,6 +132,14 @@ internal static class ChatRecorded
     {
         if (message.Briefing is not { Length: > 0 } line) return null;
         var told = Noted.Of(ChatNoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>What a conversation working in place is told of its place, as the record keeps it: a note of its own under its own lead.</summary>
+    internal static SessionEvent? ToldPlace(ChatMessage message)
+    {
+        if (message.Place is not { Length: > 0 } place) return null;
+        var told = Noted.Of(ChatNoteCodes.ChatToldPlace, "told the agent its place:").Then(" ", Noted.Said(place, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 
