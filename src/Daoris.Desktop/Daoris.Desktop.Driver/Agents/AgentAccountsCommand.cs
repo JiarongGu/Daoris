@@ -312,11 +312,9 @@ internal static class AgentAccountsCommand
                     return 0;
                 }
 
-                string[] others = [.. AccountCooling.Read(at.Home, now)
-                    .Where(entry => string.Equals(entry.Agent, owner, StringComparison.OrdinalIgnoreCase))
-                    .Select(entry => entry.Account ?? "its own sign-in")];
+                var others = AgentAccountLines.CoolingNow(AccountCooling.Read(at.Home, now), owner);
                 at.Say($"{Prefix}: {who} is not cooling, so nothing changed — "
-                    + (others.Length > 0 ? $"cooling now: {string.Join(", ", others)}." : $"no account of `{owner}` is cooling."));
+                    + (others.Count > 0 ? $"cooling now: {string.Join(", ", others)}." : $"no account of `{owner}` is cooling."));
                 return 0;
             });
     }

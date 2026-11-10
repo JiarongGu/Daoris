@@ -302,13 +302,13 @@ internal static class AgentAccountUse
         at.Say("  what each account last said:");
         foreach (var account in scope.List)
         {
-            var cooled = cooling.FirstOrDefault(entry => string.Equals(entry.Agent, owner, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(entry.Account ?? "", account, StringComparison.OrdinalIgnoreCase));
-            at.Say($"    {Shown(account),-14} {(cooled is not null
-                ? AgentAccountLines.CoolingLine(cooled, now, zone)
+            var cooled = AgentAccountLines.CoolingLinesOf(cooling, owner, account, now, zone);
+            at.Say($"    {Shown(account),-14} {(cooled.Count > 0
+                ? cooled[0]
                 : said[account] is { } reading
                     ? AgentAccountLines.SaidLine(reading, now, zone, scope.Use)
                     : "nothing said about what it has left")}");
+            foreach (var more in cooled.Skip(1)) at.Say($"    {"",-14} {more}");
         }
 
         return 0;

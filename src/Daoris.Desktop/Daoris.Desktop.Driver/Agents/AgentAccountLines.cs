@@ -124,6 +124,25 @@ internal static class AgentAccountLines
             anySaid ? null : "no account has said what it has left yet: Daoris spreads starts across them by its own sessions");
     }
 
+    /// <summary>
+    /// One line for each of an account's cooling entries: the whole account's and each family's, so a model family's cool-off is never
+    /// hidden behind another entry of the same account. <paramref name="account"/> null is the agent's own sign-in.
+    /// </summary>
+    public static IReadOnlyList<string> CoolingLinesOf(
+        IEnumerable<CoolingEntry> cooling, string owner, string? account, DateTimeOffset now, TimeZoneInfo zone) =>
+        [.. cooling
+            .Where(entry => string.Equals(entry.Agent, owner, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(entry.Account ?? "", account ?? "", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(entry => entry.Model is not null)
+            .Select(entry => CoolingLine(entry, now, zone))];
+
+    /// <summary>The accounts of <paramref name="owner"/> cooling now, each named once however many entries it holds.</summary>
+    public static IReadOnlyList<string> CoolingNow(IEnumerable<CoolingEntry> cooling, string owner) =>
+        [.. cooling
+            .Where(entry => string.Equals(entry.Agent, owner, StringComparison.OrdinalIgnoreCase))
+            .Select(entry => entry.Account ?? "its own sign-in")
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
+
     /// <summary>The line a cooling account is given: until when, how long that is, why, and how to try it now.</summary>
     public static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
     {
