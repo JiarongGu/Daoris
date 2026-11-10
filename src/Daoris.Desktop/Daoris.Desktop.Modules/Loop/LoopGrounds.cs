@@ -33,6 +33,9 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
         return rows.Count == 0 ? null : string.Join(";", rows);
     }
 
+    public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken) =>
+        [.. (await Service().RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(each => new PipeRegistered(each.Repository, each.Workspace))];
+
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
     {
         var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);

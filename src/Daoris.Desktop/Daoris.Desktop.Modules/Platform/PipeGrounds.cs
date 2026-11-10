@@ -82,6 +82,9 @@ public interface IPipeGroundWorld
     /// </summary>
     Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken);
 
+    /// <summary>Every row of this machine's registry, as a route's view reads it (<see cref="IPressView"/>).</summary>
+    Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken);
+
     /// <summary>A quest's status by its id; null where the service has none.</summary>
     Task<string?> QuestAsync(string id, CancellationToken cancellationToken);
 
