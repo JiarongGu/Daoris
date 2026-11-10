@@ -12,8 +12,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
     /// review rule's own (REVIEWENV1c3): the shared table's <c>gate</c> rows,
     /// <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, which the driver's
     /// <c>ReviewRules.Waiting</c> and the CLI's <c>REVIEW_WAITING</c> are held to. Copied, since the service references
-    /// neither, and held to the table by <c>HelpSettingProposalTests</c>, which reads its <c>gate</c> rows (REVIEWENV1c4): the
-    /// doors' words change together, this one with them.
+    /// neither, and held to the table by <c>HelpSettingProposalTests</c>.
     /// </summary>
     private const string ReviewWaiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
         + "`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. "
@@ -23,8 +22,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
     /// What the gate does with work that waits for another agent's reading, the sentences every other door says after a
     /// second-opinion rule's own (XAGENT1f4): at landing, before a chain's next step under <c>steps</c>, and with <c>verify</c>.
     /// The shared table's <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json</c>,
-    /// which the driver's <c>OpinionRules.Gate</c> and the CLI's <c>opinionGate</c> are held to. Copied, since the service
-    /// references neither, and held to the table by <c>HelpSettingProposalTests</c>, which reads its <c>gate</c> rows.
+    /// which the driver's <c>OpinionRules.Gate</c> and the CLI's <c>opinionGate</c> are held to; copied, and held to it by <c>HelpSettingProposalTests</c>.
     /// </summary>
     private const string OpinionWaiting = "Where work here waits for another agent's reading, it lands only once that reading is "
         + "settled, or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, "

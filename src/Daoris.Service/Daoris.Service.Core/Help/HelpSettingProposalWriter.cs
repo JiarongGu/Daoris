@@ -51,8 +51,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                     ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
             case "review":
-                // Where work is shown to the person before it lands, as `daoris place review` takes
-                // its words; the rule itself, the registry and the procedure are the driver's to judge, in the twins' words.
                 if (named == circle) return "a review rule is set for a repository or a workspace — name exactly one.";
                 // A quoted run, a command or a path with spaces, is one word whatever it holds.
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !ReviewFlags.Contains(word))
@@ -68,8 +66,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                       + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear`."
                     : null;
             case "helpers":
-                // What a helper an agent asks for does, as `daoris place helpers` takes its words; the rule,
-                // its agents and the registry are the driver's to judge, in the twins' words.
                 if (named == circle) return "a helpers rule is set for a repository or a workspace — name exactly one.";
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !HelpersFlags.Contains(word))
                     ? "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`."

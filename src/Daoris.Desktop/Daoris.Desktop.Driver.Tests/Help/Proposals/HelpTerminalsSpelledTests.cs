@@ -15,6 +15,7 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
     [Theory]
     [InlineData("helpers", "my team", "--mode on", "daoris place helpers --workspace \"my team\" --mode on")]
     [InlineData("commits", "R&D", "--mode at-end", "daoris place commits --workspace <workspace> --mode at-end")]
+    [InlineData("helpers", "our lab", "--clear", "daoris place helpers --workspace \"our lab\" --clear")]
     public void A_workspace_setting_s_terminal_spells_its_workspace(string door, string workspace, string value, string terminal)
     {
         var plan = Plan(Setting(door, workspace: workspace, value: value));

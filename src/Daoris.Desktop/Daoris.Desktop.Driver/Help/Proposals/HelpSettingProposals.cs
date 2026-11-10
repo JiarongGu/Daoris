@@ -11,9 +11,6 @@ namespace Daoris.Driver;
 /// <para>The names the routes do not check, and a helper can invent, are checked here first: a registered
 /// repository, a workspace, an agent. Applied as the <c>SET_*</c> routes make the same edit. <c>retry</c>'s target is a quest the loop's
 /// last tick parked (<see cref="HelpMachineFacts.Parked"/>), applied as <c>RETRY_QUEST</c> makes the same edit.</para>
-///
-/// <para>Each door's plan is its own type: <see cref="HelpRetrySetting"/>, <see cref="HelpGitUseSetting"/> and the rule doors in
-/// <see cref="HelpRuleSettings"/>.</para>
 /// </remarks>
 internal sealed class HelpSettingProposals : IHelpProposalKind
 {
@@ -53,10 +50,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var value = proposal.Value?.Trim() ?? "";
         HelpPlan Refused(string why, string describe, string terminal) => new(why, describe, terminal, null);
 
-        // A retry's target is a quest, not a repository, so it is judged before the registry is asked.
         if (proposal.Door == "retry") return HelpRetrySetting.Plan(target, config, facts);
 
-        // A git identity chosen for a remote or a host is the identities file's own write, not an edit of the driver's file.
         if (proposal.Door == "git-use")
         {
             if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
@@ -112,8 +107,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 return Refused($"`{proposal.Door} {value}` is not a change the driver makes.", "", "");
         }
 
-        // The route's own edits judge the rest — a branch git would not take, a pattern that is not one
-        // branch per session — in their own words.
         try
         {
             planned.Edit(config);

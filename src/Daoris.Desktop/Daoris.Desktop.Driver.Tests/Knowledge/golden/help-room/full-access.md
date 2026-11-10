@@ -30,13 +30,13 @@ Where your agent takes Daoris's rules, the person's own denies still hold.
 
 ## What you may propose
 
-- `setting_propose`: every setting door below but the repository switches, which are pressed, never proposed:
-  `daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`.
+- `setting_propose`: a review, a second opinion, a helpers rule, a commit rule, a retry and a git identity. Every other setting is
+  pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,
+  `daoris place trees <repository> on|off`, `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),
+  `daoris place standing <repository> …`, `daoris place across <repository> read|write-to …` and
+  `daoris settings notify|cap|cooloff|quiet|keep …`.
   `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,
   as the target, as its page's *Try again* does; a quest on neither list is refused.
-  `across` takes `read on|off|--clear` for a repository or a whole workspace,
-  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
-  Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,
   the few words that tell it apart in a list, the person's own where they gave one).
   A repository set up already that declares no rooms (no lane with `builds`) is offered them by `ask_propose` at its workspace:

@@ -57,16 +57,14 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
-    // A helpers rule and a commit rule for a repository or a workspace,
-    // as `daoris place helpers` and `daoris place commits` take their words, a quoted list or convention kept whole; the rule and
-    // the registry are the driver's to judge.
+    // A helpers rule and a commit rule, a quoted list or convention kept whole.
     [InlineData("helpers", "web-app", null, "--mode on --agents codex-acp,dsh")]
     [InlineData("helpers", null, "work", "--agents \"codex-acp, dsh\"")]
     [InlineData("helpers", "web-app", null, "--clear")]
     [InlineData("commits", "web-app", null, "--mode ask --convention \"Imperative subject line, at most 72 characters.\"")]
     [InlineData("commits", null, "work", "--mode at-end --no-convention")]
     [InlineData("commits", "web-app", null, "--clear")]
-    public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
+    public void The_doors_still_proposed_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
 
@@ -124,24 +122,17 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("for retry, the quest's id, as the room lists the parked and the held ones", target);
     }
 
-    /// <summary>
-    /// The tool tells the helper what a session language takes, and that it is the work's, never
-    /// the window's, so it proposes the codes the box takes rather than learning them from a refusal.
-    /// </summary>
+    /// <summary>The tool names the settings that are pressed, never proposed, so a helper presses them rather than proposing them.</summary>
     [Fact]
-    public void The_tool_says_a_language_takes_a_code_of_the_table_or_a_clear_and_is_not_the_windows()
+    public void The_tool_says_the_settings_it_no_longer_proposes_are_pressed()
     {
         var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
-        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
-            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
-            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 
-        Assert.Contains("`en` or `zh`, or `--clear` (language)", Described("value"));
-        Assert.Contains("a language", Described("target"));
-        Assert.Contains("a language", Described("workspace"));
-        Assert.Contains("never the window's", tool);
+        Assert.Contains("pressed, never proposed", tool);
+        Assert.Contains("`daoris place line|language|standing|across …`", tool);
+        Assert.Contains("`daoris settings notify|cap|cooloff|quiet|keep …`", tool);
     }
 
     /// <summary>
@@ -207,7 +198,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("never production", tool);
         Assert.Contains("propose it only when they ask", tool);
 
-        // The review's clause runs from its door's name to the opinion's.
         var review = tool[tool.IndexOf("`review` declares", StringComparison.Ordinal)..tool.IndexOf("`opinion` declares", StringComparison.Ordinal)];
         var gate = GateSays();
         Assert.NotEmpty(gate);
