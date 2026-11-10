@@ -4,8 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, toTurns } from './conversation';
 
-// A line a host draws above the person's words that carry its mark (Ask Daoris's focus change), found by the word's id on the
-// record, so a reload and a later reading draw it where it was.
+// A line a host draws above the person's words that carry its mark, found by the word's id on the record.
 
 let seq = 0;
 const ev = (over: Partial<SessionEvent>): SessionEvent => ({ seq: ++seq, at: '2026-09-25T00:00:00Z', kind: 'message', ...over });

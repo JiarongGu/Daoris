@@ -65,6 +65,7 @@ export function useAskConversation(
   onOpened?: () => void,
   /** Where a go the person applied takes them: the starters' own door, so nothing else changes. */
   onGo?: (door: StarterDoor) => void,
+  changeFocus?: number,
 ) {
   const { here, every, scoped, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, startIn, mine, newest, shownIn, i18n } = useHelpPlace();
   const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here: every ? null : here, registered, helper, chosen, setChosen, shown, live, picked });
@@ -222,7 +223,7 @@ export function useAskConversation(
   );
   const { access, whatItHas, offered, selectedMode } = useHelpMode({ shown, known, live, picked, setChosen, readied, readiedLive, setRound, t, onGo });
   const focusing = useHelpFocus({
-    shown, known, shownIn, here, window: every ? null : scoped ?? here ?? null, readied: readiedLive ? readied : null, setRound, onGo: onGo ?? (() => {}),
+    shown, known, shownIn, here, window: every ? null : scoped ?? here ?? null, readied: readiedLive ? readied : null, setRound, onGo: onGo ?? (() => {}), reveal: changeFocus,
   });
   startFocus.current = focusing.startFocus;
   takeFocus.current = focusing.take;

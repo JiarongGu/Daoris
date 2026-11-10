@@ -90,7 +90,6 @@ export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
   waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers,
 }: {
-  /** A line the host draws above the person's words, by the id the record gives them — `ConversationView`'s. */
   dividers?: Readonly<Record<string, ReactNode>>;
   /** The home of the channel messages its turns took, the attended session's alone — `ConversationView`'s. */
   channel?: ChannelHome;

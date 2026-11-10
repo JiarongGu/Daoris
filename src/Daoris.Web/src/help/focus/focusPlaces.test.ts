@@ -105,7 +105,7 @@ describe('the focus chip', () => {
     ['zh', 'Games · 下一条消息起 engine', 'engine · 下一条起', '问道衍的聚焦：工作区 Games（此窗口的），从你的下一条消息起为 engine'],
   ])('says a change waiting for the next message, shorter when narrow (%s)', async (language, wide, narrow, label) => {
     await i18n.changeLanguage(language);
-    expect(focusChip({ focus: games, next: engine, window: 'Games', narrow: false })).toEqual({ icon: 'workspace', text: wide, label, pending: true });
+    expect(focusChip({ focus: games, next: engine, window: 'Games', narrow: false })).toEqual({ icon: 'workspace', text: wide, short: narrow, label, pending: true });
     expect(focusChip({ focus: games, next: engine, window: 'Games', narrow: true })).toEqual({ icon: 'repository', text: narrow, label, pending: true });
   });
 

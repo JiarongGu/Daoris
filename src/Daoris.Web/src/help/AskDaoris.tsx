@@ -15,8 +15,9 @@ import { attendedOf, type HelpWhere } from './where';
  * it is this machine's, which a browser may not learn.
  */
 export function AskDaoris({
-  where, attending = null, framed = true, opening, onOpened, width, range, onResize, onResetWidth, onGo, onClose,
+  where, attending = null, framed = true, opening, onOpened, width, range, onResize, onResetWidth, onGo, onClose, changeFocus,
 }: {
+  changeFocus?: number;
   /** What is on the screen, told to the conversation ahead of the person's words. */
   where?: Omit<HelpWhere, 'session'>;
   /**
@@ -44,7 +45,7 @@ export function AskDaoris({
   const helper = machine.helper;
   const conversation = useAskConversation(
     scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined, opening,
-    helper, onOpened, onGo);
+    helper, onOpened, onGo, changeFocus);
 
   const found = starters(machine);
   // The setup guide's standing, from the same reading: the starters lead to it while it is not done.

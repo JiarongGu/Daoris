@@ -23,7 +23,8 @@ import { keepFocusRecent, readFocusRecent } from './focusRecent';
  * @param window The window's workspace; null for a window on every workspace.
  * @param readied The conversation opened ahead that nobody has spoken in, while it runs.
  */
-export function useHelpFocus({ shown, known, shownIn, here, window, readied, setRound, onGo }: {
+export function useHelpFocus({ shown, known, shownIn, here, window, readied, setRound, onGo, reveal }: {
+  reveal?: number;
   shown: Session | null;
   known: HelpConversationRow | null;
   shownIn: string | null;
@@ -94,6 +95,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
         gone={gone}
         wider={gone ? wider : null}
         onChoose={choose}
+        reveal={reveal}
       />
       {refused && <p role="alert" className="m-0 text-small text-danger wrap-anywhere">{refused}</p>}
     </div>

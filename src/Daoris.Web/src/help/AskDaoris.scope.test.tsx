@@ -106,7 +106,7 @@ function Window() {
   );
 }
 
-function show(workspace: string | null, opening?: AskOpening) {
+function show(workspace: string | null, opening?: AskOpening, changeFocus?: number) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -114,7 +114,7 @@ function show(workspace: string | null, opening?: AskOpening) {
       <WorkspaceScopeProvider initial={workspace}>
         <Window />
         <Tooltip.Provider>
-          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} opening={opening ?? null} />
+          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} opening={opening ?? null} changeFocus={changeFocus} />
         </Tooltip.Provider>
       </WorkspaceScopeProvider>
     </QueryClientProvider>,
@@ -290,6 +290,19 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
 
     await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'h2w0rk00', text: words }));
     expect(screen.getByText('window: games')).toBeInTheDocument();
+  });
+
+  it('opens the focus picker where the palette asked to change the focus, and not before', async () => {
+    ROWS = [];
+    bridge();
+    const view = show('games');
+    expect(await screen.findByRole('button', { name: /^Ask Daoris’s focus/ })).toBeInTheDocument();
+    expect(screen.queryByRole('listbox', { name: 'Focus' })).toBeNull();
+    view.unmount();
+
+    bridge();
+    show('games', undefined, 1);
+    expect(await screen.findByRole('listbox', { name: 'Focus' })).toBeInTheDocument();
   });
 
   it('says it in Chinese', async () => {

@@ -90,7 +90,6 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>The place chosen for its next words, or null.</summary>
     public HelpFocus? FocusNext { get; init; }
 
-    /// <summary>Each message that carried a change of focus, first to last: what the transcript draws its dividers from.</summary>
     public IReadOnlyList<HelpFocusMark> Marks { get; init; } = [];
 
     /// <summary>The earlier conversation it started from, or null.</summary>

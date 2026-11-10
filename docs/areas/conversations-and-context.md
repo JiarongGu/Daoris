@@ -254,8 +254,11 @@ of everything it handed, section by section.
     which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
     another home goes on where it is shown, the window unmoved. (from D89, D170, D183, D158, D253)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
-    every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there.
-    They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
+    every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there. The
+    panel's *Showing* chip chooses among them: this workspace's by day, the others grouped by home with the window's first,
+    a row's focus chip only where its focus is not its home. A row carries the messages that changed its focus (`marks`),
+    and the transcript draws a divider above each from them, *Focus widened* where the driver widened it. The palette's
+    *Change focus…* opens the picker. They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
     words* carries the words alone. A start its agent refuses at the open, before a word took the brief, hands it to its
