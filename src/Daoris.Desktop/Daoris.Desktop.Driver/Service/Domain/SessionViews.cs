@@ -376,10 +376,7 @@ public sealed record SessionView(
     /// <summary>The attempt a supervisor's turn decides for, which takes no place under the cap; answered on loopback alone.</summary>
     public string? Decides { get; init; }
 
-    /// <summary>
-    /// The uncommitted paths of its own its last turn left in its git place, or null: parked with them, it holds the place.
-    /// Answered on loopback alone.
-    /// </summary>
+    /// <summary>The uncommitted paths of its own a parked line keeps its git place with, on loopback alone.</summary>
     public IReadOnlyList<string>? HoldsPlace { get; init; }
 }
 

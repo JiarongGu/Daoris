@@ -136,7 +136,6 @@ internal static class SessionSchema
         await SchemaColumns.EnsureAsync(db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(db, "sessions", "decides", "decides TEXT NULL", ct).ConfigureAwait(false);
 
-        // The uncommitted paths of its own a parked line keeps its place with, a JSON array. This machine's own, as `serves` is.
         await SchemaColumns.EnsureAsync(db, "sessions", "holds_place", "holds_place TEXT NULL", ct).ConfigureAwait(false);
 
         // The session a record continues, why and who asked. This machine's own, as `opinion` is,

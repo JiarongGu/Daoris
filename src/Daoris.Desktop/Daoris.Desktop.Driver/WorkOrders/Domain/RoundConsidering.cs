@@ -196,7 +196,6 @@ internal sealed class RoundConsidering(PlanRound round)
                 };
             }
         }
-        // The place's writer holds it: a running turn, or a parked line with uncommitted paths of its own.
         else if (PlaceHolders.Of(snapshot, quest.To, repo.Root, Itself) is { } holder)
         {
             return new(quest, StartVerdict.RepositoryBusy, PlaceHolders.Said(holder, quest.To))

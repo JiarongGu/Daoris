@@ -33,7 +33,6 @@ public sealed class DriverRunPartsTests : IDisposable
             [.. Enumerable.Repeat(RunPhase.Choose, 3), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Opened, RunPhase.Handed],
             order.Select(part => (RunPhase)part.Phase));
 
-        // What each anchor runs, in the order it runs them.
         Assert.Collection(
             driver.RunStages.In(RunPhase.Choose),
             stage => Assert.IsType<StartAgent>(stage),

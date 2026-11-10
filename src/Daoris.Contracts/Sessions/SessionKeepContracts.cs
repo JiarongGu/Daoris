@@ -30,10 +30,7 @@ public sealed record OpenHelp(
     public static string Path => "/api/sessions/help";
 }
 
-/// <summary>
-/// Let others work in the place a parked line keeps with its uncommitted paths: the person's press, or those paths discarded. Clears
-/// the record's mark and moves nothing else.
-/// </summary>
+/// <summary>Let others work in the place a parked line keeps with its uncommitted paths: the person's press, or a discard.</summary>
 public sealed record ReleasePlace(string Id) : IRoute<SessionActionResponse>
 {
     public static string Method => "POST";

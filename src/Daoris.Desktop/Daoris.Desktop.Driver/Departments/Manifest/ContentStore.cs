@@ -13,7 +13,7 @@ public sealed class ContentStore(string folder, long bound = ContentStore.Bound)
     private const int Largest = 1 << 20;
     private const int Sniffed = 8000;
 
-    /// <summary>Whether a blob was refused for the bound since this store was opened.</summary>
+    /// <summary>Whether the bound refused a blob since this store opened.</summary>
     public bool Full { get; private set; }
 
     /// <summary>Where the blob of <paramref name="sha256"/> is kept.</summary>

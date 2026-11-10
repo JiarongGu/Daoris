@@ -60,7 +60,6 @@ public sealed record SaidWordResponse(
 /// <param name="Piece">The piece a partner's record writes.</param>
 /// <param name="HelpMode">The access mode an Ask Daoris record's run got.</param>
 /// <param name="Resolved">The downloaded versions its starts were handed.</param>
-/// <param name="HoldsPlace">The uncommitted paths of its own a parked line keeps its git place with, on loopback alone.</param>
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Door, [property: PageType(SessionPageTypes.State)] string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,

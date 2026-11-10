@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <param name="Kind">The place's kind; <c>git</c> is the one read today.</param>
 /// <param name="Head">The commit <c>HEAD</c> named, or null in a repository with none.</param>
 /// <param name="Branch">The branch checked out, or null where detached.</param>
-/// <param name="At">When it was read, UTC.</param>
+/// <param name="At">The moment of its read, UTC.</param>
 /// <param name="Entries">The listed paths, relative to the root with <c>/</c>, sorted.</param>
 public sealed record RunManifest(string Kind, string? Head, string? Branch, DateTimeOffset At, IReadOnlyList<ManifestEntry> Entries)
 {
@@ -22,7 +22,7 @@ public sealed record RunManifest(string Kind, string? Head, string? Branch, Date
 /// <param name="Size">Its size in bytes; null where it is gone.</param>
 public sealed record ManifestEntry(string Path, string Status, string? Sha256, long? Size);
 
-/// <summary>Which end of a turn a manifest was read at.</summary>
+/// <summary>The end of a turn a manifest reads.</summary>
 public enum ManifestMoment
 {
     Start,

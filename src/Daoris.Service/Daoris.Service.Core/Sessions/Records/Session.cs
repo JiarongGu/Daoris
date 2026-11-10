@@ -115,10 +115,7 @@ public sealed record Session(
     /// <summary>The attempt a supervisor's turn decides for, read before every other mark; this machine's own, as <see cref="Serves"/> is.</summary>
     public string? Decides { get; init; }
 
-    /// <summary>
-    /// The uncommitted paths of its own its last turn left in its git place, relative to the place's root, or null: while it is
-    /// parked or waiting with them it holds the place (<see cref="SessionPlaceLease"/>). This machine's own, as <see cref="Serves"/> is.
-    /// </summary>
+    /// <summary>The uncommitted paths of its own a parked line keeps its git place with (<see cref="SessionPlaceLease"/>); this machine's own.</summary>
     public IReadOnlyList<string>? HoldsPlace { get; init; }
 
     /// <summary>
