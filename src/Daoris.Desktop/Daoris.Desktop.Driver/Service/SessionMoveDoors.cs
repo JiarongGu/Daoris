@@ -53,7 +53,7 @@ public sealed class SessionMoveDoors
         string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
     {
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
-        // A move out of a running state reads its turn's end in its place; the ledger writes the mark only where the record was running.
+        // A move out of a running state reads its turn's end in its place; the ledger writes the mark only out of a running state.
         var holdsPlace = Running.Contains(state) || _service.PlaceEnds is not { } ends ? null : await ends(id, ct).ConfigureAwait(false);
         var request = new AdvanceSession(
             id, state, note, evidence, transcript, interrupted ? true : null, limit ? true : null,

@@ -83,8 +83,6 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var small = await MeasuredAsync("a small tree's review", () => ReviewAsync(trees, Home.Trees[^1]));
 
         // A start's own parts before its spawn that do not wait on a model: its place's manifest, its tree grown, its record opened.
-        // Its manifest as a turn in place reads it: the place's last manifest, git's status with each listed path's hash, kept; a
-        // second start compares with the first's end.
         await MeasuredAsync("a turn's end in place", async () =>
         {
             await PlaceTurns.StartAsync(Home.Home, "default", BenchHome.Repository, Home.Root, "s-bench001", null, CancellationToken.None);

@@ -31,10 +31,6 @@ public static class HandedSections
     /// <summary>For a carry-on: what the session before left, its record's end, its tree, its plan and its last words.</summary>
     public const string CarryOn = "carry-on";
 
-    /// <summary>
-    /// For a session working in its place: what changed there outside Daoris since the last session, and the uncommitted paths that
-    /// are not its own.
-    /// </summary>
     public const string Place = "place";
 
     /// <summary>How to take the quest and close it, or carry it on.</summary>

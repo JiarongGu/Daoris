@@ -163,10 +163,7 @@ public sealed record SessionTarget(
     /// </summary>
     public string? Git { get; init; }
 
-    /// <summary>
-    /// For a session working in its place: what its start's manifest found changed there outside Daoris, and the uncommitted paths
-    /// that are not its own (<see cref="PlacePrompt"/>). Null in a tree of its own or a place that reads no manifest.
-    /// </summary>
+    /// <summary>What its start's manifest found in its place (<see cref="PlacePrompt"/>); null in a tree of its own.</summary>
     public PlaceTold? Place { get; init; }
 
     /// <summary>

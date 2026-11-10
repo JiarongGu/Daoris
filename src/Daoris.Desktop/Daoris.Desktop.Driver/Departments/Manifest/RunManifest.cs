@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <param name="Entries">The listed paths, relative to the root with <c>/</c>, sorted.</param>
 public sealed record RunManifest(string Kind, string? Head, string? Branch, DateTimeOffset At, IReadOnlyList<ManifestEntry> Entries)
 {
-    /// <summary>The place's root the turn worked in, so a turn's end is read where its start was, a sweep's after a restart included.</summary>
+    /// <summary>The place's root the turn worked in, so a turn's end is read where its start read, a sweep's after a restart included.</summary>
     public string? Root { get; init; }
 
     /// <summary>

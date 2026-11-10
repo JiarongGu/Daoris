@@ -36,7 +36,7 @@ public static class PlaceTurns
 
     /// <summary>
     /// Read and keep the end's manifest of <paramref name="record"/>'s turn in place, once: an end already read after its start is
-    /// answered as it was, so the person's end of a park never takes their later edits for the turn's.
+    /// answered from what it kept, so the person's end of a park never takes their later edits for the turn's.
     /// </summary>
     /// <returns>The line's own uncommitted paths it keeps the place with, empty where none; null where it had no turn in place.</returns>
     public static async Task<IReadOnlyList<string>?> EndAsync(string home, string record, CancellationToken ct)

@@ -135,8 +135,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 asking = asking with { Words = askRead.WithMoved(movedOn, sessionId, quest.Id) };
             }
 
-            // In its place, under the lease its open took, its start's manifest: what changed there since the last session, and the
-            // uncommitted paths that are not its line's own, which its rules then guard.
+            // In its place, read under the lease its open took, so what it is told is no other turn's.
             var place = context.Trees.Holds(workTree)
                 ? null
                 : await PlaceTurns.StartAsync(
