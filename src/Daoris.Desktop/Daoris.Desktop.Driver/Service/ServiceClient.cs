@@ -393,6 +393,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
 
+    /// <summary>
+    /// The uncommitted paths of its own a record's turn in its place ends with, its end's manifest read once (<see cref="PlaceTurns"/>);
+    /// null where it had no turn in place. Set where this client's home is known, so every move out of a running state, a sweep's
+    /// conclusion included, writes the place's mark; null marks nothing.
+    /// </summary>
+    public Func<string, CancellationToken, Task<IReadOnlyList<string>?>>? PlaceEnds { get; init; }
+
     /// <summary>One turn line as the service is handed it: the fields its memory rows' models are read from.</summary>
     public sealed record TurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset Ended, string Model);
 

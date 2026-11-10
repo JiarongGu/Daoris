@@ -164,6 +164,12 @@ public sealed record SessionTarget(
     public string? Git { get; init; }
 
     /// <summary>
+    /// For a session working in its place: what its start's manifest found changed there outside Daoris, and the uncommitted paths
+    /// that are not its own (<see cref="PlacePrompt"/>). Null in a tree of its own or a place that reads no manifest.
+    /// </summary>
+    public PlaceTold? Place { get; init; }
+
+    /// <summary>
     /// For a session in a tree whose files stage kept, placed or installed its dependencies: which, and to skip the install that
     /// would delete them (<see cref="TreeFilesOutcome.Told"/>), said before how to take the quest. Null where none stands ready, and
     /// the instruction reads as it did.

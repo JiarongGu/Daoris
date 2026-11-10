@@ -80,6 +80,9 @@ internal static class SessionRules
         if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
         IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
 
+        // In its place, where its start found uncommitted paths not its own, what would take them with its own commit.
+        composed = PlaceDenies.Compose(composed, PlaceTurns.Others(home, sessionId));
+
         // What Daoris keeps for git is no session's to read, whatever shape its rules take.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 

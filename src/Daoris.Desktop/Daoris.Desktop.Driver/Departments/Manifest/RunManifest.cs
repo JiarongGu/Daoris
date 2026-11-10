@@ -11,6 +11,15 @@ namespace Daoris.Driver;
 /// <param name="Entries">The listed paths, relative to the root with <c>/</c>, sorted.</param>
 public sealed record RunManifest(string Kind, string? Head, string? Branch, DateTimeOffset At, IReadOnlyList<ManifestEntry> Entries)
 {
+    /// <summary>The place's root the turn worked in, so a turn's end is read where its start was, a sweep's after a restart included.</summary>
+    public string? Root { get; init; }
+
+    /// <summary>
+    /// The line's own uncommitted paths: at a start, those it carried in from its last end; at an end, every one it keeps the place
+    /// with. Every other listed path at a start is the person's or another line's.
+    /// </summary>
+    public IReadOnlyList<string>? Own { get; init; }
+
     /// <summary>The entry listed for <paramref name="path"/>, or null where the path is <c>HEAD</c>'s.</summary>
     public ManifestEntry? Listed(string path) => Entries.FirstOrDefault(entry => string.Equals(entry.Path, path, StringComparison.Ordinal));
 }
