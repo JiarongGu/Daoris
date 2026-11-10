@@ -262,6 +262,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             .ConfigureAwait(false);
         if (host.Processes.WasStopRequested(sessionId)) host.Processes.Stop(sessionId);
         var leg = Captured(process, proc, append: true, opening: null, preamble: null, Told, ct);
+        _opened = leg;
         // The retry is the run's own and the last: a word the new process cannot take is no longer kept for another. It is handed every word
         // written to the process that ended, in order, then those said while this one started.
         Input.MayRetry = false;
