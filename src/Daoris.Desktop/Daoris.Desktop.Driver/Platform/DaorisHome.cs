@@ -439,7 +439,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // The dependency store's entries, one per key, and each tree's files record beside the others.
     public static readonly HomeEntry Deps = new("deps", HomeCategory.Work, "work/deps/*", "work/deps/*");
     public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
-    // A department's place, by workspace and department: its manifests and their content store.
     public static readonly HomeEntry Places = new("places", HomeCategory.Work, "work/places/*/*", "work/places/*/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");

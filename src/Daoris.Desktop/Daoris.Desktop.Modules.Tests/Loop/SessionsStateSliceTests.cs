@@ -35,7 +35,6 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["work"] = "build",
         // The quest a chat took, pushed for the at-work view.
         ["tookQuest"] = null,
-        // The paths a parked line keeps its place with, pushed for the work page's head.
         ["holdsPlace"] = new JsonArray("draft.md"),
     };
 

@@ -160,7 +160,6 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
-    /// <summary>A quest the driver's last look parked, as a retry press's view reads it at the ask.</summary>
     public StubGrounds Parking(string quest)
     {
         Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
@@ -189,7 +188,6 @@ internal sealed class StubGrounds : IPipeGroundWorld
     public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken)
     {
         await Read(cancellationToken);
-        // A name only registered is listed in no workspace, as one placed is in its own.
         return [
             .. Placed.Select(each => new PipeRegistered(each.Key, each.Value)),
             .. Registered.Where(name => !Placed.ContainsKey(name)).Select(name => new PipeRegistered(name, null)),
@@ -255,10 +253,7 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return JsonSerializer.SerializeToElement(answered, Shenora.Core.Ipc.IpcJson.Options);
     }
 
-    /// <summary>
-    /// Each session asked (every held one where none is) as the list places it, deletable: a held one by its state, running in Working and
-    /// waiting on the person in You, and any other ended, so a press names a session the machine has unless the test says otherwise.
-    /// </summary>
+    /// <summary>Each session asked (else each held) as listed, deletable: a held one by its state, any other ended.</summary>
     private object Listed(JsonElement? asked)
     {
         IEnumerable<string> ids = asked is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("ids", out var named)

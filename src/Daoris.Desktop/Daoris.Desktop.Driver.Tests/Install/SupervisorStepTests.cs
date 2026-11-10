@@ -99,6 +99,7 @@ public sealed class SupervisorStepTests : IDisposable
     [Fact]
     public void The_migration_carries_the_step()
     {
-        Assert.Contains(HomeMigration.Steps, step => step is SupervisorStep && step.Name == SupervisorStep.StepName);
+        var step = Assert.Single(HomeMigration.Steps, step => step is SupervisorStep);
+        Assert.Equal(SupervisorStep.StepName, step.Name);
     }
 }
