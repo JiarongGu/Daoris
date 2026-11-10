@@ -282,10 +282,12 @@ public sealed class DriverModule : ModuleBase
     /// <summary>
     /// What an owner's door names: a person's or a window's route in the form <paramref name="payload"/>
     /// gives it, dispatched from the window or a confirmed card (never a role's act, which the router passes by), by its census row
-    /// (<see cref="OwnerMarks.Of"/>); null for every other route and form.
+    /// (<see cref="OwnerMarks.Of"/>); null for every other route and form, and for a working session's own press (<see cref="PipeDoor.Worker"/>),
+    /// which makes nothing the owner's.
     /// </summary>
     public static IReadOnlyList<OwnerNamed>? OwnerDoor(string type, System.Text.Json.JsonElement? payload)
     {
+        if (PipeDoor.Worker is not null) return null;
         var @class = PipeCensus.Daoris.Of(Name, type, payload);
         return @class is PipeClass.Person or PipeClass.Window ? OwnerMarks.Of(Name, type, payload) : null;
     }

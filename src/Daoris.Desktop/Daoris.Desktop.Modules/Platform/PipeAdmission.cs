@@ -182,7 +182,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (fields is null)
         {
             if (delegated is { Tier: PipeDelegateTier.Covered }) pipe.Delegate.Pressed(delegated, request);
-            _ = pipe.RunAsync(request, id, binding, mine, role: role, client: connection.Client);
+            _ = pipe.RunAsync(request, id, binding, mine, role: role, client: connection.Client, worker: delegated is { Own: true } own ? own.Session : null);
             return (null, answer);
         }
 

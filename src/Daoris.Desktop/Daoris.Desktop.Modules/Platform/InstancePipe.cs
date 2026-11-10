@@ -612,9 +612,10 @@ public sealed class InstancePipe : IDisposable
     /// <param name="role">The role act the judge's role method covered: run inside <see cref="PipeDoor.EnterRole"/>.</param>
     /// <param name="begun">Told once the journal's first line is written or failed, before anything runs.</param>
     /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>).</param>
+    /// <param name="worker">The working session whose own press it is: run inside <see cref="PipeDoor.EnterWorker"/>.</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
-        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null)
+        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, string? worker = null)
     {
         string text;
         try
@@ -629,7 +630,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (role is not null ? PipeDoor.EnterRole(role, client) : PipeDoor.Enter(client))
+                using (role is not null ? PipeDoor.EnterRole(role, client) : worker is not null ? PipeDoor.EnterWorker(worker, client) : PipeDoor.Enter(client))
                 using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);

@@ -92,7 +92,7 @@ internal sealed class ChatRun(
 
             // Its process as its door makes it, with its toolchain's environment and its tools at the start, as every driven session's.
             // Its own record on the request, so a take through the connector its harness starts marks it.
-            var request = SpawnRequests.Chat(place.Name, workTree, service.BaseUrl, sessionId, processes.Delegates) with
+            var request = SpawnRequests.Chat(place.Name, workTree, service.BaseUrl, sessionId, processes.Delegates, place.Workspace) with
             {
                 Command = config.Commands.GetValueOrDefault(agent.Name),
                 Asked = carrying,

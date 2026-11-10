@@ -34,6 +34,15 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>The checkouts' grant, the page's <c>HelpGrantId</c>: its operations are the repositories, each on or off.</summary>
     public const string CheckoutsGrant = "checkouts";
 
+    /// <summary>The acts' grant, the page's <c>HelpGrantId</c>: its operations are the families of acts (<see cref="ActFamilies"/>).</summary>
+    public const string ActsGrant = "acts";
+
+    /// <summary>
+    /// The families of acts chosen, in <see cref="ActFamilies.Built"/>'s order, once each; none by default. A proved press of a chosen
+    /// family runs with no card in restricted mode, read at the press.
+    /// </summary>
+    public IReadOnlyList<string> Acts { get; init; } = [];
+
     /// <summary>Where the file keeps the checkouts turned off: a list of repository names.</summary>
     private const string CheckoutsOffKey = "checkouts-off";
 
@@ -86,13 +95,14 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         HousekeepingGrant => Housekeeping,
         SettingsGrant => Settings,
         CheckoutsGrant => CheckoutsOff,
+        ActsGrant => Acts,
         _ => [],
     };
 
     /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order.</summary>
     public bool Same(ConfiguredAccess other) =>
         Housekeeping.SequenceEqual(other.Housekeeping, StringComparer.Ordinal) && Settings.SequenceEqual(other.Settings, StringComparer.Ordinal)
-        && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);
+        && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase) && Acts.SequenceEqual(other.Acts, StringComparer.Ordinal);
 
     /// <summary>A look at what the cleanup would remove and what it keeps.</summary>
     public const string Inspect = "inspect";
@@ -133,25 +143,33 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// </exception>
     public static ConfiguredAccess Choose(string home, string grant, string operation, bool chosen)
     {
-        if (grant is not (HousekeepingGrant or SettingsGrant or CheckoutsGrant))
+        if (grant is not (HousekeepingGrant or SettingsGrant or CheckoutsGrant or ActsGrant))
         {
             throw new DriverException(grant == "browser"
                 ? "The browser's grant is its plugin's approval, made on the plugin's own page; nothing is chosen for it here."
-                : $"`{grant}` is not built yet as a grant of Ask Daoris's configured access; only `{HousekeepingGrant}`, `{SettingsGrant}` "
-                  + $"and `{CheckoutsGrant}` are chosen here.");
+                : $"`{grant}` is not built yet as a grant of Ask Daoris's configured access; only `{HousekeepingGrant}`, `{SettingsGrant}`, "
+                  + $"`{CheckoutsGrant}` and `{ActsGrant}` are chosen here.");
         }
 
         if (grant == CheckoutsGrant) return ChooseCheckout(home, operation, chosen);
 
-        var (built, drawn) = grant == SettingsGrant ? (SettingsBuilt, SettingsBuilt.ToArray()) : (HousekeepingBuilt, HousekeepingDrawn);
+        var (built, drawn) = grant switch
+        {
+            SettingsGrant => (SettingsBuilt, SettingsBuilt.ToArray()),
+            ActsGrant => (ActFamilies.Built, ActFamilies.Built.ToArray()),
+            _ => (HousekeepingBuilt, HousekeepingDrawn),
+        };
         if (!built.Contains(operation))
         {
             var named = string.Join(", ", built.Select(each => $"`{each}`"));
             throw new DriverException(drawn.Contains(operation)
                 ? $"`{operation}` is not built yet, so it cannot be granted: {grant} grants {named}."
-                : grant == SettingsGrant
-                    ? $"`{operation}` is no setting Ask Daoris may be granted: they are {named}."
-                    : $"`{operation}` is no housekeeping operation: they are {named}.");
+                : grant switch
+                {
+                    SettingsGrant => $"`{operation}` is no setting Ask Daoris may be granted: they are {named}.",
+                    ActsGrant => $"`{operation}` is no family of acts Ask Daoris may be granted: they are {named}.",
+                    _ => $"`{operation}` is no housekeeping operation: they are {named}.",
+                });
         }
 
         lock (Gate)
@@ -233,6 +251,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
             return new ConfiguredAccess(Chosen(root, HousekeepingGrant, HousekeepingBuilt))
             {
                 Settings = Chosen(root, SettingsGrant, SettingsBuilt),
+                Acts = Chosen(root, ActsGrant, ActFamilies.Built),
                 CheckoutsOff = Off(root),
             };
         }
