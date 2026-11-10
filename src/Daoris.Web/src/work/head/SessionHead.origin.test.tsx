@@ -108,6 +108,38 @@ describe('where a session started from, and what it started with', () => {
     expect(onOpenSession).toHaveBeenCalledWith(earlier);
   });
 
+  it('a go-on shows the brief it was handed, folded, beside the quest’s words', () => {
+    render(
+      <SessionHead
+        session={session({ quest: '7a82cc', from: 'a1b2c3d4', fromWhy: 'carried-on' })} quest={quest({ requirements: [] })}
+        brief="Carry on from the failing hydrator test." headed
+      />,
+    );
+    details();
+    const started = row('Started with');
+    expect(within(started).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
+    const folded = within(started).getByText('Handed brief').closest('details') as HTMLDetailsElement;
+    expect(folded.open).toBe(false);
+    expect(within(folded).getByText('Carry on from the failing hydrator test.')).toBeInTheDocument();
+  });
+
+  it('a hand-over with no words of its own shows the brief alone', () => {
+    render(<SessionHead session={session({ quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'near' })} brief="Pick up the hydrator work." headed />);
+    details();
+    const started = row('Started with');
+    expect(within(started).getByText('Handed brief')).toBeInTheDocument();
+    expect(within(started).getByText('Pick up the hydrator work.')).toBeInTheDocument();
+  });
+
+  it('says the handed brief in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SessionHead session={session({ quest: '7a82cc' })} quest={quest({ requirements: [] })} brief="接着修水合。" headed />);
+    details();
+    const started = row('起始要求');
+    expect(within(started).getByText('交接的简报')).toBeInTheDocument();
+    expect(within(started).getByText('接着修水合。')).toBeInTheDocument();
+  });
+
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<SessionHead session={session({ quest: '7a82cc' })} quest={quest({ requirements: [] })} headed />);

@@ -149,7 +149,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## The desktop app
 
-- [ ] **SESSIONORIGIN1b — the brief a start was handed, shown beside what it started with** (driver, service, web): the session record keeps no brief, so *Started with* cannot show one; and a line's rail row still marks the intake's quest `asked` in the driver (`SessionEntryReader.cs:125`), which only the page's words now correct.
 
 - [ ] **KITREQ2 — what Shenora's kit still lacks for the desktop** (app; a Shenora quest, unpublished): `TrayIcon` fixes its double-click to `ShowWindow` and adds Open and Exit (an open callback and no built-in items would let `SessionNotifier` take `ShowBalloon`); `ApplyChromeTheme` skips a framed window's caption, which `SecondaryChrome` sets through DWM. → `docs/areas/desktop-app.md`
 - [ ] **UIREVIEW1 — every screen reviewed for its UI and UX, by the devtools** (web, app): left a quest's page (the Ask drawer needs typing) and the secondary windows (menu doors, which `click` does not open): a typing step in `tools/desktop.mjs` reaches both. Its findings are the rows below.

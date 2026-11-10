@@ -72,10 +72,7 @@ export function waitingOnLine(t: TFunction, exchanges: readonly AtWorkExchange[]
   return t('work.atWork.waitingOn', { what: what.join('; ') });
 }
 
-/**
- * How a part joined, by what its record and quest say; the strip's own words where it only began
- * (retried, resumed, carried on, handed over, moved). Null for a part that simply opened.
- */
+/** How a part joined, by what its record and quest say, else the strip's own words; null for a part that simply opened. */
 export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
   const part = (n: number | undefined) => (n === undefined ? t('work.atWork.routed.anotherSession') : t('work.parts.number', { n }));
   const quest = joined.quest ?? '';
@@ -89,9 +86,7 @@ export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
   const after = joined.after === undefined ? '' : t('work.parts.number', { n: joined.after });
   switch (joined.began) {
     case 'opened': return null;
-    case 'asked': return joined.askedBy?.toLowerCase().startsWith('ask #')
-      ? t('work.parts.began.askedByAsk', { ask: joined.askedBy.slice('ask #'.length) })
-      : joined.askedBy ? t('work.parts.began.asked', { repository: joined.askedBy }) : t('work.parts.began.askedUnnamed');
+    case 'asked': return joined.askedBy ? t('work.parts.began.asked', { repository: joined.askedBy }) : t('work.parts.began.askedUnnamed');
     case 'retried': return t('work.parts.began.retried', { after });
     case 'resumed': return t('work.parts.began.resumed', { after });
     case 'carried-on': return joined.after === undefined ? t('work.parts.began.carriedOnAlone') : t('work.parts.began.carriedOn', { after });

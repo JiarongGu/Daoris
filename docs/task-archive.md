@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SESSIONORIGIN1b — a start's handed brief in Started with, a line's own intake quest its own (2026-11-10)
+
+> **SESSIONORIGIN1b** (driver, modules, web): Outcome: the record already kept a go-on's or hand-over's first message whole (the event carrying `Continues`), so nothing new is stored: `SESSION_OPENINGS` answers `{openings, briefs}` (`Context/Events/StartBrief.cs`, `SessionEventLog.Briefs()`), a brief cut at 4000 characters with its length said, and *Started with* shows a folded *Handed brief* beside the quest's or ask's words or alone; a quest its own line's ask's intake published opens its part instead of being marked `asked` (`SessionEntryReader` `LinesOwn`), and the page's corrective wording is gone. Proof: `StartBriefTests`, `DriverModuleBriefsTests`, `SessionEntryOwnIntakeTests`, `SessionHead.origin.test.tsx` (not seen failing first).
+
+---
+
 ## ASKFULL1d — the window lists what Ask Daoris pressed (2026-11-10)
 
 > **ASKFULL1d** (modules, web; D253 point 1): Outcome: each press Ask Daoris's key ran with no card is kept this run (route, conversation, target, time, outcome; the newest 100; a restart empties it; `Modules/Platform/HelpPressRecord.cs`), told to the windows at the press and at its answer and read as `standingConfirmation.helpPresses`; Notifications shows them as a folded section in the standing slot (`notifications/HelpPressLine.tsx`) in the window's route words with their outcome, each opening Ask Daoris's panel, a done pause offering *Resume*. Proof: `HelpPressRecordTests`, `PipeDelegateTests`, `HelpPressLine.test.tsx` in both languages. Left: a reverse for other acts, and opening the exact conversation.

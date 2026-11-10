@@ -221,7 +221,9 @@ of everything it handed, section by section.
     where a count is above zero. They are never instructions and never another agent's text. (from D229)
 41. Everything handed is accounted: each section's size, source and cuts, by `HandedSections` and `HandedCuts` codes. The
     account rides the event of the instruction or first message. A section that could have been handed and was not is
-    said, with why. (from D143, D189)
+    said, with why. The words themselves of a go-on's or hand-over's first message stay on its event, and the openings route
+    answers them as `briefs`, bounded (`StartBrief`, 4000 characters, the cut said with the full length), for the head's
+    *Started with*; they are no session's opening. (from D143, D189)
 
 **Ask Daoris**
 
