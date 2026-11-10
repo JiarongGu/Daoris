@@ -253,12 +253,16 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
                 await process.StandardInput.FlushAsync(ct).ConfigureAwait(false);
                 seat.Wrote();
             }
-
-            process.StandardInput.Close();
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or OperationCanceledException)
         {
             // The process ended before it read its stdin: its exit says what happened.
+        }
+        finally
+        {
+            // A callback that throws must not leave a prompt-reading child waiting for its end.
+            try { process.StandardInput.Close(); }
+            catch (Exception error) when (error is IOException or ObjectDisposedException) { }
         }
     };
 
