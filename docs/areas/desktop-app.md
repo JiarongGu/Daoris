@@ -102,7 +102,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
-    takes it back. The route's name and raw values sit under *Details*. A start sent with
+    takes it back. A main window says a press by a toast as it comes where it is in front of the person; a terminal's press is
+    asked from the terminal, so one heard out of focus is said once the window comes in front, where it still waits unshown
+    (`useInFront`). The route's name and raw values sit under *Details*. A start sent with
     `hold: true`, or the pipe's `HOLD { session }`, is carded saying so; confirmed, it
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
