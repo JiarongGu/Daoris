@@ -16,6 +16,9 @@ public static class OwnHomeDefaults
     /// <summary>The plugins the person's own tool home installed and enables.</summary>
     public const string PluginsId = "own-plugins";
 
+    /// <summary>The Claude in Chrome switch of the person's own tool home.</summary>
+    public const string ChromeId = "own-chrome";
+
     /// <summary>The defaults, in the order the rules list them after Daoris's own.</summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
@@ -29,6 +32,9 @@ public static class OwnHomeDefaults
         new(
             PluginsId, RuleList.Allow, [],
             "A session is handed the plugins your own tool home installed and enables, read where they are installed."),
+        new(
+            ChromeId, RuleList.Allow, [],
+            "A session turns Claude in Chrome on where your own run of the agent turns it on by default."),
     ];
 
     /// <summary>The families <paramref name="rules"/> leave on.</summary>
@@ -39,6 +45,7 @@ public static class OwnHomeDefaults
         if (On(rules, SkillsId)) families |= OwnFamilies.Skills;
         if (!connectorOnly && On(rules, ServersId)) families |= OwnFamilies.Servers;
         if (On(rules, PluginsId)) families |= OwnFamilies.Plugins;
+        if (On(rules, ChromeId)) families |= OwnFamilies.Chrome;
         return families;
     }
 

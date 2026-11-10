@@ -203,6 +203,43 @@ public sealed class OwnToolHomeTests : IDisposable
         Assert.False(OwnHomeDefaults.Families(switched, connectorOnly: false).HasFlag(OwnFamilies.Plugins));
     }
 
+    /// <summary>
+    /// The person's Chrome switch (<c>/chrome</c>'s enabled by default, kept in their global file) is handed as <c>--chrome</c> on the
+    /// native door, as their own run turns Claude in Chrome on; not where they left it off, not where they switched the family off, and
+    /// never on a door that does not run <c>claude</c> itself.
+    /// </summary>
+    [Fact]
+    public void The_persons_chrome_switch_is_handed_on_the_native_door()
+    {
+        Directory.CreateDirectory(ToolHome);
+        Put(Path.Combine(Person, ".claude.json"), """{ "claudeInChromeDefaultEnabled": true }""");
+
+        var native = new ProcessStartInfo();
+        SpawnSkills.Hand(
+            ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code"), native, Home, "s10", PluginCatalog.Load(Home), PluginServerTo.Sessions,
+            Tools(OwnFamilies.Chrome));
+        Assert.Equal(["--chrome"], native.ArgumentList);
+
+        foreach (var (door, families) in new[] { ("claude-code-acp", OwnFamilies.Chrome), ("codex-acp", OwnFamilies.Chrome), ("claude-code", OwnFamilies.Skills) })
+        {
+            var info = new ProcessStartInfo();
+            SpawnSkills.Hand(
+                ProviderRegistry.Built(), ProviderRegistry.Built().Door(door), info, Home, "s11", PluginCatalog.Load(Home), PluginServerTo.Sessions,
+                Tools(families));
+            Assert.Empty(info.ArgumentList);
+        }
+
+        Put(Path.Combine(Person, ".claude.json"), """{ "claudeInChromeDefaultEnabled": false }""");
+        var left = new ProcessStartInfo();
+        SpawnSkills.Hand(
+            ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code"), left, Home, "s12", PluginCatalog.Load(Home), PluginServerTo.Sessions,
+            Tools(OwnFamilies.Chrome));
+        Assert.Empty(left.ArgumentList);
+
+        var off = PermissionRules.SwitchDefault(PermissionFile.Empty, OwnHomeDefaults.ChromeId, on: false);
+        Assert.False(OwnHomeDefaults.Families(off, connectorOnly: false).HasFlag(OwnFamilies.Chrome));
+    }
+
     [Fact]
     public void Both_claude_doors_are_handed_the_own_plugin_beside_daoris_plugins_and_it_goes_with_the_session()
     {

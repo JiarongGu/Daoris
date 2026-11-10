@@ -36,6 +36,7 @@ public static class SpawnSkills
         var (ownFolder, ownPlugins) = own is null || adapter.Declared ? (null, []) : layout.Own(home, sessionId, own);
         IReadOnlyList<string> all = [.. plugins, .. ownPlugins];
         if (all.Count > 0) adapter.Spawned().HandPlugins(info, all);
+        if (own is not null && !adapter.Declared) adapter.Spawned().HandOwn(info, own);
         return (folder ?? ownFolder, all);
     }
 }

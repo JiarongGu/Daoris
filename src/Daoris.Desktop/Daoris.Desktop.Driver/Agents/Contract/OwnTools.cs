@@ -16,6 +16,9 @@ public enum OwnFamilies
 
     /// <summary>The plugins it installed and enables.</summary>
     Plugins = 4,
+
+    /// <summary>Its Claude in Chrome switch.</summary>
+    Chrome = 8,
 }
 
 /// <summary>

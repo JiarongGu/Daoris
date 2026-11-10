@@ -56,6 +56,9 @@ public interface ISpawn
 
     /// <summary>Hands a pipe-door spawn the harness plugins composed for it; nothing by default.</summary>
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
+
+    /// <summary>Hands a spawn the switches of the person's own tool home its program reads from its command line (D253 point 7); nothing by default.</summary>
+    void HandOwn(ProcessStartInfo info, OwnTools own) { }
 }
 
 /// <summary>What a door reads of its program's wire beyond the transport's: a native door's lines, or a protocol door's frames.</summary>

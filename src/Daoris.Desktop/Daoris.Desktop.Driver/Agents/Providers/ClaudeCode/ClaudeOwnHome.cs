@@ -2,10 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Claude Code's own tool home as the person's own run reads it, laid out for one session (D253 point 7, census row 23): the folder
-/// <c>CLAUDE_CONFIG_DIR</c> names, else <c>.claude</c> in the profile. What a session is handed of it is one harness plugin, <c>own</c>,
-/// beside Daoris's plugins under the session's spawn folder (<see cref="ClaudeSkills"/>), named by the door's session-only way, so
-/// its pieces are named <c>own:&lt;name&gt;</c>. The person's folder is read and never written; nothing is laid out for a session that
-/// runs in it, whose harness loads it all by itself.
+/// <c>CLAUDE_CONFIG_DIR</c> names, else <c>.claude</c> in the profile. Its skills, subagents and commands and its servers
+/// (<see cref="ClaudeOwnServers"/>) are one harness plugin, <c>own</c>, beside Daoris's plugins under the session's spawn folder
+/// (<see cref="ClaudeSkills"/>), named by the door's session-only way, so its pieces are named <c>own:&lt;name&gt;</c>; its enabled
+/// plugins follow in place (<see cref="ClaudeOwnPlugins"/>). The person's folder is read and never written; nothing is laid out for a
+/// session that runs in it, whose harness loads it all by itself.
 /// </summary>
 /// <remarks>
 /// <b>Copied, never linked</b>: the copy goes with the session's folder, and a link's removal must never reach the person's own files.
@@ -44,7 +45,7 @@ internal static class ClaudeOwnHome
     {
         var own = Place(tools);
         if (tools.Families == OwnFamilies.None || !Directory.Exists(own) && !File.Exists(GlobalFile(tools))) return (null, []);
-        if (Same(tools.Session(HomeVariable) ?? Path.Combine(tools.UserHome, ".claude"), own)) return (null, []);
+        if (InOwnHome(tools)) return (null, []);
 
         var installed = tools.Families.HasFlag(OwnFamilies.Plugins) ? ClaudeOwnPlugins.Enabled(own) : [];
         var folder = DaorisHome.Entry(home, HomeEntry.Spawn, $"{sessionId}.plugins");
@@ -83,6 +84,9 @@ internal static class ClaudeOwnHome
 
         return copied;
     }
+
+    /// <summary>Whether the session runs in the person's own tool home, whose harness loads all of it by itself.</summary>
+    public static bool InOwnHome(OwnTools tools) => Same(tools.Session(HomeVariable) ?? Path.Combine(tools.UserHome, ".claude"), Place(tools));
 
     private static bool Same(string one, string other) => string.Equals(
         Path.TrimEndingDirectorySeparator(Path.GetFullPath(one)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(other)),
