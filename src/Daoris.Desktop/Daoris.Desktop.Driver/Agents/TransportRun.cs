@@ -492,6 +492,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.
         session.LimitsSaid += windows => sink.Read(new WireReading.WindowsSaid(windows));
         Session = session;
+        session.OwnServers = plan => OwnServersOf(process, plan);
         protocol.Configure?.Invoke(session);
         // A model the open refuses is a reading before its re-ask walks on: the offers store's part keeps it.
         session.ModelRefused = RefusalReading.Of(session.ModelRefused, sink);
@@ -510,6 +511,20 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         _captures.Remove(errors);
         _captures.Add(drive);
         return new Leg(process, proc, drive) { Drive = drive };
+    }
+
+    /// <summary>None to a pass held to Daoris's connector alone: its plan permits no plugin's servers.</summary>
+    private IReadOnlyList<ServerEntry> OwnServersOf(Process process, ConnectorPlan? plan)
+    {
+        if (plan?.Permitted is { } permitted && !permitted.Contains(ConnectorSource.Plugin)) return [];
+        try
+        {
+            return adapter.Spawned().OwnServers(OwnTools.Machine(host.Home, process.StartInfo));
+        }
+        catch (InvalidOperationException)
+        {
+            return [];
+        }
     }
 
     /// <summary>

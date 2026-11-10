@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## APPROVE1y's check and AGENTFREE1's Codex servers — `plugin try` asks the start's token question, a Codex session gets the person's servers (2026-11-11)
+
+> **APPROVE1y (the check), AGENTFREE1 (Codex servers)** (driver): Outcome: `daoris plugin try` adds a `host-token` step for a plugin that takes the token, asking the same `PluginHostToken.Hand` the desktop's start asks on the origin of the checkout it runs in, failing "this plugin's start needs an API token on identity X; set it in Settings → Git" (`Plugins/PluginTrialHand.cs`); the person's own Codex `mcp_servers` (local programs) are added to `session/new` and the resume after the plan's servers, the plan's name winning a clash, `daoris-knowledge`, a `DAORIS_` variable, a disabled or remote server kept out, all off under `own-servers` and for connector-only passes (`Providers/Codex/CodexOwnServers.cs`, `ISpawn.OwnServers`). Proof: `PluginTrialHandTests`, `CodexOwnServersTests`. Not run against a real Codex session.
+
+---
+
 ## WFREVIEW3a, 3l — a performed land's press says what it came to, a moved tip waits on both tips (2026-11-11)
 
 > **WFREVIEW3a, 3l** (driver, modules): Outcome: every try the land performer makes keeps its end under its own code (`Workplace/LandEnds.cs`), and the desk answers a press from that end (`Bridge/PerformedAnswers.cs`): *landing* only where no try ended within the twenty-second bound, *carried* only where the session was carried on, never guessed from a repair on the record; the graph's and the chat's paths keep the tree's tip and the start's tip (`AutoTry.Start`) and try again once either moves, so a tree back at its start tip lands with no press. The `merge` kind's runtime stays PROCSTEPS1's. Proof: `PerformedEndsTests` (Process, Git; all four seen failing first), `LandEndsTests`, `LandTriesMovedTests`, `PerformedAnswersTests`.
