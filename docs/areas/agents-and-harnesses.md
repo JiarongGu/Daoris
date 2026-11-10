@@ -245,7 +245,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     every window), never mid-turn, and not again within 30 minutes of its last curve move. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home. A start on
-    another agent is on another account, whatever the names. (from D131, D137)
+    another agent is on another account, whatever the names. A resume judges that account as the walk does: its reading at a whole
+    window with the reset ahead cools it until then, unless the person picked it. (from D131, D137, D206)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (from D125, D150)
 
 **Usage, limits and errors**
@@ -582,7 +583,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   door over the program the start resolved (its file and the arguments before `-p`, the launcher's seat starting it in the door's
   command's place) and the environment its shell composed, its two refused-model entries, a tool call read by Claude Code's own
   vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and servers files (a door's
-  `Options`) carried as today's spawn carries them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
+  `Options`) carried as today's spawn carries them; a start that hands the sources alone (a supervisor's turn) stays on `TransportRun`,
+  the layer's start having no field for them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
   on the run its door's binding answers (`DrivenRuns`, bound when the driver loads), today's `TransportRun` otherwise; both are a
   `HeldRun`, the run and the hold's own steps around it, and a partner's piece stays on today's. A held `LayerRun` is one turn per
   process, the first's, the native resume's one retry's and each go-on's, and takes today's steps through the same host

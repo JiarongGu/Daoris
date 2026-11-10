@@ -471,7 +471,15 @@ public sealed class SessionProcesses(string? markers = null)
             lock (_gate)
             {
                 if (!_running.TryGetValue(sessionId, out var held)) _running[sessionId] = held = [];
-                // A process that has exited is replaced, and one still running is kept beside this one.
+                // A process that has exited is replaced, and one still running is kept beside this one. A stop pressed after the
+                // exited one's end and before this one is tracked flagged that entry alone: it goes on to the one that replaces it.
+                if (held.FindLast(each => each.StopRequested && Exited(each)) is { } stopped)
+                {
+                    entry.StopRequested = true;
+                    entry.Reason = stopped.Reason;
+                    entry.Note = stopped.Note;
+                }
+
                 held.RemoveAll(Exited);
                 held.Add(entry);
             }

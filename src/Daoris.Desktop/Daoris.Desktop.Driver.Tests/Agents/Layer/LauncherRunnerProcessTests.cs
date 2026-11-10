@@ -76,6 +76,24 @@ public sealed class LauncherRunnerProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_wrote_callback_that_throws_still_closes_the_childs_stdin_so_it_does_not_wait_on_its_prompt()
+    {
+        var runner = new LauncherRunner(
+            new LauncherSeat(ContainedKind.Agent, StartClass.Background, Home: null, Log: null)
+            {
+                Wrote = () => throw new InvalidOperationException("the event is gone"),
+            },
+            TimeSpan.FromSeconds(8),
+            exists: _ => true);
+
+        var clock = Stopwatch.StartNew();
+        var failed = await Assert.ThrowsAsync<InvalidOperationException>(async () => await All(Lines(runner, new { echo = true }, stdin: "the prompt")));
+
+        Assert.Equal("the event is gone", failed.Message);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(6), "the child waited on its stdin until the read's patience ended");
+    }
+
+    [Fact]
     public async Task A_turn_arms_no_clock_whatever_window_the_layer_hands_it()
     {
         var runner = Turn();

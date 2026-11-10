@@ -187,6 +187,9 @@ public static class AgentsCommand
     /// nothing. A pin with nothing installed at it answers <c>missing</c>, exit 0. With <c>--json</c> it is one object on the standard
     /// output, which the real-run tools read (<c>proof-kit.mjs</c>, <c>acp-trust-probe.mjs</c>).
     /// </summary>
+    internal static IReadOnlyList<string>? ConfiguredCommand(string home, string name) =>
+        DriverConfig.Load(DriverConfig.ResolvePath(home)).Commands.GetValueOrDefault(name);
+
     private static AgentPress? Which(IReadOnlyList<string> args, AgentsWorld world, out int exit)
     {
         exit = 0;
@@ -197,8 +200,8 @@ public static class AgentsCommand
         var settings = HarnessSettings.Load(path);
         if (settings.Problem is { } problem) throw new AgentWords(problem);
 
-        var named = DriverConfig.Load(DriverConfig.ResolvePath(home)).Commands.GetValueOrDefault(name);
-        var run = HarnessProbe.CommandOf(name, toolchain, named, settings, home, FlagValue(args, "--workspace"));
+        var named = ConfiguredCommand(home, name);
+        var run =HarnessProbe.CommandOf(name, toolchain, named, settings, home, FlagValue(args, "--workspace"));
         if (args.Contains("--json"))
         {
             Say(new JsonObject

@@ -145,9 +145,19 @@ internal static class AgentLongCommand
         if (args.Contains("--remove", StringComparer.Ordinal))
         {
             if (account is null) throw new AgentWords("`--remove` takes the key out of an account: name it with `--account`.");
-            using (await HomeLease.ForPublicationAsync(home, "daoris agent key", _ => { }, ct, world.Waiting, world.Now).ConfigureAwait(false))
+            try
             {
-                HarnessKeys.Withdraw(home, owner, account);
+                using (await HomeLease.ForPublicationAsync(home, "daoris agent key", _ => { }, ct, world.Waiting, world.Now).ConfigureAwait(false))
+                {
+                    HarnessKeys.Withdraw(home, owner, account);
+                }
+            }
+            catch (Exception refused) when (refused is DriverException or IOException)
+            {
+                // The keys file refused the removal, or another writer held its edit lock for the whole wait: nothing is written.
+                var line = refused is DriverException driver ? $"{refused.Message} ({ChoiceCodes.Of(driver)})" : refused.Message;
+                await error.WriteLineAsync($"{Prefix}: {line}").ConfigureAwait(false);
+                return 2;
             }
 
             Say($"{Prefix}: `{owner}` account `{account}` has no key now; the account stays, and reads no key until `daoris agent key {owner} --account {ShellWord.Of(account, "<account>")}` sets one.");
