@@ -242,10 +242,7 @@ public sealed class SessionLedger(
         IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null) =>
         advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace);
 
-    /// <summary>
-    /// Clear the mark a parked line keeps its place with: all of it at the person's press, or the <paramref name="paths"/> a discard took
-    /// out; null where no record of this machine's has the id.
-    /// </summary>
+    /// <summary>Clear a parked line's mark: all at the person's press, or the <paramref name="paths"/> a discard took out; null where no record of this machine's has the id.</summary>
     public async Task<Session?> ReleasePlaceAsync(string id, IReadOnlyList<string>? paths = null, CancellationToken ct = default) =>
         await new SessionPlaceLease(sessions).ReleaseAsync(id, paths, ct).ConfigureAwait(false)
             ? await sessions.FindAsync(id, ct).ConfigureAwait(false)

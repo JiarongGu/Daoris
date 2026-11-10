@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The paths a turn in place changed that no tool event of its run names: its end's manifest against its start's, less every path a
 /// file tool of the turn named (the run's tool events from the turn's start on). The lease cannot hold the person's own editor, so such a
-/// path was changed while it ran by the person or another program, or by a command the harness does not report as a file tool. It is
-/// said on the turn's review and told to the line at its next turn.
+/// path is one the person or another program changed beside it, or a command the harness does not report as a file tool. It is said on
+/// the turn's review and told to the line at its next turn.
 /// </summary>
 public static class TurnUnattributed
 {

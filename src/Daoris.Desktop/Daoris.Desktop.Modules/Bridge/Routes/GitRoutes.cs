@@ -359,10 +359,7 @@ public sealed class GitRoutes(DriverContext context)
         return (new StageContext(repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(_loop.Home, service, token)), null);
     }
 
-    /// <summary>
-    /// <see cref="Acted"/> for an act that takes changes out of the checkout (a commit, a stash): once done, each parked line's marked
-    /// paths it took out are released in the ledger (<see cref="PlaceMarkDiscards"/>).
-    /// </summary>
+    /// <summary><see cref="Acted"/> for a commit or a stash, once done releasing the parked lines' marked paths it took out (<see cref="PlaceMarkDiscards"/>).</summary>
     private async Task<object> ReleasingAsync(ActRun run, StageContext context, CancellationToken cancellationToken)
     {
         if (!run.Refused && run.Outcome == ActOutcomes.Done && _loop.Service is { } service)

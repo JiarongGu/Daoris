@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * Above a turn in place's files: the paths it changed that no tool of its run named, changed while it ran by the person or another
- * program, so the person reads them as possibly not the session's. Nothing where every path was its own.
+ * program, so the person reads them as possibly not the session's. Nothing where every path is its own.
  */
 export function UnattributedNote({ paths }: { paths?: string[] | null }) {
   const { t } = useTranslation();

@@ -33,7 +33,6 @@ public static class TreesReviewWires
         Session = session,
         Base = diff?.Base ?? "",
         diff?.Truncated,
-        // The paths a turn in place changed that no tool of its run named (`TurnUnattributed`); null where none.
         Unattributed = unattributed is { Count: > 0 } ? unattributed : null,
         Files = (diff?.Files ?? []).Select(file => new
         {

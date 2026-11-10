@@ -72,10 +72,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         Assert.True(pulled.Moved, pulled.Message);
     }
 
-    /// <summary>
-    /// The session in the checkout parked, its turn's end marking <paramref name="kept"/> as its own uncommitted paths, or none, as the
-    /// ledger's lease leaves it.
-    /// </summary>
+    /// <summary>The session in the checkout parked, its turn's end marking <paramref name="kept"/> as its own uncommitted paths.</summary>
     private static async Task<ServiceClient> ParkedInAsync(string root, params string[] kept)
     {
         var (ledger, _) = WorkingIn(root);

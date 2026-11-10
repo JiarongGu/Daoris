@@ -868,7 +868,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
-                    // A step's go-on is compared with `updated`; a move out of a running state writes the place's mark or none.
+                    // A step's go-on is compared with `updated`; a move writes the place's mark or none.
                     session["holdsPlace"] = body["holdsPlace"]?.DeepClone();
                     _clock = _clock.AddSeconds(1);
                     session["updated"] = _clock.ToString("O");

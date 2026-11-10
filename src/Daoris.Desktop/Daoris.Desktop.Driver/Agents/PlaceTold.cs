@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>What a turn in place is told at its start: the paths changed outside every session since the place's last manifest, and
-/// the uncommitted paths that are not its line's own.</summary>
+/// <summary>What a turn in place is told at its start: the paths changed outside every session since the place's last manifest, the
+/// uncommitted paths that are not its line's own, and what its line's last turn changed by none of its tools (<see cref="TurnUnattributed"/>).</summary>
 /// <param name="Outside">Added, changed or removed by the person or another program since the last session here, sorted.</param>
 /// <param name="Others">Uncommitted at the start and not the line's own: the person's, or those of a line the person let go.</param>
 public sealed record PlaceTold(IReadOnlyList<string> Outside, IReadOnlyList<string> Others)
@@ -11,7 +11,6 @@ public sealed record PlaceTold(IReadOnlyList<string> Outside, IReadOnlyList<stri
 
     public bool TooLarge { get; init; }
 
-    /// <summary>What the line's last turn here changed by none of its tools (<see cref="TurnUnattributed"/>), sorted.</summary>
     public IReadOnlyList<string> Unattributed { get; init; } = [];
 
     public bool Equals(PlaceTold? other) =>

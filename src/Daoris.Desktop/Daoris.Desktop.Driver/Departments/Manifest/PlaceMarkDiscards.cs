@@ -29,7 +29,7 @@ public static class PlaceMarkDiscards
 
     /// <summary>
     /// Release from each parked line's mark in <paramref name="checkout"/> the paths a person's act there just took out, in the ledger.
-    /// A ledger that cannot be read or refuses leaves the mark as it was: it holds the place until a turn, a discard or the person's press
+    /// A ledger that cannot be read or refuses leaves the mark standing: it holds the place until a turn, a discard or the person's press
     /// clears it.
     /// </summary>
     /// <returns>How many paths were released.</returns>

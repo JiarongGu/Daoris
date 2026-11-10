@@ -15,10 +15,6 @@ internal static class PlaceHolders
             && Leases(session)
             && except?.Invoke(session) != true);
 
-    /// <summary>
-    /// Whether an active record holds the lease of the place it works in: no pass, and running, or parked with uncommitted paths of
-    /// its own marked.
-    /// </summary>
     public static bool Leases(SessionView session) =>
         session is { Ask: null, Opinion: null, Serves: null, Decides: null }
         && (!SessionStates.IsParked(session.State) || session.HoldsPlace is { Count: > 0 });

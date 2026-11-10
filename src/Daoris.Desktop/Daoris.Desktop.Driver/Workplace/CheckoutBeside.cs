@@ -17,18 +17,15 @@ public sealed record TreeHolder(string Tree, string Session)
 }
 
 /// <summary>
-/// Whether a writer of a checkout waits for a session working there: the line's pull and a
-/// promotion move a checkout only where the ledger holds no session in it, read inside the writer's hold; a ledger that cannot be read
-/// holds it too. In a session's own tree that is any session running, waiting or held to go on there; in the repository's own checkout
-/// it is the writer's lease's holder alone, a turn running there or a line parked with uncommitted paths of its own. Each wait is said,
-/// naming the session and where the person finds it, and the write goes on at the next look once the checkout is free.
+/// Whether a writer of a checkout waits for a session working there, read inside the writer's hold, an unread ledger holding it too: in a
+/// session's own tree any session running, waiting or held to go on there; in the repository's own checkout (a place) the lease's holder
+/// alone. Each wait is said, naming the session and where the person finds it, and the write goes on at the next look once it is free.
 /// </summary>
 internal static class CheckoutBeside
 {
     /// <summary>
     /// Why <paramref name="checkout"/> is not written now, or null where no session holds it. <paramref name="beside"/> null is a door that
-    /// reads no ledger, which writes as before. <paramref name="what"/> is what waits, as the sentence names it. <paramref name="place"/>
-    /// says the checkout is the repository's own, where only the lease's holder and a step's reservation hold it.
+    /// reads no ledger, which writes as before. <paramref name="what"/> is what waits, as the sentence names it.
     /// </summary>
     internal static async Task<string?> WaitsAsync(
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside, string checkout, string repository, string what, CancellationToken ct,
@@ -54,9 +51,8 @@ internal static class CheckoutBeside
     }
 
     /// <summary>
-    /// The same read for a press: why <paramref name="what"/> is refused now, or null where no session holds the checkout. A ledger not given or not
-    /// readable refuses, since the person's press is not retried at a look. In a place (<paramref name="place"/>) only a turn running there
-    /// or a step's reservation refuses it, so the person may commit, stash or discard what a parked line keeps.
+    /// The same read for a press, which an unread ledger refuses since a press is not retried; in a place only a turn running there or a
+    /// step's reservation refuses it, so the person may commit, stash or discard what a parked line keeps.
     /// </summary>
     internal static async Task<string?> RefusesAsync(
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside, string checkout, string repository, string what, string then, CancellationToken ct,

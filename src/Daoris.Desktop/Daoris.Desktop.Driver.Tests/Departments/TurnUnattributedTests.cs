@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A path a turn in place changed that no tool event of its run names was changed while it ran, by the person or another program: it is
+/// A path a turn in place changed that no tool event of its run names is one the person or another program changed while it ran: it is
 /// said so on the turn's review and told to the line at its next turn. A path its own file tools named is its own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
