@@ -153,6 +153,8 @@ public static class PluginTrials
         // The tools it declares, each said in its own sentence; a problem there never stops the trial.
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
 
+        if (PluginTrialHand.Step(entry, toolsHome, options.Origin) is { } hand) steps.Add(hand);
+
         PluginTrialProcess process;
         try
         {
