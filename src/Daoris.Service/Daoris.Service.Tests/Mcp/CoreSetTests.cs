@@ -91,7 +91,8 @@ public sealed class CoreSetTests(ITestOutputHelper output)
         {
             var served = sizes.Keys.Where(tool => CallTable.Served(column, tool)).ToList();
             var size = served.Sum(tool => sizes[tool]);
-            output.WriteLine($"{column}: {served.Count} tools, {size} characters");            if (column.Work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake
+            output.WriteLine($"{column}: {served.Count} tools, {size} characters");
+            if (column.Work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat or ParticipantWork.Intake
                 or ParticipantWork.Help)
             {
                 Assert.True(size <= 40_000, $"{column} is served {size} characters of definitions");
