@@ -63,7 +63,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 9. Daoris pushes through its own push act and opens no pull request; a plugin's `pull-request` step on `work/perform` does, as the
    person. No plugin is started for a landing, and a `work/land` point is no longer spoken. A decision waits 10 s. (from D100, D101, D241)
 10. `work/state` asks one plugin: the one that pushed the branch, else the landing rule's, and only if installed, on,
-    sound and listening. A frame waits 30 s, no frame starts after 60 s, an entry is asked once a minute at most. (from D148)
+    sound and listening. A frame waits 30 s, no frame starts after 60 s, an entry is asked once a minute at most. A landing with no
+    answer (its plugin never started, or no address was kept) that the keeper proved its line holds reads as its pull request merged,
+    so a run's monitor goes on and its pull-request step not started yet is passed over (`PullRequestReading.OnTheLine`). (from D148)
 11. It is asked at LAND3's tidy, the clean-up's look, bringing up to date's look, *Ask again*, origin's line moving,
     after Daoris pushes, and window focus while a pull request is open. Never at a press that removes, a read or a timer. (from D148)
 12. A `completed` answer clears a branch only where git confirms: the target is the line, the merge commit is held
