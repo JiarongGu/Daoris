@@ -12,13 +12,13 @@ namespace Daoris.Contracts.Registry;
 /// registrations are the family. <c>Workspace</c> is null when the client said nothing, which preserves the row; <c>DefaultBranch</c>
 /// likewise. The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
 /// <c>Adopted</c> is false only from a door that looked and found no manifest. <c>Lanes</c> are the words of the lanes it declares,
-/// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> (<c>git</c> or <c>folder</c>) does./// </summary>
+/// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> and <c>System</c> (its adapter, plugin/system) do.</summary>
 public sealed record RegisterRepository(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
     string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null,
     bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null, string? Kind = null,
-    IReadOnlyList<string>? Excludes = null) : IRoute<RegisteredResponse>
+    IReadOnlyList<string>? Excludes = null, string? System = null) : IRoute<RegisteredResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/registry";

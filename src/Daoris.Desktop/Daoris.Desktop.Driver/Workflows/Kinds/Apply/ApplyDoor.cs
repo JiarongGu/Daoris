@@ -68,6 +68,7 @@ public sealed class ApplyDoor(
         log?.Invoke(applied.State switch
         {
             SystemApplyStates.Applied => $"apply  {start.Unit.Id}: plan {plan.Plan} applied to `{plan.Place}`: {applied.Applied.Count} operation(s).",
+            SystemApplyStates.None => $"apply  {start.Unit.Id}: plan {plan.Plan} had nothing to change in `{plan.Place}`: every resource already held what it asks, so nothing was written.",
             SystemApplyStates.Stale => $"apply  {start.Unit.Id}: plan {plan.Plan} was stale at `{applied.Refused}`, so the work plans again.",
             _ => $"apply  {start.Unit.Id}: plan {plan.Plan} was refused: {applied.Message}",
         });
@@ -76,9 +77,9 @@ public sealed class ApplyDoor(
         {
             var status = WorkPerformer.StatusOf(record, start.Node.Id);
             if (status.State != NodeStates.Active || status.Attempt != start.Attempt || status.Binding is not { } binding) return (null, false);
-            var move = applied.State == SystemApplyStates.Applied
+            var move = applied.State is SystemApplyStates.Applied or SystemApplyStates.None
                 ? NodeObserving.Reached(new NodeReading(start.Unit, start.Node, binding), NodeSource.Plugin, binding.SubjectRevision,
-                    $"plan-{plan.Plan}.json", plan.Place, $"plan {plan.Plan} applied").Move!
+                    $"plan-{plan.Plan}.json", plan.Place, applied.State == SystemApplyStates.None ? $"plan {plan.Plan} had nothing to change" : $"plan {plan.Plan} applied").Move!
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
                     Source = NodeSource.Plugin, Attempt = status.Attempt, Code = applied.State == SystemApplyStates.Stale ? Stale : Refused,

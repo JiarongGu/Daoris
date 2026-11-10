@@ -144,6 +144,8 @@ public sealed class RegistrationStore
             ("kind", "kind TEXT NULL"),
             // The person's own excludes, a JSON list. NULL is unstated and preserved; `[]` clears.
             ("excludes", "excludes TEXT NULL"),
+            // A system department's adapter, `<plugin>/<system>`. NULL is unstated and preserved, as the kind is.
+            ("system", "system TEXT NULL"),
         })
         {
             await SchemaColumns.EnsureAsync(_db, "registrations", column, definition, ct).ConfigureAwait(false);
@@ -215,9 +217,9 @@ public sealed class RegistrationStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes, kind, excludes)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes, kind, excludes, system)
             VALUES ({RegistrationKey.Held("registrations")}, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes, $kind, $excludes)
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes, $kind, $excludes, $system)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated, uses = $uses,
               root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
@@ -231,9 +233,11 @@ public sealed class RegistrationStore
               lanes = COALESCE($lanes, lanes),
               -- The kind too: `connect` says nothing of it, and must not erase what an import or a follow said.
               kind = COALESCE($kind, kind),
-              excludes = COALESCE($excludes, excludes)
-            RETURNING workspace, default_branch, lanes, kind, excludes
+              excludes = COALESCE($excludes, excludes),
+              system = COALESCE($system, system)
+            RETURNING workspace, default_branch, lanes, kind, excludes, system
             """;
+        command.Parameters.AddWithValue("$system", (object?)PlaceKinds.SystemOf(registration.System) ?? DBNull.Value);
         command.Parameters.AddWithValue("$excludes", registration.Excludes is null ? DBNull.Value : ToJson(registration.Excludes));
         command.Parameters.AddWithValue("$kind", (object?)PlaceKinds.Of(registration.Kind) ?? DBNull.Value);
         command.Parameters.AddWithValue("$adopted", registration.Adopted ? 1 : 0);
@@ -274,6 +278,7 @@ public sealed class RegistrationStore
             Lanes = reader.IsDBNull(2) ? null : LanesFromJson(reader.GetString(2)),
             Kind = reader.IsDBNull(3) ? null : reader.GetString(3),
             Excludes = reader.IsDBNull(4) ? null : FromJson(reader.GetString(4)),
+            System = reader.IsDBNull(5) ? null : reader.GetString(5),
         };
     }, ct);
 
@@ -543,7 +548,7 @@ public sealed class RegistrationStore
         await using var command = _db.Command();
         command.CommandText =
             "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
-            + "default_branch, uses, lanes, kind, excludes FROM registrations";
+            + "default_branch, uses, lanes, kind, excludes, system FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -565,7 +570,8 @@ public sealed class RegistrationStore
                 Uses: FromJson(reader.GetString(11)),
                 Lanes: reader.IsDBNull(12) ? null : LanesFromJson(reader.GetString(12)),
                 Kind: reader.IsDBNull(13) ? null : reader.GetString(13),
-                Excludes: reader.IsDBNull(14) ? null : FromJson(reader.GetString(14))));
+                Excludes: reader.IsDBNull(14) ? null : FromJson(reader.GetString(14)),
+                System: reader.IsDBNull(15) ? null : reader.GetString(15)));
         }
 
         return registrations;

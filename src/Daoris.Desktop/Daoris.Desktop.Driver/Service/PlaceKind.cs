@@ -8,12 +8,14 @@ public static class PlaceKind
 {
     public const string Git = "git";
     public const string Folder = "folder";
+    public const string System = "system";
 
     /// <summary>The kind a registration's word names, where it names one this side reads; null otherwise.</summary>
     public static string? Of(string? word) => word?.Trim().ToLowerInvariant() switch
     {
         Git => Git,
         Folder => Folder,
+        System => System,
         _ => null,
     };
 

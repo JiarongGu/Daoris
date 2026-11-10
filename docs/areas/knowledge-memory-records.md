@@ -93,10 +93,12 @@ one job each, checked by `verify`.
     workspace never looks across. (from D48, D107)
 15. The registry decides what is indexed. A registration is pushed by `daoris connect` and persisted; a folder scan proposes. A
     root is machine-local: answered to loopback callers only and stripped from anything that syncs. A registration's `kind` is
-    `git` or `folder`: an import and the page's add say it from the root, the driver's follow reads a folder's again and registers
+    `git`, `folder` or `system`: an import and the page's add say it from the root, the driver's follow reads a folder's again and registers
     one that became a git checkout as `git`, `connect`'s silence keeps the row's, and a row that never said is a repository's,
     held where its root stops being one. A folder's registration also keeps the person's own `excludes`, globs its manifest passes by
-    beside the defaults: silence preserves them, an empty list clears them. (from D34, D48, D70, D254)
+    beside the defaults: silence preserves them, an empty list clears them. A system's has no root and keeps its adapter as `system`,
+    `<plugin>/<system>`, preserved when unstated; the page's *A system…* and `daoris repository add --system <plugin>/<system> [<name>]`
+    add one, refused where no plugin installed and on declares that system (`SystemAdd`). (from D34, D48, D70, D254)
 
 **The connector**
 
@@ -110,7 +112,8 @@ one job each, checked by `verify`.
 18. The call table serves by work. A session in a repository gets the 18 core tools (knowledge, memory, quests, its line, the
     registry, a helper's ask, the channel, handbacks) plus its kind's own. Ask Daoris gets every tool but the brainstorm turns,
     memory changes and `helper_ask`, which an intake is refused too: neither works in a repository of its own. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
-    the reads. (from D212, D230)
+    the reads. `system_plan` is served only to a quest's session whose department is registered as a system (`SessionWork.InSystem`,
+    read from the registration), and refused to every other work, so no repository's session lists it. (from D212, D230, D270)
 19. `tools/list` names only what the table serves, and a refused call answers a sentence and a closed code before the tool
     runs. `McpRoleFilterTests` holds the table to the tests' `fixtures/call-table.json`. (from D212, D230)
 20. A connector that names no session (a person's own agent) is not filtered by the table. (from D212)

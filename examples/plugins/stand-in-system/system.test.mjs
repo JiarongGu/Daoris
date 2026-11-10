@@ -51,6 +51,18 @@ test('an apply writes every operation under its etag, and a plan read before a c
   assert.equal(again.state.items.release.value, '2');
 });
 
+test('an apply of what the store already holds, or of an empty plan, writes nothing and answers none', () => {
+  const empty = { items: {}, serial: 0 };
+  const planned = plan(empty, [{ resource: 'release', value: '1' }]).operations;
+  const applied = apply(empty, planned).state;
+
+  const twice = apply(applied, planned);
+  assert.deepEqual(twice.answer, { state: 'none', applied: [] });
+  assert.equal(twice.state, applied, 'nothing is written');
+  assert.deepEqual(apply(applied, []).answer, { state: 'none', applied: [] });
+  assert.equal(apply(applied, plan(applied, [{ resource: 'gone', remove: true }]).operations).answer.state, 'none');
+});
+
 test('the adapter answers both points on the hook wire, keeping the store in its data folder', async () => {
   const data = scratch('wire');
   keep(data, { items: { release: { value: '1', etag: 'e1' } }, serial: 1 });
@@ -74,7 +86,11 @@ test('the adapter answers both points on the hook wire, keeping the store in its
     assert.deepEqual(applied.result, { state: 'applied', applied: ['release'] });
     assert.equal(read(data).items.release.value, '2');
 
-    const stale = await ask(4, 'hook/apply/perform', { system: 'stand-in', operations: planned.result.operations });
+    const twice = await ask(4, 'hook/apply/perform', { system: 'stand-in', operations: planned.result.operations });
+    assert.deepEqual(twice.result, { state: 'none', applied: [] });
+
+    keep(data, { items: { release: { value: 'by hand', etag: 'e-hand' } }, serial: 5 });
+    const stale = await ask(5, 'hook/apply/perform', { system: 'stand-in', operations: planned.result.operations });
     assert.equal(stale.result.state, 'stale');
   } finally {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);

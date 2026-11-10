@@ -68,7 +68,7 @@ public sealed class ProtocolChatTests : IDisposable
         await Until(() => service.State(id!) == "completed", Seen);
 
         Assert.Equal(
-            ["initialize", "session/new", "prompt: first", "routing: not driven", "prompt: second", "session/close", "stdin ended"],
+            ["initialize", "session/new", "place: folder", "prompt: first", "routing: not driven", "prompt: second", "session/close", "stdin ended"],
             HeardLines());
 
         var said = events.Page(id!).Events
@@ -591,7 +591,7 @@ public sealed class ProtocolChatTests : IDisposable
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-chat-agent.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
@@ -629,7 +629,9 @@ public sealed class ProtocolChatTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 // The standing block Daoris appends after the words is logged apart, its routing standing noted (StubFile.WithoutBlock).
                 const raw = frame.params.prompt[0].text;
-                const said = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                // The place section its folder is told ahead of the first words is noted apart, by its kind (StubPlace).
+                const { place, said } = placeApart(raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, ''));
+                if (place) note('place: ' + place);
                 note('prompt: ' + said);
                 if (/Routing standing here: /.test(raw)) note('routing: ' + /Routing standing here: ([^.]*)\./.exec(raw)[1]);
                 if (said === 'hold') continue;   // a turn that runs until someone stops it

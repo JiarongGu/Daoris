@@ -61,6 +61,8 @@ public static class SystemWire
         {
             case SystemApplyStates.Applied:
                 return new SystemApplied(state, applied, null, [], null);
+            case SystemApplyStates.None:
+                return applied.Count == 0 ? new SystemApplied(state, [], null, [], null) : null;
             case SystemApplyStates.Stale:
                 if (Text(answer, "refused") is not { Length: > 0 } refused || !answer.TryGetProperty("present", out var listed) || listed.ValueKind != JsonValueKind.Array) return null;
                 var present = new List<SystemPresent>();

@@ -50,9 +50,9 @@ public static class SessionReviews
         using var count = GitLaunch.Count();
         SessionReview? review;
         var graph = new ReviewGraph();
-        // A review writes nothing, so each question its stages share is asked of git once (GitReadOnce).
+        // A review writes nothing, so each question its stages share is asked of git once (GitReadOnce), ended with the review.
         using (GitLaunch.Within(GitBudget.Review))
-        using (GitReadOnce.Within())
+        using (GitReadOnce.Within(ct))
         {
             // Today's reads as a graph, each started once what it needs has answered (ReviewGraphReads).
             review = await ReviewGraphReads.ReadAsync(graph, session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);

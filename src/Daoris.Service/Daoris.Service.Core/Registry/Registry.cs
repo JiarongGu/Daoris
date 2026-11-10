@@ -71,7 +71,8 @@ public sealed record Registration(
     IReadOnlyList<string>? Uses = null,
     IReadOnlyList<DeclaredLane>? Lanes = null,
     string? Kind = null,
-    IReadOnlyList<string>? Excludes = null)
+    IReadOnlyList<string>? Excludes = null,
+    string? System = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);

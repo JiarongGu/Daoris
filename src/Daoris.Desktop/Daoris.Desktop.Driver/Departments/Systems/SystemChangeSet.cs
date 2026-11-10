@@ -29,6 +29,9 @@ public static class SystemApplyStates
 
     /// <summary>A refusal that is not stale, said in the adapter's words.</summary>
     public const string Failed = "failed";
+
+    /// <summary>Nothing to change: every resource already held what the plan asks, so the system wrote nothing.</summary>
+    public const string None = "none";
 }
 
 /// <summary>
