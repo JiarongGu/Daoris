@@ -6,8 +6,8 @@ export function looking(): boolean {
 }
 
 /**
- * Calls `onFront` each time this window comes in front of the person: focused, or made visible while it holds the focus. What a
- * window heard while the person was elsewhere (a terminal's press is asked from the terminal) is said there then.
+ * Calls `onFront` each time this window comes in front of the person: focused, or made visible while it holds the focus, where
+ * what it heard out of focus (a terminal's press, asked from the terminal) is said.
  */
 export function useInFront(onFront: () => void): void {
   const latest = useRef(onFront);

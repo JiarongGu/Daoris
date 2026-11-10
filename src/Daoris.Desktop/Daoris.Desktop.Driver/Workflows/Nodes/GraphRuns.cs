@@ -345,10 +345,7 @@ public sealed class RunOwners
             .Distinct(StringComparer.Ordinal),
     ];
 
-    /// <summary>
-    /// The graph runs a branch unit is the subject of: each run whose quests produced it, where every one of them is a graph run's, as when a
-    /// later run's session works in the tree an earlier run's opened; none where Current's work is on it too.
-    /// </summary>
+    /// <summary>The graph runs a branch unit is the subject of: each run whose quests produced it, where all are graph runs; else none.</summary>
     public IReadOnlyList<GraphRun> Governing(WorkUnit branch) =>
         RunsOf(branch) is { Count: > 0 } runs && runs.All(_runs.ContainsKey) ? [.. runs.Select(run => _runs[run])] : [];
 
@@ -365,10 +362,7 @@ public sealed class RunOwners
         return runs.All(_runs.ContainsKey) ? Run : Held;
     }
 
-    /// <summary>
-    /// A graph run's branch, or several graph runs': each run's graph holds what it wants done on it, and its repository's landing cycle does not
-    /// run there.
-    /// </summary>
+    /// <summary>A graph run's branch, or several's: each one's graph holds what it wants done on it, and no landing cycle runs there.</summary>
     public const string Run = "run";
 
     /// <summary>Current's work and a graph run's on one branch: neither engine governs it, said.</summary>

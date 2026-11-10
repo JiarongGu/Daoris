@@ -50,7 +50,7 @@ export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, w
   const open = useRef(viewOpen);
   open.current = viewOpen;
 
-  // A terminal's press heard while the person was elsewhere, said once this window comes in front.
+  // A terminal's press heard out of focus, said once this window comes in front.
   const missed = useRef(new Set<string>());
   const say = useCallback((key: string) => {
     if (decided.current.has(key)) return;

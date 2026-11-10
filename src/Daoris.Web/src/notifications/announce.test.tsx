@@ -55,8 +55,6 @@ describe('announcing a press', () => {
     expect(result.current.toasts).toHaveLength(0);
   });
 
-  // A terminal's press is asked while the person is at the terminal, so the window hears it out of focus: it is said once the window
-  // comes in front, where it still waits unshown and the view is closed.
   it("says a terminal's press heard out of focus once the window comes in front, while it waits unshown", () => {
     focused.mockReturnValue(false);
     const shown: Confirmation = { ...PIPE, id: 'c3', shown: true };

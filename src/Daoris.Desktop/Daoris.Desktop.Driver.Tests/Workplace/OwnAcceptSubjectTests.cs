@@ -23,10 +23,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
         ["q3"] = new("q3", "game", "engine", "Paint the wall", "Paint it.", "Done"),
     };
 
-    /// <summary>
-    /// Two quests one ask sent to one repository are two runs in one entry: each lands on its own quest's branch and joins nothing, as the
-    /// later one named for the earlier did not.
-    /// </summary>
+    /// <summary>Two quests one ask sent to one repository are two runs in one entry: each lands on its own quest's branch.</summary>
     [Fact]
     public async Task Each_run_of_an_entry_lands_on_its_own_quests_branch()
     {
