@@ -19,8 +19,8 @@ internal sealed class HelpRoomOwnPlugins : IHelpRoomSection
         text.Append("## Daoris's own plugins\n\n");
         text.Append("This install carries plugins of Daoris's own, none of them installed here. Nothing of one runs until the\n");
         text.Append("person installs it, and one that performs a pull request runs only where a workflow names its step. Before making a\n");
-        text.Append("plugin, see whether one of these does the job: propose installing it with `plugin_propose` (`add`, and\n");
-        text.Append("`offer` its id, never a path), and say what it needs, which the person sets up themselves.\n\n");
+        text.Append("plugin, see whether one of these does the job: press `daoris plugin add --offer <id>` to install it, and say\n");
+        text.Append("what it needs, which the person sets up themselves.\n\n");
         foreach (var offer in machine.Offers) text.Append($"- {OfferLine(offer)}\n");
         text.Append('\n');
         return text.ToString();

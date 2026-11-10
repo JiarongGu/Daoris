@@ -57,16 +57,13 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // Ask Daoris is the general entry, so a go may begin a conversation: the composer opens with the
         // words and the repository, and the person sends them.
         text.Append("  A go may fill Add or Import with a workspace, or open New conversation with a repository and the person's words in the composer.\n");
-        text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
-        text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
-        text.Append("  an added plugin into its home under its id, and never replaces one already installed. An `add` may name\n");
-        text.Append("  one of Daoris's own plugins by its id instead (`offer`, below), and an `update` (the plugin's `id`) takes a\n");
-        text.Append("  newer copy from where an installed one came from, the card saying what changes; one with no record of\n");
-        text.Append("  where it came from cannot be updated.\n");
-        // The person's approval of what a plugin's server offers Ask Daoris, by their press.
-        text.Append("  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,\n");
-        text.Append("  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you\n");
-        text.Append("  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.\n");
+        text.Append("- A plugin is added, updated or switched by pressing, never proposed, as the Plugins place does: `daoris plugin add <folder>`\n");
+        text.Append("  (a plugin that has landed, its folder's whole path in the checkout of the repository that holds it), `daoris plugin add\n");
+        text.Append("  --offer <id>` (one of Daoris's own plugins, below), `daoris plugin update <id> --yes` (a newer copy from where it came\n");
+        text.Append("  from) and `daoris plugin enable|disable <id>`. Its card shows the person what it will run, or what an update changes.\n");
+        text.Append("  `daoris plugins approve <id> <server>` asks the person's approval of what a plugin's server offers you, with\n");
+        text.Append("  `--writes <tool>,…` naming only the writes outside Daoris they said they accept, or `--reads-only`; its card names every\n");
+        text.Append("  tool, and you are handed it from your next conversation. `daoris plugins withdraw <id> <server>` takes one back.\n");
         // Bring up to date, whose look fetches and so is the person's press, as on the screen.
         text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →\n");
         text.Append("  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at\n");

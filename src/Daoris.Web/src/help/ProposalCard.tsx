@@ -4,48 +4,15 @@ import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
 import type { StarterDoor } from './starters';
 
-/**
- * What a plugin proposal's plugin runs, each command as its manifest writes it, `${plugin}`
- * included: the bridge leaves a null out, so a plugin that speaks on no point arrives with no `command`,
- * and a switch with no `copied`.
- */
-export type HelpPluginShown = {
-  id: string;
-  name: string;
-  version: string;
-  command?: string[] | null;
-  points: string[];
-  harnesses: { name: string; command: string[] }[];
-  servers: { name: string; command: string[] }[];
-  copied?: boolean;
-  problem?: string | null;
-  /** What one of the install's own plugins needs, in its README's words. */
-  needs?: string[];
-  /** What an update changes, each side as the manifests write it. */
-  changes?: { what: string; was: string; now: string }[];
-  /** Whether Apply replaces an installed plugin's folder from where it came from (an update). */
-  replaced?: boolean;
-};
-
-/**
- * A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same.
- * A kind for each door: an agent's update or pin, and a go to a screen, which has no command since it changes nothing.
- * A plugin that has landed, added from its folder, or one switched on or off, with what it runs.
- * A branch a landing made, handed to a landing plugin, which pushes it. Daoris's
- * bringing repositories up to date, which is looked at first.
- * The person's yes to a done's departure, with each departure shown before the press.
- */
+/** A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same; a go has none. */
 export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  kind: 'ask' | 'go' | 'plugin' | 'sync' | 'clear' | 'workflow' | 'setup';
+  kind: 'ask' | 'go' | 'sync' | 'clear' | 'workflow' | 'setup';
   describe: string;
   terminal: string;
   why: string;
-  plugin?: HelpPluginShown | null;
-  /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`). */
-  grant?: HelpGrantShown | null;
   /** Bringing up to date: whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
   /** A workflow version (`workflow`): drawn as the design's card. */
@@ -162,82 +129,6 @@ export type HelpSyncShown = {
   /** The repositories with a checkout here that the look left apart, holding no branch of Daoris's. */
   apart?: string[];
 };
-
-/**
- * What an approval of a plugin's server for Ask Daoris names, as the driver's judge reads the
- * manifest: the plugin, the server, each tool it reads with and each it writes outside Daoris with, and the writes the approval
- * accepts; for a withdrawal (`withdraw`), those it had accepted. The bridge leaves a false out.
- */
-export type HelpGrantShown = {
-  plugin: string;
-  name: string;
-  server: string;
-  reads: string[];
-  writes: string[];
-  accepted: string[];
-  withdraw?: boolean;
-};
-
-/**
- * Every tool an approval hands Ask Daoris, or a withdrawal takes back: its reads, the writes accepted and those
- * not, each named as the plugin declares it, so the person sees exactly what their press widens or narrows.
- */
-function GrantTools({ grant }: { grant: HelpGrantShown }) {
-  const { t } = useTranslation();
-  const tools = (names: string[]) => names.map((name) => `\`${name}\``).join(', ');
-  const asked = grant.writes.filter((tool) => !grant.accepted.includes(tool));
-  const said = (text: string, key: string) => (
-    <li key={key} className="m-0 text-meta text-ink-soft"><Inline text={text} /></li>
-  );
-  return (
-    <ul aria-label={t(grant.withdraw ? 'help.proposal.grant.loses' : 'help.proposal.grant.shows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
-      {said(grant.name && grant.name !== grant.plugin
-        ? t('help.proposal.grant.serverNamed', { server: grant.server, plugin: grant.plugin, name: grant.name })
-        : t('help.proposal.grant.server', { server: grant.server, plugin: grant.plugin }), 'server')}
-      {said(grant.reads.length > 0 ? t('help.proposal.grant.reads', { tools: tools(grant.reads) }) : t('help.proposal.grant.readsNone'), 'reads')}
-      {grant.accepted.length > 0 && said(t('help.proposal.grant.writesAccepted', { tools: tools(grant.accepted) }), 'accepted')}
-      {!grant.withdraw && asked.length > 0 && said(t('help.proposal.grant.writesAsked', { tools: tools(asked) }), 'asked')}
-    </ul>
-  );
-}
-
-/** A command as a terminal takes it: a word holding a space quoted, as the driver spells it. */
-const line = (command: string[]) => command.map((word) => (word.includes(' ') ? `"${word}"` : word)).join(' ');
-
-/**
- * What a plugin runs, before Apply: its id, the process it starts and the points it speaks on, the
- * harnesses it declares and the servers it hands every session. Chrome translates; every name and command
- * is the manifest's, as it writes it.
- */
-function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
-  const { t } = useTranslation();
-  const said = (text: string, key: string) => (
-    <li key={key} className="m-0 text-meta text-ink-soft"><Inline text={text} /></li>
-  );
-  return (
-    <ul aria-label={t('help.proposal.plugin.shows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
-      {said(t('help.proposal.plugin.id', { id: plugin.id }), 'id')}
-      {said(plugin.command && plugin.command.length > 0
-        ? t('help.proposal.plugin.runs', { command: line(plugin.command) })
-        : t('help.proposal.plugin.runsNothing'), 'runs')}
-      {plugin.points.length > 0
-        && said(t('help.proposal.plugin.points', { points: plugin.points.map((point) => `\`${point}\``).join(', ') }), 'points')}
-      {plugin.harnesses.map((harness) =>
-        said(t('help.proposal.plugin.harness', { name: harness.name, command: line(harness.command) }), `harness-${harness.name}`))}
-      {plugin.servers.map((server) =>
-        said(t('help.proposal.plugin.server', { name: server.name, command: line(server.command) }), `server-${server.name}`))}
-      {/* Each side as the manifests write it; a side that is empty is none. */}
-      {(plugin.changes ?? []).map((change) =>
-        said(t('help.proposal.plugin.change', {
-          what: t(`plugin.update.what.${change.what}`, { defaultValue: change.what }),
-          was: change.was ? `\`${change.was}\`` : t('plugin.update.none'),
-          now: change.now ? `\`${change.now}\`` : t('plugin.update.none'),
-        }), `change-${change.what}`))}
-      {/* The README's own requirement lines, which the person sets up themselves. */}
-      {(plugin.needs ?? []).map((need) => said(t('help.proposal.plugin.needs', { need }), `need-${need}`))}
-    </ul>
-  );
-}
 
 /**
  * What a workflow proposal changes, in the design's order: the version it makes, *Your part* first, the
@@ -394,8 +285,7 @@ function SyncApart({ apart }: { apart: string[] }) {
  * **Each kind says what its press does**: a delete is titled as one, says it cannot be undone as
  * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
  * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody;
- * a go to a quest says, in the driver's sentence, whether it is taken. A plugin shows what will run before Apply,
- * and an add says its folder is copied in and that nothing starts at the press.
+ * a go to a quest says, in the driver's sentence, whether it is taken.
  *
  * **Bringing up to date has the screen's two presses**: looking fetches as the person, so the
  * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
@@ -418,8 +308,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
 }) {
   const { t } = useTranslation();
   const going = proposal.kind === 'go';
-  const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
-  const grant = proposal.kind === 'plugin' ? proposal.grant ?? null : null;
   const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
   const looking = syncing !== null && !syncing.looked;
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
@@ -431,17 +319,13 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
     <li className="rounded-control border border-accent/50 bg-raised px-3 py-2.5">
       <p className="m-0 text-small font-semibold text-accent">
         {t(going ? 'help.proposal.titleGo'
-          : grant ? (grant.withdraw ? 'help.proposal.titleWithdraw' : 'help.proposal.titleGrant')
-            : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
-              : syncing ? 'help.proposal.titleSync'
-                : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
+          : syncing ? 'help.proposal.titleSync'
+            : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
+              : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
-      {plugin && <PluginRuns plugin={plugin} />}
-      {grant && <GrantTools grant={grant} />}
       {place && <PlaceChanges place={place} />}
       {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
       {syncing?.looked && (
@@ -464,12 +348,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
           {(syncing.apart ?? []).length > 0 && <SyncApart apart={syncing.apart!} />}
           <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncNote')}</p>
         </>
-      )}
-      {plugin?.copied && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.copied')}</p>}
-      {plugin?.replaced && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.replaced')}</p>}
-      {/* The catalogue's sentence, carried through as a value: one copy of it, the driver's. */}
-      {plugin?.problem && (
-        <p className="m-0 mt-1 text-meta text-ink-danger"><Inline text={t('help.proposal.plugin.problem', { problem: plugin.problem })} /></p>
       )}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
       {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}

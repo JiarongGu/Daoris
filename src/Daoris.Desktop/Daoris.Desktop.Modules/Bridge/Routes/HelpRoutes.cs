@@ -28,9 +28,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     private readonly HelpProposalFacts _facts = new(context);
 
-    // Ask Daoris's conversation, one per workspace: the one running in the press's workspace, carried on, or a new one in its room.
-    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since the room's look alone
-    // can near the page's 30 s wait. `workspace` is read at the press and carried to the record; a name this machine lacks is refused.
+    // Ask Daoris's conversation, one per workspace, carried on or new in its room; answered once placed, with `starting`, its agent spawned
+    // off the request, since the room's look alone can near the page's 30 s wait. A workspace this machine lacks is refused.
     [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_HELP", "workspace")]
@@ -230,24 +229,6 @@ public sealed class HelpRoutes(DriverContext context)
         new
         {
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-            // What a plugin runs, as its manifest writes it, for the card to show before Apply.
-            Plugin = plan.Plugin is { } plugin
-                ? new
-                {
-                    plugin.Id, plugin.Name, plugin.Version, plugin.Command, plugin.Points,
-                    Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
-                    Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
-                    plugin.Copied, plugin.Problem,
-                    // An offer's requirement lines, and an update's changes.
-                    plugin.Needs, plugin.Replaced,
-                    Changes = PluginsRoutes.ChangesOf(plugin.Changes),
-                }
-                : null,
-            // An approval of what a plugin's server offers Ask Daoris, or its withdrawal: every tool, reads and
-            // writes apart, and the writes it accepts.
-            Grant = plan.Grant is { } grant
-                ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
-                : null,
             Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
