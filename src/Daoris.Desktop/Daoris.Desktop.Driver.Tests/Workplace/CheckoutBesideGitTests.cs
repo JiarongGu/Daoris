@@ -72,6 +72,73 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         Assert.True(pulled.Moved, pulled.Message);
     }
 
+    /// <summary>The session in the checkout parked, its turn's end marking <paramref name="kept"/> as its own uncommitted paths.</summary>
+    private static async Task<ServiceClient> ParkedInAsync(string root, params string[] kept)
+    {
+        var (ledger, _) = WorkingIn(root);
+        var client = new ServiceClient(StandInLedger.Url, null, new HttpClient(ledger, disposeHandler: false))
+        {
+            PlaceEnds = (_, _) => Task.FromResult<IReadOnlyList<string>?>(kept),
+        };
+        await client.AdvanceAsync("s1", "awaiting-person", note: "Which report is the daily one?");
+        return client;
+    }
+
+    /// <summary>🔴 A session parked in the checkout with nothing uncommitted of its own holds no lease, so the pull goes through.</summary>
+    [Fact]
+    public async Task A_pull_beside_a_parked_session_with_nothing_uncommitted_goes_through()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        await PlatformCommitAsync(origin, "other.txt", "other\n", "Someone else's (#8)");
+        var client = await ParkedInAsync(root);
+
+        var pulled = (await new SessionTrees(Home).SyncAsync(Repositories(root), Nobody, fetch: true, scope: SyncScope.Everything,
+            beside: token => BranchTidying.BesideAsync(Home, client, token))).Lines.Single();
+
+        Assert.True(pulled.Moved, pulled.Message);
+    }
+
+    /// <summary>🔴 A session parked keeping uncommitted paths of its own holds the checkout, so the pull waits for it.</summary>
+    [Fact]
+    public async Task A_pull_waits_for_a_parked_session_keeping_uncommitted_paths_of_its_own()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        await PlatformCommitAsync(origin, "other.txt", "other\n", "Someone else's (#8)");
+        var client = await ParkedInAsync(root, "notes.txt");
+        var before = await RevAsync(root, "main");
+
+        var waited = (await new SessionTrees(Home).SyncAsync(Repositories(root), Nobody, fetch: true, scope: SyncScope.Everything,
+            beside: token => BranchTidying.BesideAsync(Home, client, token))).Lines.Single();
+
+        Assert.False(waited.Moved);
+        Assert.Equal($"{Waits} `main`'s pull waits for it and goes on at the next look once it ends.", waited.Message);
+        Assert.Equal(before, await RevAsync(root, "main"));
+    }
+
+    /// <summary>🔴 A promotion beside a session parked in the checkout with nothing uncommitted promotes at once.</summary>
+    [Fact]
+    public async Task A_promotion_beside_a_parked_session_with_nothing_uncommitted_promotes()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "checkout", "--quiet", "-b", "feature/a");
+        await CommitAsync(root, "a.txt", "a\n", "work on feature/a");
+        var tip = await RevAsync(root, "feature/a");
+        await GitAsync(root, "checkout", "--quiet", "main");
+        var client = await ParkedInAsync(root);
+        var store = new IntegrationStore(Home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell);
+        Assert.Null(store.Add(new IntegrationRequest(
+            "ra", "engine", "aurora", "feature/a", tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card,
+            new LandingIntegrate(Gates: LandingIntegrate.NoGates).Resolved(), DateTimeOffset.UtcNow)));
+        var asks = new IntegrationSweepAsks(
+            new IntegrationReplayAsk("engine", "aurora", root, "main") { Config = DriverConfig.Empty },
+            new IntegrationPromoteAsk("engine", "aurora", root, "main", DriverConfig.Empty, Home) { Beside = token => BranchTidying.BesideAsync(Home, client, token) });
+
+        await new IntegrationLines(store, TreesHome).RunAsync(asks);
+
+        Assert.Equal(IntegrationRequestCloses.Settled, store.Request("ra")!.ClosedWhy);
+        Assert.Equal("a", (await File.ReadAllTextAsync(Path.Combine(root, "a.txt"))).Trim());
+    }
+
     /// <summary>🔴 A promotion onto the line the checkout has out waits for the driven session there, and promotes at the next look once it ends.</summary>
     [Fact]
     public async Task A_promotion_waits_for_a_driven_session_in_the_checkout_and_promotes_once_it_ends()

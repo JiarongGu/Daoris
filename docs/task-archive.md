@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1c whole, and 1e's unattributed paths (2026-11-11)
+
+> **PLACEWORK1c's rest and 1e's part** (driver, service, web): Outcome: in a repository's own checkout a pull or promotion waits only for the lease's holder — a turn running, or a parked line with uncommitted paths of its own — and in a session's own tree for any session there, as before (`CheckoutBeside`; driving rule 12 rewritten to the design); a person's commit or stash releases a parked line's marked paths that no longer differ from HEAD and the place once none is left, and the person's acts in the checkout are refused only while a turn runs (git rule 39); a path the turn changed that none of its tools named is listed above the session's review and told to the line at its next turn. Proof: real-git tests for the pull and promotion wait (two seen failing first), the service lease tests and a real-git release test, the review's web test (seen failing first).
+
+---
+
 ## ASKFULL1g-v's plugin half — `daoris plugin` pressed, the plugin kind gone (2026-11-11)
 
 > **ASKFULL1g-v, plugin** (modules, service, driver, web): Outcome: `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` and `PLUGIN_ACTION` each judge a press as the Plugins place does, refuse to the terminal with no card, and otherwise put what the plugin runs, or every tool an approval names, on the Confirm card (`Platform/Views/Plugin*View`, `PluginGrantJudge`, `PluginShown`, web `person/view/PluginRuns`); the room names the verbs; the plugin proposal kind, `plugin_propose` and its writer, the screen doors, the box row, the call-table entries and the card's plugin and grant parts are gone whole. Proof: `PluginViewsTests`, `PluginRuns.test` in both languages, the room, kinds, tool-registration and call-table tests.

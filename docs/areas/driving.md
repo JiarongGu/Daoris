@@ -162,7 +162,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
     whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
-    there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
+    there. The person's commit or stash in the checkout releases from the mark each path it took out (`PlaceMarkDiscards`,
+    `ReleasePlace` with its paths), the place going once none is left; the person's acts there are refused only while a turn
+    runs. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
     one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
     (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
     (a driven turn and a conversation alike), and is told what changed there outside Daoris since the last session, commits
@@ -172,9 +174,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     commit clears it. A folder that is no git repository is worked in place the same way: its turn alone holds it, its start
     reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
     marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
+    In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
+    ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
     A git place's first in-place start marks its common git directory with its home, and another home on
-    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the checkout
-    waits for the session the ledger holds there, read inside the checkout's hold. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
+    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the repository's
+    own checkout waits only for the lease's holder there, a turn running or a line parked with uncommitted paths of its own, read
+    inside the checkout's hold (`CheckoutBeside`, `PlaceHolders.Leases`); in a session's own tree it waits for any session running,
+    waiting or held to go on there. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,

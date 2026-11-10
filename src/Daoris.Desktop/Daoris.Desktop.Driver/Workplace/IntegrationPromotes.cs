@@ -398,7 +398,8 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         if (checkout is not null)
         {
             // Never under a session the ledger holds in that checkout, read inside the hold.
-            if (await CheckoutBeside.WaitsAsync(ask.Beside, checkout.Path, ask.Repository, $"the promotion onto `{ask.Line}`", ct).ConfigureAwait(false) is { } waits)
+            var place = TreeGit.SamePath(checkout.Path, ask.Root);
+            if (await CheckoutBeside.WaitsAsync(ask.Beside, checkout.Path, ask.Repository, $"the promotion onto `{ask.Line}`", ct, place).ConfigureAwait(false) is { } waits)
             {
                 return Held($"{char.ToUpperInvariant(waits[0])}{waits[1..]}: nothing was moved.");
             }
