@@ -79,6 +79,7 @@ internal static class SessionRules
         // person wrote still stands beside them.
         if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
         IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
+        composed = PlaceDenies.Compose(composed, PlaceTurns.Others(home, sessionId));
 
         // What Daoris keeps for git is no session's to read, whatever shape its rules take.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };

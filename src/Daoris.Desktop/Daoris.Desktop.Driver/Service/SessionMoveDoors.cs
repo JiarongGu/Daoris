@@ -15,6 +15,9 @@ public sealed class SessionMoveDoors
     /// <summary>The states a session's record ends in: where its staged memory's models are named.</summary>
     private static readonly string[] Ending = ["completed", "stopped", "failed", "declined", "stood-down"];
 
+    /// <summary>The states a move into takes or keeps the place's lease by itself, so it marks nothing.</summary>
+    private static readonly string[] Running = ["queued", "starting", "working"];
+
     private readonly ServiceClient _service;
 
     internal SessionMoveDoors(ServiceClient service) => _service = service;
@@ -50,6 +53,8 @@ public sealed class SessionMoveDoors
         string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
     {
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
+        // A move out of a running state reads its turn's end in its place; the ledger writes the mark only out of a running state.
+        var holdsPlace = Running.Contains(state) || _service.PlaceEnds is not { } ends ? null : await ends(id, ct).ConfigureAwait(false);
         var request = new AdvanceSession(
             id, state, note, evidence, transcript, interrupted ? true : null, limit ? true : null,
             note is not null && parts is { Count: > 0 } ? PartsElement(parts) : null,
@@ -58,7 +63,8 @@ public sealed class SessionMoveDoors
                 pair => pair.Key,
                 pair => new MemoryTurnsRequest(
                     [.. pair.Value.Select(line => new MemoryTurnLine(line.Seq, line.Started, line.Ended, line.Model))], []),
-                StringComparer.Ordinal));
+                StringComparer.Ordinal),
+            holdsPlace is null ? null : [.. holdsPlace]);
 
         var sent = await _service.SendAsync(request, ct).ConfigureAwait(false);
 

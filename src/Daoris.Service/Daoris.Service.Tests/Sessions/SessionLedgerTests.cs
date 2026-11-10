@@ -1180,26 +1180,17 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A session waiting on its own helper keeps its tree, as a park does, though it is completed:
-    /// no other session opens there while its helper reads, and it goes on there itself with the answer, or parks for the person. Once its
-    /// quest is no longer taken it holds nothing.
+    /// 🔴 A session waiting on its own helper in the place itself holds it only with uncommitted paths of its own (the writer's
+    /// lease): with none the next opens there, and it goes on there itself with the answer once that turn ends.
     /// </summary>
     [Fact]
-    public async Task A_session_waiting_on_its_own_helper_keeps_its_tree()
+    public async Task A_session_waiting_on_its_own_helper_holds_the_place_only_with_its_own_paths()
     {
-        // A quest no longer taken holds no tree: the next opens in the same one.
-        var untaken = await WaitingOnHelper(taken: false);
         var waiting = await WaitingOnHelper();
-        var tree = waiting.Tree;
-        Assert.Equal(untaken.Tree, tree);
-        var other = await Publish(title: "Another ask");
+        var opened = await _ledger.OpenChatAsync("Owner", "stub", Now.AddMinutes(11), tree: waiting.Tree);
+        Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
+        await _ledger.AdvanceAsync(opened.Session!.Id, "failed", null, null, null, Now.AddMinutes(12));
 
-        var refused = await _ledger.OpenAsync(other.Id, "stub", Now.AddMinutes(11), tree: tree);
-        var chat = await _ledger.OpenChatAsync("Owner", "stub", Now.AddMinutes(11), tree: tree);
-        Assert.Equal((SessionOpenRefusal.RepositoryBusy, SessionOpenRefusal.RepositoryBusy), (refused.Refusal, chat.Refusal));
-        Assert.Contains(waiting.Id, refused.Message);
-
-        // It is no holder against itself: it goes on there with the answer.
         await _sessions.KeepSaidAsync(
             waiting.Id, new SaidWord("w0helper", "A helper answered your question.", Now.AddMinutes(12), [], Reopens: true, Helper: "h1a2b3c4"));
         var went = await _ledger.AdvanceAsync(waiting.Id, "working", null, null, null, Now.AddMinutes(13));

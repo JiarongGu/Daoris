@@ -235,8 +235,14 @@ public sealed class SessionLedger(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null) =>
-        advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns);
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null) =>
+        advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace);
+
+    /// <summary>Clear the mark a parked line keeps its place with (the person's press, or a discard); null where no record of this machine's has the id.</summary>
+    public async Task<Session?> ReleasePlaceAsync(string id, CancellationToken ct = default) =>
+        await new SessionPlaceLease(sessions).MarkAsync(id, null, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false)
+            : null;
 
     /// <summary>Whether this session's record may be deleted; see <see cref="SessionDeletes.JudgeDeleteAsync"/>.</summary>
     public Task<SessionDeleteOutcome> JudgeDeleteAsync(string id, CancellationToken ct = default) => deletes.JudgeDeleteAsync(id, ct);

@@ -52,8 +52,8 @@ public sealed record SittingFact(string Code)
     /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest going into that tree at this look.</summary>
     public const string TreeThisLook = "treeThisLook";
 
-    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a session is active in the repository, whose root is its one tree.</summary>
-    public const string InRepository = "repository";
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: the session holds the place <see cref="Repository"/>, parked with <see cref="Paths"/> where named.</summary>
+    public const string Place = "place";
 
     /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest starting in the repository at this look.</summary>
     public const string Queued = "queued";

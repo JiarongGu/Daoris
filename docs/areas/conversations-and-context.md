@@ -226,7 +226,9 @@ of everything it handed, section by section.
     account rides the event of the instruction or first message. A section that could have been handed and was not is
     said, with why. The words themselves of a go-on's or hand-over's first message stay on its event, and the openings route
     answers them as `briefs`, bounded (`StartBrief`, 4000 characters, the cut said with the full length), for the head's
-    *Started with*; they are no session's opening. (from D143, D189)
+    *Started with*; they are no session's opening. A session working in its place is handed `place` where its start's
+    manifest found any: what changed there outside Daoris since the last session, and the uncommitted paths that are not its
+    own with how to leave them out of its commits, 30 of each named and the rest counted (`PlacePrompt`). (from D143, D189, D254)
 
 **Ask Daoris**
 

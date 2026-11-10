@@ -125,6 +125,7 @@ internal static class InstructionAccounting
             HandedSections.CarryOn => target.CutOff is not null || target.Retried is not null ? CarryOn(target, chars, size)
                 : target.Parts is not null ? Parts(target, chars, size)
                 : Channel(target, chars, size),
+            HandedSections.Place => PlaceAccount.Of(target.Place, chars, size),
             HandedSections.Close => Own(target.Retried is not null ? "how to take it, carry it on and close it"
                 : target.Answered is null && target.CutOff is null
                 ? "how to take it and close it"

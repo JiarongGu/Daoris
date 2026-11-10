@@ -26,8 +26,13 @@ internal sealed class LoopRun(
         var homeDirectory = loop.Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         var person = supervisor.ProvedKey;
-        // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
-        using var service = new ServiceClient(serviceUrl, key, personKey: person) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
+        // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from, and in its
+        // place the uncommitted paths of its own its end's manifest found.
+        using var service = new ServiceClient(serviceUrl, key, personKey: person)
+        {
+            TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)),
+            PlaceEnds = (id, ct) => PlaceTurns.EndAsync(homeDirectory, id, ct),
+        };
         // The service's doors for the one read the client does not carry: the repositories' index sizes.
         using var doors = new ServiceHttp(service.BaseUrl, key, personKey: person);
         // After the client and before the chat runner, so it hears the runner's closing moves and lets go before the client does.
