@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## APPROVE1a, b, h — an ask published once, a done checked against nothing waits unchecked, an abandon ends its runs' waits (2026-11-10)
+
+> **APPROVE1a, b, h** (service, driver; D255): Outcome: `AskPublishGuard` runs first in `AskPublishing.PublishAsync`: a publish to a receiver the ask already holds an open, taken or done quest for, from another publisher than that quest's, answers with that quest and publishes nothing, and a session's publish is refused while the ask's intake is queued, starting or working or before any intake served it, the person's own press never refused; `daoris ask publish` names its session and takes `--require "<words>" "<check>"`, and a publish with no requirement says so; the creation sentence names the intake's condition instead of *Nothing was published*. A done of a quest from an ask carrying no requirement waits at `quest.holds` as *unchecked*, naming the note to read (D255; rejected: the ask's words as one requirement at publish). Abandoning an ask stops every live step of its runs through the person's own stop on the run's step (`AbandonRuns`). Proof: `AskPublishOnceTests`, `AskPublishRequestTests`, `AbandonRunsTests`, `QuestHoldsNodeTests`. Service.Http.Tests not run; not seen in the window.
+
+---
+
 ## APPROVE1c, e, f, j — an early Accept kept, an observed review git's, a landing that needs no review worded so, a second Apply answered (2026-11-10)
 
 > **APPROVE1c, e, f, j** (driver, modules, web; D256): Outcome: an Accept pressed before the gate judged the run, or before its review is active, is kept on the run's record for the commit pressed on and applied by the first pass that finds the review active, answered *Accepted; it lands at the next look* (`Workflows/Nodes/EarlyAccepts.cs`), ending where the review begins at another commit, the person says a later word, or the run ends; a review reached by seeing its landing is recorded as git's, never the person's; an automatic landing whose line holds everything closes its entry (`line-holds`) and one tried again at each look says so (`queued`), neither worded as waiting for review; a second Apply on a settled card answers *Already applied* with the first's outcome and logs `help.apply.again` (`Help/HelpAppliedAgain.cs`). Proof: `EarlyAcceptsTests`, `GraphPressTests`, `ReviewObservedTests`, `LandTriesLineTests`, `HelpAppliedAgainTests`, `landingLineNote.test.ts`. Not seen in the window.

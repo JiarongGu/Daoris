@@ -84,6 +84,7 @@ internal static class AbandonLines
             $"  {(tree.Alone ? "deleted" : "discarded")} {tree.Repository} {tree.Branch} at {tree.Tip}: "
             + $"`git branch {tree.Branch} {tree.Tip}`, in {tree.Repository}, brings it back while git keeps its commits."));
         if (outcome.Archived.Count > 0) lines.Add($"  archived {string.Join(", ", outcome.Archived)}.");
+        if (outcome.RunsEnded.Count > 0) lines.Add($"  stopped the runs' steps {string.Join(", ", outcome.RunsEnded)} with your reason: none waits on you.");
         lines.AddRange(outcome.Declines.Select(decline => decline.Answer switch
         {
             DeclineAnswer.Confirmed => $"  #{decline.Quest}'s decline was confirmed by the remote.",

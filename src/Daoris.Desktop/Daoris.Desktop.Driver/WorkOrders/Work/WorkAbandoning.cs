@@ -263,6 +263,8 @@ public static class WorkAbandoning
 
         // 6. Each listed session the reader now places in Ended archived; a session stopped whose tree stays with work is left to review.
         var archived = await ArchiveAsync(world, plan, goes, unreached, changed, stayed, failed, ct).ConfigureAwait(false);
+        var runsEnded = await AbandonRuns.EndAsync(new NodeRecordFiles(world.Home), run => plan.Work.Pieces.Has(run.Run)
+            || (scope == WorkScope.Ask && string.Equals(run.Binding.Ask, named, StringComparison.OrdinalIgnoreCase)), said, world.Clock, ct).ConfigureAwait(false);
 
         // 7. driver.json tidied: a closed quest is never planned again, so its release and mark go; then the pause,
         // unless a step failed or something joined, since a half-finished abandon must never leave its work starting again.
@@ -306,6 +308,7 @@ public static class WorkAbandoning
             Stopped = stopped,
             Discarded = discarded,
             Archived = archived,
+            RunsEnded = runsEnded,
             Stayed = stayed,
             Declines = declines,
             StillPaused = stillPaused,
