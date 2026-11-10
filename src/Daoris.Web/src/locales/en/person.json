@@ -37,6 +37,8 @@
   "person.keyed": "This carries a key, so it does not wait across a restart of Daoris.",
   "person.hold": "Confirm also lets this terminal speak for you in this conversation until it lets go.",
   "person.values": "What it carries",
+  "person.view.repository-move": "Moves {{repository}} from workspace {{from}} to workspace {{to}}: one row of this machine's registry changes, and no file is touched.",
+  "person.view.repository-move-starts": "Moves {{repository}} from workspace {{from}} to workspace {{to}}: one row of this machine's registry changes, and no file is touched. No repository is in {{to}} yet, so the move starts it here.",
   "person.cannotTell": "Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.",
   "person.refuse": "Refuse",
   "person.confirm": "Confirm",
