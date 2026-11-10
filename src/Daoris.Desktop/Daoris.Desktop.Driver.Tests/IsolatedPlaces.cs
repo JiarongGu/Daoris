@@ -16,6 +16,8 @@ public static class IsolatedPlaces
 
     public static Snapshot Apart(this Snapshot snapshot, IsolateStep step, params string[] repositories) => snapshot with { Isolations = Of(step, repositories) };
 
+    public static Snapshot Apart(this Snapshot snapshot, bool apart, params string[] repositories) => apart ? snapshot.Apart(repositories) : snapshot;
+
     /// <summary>A snapshot's isolations: each of <paramref name="repositories"/> with a tree of its own.</summary>
     public static IReadOnlyDictionary<string, IsolateStep> Of(params string[] repositories) => Of(IsolateStep.Trees, repositories);
 

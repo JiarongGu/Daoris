@@ -163,7 +163,7 @@ public sealed class PlannerTests
     private static IReadOnlyList<Consideration> Plan(
         QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null,
         bool unadopted = false, bool apart = false) =>
-        Planner.Plan(apart ? new Snapshot(quests, repos ?? [Repo()], active ?? []).Apart("Game") : new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), unadopted);
+        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []).Apart(apart, "Game"), config ?? Config(), unadopted);
 
     /// <summary>
     /// Two active sessions in ONE repository is a state that is allowed — a conversation in the checkout

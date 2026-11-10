@@ -237,8 +237,7 @@ public sealed class TargetPromptGoldenTests
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "target-prompt", file);
 
     /// <summary>
-    /// The standing block a build's start composes for `console-ui`, declaring two lanes, under the drive and trees
-    /// <paramref name="standing"/> names: its routing among it.
+    /// The standing block a build's start composes for `console-ui`, declaring two lanes, under <paramref name="standing"/>.
     /// </summary>
     internal static StandingFacts Routed(string standing)
     {

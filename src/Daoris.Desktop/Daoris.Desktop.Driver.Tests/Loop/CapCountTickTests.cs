@@ -88,7 +88,6 @@ public sealed class CapCountTickTests : IDisposable
 
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
 
-        // The cap of one is free for q1, and the conversation in `tools` holds that root (no tree of its own opens there), so q2 waits for it.
         Assert.Equal(StartVerdict.Start, look.Considerations.Single(c => c.Quest.Id == "q1").Verdict);
         var waits = look.Considerations.Single(c => c.Quest.Id == "q2");
         Assert.Equal(StartVerdict.RepositoryBusy, waits.Verdict);
