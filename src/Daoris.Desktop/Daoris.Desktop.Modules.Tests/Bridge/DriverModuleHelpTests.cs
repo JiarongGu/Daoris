@@ -230,13 +230,12 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The quests and asks are read from the service only while a proposal is judged against them, a delete or
-    /// a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
-    /// A go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
-    /// that holds none reads neither, since the judge refuses it unread.
+    /// The quests and asks are read from the service only while a proposal is judged against them, a go naming an item on
+    /// Quests; a go to a place alone, or any other kind, asks the service for none. A go naming an item on Sessions reads this
+    /// machine's session records instead, and a go naming one on a view that holds none reads neither, since the judge refuses
+    /// it unread.
     /// </summary>
     [Theory]
-    [InlineData("delete", "quests", null, true, false)]
     [InlineData("go", "quests", "q1a2b3c4", true, false)]
     [InlineData("go", "Quests ", "ask:a1", true, false)]
     [InlineData("go", "sessions", "s1a2b3c4", false, true)]
