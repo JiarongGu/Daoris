@@ -394,7 +394,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
 
     /// <summary>
-    /// The uncommitted paths of its own a record's turn in its place ends with, its end's manifest read once (<see cref="PlaceTurns"/>);
+    /// The uncommitted paths of its own a record's turn in its place ends with, its end's manifest read once;
     /// null where it had no turn in place. Set where this client's home is known, so every move out of a running state, a sweep's
     /// conclusion included, writes the place's mark; null marks nothing.
     /// </summary>

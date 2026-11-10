@@ -28,15 +28,16 @@ public sealed class DriverRunPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home);
 
         var order = driver.RunStages.Order;
-        Assert.Equal(["agent", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "files", "hand"], order.Select(part => part.Name));
+        Assert.Equal(["agent", "account", "home", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "files", "hand"], order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(RunPhase.Choose, 3), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Opened, RunPhase.Handed],
+            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Opened, RunPhase.Handed],
             order.Select(part => (RunPhase)part.Phase));
 
         Assert.Collection(
             driver.RunStages.In(RunPhase.Choose),
             stage => Assert.IsType<StartAgent>(stage),
             stage => Assert.IsType<AccountWalk>(stage),
+            stage => Assert.IsType<PlaceHome>(stage),
             stage => Assert.IsType<StartAccess>(stage));
         Assert.Collection(driver.RunStages.In(RunPhase.Grown), stage => Assert.IsType<GrowTree>(stage));
         Assert.Collection(
