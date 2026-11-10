@@ -91,6 +91,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     that place's origin and hands its token to that process alone. An attempt goes to the place its unit was told for; the runtime
     sees the plugin's id, its generations unique across the places (`GenerationOf(plugin, held)` fences against the process that took
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
+17b. `work/perform`'s params carry `options`, an object of the performed node's graph options (`NodeDeclaration.Options`) by name, each
+    its JSON value, or its text where that is not JSON; none are written where the node has none. `WorkPerformer` fills them at every
+    delivery from the declaration it performs and never keeps them on the attempt's record, so an edited graph reaches a redelivery;
+    the kit's `work.mjs` hands them to `act()` as `call.options`, `{}` when absent.
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
     unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one, and its dotted parts compare number by number (`beta.2` before `beta.10`). (from D119)

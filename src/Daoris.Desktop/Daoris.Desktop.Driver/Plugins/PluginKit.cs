@@ -448,7 +448,7 @@ public static class PluginKit
               send,
               say,
               // The work, done once for an attempt: call.unit, call.step, call.invocation, call.idempotencyKey, call.subjectRevision,
-              // call.inputs, call.deadlineAt. Say the receipt it reached on and what it made, which Daoris has removed at the end:
+              // call.inputs, call.options (the step's options in the workflow graph, by name, `{}` when none), call.deadlineAt. Say the receipt it reached on and what it made, which Daoris has removed at the end:
               //   return { state: 'reached', evidence: { ref: `{{ReceiptOf(id)}}:${call.invocation}`, url, message },
               //            resources: [{ schema: '{{ResourceOf(id)}}', id: '<the platform's id for it>' }] };
               // A failure names its code; only the codes plugin.json lists as `transient` are tried again:

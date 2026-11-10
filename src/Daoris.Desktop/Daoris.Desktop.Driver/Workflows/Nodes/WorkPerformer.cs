@@ -417,7 +417,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         {
             generation = await StepAuthority.RunAsync(StepAuthorities.Of(unit, attempt), async () =>
             {
-                if (!OnPort(attempt)) return await port.PerformAsync(attempt.Plugin, attempt.Call, ct).ConfigureAwait(false);
+                if (!OnPort(attempt)) return await port.PerformAsync(attempt.Plugin, attempt.Call with { Options = node.Options }, ct).ConfigureAwait(false);
 
                 // A hand-over; the executor runs it on its own task, never the pass's.
                 await (PortOf(attempt.Plugin) ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct).ConfigureAwait(false);

@@ -181,6 +181,33 @@ public sealed class WorkPerformerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_send_and_a_delivery_again_carry_the_nodes_options_which_its_record_does_not_keep()
+    {
+        _deploy = Deploy with { Options = new Dictionary<string, string> { ["autoComplete"] = "true", ["mergeStrategy"] = "\"squash\"" } };
+        var first = Performer();
+        _port.OnPerform = _ => throw new OperationCanceledException();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => StartAsync(first));
+        Assert.Empty(Assert.Single(Record().Attempts).Call.Options);
+
+        _port.OnPerform = null;
+        var again = Performer();
+        _port.Answer = _ => new(ReconcileStates.NotStarted);
+        Assert.Equal(PerformedWhat.Redelivered, Assert.Single(await again.ReconcileAsync(Declared, CancellationToken.None)).What);
+
+        var (call, _) = Assert.Single(_port.Sent);
+        Assert.Equal(_deploy.Options, call.Options);
+        Assert.Empty(Assert.Single(Record().Attempts).Call.Options);
+    }
+
+    [Fact]
+    public async Task A_node_with_no_options_sends_none()
+    {
+        await StartAsync(Performer());
+
+        Assert.Empty(Assert.Single(_port.Sent).Call.Options);
+    }
+
+    [Fact]
     public async Task A_loop_ended_between_the_record_and_the_send_is_reconciled_first_and_never_sent_twice()
     {
         var first = Performer();
