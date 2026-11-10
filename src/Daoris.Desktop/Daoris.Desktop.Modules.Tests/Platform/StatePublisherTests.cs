@@ -458,6 +458,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
     [InlineData("WORK_RECORDS_FOLDER", "", null)]
+    [InlineData("REGISTRY_OPEN_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
     // *Stop waiting*, a conversation held by its limit marked to wait for the person's next word.

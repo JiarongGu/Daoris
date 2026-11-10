@@ -18,7 +18,8 @@ import { useScope } from '../data/scope';
 import {
   useDriver, useLines, useHeavySlot, useSweepPlan,
 } from '../bridge/shell';
-import { type Notify, useErrorNotify } from '../design/ui';
+import { useOpenDepartmentFolder } from '../bridge/repositories/registry';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
@@ -150,6 +151,7 @@ export function useProjectsView({
   // Session branches holding work no branch of the person's holds — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one.
   const sweep = useSweepPlan();
+  const openFolder = useOpenDepartmentFolder();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
   // And every branch of Daoris's it holds, sessions' and landings' (§4.1): its row says how many. Absent where the driver
@@ -323,6 +325,7 @@ export function useProjectsView({
           // Adoption's own acts are an adopter's: managing writes its declaration into it.
           onManage={attached && shown.adopted ? () => setManaging(shown) : undefined}
           onOpenCode={onOpenCode ? () => onOpenCode(shown.repository) : undefined}
+          onOpenFolder={attached && Boolean(shown.root) ? () => openFolder.mutate(shown.repository, { onError: failure(notify) }) : undefined}
         />
       )
       : goneOrLoading('repository')

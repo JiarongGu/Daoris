@@ -8,12 +8,12 @@ namespace Daoris.Driver;
 public static class PlaceTurns
 {
     /// <summary>Read and keep the start's manifest of <paramref name="record"/> working in <paramref name="root"/>, and what it is told.</summary>
-    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>
-    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
+    /// <param name="continues">The record a carry-on continues, whose end's own paths it carries in; null for a first start.</param>    /// <returns>What the session is told, or null where the place reads no manifest.</returns>
     public static async Task<PlaceTold?> StartAsync(
-        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct)
+        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct,
+        PlaceExcludes? excludes = null)
     {
-        if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record);
+        if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes);
         var store = new ManifestStore(home, workspace, department);
         var last = store.Last();
         RunManifest start;

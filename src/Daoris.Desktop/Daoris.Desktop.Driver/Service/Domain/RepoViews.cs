@@ -14,6 +14,9 @@ public sealed record RepoView(
     /// Heard in <see cref="Repositories.Signature"/>, so a lanes-only registration moves the tick.
     /// </summary>
     public IReadOnlyList<string> Lanes { get; init; } = [];
+
+    /// <summary>The person's own globs a folder's manifest passes by, beside its defaults, as its registration keeps them.</summary>
+    public IReadOnlyList<string> Excludes { get; init; } = [];
 }
 
 /// <summary>One lane of a repository, as the registry answers it: what a quest addresses as `repository:id`.</summary>

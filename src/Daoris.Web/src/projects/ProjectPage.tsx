@@ -50,8 +50,10 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  */
 export function ProjectPage({
   registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, files, tab = 'details', onTab,
-  onManage, onOpenCode, onOpenSetup, heavy,
+  onManage, onOpenCode, onOpenSetup, onOpenFolder, heavy,
 }: {
+  /** Open its folder in the system's file manager: a shell's, offered where the folder is on this machine. */
+  onOpenFolder?: () => void;
   /** Open its page in the Agents place's Setup mode, where its Setup is. */
   onOpenSetup?: () => void;
   /**
@@ -193,6 +195,11 @@ export function ProjectPage({
                 {t('projects.lineDoor')}
               </Button>
             )}
+          </Fact>
+        )}
+        {onOpenFolder && (
+          <Fact label={t('projects.page.folder')}>
+            <Button variant="ghost" className="text-small" onClick={onOpenFolder}>{t('projects.page.open')}</Button>
           </Fact>
         )}
         {unlanded > 0 && (

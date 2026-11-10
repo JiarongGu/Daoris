@@ -9,9 +9,11 @@ internal static class ChatPlaceTold
     /// <summary>The words its place tells it (what changed outside Daoris, paths not its own, a folder's); null where there are none.</summary>
     /// <param name="continues">The record a hand-over or carry-on continues, whose own paths the conversation carries in.</param>
     public static async Task<string?> ToldAsync(
-        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct)
+        string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct,
+        IReadOnlyList<string>? excludes = null)
     {
-        var place = await PlaceTurns.StartAsync(home, RemoteTarget.Workspace(workspace), department, root, record, continues, ct).ConfigureAwait(false);
+        var place = await PlaceTurns.StartAsync(
+            home, RemoteTarget.Workspace(workspace), department, root, record, continues, ct, PlaceExcludes.Of(excludes)).ConfigureAwait(false);
         return PlacePrompt.Told(place).Trim() is { Length: > 0 } words ? words : null;
     }
 }

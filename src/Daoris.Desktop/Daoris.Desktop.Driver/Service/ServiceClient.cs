@@ -220,6 +220,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     public Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default) => Registry.ConnectAsync(root, workspace, ct);
 
+    public Task<ConnectDone> AddFolderAsync(string root, string? workspace, IReadOnlyList<string> excludes, CancellationToken ct = default) =>
+        Registry.AddFolderAsync(root, workspace, excludes, ct);
+
     public Task<string> RetireAsync(string repository, CancellationToken ct = default) => Registry.RetireAsync(repository, ct);
 
     public Task<string> ImportAsync(string? folder, string? workspace, CancellationToken ct = default) => Registry.ImportAsync(folder, workspace, ct);

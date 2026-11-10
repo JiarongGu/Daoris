@@ -369,6 +369,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SYSTEM_PATH", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "WORK_RECORDS_FOLDER", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "REGISTRY_OPEN_FOLDER", PipeClass.Window)]
     // A terminal never reads or answers what waits for the window, and never reads the person key.
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]

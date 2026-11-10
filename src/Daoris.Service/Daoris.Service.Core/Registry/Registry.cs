@@ -54,6 +54,7 @@ namespace Daoris.Knowledge;
 /// </param>
 /// <param name="Kind">Its kind (<see cref="PlaceKinds"/>): <b>null is unstated</b>, preserved on upsert as the line is, and read through
 /// <see cref="PlaceKind"/>.</param>
+/// <param name="Excludes">A folder's own globs its manifest passes by: <b>null is unstated</b> and preserved, empty clears.</param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -69,7 +70,8 @@ public sealed record Registration(
     string? DefaultBranch = null,
     IReadOnlyList<string>? Uses = null,
     IReadOnlyList<DeclaredLane>? Lanes = null,
-    string? Kind = null)
+    string? Kind = null,
+    IReadOnlyList<string>? Excludes = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);
