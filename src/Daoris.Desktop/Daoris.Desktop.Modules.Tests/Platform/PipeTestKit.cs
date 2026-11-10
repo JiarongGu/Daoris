@@ -109,7 +109,7 @@ internal sealed class HeldClock : TimeProvider
 /// <summary>
 /// The loop's readers of a press's grounds as a test holds them: each world fact a dictionary the test moves between
 /// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set; the list's
-/// <c>SESSION_GROUPS</c> places <see cref="Sessions"/>, as a session press's view reads them at the ask), every read counted, and the
+/// <c>SESSION_GROUPS</c> places each session asked, as a session press's view reads it at the ask), every read counted, and the
 /// whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
 /// </summary>
 internal sealed class StubGrounds : IPipeGroundWorld
@@ -157,6 +157,13 @@ internal sealed class StubGrounds : IPipeGroundWorld
     public StubGrounds Session(string id, string state, int minute = 0)
     {
         Sessions[id] = (state, new DateTimeOffset(2026, 10, 20, 9, minute, 0, TimeSpan.Zero));
+        return this;
+    }
+
+    /// <summary>A quest the driver's last look parked, as a retry press's view reads it at the ask.</summary>
+    public StubGrounds Parking(string quest)
+    {
+        Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
         return this;
     }
 
@@ -244,25 +251,34 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         var asked = payload is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(payload, Shenora.Core.Ipc.IpcJson.Options);
-        var answered = Reads.TryGetValue(route, out var answer) ? answer(asked) : route == "SESSION_GROUPS" ? Listed() : new { };
+        var answered = Reads.TryGetValue(route, out var answer) ? answer(asked) : route == "SESSION_GROUPS" ? Listed(asked) : new { };
         return JsonSerializer.SerializeToElement(answered, Shenora.Core.Ipc.IpcJson.Options);
     }
 
-    /// <summary>Each held session as the list places it: running in Working, waiting on the person in You, else ended, and deletable.</summary>
-    private object Listed() => new
+    /// <summary>
+    /// Each session asked (every held one where none is) as the list places it, deletable: a held one by its state, running in Working and
+    /// waiting on the person in You, and any other ended, so a press names a session the machine has unless the test says otherwise.
+    /// </summary>
+    private object Listed(JsonElement? asked)
     {
-        sessions = Sessions.Select(each => new
+        IEnumerable<string> ids = asked is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("ids", out var named)
+            ? named.EnumerateArray().Select(each => each.GetString() ?? "")
+            : Sessions.Keys;
+        return new
         {
-            session = each.Key,
-            group = each.Value.State switch
+            sessions = ids.Select(id => new
             {
-                "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
-                "awaiting-person" => Daoris.Driver.SessionGroup.You,
-                _ => Daoris.Driver.SessionGroup.Ended,
-            },
-            deletable = true,
-        }).ToArray(),
-    };
+                session = id,
+                group = (Sessions.TryGetValue(id, out var held) ? held.State : null) switch
+                {
+                    "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
+                    "awaiting-person" => Daoris.Driver.SessionGroup.You,
+                    _ => Daoris.Driver.SessionGroup.Ended,
+                },
+                deletable = true,
+            }).ToArray(),
+        };
+    }
 
     public async Task<string?> HeldAsync(string wait, JsonElement? payload, CancellationToken cancellationToken)
     {

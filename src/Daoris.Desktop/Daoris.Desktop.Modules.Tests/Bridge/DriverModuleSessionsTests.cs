@@ -512,10 +512,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
         // The grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
-        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log)
-        {
-            Grounds = new StubGrounds().Session("done1", "completed"),
-        };
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
         var output = new StringWriter();
@@ -572,10 +569,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
         // The grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
-        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log)
-        {
-            Grounds = new StubGrounds().Session("chat1", "completed"),
-        };
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
         var output = new StringWriter();

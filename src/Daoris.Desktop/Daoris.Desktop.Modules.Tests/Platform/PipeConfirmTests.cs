@@ -206,10 +206,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(["asked", "refused"], Confirmations().Select(line => JsonDocument.Parse(line).RootElement.GetProperty("state").GetString()));
     }
 
-    /// <summary>
-    /// One press per ground, each changed between its ask and its Confirm, runs nothing and its terminal
-    /// hears <c>changed</c> with the reason's code and values.
-    /// </summary>
+    /// <summary>One press per ground moved between its ask and its Confirm runs nothing; its terminal hears <c>changed</c>, its reason's code and values.</summary>
     [Theory]
     [InlineData("turn")]
     [InlineData("session")]
@@ -223,7 +220,7 @@ public sealed class PipeConfirmTests : Bridge
     public async Task A_press_whose_ground_moved_while_it_waited_is_refused_at_the_Confirm_with_its_reason(string reason)
     {
         if (!OperatingSystem.IsWindows()) return;
-        var grounds = new StubGrounds().Session("s1a2b3c4", "awaiting-person");
+        var grounds = new StubGrounds().Session("s1a2b3c4", "awaiting-person").Parking("q1");
         grounds.Registered.Add("Lyntai");
         grounds.Quests["q1"] = "Open";
         grounds.Asks["a1"] = "open";
@@ -450,8 +447,6 @@ public sealed class PipeConfirmTests : Bridge
         if (!OperatingSystem.IsWindows()) return;
         var clock = new HeldClock();
         var grounds = new StubGrounds();
-        for (var each = 0; each < 10; each++) grounds.Session($"s000000{each}", "completed");
-        grounds.Session("s0000010", "completed");
         var (pipe, client, driver, services, log) = await ServeAsync(grounds, clock);
         using var _ = services;
         using var __ = log;
