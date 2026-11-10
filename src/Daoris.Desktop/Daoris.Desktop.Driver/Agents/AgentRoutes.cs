@@ -54,7 +54,6 @@ public static class AgentRoutes
         ("agent update <agent> --workspace <name>", null, "alone: HARNESS_ACTION's update names no workspace", AgentHome.Wiring),
     ];
 
-    /// <summary>The home a verb of this program's writes: its row's, by its first word.</summary>
     public static AgentHome HomeOf(string verb) =>
         Verbs.First(row => row.Verb.Split(' ')[1] == verb).Home;
 }

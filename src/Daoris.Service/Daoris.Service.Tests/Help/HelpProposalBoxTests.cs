@@ -7,7 +7,6 @@ namespace Daoris.Service.Tests;
 /// here and judged by the driver with the route's own code before the person sees it. Nothing here
 /// applies anything: every change is the person's press.
 /// </summary>
-/// <remarks>What holds for every kind. Each kind's writer is held beside this under <c>Help/</c>.</remarks>
 public sealed class HelpProposalBoxTests : HelpProposalBoxFixture
 {
     [Fact]

@@ -68,7 +68,6 @@ const PLUGIN_ADD: HelpProposal = {
   },
 };
 
-// The bridge leaves a null out, so a switch's view arrives with no command and no `copied`.
 const PLUGIN_ON: HelpProposal = {
   id: 'p7', kind: 'plugin', describe: 'Switch plugin `example.lands` on.', terminal: 'daoris plugin enable example.lands',
   why: 'the person wants it on',

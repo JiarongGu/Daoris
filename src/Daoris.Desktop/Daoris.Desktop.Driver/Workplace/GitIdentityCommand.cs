@@ -64,7 +64,6 @@ public static class GitIdentityCommand
     public static bool Changes(IReadOnlyList<string> args) =>
         Answers(args) && !(args[0] == "identity" && args.Count > 1 && args[1] is "list" or "public-key") && !args.Any(arg => arg is "--help" or "-h");
 
-    /// <summary>The line a press the window confirmed and ran is said with.</summary>
     public const string Confirmed = "git: confirmed in Daoris's window and done there.";
 
     /// <summary>Run the words; the exit code is the family's.</summary>

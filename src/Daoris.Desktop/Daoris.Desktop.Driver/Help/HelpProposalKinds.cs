@@ -31,7 +31,6 @@ internal interface IHelpProposalKind
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 
-    /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
     /// <summary>
@@ -65,7 +64,6 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
 
     public IHelpDoors Doors => doors;
 
-    /// <summary>The conversation, for what is said after the Apply's own answer: an agent action's end.</summary>
     public Action<string> Later => later;
 
     public string Id => proposal.Id;

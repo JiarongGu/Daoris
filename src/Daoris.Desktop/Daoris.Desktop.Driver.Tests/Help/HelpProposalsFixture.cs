@@ -23,7 +23,6 @@ public abstract class HelpProposalsFixture : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>A folder beside the home, never inside it, removed with the home when the test ends.</summary>
     protected string Beside(string suffix)
     {
         var folder = _home + suffix;
@@ -34,9 +33,7 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static readonly HelpMachineFacts Facts = new(
         Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"])
     {
-        // What the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
         Parked = [new ParkedQuest("q1a2b3c4", "engine")],
-        // What its last look held by the person's stop, and the session each is stopped in.
         Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
     };
 
@@ -156,7 +153,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
     }
 
-    /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
     public HistoryOutcome? HistoryCleared { get; set; }
 
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
@@ -233,7 +229,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         if (SyncRefusal is { } refused) throw new DriverException(refused);
-        // The workspace is recorded only where one is named, so a call without one records none.
         Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
         return Task.FromResult(Listed);
     }

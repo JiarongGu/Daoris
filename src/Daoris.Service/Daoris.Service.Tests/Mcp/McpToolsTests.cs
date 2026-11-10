@@ -185,7 +185,6 @@ public sealed class McpToolsTests : McpToolsFixture
         var answered = (await asks.FindAsync(ask.Id))!;
         Assert.Equal(AskDesk.ByIntake, answered.Tier);
         Assert.Equal([quest.Id], answered.Quests);
-        // Its own circle, though nothing registered sits where it runs.
         Assert.Contains("in workspace `default`", await new KnowledgeSearchTools(_service, circle).RegistryAsync());
     }
 

@@ -43,11 +43,9 @@ public sealed class HelpProposalBox(string? home)
 
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
-    /// <summary>The driver's named home first — where what this would change lives — then the account's.</summary>
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
 
-    /// <inheritdoc cref="HelpAskProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeAsk(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
         string? review = null, string? reviewWords = null, string? shortTitle = null) =>

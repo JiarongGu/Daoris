@@ -111,7 +111,6 @@ public static class AgentsCommand
             return 0;
         }
 
-        // None named is `list`.
         var verb = args.Count > 0 ? args[0] : "list";
         if (!Verbs.Contains(verb, StringComparer.Ordinal))
         {

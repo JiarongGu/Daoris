@@ -12,7 +12,6 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
 
-    /// <summary>A workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
     [Theory]
     [InlineData("my team", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace \"my team\"")]
     [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]

@@ -19,7 +19,6 @@ public sealed class HelpRoomDoorsTests
             "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
             "daoris place trees <repository> on|off", "daoris place line <repository> <branch>|--clear",
             "daoris place landing <repository> merge|branch <pattern>|--clear",
-            // A role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
             "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
             "daoris settings notify on|off", "daoris agent rules", "daoris ask --workspace <name>",
             // The clean-up and bringing up to date take one workspace's checkouts with `--workspace`.

@@ -7,8 +7,7 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// Every kind the box writes is whole: its writer in a file of its own that writes exactly that kind, and
-/// the connector's tool that proposes it. The driver's <c>HelpProposalKindsTests</c> holds the same table, and
-/// also checks that each kind has its judge there and its card on the page.
+/// the connector's tool that proposes it. The driver's <c>HelpProposalKindsTests</c> holds the same table.
 /// </summary>
 public sealed class HelpProposalBoxKindsTests
 {

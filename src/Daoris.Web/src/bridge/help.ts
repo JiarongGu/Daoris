@@ -91,8 +91,7 @@ export const useHelpReadied = () => {
     ready: (id: string, workspace?: string) => change((was) => (was.spoken.includes(id) ? was : {
       ...was, readied: id, ...(workspace === undefined ? {} : { workspaces: { ...was.workspaces, [id]: workspace } }),
     })),
-    /** The person's words went to it: seen from now on. */
-    spoke: (id: string) => change((was) => ({
+      spoke: (id: string) => change((was) => ({
       readied: was.readied === id ? null : was.readied,
       spoken: was.spoken.includes(id) ? was.spoken : [...was.spoken, id],
     })),

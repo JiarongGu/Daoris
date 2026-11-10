@@ -86,14 +86,12 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         _loop.Nudge();
     }
 
-    // PLUGIN_ACTION's own enable|disable: the same lookup, the same row, the same nudge.
     public void SwitchPlugin(string id, bool on)
     {
         PluginsRoutes.SwitchPlugin(_loop, PluginsRoutes.InstalledPlugin(_loop, id), on);
         _loop.Nudge();
     }
 
-    // PLUGIN_INSTALL's own copy of one of the install's offers; nothing runs here.
     public void AddOffer(string id)
     {
         PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, ProviderRegistry.Built().Names);

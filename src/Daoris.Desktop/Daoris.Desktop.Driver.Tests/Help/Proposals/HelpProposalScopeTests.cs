@@ -55,7 +55,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     private static string? Refusal(HelpProposal proposal, string? circle = "alpha") =>
         HelpProposals.Plan(proposal, DriverConfig.Empty, Bound(circle)).Refusal;
 
-    /// <summary>The conversation of <c>alpha</c> proposes it as the whole machine's does: no refusal names a workspace it is bound to.</summary>
     private static void Reaches(HelpProposal proposal)
     {
         Assert.DoesNotContain("this conversation is workspace", Refusal(proposal) ?? "");
@@ -93,7 +92,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("clear", "workspace", "beta"));
     }
 
-    /// <summary>A look and a press over every workspace at once, or another workspace's, are judged by the sync's own kind.</summary>
     [Fact]
     public void A_sync_over_every_workspace_or_another_is_judged_by_its_kind()
     {

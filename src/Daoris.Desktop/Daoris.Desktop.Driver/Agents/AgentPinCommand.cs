@@ -74,7 +74,6 @@ internal static class AgentPinCommand
         {
             try
             {
-                // Refused HERE, before a single byte is fetched.
                 ReleaseChannels.RefuseVersion(channel, version);
             }
             catch (DriverException refused)
@@ -116,7 +115,6 @@ internal static class AgentPinCommand
         switch (plan.Way)
         {
             case PinWay.Present:
-                // An install already in place is the proof it verified — the channel moves it there only after every check.
                 Say($"{Prefix}: `{name}` {version} is already installed where Daoris keeps it — nothing was downloaded.");
                 Say($"  {plan.Present}");
                 break;

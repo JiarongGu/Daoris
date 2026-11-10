@@ -22,7 +22,6 @@ internal static class HelpDoorRowsMachine
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
             "`daoris tree remove <session|branch> [--repository <name>] --force`"),
-        // Ask again from a terminal, exempt from Ask Daoris as a read.
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris tree state <session|branch> [--repository <name>]`",
             new HelpDoorAsk.Never("it changes nothing of yours or on the platform, and the room already says what was last answered")),

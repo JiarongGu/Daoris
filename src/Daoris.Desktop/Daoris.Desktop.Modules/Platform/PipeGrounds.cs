@@ -10,7 +10,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public enum PipeGroundKind
 {
-    /// <summary>A session's record: its state and when it last moved.</summary>
     Session,
 
     /// <summary>A setting's value where it is kept.</summary>

@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's chosen settings, the driver's half: each request its
-/// connector's tool wrote is judged here at the call, then the setting is changed through the edit its own door makes, judged by the
-/// same checks a <c>setting</c> proposal is, with no Apply. What the loop running the conversation answers its
+/// Ask Daoris's chosen settings, the driver's half: each request its connector's tool wrote is judged here at the call, then the
+/// setting is changed through the edit its own door makes, with no Apply. What the loop running the conversation answers its
 /// <see cref="SessionRequestWatch.Set"/> with.
 /// </summary>
 /// <remarks>
@@ -21,7 +20,6 @@ namespace Daoris.Driver;
 /// <param name="service">The loop's service once it answers; null before, when every request is refused saying so.</param>
 public sealed class HelpSettings(string home, Func<ServiceClient?> service)
 {
-    /// <summary>Judge one request and change the setting where it holds; a refusal is an answer, never thrown.</summary>
     public async Task<SettingAnswer> AnswerAsync(SessionRequest request, CancellationToken ct)
     {
         var setting = request.Operation ?? "";

@@ -45,7 +45,6 @@ public sealed partial class HelpProposalKindsTests
         ["draft"] = """WriteString("draft",""",
     };
 
-    /// <summary>The workflow file's optional <c>name</c> is read by the judge, so its twin is held to writing it.</summary>
     [Fact]
     public void The_workflow_writer_writes_its_name()
     {
@@ -61,7 +60,6 @@ public sealed partial class HelpProposalKindsTests
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
-    /// <summary>The service core's source folder: its files sit in module folders, so a reader finds one by name.</summary>
     internal static string CoreFolder() => Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
     internal static string CoreFile(string name) =>
@@ -78,10 +76,8 @@ public sealed partial class HelpProposalKindsTests
     [Fact]
     public void Every_kind_is_a_class_in_a_file_of_its_own()
     {
-        // The kinds' folder is the one the first kind's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpProposalKinds.All[0].GetType().Name}.cs"))!;
 
-        // A kind's plans may sit in parts beside it (`HelpWorkflowCard`…); what declares a kind is one file per kind.
         Assert.Equal(
             HelpProposalKinds.All.Select(kind => $"{kind.GetType().Name}.cs").Order(StringComparer.Ordinal),
             Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories)

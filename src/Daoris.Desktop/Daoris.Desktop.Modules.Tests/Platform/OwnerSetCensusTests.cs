@@ -50,7 +50,6 @@ public sealed class OwnerSetCensusTests
         ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names
     };
 
-    // The fields that name a target, as a handler reads them: what the sweep tells a naming route by.
     private static readonly string[] TargetFields = ["repository", "workspace", "quest", "session", "id", "ids", "ask", "entry", "unit"];
 
     private const StateScopes RoleScopes = StateScopes.Driver | StateScopes.Sessions | StateScopes.Landing | StateScopes.Lines;
@@ -112,7 +111,6 @@ public sealed class OwnerSetCensusTests
         Assert.DoesNotContain(Sweep(PipeTargets.Daoris.Marks, Exemptions, handlers), each => each.StartsWith("SESSION_OPEN_FOLDER:", StringComparison.Ordinal));
     }
 
-    /// <summary>Every door of the set-up kind declares its target.</summary>
     [Fact]
     public void Every_apply_door_declares_its_target()
     {

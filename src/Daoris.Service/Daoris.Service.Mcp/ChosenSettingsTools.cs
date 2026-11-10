@@ -17,8 +17,8 @@ namespace Daoris.Knowledge.Mcp;
 public sealed class ChosenSettingsTools(IntakeScope? intake = null, SessionLedger? ledger = null, SettingsBox? box = null)
 {
     private const string Granted =
-        "Ask Daoris only, and only where the person granted this setting under Ask Daoris's configured access (chosen settings): "
-        + "otherwise it is refused, saying so, and the `daoris settings` verb presses it for their Confirm instead. ";
+        "Ask Daoris only, and only where the person granted this setting (chosen settings): "
+        + "otherwise it is refused, saying so, and `daoris settings` presses it for their Confirm instead. ";
 
     private const string Applies =
         " It changes the setting at once, with no Apply, through the same checks and writer as Settings, and the change is recorded. "

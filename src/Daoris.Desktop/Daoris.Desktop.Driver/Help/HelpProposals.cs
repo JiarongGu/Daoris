@@ -21,7 +21,6 @@ public sealed record HelpProposal(
     /// </summary>
     public string? Repository { get; init; }
 
-    // The ask kind's.
 
     /// <summary>
     /// The review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
