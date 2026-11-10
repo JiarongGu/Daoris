@@ -755,7 +755,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-go-on-agent.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync, existsSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
@@ -794,7 +794,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 // The standing block Daoris appends after the words is kept apart, its routing standing set aside (StubFile.WithoutBlock, StubFile.Routings).
-                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                const text = wordsOf(raw);
                 if (/Routing standing here: /.test(raw)) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note('prompt: ' + text);
                 if (text === 'hold') {
@@ -841,7 +841,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private string NativeHarness()
     {
         var script = Path.Combine(_home, "claude.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             const [log, ...argv] = process.argv.slice(2);
@@ -868,7 +868,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
               const frame = JSON.parse(line);
               if (frame.type !== 'user') return;
               const raw = frame.message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
-              const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+              const text = wordsOf(raw);
               if (/Routing standing here: /.test(raw)) appendFileSync(log + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
               appendFileSync(log, `message=${text.replace(/\n/g, '\\n')}\n`);
               if (!named) {

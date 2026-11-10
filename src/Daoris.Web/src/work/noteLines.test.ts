@@ -756,7 +756,7 @@ describe('noteLines', () => {
       );
       const signedOut = [coded('held.signed-out', '…', { owner: 'codex', account: 'a-1', profile: 'a-1' })];
       expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
-        "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --account a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
+        "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --account a-1` runs the agent's own sign-in into it. Daoris manages the folder and the name; the credential stays in the agent's own store.",
       );
       // The accounts a start waited on for their lock, each by the name the page knows.
       const locked = [coded('held.locked', '…', { owner: 'claude-code', accounts: ['account-1'] })];

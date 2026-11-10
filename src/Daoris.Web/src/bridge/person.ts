@@ -4,8 +4,10 @@ import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import type { PipeAsker } from '../person/askerSaid';
+import { helpCardPlaceOf } from '../person/helpPlaceSaid';
 import {
-  type DeskRequestNow, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow, type StewardActNow, type StewardLandNow,
+  type DeskRequestNow, HELP_PRESS_OUTCOMES, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow,
+  type StewardActNow, type StewardLandNow,
 } from '../person/standing';
 import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
@@ -37,6 +39,7 @@ export type PipeConfirmation = {
   hold?: boolean | null;
   /** Where its terminal stands, as the pipe's code, where that is to be said; absent from a shell without it. */
   standing?: string | null;
+  helpPlace?: unknown;
 };
 
 /** What waits, whole, numbered so the newest telling is kept (as `UNDER_WAY` is). */
@@ -71,6 +74,7 @@ const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   checkWithin: typeof waiting.checkWithin === 'number' ? waiting.checkWithin : null,
   keyed: waiting.keyed === true, restored: waiting.restored === true, hold: waiting.hold === true,
   standing: typeof waiting.standing === 'string' ? waiting.standing : null,
+  helpPlace: helpCardPlaceOf(waiting.helpPlace),
 });
 
 /**
@@ -214,8 +218,6 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
   };
 }
 
-const HELP_OUTCOMES: readonly HelpPressNow['outcome'][] = ['running', 'done', 'failed'];
-
 /** The presses Ask Daoris made, each read field by field; one with no id, route, conversation or time, or an outcome not known, is left out. */
 function helpPressesOf(raw: unknown): HelpPressNow[] {
   if (!Array.isArray(raw)) return [];
@@ -226,11 +228,11 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     const route = text(shaped.route);
     const session = text(shaped.session);
     const at = text(shaped.at);
-    const outcome = HELP_OUTCOMES.find((known) => known === shaped.outcome);
+    const outcome = HELP_PRESS_OUTCOMES.find((known) => known === shaped.outcome);
     if (id === null || route === null || session === null || at === null || !outcome) return [];
     return [{
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
-      place: readPlace(shaped.place), beyond: shaped.beyond === true,
+      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
     }];
   });
 }

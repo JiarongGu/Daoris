@@ -520,8 +520,8 @@ export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: b
 
 /**
  * A working role added, changed, removed or given back its seed: the person's press through the driver's role door,
- * whose judge refuses with nothing written. `daoris role` is its terminal twin, and Ask Daoris's `role_propose` is applied
- * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
+ * whose judge refuses with nothing written. `daoris role` is its terminal twin, Ask Daoris's press of it
+ * shown on the Confirm card by the route's view. What starts may move with it, so the route publishes the roster's key too.
  */
 export const useSetRole = () => useDriverChange('SET_ROLE');
 

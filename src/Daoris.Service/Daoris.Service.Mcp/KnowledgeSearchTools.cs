@@ -87,6 +87,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                  + "empty result: nothing could read the index. Try again, or call `knowledge_refresh`.";
         }
 
+        CallFound.Say(hits.Count);
         if (hits.Count == 0)
         {
             return answer.Semantic

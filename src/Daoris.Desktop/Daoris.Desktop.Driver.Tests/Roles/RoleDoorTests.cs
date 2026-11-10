@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The person's one door into the role catalogue, which the screen's
-/// <c>SET_ROLE</c>, <c>daoris role</c> and Ask Daoris's <c>role_propose</c> each call. Every judge's code is refused with nothing
+/// <c>SET_ROLE</c> and <c>daoris role</c> each call. Every judge's code is refused with nothing
 /// written; an added role keeps its record and its staffing; a removed role's work holds its starts, said; a running session goes on.
 /// </summary>
 public sealed class RoleDoorTests : IDisposable

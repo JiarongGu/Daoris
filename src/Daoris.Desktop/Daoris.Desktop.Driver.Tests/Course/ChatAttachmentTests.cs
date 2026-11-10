@@ -284,7 +284,7 @@ public sealed class ChatAttachmentTests : IDisposable
     private string NativeHarness()
     {
         var script = Path.Combine(_home, "claude-attach.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync, readFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             const argv = process.argv.slice(2);
@@ -297,8 +297,9 @@ public sealed class ChatAttachmentTests : IDisposable
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             for await (const line of createInterface({ input: process.stdin })) {
               const frame = JSON.parse(line);
-              // The standing block Daoris appends after the words is not the person's (StubFile.WithoutBlock).
-              note('user: ' + frame.message.content.map((b) => b.text ?? '[' + b.type + ']').join('').replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, ''));
+              // The standing block Daoris appends after the words, and the folder's place section before them, are not the person's
+              // (StubFile.WithoutBlock, StubPlace).
+              note('user: ' + placeApart(frame.message.content.map((b) => b.text ?? '[' + b.type + ']').join('').replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '')).said);
               send({ type: 'assistant', message: { id: 'm', content: [{ type: 'text', text: 'read it' }] } });
               send({ type: 'result', subtype: 'success', is_error: false, result: 'read it' });
             }
@@ -313,7 +314,7 @@ public sealed class ChatAttachmentTests : IDisposable
     private string ProtocolAgent()
     {
         var script = Path.Combine(_home, "acp-attach-agent.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync, readFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
@@ -331,7 +332,7 @@ public sealed class ChatAttachmentTests : IDisposable
                 note('settings: ' + (settings ? readFileSync(settings, 'utf8') : '(none)'));
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-attach' } });
               } else if (frame.method === 'session/prompt') {
-                const unrouted = (text) => text.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                const unrouted = (text) => placeApart(text.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '')).said;
                 for (const block of frame.params.prompt) {
                   if (block.type === 'text') note('prompt: ' + unrouted(block.text));
                   else if (block.type === 'resource_link') note('link: ' + block.name + ' ' + block.uri);

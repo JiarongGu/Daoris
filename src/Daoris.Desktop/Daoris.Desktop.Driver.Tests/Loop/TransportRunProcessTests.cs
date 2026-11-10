@@ -452,7 +452,8 @@ public sealed class TransportRunProcessTests : IDisposable
             "conv-1", [], Continuations.Opening("scripted", null, null, answer: false, findings: false, persons: true)));
         var ending = run.EndAsync(Bound);
         await Poll.Until(() => File.Exists(ChildLineage.PathOf(_home, "s1"))
-            && Lineage().Count(line => line.GetProperty("by").GetString() == "start") >= 2);
+            && Lineage().Where(line => line.GetProperty("by").GetString() == "start").Select(line => line.GetProperty("proc").GetString()).ToList() is [_, var second]
+            && run.Proc == second && !run.Input.MayRetry);
 
         var retried = run.Process!;
         var proc = run.Proc!;

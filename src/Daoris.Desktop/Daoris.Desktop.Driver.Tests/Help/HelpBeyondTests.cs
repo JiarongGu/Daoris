@@ -39,13 +39,31 @@ public sealed class HelpBeyondTests : IDisposable
         File.AppendAllText(path, string.Join("\n", lines) + "\n");
     }
 
-    private static string Line(DateTimeOffset at, string act, string? workspace = null, string? repository = null, string? what = null)
+    private static string Line(
+        DateTimeOffset at, string act, string? workspace = null, string? repository = null, string? what = null, int? found = null)
     {
         var fields = new List<string> { $"\"at\":\"{at.UtcDateTime:yyyy-MM-dd'T'HH:mm:ss.fff'Z'}\"", "\"tool\":\"t\"", $"\"act\":\"{act}\"" };
         if (workspace is not null) fields.Add($"\"workspace\":\"{workspace}\"");
         if (repository is not null) fields.Add($"\"repository\":\"{repository}\"");
         if (what is not null) fields.Add($"\"what\":\"{what}\"");
+        if (found is not null) fields.Add($"\"found\":{found}");
         return "{" + string.Join(",", fields) + "}";
+    }
+
+    [Fact]
+    public void A_search_keeps_how_many_its_answer_found_and_answers_it_as_its_count()
+    {
+        new HelpConversations(_home).Change("h1", kept => kept with { Focus = Games, Foci = [Games] });
+        Noted(
+            Line(Noon, "search", workspace: "Work", what: "release", found: 3),
+            Line(Noon.AddSeconds(1), "search", workspace: "all", found: 0),
+            Line(Noon.AddSeconds(2), "read", repository: "api", what: "README.md"));
+
+        var entries = HelpBeyond.Of(_home, "h1", "Games", Registry);
+
+        Assert.Equal([3, 0, null], entries.Select(entry => entry.Count));
+        Assert.Equal(3, entries[0].Wire()["count"]);
+        Assert.Null(entries[2].Wire()["count"]);
     }
 
     [Fact]

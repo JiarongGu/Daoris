@@ -5,6 +5,30 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## A conversation's place told under a note of its own, and the merged words to the glossary (2026-11-11)
+
+> **The told place and the catalogue reds** (driver, web): Outcome: the place a conversation is told before its first words rides its own field (`ChatMessage.Place`) and is kept under `chat.told-place`, so the page no longer says the agent was told of Daoris's browser (FIX-LOG); the pressed settings', isolate and apply words follow the glossary (委托 for a quest, 智能体 for an agent, 本机, counts said in their number, *Apply the reviewed changes*), *Work apart* accepted as the isolate step's own name, the browser's *profile* as the browser's word. Proof: `ChatAttachmentTests` (red before), `noteToldPlace.test`, `i18n.test`, `names.test`, `noteLines.test`, `i18n:check` and `names:check --strict`.
+
+---
+
+## ASKFULL1g-v's role half — `daoris role` pressed, the role kind gone (2026-11-11)
+
+> **ASKFULL1g-v, role** (modules, service, driver, web): Outcome: each role verb (set, remove, default, policy, rules, a supervisor's set) presses `SET_ROLE`, judged at the ask by the role door's own judges and refused with no card where they refuse; the Confirm card draws the place's rules and the supervisor's record before and after (`RoleChangeView`, `PressView`'s `Rules` and `Supervisor`, web `person/view/RulesChange|SupervisorChange`); the role proposal kind, its service tool and writer, its box row, call-table column, room line and card kind are gone whole. Proof: `RoleChangeViewTests` (seen failing first), the moved card tests in both languages, the room goldens; rules 9, 40, 41 and 56 rewritten.
+
+---
+
+## ASKSCOPE2's counts, the card's place line and the *Asked you* rows (2026-11-11)
+
+> **ASKSCOPE2, the rest of 2e-2i** (service, driver, modules, web): Outcome: `knowledge_search` and `quest_list` say how many they found as they answer (`CallFound`), noted as `found` beside the call's place, so the receipt says *Searched workspace … · N found*; a restricted press reads its place before its card through the delegate that judges full-access presses, and the card says *In …, outside this conversation's focus (…)* only when it lies beyond (`HelpCardPlace`); an asked press is kept marked asked from waiting to allowed, refused, changed or unanswered (`HelpAskedPress`), and the receipt and Notifications list it apart with no *Resume*; a press naming only a quest is judged at the repository its quest asks (`HelpPressPlace.QuestOnly`). Proof: `CallPlaceFilterTests`, `McpHelpCircleTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `PipeDelegateTests`, `BeyondReceipt`, `HelpPressLine` and `helpPlaceSaid` in both languages, seen failing first.
+
+---
+
+## The process halves' reds after the place work (2026-11-11)
+
+> **CI reds, process halves** (driver, modules): Outcome: the chat classes' stand-ins set apart the place section a conversation in a plain folder is told before its first words (driving rule 12; `StubPlace.cs`); the transport test waits for the retry's leg, whose lineage start is written before its spawn; the review's read flows pass their own token, so a review the page leaves no longer keeps its git running (FIX-LOG); the git half, the limit-move crash, the server keeper and the cap count pass on main as they stand. Left: the place section is filed under the browser's note (`chat.told-browser`), so the page says the agent was told of Daoris's browser — a note code of its own with its words. Proof: each class run filtered, green but `ChatAttachmentTests`' browser case; 319 memo-read tests.
+
+---
+
 ## PLACEWORK1h (part) — a real session plans a system, and a system is a department (2026-11-11)
 
 > **PLACEWORK1h, second part** (service, driver, web, examples): Outcome: a session in a system department calls the connector's `system_plan`, which the loop hands to the department's plugin, keeps under the session's record and answers with the plan's number and resources (Service `Systems/SystemPlanBox.cs`, `Mcp/SystemPlanTools.cs`; driver `Departments/Systems/SystemPlanning.cs`); the tool is served to that session alone (D270); a department registers as a system with no root and its plugin's `<plugin>/<system>`, through *A system…* on the add or `daoris repository add --system`, refused where no switched-on plugin declares it; two sessions planning at once keep their own plans and the second apply is refused as stale; an apply answered `none` settles with nothing written. Proof: `McpSystemPlanToolTests`, `RegistrationStoreTests`, `SystemAddTests`, `SystemPlanningTests`, `SystemChoiceField.test`, `CoreSetTests` (seen failing first), and `SystemPlanToolProcessTests` on the stand-in's real process.

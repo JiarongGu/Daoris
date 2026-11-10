@@ -182,7 +182,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-restart-agent.mjs");
-        File.WriteAllText(script, """
+        File.WriteAllText(script, StubPlace.Js + """
             import { appendFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
@@ -210,7 +210,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 // The standing block Daoris appends after the words is kept apart, its routing standing set aside (StubFile.WithoutBlock, StubFile.Routings).
-                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                const text = placeApart(raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '')).said;
                 if (/Routing standing here: /.test(raw)) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note('prompt: ' + text);
                 if (text === 'hold') return;

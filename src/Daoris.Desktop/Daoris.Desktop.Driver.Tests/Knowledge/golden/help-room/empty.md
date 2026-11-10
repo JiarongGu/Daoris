@@ -108,13 +108,11 @@ under *Done at a terminal* (below), name its command for the person to run.
   move starts. Its card shows the person the move; one the registry would refuse is answered to you at once and never shown.
   Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
-- `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →
-  Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left
-  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give
-  every seeded role back its seed and keep the added ones. A removed role's work
-  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
-  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section
-  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.
+- A role of this machine's role catalogue is added, changed or removed by pressing, never proposed, as Agents → Roles
+  does: `daoris role set <id> …` (its names, work, scope and choices, or a supervisor's kinds, acts, holder and window),
+  `daoris role remove <id>`, `daoris role default <id>|--all`, a role's policy `daoris role policy <id> …` and a place's
+  supervisor rules `daoris role rules --place <place> …`. A removed role's work waits until a role takes it; running work
+  goes on. Its card shows the person the change; one the role door would refuse is answered to you at once and never shown.
 - Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and
   `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record
   whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never

@@ -33,7 +33,7 @@ internal sealed class LandedReviews(TreeContext context)
     internal async Task<LandedReview> LandedReviewAsync(string? root, LandedBranch entry, bool changes = true, CancellationToken ct = default)
     {
         // Reads only: the checkout's top is asked once for the whole review, not again by the diff's own check.
-        using var once = GitReadOnce.Within();
+        using var once = GitReadOnce.Within(ct);
         if (root is null || !await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false))
         {
             return new(entry, LandedState.NoCheckout);

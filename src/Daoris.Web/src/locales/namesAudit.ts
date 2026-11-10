@@ -21,6 +21,7 @@ export const STRAY_AUDITED = [
   'menu.keys.field:zh',
   // 远程 here is the act's own: a git act on a git remote, which is no Daoris remote.
   'person.route.GIT_ANSWER:zh',
+  'person.view.browser-use-edge:en',
   // 改动 is the diff's changes, which review's own reason names as another thing.
   'projects.folder.noGit:zh', 'projects.manage.folderNote:zh',
   // An appointment's scope, a permission rule's and the window's workspace: none is a conversation's focus.

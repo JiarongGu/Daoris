@@ -23,7 +23,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     /// </param>
     internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null)
     {
-        using var once = GitReadOnce.Within();
+        using var once = GitReadOnce.Within(ct);
         var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
         var full = Path.GetFullPath(path);

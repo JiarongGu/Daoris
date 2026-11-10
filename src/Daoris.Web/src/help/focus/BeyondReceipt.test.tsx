@@ -44,6 +44,30 @@ describe.each(['en', 'zh'])('the receipt in %s', (language) => {
       .toBeInTheDocument();
   });
 
+  it('says how many a search found where its answer said so', async () => {
+    await i18n.changeLanguage(language);
+    render(<BeyondReceipt entries={[{ ...search, count: 3 }, { ...every, count: 1 }]} focus={games} next={null} onFocus={() => {}} defaultOpen />);
+    const workspace = i18n.t('help.beyond.place.workspace', { workspace: 'Work' });
+    expect(screen.getByText(i18n.t('help.beyond.searchFound', { place: workspace, count: 3 }))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('help.beyond.searchFound', { place: i18n.t('help.beyond.place.every'), count: 1 }))).toBeInTheDocument();
+    if (language === 'en') expect(screen.getByText('Searched workspace Work · 3 found')).toBeInTheDocument();
+    if (language === 'zh') expect(screen.getByText('搜索了工作区 Work · 找到 3 条')).toBeInTheDocument();
+  });
+
+  it("says a press that asked the person apart from one that ran, with its card's state", async () => {
+    await i18n.changeLanguage(language);
+    const asked: BeyondEntry = { at: '2026-11-11T12:00:09Z', act: 'asked', place: work, what: 'DAORIS.DRIVER.WORK_PAUSE', outcome: 'waiting' };
+    render(<BeyondReceipt entries={[pressed, asked]} focus={games} next={null} onFocus={() => {}} defaultOpen />);
+    const workspace = i18n.t('help.beyond.place.workspace', { workspace: 'Work' });
+    const act = i18n.t(routeKey('DAORIS.DRIVER', 'WORK_PAUSE'), { defaultValue: 'WORK_PAUSE' });
+    const state = i18n.t('notifications.helpPressed.outcome.waiting');
+    expect(screen.getByText(i18n.t('help.beyond.asked', { act, place: workspace, state }))).toBeInTheDocument();
+    if (language === 'en') expect(screen.getByText('Asked you: pause the work on this machine in workspace Work · Waiting')).toBeInTheDocument();
+    if (language === 'zh') expect(screen.getByText('已请你确认：工作区 Work 中的暂缓本机上的这项工作 · 等待中')).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-beyond-act="asked"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-beyond-act="press"]')).toHaveLength(1);
+  });
+
   it('makes a place the focus, and says one that already is, or waits to be', async () => {
     await i18n.changeLanguage(language);
     const onFocus = vi.fn();

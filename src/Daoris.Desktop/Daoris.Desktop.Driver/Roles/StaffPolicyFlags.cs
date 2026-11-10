@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// The words of <c>daoris role policy</c> as a policy press: a draft (the stored policy
 /// or today's order, or a preset's fill) with each flag laid over it, in the order typed. It judges nothing; the role door's judge does.
 /// </summary>
-internal static class StaffPolicyFlags
+public static class StaffPolicyFlags
 {
     /// <exception cref="ChoiceWords">A flag that is not one, lacks its value or names a choice the role does not have.</exception>
     public static RolePolicyPress Read(IReadOnlyList<string> words, IReadOnlyList<ActorChoice> choices, StaffPolicyRead existing, string grammar)

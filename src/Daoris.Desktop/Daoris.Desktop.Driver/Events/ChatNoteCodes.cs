@@ -137,8 +137,9 @@ public static class ChatNoteCodes
     public static readonly NoteCode BrowserNoHost = new("browser.no-host", []);
     public static readonly NoteCode BrowserNoneUp = new("browser.none-up", []);
 
-    // The line a chat's agent is told of the browser it is handed: the lead by its code, the line Daoris's one-copy English.
+    // What a chat's agent is told of the browser it is handed and of the place it works in: the lead by its code, then Daoris's English.
     public static readonly NoteCode ChatToldBrowser = new("chat.told-browser", []);
+    public static readonly NoteCode ChatToldPlace = new("chat.told-place", []);
 
     // The repository's process a chat in a tree of its own is told at its start: its commit rule's mode and where it is set are
     // facts, the words after the lead Daoris's one-copy English.

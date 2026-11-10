@@ -1,15 +1,9 @@
 namespace Daoris.Knowledge;
 
-/// <summary>
-/// Where Ask Daoris's proposals are written: one file each, under the driver's home, for
-/// the person to apply or not.
-/// </summary>
+/// <summary>Where Ask Daoris's proposals are written: one file each, under the driver's home, for the person to apply or not.</summary>
 /// <remarks>
-/// <para><b>One writer per kind</b>, each a class, <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of its own and listed in
-/// <see cref="Kinds"/>. The box's <c>Propose…</c> method, which the connector's tool calls, is one call to the kind's writer, which
-/// checks the kind's shape and hands its fields to <see cref="HelpProposalFile.Write"/>. Every file carries
-/// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none.</para>
-///
+/// <para><b>One writer per kind</b>, <c>Help&lt;Kind&gt;ProposalWriter</c>, listed in <see cref="Kinds"/>: the box's <c>Propose…</c>,
+/// which the connector's tool calls, hands the kind's checked fields to <see cref="HelpProposalFile.Write"/>.</para>
 /// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
 /// accepts, a pattern that names one branch per session, a repository registered here, an agent this
 /// machine has — is the driver's, which judges each with the route's own code before the person sees
@@ -30,7 +24,6 @@ public sealed class HelpProposalBox(string? home)
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
-        ("role", "role_propose"),
     ];
 
     private readonly HelpProposalFile file = new(home);
@@ -63,13 +56,6 @@ public sealed class HelpProposalBox(string? home)
     public (string? Id, string Message) ProposeSync(
         string? repository, string why, string? session, DateTimeOffset at, string? workspace = null) =>
         new HelpSyncProposalWriter(file).Propose(repository, why, session, at, workspace);
-
-    /// <inheritdoc cref="HelpRoleProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeRole(
-        string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
-        long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null,
-        string? place = null, string? rules = null, long? rulesRevision = null, HelpSupervisorFields? supervisor = null) =>
-        new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at, policy, policyRevision, place, rules, rulesRevision, supervisor);
 
     /// <inheritdoc cref="HelpClearProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeClear(

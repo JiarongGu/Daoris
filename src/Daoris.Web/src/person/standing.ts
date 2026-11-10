@@ -18,13 +18,17 @@ export type StandingConfirmationNow = {
   stewardDesk: DeskRequestNow[];
   /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
   stewardLands: StewardLandNow[];
-  /** What Ask Daoris pressed this run in full access, newest first, from Daoris's memory: the second group of *Notifications*' line. */
+  /** What Ask Daoris pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
   helpPresses: HelpPressNow[];
 };
 
+/** How an Ask Daoris press stands: one run with no card under way, done or not; one asked on a card, its card's state. */
+export const HELP_PRESS_OUTCOMES = ['running', 'done', 'failed', 'waiting', 'allowed', 'refused', 'changed', 'unanswered'] as const;
+export type HelpPressOutcome = (typeof HELP_PRESS_OUTCOMES)[number];
+
 /**
- * One press Ask Daoris made in full access with no card, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules'
- * `HelpPressNow`): the route as the window words it, the conversation that pressed it, what it named, when and how it ended.
+ * One press Ask Daoris made this run, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules' `HelpPressNow`): the route
+ * as the window words it, the conversation that pressed it, what it named, when and how it stands, and whether it asked the person.
  */
 export type HelpPressNow = {
   id: string;
@@ -34,11 +38,13 @@ export type HelpPressNow = {
   scope: string | null;
   target: string | null;
   at: string;
-  outcome: 'running' | 'done' | 'failed';
+  outcome: HelpPressOutcome;
   /** The workspace or repository the press named; none where it named neither, or until the driver placed it. */
   place?: Place | null;
   /** Whether that place lay beyond its conversation's focus at the press. */
   beyond?: boolean;
+  /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
+  asked?: boolean;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */
