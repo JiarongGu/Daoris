@@ -83,7 +83,6 @@ public sealed class StewardAllowTests : DriverModuleBridge
             ? new Dictionary<string, IRoleAct>(StringComparer.Ordinal) { [act] = probe }
             : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
         judge.Staff(RoleKit.Steward([]), RoleKit.Supervisor(Supervisor, scope ?? CatalogueScope.Everywhere, decides: [SupervisorKinds.Allow], acts: [AllowSteward]));
-        // The repository the hold names is registered here, as a switch press's view reads it at the ask.
         var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, standing: judge)
         {
             Grounds = new StubGrounds { Registered = { "engine" } },

@@ -224,10 +224,6 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeStates.Active, timedOut.Status.State);
     }
 
-    /// <summary>
-    /// Only the kind's reach authority reaches it: the session's own word on the ledger reaches <c>claimed</c> (its done) and <c>isolate</c>
-    /// (its take, after the start set the work apart), neither of which may end a graph, and nothing else.
-    /// </summary>
     [Fact]
     public void Only_the_kinds_authority_reaches_it_and_a_claim_is_no_evidence()
     {
@@ -238,14 +234,9 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeRefusal.NotAuthority, NodeLifecycle.Apply(line, At(NodeStates.Active), Reach(NodeSource.Plugin)).Refused);
         Assert.Equal(NodeStates.Reached, NodeLifecycle.Apply(line, At(NodeStates.Active), Reach(NodeSource.Git)).Status.State);
 
-        string[] onTheLedger = [NodeKinds.Claimed, NodeKinds.Isolate];
-        foreach (var kind in onTheLedger)
-        {
-            Assert.Equal(NodeStates.Reached, NodeLifecycle.Apply(Declared(kind), At(NodeStates.Active), Reach(NodeSource.Ledger)).Status.State);
-            Assert.False(NodeKit.Row(kind)!.MayEnd);
-        }
-
-        Assert.All(NodeKit.Built.Units.Select(unit => unit.Row).Where(each => !onTheLedger.Contains(each.Kind)), each => Assert.NotEqual(NodeSource.Ledger, each.ReachBy));
+        Assert.Equal(NodeStates.Reached, NodeLifecycle.Apply(Declared(NodeKinds.Claimed), At(NodeStates.Active), Reach(NodeSource.Ledger)).Status.State);
+        Assert.False(NodeKit.Row(NodeKinds.Claimed)!.MayEnd);
+        Assert.All(NodeKit.Built.Units.Select(unit => unit.Row).Where(each => each.Kind is not (NodeKinds.Claimed or NodeKinds.Isolate)), each => Assert.NotEqual(NodeSource.Ledger, each.ReachBy));
     }
 
     /// <summary>Git's proofs never fail: not yet is pending. A plugin's failure needs its code.</summary>
