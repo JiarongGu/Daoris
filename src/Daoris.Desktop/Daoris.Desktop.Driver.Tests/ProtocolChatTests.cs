@@ -67,8 +67,9 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.True(runner.Finish(id!));
         await Until(() => service.State(id!) == "completed", Seen);
 
+        // The folder it works in is told its place with the first message alone, under the writer's lease.
         Assert.Equal(
-            ["initialize", "session/new", "prompt: first", "routing: not driven", "prompt: second", "session/close", "stdin ended"],
+            ["initialize", "session/new", "place: folder", "prompt: first", "routing: not driven", "prompt: second", "session/close", "stdin ended"],
             HeardLines());
 
         var said = events.Page(id!).Events
@@ -629,7 +630,11 @@ public sealed class ProtocolChatTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 // The standing block Daoris appends after the words is logged apart, its routing standing noted (StubFile.WithoutBlock).
                 const raw = frame.params.prompt[0].text;
-                const said = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                const unblocked = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                // The place section a conversation in its own folder is told ahead of its first words is noted apart, by its kind.
+                const placed = /^## Your place\n[\s\S]*\n\n/.exec(unblocked);
+                if (placed) note('place: ' + (/not a git repository/.test(placed[0]) ? 'folder' : 'checkout'));
+                const said = placed ? unblocked.slice(placed[0].length) : unblocked;
                 note('prompt: ' + said);
                 if (/Routing standing here: /.test(raw)) note('routing: ' + /Routing standing here: ([^.]*)\./.exec(raw)[1]);
                 if (said === 'hold') continue;   // a turn that runs until someone stops it
