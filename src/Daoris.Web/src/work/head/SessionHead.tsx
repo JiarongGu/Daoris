@@ -120,7 +120,6 @@ export function SessionHead({
 }: {
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
-  /** A parked line's hold on its checkout, the frame's `SessionPlaceHold`: *Details*' *Checkout* row, with *Let others work here*. */
   placeHold?: ReactNode;
   /** The line's counts and the acts the person's rules made on it: *Details*' course rows and its Supervisor line. Absent, none is drawn. */
   supervision?: LineSupervision;

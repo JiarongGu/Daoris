@@ -413,7 +413,6 @@ export const useEverySession = (enabled: boolean) => {
   return useQuery({ ...read, enabled });
 };
 
-/** A parked line's checkout let go for others: the ledger clears the mark, and the pushed sessions carry the record back. */
 export const useReleasePlace = () => useMutation({ mutationFn: (session: string) => api.releasePlace(session) });
 
 /**

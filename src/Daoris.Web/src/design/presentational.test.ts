@@ -94,7 +94,6 @@ const ORGANISMS = new Set<string>([
   './work/head/SessionTerminalHold.tsx',
   // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
-  // A parked line's hold on its checkout: it holds the release, so `PlaceHoldFact` is handed the press and holds none.
   './work/head/SessionPlaceHold.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',
@@ -125,9 +124,7 @@ const ORGANISMS = new Set<string>([
   './help/ask/useHelpMode.tsx',
   './help/ask/useHelpFollow.tsx',
   './help/ask/useHelpSlotParts.tsx',
-  // Its focus, the place the conversation is about, with its press, one hook too.
   './help/focus/useHelpFocus.tsx',
-  // The tool calls it holds for the person: the waits and the answer, so `PermissionAsks` is handed them and holds neither.
   './help/ask/AskHeld.tsx',
   // The machine as the queries answer it: one reading for the starters and the setup
   // guide, so the panel, the guide and the steps below them hold no query.

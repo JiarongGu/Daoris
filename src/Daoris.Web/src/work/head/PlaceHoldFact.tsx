@@ -15,8 +15,6 @@ export const placeHolds = (session: Pick<Session, 'state' | 'holdsPlace'>): read
 /**
  * **A line holding its repository's checkout**: one writer works a place at a time, and a parked line that kept uncommitted paths
  * of its own keeps the checkout until its next turn commits them, they are discarded, or the person lets others work here.
- *
- * @remarks
  * The paths are the record's, named in the fact's title; the press sends the ledger's `ReleasePlace`, after which the next session
  * there is told those paths are another line's. Props only: `SessionPlaceHold` holds the mutation.
  */
@@ -38,7 +36,6 @@ export function PlaceHoldFact({ paths, onRelease, pending = false, refusal }: {
   );
 }
 
-/** *Details*' *Checkout* row, `hold` the frame's `SessionPlaceHold`: said only where a parked line keeps its checkout with paths of its own. */
 export function placeHoldRow(t: TFunction, session: Session, hold?: ReactNode): DetailRow {
   return { label: t('work.placeHold.details'), value: placeHolds(session) ? hold ?? null : null };
 }
