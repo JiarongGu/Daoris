@@ -115,6 +115,7 @@ export function toTurns(
   const foot = (key: string): Turn => (current?.waiting ? current : Object.assign(open(key), { waiting: true }));
   const asked = (event: SessionEvent, key: string): Ask => ({
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
+    ...(event.id ? { id: event.id } : {}),
     ...(event.files?.length ? { files: event.files } : {}),
     // A channel's message by its own mark, never by Daoris's words around it.
     ...(event.channel ? { channel: event.channel } : {}),

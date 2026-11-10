@@ -4,6 +4,7 @@ import { sentence } from '../locales/format';
 import { NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
+import { focusDividers } from './focus/FocusDivider';
 import { BackToBottom, SessionConversation, type TailState } from '../work/conversation/SessionConversation';
 import { AskHistory } from './AskHistory';
 import { type AskConversationSlot } from './AskPanel';
@@ -241,6 +242,7 @@ export function useAskConversation(
       live={live}
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
+      dividers={focusDividers(shownRow?.marks)}
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}

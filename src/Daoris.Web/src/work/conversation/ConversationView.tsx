@@ -66,8 +66,10 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers,
 }: {
+  /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
+  dividers?: Readonly<Record<string, ReactNode>>;
   /** The requests its agent made, each drawn as its card at its call, its answer folded in; none, every call is a tool card. */
   exchanges?: Exchanges;
   /**
@@ -199,6 +201,7 @@ export function ConversationView({
               onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
               reveal={reveal}
               callMark={index === turns.length - 1 ? callMark : undefined}
+              divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
             />
           ))}
         </section>
@@ -247,8 +250,9 @@ function Held({ id, reveal, children }: { id: string; reveal?: string; children?
   );
 }
 
-function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark }: {
+function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divider }: {
   turn: Turn;
+  divider?: ReactNode;
   callMark?: CallMark;
   tree?: string | null;
   running: boolean;
@@ -267,6 +271,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark }: {
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
+      {divider}
       {turn.ask && (
         <Held id={turn.ask.key} reveal={reveal}>
           {taken ? <TakenLine card={taken} onShow={onShow} /> : <AskView ask={turn.ask} answer={exchanges.answers[turn.ask.key]} />}
