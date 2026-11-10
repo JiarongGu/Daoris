@@ -17,6 +17,9 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
 
     private const string ProposalSuffix = "_propose";
 
+    /// <summary>How many a search's answer found, where its tool said so (<see cref="CallFound"/>).</summary>
+    public int? Found { get; init; }
+
     /// <summary>The place a call named, or null where it named no workspace or repository, or its tool is none the table classes.</summary>
     public static CallPlace? Of(string? tool, IDictionary<string, JsonElement>? arguments)
     {

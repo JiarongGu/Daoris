@@ -225,6 +225,8 @@
   "help.beyond.place.workspace": "工作区 {{workspace}}",
   "help.beyond.place.repository": "仓库 {{repository}}（{{workspace}}）",
   "help.beyond.search": "搜索了{{place}}",
+  "help.beyond.searchFound": "搜索了{{place}} · 找到 {{count}} 条",
+  "help.beyond.searchFound_other": "搜索了{{place}} · 找到 {{count}} 条",
   "help.beyond.read": "读取了{{place}}：{{what}}",
   "help.beyond.readPlace": "读取了{{place}}",
   "help.beyond.propose": "在{{place}}中提出了更改",

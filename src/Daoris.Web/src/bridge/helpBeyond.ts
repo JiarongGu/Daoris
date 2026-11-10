@@ -19,7 +19,8 @@ export function beyondAnswer(raw: unknown): BeyondEntry[] {
     const act = ACTS.find((known) => known === shaped.act);
     const place = readPlace(shaped.place);
     if (at === null || !act || place === null) return [];
-    return [{ at, act, place, what: text(shaped.what), outcome: OUTCOMES.find((known) => known === shaped.outcome) ?? null }];
+    const count = typeof shaped.count === 'number' && Number.isInteger(shaped.count) && shaped.count >= 0 ? shaped.count : null;
+    return [{ at, act, place, what: text(shaped.what), outcome: OUTCOMES.find((known) => known === shaped.outcome) ?? null, count }];
   });
 }
 

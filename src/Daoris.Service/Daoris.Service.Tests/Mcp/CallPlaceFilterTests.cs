@@ -12,8 +12,8 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// An Ask Daoris connector bound to a workspace notes each call that named a workspace or a repository, after its tool answered,
-/// in the session's place file the driver composes the turn's receipt from: what the call did, the place as named, and what it
-/// named of it. A call that names no place, one its tool refused, and a connector bound to none note nothing.
+/// in the session's place file the driver composes the turn's receipt from: what the call did, the place as named, what it
+/// named of it, and how many a search's answer found where its tool said so. A call that names no place, one its tool refused, and a connector bound to none note nothing.
 /// </summary>
 public sealed class CallPlaceFilterTests : IDisposable
 {
@@ -94,6 +94,8 @@ public sealed class CallPlaceFilterTests : IDisposable
             ((string?)lines[1]["tool"], (string?)lines[1]["act"], (string?)lines[1]["repository"], (string?)lines[1]["what"]));
         Assert.Null(lines[1]["workspace"]);
         Assert.True(DateTimeOffset.TryParse((string?)lines[0]["at"], out _));
+        Assert.Equal(3, (int?)lines[0]["found"]);
+        Assert.Null(lines[1]["found"]);
     }
 
     [Fact]
@@ -110,8 +112,15 @@ public sealed class CallPlaceFilterTests : IDisposable
         var toServer = new Pipe();
         var fromServer = new Pipe();
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
-        var tools = new[] { "knowledge_search", "checkout_read" }
-            .Select(name => McpServerTool.Create(() => "ran " + name, new McpServerToolCreateOptions { Name = name, Description = "Stands in." }))
+        var tools = new[]
+            {
+                McpServerTool.Create(() =>
+                {
+                    CallFound.Say(3);
+                    return "ran knowledge_search";
+                }, new McpServerToolCreateOptions { Name = "knowledge_search", Description = "Stands in, finding three." }),
+                McpServerTool.Create(() => "ran checkout_read", new McpServerToolCreateOptions { Name = "checkout_read", Description = "Stands in." }),
+            }
             .Append(McpServerTool.Create(
                 () => new ModelContextProtocol.Protocol.CallToolResult { IsError = true, Content = [new ModelContextProtocol.Protocol.TextContentBlock { Text = "no" }] },
                 new McpServerToolCreateOptions { Name = "quest_list", Description = "Refuses, as a tool whose call failed." }));

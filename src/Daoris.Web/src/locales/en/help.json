@@ -225,6 +225,8 @@
   "help.beyond.place.workspace": "workspace {{workspace}}",
   "help.beyond.place.repository": "repository {{repository}} ({{workspace}})",
   "help.beyond.search": "Searched {{place}}",
+  "help.beyond.searchFound": "Searched {{place}} · {{count}} found",
+  "help.beyond.searchFound_other": "Searched {{place}} · {{count}} found",
   "help.beyond.read": "Read {{place}}: {{what}}",
   "help.beyond.readPlace": "Read {{place}}",
   "help.beyond.propose": "Proposed a change in {{place}}",

@@ -216,6 +216,7 @@ public sealed class QuestTools(
     {
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var found = await quests.ListAsync(repository, includeClosed, scope, ct).ConfigureAwait(false);
+        CallFound.Say(found.Count);
         if (found.Count == 0)
         {
             return repository is null

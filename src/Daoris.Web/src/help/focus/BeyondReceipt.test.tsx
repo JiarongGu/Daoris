@@ -44,6 +44,16 @@ describe.each(['en', 'zh'])('the receipt in %s', (language) => {
       .toBeInTheDocument();
   });
 
+  it('says how many a search found where its answer said so', async () => {
+    await i18n.changeLanguage(language);
+    render(<BeyondReceipt entries={[{ ...search, count: 3 }, { ...every, count: 1 }]} focus={games} next={null} onFocus={() => {}} defaultOpen />);
+    const workspace = i18n.t('help.beyond.place.workspace', { workspace: 'Work' });
+    expect(screen.getByText(i18n.t('help.beyond.searchFound', { place: workspace, count: 3 }))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('help.beyond.searchFound', { place: i18n.t('help.beyond.place.every'), count: 1 }))).toBeInTheDocument();
+    if (language === 'en') expect(screen.getByText('Searched workspace Work · 3 found')).toBeInTheDocument();
+    if (language === 'zh') expect(screen.getByText('搜索了工作区 Work · 找到 3 条')).toBeInTheDocument();
+  });
+
   it('makes a place the focus, and says one that already is, or waits to be', async () => {
     await i18n.changeLanguage(language);
     const onFocus = vi.fn();

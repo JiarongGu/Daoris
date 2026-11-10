@@ -27,7 +27,9 @@ const actOf = (t: Say, what: string | null) => {
 /** One entry's sentence, in the design's words. */
 const sentenceOf = (t: Say, entry: BeyondEntry) => {
   const place = placeWords(t, entry.place);
-  if (entry.act === 'search') return t('help.beyond.search', { place });
+  if (entry.act === 'search') {
+    return typeof entry.count === 'number' ? t('help.beyond.searchFound', { place, count: entry.count }) : t('help.beyond.search', { place });
+  }
   if (entry.act === 'read') return entry.what ? t('help.beyond.read', { place, what: entry.what }) : t('help.beyond.readPlace', { place });
   if (entry.act === 'propose') return t('help.beyond.propose', { place });
   const act = actOf(t, entry.what);

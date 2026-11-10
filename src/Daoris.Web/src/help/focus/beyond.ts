@@ -10,4 +10,6 @@ export type BeyondEntry = {
   what: string | null;
   /** A full-access press's outcome; none for what the connector noted, which it noted once answered. */
   outcome: 'running' | 'done' | 'failed' | null;
+  /** How many a search's answer found, where its tool said so. */
+  count?: number | null;
 };

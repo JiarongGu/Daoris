@@ -2,15 +2,15 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One thing an Ask Daoris turn did beyond its conversation's focus, as Daoris's doors saw it: when, its act (<c>search</c>,
-/// <c>read</c>, <c>propose</c> or <c>press</c>), the place (this machine for every workspace), what it named of it, and a press's
-/// outcome.
+/// <c>read</c>, <c>propose</c> or <c>press</c>), the place (this machine for every workspace), what it named of it, a press's
+/// outcome, and how many a search found where its tool said so.
 /// </summary>
-public sealed record HelpBeyondEntry(DateTimeOffset At, string Act, HelpFocus Place, string? What, string? Outcome = null)
+public sealed record HelpBeyondEntry(DateTimeOffset At, string Act, HelpFocus Place, string? What, string? Outcome = null, int? Count = null)
 {
-    /// <summary>The entry as <c>HELP_BEYOND</c> answers it: <c>{ at, act, place, what, outcome }</c>.</summary>
+    /// <summary>The entry as <c>HELP_BEYOND</c> answers it: <c>{ at, act, place, what, outcome, count }</c>.</summary>
     public IReadOnlyDictionary<string, object?> Wire() => new Dictionary<string, object?>
     {
-        ["at"] = At, ["act"] = Act, ["place"] = Place.Wire(), ["what"] = What, ["outcome"] = Outcome,
+        ["at"] = At, ["act"] = Act, ["place"] = Place.Wire(), ["what"] = What, ["outcome"] = Outcome, ["count"] = Count,
     };
 }
 
@@ -65,7 +65,7 @@ public static class HelpBeyond
             var focus = FocusAt(held, kept.Marks, note.At);
             if (Place(note, focus, registry) is { } place && Outside(focus, place))
             {
-                entries.Add(new(note.At, note.Act, place, note.What));
+                entries.Add(new(note.At, note.Act, place, note.What, Count: note.Found));
             }
         }
 
