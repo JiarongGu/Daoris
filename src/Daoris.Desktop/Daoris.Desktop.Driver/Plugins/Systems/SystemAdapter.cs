@@ -30,7 +30,7 @@ public sealed class SystemAdapter(IHookChannel channel, SystemPlace place, Syste
         var answer = await channel.SystemAsync(HookPoints.ApplyPerform, SystemWire.Apply(place.System, plan), ct).ConfigureAwait(false);
         var applied = SystemWire.ReadApplied(answer)
             ?? throw new DriverException($"plugin `{place.Plugin}` answered `{HookPoints.ApplyPerform}` with {answer.GetRawText()}, which is not what an apply came to — "
-                + "`{ \"state\": \"applied\" | \"stale\" | \"failed\", \"applied\": [ … ] }`, a stale one naming `refused` and each resource's `present` version.");
+                + "`{ \"state\": \"applied\" | \"none\" | \"stale\" | \"failed\", \"applied\": [ … ] }`, a stale one naming `refused` and each resource's `present` version.");
         plans.Applied(record, plan.Plan, applied);
         return applied;
     }

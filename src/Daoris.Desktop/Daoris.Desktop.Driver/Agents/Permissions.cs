@@ -128,8 +128,9 @@ public static class PermissionRules
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
                 "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
-                "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose",
+                "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Select(tool => ConnectorPrefix + tool)],
+            // `system_plan` only keeps a plan: the system changes at the apply, after the person's review.
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` only PROPOSES — a widening still waits for the person. `go_ahead_ask`
             // only ASKS — the act it names still waits for the person's yes. `review_serve` and
