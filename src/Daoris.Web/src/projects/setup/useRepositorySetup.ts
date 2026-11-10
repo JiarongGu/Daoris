@@ -85,7 +85,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const named = (names: string[] | undefined, name: string) => (names ?? []).some((each) => each.toLowerCase() === name.toLowerCase());
   const checkoutOn = target !== null && named(driver.data?.checkoutWrites, target);
   const checkoutSessions = useSessions(target, false, shown && checkoutOn);
-  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list: the driver's reading.
   const heavyMarks = useHeavyMarks(target ?? '', { enabled: shown });
   // The route row reads its Workflow answer's start node.
   const current = useWorkflowCurrent(target === null ? null : { repository: target }, { enabled: shown });

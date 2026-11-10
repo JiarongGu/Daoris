@@ -68,7 +68,6 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
       ),
     });
   }
-  // The rows of the line and landing, each one `work` holds and the place's folds hold apart.
   const lineRow = line && work?.onLine
     ? (
       <>

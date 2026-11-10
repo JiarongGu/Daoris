@@ -94,7 +94,6 @@ export type AccessSetup = {
 export type Driving = {
   drivable: boolean;
   held: boolean;
-  /** Whether its workflow sets each session apart in a tree of its own (the workflow's `isolate` step). */
   ownTree: boolean;
   onDrive: (drivable: boolean) => void;
   onHold: (held: boolean) => void;

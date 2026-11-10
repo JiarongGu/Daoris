@@ -26,7 +26,6 @@ export const INTEGRATE_CHOICES = {
 
 export type IntegrateChoice = keyof typeof INTEGRATE_CHOICES;
 
-/** The choices that are a line's policy; `request` and `conflicts` are the integrate step's own options. */
 const POLICY_CHOICES: readonly IntegrateChoice[] = ['commit', 'order', 'gates', 'unreached', 'reached'];
 
 /** The integrate choices as the draft holds them: text, empty where unset. */

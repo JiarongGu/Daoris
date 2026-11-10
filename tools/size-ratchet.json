@@ -92,7 +92,7 @@
   "src/Daoris.Web/src/locales/names.test.ts": 41639,
   "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81534,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 78607,
-  "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47539,
+  "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47409,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76003,
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 61787,
   "src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx": 61591,
