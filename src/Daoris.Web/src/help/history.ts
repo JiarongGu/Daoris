@@ -1,3 +1,5 @@
+import type { Place } from './focus';
+
 /**
  * One of Ask Daoris's conversations as its history lists it: the driver's `HELP_CONVERSATIONS` row, field for
  * field what `daoris ask-daoris list --json` prints. Kept on this machine only: its words are this machine's record, and its
@@ -31,6 +33,13 @@ export type HelpConversationRow = {
    * moved, `default` for a record from before. Absent from a driver before it, which is `default`'s too (`workspaceOf`).
    */
   workspace?: string;
+  /**
+   * The place its last turn ran under (`focus.ts`), its home's until one is applied; absent from a driver before it, which reads
+   * as `homeFocus(workspace)`.
+   */
+  focus?: Place | null;
+  /** The place chosen for its next words, or null. */
+  focusNext?: Place | null;
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;
   /** The earlier conversation it started from, and what it is handed of it. */

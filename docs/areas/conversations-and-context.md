@@ -232,8 +232,14 @@ of everything it handed, section by section.
     change. A limit move opens it again in its room. Its room, first lines, history and the one running are its
     workspace's own, and its tools start there: it reads another workspace by naming it, or every workspace with `all`,
     and proposes, inspects, reads checkouts and sets settings in any workspace's repositories, each judged by its own
-    judge and none refused for the workspace it names. (from D89, D170, D183, D158, D253)
-43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
+    judge and none refused for the workspace it names. What it is about, its focus, is the person's choice: this machine, a
+    workspace or a repository (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its
+    name and pin with the one waiting and each one held. Chosen before its first words it is its first focus; chosen after, it
+    waits for the next words: a running agent ends at its turn's end, or now if idle, as for an access change, and the words
+    resume it under the new focus, a gone place widened, the agent told in one line ahead of them. The focus limits nothing.
+    (from D89, D170, D183, D158, D253)
+43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
+    every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there.
     They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these

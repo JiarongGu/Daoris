@@ -8,6 +8,7 @@ import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help
 import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
+import type { Place } from '../help/focus';
 import type { HelpPublishedEntry } from '../help/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
@@ -374,6 +375,20 @@ export const useRenameHelp = () =>
   useMutation({
     mutationFn: (rename: { id: string; name: string | null }) =>
       call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
+  });
+
+/** What `HELP_FOCUS` answers: the applied focus and the one waiting for the next words, or the refusal's code and sentence. */
+export type HelpFocusAnswer =
+  | { session: string; focus: Place; focusNext: Place | null; refused?: undefined }
+  | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
+
+/**
+ * Choose what an Ask Daoris conversation is about, sent at once so a reload or another window shows it (ASKSCOPE2b): before any
+ * words its first focus, after them the one its next words take; the applied one chosen again clears what waited.
+ */
+export const useHelpFocus = () =>
+  useMutation({
+    mutationFn: (choice: { session: string; focus: Place }) => call('HELP_FOCUS', choice) as Promise<HelpFocusAnswer>,
   });
 
 /** Pin an Ask Daoris conversation to the top of its history, or unpin it. */
