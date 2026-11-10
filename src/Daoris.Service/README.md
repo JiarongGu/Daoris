@@ -551,8 +551,7 @@ may carry the `repository` and `sentence` the composer opens with, written to th
 installed here switched on or off; since D103 also one of the install's own plugins by its id in
 `offer`, or an `update` of an installed one from where it came from; since HELPPLUG1c an `approve` of what a
 plugin's server offers Ask Daoris, with its `server` and the `writes` the person accepts, or a `withdraw`), and since
-HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings → Browser sets them) and
-`sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
+HELP10 `sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
 fetches, and only then offers the press; since BRSCOPE1b an optional one-word `workspace` scopes the look and the press), and since FOUNDATION1y-i `role_propose` (a working role of the role catalogue set,
 removed or given back its seed, or every seeded role at once with `default-all`, its press the driver's role door judges; the person's Apply alone), and since SESSUX1h2a `session_propose` (sessions archived or unarchived by id, or every
 ended one archived; and `delete_propose` takes a `session`, one bare id), and since PAUSE1f-a `pause_propose` (one ask's or quest's work paused or resumed, by id; abandon is

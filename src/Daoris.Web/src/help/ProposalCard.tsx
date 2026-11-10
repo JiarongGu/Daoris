@@ -34,7 +34,7 @@ export type HelpPluginShown = {
  * A kind for each door: an agent's update or pin, and a go to a screen, which has no command since it changes nothing.
  * A plugin that has landed, added from its folder, or one switched on or off, with what it runs.
  * A branch a landing made, handed to a landing plugin, which pushes it. Daoris's
- * browser's settings, and bringing repositories up to date, which is looked at first.
+ * bringing repositories up to date, which is looked at first.
  * The person's yes to a done's departure, with each departure shown before the press.
  */
 export type HelpProposal = {
@@ -42,7 +42,7 @@ export type HelpProposal = {
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
   /** A change of the role catalogue (`role`) is the generic card: its sentence, its `daoris role` command, Apply. */
-  kind: 'ask' | 'go' | 'plugin' | 'browser' | 'sync' | 'clear' | 'workflow' | 'setup' | 'role';
+  kind: 'ask' | 'go' | 'plugin' | 'sync' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;

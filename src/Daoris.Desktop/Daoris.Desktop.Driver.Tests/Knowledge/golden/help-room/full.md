@@ -76,6 +76,9 @@ under *Done at a terminal* (below), name its command for the person to run.
   `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest
   release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one
   exact release, like 2.1.300, never `latest`.
+- Daoris's browser's settings are pressed, never proposed, as Settings → Browser sets them: `daoris browser use daoris|edge`,
+  `daoris browser links system|daoris`, `daoris browser extensions offer|refuse` and `daoris browser favorite add|remove <address>`
+  (`--title` names a favorite added); a favorite removed is one the list below keeps. Each but `links` holds from the browser's next start.
 - How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:
   `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`
   and `daoris agent account ready <agent> <account>|--own` (*Try now*; `--own` ends only an old cool-off of the tool's own sign-in).
@@ -103,10 +106,6 @@ under *Done at a terminal* (below), name its command for the person to run.
   An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,
   and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you
   are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.
-- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,
-  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,
-  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).
-  Each but `links` holds from the browser's next start.
 - `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →
   Branches → Updates does: each line fast-forwarded from `origin`, the branches still at
   work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace

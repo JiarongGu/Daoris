@@ -227,6 +227,12 @@ public static class PersonPresses
     /// <summary><c>git answer &lt;ask&gt; allow|refuse</c>: a git go-ahead answered, as its row in What needs you answers it.</summary>
     public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
 
+    /// <summary><c>browser favorite add|remove &lt;address&gt;</c>: a page kept on, or dropped from, Daoris's browser's bookmarks bar.</summary>
+    public static InstanceRoute BrowserFavorite { get; } = Person("BROWSER_FAVORITE");
+
+    /// <summary><c>browser use|links|extensions &lt;value&gt;</c>: which browser, where links open, and other software's extensions.</summary>
+    public static InstanceRoute BrowserSetting { get; } = Person("BROWSER_SETTING");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c>: a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
@@ -393,6 +399,11 @@ public static class PersonPresses
         ("repository retire [<name>]", RegistryRetire),
         ("repository wire <repository> --workspace <name>", RegistryRewire),
         ("repository import [<folder>] [--workspace <name>]", RegistryImport),
+        ("browser favorite add <address> [--title \"…\"]", BrowserFavorite),
+        ("browser favorite remove <address>", BrowserFavorite),
+        ("browser use daoris|edge", BrowserSetting),
+        ("browser links system|daoris", BrowserSetting),
+        ("browser extensions offer|refuse", BrowserSetting),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

@@ -21,6 +21,12 @@ public sealed record AskWorkflowPress(string Ask, string? Kind = null, string? W
 /// <summary>An ask's review choice: <c>on</c>, <c>off</c> or an environment's name.</summary>
 public sealed record AskReviewPress(string Ask, string Choice, string? Words = null, bool Said = false);
 
+/// <summary>A page of Daoris's browser kept (<c>add</c>, with its own <c>Title</c> where given) or dropped (<c>remove</c>) on its bookmarks bar.</summary>
+public sealed record BrowserFavoritePress(string Action, string Address, string? Title = null, bool Said = false);
+
+/// <summary>One of Daoris's browser's settings, <c>use</c>, <c>links</c> or <c>extensions</c>, and what it is set to.</summary>
+public sealed record BrowserSettingPress(string Setting, string Value, bool Said = false);
+
 /// <summary>A repository taken off the registry.</summary>
 public sealed record RegistryRetirePress(string Repository, bool Said = false);
 

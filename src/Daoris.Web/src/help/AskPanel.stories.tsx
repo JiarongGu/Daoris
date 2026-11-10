@@ -120,12 +120,6 @@ export const ProposingEveryKind: Story = {
                 harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
               },
             },
-            // The browser's settings, and bringing up to date before and after the person looked.
-            {
-              id: 'b1', kind: 'browser' as const,
-              describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
-              terminal: 'daoris browser links daoris', why: 'you want tickets opened where your sign-ins are',
-            },
             {
               id: 'y1', kind: 'sync' as const,
               describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you — only origin\'s own refs move — and this card then lists what the press would do.',
