@@ -13,9 +13,9 @@ public sealed class HelpProposalBoxTests : HelpProposalBoxFixture
     [Fact]
     public void A_proposal_needs_its_reason_and_a_home()
     {
-        Assert.Null(Box().ProposeSetting(new SettingChange("line", "engine", null, "develop"), " ", "h1", Now).Id);
+        Assert.Null(Box().ProposeSetting(new SettingChange("helpers", "engine", null, "--mode on"), " ", "h1", Now).Id);
         Assert.Null(Box().ProposeAsk(" ", "work", "a reason", "h1", Now).Id);
-        Assert.Null(new HelpProposalBox(null).ProposeSetting(new SettingChange("line", "engine", null, "develop"), "a reason", "h1", Now).Id);
+        Assert.Null(new HelpProposalBox(null).ProposeSetting(new SettingChange("helpers", "engine", null, "--mode on"), "a reason", "h1", Now).Id);
         Assert.Null(Box().ProposeAgent("update", "claude-code", null, " ", "h1", Now).Id);
         Assert.Null(new HelpProposalBox(null).ProposeGo("quests", null, null, null, "a reason", "h1", Now).Id);
     }

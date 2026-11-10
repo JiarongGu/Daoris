@@ -119,7 +119,7 @@ public sealed class OwnerSetTests : IDisposable
         Assert.False(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "ledger")));
 
         var applied = Judge();
-        var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "line", null, "games", "develop", null, "", "h1", "proposed"));
+        var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "helpers", null, "games", "--mode on", null, "", "h1", "proposed"));
         await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
         {
         }

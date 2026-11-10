@@ -41,7 +41,7 @@ internal static class HelpDoorRowsMachine
         ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
             + "whose *Sitting* names the session", "`daoris quest retry <quest> --session <id>`"),
-        // The terminal's door onto the default cool-off, and Ask Daoris's `setting` kind's `cooloff`.
+        // The terminal's door onto the default cool-off.
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris settings cooloff <minutes>`"),
         // The one quiet setting: a session runs as long as it works, and this is how long it may say nothing before Daoris looks in.
@@ -53,7 +53,7 @@ internal static class HelpDoorRowsMachine
             "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
             "`daoris git use <repository> [--remote <name>] <identity>|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|--clear`",
             new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
-        // How long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep`.
+        // How long each kind Daoris keeps is kept.
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → Disk space → a kind's Change…",
             "`daoris settings keep <kind> <rule>`"),
         ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris settings cap <n>`"),
@@ -70,7 +70,7 @@ internal static class HelpDoorRowsMachine
         // What the person says holds for every session in one repository, kept on this machine.
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             Setup + "Sessions", "`daoris place standing <repository> \"…\"|--clear`"),
-        // The work's language, apart from the window's; Ask Daoris proposes it as the `setting` kind's `language` door.
+        // The work's language, apart from the window's.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             Setup + "Sessions; a workspace's, " + Ws + "Setup → Defaults → Session language",

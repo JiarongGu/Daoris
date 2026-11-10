@@ -10,21 +10,21 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     public void A_setting_is_written_as_a_file_the_driver_judges_with_who_proposed_it_and_why()
     {
         var (id, message) = Box().ProposeSetting(
-            new SettingChange("line", Target: null, Workspace: "work", Value: "develop"),
-            "the person asked for work to start from develop", session: "h1e1p000", Now);
+            new SettingChange("commits", Target: null, Workspace: "work", Value: "--mode at-end"),
+            "the person asked for work to be committed once, when it is done", session: "h1e1p000", Now);
 
         Assert.NotNull(id);
         Assert.Contains($"#{id}", message);
         Assert.Contains("Apply", message);
         var file = Written(id!);
         Assert.Equal("setting", file.GetProperty("kind").GetString());
-        Assert.Equal("line", file.GetProperty("door").GetString());
+        Assert.Equal("commits", file.GetProperty("door").GetString());
         Assert.Equal("work", file.GetProperty("workspace").GetString());
         Assert.Equal(JsonValueKind.Null, file.GetProperty("target").ValueKind);
-        Assert.Equal("develop", file.GetProperty("value").GetString());
+        Assert.Equal("--mode at-end", file.GetProperty("value").GetString());
         Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString());
         Assert.Equal("proposed", file.GetProperty("state").GetString());
-        Assert.Equal("the person asked for work to start from develop", file.GetProperty("why").GetString());
+        Assert.Equal("the person asked for work to be committed once, when it is done", file.GetProperty("why").GetString());
     }
 
     [Fact]
@@ -35,37 +35,13 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
             new SettingChange("landing", Target: "engine", Workspace: null, Value: "merge"), "why", session: "h1e1p000", Now).Message);
     }
 
-    /// <summary>Reading and writing across and a cap pass the shape as the terminal spells them.</summary>
+    /// <summary>The doors still proposed pass the shape as the terminal spells them.</summary>
     [Theory]
-    [InlineData("across", "engine", null, "read off")]
-    [InlineData("across", null, "work", "read --clear")]
-    [InlineData("across", "plugins", null, "write-to engine")]
-    [InlineData("across", "plugins", null, "write-to engine --clear")]
-    [InlineData("cap", null, null, "3")]
-    [InlineData("cooloff", null, null, "90")]
-    [InlineData("quiet", null, null, "5")]
-    [InlineData("quiet", null, null, "120")]
     // A repository's remote or a workspace's host pointed at an identity, or taken back.
     [InlineData("git-use", "engine", null, "Work")]
     [InlineData("git-use", "engine", null, "--remote upstream Work")]
     [InlineData("git-use", "engine", null, "--clear")]
     [InlineData("git-use", null, "work", "--host github.com Work")]
-    // Each kind's keep rule, a kind and its rule, for this machine.
-    [InlineData("keep", null, null, "set-aside 30")]
-    [InlineData("keep", null, null, "set-aside whole")]
-    [InlineData("keep", null, null, "downloads never")]
-    [InlineData("keep", null, null, "logs default")]
-    // History's age, the person's to apply.
-    [InlineData("keep", null, null, "history 365")]
-    [InlineData("keep", null, null, "history never")]
-    // A standing answer for a repository, in the person's words, or cleared.
-    [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
-    [InlineData("standing", "engine", null, "--clear")]
-    // A session language for a repository or a workspace, a code of the table in any case, or cleared.
-    [InlineData("language", "engine", null, "zh")]
-    [InlineData("language", null, "work", "en")]
-    [InlineData("language", "engine", null, "ZH")]
-    [InlineData("language", null, "work", "--clear")]
     // A review rule for a repository or a workspace, as `daoris place review` takes its words, a
     // quoted command kept whole whatever it holds; the rule, the registry and the procedure are the driver's to judge.
     [InlineData("review", "storefront", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required")]
@@ -81,16 +57,14 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
-    // A helpers rule and a commit rule for a repository or a workspace,
-    // as `daoris place helpers` and `daoris place commits` take their words, a quoted list or convention kept whole; the rule and
-    // the registry are the driver's to judge.
+    // A helpers rule and a commit rule, a quoted list or convention kept whole.
     [InlineData("helpers", "web-app", null, "--mode on --agents codex-acp,dsh")]
     [InlineData("helpers", null, "work", "--agents \"codex-acp, dsh\"")]
     [InlineData("helpers", "web-app", null, "--clear")]
     [InlineData("commits", "web-app", null, "--mode ask --convention \"Imperative subject line, at most 72 characters.\"")]
     [InlineData("commits", null, "work", "--mode at-end --no-convention")]
     [InlineData("commits", "web-app", null, "--clear")]
-    public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
+    public void The_doors_still_proposed_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
 
@@ -148,24 +122,17 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("for retry, the quest's id, as the room lists the parked and the held ones", target);
     }
 
-    /// <summary>
-    /// The tool tells the helper what a session language takes, and that it is the work's, never
-    /// the window's, so it proposes the codes the box takes rather than learning them from a refusal.
-    /// </summary>
+    /// <summary>The tool names the settings that are pressed, never proposed, so a helper presses them rather than proposing them.</summary>
     [Fact]
-    public void The_tool_says_a_language_takes_a_code_of_the_table_or_a_clear_and_is_not_the_windows()
+    public void The_tool_says_the_settings_it_no_longer_proposes_are_pressed()
     {
         var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
-        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
-            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
-            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 
-        Assert.Contains("`en` or `zh`, or `--clear` (language)", Described("value"));
-        Assert.Contains("a language", Described("target"));
-        Assert.Contains("a language", Described("workspace"));
-        Assert.Contains("never the window's", tool);
+        Assert.Contains("pressed, never proposed", tool);
+        Assert.Contains("`daoris place line|language|standing|across …`", tool);
+        Assert.Contains("`daoris settings notify|cap|cooloff|quiet|keep …`", tool);
     }
 
     /// <summary>
@@ -231,7 +198,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("never production", tool);
         Assert.Contains("propose it only when they ask", tool);
 
-        // The review's clause runs from its door's name to the opinion's.
         var review = tool[tool.IndexOf("`review` declares", StringComparison.Ordinal)..tool.IndexOf("`opinion` declares", StringComparison.Ordinal)];
         var gate = GateSays();
         Assert.NotEmpty(gate);
@@ -303,40 +269,20 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("push", "engine", null, null, "is not a door")]
     [InlineData("drive", "engine", null, null, "is not a door")]
     [InlineData("trees", "engine", null, "on", "is not a door")]
-    [InlineData("line", null, null, "develop", "a repository or a workspace")]
-    [InlineData("line", "engine", "work", "develop", "a repository or a workspace")]
-    [InlineData("line", "engine", null, null, "a branch, or `--clear`")]
-    [InlineData("notify", null, null, "loud", "`on` or `off`")]
-    [InlineData("across", null, null, "read off", "a repository or a workspace")]
-    [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
-    [InlineData("across", "engine", null, "read maybe", "`read on|off|--clear`")]
-    [InlineData("across", null, "work", "write-to engine", "declared from one repository")]
-    [InlineData("across", "plugins", null, "write-to", "`write-to <other>`")]
-    [InlineData("across", "plugins", null, "write-to two words", "`write-to <other>`")]
-    [InlineData("across", "engine", null, "peek", "`read on|off|--clear` or `write-to <other> [--clear]`")]
-    [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
-    [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
-    [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
-    [InlineData("quiet", null, null, "4", "a whole number of minutes from 5 to 120")]
-    [InlineData("quiet", null, null, "121", "a whole number of minutes from 5 to 120")]
-    [InlineData("quiet", null, null, "soon", "a whole number of minutes from 5 to 120")]
+    // Every door the window presses is no door here.
+    [InlineData("line", "engine", null, "develop", "is not a door")]
+    [InlineData("language", "engine", null, "zh", "is not a door")]
+    [InlineData("standing", "engine", null, "dev only", "is not a door")]
+    [InlineData("across", "engine", null, "read off", "is not a door")]
+    [InlineData("notify", null, null, "off", "is not a door")]
+    [InlineData("cap", null, null, "3", "is not a door")]
+    [InlineData("cooloff", null, null, "90", "is not a door")]
+    [InlineData("quiet", null, null, "15", "is not a door")]
+    [InlineData("keep", null, null, "logs 14", "is not a door")]
     [InlineData("git-use", null, null, "Work", "name exactly one")]
     [InlineData("git-use", "engine", "work", "Work", "name exactly one")]
     [InlineData("git-use", "engine", null, "", "`git-use` is an identity's label or `--clear`")]
     [InlineData("git-use", "engine", null, "--machine Work", "`git-use` is an identity's label or `--clear`")]
-    [InlineData("keep", null, null, "trees 30", "`keep` names a kind and its rule")]
-    [InlineData("keep", null, null, "set-aside", "`keep` names a kind and its rule")]
-    [InlineData("keep", "engine", null, "set-aside 30", "for this machine")]
-    [InlineData("standing", null, null, "dev only", "names the repository it holds for")]
-    [InlineData("standing", "engine", "work", "dev only", "names the repository it holds for")]
-    [InlineData("standing", "engine", null, null, "the person's words, or `--clear`")]
-    [InlineData("standing", "engine", null, "  ", "the person's words, or `--clear`")]
-    // LANG1c2: exactly one of a repository or a workspace, and a code the table holds or `--clear`.
-    [InlineData("language", null, null, "zh", "session language is set for a repository or a workspace — name exactly one")]
-    [InlineData("language", "engine", "work", "zh", "session language is set for a repository or a workspace — name exactly one")]
-    [InlineData("language", "engine", null, null, "`language` is set to `en` or `zh`, or `--clear`")]
-    [InlineData("language", null, "work", "fr", "`language` is set to `en` or `zh`, or `--clear`")]
-    [InlineData("language", "engine", null, "en zh", "`language` is set to `en` or `zh`, or `--clear`")]
     // Exactly one of a repository or a workspace, some words, and only the flags `daoris place review` takes.
     [InlineData("review", null, null, "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]

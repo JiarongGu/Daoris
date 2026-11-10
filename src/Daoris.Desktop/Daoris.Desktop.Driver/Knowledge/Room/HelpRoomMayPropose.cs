@@ -15,16 +15,15 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // Every door, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        // Every setting verb (`daoris place`, `settings`, `quest`, `git`); across said form by form, and a write-to as the say-so the canon
-        // asks for, which its card says too. `retry` too, of a quest the driver parked, named from the list;
-        // or one the person's stop holds, released from that stop.
-        text.Append("- `setting_propose`: every setting door below but the repository switches, which are pressed, never proposed:\n");
-        text.Append("  `daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`.\n");
+        // The doors still proposed: the rules (review, opinion, helpers, commits), a git identity, and a retry of a quest the driver
+        // parked, named from the list, or one the person's stop holds, released from that stop.
+        text.Append("- `setting_propose`: a review, a second opinion, a helpers rule, a commit rule, a retry and a git identity. Every other setting is\n");
+        text.Append("  pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
+        text.Append("  `daoris place trees <repository> on|off`, `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
+        text.Append("  `daoris place standing <repository> …`, `daoris place across <repository> read|write-to …` and\n");
+        text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");
         text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
         text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
-        text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
-        text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
-        text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
         // An ask's short title, at most 40, the person's own where they gave one (the card says it).
         text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
         text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
