@@ -114,6 +114,6 @@ public sealed class ManifestTests : IDisposable
         Assert.Null(store.Read("s-00000001", ManifestMoment.Start));
         Assert.Null(store.Read("s-00000002", ManifestMoment.Start));
         Assert.NotNull(store.Read("s-00000003", ManifestMoment.Start));
-        Assert.Equal(21, Directory.GetFiles(Path.Combine(Home, "work", "places", "default", "reports", "manifests")).Length);
+        Assert.Equal(21, Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Places, "default", "reports", "manifests")).Length);
     }
 }

@@ -72,7 +72,7 @@ public static class PlaceTurns
     /// <summary>The store holding <paramref name="record"/>'s start, and that start, wherever under the home its place is.</summary>
     internal static (ManifestStore Store, RunManifest Start)? Find(string home, string record)
     {
-        var places = Path.Combine(home, "work", "places");
+        var places = DaorisHome.Entry(home, HomeEntry.Places);
         if (!Directory.Exists(places)) return null;
         foreach (var workspace in Directory.EnumerateDirectories(places))
         {
