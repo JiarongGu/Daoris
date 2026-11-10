@@ -180,6 +180,7 @@
   "workflow.edit.kind.rebase": "把工作变基到目标上",
   "workflow.edit.kind.resolve": "把冲突交给负责解决的一方",
   "workflow.edit.kind.merge": "把提交合并到目标上",
+  "workflow.edit.kind.apply": "把审阅过的变更应用到系统",
   "workflow.edit.option.rebase.onto": "变基到哪里",
   "workflow.edit.option.rebase.onto.hint": "不设时，变基到它所供给的合并的目标；也可写 `line`，或一个分支名。",
   "workflow.edit.option.rebase.fetch": "先获取目标",

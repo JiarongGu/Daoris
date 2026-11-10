@@ -58,6 +58,12 @@ public static class NodeKinds
     public const string Integrate = "integrate";
 
     /// <summary>
+    /// A system place's apply: the reviewed change set the run's work planned, applied by the system's adapter under each operation's
+    /// precondition; a stale plan fails it with the present versions, for a way back to plan again. Its start is <see cref="ApplyNode"/>.
+    /// </summary>
+    public const string Apply = "apply";
+
+    /// <summary>
     /// The hold on the work's own requests: observed from the quests the run's sessions published,
     /// placed after <c>claimed</c> and before the landing. A kind and no option of <c>claimed</c>, because an older build reads an option as
     /// readable and runs it with the hold dropped, where it refuses this kind and holds the run whole.

@@ -169,6 +169,7 @@ internal sealed class NodeRunKeeping(
             var text = was.State switch
             {
                 NodeStates.Rejected when was.Words is { } words => ChangesWords(source, words),
+                NodeStates.Failed when was.Words is { Length: > 0 } own => own,
                 NodeStates.Failed => $"Daoris: `{source}` failed{(was.Code is { } code ? $" (`{code}`)" : "")}, so your work goes back to you: mend what it "
                     + "found and commit, and what you commit goes through the workflow again.",
                 _ => $"Daoris: `{source}` came to `{was.Current?.Outcome}`, so your work goes back to you: what you commit goes through the workflow again.",

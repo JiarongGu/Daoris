@@ -41,6 +41,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     {
         var id = press.Id;
         if (PlaceChanges.Of(_loop.Home, id) is { } placed) return TreesReviewWires.ReviewAnswer(id, placed, TreesReviewWires.ReviewSource.Place, null, treeGone: false);
+        if (SystemChanges.Of(_loop.Home, id) is { } planned) return TreesReviewWires.ReviewAnswer(id, planned, TreesReviewWires.ReviewSource.Place, null, treeGone: false);
 
         var service = _loop.Service ?? throw NotReady();
 
