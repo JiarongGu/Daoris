@@ -12,10 +12,7 @@ type Row = StartRepository & { recent: boolean };
 /** A run of rows under one name: *Recent*, then each workspace. */
 type Group = { name: string; rows: Row[] };
 
-/**
- * The groups the picker lists for what is typed: *Recent* first, in the order kept, then each workspace's repositories by
- * name, none twice. A typed word keeps the rows whose name or workspace holds it.
- */
+/** The groups listed for what is typed: *Recent* first, then each workspace's by name, none twice, matched by name or workspace. */
 export function pickerGroups(repositories: readonly StartRepository[], recent: readonly string[], typed: string, recentLabel: string): Group[] {
   const word = typed.trim().toLowerCase();
   const matches = (row: StartRepository) =>
@@ -39,14 +36,9 @@ export function pickerGroups(repositories: readonly StartRepository[], recent: r
 }
 
 /**
- * The repository chip and its picker, on the composers' one combobox (`ChipCombobox`): searchable, *Recent* first, then each
- * workspace's repositories. One with no checkout here is listed, not choosable, and says why; one whose checkout a session holds
- * is marked busy and stays choosable, since its own tree starts beside it.
- *
- * @remarks
- * **Its foot is the caller's** (`foot`): the caller puts *Add repository…* and *Import a folder…* there, which open the existing
- * drawers with the draft kept. A press there closes the list first (`foot` is handed what closes it), so the drawer opens over
- * a composer with nothing floating. An import that registered several asks the list open on their workspace (`reveal`).
+ * The repository chip and its picker, on the composers' one combobox (`ChipCombobox`): *Recent* first, then each workspace's
+ * repositories. One with no checkout here is listed, not choosable, and says why; one a session holds is marked busy and stays
+ * choosable, since its own tree starts beside it. Its foot is the caller's (*Add repository…*, *Import a folder…*).
  */
 export function RepositoryPicker({ repositories, busy = {}, recent = [], value, onChoose, foot, reveal, defaultOpen = false }: {
   repositories: readonly StartRepository[];
@@ -58,10 +50,7 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
   onChoose: (repository: string) => void;
   /** What the picker offers below its rows, after a rule, given what puts the list down: a press there closes it first. */
   foot?: (close: () => void) => ReactNode;
-  /**
-   * Opens the list filtered to a workspace's group (after an import that registered several): each new `n` is one ask, and an
-   * empty workspace opens it whole.
-   */
+  /** Opens the list on a workspace's group after an import that registered several: each new `n` is one ask. */
   reveal?: { workspace: string; n: number } | null;
   /** Drawn open, for a story. */
   defaultOpen?: boolean;

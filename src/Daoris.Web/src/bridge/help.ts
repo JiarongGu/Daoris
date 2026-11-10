@@ -38,7 +38,6 @@ import { useHarnesses } from './agents/agents';
  */
 export const useStartHelp = () =>
   useMutation({
-    // The focus is sent only where the person chose one before the first words; else the driver takes the home's.
     mutationFn: ({ workspace, focus }: { workspace?: string; focus?: Place } = {}) =>
       call('START_HELP', { ...(workspace ? { workspace } : {}), ...(focus ? { focus } : {}) }) as Promise<
       { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,

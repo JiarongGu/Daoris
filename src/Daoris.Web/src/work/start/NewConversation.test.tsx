@@ -435,7 +435,6 @@ describe('a new conversation', () => {
     await userEvent.click(await screen.findByRole('option', { name: /game/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Make it a task with Daoris…' }));
 
-    // The repository goes as the conversation's focus, the words as typed.
     expect(onMakeTask).toHaveBeenCalledWith('Fix the build', { kind: 'repository', workspace: 'aurora', repository: 'game' });
     expect(onStart).not.toHaveBeenCalled();
     expect(onDraft).not.toHaveBeenCalled();

@@ -40,7 +40,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   const [ahead, setAhead] = useState<Place | null>(null);
   const [recent, setRecent] = useState(readFocusRecent);
   const [refused, setRefused] = useState<string | null>(null);
-  // A conversation shown has its own focus on its file: what was chosen ahead of it went with its start.
+  // A conversation shown keeps its focus on its file, so nothing chosen ahead of it stays.
   useEffect(() => {
     if (shown) setAhead(null);
     setRefused(null);

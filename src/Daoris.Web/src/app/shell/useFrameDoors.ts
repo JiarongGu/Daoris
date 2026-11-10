@@ -37,10 +37,7 @@ export function useFrameDoors() {
     setHelpOpening({ text: message, id: openings.current });
     openHelp();
   };
-  /**
-   * Quick Ask, with a question it sends, or with a draft in its box for the person to finish (*Ask Daoris about it*), and the
-   * focus a draft's conversation takes where its door chose one.
-   */
+  /** Quick Ask, with a question it sends, or a draft in its box for the person to finish, and the focus its door chose. */
   const askQuickly = (question?: string, draft = false, focus?: Place) => {
     if (question) {
       openings.current += 1;

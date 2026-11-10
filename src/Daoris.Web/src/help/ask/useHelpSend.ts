@@ -366,7 +366,6 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       // its own words (the composer's hand-over) is kept apart from them by one.
       const apart = /\n\s*$/.test(opening.text) ? '' : '\n\n';
       editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join(apart) }));
-      // The focus its door chose: the new conversation's first, or a change the running one's next words take.
       if (opening.focus) takeFocus(opening.focus, key === NEW_DRAFT ? null : key);
     } else onSend(opening.text, []);
     // From the effect, never the render: the holder clears what is sent.
