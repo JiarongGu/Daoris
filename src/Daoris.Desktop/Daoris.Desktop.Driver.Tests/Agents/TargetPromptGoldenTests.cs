@@ -243,10 +243,9 @@ public sealed class TargetPromptGoldenTests
     internal static StandingFacts Routed(string standing)
     {
         var config = standing == RoutingStanding.NotDriven ? DriverConfig.Empty : DriverConfig.Empty.WithDrivable("console-ui", true);
-        if (standing == RoutingStanding.Open) config = config.WithTrees("console-ui", true);
         var facts = StandingBlocks.OnMachine(
             new StandingFacts { Repository = "console-ui" }, ParticipantWork.Build, config,
-            [new RepoView("console-ui", true, "C:/work/console-ui") { Lanes = ["core", "web"] }], "work");
+            [new RepoView("console-ui", true, "C:/work/console-ui") { Lanes = ["core", "web"] }], "work", apart: standing == RoutingStanding.Open);
         Assert.Equal(standing, facts.Routing);
         return facts;
     }

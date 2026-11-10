@@ -25,7 +25,7 @@ public sealed class SessionMessagesPlanTests
             Adapter = "claude-code-acp",
         };
 
-    private static DriverConfig Config(int cap = 2) => DriverConfig.Empty with { Drivable = ["Game"], Trees = ["Game"], Cap = cap };
+    private static DriverConfig Config(int cap = 2) => DriverConfig.Empty with { Drivable = ["Game"], Cap = cap };
 
     /// <summary>
     /// 🔴 The owner's case: a session in *To review* the person writes to goes on in its own record. Its quest closed done, so
@@ -192,6 +192,7 @@ public sealed class SessionMessagesPlanTests
     {
         var snapshot = new Snapshot([Quest("q2", "Open")], [Repo], [])
         {
+            Isolations = IsolatedPlaces.Of("Game"),
             Closed = [Quest("q1", "Done")],
             LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("completed") },
         };

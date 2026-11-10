@@ -53,7 +53,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = command ?? ["node", Agent(), Log, mode] },
@@ -453,7 +453,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -503,7 +503,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -703,7 +703,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Path.Combine(_home, "taken.flag"), go] },
         };

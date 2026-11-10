@@ -33,16 +33,15 @@ public sealed class CapCountTickTests : IDisposable
 
     private string Tree(string name) => Path.Combine(_home, name);
 
-    private static DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
+    private DriverConfig Intake(int cap) => ActorChoices.With(Config(cap), "intake", [new ActorChoice("stub")]);
 
-    private static DriverConfig Config(int cap) => DriverConfig.Empty with
+    private DriverConfig Config(int cap) => (DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
         Actors = StaffedRoles.On("stub"),
         Cap = cap,
         PollSeconds = 1,
-        Trees = ["engine"],
-    };
+    }).Isolating(_home, "engine");
 
     private (Daoris.Driver.Driver Driver, StandInRuns Runs) Driver(DriverConfig config)
     {

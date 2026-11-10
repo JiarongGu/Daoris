@@ -162,8 +162,8 @@ public sealed class PlannerTests
 
     private static IReadOnlyList<Consideration> Plan(
         QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null,
-        bool unadopted = false) =>
-        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), unadopted);
+        bool unadopted = false, bool apart = false) =>
+        Planner.Plan(apart ? new Snapshot(quests, repos ?? [Repo()], active ?? []).Apart("Game") : new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), unadopted);
 
     /// <summary>
     /// Two active sessions in ONE repository is a state that is allowed — a conversation in the checkout
@@ -319,7 +319,7 @@ public sealed class PlannerTests
     [Fact]
     public void Where_sessions_open_their_own_trees_an_active_session_does_not_hold_the_repository()
     {
-        var plan = Plan([Quest()], active: [new SessionView("s1", "Game")], config: Config() with { Trees = ["Game"] });
+        var plan = Plan([Quest()], active: [new SessionView("s1", "Game")], apart: true);
 
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
     }
@@ -327,7 +327,7 @@ public sealed class PlannerTests
     [Fact]
     public void Where_sessions_open_their_own_trees_several_quests_start_together_up_to_the_cap()
     {
-        var plan = Plan([Quest("q1"), Quest("q2"), Quest("q3")], config: Config(cap: 2) with { Trees = ["Game"] });
+        var plan = Plan([Quest("q1"), Quest("q2"), Quest("q3")], config: Config(cap: 2), apart: true);
 
         Assert.Equal([StartVerdict.Start, StartVerdict.Start, StartVerdict.AtCapacity], plan.Select(c => c.Verdict));
         // The cap as a number, which the page words; a start says no code.
@@ -347,7 +347,7 @@ public sealed class PlannerTests
         var plan = Plan(
             [Quest("q1"), Quest("q2")],
             active: [new SessionView("s1", "Game", "working") { Quest = "q1" }],
-            config: Config(cap: 3) with { Trees = ["Game"] });
+            config: Config(cap: 3), apart: true);
 
         Assert.Equal(StartVerdict.RepositoryBusy, plan[0].Verdict);
         Assert.Contains("`s1`", plan[0].Reason);
@@ -369,7 +369,7 @@ public sealed class PlannerTests
         };
 
         Assert.Equal(StartVerdict.RepositoryBusy,
-            Assert.Single(Planner.Plan(snapshot, Config() with { Trees = ["Game"] })).Verdict);
+            Assert.Single(Planner.Plan(snapshot.Apart("Game"), Config())).Verdict);
     }
 
     /// <summary>Oldest first, one per repository — the second ask queues behind the first.</summary>
@@ -888,7 +888,7 @@ public sealed class PlannerTests
             Active = [new SessionView("s2", "Game") { Tree = "D:/trees/s1", Quest = "q9" }],
         };
 
-        var only = Assert.Single(Planner.Plan(snapshot, Config() with { Trees = ["Game"] }));
+        var only = Assert.Single(Planner.Plan(snapshot.Apart("Game"), Config()));
 
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
         Assert.Equal(1, only.CarriesWork);
