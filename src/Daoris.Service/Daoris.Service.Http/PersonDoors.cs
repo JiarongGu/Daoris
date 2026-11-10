@@ -325,6 +325,8 @@ public static class PersonDoors
         new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
+        // A parked line's place is let go on the person's press or their discard of its uncommitted paths, never by an agent.
+        new("POST", "/api/sessions/{id}/release-place", DoorClass.Person, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
         new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
         // Only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
         // for their yes, which a terminal's confirmation in the window is.
