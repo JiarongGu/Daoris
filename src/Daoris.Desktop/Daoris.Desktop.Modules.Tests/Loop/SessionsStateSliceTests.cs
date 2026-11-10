@@ -35,6 +35,8 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["work"] = "build",
         // The quest a chat took, pushed for the at-work view.
         ["tookQuest"] = null,
+        // The paths a parked line keeps its place with, pushed for the work page's head.
+        ["holdsPlace"] = new JsonArray("draft.md"),
     };
 
     private static string Records(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();
@@ -111,7 +113,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         // The first parameter, one after a generic type, and the last: the reading went through the whole record.
         Assert.Equal("id", service[0]);
         Assert.Contains("said", service);
-        Assert.Equal("decides", service[^1]);
+        Assert.Equal("holdsPlace", service[^1]);
         Assert.All(SessionsStateSlice.Fields, field => Assert.Contains(field, page));
         Assert.Empty(SessionsStateSlice.Fields.Intersect(SessionsStateSlice.PulledOnly));
         var classed = SessionsStateSlice.Fields.Concat(SessionsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);

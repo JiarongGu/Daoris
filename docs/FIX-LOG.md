@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A parked line's kept place never reached the work page's head
+
+- **Symptom:** `SessionsStateSliceTests.Every_field_the_page_reads_is_pushed_and_every_field_the_service_answers_is_classed` failed:
+  the service's last session field was `holdsPlace`, which the sessions slice neither pushed nor named the pull's alone.
+- **Root cause:** 2e95cdde44 added `holdsPlace` to the session record the service answers, and db49b1e989 made the work page's head read it
+  (`placeHolds`), but the slice's allow-list (`SessionsStateSlice.Fields`) was not given it, so the pushed records the page reads never
+  carried it and the head's "keeps its checkout" fact and its Let others work here press never showed.
+- **Fix:** `holdsPlace` is pushed with the other fields the page's `Session` type reads.
+- **Verify:** the slice test above, red first, and its pushed record carrying the field.
+
 ## 2026-11-08 - The canvas drew every card again on each zoom step and its toolbar on every frame
 
 - **Symptom:** `large/Hundred` and `large/Thousand` of `measured/large.spec.ts` failed their frame budget in CI when run alone after the other

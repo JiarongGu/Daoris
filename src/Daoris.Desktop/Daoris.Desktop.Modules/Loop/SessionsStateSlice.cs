@@ -52,6 +52,8 @@ public static class SessionsStateSlice
         "work",
         // The quest a chat took through its own connector, which the at-work view reads a chat's wait by.
         "tookQuest",
+        // The uncommitted paths a parked line keeps its place with, which the work page's head says.
+        "holdsPlace",
     ];
 
     /// <summary>
