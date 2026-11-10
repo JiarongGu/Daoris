@@ -20,7 +20,7 @@ public static class PlaceTurns
         RunManifest start;
         try
         {
-            start = await ManifestReader.GitAsync(root, store.Content, ct).ConfigureAwait(false);
+            start = await ManifestReader.OfPlaceAsync(root, store.Content, ct).ConfigureAwait(false);
         }
         catch (InvalidOperationException)
         {
@@ -30,7 +30,8 @@ public static class PlaceTurns
         var carried = (store.Read(record, ManifestMoment.End) ?? (continues is null ? null : store.Read(continues, ManifestMoment.End)))?.Own ?? [];
         var own = carried.Where(path => start.Listed(path) is not null).ToList();
         store.Keep(record, ManifestMoment.Start, start with { Root = root, Own = own });
-        var outside = last is null ? [] : PlaceChangesSince.Between(last, start, []).All;
+        var committed = last is null ? [] : await ManifestReader.CommittedBetweenAsync(root, last.Head, start.Head, ct).ConfigureAwait(false);
+        var outside = last is null ? [] : PlaceChangesSince.Between(last, start, committed).All;
         return new PlaceTold(outside, Others(start, own));
     }
 
@@ -47,7 +48,7 @@ public static class PlaceTurns
         RunManifest end;
         try
         {
-            end = await ManifestReader.GitAsync(root, store.Content, ct).ConfigureAwait(false);
+            end = await ManifestReader.OfPlaceAsync(root, store.Content, ct).ConfigureAwait(false);
         }
         catch (InvalidOperationException)
         {

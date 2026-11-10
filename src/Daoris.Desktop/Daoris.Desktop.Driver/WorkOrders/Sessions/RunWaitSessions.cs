@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The session each run waiting on the person stands for in Sessions' groups: the newest record of this machine's that served a quest of
-/// the run, its chain's quests in its repository, whatever the record's own state. Pure over the look.
-/// </summary>
+/// <summary>The session each run waiting on the person stands for in Sessions' groups: the newest record that served a quest of the run, whatever its state.</summary>
 internal static class RunWaitSessions
 {
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<PersonWait>> None = new Dictionary<string, IReadOnlyList<PersonWait>>(StringComparer.Ordinal);
@@ -16,12 +13,11 @@ internal static class RunWaitSessions
             .ToDictionary(group => group.Key, group => (IReadOnlyList<PersonWait>)[.. group], StringComparer.Ordinal);
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        var chains = new QuestChains(look.Quests);
         var standing = new Dictionary<string, SessionRecord>(StringComparer.Ordinal);
         foreach (var record in look.Records.Where(record => !record.Teammate && record.Quest is { Length: > 0 }))
         {
             var run = quests.TryGetValue(record.Quest!, out var quest)
-                ? WorkflowRunBindings.RunOf(chains.Of(quest.Id), quest.To) ?? quest.Id
+                ? QuestRuns.Of(quest, id => quests.GetValueOrDefault(id.TrimStart('#')))
                 : record.Quest!;
             if (!byRun.ContainsKey(run)) continue;
             if (!standing.TryGetValue(run, out var newest) || Newer(record, newest)) standing[run] = record;

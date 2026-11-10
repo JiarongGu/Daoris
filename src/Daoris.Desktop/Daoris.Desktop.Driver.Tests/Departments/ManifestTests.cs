@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the text of each new file in the place's content store. The start against the place's last end finds what the person changed
 /// meanwhile; the end against the start is the turn's own, and what of it stays uncommitted is what the line keeps the place with.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ManifestTests : IDisposable
 {
@@ -33,10 +34,10 @@ public sealed class ManifestTests : IDisposable
         var root = await RepositoryAsync();
         var store = new ManifestStore(Home, "default", "reports");
 
-        var lastEnd = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var lastEnd = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
         File.WriteAllText(Path.Combine(root, "notes.md"), "the person's line\n");
         File.WriteAllText(Path.Combine(root, "new.txt"), "a new file\n");
-        var start = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var start = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
 
         var outside = PlaceChangesSince.Between(lastEnd, start, committed: []);
         Assert.Equal(["new.txt"], outside.Added);
@@ -45,7 +46,7 @@ public sealed class ManifestTests : IDisposable
 
         File.WriteAllText(Path.Combine(root, "draft.md"), "the session's\n");
         File.Delete(Path.Combine(root, "kept.md"));
-        var end = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var end = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
 
         var turn = PlaceChangesSince.Between(start, end, committed: []);
         Assert.Equal(["draft.md", "kept.md"], turn.All);
@@ -69,13 +70,13 @@ public sealed class ManifestTests : IDisposable
         var root = await RepositoryAsync();
         var store = new ManifestStore(Home, "default", "reports");
 
-        var before = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var before = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
         Assert.Empty(before.Entries);
         Assert.Equal("main", before.Branch);
 
         File.WriteAllText(Path.Combine(root, "kept.md"), "committed by the person\n");
         await GitFixture.RunAsync(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "two");
-        var after = await ManifestReader.GitAsync(root, store.Content, CancellationToken.None);
+        var after = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
         var committed = await ManifestReader.CommittedBetweenAsync(root, before.Head, after.Head, CancellationToken.None);
 
         Assert.Equal(["kept.md"], PlaceChangesSince.Between(before, after, committed).Changed);

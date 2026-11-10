@@ -13,6 +13,8 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
 
     private readonly ConcurrentDictionary<string, ProcessBriefing> _process = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly ConcurrentDictionary<string, string> _place = new(StringComparer.OrdinalIgnoreCase);
+
     // The checks each live execution keeps by its id for `run-heavy`, let go as it ends.
     private readonly ConcurrentDictionary<string, string> _checksKept = new(StringComparer.Ordinal);
 
@@ -22,9 +24,13 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// <summary>What a new conversation's standing block is composed from, taken by its first message like its process.</summary>
     public void HoldBlock(string sessionId, StandingFacts block) => _block[sessionId] = block;
 
+    /// <summary>What a new conversation in its place is told of it (<see cref="ChatPlaceTold"/>), taken by its first message after the browser's line.</summary>
+    public void HoldPlace(string sessionId, string words) => _place[sessionId] = words;
+
     /// <summary>A start that fails, or is cancelled, has no first message to tell it with.</summary>
     public void Forget(string sessionId)
     {
+        _place.TryRemove(sessionId, out _);
         _process.TryRemove(sessionId, out _);
         _block.TryRemove(sessionId, out _);
     }
@@ -32,6 +38,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// <summary>The conversation ended: nothing is told now, and its execution's checks are let go.</summary>
     public void Ended(string sessionId)
     {
+        _place.TryRemove(sessionId, out _);
         _process.TryRemove(sessionId, out _);
         LetGoChecks(sessionId);
         _block.TryRemove(sessionId, out _);
@@ -58,6 +65,13 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
         {
             message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
             restore += () => _block.TryAdd(sessionId, block);
+        }
+
+        if (_place.TryRemove(sessionId, out var place))
+        {
+            var before = message.Briefing;
+            message = message with { Briefing = before is { Length: > 0 } ? $"{before}\n\n{place}" : place };
+            restore += () => _place.TryAdd(sessionId, place);
         }
 
         if (!_process.TryRemove(sessionId, out var told)) return message;
