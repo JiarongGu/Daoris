@@ -79,9 +79,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     public void A_setting_naming_another_workspace_s_repository_is_judged_by_its_kind()
     {
         Reaches(Setting("drive", target: "game"));
-        Reaches(Setting("line", workspace: "beta", value: "trunk"));
-        Reaches(Setting("across", target: "engine", value: "write-to game"));
-        Reaches(Setting("cap", value: "3"));
+        Reaches(Setting("helpers", workspace: "beta", value: "--mode on"));
         Assert.Contains("not registered", Refusal(Setting("drive", target: "nowhere")));
     }
 

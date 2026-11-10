@@ -1,13 +1,12 @@
-using System.Globalization;
 using static Daoris.Knowledge.HelpProposalFile;
 
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes: one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `quiet`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `review`, `opinion`, `helpers`, `commits`, `retry` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
-/// <param name="Workspace">The workspace, for a line, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
-/// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
+/// <param name="Workspace">The workspace, for a review rule, a second-opinion rule, a helpers rule or a commit rule set for a whole workspace.</param>
+/// <param name="Value">What it is set to, as the CLI takes it: `--mode ask`, `--agents claude-code,codex`, `none`, `--clear`…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
 /// <summary>The <c>setting</c> kind's writer: one of the driver's doors, shape-checked as the CLI's verbs take it.</summary>
@@ -16,11 +15,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c> lists them.
     /// </summary>
-    public static readonly IReadOnlyList<string> Doors =
-    [
-        "line", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "retry", "notify", "cap", "cooloff", "quiet", "keep", "git-use",
-    ];
+    public static readonly IReadOnlyList<string> Doors = ["review", "opinion", "helpers", "commits", "retry", "git-use"];
 
     private static readonly IReadOnlyList<string> ReviewFlags =
         ["--kind", "--procedure", "--address", "--run", "--drop", "--clear", "--required", "--not-required"];
@@ -38,15 +33,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     /// <summary>The flags a commit rule's words may carry, as <c>daoris place commits</c> takes them.</summary>
     private static readonly IReadOnlyList<string> CommitsFlags = ["--mode", "--convention", "--no-convention", "--clear"];
 
-    /// <summary>The most characters a standing answer holds — the driver's <c>DriverConfig.StandingLimit</c>, a deliberate copy.</summary>
-    private const int StandingLimit = 2_000;
-
-    /// <summary>
-    /// The codes a session language takes — the driver's <c>SessionLanguages.Table</c>, a deliberate
-    /// copy, which the driver's <c>HelpSettingProposalsTests</c> holds to its own, code for code.
-    /// </summary>
-    private static readonly IReadOnlyList<string> Languages = ["en", "zh"];
-
     /// <summary>Why a setting is no door's shape, or null when it is one.</summary>
     public static string? Refusal(SettingChange change)
     {
@@ -58,30 +44,12 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
         var circle = !string.IsNullOrWhiteSpace(change.Workspace);
         switch (door)
         {
-            case "line":
-                if (named == circle) return "a line is set for a repository or a workspace — name exactly one.";
-                return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;
             case "retry":
                 // The quest by id, as `daoris quest retry <quest>` takes it; whether it is parked, or held by the
                 // person's stop, is the driver's to judge, so the box takes either id unchanged.
                 return !named || circle || !string.IsNullOrWhiteSpace(value) || Word(change.Target!.Trim(), "a quest") is not null
                     ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
-            case "across":
-                return AcrossShape(named, circle, value);
-            case "standing":
-                // One repository's standing answer, in the person's words, as `daoris place standing` takes it.
-                if (!named || circle) return "a standing answer names the repository it holds for, as the target, and no workspace.";
-                if (string.IsNullOrWhiteSpace(value)) return "`standing` is set to the person's words, or `--clear`.";
-                return value.Length > StandingLimit ? $"a standing answer is at most {StandingLimit} characters of the person's words." : null;
-            case "language":
-                // The work's session language, as `daoris place language` takes it — a code of the
-                // table in any case, as the driver reads one, or `--clear`; whether the repository or the workspace is one
-                // this machine holds is the driver's to judge.
-                if (named == circle) return "a session language is set for a repository or a workspace — name exactly one.";
-                return value is not null && (value == "--clear" || Languages.Contains(value.ToLowerInvariant()))
-                    ? null
-                    : $"`language` is set to {string.Join(" or ", Languages.Select(code => $"`{code}`"))}, or `--clear`.";
             case "review":
                 // Where work is shown to the person before it lands, as `daoris place review` takes
                 // its words; the rule itself, the registry and the procedure are the driver's to judge, in the twins' words.
@@ -113,32 +81,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !CommitsFlags.Contains(word))
                     ? "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear`."
                     : null;
-            case "cap":
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1
-                    ? null
-                    : "`cap` is a whole number, 1 or more: how many sessions run at once.";
-            case "cooloff":
-                // The default cool-off, as `daoris settings cooloff` takes it; under a minute would spin.
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1
-                    ? null
-                    : "`cooloff` is a whole number of minutes, 1 or more: how long an account cools when its limit names no time.";
-            case "quiet":
-                // The one quiet setting, as `daoris settings quiet` takes it: the driver judges the same bounds.
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var quiet) && quiet is >= 5 and <= 120
-                    ? null
-                    : "`quiet` is a whole number of minutes from 5 to 120: how long a session may say nothing and run nothing before Daoris looks in.";
-            case "keep":
-            {
-                // One kind's keep rule, as `daoris settings keep <kind> <rule>` takes it; its bounds are the
-                // driver's to judge, which knows them. Applied by the
-                // person's press as every door is.
-                var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                return !named && !circle && words.Length == 2 && words[0] is "set-aside" or "downloads" or "browser-cache" or "logs" or "history" or "floor"
-                    ? null
-                    : "`keep` names a kind and its rule, for this machine: `set-aside <days>|whole|slim|default`, "
-                      + "`downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`.";
-            }
-            case "git-use":
+            default: // git-use
             {
                 // A repository's remote or a workspace's host pointed at an identity, as `daoris git use`
                 // takes it; whether the identity exists, its host, and never `own`, are the driver's to judge.
@@ -148,8 +91,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                     ? null
                     : "`git-use` is an identity's label or `--clear`: for a repository `[--remote <name>] <identity>|--clear`, for a workspace `--host <host> <identity>|--clear`.";
             }
-            default: // notify
-                return value is "on" or "off" ? null : "`notify` is set `on` or `off`.";
         }
     }
 
@@ -158,30 +99,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
         System.Text.RegularExpressions.Regex.Replace(value, "\"(?:[^\"\\\\]|\\\\.)*\"", "quoted")
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Where(word => word.StartsWith("--", StringComparison.Ordinal));
-
-    /// <summary>
-    /// <c>across</c>'s shape, as <c>daoris place across</c> takes its words: <c>read on|off|--clear</c>
-    /// for a repository or a workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository.
-    /// </summary>
-    private static string? AcrossShape(bool named, bool circle, string? value)
-    {
-        var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
-        var clear = words.Remove("--clear");
-        switch (words.FirstOrDefault())
-        {
-            case "read":
-            {
-                if (named == circle) return "reading across is set for a repository or a workspace — name exactly one.";
-                var sound = clear ? words.Count == 1 : words.Count == 2 && words[1] is "on" or "off";
-                return sound ? null : "`across … read` is `read on|off|--clear`.";
-            }
-            case "write-to":
-                if (circle || !named) return "a relationship is declared from one repository — name it as the target, and no workspace.";
-                return words.Count == 2 ? null : "`across … write-to` names one repository: `write-to <other>`, with `--clear` to take it back.";
-            default:
-                return "`across` is `read on|off|--clear` or `write-to <other> [--clear]`.";
-        }
-    }
 
     /// <summary>Write one setting proposal, or refuse it — answered as the sentence the agent reads.</summary>
     public (string? Id, string Message) Propose(SettingChange change, string why, string? session, DateTimeOffset at)

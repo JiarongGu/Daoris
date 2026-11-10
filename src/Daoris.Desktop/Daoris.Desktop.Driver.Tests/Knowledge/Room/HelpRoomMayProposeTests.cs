@@ -188,21 +188,20 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// A setting's doors are every setting verb, reading and writing across among them, each
-    /// form said as the terminal spells it, and a write-to named as the person's standing say-so;
-    /// `retry` too, of a quest the driver parked.
+    /// A setting is proposed only for a rule, a retry or a git identity; every other setting verb, reading and writing across
+    /// among them, is said as pressed, never proposed.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_setting_proposes_reading_and_writing_across()
+    public void The_room_says_which_settings_are_proposed_and_which_are_pressed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every setting door below but the repository switches, which are pressed, never proposed", proposes);
-        Assert.Contains("`daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`", proposes);
-        Assert.DoesNotContain("but `retry`", proposes);
-        Assert.Contains("`across` takes `read on|off|--clear` for a repository or a whole workspace", proposes);
-        Assert.Contains("`write-to <other> [--clear]` for a repository", proposes);
-        Assert.Contains("the person's standing say-so for writing across", proposes);
+        Assert.Contains("a review, a second opinion, a helpers rule, a commit rule, a retry and a git identity. Every other setting is", proposes);
+        Assert.Contains("`daoris place drive|undrive|hold|resume <repository>`", proposes);
+        Assert.Contains("`daoris place trees <repository> on|off`", proposes);
+        Assert.Contains("`daoris place across <repository> read|write-to …`", proposes);
+        Assert.Contains("`daoris settings notify|cap|cooloff|quiet|keep …`", proposes);
+        Assert.DoesNotContain("`across` takes", proposes);
     }
 
     /// <summary>
