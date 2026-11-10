@@ -133,10 +133,16 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         }
     }
 
-    /// <summary><c>--chrome</c> where the person's own run turns Claude in Chrome on (<see cref="ClaudeOwnChrome"/>).</summary>
+    /// <summary>
+    /// <c>--chrome</c> where the person's own run turns Claude in Chrome on (<see cref="ClaudeOwnChrome"/>), and their memory file
+    /// appended to the system prompt (<see cref="ClaudeOwnMemory"/>).
+    /// </summary>
     public void HandOwn(ProcessStartInfo info, OwnTools own)
     {
         if (ClaudeOwnChrome.On(own)) info.ArgumentList.Add(ClaudeOwnChrome.Flag);
+        if (ClaudeOwnMemory.File(own) is not { } memory) return;
+        info.ArgumentList.Add(ClaudeOwnMemory.Flag);
+        info.ArgumentList.Add(memory);
     }
 
     /// <summary>

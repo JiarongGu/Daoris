@@ -23,12 +23,19 @@ public sealed class ClaudeRules : IRuleLanguage
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
     /// <inheritdoc/>
-    /// <remarks>The lineage hook is Claude Code's own (<see cref="ClaudeLineageHook"/>), installed here for the file it is handed.</remarks>
-    public string Write(string home, string sessionId, HandedRules rules) =>
-        Render(
+    /// <remarks>
+    /// The lineage hook is Claude Code's own (<see cref="ClaudeLineageHook"/>), installed here for the file it is handed; the person's
+    /// own settings are merged beneath the file (<see cref="ClaudeOwnSettings"/>).
+    /// </remarks>
+    public string Write(string home, string sessionId, HandedRules rules)
+    {
+        var path = Render(
             home, sessionId, rules.Rules, rules.HardDeny, rules.Guard,
             rules.Lineage is { } file ? ClaudeLineageHook.For(home, sessionId, file) : null,
             rules.Asked ? ClaudeAskHook.For(home, sessionId) : null);
+        ClaudeOwnSettings.Merge(path, rules);
+        return path;
+    }
 
     /// <summary>Write the file for one session, which every session is handed, its permissions at least.</summary>
     /// <param name="hardDeny">

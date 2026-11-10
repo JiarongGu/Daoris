@@ -27,13 +27,16 @@ public static class DoorPorts
         /// <summary>The line that stops a conversation's turn on the door's stdin, null where it has none.</summary>
         public string? FrameInterrupt() => Native(door)?.FrameInterrupt();
 
-        /// <summary>What a protocol-door session carries on <c>session/new</c> to take its rules file and plugins, null for none.</summary>
-        public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string>? plugins = null) =>
-            door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SessionMeta(settingsFile, plugins ?? []) : null;
+        /// <summary>
+        /// What a protocol-door session carries on <c>session/new</c> to take its rules file, its plugins and what of the person's own tool
+        /// home its harness takes there (<paramref name="own"/>), null for none.
+        /// </summary>
+        public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string>? plugins = null, OwnTools? own = null) =>
+            door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SessionMeta(settingsFile, plugins ?? [], OwnFor(door, own)) : null;
 
         /// <summary><see cref="AcpSessionMeta"/> for a session held to the person's tier, its handed file and Daoris's servers alone.</summary>
-        public object? AcpSourcesAloneMeta(string settingsFile, IReadOnlyList<string>? plugins = null) =>
-            door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SourcesAloneMeta(settingsFile, plugins ?? []) : null;
+        public object? AcpSourcesAloneMeta(string settingsFile, IReadOnlyList<string>? plugins = null, OwnTools? own = null) =>
+            door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SourcesAloneMeta(settingsFile, plugins ?? [], OwnFor(door, own)) : null;
 
         /// <summary>How the door takes a start's servers at its spawn, or null where they ride its wire or it takes none there.</summary>
         public IServerHanding? ServerHanding() => door.Spawn.TryGet(out var spawn) ? spawn as IServerHanding : null;
@@ -83,4 +86,7 @@ public static class DoorPorts
     }
 
     private static INativeDialect? Native(AgentDoor door) => door.Dialect.IsKnown ? door.Dialect.Required as INativeDialect : null;
+
+    /// <summary>The person's own tool home for a door its provider owns; a plugin's door, its program unmeasured, takes none of it.</summary>
+    private static OwnTools? OwnFor(AgentDoor door, OwnTools? own) => door.Declared ? null : own;
 }

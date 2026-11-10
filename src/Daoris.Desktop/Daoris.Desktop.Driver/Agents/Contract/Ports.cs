@@ -86,10 +86,13 @@ public interface INativeDialect : IDialect
 /// </summary>
 public interface IProtocolDialect : IDialect
 {
-    /// <summary>What <c>session/new</c> carries to take the rules file and the plugins composed for the session; null sends no <c>_meta</c>.</summary>
-    object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins) => null;
+    /// <summary>
+    /// What <c>session/new</c> carries to take the rules file and the plugins composed for the session, and what of the person's own tool
+    /// home (<paramref name="own"/>, null for none) the harness takes there; null sends no <c>_meta</c>.
+    /// </summary>
+    object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own) => null;
 
-    object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins) => SessionMeta(settingsFile, plugins);
+    object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own) => SessionMeta(settingsFile, plugins, own);
 }
 
 /// <summary>How an account's windows are asked between turns: the program, the command, the answers recorded and the freshness.</summary>

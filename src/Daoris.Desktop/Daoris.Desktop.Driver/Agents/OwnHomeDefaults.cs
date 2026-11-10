@@ -19,6 +19,12 @@ public static class OwnHomeDefaults
     /// <summary>The Claude in Chrome switch of the person's own tool home.</summary>
     public const string ChromeId = "own-chrome";
 
+    /// <summary>The user settings of the person's own tool home.</summary>
+    public const string SettingsId = "own-settings";
+
+    /// <summary>The memory file of the person's own tool home.</summary>
+    public const string MemoryId = "own-memory";
+
     /// <summary>The defaults, in the order the rules list them after Daoris's own.</summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
@@ -35,6 +41,13 @@ public static class OwnHomeDefaults
         new(
             ChromeId, RuleList.Allow, [],
             "A session turns Claude in Chrome on where your own run of the agent turns it on by default."),
+        new(
+            SettingsId, RuleList.Allow, [],
+            "A session is handed your own tool home's settings beneath Daoris's rules, the repository's and the account's: your denies "
+            + "hold, and nothing that signs in, sets the mode or switches Daoris's hooks off is taken."),
+        new(
+            MemoryId, RuleList.Allow, [],
+            "A session is handed the instructions your own tool home keeps for every run, as your own run of the agent reads them."),
     ];
 
     /// <summary>The families <paramref name="rules"/> leave on.</summary>
@@ -46,6 +59,8 @@ public static class OwnHomeDefaults
         if (!connectorOnly && On(rules, ServersId)) families |= OwnFamilies.Servers;
         if (On(rules, PluginsId)) families |= OwnFamilies.Plugins;
         if (On(rules, ChromeId)) families |= OwnFamilies.Chrome;
+        if (On(rules, SettingsId)) families |= OwnFamilies.Settings;
+        if (On(rules, MemoryId)) families |= OwnFamilies.Memory;
         return families;
     }
 

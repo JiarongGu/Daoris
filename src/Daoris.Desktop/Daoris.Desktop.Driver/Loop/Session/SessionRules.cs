@@ -83,6 +83,8 @@ internal static class SessionRules
         // What Daoris keeps for git is no session's to read, whatever shape its rules take.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 
+        var shaped = opinion || helper || supervise || partner || brainstorm is not null || job is { Count: > 0 };
+        var own = OwnTools.Machine(home, info, connectorOnly: opinion || helper);
         var file = language.Write(home, sessionId, new HandedRules(
             composed,
             brainstorm is not null ? [.. pushTold, BrainstormPermissions.HardDeny]
@@ -96,7 +98,11 @@ internal static class SessionRules
             ChildLineage.PathOf(home, sessionId))
         {
             // A working session on a door with no wire asks the person through Daoris; a session shaped for one job is held to it.
-            Asked = !adapter.Can.HeldOnWire && !(opinion || helper || supervise || partner || brainstorm is not null || job is { Count: > 0 }),
+            Asked = !adapter.Can.HeldOnWire && !shaped,
+            // The person's own settings beneath these, the tree's own above them; a shaped pass takes none that would widen it.
+            Own = own,
+            Folder = tree,
+            Shaped = shaped,
         });
         var handed = Handed(takes: true, rules, composed, workspace, repository);
         if (!adapter.Can.RulesOnWire)
@@ -106,7 +112,7 @@ internal static class SessionRules
             return (file, null, handed);
         }
 
-        return (file, supervise ? adapter.AcpSourcesAloneMeta(file, plugins ?? []) : adapter.AcpSessionMeta(file, plugins ?? []), handed);
+        return (file, supervise ? adapter.AcpSourcesAloneMeta(file, plugins ?? [], own) : adapter.AcpSessionMeta(file, plugins ?? [], own), handed);
     }
 
     /// <summary>
