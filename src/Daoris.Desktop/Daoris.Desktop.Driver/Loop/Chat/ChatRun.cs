@@ -205,6 +205,7 @@ internal sealed class ChatRun(
                     Withheld = browserNotice,
                     Housekeeping = place.Housekeeping,
                     Settings = place.Settings,
+                    Circle = place.Circle,
                 });
             }
 

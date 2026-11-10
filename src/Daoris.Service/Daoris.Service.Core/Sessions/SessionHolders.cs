@@ -6,6 +6,22 @@ namespace Daoris.Knowledge;
 /// </summary>
 internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, KnowledgeService? registry)
 {
+    private readonly SessionPlaceLease lease = new(sessions);
+
+    /// <summary>The writer's lease of the place at <paramref name="root"/>; see <see cref="SessionPlaceLease.HolderAsync"/>.</summary>
+    public Task<Session?> PlaceHolderAsync(string department, string? root, CancellationToken inside, string? except = null) =>
+        lease.HolderAsync(department, root, inside, except);
+
+    /// <summary>Write or clear a record's mark; see <see cref="SessionPlaceLease.MarkAsync"/>.</summary>
+    public Task<bool> MarkPlaceAsync(string id, IReadOnlyList<string>? paths, CancellationToken inside) => lease.MarkAsync(id, paths, inside);
+
+    /// <summary>
+    /// Whether <paramref name="tree"/> is the place itself rather than a copy of it: the registered root, or a tree unsaid. Where no
+    /// root is registered a named tree stays under the tree lock, which reads an unknown conservatively.
+    /// </summary>
+    public static bool InPlace(string? tree, string? root) =>
+        Trees.Normalize(tree) is not { } held || (Trees.Normalize(root) is { } place && string.Equals(held, place, StringComparison.Ordinal));
+
     /// <summary>
     /// The driver's code for a session that ended its turn on its own open helper ask (its <c>EndNoteCodes.EndedAwaitsHelper</c>,
     /// a twin read here by its spelling): completed, since it waits on that helper and not on the person.

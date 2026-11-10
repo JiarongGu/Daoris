@@ -11,6 +11,7 @@ internal sealed class KnowledgeHelpReads : IKnowledgeHelp
     public string? GoesOnIn(string home, string? workspace, string? tree) => HelpRoom.GoesOnIn(home, workspace, tree);
     public bool SaidNotReadYet(string home) => HelpRoom.SaidNotReadYet(home);
     public IReadOnlyList<string?> Unread(string home) => HelpRoom.Unread(home);
+    public HelpFocus? FocusWritten(string home, string? workspace) => HelpRoom.FocusWritten(home, workspace);
     public string Prepare(string home, HelpMachine machine) => HelpRoom.Prepare(home, machine);
     public IReadOnlyList<HelpRead> HandedCheckouts(string home, string session) => new HelpWired(home).Read(session).FirstOrDefault()?.Checkouts ?? [];
     public IReadOnlyList<(string Id, string Name)> Views => HelpPlaces.Views;

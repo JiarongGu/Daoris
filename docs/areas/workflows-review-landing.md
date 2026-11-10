@@ -237,7 +237,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     chain, the session branch of every unit its landing carries: each part's commits kept on a recovery ref, its branch deleted through
     the journal (`JournaledDeletes`, with its Undo), one a tree has checked out left standing and ended all the same, and what it ended
     written on the landing as `tidied` (`ChainTidied`), whole only when every part ended: a part whose door threw after earlier ones
-    ended records those as `partly`, which the keeper reads but the node does not, and the next pass goes on from them. Nothing fails a tidy: where the request did not merge its door ends nothing. Each
+    ended records those as `partly`, which the keeper reads but the node does not, and the next pass goes on from them. Nothing fails a tidy: where the request did not merge its door ends nothing. A chain the look's own
+    tidy already ended (its landing gone from the record by its end with nothing tidied on it, the unit's session branch gone too) leaves
+    the tidy nothing to clean: its door finds no standing landing to write on, and its reading reaches it from the record
+    (`TidiedByTheLook`, `TidyAfterTheLookTests`). Each
     kind's save rules are its own (`INodeKind.Problems`): the save refuses a `monitor` on no step, on two, after a step that reports no
     state, or with outcomes other than that step's states in their order (`monitor-watch`), a `tidy` no monitor's `when merged` way
     reaches (`tidy-merged`), and a `push` no way from a method's landing reaches or after a landing not of the `branch` method
@@ -273,7 +276,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     advances only while its pull request can take it. (from D82, D149)
 37. Branches a landing made are kept in `<home>/landings.json`, with traces once gone. A landing removes no tree and no other
     session branch. A session branch goes only by its own door or the look's tidy, behind D88's proof: every commit is on a branch
-    that is not Daoris's, never forced. (from D88, D102, D232)
+    that is not Daoris's, never forced. A gone session branch's entry in `session-branches.json` is kept as a trace while its unit owes
+    anything (`WorkflowObligations.Owing`), and a unit a run's live work is bound on owes its landing: while any node of the run is ready,
+    active or unknown, every subject its nodes observe is held (`RunHeldUnits`, `RunHeldTraceTests`), so a run whose review the person
+    accepted still finds the branch its `land` binds. (from D88, D102, D232)
 38. A pull request's state is asked of the plugin that opened it, at most once a minute per pull request. A landed session's
     review reads its landed branch. (from D113, D148)
 39. Integration is one run per line, outside every run, with fixed steps. `done` and `steward` requests need declared, accepted

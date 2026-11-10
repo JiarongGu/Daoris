@@ -648,6 +648,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]
+    [InlineData("HELP_FOCUS", "sessions,help", "session")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     [InlineData("HELP_DISMISS", "help", null)]
     // A set-up's Apply adds the repository's rule, so an Apply may move the rules too.

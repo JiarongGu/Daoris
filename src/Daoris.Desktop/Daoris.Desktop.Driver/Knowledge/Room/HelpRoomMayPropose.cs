@@ -40,20 +40,21 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
-        text.Append("- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and\n");
-        text.Append("  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own\n");
-        text.Append("  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,\n");
-        text.Append("  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
+        text.Append("- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:\n");
+        text.Append("  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one\n");
+        text.Append("  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,\n");
+        text.Append("  and an effort of low, medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
         text.Append("  to the tool's own default.\n");
-        text.Append("- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the\n");
-        text.Append("  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.\n");
-        text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
-        text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
-        // A session's delete is this kind's `session` door, judged as Sessions' Delete… is; Ask Daoris's
-        // own conversations are deleted in its History, never from here.
-        text.Append("  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,\n");
+        // A delete is pressed, its card the route's view.
+        text.Append("- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:\n");
+        text.Append("  `daoris quest delete <id>` or `daoris ask --delete <id>`, as the quest's drawer and the ask's record delete them. Only an open\n");
+        text.Append("  quest nobody has started on can go, and an ask goes with every quest it became, or not at all. Never press the delete of a\n");
+        text.Append("  taken, done or declined quest: its record stays, the press is answered to you at once and never shown, and declining it\n");
+        text.Append("  with the reason is the way instead. A delete cannot be undone.\n");
+        // A session's delete is judged as Sessions' Delete… is; Ask Daoris's own conversations are deleted in its History.
+        text.Append("  A session goes by `daoris sessions delete <id>` only where Sessions offers Delete…: a conversation that served no quest, ended,\n");
         text.Append("  this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest\n");
-        text.Append("  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.\n");
+        text.Append("  is archived instead, and Ask Daoris's own conversations are deleted in its History.\n");
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
         // Ask Daoris is the general entry, so a go may begin a conversation: the composer opens with the
         // words and the repository, and the person sends them.
@@ -99,25 +100,22 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // A `set` may carry the role's policy, judged by the policy's judge and said on the card as before and after.
         text.Append("  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section\n");
         text.Append("  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.\n");
-        // Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
-        // is the session's own conversation, which a go reaches.
-        text.Append("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,\n");
-        text.Append("  or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.\n");
-        text.Append("  An archived session leaves the list with its record whole, and a teammate's may be archived here too.\n");
-        text.Append("  A session still running, in Waiting on you or in To review is never archived: archive never hides what\n");
-        text.Append("  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,\n");
-        text.Append("  on the session's page, where `go_propose` takes them.\n");
-        // The person's helper doors, judged as the page's Ask another agent…, Ask again… and Pass to the lead are.
-        text.Append("  Door `helper` asks another agent, read-only, one question about one session's work (`question`, and `agent` to\n");
-        text.Append("  name it); `ask` asks again after an answered one, and `toMe` keeps the answer for the person, who passes it on.\n");
-        text.Append("  Door `pass` sends an answer kept for the person to the session that asked, naming the ask.\n");
-        // The pages' Pause… and Resume, judged by what a pause does with each piece of the
-        // work. Abandon is exempt: it declines quests with the person's reason, which is their answer.
-        text.Append("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or\n");
-        text.Append("  the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it\n");
-        text.Append("  until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a\n");
-        text.Append("  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest\n");
-        text.Append("  of the work stays.\n");
+        // Sessions' Archive and Unarchive, judged as the list judges them, pressed by id. A stop is the session's own
+        // conversation, which a go reaches.
+        text.Append("- Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and\n");
+        text.Append("  `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record\n");
+        text.Append("  whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never\n");
+        text.Append("  archived: archive never hides what needs the person, and the press is answered to you at once and never shown.\n");
+        text.Append("  Stopping a session is never pressed for the person: it is their own, on the session's page, where `go_propose` takes them.\n");
+        // The person's helper doors, as the page's Ask another agent…, Ask again… and Pass to the lead are.
+        text.Append("  `daoris sessions helper <id> \"…\"` asks another agent, read-only, one question about one session's work, and\n");
+        text.Append("  `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.\n");
+        // The pages' Pause… and Resume. Abandon is exempt: it declines quests with the person's reason, which is their answer.
+        text.Append("- One ask's work, or one quest's, is paused on this machine or resumed by pressing, never proposed:\n");
+        text.Append("  `daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`. A pause stops what of the work runs\n");
+        text.Append("  here as the person's own stop and starts nothing of it until it is resumed; a session waiting on the person stays parked,\n");
+        text.Append("  a running intake keeps reading, and a teammate's session is never reached. Resume lifts the pause and releases its stops;\n");
+        text.Append("  another pause over a quest of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
         text.Append("  ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.\n");
         // The pages' clears, judged by their first press, a closed quest's failed
@@ -172,12 +170,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
         text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
         text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
-        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*, a delete's
-        // press is *delete*, and a bring-up-to-date card's first is the look. A go card's second
+        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*, and a bring-up-to-date card's first is the look. A go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
-        text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
         text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
         text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
         text.Append("A press of not now comes back to you as the person's next message;\n");

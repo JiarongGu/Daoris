@@ -163,6 +163,9 @@ public sealed record SessionTarget(
     /// </summary>
     public string? Git { get; init; }
 
+    /// <summary>What its start's manifest found in its place (<see cref="PlacePrompt"/>); null in a tree of its own.</summary>
+    public PlaceTold? Place { get; init; }
+
     /// <summary>
     /// For a session in a tree whose files stage kept, placed or installed its dependencies: which, and to skip the install that
     /// would delete them (<see cref="TreeFilesOutcome.Told"/>), said before how to take the quest. Null where none stands ready, and

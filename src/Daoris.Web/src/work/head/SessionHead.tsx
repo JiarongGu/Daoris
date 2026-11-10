@@ -18,6 +18,7 @@ import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from './AccessFact';
 import { gitAccessRow, type SessionGitAccessHold } from './GitAccessFact';
+import { placeHoldRow } from './PlaceHoldFact';
 import { countRows, courseRow, type LineSupervision, NO_SUPERVISION, supervisorRow } from './lineSupervision';
 import { ChoiceChip } from './ChoiceChip';
 import type { WaitEvents } from '../waits/anchors';
@@ -590,6 +591,8 @@ export function SessionHead({
           accessRow(t, session),
           // What it holds of git access now, one fact, narrowed by what the person tightened.
           gitAccessRow(t, session, gitAccess),
+          // A parked line keeping its checkout with uncommitted paths of its own, and the press that lets others work there.
+          placeHoldRow(t, session),
           // The line's counts and what the person's rules did with them, as the driver counted them.
           ...countRows(t, supervision),
           supervisorRow(t, supervision),

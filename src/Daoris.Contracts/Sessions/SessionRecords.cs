@@ -75,7 +75,7 @@ public sealed record SessionResponse(
     [property: PageType(SessionPageTypes.Override)] JsonElement? Override = null,
     [property: PageType(SessionPageTypes.Ran)] JsonElement? Ran = null,
     [property: PageType(SessionPageTypes.Chosen)] JsonElement? Chosen = null,
-    string? Work = null, string? Head = null, string? Decides = null);
+    string? Work = null, string? Head = null, string? Decides = null, IReadOnlyList<string>? HoldsPlace = null);
 
 /// <summary>
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer

@@ -52,7 +52,7 @@ public sealed record ListSessionChanges(string? Since = null) : IRoute<SessionCh
 public sealed record AdvanceSession(
     string Id, string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
     JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null,
-    Dictionary<string, MemoryTurnsRequest>? Turns = null) : IRoute<SessionActionResponse>
+    Dictionary<string, MemoryTurnsRequest>? Turns = null, IReadOnlyList<string>? HoldsPlace = null) : IRoute<SessionActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/sessions/{id}/state";
@@ -173,6 +173,7 @@ public sealed record MoveSaid(string Id, string? Word, string? To = null) : IRou
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(OpenIntake))]
 [JsonSerializable(typeof(OpenHelp))]
+[JsonSerializable(typeof(ReleasePlace))]
 [JsonSerializable(typeof(KeepHelpMode))]
 [JsonSerializable(typeof(KeepAccess))]
 [JsonSerializable(typeof(KeepActor))]

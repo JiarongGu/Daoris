@@ -375,6 +375,9 @@ public sealed record SessionView(
 
     /// <summary>The attempt a supervisor's turn decides for, which takes no place under the cap; answered on loopback alone.</summary>
     public string? Decides { get; init; }
+
+    /// <summary>The uncommitted paths of its own a parked line keeps its git place with, on loopback alone.</summary>
+    public IReadOnlyList<string>? HoldsPlace { get; init; }
 }
 
 /// <summary>The one spelling of the state that means "only the person can clear this".</summary>

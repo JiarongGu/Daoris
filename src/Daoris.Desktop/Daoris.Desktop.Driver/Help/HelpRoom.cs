@@ -109,7 +109,7 @@ public static class HelpRoom
     /// </summary>
     public static string Prepare(string home, HelpMachine machine)
     {
-        var room = PathOf(home, machine.Workspace);
+        var room = PathOf(home, machine.Home);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
         // The housekeeping granted, the chosen settings and the checkouts turned off, as the record
         // holds them as this start writes its room.
@@ -124,16 +124,20 @@ public static class HelpRoom
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape.
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
-        Said[Path.GetFullPath(room)] = new RoomSaid(Path.GetFullPath(home), machine.Workspace, machine.NotReadYet.Any);
+        Said[Path.GetFullPath(room)] = new RoomSaid(Path.GetFullPath(home), machine.Home, machine.NotReadYet.Any, machine.Focus);
         return room;
     }
+
+    /// <summary>The focus this process last wrote the room of <paramref name="workspace"/> for; null for its home's own.</summary>
+    internal static HelpFocus? FocusWritten(string home, string? workspace) =>
+        Said.GetValueOrDefault(Path.GetFullPath(PathOf(home, workspace)))?.Focus;
 
     // What each room this process wrote last under each home said is not read yet, by its folder, with its workspace:
     // the catch-up writes only such a room again, from its own workspace's facts. A room another process wrote, or one
     // written before this process, is written again at its next start.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoomSaid> Said = new(StringComparer.OrdinalIgnoreCase);
 
-    private sealed record RoomSaid(string Home, string? Workspace, bool NotReadYet);
+    private sealed record RoomSaid(string Home, string? Workspace, bool NotReadYet, HelpFocus? Focus);
 
     /// <summary>
     /// Whether any room this process wrote last under <paramref name="home"/> said something is not read yet, so it
@@ -260,11 +264,17 @@ public static class HelpRoom
     /// projected to it first, the whole machine where null. The machine keeps <paramref name="whole"/>, so another
     /// workspace's room is described from the same facts (<see cref="HelpMachine.Within"/>).
     /// </summary>
-    internal static HelpMachine Describe(HelpMachineSources whole, string? workspace)
+    /// <param name="focus">
+    /// The place its conversation is about, the facts projected to its workspace and kept whole for this machine, the room still the
+    /// home's (<see cref="HelpMachine.Home"/>); null is the home's own.
+    /// </param>
+    internal static HelpMachine Describe(HelpMachineSources whole, string? workspace, HelpFocus? focus = null)
     {
-        var sources = workspace is null ? whole : HelpRoomScope.Project(whole, workspace);
+        var place = focus ?? (workspace is null ? HelpFocus.Machine : HelpFocus.OfWorkspace(workspace));
+        var sources = HelpRoomScope.Project(whole, place);
         return HelpRoomSections.All.Aggregate(
-            new HelpMachine { Workspace = workspace, Whole = whole }, (machine, section) => section.Describe(machine, sources));
+            new HelpMachine { Workspace = sources.Workspace, Home = workspace, Focus = focus, Whole = whole },
+            (machine, section) => section.Describe(machine, sources));
     }
 
     public static string Render(HelpMachine machine) =>
@@ -303,6 +313,7 @@ internal sealed record HelpMachineSources(
 {
     HelpMachine IHelpMachineSources.Describe(IHelpRoomSection section, HelpMachine machine) => HelpRoomDescriptions.Describe(section, machine, this);
     HelpMachine IHelpMachineSources.Describe(string? workspace) => HelpRoom.Describe(this, workspace);
+    HelpMachine IHelpMachineSources.Describe(string? home, HelpFocus focus) => HelpRoom.Describe(this, home, focus);
 
     /// <summary>The quests the loop's last look held by the person's stop.</summary>
     public IReadOnlyList<HeldQuest> Held { get; init; } = [];

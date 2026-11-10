@@ -83,6 +83,7 @@ internal static class SessionReads
                 Serves = session.Serves is { Length: > 0 } serves ? serves : null,
                 Piece = session.Piece is { Length: > 0 } piece ? piece : null,
                 Decides = session.Decides is { Length: > 0 } decides ? decides : null,
+                HoldsPlace = session.HoldsPlace is { Count: > 0 } kept ? kept : null,
             });
         }
 

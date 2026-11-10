@@ -17,12 +17,6 @@ internal sealed class PlanRound
         Unadopted = unadopted;
         Window = window;
 
-        // Grouped, never keyed straight off the list: two active sessions in one repository is a state the tree rule allows (a
-        // conversation in the checkout, another in a tree of its own), and a dictionary built from the list threw on the second.
-        // Either blocks the repository; the first is the one the reason names.
-        BlockedBy = snapshot.Active
-            .GroupBy(s => s.Repository, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.First().Id, StringComparer.OrdinalIgnoreCase);
         // A start of this machine's still opening takes its place as a live session does, counted once where its record has opened
         // since and an active session already stands for its quest.
         Opening = Planner.Opening(snapshot);
@@ -42,8 +36,6 @@ internal sealed class PlanRound
 
     /// <summary>Whether this loop carries Daoris's browser, the window a local set-up step shows its chain's work in.</summary>
     internal bool Window { get; }
-
-    internal IReadOnlyDictionary<string, string> BlockedBy { get; }
 
     internal IReadOnlyList<StartReservation> Opening { get; }
 

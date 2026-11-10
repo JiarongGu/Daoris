@@ -298,7 +298,7 @@ public sealed class PlannerTests
         Assert.Contains("connect", only.Reason);
     }
 
-    /// <summary>One session per repository: an active session holds the tree.</summary>
+    /// <summary>An active session holds its place.</summary>
     [Fact]
     public void An_active_session_blocks_its_repository_and_is_named()
     {
@@ -307,7 +307,7 @@ public sealed class PlannerTests
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
         Assert.Contains("s1", only.Reason);
-        Assert.Equal(new SittingFact(SittingFact.InRepository) { Session = "s1" }, only.Said);
+        Assert.Equal(new SittingFact(SittingFact.Place) { Session = "s1", Repository = "Game" }, only.Said);
     }
 
     // ── parallel sessions, one per tree ───────────────────────────────────────────────────────────

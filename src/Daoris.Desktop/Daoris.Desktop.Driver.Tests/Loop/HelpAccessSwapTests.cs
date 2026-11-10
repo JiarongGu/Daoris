@@ -76,6 +76,38 @@ public sealed class HelpAccessSwapTests : IDisposable
 
     private string Console(string id) => string.Join('\n', _output.Tail(id).Lines.Select(line => line.Text));
 
+    [Fact]
+    public async Task A_focus_waiting_ends_a_busy_conversation_at_its_turn_s_end_and_an_idle_one_now()
+    {
+        var runner = Runner();
+        var busy = Running(runner, "h1", HelpModes.Restricted);
+        var idle = Running(runner, "h2", HelpModes.Restricted);
+        await Talking(busy);
+
+        runner.HelpFocusChosen("h1", waiting: true);
+        runner.HelpFocusChosen("h2", waiting: true);
+
+        await Poll.Until(() => idle.Finished == 1, () => "the idle conversation was never ended");
+        Assert.Equal(0, busy.Finished);
+        busy.Turn.SetResult();
+        await Poll.Until(() => busy.Finished == 1, () => "the turn's end never ended it");
+    }
+
+    [Fact]
+    public async Task The_applied_focus_chosen_again_withdraws_the_end()
+    {
+        var runner = Runner();
+        var busy = Running(runner, "h1", HelpModes.Restricted);
+        await Talking(busy);
+
+        runner.HelpFocusChosen("h1", waiting: true);
+        runner.HelpFocusChosen("h1", waiting: false);
+        busy.Turn.SetResult();
+
+        await Task.Delay(200);
+        Assert.Equal(0, busy.Finished);
+    }
+
     /// <summary>
     /// 🔴 HELPMODE1a5: full to restricted while a turn runs says on its console that it ends at its turn's end, and it is not ended
     /// mid-turn; the turn's end ends it, once.

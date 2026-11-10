@@ -82,8 +82,14 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var large = await MeasuredAsync($"the review of the tree with {Built} ignored files", () => ReviewAsync(trees, Home.Large));
         var small = await MeasuredAsync("a small tree's review", () => ReviewAsync(trees, Home.Trees[^1]));
 
-        // A start's own parts before its spawn that do not wait on a model: its checkout's status, its tree grown, its record opened.
-        await MeasuredAsync("a start's clean checkout", () => WorkingTree.CleanAsync(Home.Root, CancellationToken.None));
+        // A start's own parts before its spawn that do not wait on a model: its place's manifest, its tree grown, its record opened.
+        await MeasuredAsync("a turn's end in place", async () =>
+        {
+            await PlaceTurns.StartAsync(Home.Home, "default", BenchHome.Repository, Home.Root, "s-bench001", null, CancellationToken.None);
+            return await PlaceTurns.EndAsync(Home.Home, "s-bench001", CancellationToken.None);
+        });
+        var manifest = await MeasuredAsync("a start's manifest", () =>
+            PlaceTurns.StartAsync(Home.Home, "default", BenchHome.Repository, Home.Root, "s-bench002", "s-bench001", CancellationToken.None));
         await MeasuredAsync("a start's tree", () => trees.OpenAsync(Home.Root, BenchHome.Repository, "default"));
         await MeasuredAsync("a start's record", () => Home.Client.OpenChatAsync(BenchHome.Repository, "stub"));
 
@@ -92,6 +98,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
 
         // Each read that reads the session list once is allowed that read: the rest is the driver's own.
         Within("the look", look - list, LookBudget);
+        Within("a start's manifest", manifest, BesideBudget);
         Within("the nodes' read", nodes - list, BesideBudget);
         // A tree's ignored build costs a read nothing: its kept read is its two statuses, and its review a tracked tree's.
         Within("the large tree's kept read", kept, ReviewBudget);

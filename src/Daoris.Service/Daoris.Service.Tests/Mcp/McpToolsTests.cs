@@ -732,40 +732,27 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Empty(await _quests.ListAsync());
     }
 
-    /// <summary>
-    /// Ask Daoris's four further tools each write one proposal under the home, naming the
-    /// conversation its connector is handed — and a malformed one writes nothing, said in the agent's terms.
-    /// </summary>
+    /// <summary>Ask Daoris's further tools each write one proposal under the home, naming the conversation its connector is handed.</summary>
     [Fact]
-    public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
+    public void Ask_Daoris_proposes_an_agent_action_and_a_screen()
     {
         var home = Path.Combine(_root, "help-home");
         var intake = new IntakeScope(null, "h1e1p000");
         var box = new HelpProposalBox(home);
         var agent = new HelpAgentTool(intake, box);
-        var delete = new HelpDeleteTool(intake, box);
-        var account = new HelpAccountTool(intake, box);
         var go = new HelpGoTool(intake, box);
-        var session = new HelpSessionTool(intake, box);
 
         Assert.Contains("Proposed", agent.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
-        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
-        Assert.Contains("Proposed", account.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
         Assert.Contains("Proposed", go.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
         // ENTRY1f1: the tool hands the box the item it names.
         Assert.Contains("Proposed", go.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
         // ENTRY1d2a: and the workspace Add repository opens with.
         Assert.Contains("Proposed", go.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
-        Assert.Contains("Nothing was proposed", delete.ProposeDelete("no id at all"));
-        // SESSUX1h2a: the session kind's tool, and delete's session door.
-        Assert.Contains("Proposed", session.ProposeSession("archive", "the person is done with them", sessions: "s1,s2"));
-        Assert.Contains("Proposed", session.ProposeSession("archive", "tidy up", ended: true));
-        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", session: "s9"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
             .ToList();
-        Assert.Equal(["account", "agent", "delete", "delete", "go", "go", "go", "session", "session"], written.Select(file => file.GetProperty("kind").GetString()).Order());
+        Assert.Equal(["agent", "go", "go", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
         Assert.Contains(written, file => file.GetProperty("kind").GetString() == "go"
             && file.GetProperty("workspace").ValueKind == JsonValueKind.String && file.GetProperty("workspace").GetString() == "work");
         Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));

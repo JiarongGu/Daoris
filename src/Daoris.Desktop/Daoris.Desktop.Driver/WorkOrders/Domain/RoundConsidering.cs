@@ -196,16 +196,14 @@ internal sealed class RoundConsidering(PlanRound round)
                 };
             }
         }
-        else if ((continuing
-                     ? snapshot.Active.FirstOrDefault(s =>
-                         string.Equals(s.Repository, quest.To, StringComparison.OrdinalIgnoreCase) && !Itself(s))?.Id
-                     : round.BlockedBy.GetValueOrDefault(quest.To)) is { } session)
+        else if (PlaceHolders.Of(snapshot, quest.To, repo.Root, Itself) is { } holder)
         {
-            return new(quest, StartVerdict.RepositoryBusy,
-                $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
-                + "is its one tree. Sessions there run side by side once they open trees of their own.")
+            return new(quest, StartVerdict.RepositoryBusy, PlaceHolders.Said(holder, quest.To))
             {
-                Said = new(SittingFact.InRepository) { Session = session },
+                Said = new(SittingFact.Place)
+                {
+                    Session = holder.Id, Repository = quest.To, Paths = SessionStates.IsParked(holder.State) ? holder.HoldsPlace : null,
+                },
             };
         }
         else if (round.StartedThisTick.TryGetValue(quest.To, out var ahead))
@@ -216,7 +214,6 @@ internal sealed class RoundConsidering(PlanRound round)
                 Said = new(SittingFact.Queued) { Quest = ahead },
             };
         }
-        // A start still opening in the root holds it, as its session will once it opens.
         else if (round.Opening.FirstOrDefault(start => string.Equals(start.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                                                        && !string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
                  is { Quest: { } before })
