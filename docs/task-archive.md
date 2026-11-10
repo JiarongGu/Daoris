@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTFREE1a — the census of what a session narrows, and its first two lifts (2026-11-10)
+
+> **AGENTFREE1a** (driver; D253 point 7): Outcome: `docs/2026-11-10-agent-free-census.md`, 29 rows, each narrowing with what it stops, why, and kept or lifted. Lifted: a Claude session keeps its account's memory, synced skills, plugins and connectors (the four account keys gone from its settings file; `AccountContextTests` replaces `OwnContextTests`); the tree guard lets a subagent's call write inside its own worktree, which Claude makes under the repository's main checkout, checked against the session's repository, the session's own agent still writing only in its tree (`Workplace/hooks/subagent-worktree.mjs`, `SubagentWorktreeShippedTests`, the node test beside it). The worktree's place was read from the installed binary, not measured in a real session; `TreeGuardTests` (a Process class) not run.
+
+---
+
 ## SESSIONORIGIN1 — a session shows where it started from and what it started with (2026-11-10)
 
 > **SESSIONORIGIN1** (web): Outcome: a session's head and *Details* say *Started from* as a press that opens it (its quest, ask, earlier session, repository, or Ask Daoris's room and workspace; `work/head/startedFrom.tsx` `originsOf`) and *Started with* (the quest's requirements, else its words, else the ask's words, else the first message; `startingOf`), and *How this came to be* takes the same; a rail line holding several quests says which each session holds, and a quest its own ask published is no longer worded a sibling's. Proof: `SessionHead.origin.test.tsx`, `SessionRow.quests.test.tsx`, both languages. Left as SESSIONORIGIN1b: the brief a start was handed, which no record keeps. Not seen in the window.

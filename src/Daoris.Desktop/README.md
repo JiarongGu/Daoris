@@ -406,14 +406,12 @@ row of the call layer's table (`CallTable`, read by the work of the record its `
 repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
 build 25; a chat 22; an intake 15; a helper 12), Ask Daoris every tool but the brainstorm turns, the helper ask and the memory changes
 (`CoreSetTests` holds each row). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
-Since CONTEXTONE1e every Claude session's own settings file (Claude Code's rule language, `ClaudeRules`, handed by `--settings` on the
-pipe door and `_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) carries `ClaudeRules.OwnContext`:
-`autoMemoryEnabled: false`, `syncClaudeAiSkills: false`, `syncClaudeAiPlugins: false` and `disableClaudeAiConnectors: true`. Its skills are
-then the tree's and the per-session plugin copy's (`ClaudeSkills`), its connectors the ones it is handed and the tree's, and its memory
-Daoris's (D220); the file is written for every such session, rules or none. Claude Code 2.1.314's own schema says that tier stops the
-account's synced skills and plugins for that invocation alone and moves nothing, so the account's home is never written
-(`HarnessSettings.ProfileHome`). Its bundled skills stay, the same for every account. Codex takes no settings and is unchanged: it reads
-the tree's skills by path, which its standing block names.
+Every Claude session's own settings file (Claude Code's rule language, `ClaudeRules`, handed by `--settings` on the pipe door and
+`_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) is written for every such session, rules or
+none, and says nothing of the account's auto-memory, synced skills and plugins or connectors: the account's own settings decide them, as for
+the harness run by hand (D253 point 7). Its skills are the tree's, the per-session plugin copy's (`ClaudeSkills`) and whatever the account
+synced; Daoris never writes the account's home (`HarnessSettings.ProfileHome`). Codex takes no settings: it reads the tree's skills by path,
+which its standing block names.
 Since CONTEXTONE1c every session's first prompt ends with its standing block (`StandingBlock`, composed from the plain `StandingFacts`
 every start sets: `SessionTarget.Block` for a quest's session, an intake, a helper, a partner, a reviewer and a brainstorm's pass;
 `ChatPlace.Block` for a conversation and Ask Daoris). It says where things are (the repository's documents, code and history, the
