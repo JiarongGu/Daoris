@@ -14,6 +14,8 @@
   "settings.rules.defaultWhy.own-servers": "会话会拿到你自己工具目录里的服务器，但与 Daoris 连接器同名或带有 Daoris 密钥的除外；评审、助手或搭档这类单项任务一个也拿不到。",
   "settings.rules.defaultWhy.own-plugins": "会话会拿到你自己工具目录里安装并启用的插件，直接从安装位置读取。",
   "settings.rules.defaultWhy.own-chrome": "你自己运行这个代理时默认开启 Claude in Chrome 的，会话也会开启它。",
+  "settings.rules.defaultWhy.own-settings": "会话会拿到你自己工具目录里的设置，放在 Daoris 的规则、仓库的设置和账号自己的设置之下：你的拒绝规则依然有效，登录、模式和关闭 Daoris 钩子的设置不会被带入。",
+  "settings.rules.defaultWhy.own-memory": "会话会拿到你自己工具目录里为每次运行保存的说明，和你自己运行这个代理时读到的一样。",
   "settings.rules.hook": "钩子，作用于 {{tools}}",
   "settings.rules.list.allow": "允许",
   "settings.rules.list.ask": "询问",
