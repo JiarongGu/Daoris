@@ -265,6 +265,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
 |`2026-11-09-repo-config-reads.md`|Reads: REPOCONFIG1
 |`2026-11-10-agent-free-census.md`|Census: AGENTFREE1, what a session narrows (D253 point 7)
+|`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
 
 ## UI, browser, tools and plugin contracts
 
