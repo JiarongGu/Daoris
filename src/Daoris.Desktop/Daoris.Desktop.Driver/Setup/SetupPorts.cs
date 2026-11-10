@@ -10,6 +10,9 @@ public interface ISetupWorld
     /// <summary>Every repository this machine's host holds, in every circle.</summary>
     Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct);
 
+    /// <summary>The isolate step of the workflow <paramref name="repository"/>'s work follows under <paramref name="config"/>, or null where it works in place.</summary>
+    IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => null;
+
     /// <summary>The repository's line (as the driver's choices name it), read as git objects.</summary>
     Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct);
 

@@ -13,7 +13,6 @@ namespace Daoris.Driver;
 /// <param name="Cap">Concurrent sessions across all repositories.</param>
 /// <param name="PollSeconds">How often the watch loop ticks.</param>
 /// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
-/// <param name="Trees">Repositories whose sessions open their OWN worktree instead of the registered root. Empty is the default.</param>
 /// <param name="Notify">
 /// Whether this machine interrupts the person when a session parks or ends unasked. <b>On by default</b>: a driver that ran
 /// silently would leave parked sessions sitting until somebody thinks to look.
@@ -24,7 +23,6 @@ public sealed record DriverConfig(
     int Cap,
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
-    IReadOnlyList<string> Trees,
     bool Notify = true,
     IReadOnlyDictionary<string, int>? Forgiven = null)
 {
@@ -48,8 +46,7 @@ public sealed record DriverConfig(
     public static DriverConfig Empty { get; } = new(
         Drivable: [], Holds: [], Cap: 2,
         PollSeconds: 15,
-        Commands: new Dictionary<string, IReadOnlyList<string>>(),
-        Trees: []);
+        Commands: new Dictionary<string, IReadOnlyList<string>>());
 
     /// <summary>The failure count at this quest's last restart — zero when it has not been restarted.</summary>
     public int ForgivenAt(string questId) =>
@@ -557,7 +554,7 @@ public sealed record DriverConfig(
     /// stands, so two writers each adding a repository keep both. Each is a key path, <c>*</c> any one name. Duplicated deliberately as
     /// the CLI's <c>DRIVER_SETS</c>; held to the tests' <c>fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
     /// </summary>
-    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
+    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "writeAcross.*"];
 
     /// <summary>Write the choices back, the edit made onto the file as it stands and under its lock (<see cref="DriverConfigDisk.Save"/>).</summary>
     /// <exception cref="DriverConfigUnreadableException">The file now does not read, holds a key twice, or no longer holds an object this edit changes inside; nothing is written.</exception>
@@ -575,6 +572,17 @@ public sealed record DriverConfig(
             ? DriverConfigWriter.Written(this)
             : JsonKeeping.Kept(Source, DriverConfigDisk.Understood(this), DriverConfigWriter.Written(this), Sets);
 
+    /// <summary>
+    /// The trees switch's old names, read by no code of the driver and neither read from nor written to <c>driver.json</c>: a place's
+    /// sessions work apart where its workflow's <c>isolate</c> step says (<see cref="PlaceIsolates"/>). Kept only until the test fixtures
+    /// that still set it are converted to the step, then deleted.
+    /// </summary>
+    internal IReadOnlyList<string> Trees { get; init; } = [];
+
+    internal DriverConfig WithTrees(string repository, bool ownTree) => this with { Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree) };
+
+    internal bool OpensOwnTree(string repository) => Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>This machine's answer to "may I drive that repository, now" — one flag flipped at a time.</summary>
     public DriverConfig WithDrivable(string repository, bool drivable) => this with
     {
@@ -585,16 +593,6 @@ public sealed record DriverConfig(
     {
         Holds = DriverConfigEdits.Toggle(Holds, repository, held),
     };
-
-    /// <summary>Whether this repository's sessions open their own worktree.</summary>
-    public DriverConfig WithTrees(string repository, bool ownTree) => this with
-    {
-        Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree),
-    };
-
-    /// <summary>The read side of <see cref="WithTrees"/> — one comparison rule for both.</summary>
-    public bool OpensOwnTree(string repository) =>
-        Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The choices read from <c>driver.json</c>'s text.</summary>
     public static DriverConfig Parse(string json) => DriverConfigReader.Parse(json);

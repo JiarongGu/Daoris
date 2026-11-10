@@ -76,7 +76,7 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
     /// grows its own, and in a repository whose sessions run in its root, the root is held by its repository.
     /// </summary>
     private string? TreeGoneBackInto(Consideration start) =>
-        wiring.Config.OpensOwnTree(start.Quest.To) ? start.Entry?.Into?.Tree ?? start.Resumes?.Tree : null;
+        start.Isolate is not null ? start.Entry?.Into?.Tree ?? start.Resumes?.Tree : null;
 
     private StartsOutcome Fold(IReadOnlyList<StartCame> outcomes, List<string> events, List<SessionEnded> concluded)
     {

@@ -16,6 +16,7 @@ internal sealed class SnapshotLook(ILookWiring wiring) : ILookPass
         // The starts still opening, read before the snapshot as well as at the plan, so one whose record opened while the snapshot
         // is read is held by one of the two, whichever the ledger's answer missed.
         round.State.ReservedBefore = wiring.Runs.Reserved;
-        round.State.Snapshot = await wiring.Stages.TimeAsync("snapshot", () => wiring.Service.SnapshotAsync(ct)).ConfigureAwait(false);
+        var snapshot = await wiring.Stages.TimeAsync("snapshot", () => wiring.Service.SnapshotAsync(ct)).ConfigureAwait(false);
+        round.State.Snapshot = snapshot with { Isolations = PlaceIsolates.Of(WorkflowPorts.Store(wiring.Home), wiring.Config, snapshot.Repositories) };
     }
 }

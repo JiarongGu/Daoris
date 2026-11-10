@@ -150,7 +150,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     order, oldest open first. (from D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
-12. In a repository without its own trees, one writer works in its own place at a time, under the ledger's lease: the record
+12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
+    graph's one entry wired into its work: its `kind` (`auto`, `worktree`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
+    alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
+    into the snapshot (`PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
+    which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
+    converted the old per-repository trees switch and the line policies' `overlap` into the step; `daoris place trees` answers where
+    the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
     whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
     there. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
@@ -169,7 +175,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     D258, D260)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
-14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
+14. Under the isolate step's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
     repository waits until that work is integrated, a done unit's open integration request included, whose quest the look reads
     where the open list lacks it. A quest that goes back into a tree (a retry or a limit carry-on of
     an open quest) is no first start and does not wait. (from D215)

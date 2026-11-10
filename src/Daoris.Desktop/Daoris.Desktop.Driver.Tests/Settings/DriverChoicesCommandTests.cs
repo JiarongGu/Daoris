@@ -69,6 +69,17 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(["engine"], DriverConfig.Load(Config).Drivable);
     }
 
+    [Fact]
+    public async Task The_gone_trees_verb_answers_where_a_places_sessions_are_set_apart_now_and_writes_nothing()
+    {
+        var exit = await DriverChoicesCommand.RunAsync(["trees", "engine", "on"], World(), CancellationToken.None);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("`isolate` step", _error.ToString(), StringComparison.Ordinal);
+        Assert.Contains("Work apart", _error.ToString(), StringComparison.Ordinal);
+        Assert.False(File.Exists(Config));
+    }
+
     /// <summary>
     /// *Try again* alone judges from the planner's verdict over the service's snapshot: where the service cannot
     /// be read, nothing is guessed and nothing is written, and the words say how to give the count, as the CLI's did.

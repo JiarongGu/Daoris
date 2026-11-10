@@ -262,7 +262,8 @@ const SAID: Record<string, readonly string[]> = {
   AtCapacity: ['cap'],
   // `overlaps`: a start held under `overlap: wait` until the earlier quest's work is integrated.
   // `place`: the place's writer holds it, its turn running or, with paths, parked with uncommitted paths of its own.
-  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'place', 'queued', 'repositoryOpening', 'overlaps'],
+  // `apart`: the place's isolate step's count of sessions working apart is full.
+  RepositoryBusy: ['serving', 'opening', 'tree', 'treeOpening', 'treeThisLook', 'place', 'apart', 'queued', 'repositoryOpening', 'overlaps'],
   Waiting: ['asked', 'unreadRunning', 'unread', 'unreadAtCommit', 'missing', 'unreviewed', 'departed'],
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],

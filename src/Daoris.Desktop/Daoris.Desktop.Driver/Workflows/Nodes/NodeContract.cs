@@ -6,6 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class NodeKinds
 {
+    /// <summary>The work set apart from the place's other sessions: the graph's entry, performed by the start before its record opens.</summary>
+    public const string Isolate = "isolate";
+
     /// <summary>The agent's done, on the ledger: a claim, and never the end.</summary>
     public const string Claimed = "claimed";
 

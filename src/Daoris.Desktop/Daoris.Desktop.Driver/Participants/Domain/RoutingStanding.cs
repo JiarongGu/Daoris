@@ -19,12 +19,13 @@ public sealed record RoutingStanding(string Standing, IReadOnlyList<string> Lane
     public const string Open = "open";
 
     /// <summary>The standing of <paramref name="repository"/> on this machine, from its drive and trees in <paramref name="config"/> and its lanes.</summary>
-    public static RoutingStanding Of(DriverConfig config, RepoView repository)
+    /// <param name="apart">Whether its workflow sets its sessions apart (<see cref="PlaceIsolates"/>), so they work side by side.</param>
+    public static RoutingStanding Of(DriverConfig config, RepoView repository, bool apart)
     {
         var lanes = repository.Lanes;
         if (!config.Drivable.Contains(repository.Repository, StringComparer.OrdinalIgnoreCase)) return new(NotDriven, lanes);
         if (lanes.Count == 0) return new(NoLanes, lanes);
-        return new(config.OpensOwnTree(repository.Repository) ? Open : OneAtATime, lanes);
+        return new(apart ? Open : OneAtATime, lanes);
     }
 
     /// <summary>
@@ -32,8 +33,8 @@ public sealed record RoutingStanding(string Standing, IReadOnlyList<string> Lane
     /// that may publish to their own repository's lanes (the connector refuses the serving works the quest tools), and nothing for a
     /// repository the registry does not name.
     /// </summary>
-    public static RoutingStanding? Told(string? work, DriverConfig config, RepoView? repository) =>
+    public static RoutingStanding? Told(string? work, DriverConfig config, RepoView? repository, bool apart) =>
         repository is not null && work is ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Exact or ParticipantWork.Chat
-            ? Of(config, repository)
+            ? Of(config, repository, apart)
             : null;
 }

@@ -233,7 +233,7 @@ internal static class HelpRoomDescriptions
                     Checkout = known.Root is { Length: > 0 },
                     Drivable = Named(config.Drivable, known.Repository),
                     Held = Named(config.Holds, known.Repository),
-                    OwnTree = config.OpensOwnTree(known.Repository),
+                    OwnTree = (sources.Snapshot as Snapshot)?.IsolationOf(known.Repository) is not null,
                     Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
                     // A checkout whose line the facts have not judged yet, said so rather than as none git can name.
                     LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),
