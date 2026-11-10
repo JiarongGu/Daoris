@@ -8,7 +8,8 @@ import { isComposing } from '../../lib/composing';
 import type { Account } from '../../agents/tools';
 import { Button, Icon, Inline, Menu, Tip } from '../../design/ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
-import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';
+import { CHIP } from '../../design/atoms/ChipCombobox';
+import { RepositoryPicker, type StartRepository } from './RepositoryPicker';
 
 export type { StartRepository } from './RepositoryPicker';
 
