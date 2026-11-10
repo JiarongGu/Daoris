@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-v's role half — `daoris role` pressed, the role kind gone (2026-11-11)
+
+> **ASKFULL1g-v, role** (modules, service, driver, web): Outcome: each role verb (set, remove, default, policy, rules, a supervisor's set) presses `SET_ROLE`, judged at the ask by the role door's own judges and refused with no card where they refuse; the Confirm card draws the place's rules and the supervisor's record before and after (`RoleChangeView`, `PressView`'s `Rules` and `Supervisor`, web `person/view/RulesChange|SupervisorChange`); the role proposal kind, its service tool and writer, its box row, call-table column, room line and card kind are gone whole. Proof: `RoleChangeViewTests` (seen failing first), the moved card tests in both languages, the room goldens; rules 9, 40, 41 and 56 rewritten.
+
+---
+
 ## ASKSCOPE2's counts, the card's place line and the *Asked you* rows (2026-11-11)
 
 > **ASKSCOPE2, the rest of 2e-2i** (service, driver, modules, web): Outcome: `knowledge_search` and `quest_list` say how many they found as they answer (`CallFound`), noted as `found` beside the call's place, so the receipt says *Searched workspace … · N found*; a restricted press reads its place before its card through the delegate that judges full-access presses, and the card says *In …, outside this conversation's focus (…)* only when it lies beyond (`HelpCardPlace`); an asked press is kept marked asked from waiting to allowed, refused, changed or unanswered (`HelpAskedPress`), and the receipt and Notifications list it apart with no *Resume*; a press naming only a quest is judged at the repository its quest asks (`HelpPressPlace.QuestOnly`). Proof: `CallPlaceFilterTests`, `McpHelpCircleTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `PipeDelegateTests`, `BeyondReceipt`, `HelpPressLine` and `helpPlaceSaid` in both languages, seen failing first.

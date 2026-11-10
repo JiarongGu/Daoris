@@ -3,8 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One kind of Ask Daoris's proposal: the fields only it carries, its judge — the route's own code,
-/// run against the machine as it stands — and its Apply, through the door the screen's own route uses.
+/// One kind of Ask Daoris's proposal: the fields only it carries, its judge (the route's own code, against the machine now) and its Apply.
 /// </summary>
 /// <remarks>
 /// <para>A kind is a class in a file of its own under <c>Help/Proposals/</c>, registered in
@@ -94,7 +93,6 @@ internal static class HelpProposalKinds
         new HelpClearProposals(),
         new HelpWorkflowProposals(),
         new HelpSetupProposals(),
-        new HelpRoleProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

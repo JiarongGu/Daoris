@@ -16,6 +16,7 @@ public sealed record PipeMachine(DriverConfig Config, HelpMachineFacts Facts)
             .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var facts = new HelpMachineFacts([.. snapshot.Repositories.Select(known => known.Repository)], workspaces, loop.Harnesses.Adapters.Names)
         {
+            Home = loop.Home,
             Plugins = PluginCatalog.Load(loop.Home, ProviderRegistry.Built().Names),
             GitIdentities = [.. GitIdentities.Read(loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             Parked = loop.Parked.Latest,

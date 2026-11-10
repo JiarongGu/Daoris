@@ -17,7 +17,6 @@ public sealed class HelpProposalBoxKindsTests
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
-        ("role", "role_propose"),
     ];
 
     private static string RepositoryRoot()
@@ -36,9 +35,8 @@ public sealed class HelpProposalBoxKindsTests
     }
 
     /// <summary>
-    /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c> (the name the driver's twin tests read), holds that kind's
-    /// writer class of the same name, writing exactly that kind, and no part of the box: with no partial type without generated code,
-    /// the box is the one class of <c>HelpProposalBox.cs</c>.
+    /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c>, holds that kind's writer class of the same name, writing exactly that
+    /// kind, and no part of the box, the one class of <c>HelpProposalBox.cs</c>.
     /// </summary>
     [Fact]
     public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()

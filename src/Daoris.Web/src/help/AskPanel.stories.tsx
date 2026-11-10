@@ -81,10 +81,10 @@ export const Proposing: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           <ProposalCard
             proposal={{
-              id: 'p1a2b3c4', kind: 'role',
-              describe: 'Land `engine`\'s accepted work on a branch `feature/{quest}-{slug}`, its tree removed once landed.',
-              terminal: 'daoris place landing engine branch feature/{quest}-{slug} --tidy',
-              why: 'you asked for its work on feature branches',
+              id: 'p1a2b3c4', kind: 'clear',
+              describe: 'Clear quest `q-7`\'s finished history: its sessions\' words and files go, its record stays.',
+              terminal: 'daoris history clear --quest q-7',
+              why: 'you asked to tidy finished work',
             }}
             onApply={() => {}}
             onDismiss={() => {}}

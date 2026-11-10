@@ -9,9 +9,9 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 // A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
-  id: 'p1a2b3c4', kind: 'role' as const,
-  describe: 'Land workspace `work`\'s accepted work on a branch `feature/{quest}-{slug}`.',
-  terminal: 'daoris place landing --workspace work branch feature/{quest}-{slug}',
+  id: 'p1a2b3c4', kind: 'clear' as const,
+  describe: 'Clear quest `q-7`\'s finished history, kept on branch `feature/{quest}-{slug}`.',
+  terminal: 'daoris history clear --quest q-7',
   why: 'the person asked for feature branches',
 };
 

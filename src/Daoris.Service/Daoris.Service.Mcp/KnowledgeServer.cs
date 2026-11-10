@@ -34,7 +34,6 @@ public static class KnowledgeServer
         typeof(PartnerTools),
         typeof(HandOverTools),
         typeof(LineTools),
-        // One quest's handback read whole, by its id or its session's, in any state, from the session's own workspace.
         typeof(HandbackTools),
         // A repository's memory: read across the session's workspace, changed in its own repository, corrected by proposal.
         typeof(MemoryTools),
@@ -45,7 +44,6 @@ public static class KnowledgeServer
         typeof(HelpClearTool),
         typeof(HelpGoTool),
         typeof(HelpPluginTool),
-        typeof(HelpRoleTool),
         typeof(HelpSetupTool),
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),

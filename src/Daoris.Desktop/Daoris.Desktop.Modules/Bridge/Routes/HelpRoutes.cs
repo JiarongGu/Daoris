@@ -29,9 +29,8 @@ public sealed class HelpRoutes(DriverContext context)
     private readonly HelpProposalFacts _facts = new(context);
 
     // Ask Daoris's conversation, one per workspace: the one running in the press's workspace, carried on, or a new one in its room.
-    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since on a loaded
-    // machine the room's look alone took 24.9 s and the page stops waiting at 30. `workspace` is read at the press and carried to
-    // the record, so a window that changes workspace while it starts moves nothing; a name this machine does not hold is refused.
+    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since the room's look alone
+    // can near the page's 30 s wait. `workspace` is read at the press and carried to the record; a name this machine lacks is refused.
     [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_HELP", "workspace")]
@@ -249,14 +248,6 @@ public sealed class HelpRoutes(DriverContext context)
             Grant = plan.Grant is { } grant
                 ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
                 : null,
-            // A place's supervisor rules before and after, as the rules' own fields for the page to word.
-            Rules = plan.Rules is { } rules
-                ? new { rules.Place, Before = RuleShown(rules.Before), After = RuleShown(rules.After) }
-                : null,
-            // A supervisor's kinds, acts, holder and window after the change and before it, for the page to word.
-            Supervisor = plan.Supervisor is { } supervisor
-                ? new { supervisor.Id, supervisor.Names, Scope = new { supervisor.Scope.Kind, supervisor.Scope.Id }, Hold = HoldShown(supervisor.Hold), Before = supervisor.Before is { } before ? HoldShown(before) : null }
-                : null,
             Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
@@ -273,11 +264,6 @@ public sealed class HelpRoutes(DriverContext context)
                 }
                 : null,
         };
-
-    private static object HoldShown(RoleHold hold) => new { hold.Kind, hold.Acts, hold.Holder, hold.Window, hold.Decides };
-
-    private static object[] RuleShown(IReadOnlyList<SupervisorRule> rules) =>
-        [.. rules.Select(rule => new { rule.Count, rule.At, rule.Do, rule.UpTo, rule.Roles })];
 
     /// <summary>
     /// What a bring-up-to-date card shows, the page's <c>HelpSyncShown</c>: whether the person has looked, every

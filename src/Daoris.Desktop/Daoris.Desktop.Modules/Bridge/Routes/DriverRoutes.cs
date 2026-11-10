@@ -444,7 +444,7 @@ public sealed class DriverRoutes(DriverContext context)
     };
 
     // A role added, changed, removed or given back its seed, the supervisor and the steward among them: the person's press, as `daoris
-    // driver role` and `role_propose` make it, through one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A removed
+    // role` makes it, through one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A removed
     // role's work holds its starts, said; a running session goes on; a role's terminal it no longer staffs ends.
     [DriverRoute("SET_ROLE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLE", None = OwnerNone.MachineSetting)]

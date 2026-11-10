@@ -39,7 +39,7 @@ public sealed class HelpRoomRolesTests : IDisposable
             + "last 7 days: 14 starts (claude-code sonnet high ×10, claude-code opus high ×4), moved: limit ×1, transient ×1.", text);
         Assert.Contains("policy (revision 2) was set for other choices, so it runs them in order until it is saved again: its choices changed since it was set", text);
         Assert.Contains("`helper` (Helper) takes help; revision 0; off: it starts nothing; policy (revision 0): First that can run; last 7 days: no new start.", text);
-        Assert.Contains("`policy_revision`", text);
+        Assert.Contains("`daoris role policy <id> --preset first|even|weighted`", text);
     }
 
     [Fact]

@@ -5,8 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Every kind of Ask Daoris's proposal is whole: a class in a file of its own here, the service's writer
-/// of the same kind in a file of its own there, the connector's tool that proposes it, and its card on the
+/// Every kind of Ask Daoris's proposal is whole: a class here, the service's writer, the connector's tool and its card on the
 /// page — so a new kind cannot be half-added, and none is left behind when one is removed.
 /// </summary>
 /// <remarks>
@@ -26,7 +25,6 @@ public sealed partial class HelpProposalKindsTests
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
-        ("role", "role_propose"),
     ];
 
     /// <summary>

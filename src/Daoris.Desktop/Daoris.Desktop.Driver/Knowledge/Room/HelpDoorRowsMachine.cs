@@ -25,14 +25,14 @@ internal static class HelpDoorRowsMachine
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris tree state <session|branch> [--repository <name>]`",
             new HelpDoorAsk.Never("it changes nothing of yours or on the platform, and the room already says what was last answered")),
-        // A role's agents through the role door alone, Build, Intake and Ask Daoris among them; `role_propose` proposes it.
+        // A role's agents through the role door alone, Build, Intake and Ask Daoris among them.
         ("choose who does each kind of work, with which agent and model: driven sessions (Build), asks (Intake), Ask Daoris and every "
             + "other role", "Agents → Roles → Working roles", "`daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off`"),
         // The role catalogue, a role added, changed, removed or given back its seed, or every seeded role at once with added roles kept.
         ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "
             + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
             "`daoris role set|remove|default <id> …`, `daoris role default --all`"),
-        // How a role spends its choices, a policy proposed with `role_propose`'s `policy`; the terminal's twin names a choice by its number.
+        // How a role spends its choices; the terminal names a choice by its number.
         ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget and the work a choice takes",
             "Agents → Roles → Working roles, a role's Edit",
             "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--clear]`"),
