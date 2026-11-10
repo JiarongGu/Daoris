@@ -197,6 +197,32 @@ public sealed class MemoryDecisionTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 KNOWREV3a: deleting a session drops its staged rows (nothing staged applies by itself, and no session is left for the person to
+    /// Keep), and its awaiting replacement is a wait of its own, decided through its row as a deleted session's end is.
+    /// </summary>
+    [Fact]
+    public async Task A_deleted_sessions_staged_rows_are_dropped_and_its_awaiting_replacement_is_a_wait_of_its_own()
+    {
+        var pixels = await Owner.RememberAsync("Tiles are sixteen pixels.");
+        var replacer = await _machine.ChatAsync(Now.AddMinutes(10));
+        await Tools(replacer).WriteAsync("Tiles are drawn at thirty-two pixels.", supersedes: [$"Owner:{pixels.Id}@{pixels.Revision}"]);
+        await _machine.Ledger.AdvanceAsync(replacer.Id, "completed", null, null, null, Now.AddMinutes(11));
+        var stopped = await _machine.ChatAsync(Now.AddMinutes(12));
+        await Tools(stopped).WriteAsync("The legend sits under the map.");
+        await _machine.Ledger.AdvanceAsync(stopped.Id, "stopped", null, null, null, Now.AddMinutes(13));
+        var replacement = Assert.Single(await _machine.Memory.OfSessionAsync(replacer.Id));
+
+        await _machine.Sessions.DeleteAsync(stopped.Id);
+        await _machine.Sessions.DeleteAsync(replacer.Id);
+
+        Assert.Equal(MemoryOpState.Dropped, Assert.Single(await _machine.Memory.OfSessionAsync(stopped.Id)).State);
+        var wait = Assert.Single(await _machine.Memory.WaitsAsync());
+        Assert.Equal((null, 0, 1, 0, replacement.Id), (wait.Session, wait.Ends, wait.Replacements, wait.Staged, wait.End!.Op));
+        await Desk.DecideAsync(replacement.Id, session: null, approve: false, Now.AddMinutes(15));
+        Assert.Empty(await _machine.Memory.WaitsAsync());
+    }
+
+    /// <summary>
     /// 🔴 While an end awaits, a hit on its entry says who proposed it and that it awaits the person, in a search and a read;
     /// once decided, the hit says nothing of it.
     /// </summary>
