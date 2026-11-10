@@ -153,18 +153,18 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("Policy, Build: Spread by weight (1:1) →", rekeyed.Describe);
     }
 
-    /// <summary>In a workspace's conversation a change is judged by the role's own scope, and the whole-seed door reaches every workspace.</summary>
+    /// <summary>In a workspace's conversation a change to a role scoped elsewhere, and the whole-seed door, are judged by the role kind alone.</summary>
     [Fact]
-    public void A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role()
+    public void A_scoped_conversation_judges_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role_by_the_kind_alone()
     {
         RoleDoor.Apply(Staffing, RoleChange.Set(new RoleRecord("night", AuthoredText.Of("Night"), RoleRecord.Always, ["build"], new RoleScope(RoleScope.Workspace, "other"))),
             [new ActorChoice("claude-code", "sonnet", "high")]);
         var mine = Machine with { Circle = "mine" };
 
-        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("remove", "night"), DriverConfig.Empty, mine).Refusal);
-        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("default", "night"), DriverConfig.Empty, mine).Refusal);
-        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("set", "night", """{ "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, mine).Refusal);
-        Assert.Contains("every workspace at once", HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("remove", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("set", "night", """{ "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, mine).Refusal);
         Assert.Null(HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, Machine).Refusal);
         Assert.Null(HelpProposals.Plan(Role("default", "intake"), DriverConfig.Empty, mine).Refusal);
     }
