@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// An ask asks each receiver once: a publish to a receiver the ask already holds a quest for, open, taken or done, is answered with that
-/// quest and publishes nothing, as the exchange answers a retry; and a session's publish beside the ask's intake is refused while the intake
+/// An ask asks each receiver once: another hand's publish to a receiver the ask already holds a quest for, open, taken or done, is answered
+/// with that quest and publishes nothing, as the exchange answers a retry; and a session's publish beside the ask's intake is refused while the intake
 /// answers it, or before any intake has served it, since the intake publishes it. The person's own press is never refused for the intake.
 /// </summary>
 internal sealed class AskPublishGuard(QuestExchange exchange, SessionStore? sessions)
@@ -20,8 +20,12 @@ internal sealed class AskPublishGuard(QuestExchange exchange, SessionStore? sess
     public async Task<AskOutcome?> JudgeAsync(Ask ask, string to, string? session, CancellationToken ct)
     {
         var address = QuestAddress.Parse(to.Trim());
+        var by = string.IsNullOrWhiteSpace(session) ? null : session.Trim();
         var asked = await exchange.Store.FromAsync(AskDesk.SenderOf(ask.Id), ct: ct).ConfigureAwait(false);
-        if (asked.FirstOrDefault(quest => quest.Status != QuestStatus.Declined && Same(quest, address)) is { } first)
+        // Another hand's publish to a receiver already asked is the same work asked twice; one publisher's several quests to one receiver
+        // are its pieces of the work, and its exact retry is the exchange's to answer.
+        if (asked.FirstOrDefault(quest => quest.Status != QuestStatus.Declined && Same(quest, address)
+                && !string.Equals(quest.PublishedBy, by, StringComparison.Ordinal)) is { } first)
         {
             return new(
                 AskRefusal.None,

@@ -52,18 +52,23 @@ public sealed class AskPublishOnceTests : IAsyncLifetime
     private SessionLedger Ledger() => new(_quests, _sessions, _service, _asks);
 
     [Fact]
-    public async Task A_second_publish_to_a_receiver_the_ask_holds_a_quest_for_answers_that_quest_and_publishes_nothing()
+    public async Task Another_hands_publish_to_a_receiver_the_ask_holds_a_quest_for_answers_that_quest_and_publishes_nothing()
     {
         var asked = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
-        var first = (await _desk.PublishAsync(asked.Id, "media-api", Now.AddSeconds(29))).Quest!;
+        var intake = (await Ledger().OpenIntakeAsync(asked.Id, "stub", Path.Combine(_root, "room"), Now.AddSeconds(4))).Session!;
+        var first = (await _desk.PublishAsync(asked.Id, "media-api", Now.AddSeconds(29), draft: new AskDraft("Read the field name from config", null),
+            session: intake.Id)).Quest!;
+        var piece = (await _desk.PublishAsync(asked.Id, "media-api", Now.AddSeconds(38), draft: new AskDraft("Drop the hard-coded name", null),
+            session: intake.Id)).Quest!;
+        Assert.NotEqual(first.Id, piece.Id);
 
-        var again = await _desk.PublishAsync(asked.Id, "media-api", Now.AddMinutes(5), byAgent: true);
+        var again = await _desk.PublishAsync(asked.Id, "media-api", Now.AddMinutes(5));
 
         Assert.Equal(AskRefusal.None, again.Refusal);
         Assert.Equal(first.Id, again.Quest!.Id);
         Assert.Contains($"`#{first.Id}`", again.Message);
         Assert.Contains("nothing new was published", again.Message);
-        Assert.Single(await _quests.FromAsync(AskDesk.SenderOf(asked.Id)));
+        Assert.Equal(2, (await _quests.FromAsync(AskDesk.SenderOf(asked.Id))).Count);
     }
 
     [Fact]

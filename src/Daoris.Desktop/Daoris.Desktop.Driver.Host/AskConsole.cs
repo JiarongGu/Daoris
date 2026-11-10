@@ -229,7 +229,7 @@ internal static class AskConsole
     {
         Console.Error.WriteLine($"ask: {why}");
         Console.Error.WriteLine("usage: daoris ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
-        Console.Error.WriteLine("       daoris ask publish <id> --to <repo>");
+        Console.Error.WriteLine("       daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…");
         Console.Error.WriteLine("       daoris ask close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris ask delete <id>");
         Console.Error.WriteLine("       daoris ask go-ahead <id> <n> approve|refuse [\"…\"]");
