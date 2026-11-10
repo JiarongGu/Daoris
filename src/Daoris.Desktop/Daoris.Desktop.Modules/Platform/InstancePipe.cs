@@ -196,6 +196,7 @@ public sealed class InstancePipe : IDisposable
         Asking = new PipeAsking(this);
         TakeBacks = new PipeTakeBacks(this);
         StewardAllows = new StewardAllows(this);
+        SessionPresses = new SessionPressAllows(this);
         Holding = new PipeHolding(this, bus);
         HeavyRuns = new PipeHeavyRuns(this);
         Delegate = new PipeDelegate(this);
@@ -244,6 +245,9 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>A steward's act outside its grants, offered to the allow supervisor before the person's card.</summary>
     public StewardAllows StewardAllows { get; }
+
+    /// <summary>A working session's asked press, offered to the allow supervisor before the person's card.</summary>
+    public SessionPressAllows SessionPresses { get; }
 
     /// <summary>A terminal's hold of a conversation: the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
     public PipeHolding Holding { get; }
@@ -391,6 +395,7 @@ public sealed class InstancePipe : IDisposable
         }
 
         StewardAllows.Close();
+        SessionPresses.Close();
         Holding.CloseAsks();
         foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
     }
@@ -616,7 +621,7 @@ public sealed class InstancePipe : IDisposable
     /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>).</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
-        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null)
+        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, string? worker = null)
     {
         string text;
         try
@@ -631,7 +636,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (role is not null ? PipeDoor.EnterRole(role, client) : PipeDoor.Enter(client))
+                using (role is not null ? PipeDoor.EnterRole(role, client) : worker is not null ? PipeDoor.EnterWorker(worker, client) : PipeDoor.Enter(client))
                 using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);

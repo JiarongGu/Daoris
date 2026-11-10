@@ -11,7 +11,8 @@ internal static class SpawnRequests
     public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null) =>
         new(target.Repository, target.Root, target.ServiceUrl)
         {
-            Command = command, Asked = target.Asked, Mode = target.Access?.PermissionMode, Home = target.Home, Identity = Delegated(Identity(target), delegates),
+            Command = command, Asked = target.Asked, Mode = target.Access?.PermissionMode, Home = target.Home,
+            Identity = Delegated(Identity(target), delegates, target.Brainstorm is null ? new SessionPlace(target.Repository, target.Access?.Workspace) : null),
         };
 
     /// <summary>
@@ -19,20 +20,21 @@ internal static class SpawnRequests
     /// rather than an empty one, which would read as an id that failed to parse; its own record, so a connector its agent
     /// starts from the repository's server list marks this conversation.
     /// </summary>
-    public static SpawnRequest Chat(string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null) =>
+    public static SpawnRequest Chat(
+        string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null, string? workspace = null) =>
         new(repository, root, serviceUrl)
         {
             Identity = Delegated(
                 session is { } own
                     ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = own }
                     : new Dictionary<string, string?>(),
-                delegates),
+                delegates, new SessionPlace(repository, workspace)),
         };
 
-    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id.</summary>
-    private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates)
+    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id and its place.</summary>
+    private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates, SessionPlace? place)
     {
-        delegates?.Hand(identity);
+        delegates?.Hand(identity, place);
         return identity;
     }
 

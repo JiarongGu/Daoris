@@ -93,7 +93,11 @@ internal static class SessionRules
             // A partner and a supervisor's turn are held to their copy whatever the person's defaults say.
             PermissionRules.GuardsTree(rules) || partner || supervise ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop: the part's children bound by its lineage.
-            ChildLineage.PathOf(home, sessionId)));
+            ChildLineage.PathOf(home, sessionId))
+        {
+            // A working session on a door with no wire asks the person through Daoris; a session shaped for one job is held to it.
+            Asked = !adapter.Can.HeldOnWire && !(opinion || helper || supervise || partner || brainstorm is not null || job is { Count: > 0 }),
+        });
         var handed = Handed(takes: true, rules, composed, workspace, repository);
         if (!adapter.Can.RulesOnWire)
         {

@@ -14,7 +14,7 @@ internal sealed class StartAccess(IRunWiring wiring) : IRunStage
         DrivenAccess permissions;
         try
         {
-            permissions = DrivenAccess.For(access, run.Quest.To, wiring.Context.Adapters.Door(run.State.Agent));
+            permissions = DrivenAccess.For(access, run.Quest.To, wiring.Context.Adapters.Door(run.State.Agent)) with { Workspace = run.Start.Workspace };
         }
         catch (DriverException error)
         {

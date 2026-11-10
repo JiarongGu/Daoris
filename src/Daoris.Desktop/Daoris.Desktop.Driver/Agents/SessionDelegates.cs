@@ -12,6 +12,7 @@ namespace Daoris.Driver;
 public sealed class SessionDelegates
 {
     private readonly ConcurrentDictionary<string, ImmutableList<(byte[] Hash, long Drawn)>> _held = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, SessionPlace> _places = new(StringComparer.OrdinalIgnoreCase);
     private long _drawn;
 
     /// <summary>How many keys this process has drawn: a process tracked at this count ends the keys drawn up to it (<see cref="Forget(string, long)"/>).</summary>
@@ -30,14 +31,22 @@ public sealed class SessionDelegates
     /// The start's identity handed its key: where it names its session's record, a key drawn for that session beside it; one that names
     /// none is handed none.
     /// </summary>
-    public void Hand(IDictionary<string, string?> identity)
+    /// <param name="place">The repository whose work the start serves, and its workspace: where its tier is read at each press.</param>
+    public void Hand(IDictionary<string, string?> identity, SessionPlace? place = null)
     {
-        if (identity.TryGetValue(ChildMarks.SessionVariable, out var session) && session is { Length: > 0 }) identity[DelegateKey.Variable] = Draw(session);
+        if (identity.TryGetValue(ChildMarks.SessionVariable, out var session) && session is { Length: > 0 })
+        {
+            identity[DelegateKey.Variable] = Draw(session);
+            if (place is { Repository.Length: > 0 }) _places[session] = place;
+        }
     }
 
     /// <summary>The hashes held for <paramref name="session"/>: none where it runs nothing here, or its keys were forgotten.</summary>
     public IReadOnlyList<byte[]> Of(string session) =>
         _held.TryGetValue(session, out var held) ? [.. held.Select(each => each.Hash)] : [];
+
+    /// <summary>Where <paramref name="session"/>'s last start's key is held; null where it named no repository.</summary>
+    public SessionPlace? PlaceOf(string session) => _places.GetValueOrDefault(session);
 
     /// <summary>Every key of <paramref name="session"/> forgotten: its access changed, so its next start is handed a new one.</summary>
     public void Forget(string session) => _held.TryRemove(session, out _);
@@ -55,3 +64,6 @@ public sealed class SessionDelegates
         }
     }
 }
+
+/// <summary>The repository a session's start serves, and the workspace its access setup resolves in (null is <c>default</c>).</summary>
+public sealed record SessionPlace(string Repository, string? Workspace);

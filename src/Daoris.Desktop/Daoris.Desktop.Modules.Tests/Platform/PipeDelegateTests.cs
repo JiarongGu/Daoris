@@ -27,6 +27,8 @@ public sealed class PipeDelegateTests : Bridge
     private readonly SessionDelegates _delegates = new();
     private readonly ConcurrentDictionary<string, string> _modes = new(StringComparer.Ordinal);
     private readonly ConcurrentQueue<(string Session, string Route)> _said = new();
+    private readonly ConcurrentDictionary<string, string> _access = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _families = new(StringComparer.Ordinal);
 
     [Fact]
     public async Task A_full_access_Ask_Daoris_press_runs_at_once_with_no_card_said_on_its_conversation_and_logged()
@@ -165,18 +167,106 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
     }
 
-    /// <summary>The driver's stand-in: every press is counted by its route and answered done.</summary>
+    /// <summary>A working session whose repository's access setup is unrestricted presses with no card as itself, naming nothing the owner's.</summary>
+    [Fact]
+    public async Task An_unrestricted_working_session_s_press_runs_at_once_as_its_own_and_marks_nothing_the_owner_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("s-quest");
+        _access["s-quest"] = AccessRules.Unrestricted;
+
+        var answer = await client.AnswerAsync(await SendProvedAsync(client, "WORK_PAUSE", new { quest = "q1" }, "s-quest", key, nonce));
+
+        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+        Assert.Equal(1, driver.Ran("WORK_PAUSE"));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(_said);
+        Assert.Equal(("s-quest", false), Assert.Single(driver.Doors));
+        Assert.Contains(
+            $$"""{"session":"s-quest","route":"{{DriverModule.Name}}.WORK_PAUSE","by":"session s-quest","door":"terminal"}""",
+            Logged(PipeDelegate.SessionPressedEvent));
+        Assert.Empty(Logged(PipeDelegate.PressedEvent));
+    }
+
+    /// <summary>Under asking or the judged default, a working session's press is put on a card naming it, and runs on the person's yes.</summary>
+    [Theory]
+    [InlineData(AccessRules.Asking)]
+    [InlineData(AccessRules.Auto)]
+    [InlineData(null)]
+    public async Task An_asking_or_judged_working_session_s_press_asks_on_a_card_naming_it(string? permissions)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("s-quest");
+        if (permissions is not null) _access["s-quest"] = permissions;
+
+        var id = await SendProvedAsync(client, "SESSION_ARCHIVE", new { ids = new[] { Archived }, archived = true }, "s-quest", key, nonce);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+
+        Assert.Equal(("s-quest", false), (card.Asker.Session, card.Asker.Help));
+        Assert.Equal(0, driver.Ran("SESSION_ARCHIVE"));
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran("SESSION_ARCHIVE"));
+        Assert.Equal(((string?)null, true), Assert.Single(driver.Doors));
+        Assert.Empty(Logged(PipeDelegate.SessionPressedEvent));
+    }
+
+    /// <summary>A granted family of acts runs Ask Daoris's press with no card in restricted mode; a press outside it still asks.</summary>
+    [Fact]
+    public async Task A_restricted_Ask_Daoris_press_in_a_granted_family_runs_at_once_and_one_outside_asks()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Restricted;
+        _families["h1"] = [ActFamilies.Pause];
+
+        var answer = await client.AnswerAsync(await SendProvedAsync(client, "WORK_PAUSE", new { quest = "q1" }, "h1", key, nonce));
+
+        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+        Assert.Equal(1, driver.Ran("WORK_PAUSE"));
+        Assert.Equal(("h1", $"{DriverModule.Name}.WORK_PAUSE"), Assert.Single(_said));
+        Assert.Equal(((string?)null, true), Assert.Single(driver.Doors));
+
+        // A fresh connection for the next proof, as each press is proved over its own hello's nonce.
+        await using var again = await PipeClient.ConnectAsync(pipe.Serve()!);
+        var hello = await again.HelloAsync(HomeIdentity.Read(Home)!);
+        await SendProvedAsync(again, "SESSION_ARCHIVE", new { ids = new[] { Archived }, archived = true }, "h1", key,
+            hello.GetProperty("data").GetProperty("nonce").GetString()!);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        Assert.Equal(("h1", true), (Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Session, Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Help));
+    }
+
+    /// <summary>The driver's stand-in: each press counted by route and answered done, with the session it ran as and whether it named the owner's.</summary>
     private sealed class StandIn : ModuleBase
     {
         private readonly ConcurrentDictionary<string, int> _ran = new(StringComparer.Ordinal);
 
         public override string ModuleName => DriverModule.Name;
 
+        public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
+
         public int Ran(string route) => _ran.GetValueOrDefault(route);
 
         protected override Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
         {
             _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
+            Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
             return Task.FromResult<object?>(new { Done = true });
         }
     }
@@ -199,7 +289,11 @@ public sealed class PipeDelegateTests : Bridge
         if (delegates)
         {
             pipe.Delegates = session => new PipeDelegateSession(
-                _delegates.Of(session), _modes.GetValueOrDefault(session), route => _said.Enqueue((session, route)));
+                _delegates.Of(session), _modes.GetValueOrDefault(session), route => _said.Enqueue((session, route)))
+            {
+                Permissions = _access.GetValueOrDefault(session),
+                Families = _families.GetValueOrDefault(session) ?? [],
+            };
         }
 
         var client = await PipeClient.ConnectAsync(pipe.Serve()!);

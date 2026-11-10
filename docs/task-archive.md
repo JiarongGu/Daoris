@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1f, h — below full access a call is held, a working session's tier is its access setup (2026-11-11)
+
+> **ASKFULL1f, h** (driver, modules, web; D253 points 5, 6): Outcome: a working session's proved press is judged by its repository's access setup (`Modules/Loop/DelegateTiers.cs`, `PipeDelegate`): unrestricted runs it with no card as the session's own (`session.pressed`, never the owner's); asking and the judged default raise it first as the `allow` supervisor's subject `{ press }` at its repository (`SessionPressAllows`, `PressAllowSubjects`, shape `press`), its `allow.once` running it as the session's, a leave or ten minutes falling to the card. Below full access a tool call is held for the person on both doors: chats and Ask Daoris restricted on the protocol door (`Loop/Chat/ChatHolds.cs`), and the native door through a PreToolUse hook that asks Daoris and waits up to 900 s (`ClaudeAskHook.cs`, `hooks/permission-ask.mjs`, reading the person's path rules), its answer through the session requests (`NativePermits`). Granted act families run Ask Daoris restricted's press with no card (`Knowledge/ActFamilies.cs`, `ConfiguredAccess` `acts`, Configured access's *Acts without asking*); Ask Daoris's conversation shows its own held asks (`help/ask/AskHeld.tsx`). Proof: `PipeDelegateTests`, `SessionPressAllowTests`, `ChatHoldsTests`, `ClaudeAskHookTests`, the hook's node tests, the web's grant and held-ask tests. Not seen in the window.
+
+---
+
 ## AGENTREV3n — the third cycle's hardening (2026-11-11)
 
 > **AGENTREV3n** (driver): Outcome: a retry leg is the opened one once captured (`TransportRun.RetriedAsync`); the layer run's retry is stopped after its spawn when a stop was asked, as the transport's is (`LayerRun.EndAsync`); `RosterWalk.Unready`'s kept-account `Before` passes the account's facts, so a spent kept account is not kept for conversations; the process cases for a sources-alone start and for stripped variables written. Proof: `KeptAsideSpentTests` and the retry-stop case seen failing first; `LayerHoldProcessTests` and `ClaudeDrivenSpawnParityProcessTests` run filtered. The retry leg's opening has no test: AGENTREV3o.
