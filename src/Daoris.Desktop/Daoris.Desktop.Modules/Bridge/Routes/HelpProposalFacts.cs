@@ -105,7 +105,7 @@ public sealed class HelpProposalFacts(DriverContext context)
             Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
 
-        if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))
+        if (proposals.Any(proposal => proposal.Kind == "agent"))
         {
             // The HARNESSES route's own reading of each door, field by field.
             var roster = await _loop.Harnesses.RosterAsync(config, ct: ct).ConfigureAwait(false);
@@ -116,7 +116,6 @@ public sealed class HelpProposalFacts(DriverContext context)
                 {
                     var toolchain = _loop.Harnesses.AgentOf(report.Adapter);
                     var pinned = settings.ResolveVersion(report.Adapter, null, null);
-                    var owner = _loop.Harnesses.Adapters.OwnerOfAgent(report.Adapter).Value;
                     return new HelpDoorFacts(report.Adapter)
                     {
                         Present = report.Present,
@@ -124,16 +123,8 @@ public sealed class HelpProposalFacts(DriverContext context)
                         Pinned = pinned,
                         Package = toolchain?.Program.Package,
                         Channel = toolchain?.Program.Channel,
-                        Product = toolchain?.Product,
-                        Owner = owner,
-                        Accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner),
-                        SettingsKnown = _loop.Harnesses.AccountAgentOf(report.Adapter)?.Accounts.SettingsFile is { Length: > 0 },
                     };
                 })],
-                // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them.
-                Wiring = settings,
-                // The cool-offs a ready's judge reads, as the account rows show them.
-                Cooling = AccountCooling.Read(_loop.Home, DateTimeOffset.UtcNow),
             };
         }
 

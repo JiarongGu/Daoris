@@ -30,16 +30,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append(RoomsProposal.Ask());
         // Each is on the agent's page; there is no `default` door.
         text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.\n");
-        // The account doors the screen's How accounts are used fold offers, each a card the person applies;
-        // on Daoris's accounts, one set for every workspace, and naming no workspace.
-        text.Append("  Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:\n");
-        text.Append("  `use` sets how they are used (`use` goal or order, `keep` one of them or none,\n");
-        // The switch and the person's curve, in place of `early` and `near`.
-        text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` puts the\n");
-        text.Append("  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order; `ready` ends an account's\n");
-        text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
+        // Daoris's accounts for an agent are one set that serves every workspace, so these name none.
+        text.Append("- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:\n");
+        text.Append("  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`\n");
+        text.Append("  and `daoris agent account ready <agent> <account>|--own` (*Try now*; `--own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:\n");
         text.Append("  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one\n");
         text.Append("  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,\n");

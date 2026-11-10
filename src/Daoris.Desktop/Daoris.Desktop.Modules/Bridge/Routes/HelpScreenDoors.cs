@@ -47,51 +47,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             context.Actions.Relay(harness, action), config, ended);
     }
 
-    public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
-    {
-        var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
-        try
-        {
-            HarnessSettings.Change(
-                _loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null), agents: _loop.Harnesses.Agents);
-        }
-        catch (ShenoraException refused)
-        {
-            throw new DriverException(refused.Message);
-        }
-
-        _loop.Nudge();
-        return Task.CompletedTask;
-    }
-
-    // ACCOUNT_USE's own `order`: the set's order through the screen's own edit, the accounts named first,
-    // or the ids' order again where cleared, written whole by the change and clearing no setting; then the loop asked to look.
-    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
-    {
-        var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
-        try
-        {
-            HarnessSettings.Change(_loop.Harnesses.SettingsPath, clear
-                ? read => read.WithRotation(owner, null)
-                : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null),
-                agents: _loop.Harnesses.Agents);
-        }
-        catch (ShenoraException refused)
-        {
-            throw new DriverException(refused.Message);
-        }
-
-        _loop.Nudge();
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
-    {
-        var ended = _loop.Harnesses.Ready(harness, account);
-        _loop.Nudge();
-        return Task.FromResult(ended);
-    }
-
     // TREES_SYNC_PLAN's own list: the same checkouts and sessions, and each line fetched as the person,
     // whose press this is — the look on Ask Daoris's card, never its proposal.
     // It takes what the screen's look takes: the repositories holding Daoris's branches, and the one a card names.

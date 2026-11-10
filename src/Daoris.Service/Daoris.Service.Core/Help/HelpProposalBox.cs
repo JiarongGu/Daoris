@@ -65,15 +65,8 @@ public sealed class HelpProposalBox(string? home)
         new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
 
     /// <inheritdoc cref="HelpAgentProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAgent(
-        string action, string agent, string? version, string why, string? session, DateTimeOffset at,
-        string? account = null,
-        string? use = null, string? keep = null, bool noKeep = false, bool? early = null, int? near = null,
-        IReadOnlyList<string>? accounts = null, bool clear = false,
-        string? switched = null, IReadOnlyList<string>? curve = null, bool noCurve = false) =>
-        new HelpAgentProposalWriter(file).Propose(
-            action, agent, version, why, session, at, account, use, keep, noKeep, early, near, accounts, clear,
-            switched, curve, noCurve);
+    public (string? Id, string Message) ProposeAgent(string action, string agent, string? version, string why, string? session, DateTimeOffset at) =>
+        new HelpAgentProposalWriter(file).Propose(action, agent, version, why, session, at);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(

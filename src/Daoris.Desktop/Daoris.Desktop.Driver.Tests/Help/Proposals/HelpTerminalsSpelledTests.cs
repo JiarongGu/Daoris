@@ -9,47 +9,12 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 {
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Lists(string agent, params string[] accounts) =>
-        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [agent] = accounts };
-
     private static readonly HelpMachineFacts Spelled = Machine with
     {
         Workspaces = ["default", "work", "my team", "R&D", "our lab"],
-        Doors =
-        [
-            new HelpDoorFacts("claude-code")
-            {
-                Present = true, Updates = "tool", Channel = "claude-code-releases", Owner = "claude-code",
-                Accounts = ["work", "my acct", "R&D"], SettingsKnown = true, Product = "Claude Code",
-            },
-        ],
-        Wiring = new HarnessSettings { Rotation = Lists("claude-code", "work", "my acct", "R&D") },
     };
 
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
-
-    private static HelpProposal Agent(string door, string? account, string? workspace, UseChange? use = null) =>
-        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use };
-
-    [Theory]
-    [InlineData("my acct", "daoris agent account use claude-code --keep \"my acct\"")]
-    [InlineData("R&D", "daoris agent account use claude-code --keep <account>")]
-    public void A_use_s_terminal_spells_its_kept_account(string keep, string terminal)
-    {
-        var plan = Plan(Agent("use", null, null, new UseChange(Keep: keep)));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    [Fact]
-    public void An_order_s_terminal_spells_its_accounts()
-    {
-        var plan = Plan(Agent("order", null, null) with { AccountOrder = new AccountOrder(["my acct", "R&D"], false) });
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal("daoris agent account order claude-code \"my acct\" <account>", plan.Terminal);
-    }
 
     [Theory]
     [InlineData("line", "my team", "main", "daoris place line --workspace \"my team\" main")]

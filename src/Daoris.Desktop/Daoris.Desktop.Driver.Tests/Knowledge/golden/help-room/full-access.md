@@ -39,13 +39,11 @@ Where your agent takes Daoris's rules, the person's own denies still hold.
   words naming the repository and asking its session to propose its rooms by the doctrine's `rooms-and-classes` knowledge, on its own branch,
   for the person to accept where it lands. You draft nothing into the repository yourself; a set-up's adoption asks the same.
 - `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.
-  Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:
-  `use` sets how they are used (`use` goal or order, `keep` one of them or none,
-  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` puts the
-  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order; `ready` ends an account's
-  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
+- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:
+  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`
+  and `daoris agent account ready <agent> <account>|--own` (*Try now*; `--own` ends only an old cool-off of the tool's own sign-in).
 - An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:
   `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one
   of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,
