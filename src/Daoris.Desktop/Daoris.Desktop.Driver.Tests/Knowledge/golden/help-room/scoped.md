@@ -70,7 +70,8 @@ under *Done at a terminal* (below), name its command for the person to run.
 
 ## What you may propose
 
-- `setting_propose`: every setting door below.
+- `setting_propose`: every setting door below but the repository switches, which are pressed, never proposed:
+  `daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`.
   `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,
   as the target, as its page's *Try again* does; a quest on neither list is refused.
   `across` takes `read on|off|--clear` for a repository or a whole workspace,

@@ -4,11 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>
-/// What every kind's proposal tests stand on: a home of the test's own with the proposals folder, the
-/// file as the service's box writes it, the machine a proposal is judged against, and an Apply through
-/// <see cref="HelpStandInDoors"/>, whose doors each kind's test file adds.
-/// </summary>
+/// <summary>What every kind's proposal tests stand on: a home, the file as the box writes it, the machine, and an Apply through <see cref="HelpStandInDoors"/>.</summary>
 public abstract class HelpProposalsFixture : IDisposable
 {
     protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);

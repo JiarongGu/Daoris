@@ -17,7 +17,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
     public string Kind => "agent";
 
-    // Every door, each a card the person applies the same way.
     public string Tool => "agent_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["update", "pin"];

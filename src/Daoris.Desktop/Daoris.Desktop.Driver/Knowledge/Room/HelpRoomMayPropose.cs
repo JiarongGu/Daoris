@@ -18,7 +18,8 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // Every setting verb (`daoris place`, `settings`, `quest`, `git`); across said form by form, and a write-to as the say-so the canon
         // asks for, which its card says too. `retry` too, of a quest the driver parked, named from the list;
         // or one the person's stop holds, released from that stop.
-        text.Append("- `setting_propose`: every setting door below.\n");
+        text.Append("- `setting_propose`: every setting door below but the repository switches, which are pressed, never proposed:\n");
+        text.Append("  `daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`.\n");
         text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
         text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
         text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");

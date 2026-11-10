@@ -107,7 +107,6 @@ public sealed class HelpProposalFacts(DriverContext context)
 
         if (proposals.Any(proposal => proposal.Kind == "agent"))
         {
-            // The HARNESSES route's own reading of each door, field by field.
             var roster = await _loop.Harnesses.RosterAsync(config, ct: ct).ConfigureAwait(false);
             var settings = _loop.Harnesses.Settings;
             facts = facts with

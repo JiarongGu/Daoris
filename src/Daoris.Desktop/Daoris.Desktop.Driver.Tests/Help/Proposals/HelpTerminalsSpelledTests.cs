@@ -2,11 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>
-/// The terminal twin a card shows, and every command a refusal names, spells an account
-/// and a workspace for any shell, as the CLI's hints and the page's twins do (<see cref="ShellWord"/>): in double quotes where
-/// a space needs them, and a placeholder where no spelling holds. The words around a command name them as they are.
-/// </summary>
+/// <summary>The terminal twin a card shows spells a workspace for any shell (<see cref="ShellWord"/>).</summary>
 public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 {
     private static readonly HelpMachineFacts Spelled = Machine with

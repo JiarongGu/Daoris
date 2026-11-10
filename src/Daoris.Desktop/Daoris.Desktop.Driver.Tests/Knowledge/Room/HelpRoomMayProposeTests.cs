@@ -197,7 +197,8 @@ public sealed class HelpRoomMayProposeTests
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every setting door below.", proposes);
+        Assert.Contains("every setting door below but the repository switches, which are pressed, never proposed", proposes);
+        Assert.Contains("`daoris place drive|undrive|hold|resume <repository>` and `daoris place trees <repository> on|off`", proposes);
         Assert.DoesNotContain("but `retry`", proposes);
         Assert.Contains("`across` takes `read on|off|--clear` for a repository or a whole workspace", proposes);
         Assert.Contains("`write-to <other> [--clear]` for a repository", proposes);
@@ -214,8 +215,8 @@ public sealed class HelpRoomMayProposeTests
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace", agents);
-        Assert.Contains("`order` puts the\n  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order", agents);
+        Assert.Contains("How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace", agents);
+        Assert.Contains("`daoris agent account order <agent> …`", agents);
         Assert.DoesNotContain("by default, for the machine or one workspace", agents);
         Assert.DoesNotContain("daoris agent account default", agents);
         Assert.DoesNotContain("this machine's accounts", agents);

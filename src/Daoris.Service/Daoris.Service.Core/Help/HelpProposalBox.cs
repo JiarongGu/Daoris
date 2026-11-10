@@ -5,13 +5,10 @@ namespace Daoris.Knowledge;
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
-/// <para><b>One writer per kind</b>, each a door a screen or a terminal already has, each a class,
-/// <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of its own (<c>HelpProposalBox.&lt;Kind&gt;.cs</c>, the name the
-/// driver's twin tests read) and listed in <see cref="Kinds"/>. The box's <c>Propose…</c>
-/// method, which the connector's tool calls, is one call to the kind's writer, which checks the kind's shape and hands
-/// its fields to <see cref="HelpProposalFile.Write"/>, which writes every file's head and tail. Every file carries
-/// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
-/// follow them.</para>
+/// <para><b>One writer per kind</b>, each a class, <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of its own and listed in
+/// <see cref="Kinds"/>. The box's <c>Propose…</c> method, which the connector's tool calls, is one call to the kind's writer, which
+/// checks the kind's shape and hands its fields to <see cref="HelpProposalFile.Write"/>. Every file carries
+/// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none.</para>
 ///
 /// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
 /// accepts, a pattern that names one branch per session, a repository registered here, an agent this
@@ -25,8 +22,7 @@ public sealed class HelpProposalBox(string? home)
 {
     /// <summary>
     /// The kinds this box writes, each with the connector's tool that proposes it, in the order the room allows
-    /// them. A new kind is a file <c>HelpProposalBox.&lt;Kind&gt;.cs</c> holding its writer, a line here and its
-    /// <c>Propose…</c>; the driver's <c>HelpProposalKinds</c> lists the same.
+    /// them; the driver's <c>HelpProposalKinds</c> lists the same.
     /// </summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
@@ -47,7 +43,6 @@ public sealed class HelpProposalBox(string? home)
 
     public string? Home => file.Home;
 
-    /// <summary>The folder a proposal is written in, under the home.</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
     /// <summary>The driver's named home first — where what this would change lives — then the account's.</summary>
