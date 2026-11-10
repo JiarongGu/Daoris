@@ -77,7 +77,10 @@ export function AttendedSession({
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold, supervisorCourse,
+  placeHold,
 }: {
+  /** Passed straight through to the head: a parked line's hold on its checkout, with *Let others work here*. */
+  placeHold?: Parameters<typeof SessionHead>[0]['placeHold'];
   /** Passed straight through to the head: the supervisor's decision on a point its rule referred, with *Overrule* while it is held. */
   supervisorCourse?: Parameters<typeof SessionHead>[0]['supervisorCourse'];
   /** Passed straight through to the head: what each running session holds of git access, with *Tighten…*. */
@@ -339,6 +342,7 @@ export function AttendedSession({
         supervision={supervision}
         terminalHold={terminalHold}
         supervisorCourse={supervisorCourse}
+        placeHold={placeHold}
         entry={entryAccept}
       />
       {/* Its parts as a flowchart, the strip its rail; Accept's plan, once read, is where they would land. Folded to one

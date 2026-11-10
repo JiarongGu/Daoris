@@ -18,6 +18,7 @@ import type { useAttendedHead } from './useAttendedHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useAttendedSession } from './useAttendedSession';
 import { relationsOf } from './relations';
+import { SessionPlaceHold } from './SessionPlaceHold';
 import { SessionSupervisorCourse } from './SessionSupervisorCourse';
 import { SessionTerminalHold } from './SessionTerminalHold';
 
@@ -83,6 +84,8 @@ export function AttendedPane({
       terminalHold={<SessionTerminalHold session={attended.id} />}
       // The supervisor's decision on a point its rule referred, with *Overrule* while it is held.
       supervisorCourse={<SessionSupervisorCourse session={attended.id} supervision={supervision} here={here} />}
+      // A parked line keeping its checkout with paths of its own, with *Let others work here*.
+      placeHold={<SessionPlaceHold session={attended} />}
       workAsk={workAskAt('head')}
       ruleAsk={ruleAskAt('head')}
       toEvent={toEvent}

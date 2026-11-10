@@ -413,6 +413,9 @@ export const useEverySession = (enabled: boolean) => {
   return useQuery({ ...read, enabled });
 };
 
+/** A parked line's checkout let go for others: the ledger clears the mark, and the pushed sessions carry the record back. */
+export const useReleasePlace = () => useMutation({ mutationFn: (session: string) => api.releasePlace(session) });
+
 /**
  * A mark that moves when any quest's status, any ask's state or its quests, or any session's state moves, read from
  * the slices the shell pushes and only while all three are pushed: never a pull, so nothing is asked on its account. Null while

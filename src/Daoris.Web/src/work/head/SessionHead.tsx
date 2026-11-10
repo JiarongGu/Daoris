@@ -116,10 +116,12 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, supervision = NO_SUPERVISION,
+  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
 }: {
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
+  /** A parked line's hold on its checkout, the frame's `SessionPlaceHold`: *Details*' *Checkout* row, with *Let others work here*. */
+  placeHold?: ReactNode;
   /** The line's counts and the acts the person's rules made on it: *Details*' course rows and its Supervisor line. Absent, none is drawn. */
   supervision?: LineSupervision;
   /** A terminal holding this conversation, the frame's `SessionTerminalHold`: absent where none can be read. */
@@ -592,7 +594,7 @@ export function SessionHead({
           // What it holds of git access now, one fact, narrowed by what the person tightened.
           gitAccessRow(t, session, gitAccess),
           // A parked line keeping its checkout with uncommitted paths of its own, and the press that lets others work there.
-          placeHoldRow(t, session),
+          placeHoldRow(t, session, placeHold),
           // The line's counts and what the person's rules did with them, as the driver counted them.
           ...countRows(t, supervision),
           supervisorRow(t, supervision),
