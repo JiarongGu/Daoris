@@ -264,7 +264,7 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     expect(sent('HELP_CONVERSATIONS')).toContainEqual({});
 
     await userEvent.click(within(list).getByRole('button', { name: 'Showing: All workspaces' }));
-    await userEvent.click(screen.getByRole('option', { name: 'This workspace · games' }));
+    await userEvent.click(screen.getByRole('option', { name: 'This workspace · games this window' }));
     await userEvent.type(within(list).getByRole('searchbox', { name: 'Search Ask Daoris’s conversations' }), 'remote');
     expect(await within(list).findByText('No conversation holds “remote”.')).toBeInTheDocument();
     expect(within(list).getByText(/Every conversation in games was searched/)).toBeInTheDocument();

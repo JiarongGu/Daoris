@@ -54,6 +54,16 @@ describe('where a session started from, and what it started with', () => {
     expect(within(started).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
   });
 
+  it('says where it started from on the Details line itself, no line of its own, and opens the quest from there', () => {
+    const onOpenQuest = vi.fn();
+    render(<SessionHead session={session({ quest: '7a82cc' })} quest={quest()} onOpenQuest={onOpenQuest} headed />);
+    const line = screen.getByRole('region', { name: 'Details' });
+    expect(within(line).getByText('Started from')).toBeInTheDocument();
+    fireEvent.click(within(line).getByRole('button', { name: 'Expose a streaming budget' }));
+    expect(onOpenQuest).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: /^Details/ })).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('a driven session also names the ask its line began in, a press that opens it', () => {
     const onAnswerAsk = vi.fn();
     render(

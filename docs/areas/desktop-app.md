@@ -185,7 +185,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **A session's page**
 
 37. A head shows the state, the title and two facts. A session's title takes one line; a quest's or an ask's takes two.
-    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162) Under it a *Started from* line names, each a press
+    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162) *Started from* sits on *Details*' own folded line, beside its summary and
+    cut with an ellipsis rather than wrapped, so the head grows no taller; it names, each a press
     that opens it, the quest, the ask it came from, the earlier session a hand-over or a go-on continues; a conversation names its
     repository and Ask Daoris its room and workspace (`work/head/startedFrom.tsx`). *Details* repeats it and has *Started with*,
     the requirement it began with, whole, said by the record it is: the quest's requirements, else the quest's words, else the
