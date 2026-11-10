@@ -125,6 +125,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     public Func<SessionRequest, CancellationToken, Task<CheckoutAnswer>>? Checkout { get; init; }
 
     /// <summary>
+    /// A loop's half of a native session's permission ask (<see cref="NativePermits"/>): handed each one taken for a session its registry
+    /// runs and never waited for here, since its hold waits on the person for up to its bound while the session's other requests go on.
+    /// Null takes none.
+    /// </summary>
+    public Func<SessionRequest, Task>? Permit { get; init; }
+
+    /// <summary>
     /// What a loop does with a press a terminal told: the shell's publishes it to its windows as the
     /// window's press of that route is published. Null takes none: a headless loop has no window, so it leaves each for a loop that
     /// hears them, and drops only what nobody took in time (<see cref="PressesTold"/>).
@@ -316,6 +323,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         SessionMove.Set => Set is not null && _runsHere(pending.Session),
         // And for a checkout read.
         SessionMove.Read => Checkout is not null && _runsHere(pending.Session),
+        SessionMove.Permit => Permit is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
 
@@ -336,6 +344,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Set) return await SetAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Read) return await ReadCheckoutAsync(pending, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.Permit)
+        {
+            if (Permit is not { } permit || !_runsHere(pending.Session) || _requests.Take(pending) is not { } asked) return null;
+            _ = permit(asked);
+            return asked;
+        }
+
         if (!_runsHere(pending.Session)) return null;
 
         var resolves = Resolves(pending);

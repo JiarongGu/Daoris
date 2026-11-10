@@ -411,7 +411,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     line's card says *The supervisor allowed this once* (or refused it, or left it to you) for a held request, with no *Overrule*
     (`SupervisorAllowCard`). (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
-    release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
+    release the steward writes is kept in `roleReleases`, `by: steward`. A working session's own press (`PipeDoor.Worker`)
+    makes nothing the owner's: it is logged `session.pressed`, `by: session <id>`. (from D209, D253)
 
 **What a working role may do**
 
@@ -429,13 +430,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
-    the default, it reads and proposes, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. Each
+    the default, it reads and proposes, and a proved press waits on a card naming Ask Daoris and runs on the person's yes. A
+    working session's tier is its repository's access setup, read at the press from the place its key was handed for
+    (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
+    judged default put it on a card naming the session. Each
     proposal is a kind under `Help/Proposals/`, judged by its route's own code against the machine now, and applied only by the
     person's *Apply* through that route. (from D89, D170, D253)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
-    and quiet) and checkouts, each request
+    and quiet), checkouts and families of acts, each request
     judged at the call by the door's own judges, in any workspace's repositories; the checkouts it is handed are every
-    readable one on the machine, its own workspace's first. No settings grant reaches a role. (from D183, D205, D253)
+    readable one on the machine, its own workspace's first. A granted family (`acts`, `ActFamilies`: `pause` is a quest's or
+    an ask's pause and resume, a repository's hold and a session's stop) runs Ask Daoris's proved press of it with no card as the
+    person's own, read at each press, so a change asks no conversation to start again. Its tool calls outside its allow-list
+    are held for the person (agents-and-harnesses 23). No settings grant reaches a role. (from D183, D205, D253)
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console and logged `help.pressed`. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never

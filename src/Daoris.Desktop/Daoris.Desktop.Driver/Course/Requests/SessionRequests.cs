@@ -54,7 +54,14 @@ public static class SessionMove
     /// </summary>
     public const string Read = "read";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read;
+    /// <summary>
+    /// A native session's permission ask (<see cref="ClaudeAskHook"/>): a tool call its harness would ask about, the tool in
+    /// <see cref="SessionRequest.Operation"/> and the call in <see cref="SessionRequest.Text"/>, held for the person by the loop running
+    /// the session (<see cref="NativePermits"/>) and answered beside the request in housekeeping's answer's fields. Keyed as a say is.
+    /// </summary>
+    public const string Permit = "permit";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -518,6 +525,14 @@ public sealed partial class SessionRequests(string home)
         var path = AnswerPath(request);
         Directory.CreateDirectory(Folder);
         AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said));
+    }
+
+    /// <summary>What became of a permission ask, written beside it in housekeeping's answer's fields: done is the call allowed.</summary>
+    public void Answer(SessionRequest request, PermitAnswer answer)
+    {
+        var path = AnswerPath(request);
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(path, ToJson(answer.Tool, answer.Allowed, answer.Why, answer.Said));
     }
 
     /// <summary>What became of a setting request, written beside it in housekeeping's answer's fields.</summary>

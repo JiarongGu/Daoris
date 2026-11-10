@@ -99,10 +99,13 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         _ => [],
     };
 
-    /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order.</summary>
+    /// <summary>
+    /// Whether <paramref name="other"/> chose the same operations of every grant a start is handed, in the same order. The acts are read at
+    /// each press, never handed, so a change of them asks no running conversation to start again.
+    /// </summary>
     public bool Same(ConfiguredAccess other) =>
         Housekeeping.SequenceEqual(other.Housekeeping, StringComparer.Ordinal) && Settings.SequenceEqual(other.Settings, StringComparer.Ordinal)
-        && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase) && Acts.SequenceEqual(other.Acts, StringComparer.Ordinal);
+        && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>A look at what the cleanup would remove and what it keeps.</summary>
     public const string Inspect = "inspect";

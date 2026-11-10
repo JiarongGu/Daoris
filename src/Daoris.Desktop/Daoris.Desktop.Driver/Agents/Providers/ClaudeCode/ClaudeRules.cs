@@ -27,7 +27,8 @@ public sealed class ClaudeRules : IRuleLanguage
     public string Write(string home, string sessionId, HandedRules rules) =>
         Render(
             home, sessionId, rules.Rules, rules.HardDeny, rules.Guard,
-            rules.Lineage is { } file ? ClaudeLineageHook.For(home, sessionId, file) : null);
+            rules.Lineage is { } file ? ClaudeLineageHook.For(home, sessionId, file) : null,
+            rules.Asked ? ClaudeAskHook.For(home, sessionId) : null);
 
     /// <summary>Write the file for one session, which every session is handed, its permissions at least.</summary>
     /// <param name="hardDeny">
@@ -40,8 +41,13 @@ public sealed class ClaudeRules : IRuleLanguage
     /// The lineage hook for this session, or null for none: on the connector's calls and each subagent's start and
     /// stop, beside the guard, never instead of it.
     /// </param>
+    /// <param name="ask">
+    /// The permission ask for this session, or null for none: on every tool call, after the guard and the lineage hook, asking Daoris
+    /// about a call the harness would ask about and given this file to judge by.
+    /// </param>
     public static string Render(
-        string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null)
+        string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null,
+        AskHook? ask = null)
     {
         var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
 
@@ -73,7 +79,7 @@ public sealed class ClaudeRules : IRuleLanguage
         // 🔴 EXEC form — `args` present — so the harness spawns node directly with the script and the
         // tree as one argument each. Shell form would run the line through Git Bash or PowerShell on
         // Windows, and a path survives neither's quoting reliably.
-        if (guard is not null || lineage is not null)
+        if (guard is not null || lineage is not null || ask is not null)
         {
             var before = new JsonArray();
             if (guard is not null)
@@ -94,6 +100,19 @@ public sealed class ClaudeRules : IRuleLanguage
             }
 
             var hooks = new JsonObject();
+            // Last, so the guard's refusal is read first: the harness takes a refusal from any hook over an allow.
+            JsonObject? asking = ask is null ? null : new JsonObject
+            {
+                ["matcher"] = AskHook.Matcher,
+                ["hooks"] = new JsonArray(new JsonObject
+                {
+                    ["type"] = "command",
+                    ["command"] = ask.Node,
+                    ["args"] = new JsonArray(ask.Script, ask.Requests, ask.Session, path, AskHook.BoundSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    // The hold's bound, and a minute for the answer to be read and said.
+                    ["timeout"] = AskHook.BoundSeconds + 60,
+                }),
+            };
             if (lineage is not null)
             {
                 // FABRIC-C1a: which agent made each call to the connector, and each subagent's start and stop, appended to the
@@ -106,12 +125,14 @@ public sealed class ClaudeRules : IRuleLanguage
                     ["timeout"] = 10,
                 });
                 before.Add(new JsonObject { ["matcher"] = LineageHook.Matcher, ["hooks"] = Lineage() });
+                if (asking is not null) before.Add(asking);
                 hooks["PreToolUse"] = before;
                 hooks["SubagentStart"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
                 hooks["SubagentStop"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
             }
             else
             {
+                if (asking is not null) before.Add(asking);
                 hooks["PreToolUse"] = before;
             }
 

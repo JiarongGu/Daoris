@@ -191,13 +191,21 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     switches off a denying default, or (while `no-publish` is on) lets a publish through (`PublishForms`) stays the person's
     (`WideningAllows`). Every writer of the rule file reads, decides and saves under its one lock (`PermissionChange.Change`).
     Every change records who made it. (from D74)
-21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door; `acceptEdits`
-    on its pipe; `agent` on Codex; `workspace-write` through dsh's environment. (from D81, D53)
+21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door, the posture
+    marked so the door holds what the harness asks (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex;
+    `workspace-write` through dsh's environment. (from D81, D53, D253)
 22. Full access (`bypassPermissions`, `agent-full-access`) and the asking mode (`default`, `workspace-write`) are used only by the
     person's own setting: Ask Daoris's full access or a repository's access setup. A harness with no mapped mode refuses the
     start; it never runs a narrower mode under the label. (from D183, D184)
-23. A permission request reaching the driver is refused, except in the asking mode on the protocol door, where it is held for the
-    person to allow once or refuse. (from D81, D184)
+23. A permission request reaching the driver is held for the person to allow once or refuse, or for the allow supervisor at the
+    session's repository where one is staffed, on every door and mode below full access; only an unanswered hold's bound
+    (`HeldPermissions.Bound`, 15 minutes) refuses it, said as such. The protocol door holds on its wire: a driven session under
+    asking or the judged default, a chat, and Ask Daoris restricted (`ChatHolds`). The native door, which refuses under `-p` what
+    its rules do not allow, is handed a `PreToolUse` hook last beside the tree guard and the lineage hook (`permission-ask.mjs`,
+    `ClaudeAskHook`, `HandedRules.Asked`) on a working session's or a conversation's file: for a call its mode and rules would
+    ask about, it writes a `permit` request to the session requests box, the loop holds it in the same registry
+    (`NativePermits`), and the hook answers the harness allow or deny from the answer beside it. A session shaped for one job
+    (review, helper, intake, brainstorm, partner, supervise) is handed none. (from D81, D184, D253)
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's own file. With no account
     named it trusts the folder for every account of the set, never the person's own home; an account it names must be one on
     this machine, refused rather than made (`AgentsCommand.AccountHere`, as `settings` does). Trust gates a start only where

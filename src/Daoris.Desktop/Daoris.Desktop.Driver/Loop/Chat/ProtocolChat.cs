@@ -116,9 +116,13 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <summary>Its words and steer on the run, once its session opened; null while it opens, or when it could not.</summary>
     public ProtocolWords? Words => _open.Task.IsCompletedSuccessfully ? _open.Task.Result?.Words : null;
 
-    /// <summary>What its actor asked, set on the session the run made before its open.</summary>
+    /// <summary>Where its permission requests are held for the person (<see cref="ChatHolds.Door"/>); null refuses each as it comes.</summary>
+    public PermissionHolds? Permissions { get; init; }
+
+    /// <summary>What its actor asked, and where its permission requests are held, set on the session the run made before its open.</summary>
     public void Configure(AcpSession session)
     {
+        session.Permissions = Permissions;
         session.Carry = Asked;
         session.Carried = Carried;
         session.OffersRead = OffersRead;

@@ -30,6 +30,12 @@ public sealed record PostureAsked(string Modes, bool Required = false, bool Pers
         return new(posture?[at..] ?? "", required, held);
     }
 
+    /// <summary>
+    /// <paramref name="posture"/> marked so the session's permission requests are held for the person, its modes and requirement kept;
+    /// one that names no mode asks for none and is left as it is.
+    /// </summary>
+    public static string? Held(string? posture) => posture is { Length: > 0 } ? (Parse(posture) with { PersonAnswers = true }).Wire() : posture;
+
     /// <summary>The modes as a sentence says them: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
     public string Spelled() => string.Join(
         " or ",
