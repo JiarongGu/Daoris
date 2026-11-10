@@ -153,8 +153,6 @@
       ["src/Daoris.Web/src/design/ui.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
-      ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"codex\"", "-", "measurement", "a story's sample helper proposal names the agent it asks"],
-      ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/help/QuickAsk.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/map/ChainStrip.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/map/ChainStrip.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
