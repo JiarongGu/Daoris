@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The process halves' reds after the place work (2026-11-11)
+
+> **CI reds, process halves** (driver, modules): Outcome: the chat classes' stand-ins set apart the place section a conversation in a plain folder is told before its first words (driving rule 12; `StubPlace.cs`); the transport test waits for the retry's leg, whose lineage start is written before its spawn; the review's read flows pass their own token, so a review the page leaves no longer keeps its git running (FIX-LOG); the git half, the limit-move crash, the server keeper and the cap count pass on main as they stand. Left: the place section is filed under the browser's note (`chat.told-browser`), so the page says the agent was told of Daoris's browser — a note code of its own with its words. Proof: each class run filtered, green but `ChatAttachmentTests`' browser case; 319 memo-read tests.
+
+---
+
 ## PLACEWORK1h (part) — a real session plans a system, and a system is a department (2026-11-11)
 
 > **PLACEWORK1h, second part** (service, driver, web, examples): Outcome: a session in a system department calls the connector's `system_plan`, which the loop hands to the department's plugin, keeps under the session's record and answers with the plan's number and resources (Service `Systems/SystemPlanBox.cs`, `Mcp/SystemPlanTools.cs`; driver `Departments/Systems/SystemPlanning.cs`); the tool is served to that session alone (D270); a department registers as a system with no root and its plugin's `<plugin>/<system>`, through *A system…* on the add or `daoris repository add --system`, refused where no switched-on plugin declares it; two sessions planning at once keep their own plans and the second apply is refused as stale; an apply answered `none` settles with nothing written. Proof: `McpSystemPlanToolTests`, `RegistrationStoreTests`, `SystemAddTests`, `SystemPlanningTests`, `SystemChoiceField.test`, `CoreSetTests` (seen failing first), and `SystemPlanToolProcessTests` on the stand-in's real process.

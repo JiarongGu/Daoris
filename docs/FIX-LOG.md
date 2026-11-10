@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A review the page left kept its git running
+
+- **Symptom:** `DriverModuleReviewLeaveTests`' leave and window-destroyed cases timed out waiting for the read's git to exit: the caller
+  was answered cancelled, but the read's one `rev-parse` of the tree's layout ran on until its stand-in's own bound.
+- **Root cause:** b050836157 made a flow's memo (`GitReadOnce`) ask git under the flow's own token instead of its first asker's, and left
+  every read flow that opens one (`SessionReviews`, `LandedReviews`, `TreeLandPlans`, `TreeWorkReads`) calling `Within()` with no token,
+  so their shared gits ran untokened and a left read never ended them.
+- **Fix:** each read flow opens its memo under its own token (`GitReadOnce.Within(ct)`), so the read left by its last caller ends the
+  gits it shares, while a stage that leaves alone still only ends its own wait.
+- **Verify:** `DriverModuleReviewLeaveTests`, red first, its stand-in bound now past the test's wait so only the leave's kill passes it.
+
 ## 2026-11-11 - A parked line's kept place never reached the work page's head
 
 - **Symptom:** `SessionsStateSliceTests.Every_field_the_page_reads_is_pushed_and_every_field_the_service_answers_is_classed` failed:
