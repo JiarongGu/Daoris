@@ -178,10 +178,8 @@ public sealed class QuestTools(
     }
 
     /// <summary>
-    /// What a publish left for Daoris to fill, said beneath its answer, of the quest as it stands: with no short
-    /// title, the name a list will call it, read from its words. An ask's quest with no requirements is said so by the ask's own desk,
-    /// at every door.
-    /// </summary>
+    /// What a publish left for Daoris to fill, said beneath its answer: with no short title, the name a list will call it, read from its
+    /// words. An ask's quest with no requirements is said so by the ask's own desk, at every door.</summary>
     private static string LeftUnsaid(Quest? quest) =>
         quest is { Short: null }
             ? $"\n\nIt has no short title, so a list will call it \"{quest.Name}\", a name read from its own words."

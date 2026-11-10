@@ -23,10 +23,7 @@ public enum AskRefusal
     /// <summary>The quest it is to become is refused by the exchange — the ask itself is kept.</summary>
     QuestRefused,
 
-    /// <summary>
-    /// A session's publish beside the ask's intake: while the intake answers the ask, or before any intake has served it, only the intake
-    /// publishes it, so no receiver is asked twice. The person's own press is never refused for it.
-    /// </summary>
+    /// <summary>A session's publish beside the ask's intake, which alone publishes it while it answers or before any has served it.</summary>
     IntakeAnswering,
 
     /// <summary>

@@ -32,7 +32,6 @@ public sealed class AskDesk
     private readonly AskGoAheadAnswers goAheads;
     private readonly AskDeletes deletes;
 
-    /// <param name="sessions">The session records, which say whether an ask's intake still answers it and whom a publishing session answers.</param>
     public AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files, SessionStore? sessions = null)
     {
         // The files an ask keeps, until it becomes quests: the home's AskFiles.

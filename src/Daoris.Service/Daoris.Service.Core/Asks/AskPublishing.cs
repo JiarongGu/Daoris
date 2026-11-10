@@ -220,7 +220,6 @@ internal sealed class AskPublishing(
         _ when ask.Intake is { } intake =>
             $"intake session `{intake}` is answering it: it publishes where the declarations settle it, "
             + "and asks you where they do not.",
-        // Said before the driver's next look, which starts the intake where one is set: never as if nothing would publish it.
         _ when ask.Proposal.Count == 0 =>
             "by declarations only; no intake agent ran — and no repository's declarations share its words. Where Intake is set on this "
             + "machine, the intake publishes it at the driver's next look, or asks you where it cannot tell; where none is, name the "

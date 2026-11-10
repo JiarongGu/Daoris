@@ -42,10 +42,6 @@ public sealed class QuestHoldsNodeTests
         Assert.Contains("taken back", back.Said);
     }
 
-    /// <summary>
-    /// A done an ask's quest carries no requirement for is checked against nothing: it waits as unchecked with its handback to read, never
-    /// reached as checked; a requirement, a quest no ask published, or the `yes` off lets it go as before.
-    /// </summary>
     [Fact]
     public void A_done_of_an_asks_quest_with_no_requirement_waits_unchecked_with_its_handback_to_read()
     {

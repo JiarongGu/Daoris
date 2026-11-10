@@ -80,7 +80,6 @@ internal static class AskConsole
                 case "--workflow-words": workflowWords = Value(); break;
                 case "--set-workflow": setWorkflow = Value(); break;
                 case "--clear": clearWorkflow = true; break;
-                // A publish's requirement: the person's words quoted, then the check that proves them.
                 case "--require": requirements.Add(new QuestRequirementWire(Value(), Value())); break;
                 default: words.Add(args[i]); break;
             }
@@ -137,7 +136,6 @@ internal static class AskConsole
             if (publish is not null)
             {
                 if (to is null) return Usage("--publish needs --to: the repository the ask becomes a quest for");
-                // A session's terminal names its session, so the quest says who published it.
                 var session = Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable);
                 return Report(await service.PublishAskAsync(publish, to, session, requirements).ConfigureAwait(false));
             }

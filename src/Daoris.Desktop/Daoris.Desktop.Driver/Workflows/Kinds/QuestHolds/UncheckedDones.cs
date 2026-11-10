@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A done checked against nothing (D255): the quest an ask published carries no requirement of the person's, so nothing compared its done
+/// A done checked against nothing: the quest an ask published carries no requirement of the person's, so nothing compared its done
 /// with what they asked. Its <c>quest.holds</c> waits on it as unchecked, with its handback to read, never reached as checked; the person's
 /// pass of the step with their words is the way on, and a version with its <c>yes</c> off lets it go.
 /// </summary>

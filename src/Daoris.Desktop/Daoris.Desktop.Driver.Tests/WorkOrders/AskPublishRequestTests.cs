@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>A terminal's publish names the session it runs in, so the quest says who published it, and carries the requirements it was given.</summary>
+/// <summary>A terminal's publish names the session it runs in, so the quest names its publisher, and carries the requirements it is given.</summary>
 public sealed class AskPublishRequestTests
 {
     [Fact]

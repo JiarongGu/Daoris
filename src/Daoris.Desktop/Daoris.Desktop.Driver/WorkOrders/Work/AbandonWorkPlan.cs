@@ -119,7 +119,6 @@ public sealed record AbandonOutcome(WorkScope Scope, string Id, AbandonVerdict V
     /// <summary>Each session archived.</summary>
     public IReadOnlyList<string> Archived { get; init; } = [];
 
-    /// <summary>Each step of the work's runs the abandon stopped as the person's, <c>&lt;run&gt;/&lt;node&gt;</c>, so no review or landing of it waits.</summary>
     public IReadOnlyList<string> RunsEnded { get; init; } = [];
 
     /// <summary>What the list kept by design, and each session stopped but left to review.</summary>
