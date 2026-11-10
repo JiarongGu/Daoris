@@ -4,10 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// Ask Daoris follows the window's workspace. Its start carries the workspace
-// the window shows, captured at the press; a window on every workspace asks which before a start; its history is the window's
-// workspace unless every workspace's is chosen, each row then labelled; and another workspace's conversation is named, and gone
-// on in only once the window has switched to it. The bridge is mocked as present, as Ask Daoris's own suite mocks it.
+// Ask Daoris follows the window's workspace, and a conversation's focus is its own. Its start carries the workspace the window
+// shows, captured at the press, and the focus chosen before the first words; a window on every workspace starts on this machine
+// with no ask; its history is the window's workspace unless every workspace's is chosen, each row then labelled; and another
+// workspace's conversation goes on in place, its head saying where it started. The bridge is mocked as present, as Ask Daoris's
+// own suite mocks it.
 
 const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -46,7 +47,7 @@ const row = (session: string, workspace: string, title: string, live = false) =>
 
 const ACTIVE = ['queued', 'starting', 'working', 'awaiting-person'];
 let SESSIONS: ReturnType<typeof help>[] = [];
-let ROWS: ReturnType<typeof row>[] = [];
+let ROWS: (ReturnType<typeof row> & { focus?: Payload; focusNext?: Payload | null })[] = [];
 // Two workspaces, so the window's switcher offers a choice between them, and *every workspace* is a choice of its own.
 const REGISTRY = [{ repository: 'engine', workspace: 'games' }, { repository: 'ledger', workspace: 'work' }];
 
@@ -173,29 +174,61 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
 
     expect(sent('START_HELP')[1]).toEqual({ workspace: 'games' });
     await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'n3wgame0', text: words }));
-    // The window on *work* shows where the words went, and goes on in it only once it switches back.
-    expect(await screen.findByRole('button', { name: 'Switch to games and continue' })).toBeInTheDocument();
+    // The window on *work* goes on in it where it is, its head saying where it started.
+    expect(await screen.findByText('started in games')).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toBeInTheDocument();
   });
 
-  it('asks which workspace before a start on every workspace, and starts none by itself', async () => {
+  it('starts a window on every workspace on this machine, with no ask', async () => {
     const words = 'which agent runs intake?';
-    bridge(() => ({ sessionId: 'n3wwork0', message: 'opened' }));
+    bridge(() => ({ sessionId: 'n3wmach0', message: 'opened' }));
     show(null);
 
+    expect(await screen.findByRole('button', { name: 'Ask Daoris’s focus: this machine' })).toBeInTheDocument();
+    SESSIONS = [help('n3wmach0', 'default')];
     await say(words);
 
-    expect(await screen.findByText(/Which workspace is this conversation in\?/)).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^Start in / }).map((each) => each.textContent)).toEqual(['Start in games', 'Start in work']);
-    expect(screen.getByLabelText('Message')).toHaveValue(words);
-    expect(sent('START_HELP')).toEqual([]);
-
-    SESSIONS = [help('n3wwork0', 'work')];
-    await userEvent.click(screen.getByRole('button', { name: 'Start in work' }));
-
-    await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'n3wwork0', text: words }));
-    expect(sent('START_HELP')).toEqual([{ workspace: 'work' }]);
-    // Asked for the start alone: the window stays on every workspace.
+    await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'n3wmach0', text: words }));
+    expect(sent('START_HELP').every((payload) => payload.workspace === undefined)).toBe(true);
+    expect(screen.queryByText(/Which workspace/)).toBeNull();
     expect(screen.getByText('window: every')).toBeInTheDocument();
+  });
+
+  it('starts with the focus chosen before the first words', async () => {
+    bridge();
+    show('games');
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(1));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ask Daoris’s focus: workspace games, this window’s' }));
+    await userEvent.keyboard('engine{Enter}');
+    expect(screen.getByRole('button', { name: 'Ask Daoris’s focus: repository engine in games' })).toBeInTheDocument();
+    await say('what does the engine wait on?');
+
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(2));
+    expect(sent('START_HELP')[1]).toEqual({ workspace: 'games', focus: { kind: 'repository', workspace: 'games', repository: 'engine' } });
+  });
+
+  it('sends a focus chosen for the conversation opened ahead at once, and opens it ahead again when the driver ended it', async () => {
+    bridge(() => {
+      SESSIONS = [help('r3adied0', 'games', 'awaiting-person')];
+      return { sessionId: 'r3adied0', message: 'opened' };
+    });
+    const answer = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Payload }) => {
+      if (type !== 'HELP_FOCUS') return answer(module, type, options);
+      SESSIONS = [help('r3adied0', 'games', 'ended')];
+      return { session: 'r3adied0', focus: options!.payload!.focus, focusNext: null, reopens: true };
+    });
+    show('games');
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(1));
+
+    await userEvent.click(await screen.findByRole('button', { name: /^Ask Daoris’s focus/ }));
+    await userEvent.keyboard('engine{Enter}');
+
+    const engine = { kind: 'repository', workspace: 'games', repository: 'engine' };
+    await waitFor(() => expect(sent('HELP_FOCUS')).toEqual([{ session: 'r3adied0', focus: engine }]));
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(2));
+    expect(sent('START_HELP')[1]).toEqual({ workspace: 'games', focus: engine });
   });
 
   it('lists the window’s workspace, every one’s labelled when chosen, and searches within the scope', async () => {
@@ -222,10 +255,10 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     expect(sent('HELP_CONVERSATIONS')).toContainEqual({ workspace: 'games', q: 'remote' });
   });
 
-  it('names another workspace’s conversation, and goes on in it only after the window switches', async () => {
+  it('goes on in another workspace’s conversation in place, its head saying where it started and its focus waiting', async () => {
     const words = 'and its remote?';
     SESSIONS = [help('h2w0rk00', 'work')];
-    ROWS = [row('h2w0rk00', 'work', 'and the remote?', true)];
+    ROWS = [{ ...row('h2w0rk00', 'work', 'and the remote?', true), focus: { kind: 'workspace', workspace: 'work' }, focusNext: { kind: 'repository', workspace: 'work', repository: 'ledger' } }];
     bridge();
     show('games');
 
@@ -233,14 +266,13 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     await userEvent.click(within(list).getByRole('button', { name: 'All workspaces' }));
     await userEvent.click(await within(list).findByRole('button', { name: /^and the remote\?/ }));
 
-    expect(await screen.findByText(/This conversation is in work, and this window is on games/)).toBeInTheDocument();
-    expect(screen.queryByLabelText('Message')).toBeNull();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Switch to work and continue' }));
-    expect(screen.getByText('window: work')).toBeInTheDocument();
+    const head = await screen.findByRole('navigation', { name: 'Focus' });
+    expect(head.textContent?.replace(/\s+/g, ' ').trim()).toBe('This machine › work ◇ this window: games · started in work · ledger next message');
+    expect(screen.getByRole('button', { name: 'Ask Daoris’s focus: workspace work, ledger from your next message' })).toBeInTheDocument();
     await say(words);
 
     await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'h2w0rk00', text: words }));
+    expect(screen.getByText('window: games')).toBeInTheDocument();
   });
 
   it('says it in Chinese', async () => {
@@ -249,11 +281,7 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     bridge();
     show(null);
 
-    await userEvent.type(await screen.findByLabelText('消息'), '谁负责 intake？');
-    await userEvent.click(screen.getByRole('button', { name: '发送' }));
-
-    expect(await screen.findByText(/这段对话属于哪个工作区？/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '在 work 中开始' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '问道衍的聚焦：本机' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '返回对话历史' }));
     const list = await screen.findByRole('region', { name: '对话历史' });
     expect(await within(list).findByText(/在 work 中/)).toBeInTheDocument();

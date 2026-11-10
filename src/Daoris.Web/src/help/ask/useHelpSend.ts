@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import type { useHelpReadied } from '../../bridge/help';
+import type { useHelpReadied, useStartHelp } from '../../bridge/help';
+import type { Place } from '../focus';
 import { sentence } from '../../locales/format';
 import { workspaceOf } from '../../data/workspaces';
 import { useSessionEvents, stoppedWaiting, useHandOver, logEvent } from '../../bridge/shell';
@@ -16,7 +17,7 @@ import { type WordsAnswer, type SessionTurns } from '../../bridge/sessions/conve
 import { type TFunction } from 'i18next';
 import { type Session } from '../../data/api';
 
-export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, elsewhere, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
+export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
   where: HelpWhere | undefined;
   sends: React.RefObject<number>;
   setSent: React.Dispatch<React.SetStateAction<Sent[]>>;
@@ -39,19 +40,20 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   firstWords: FirstWords | null;
   goesOn: boolean;
   setRefusal: React.Dispatch<React.SetStateAction<string | null>>;
-  elsewhere: boolean;
   startedFrom: { session: string; title: string; } | null;
   setStartedFrom: React.Dispatch<React.SetStateAction<{ session: string; title: string; } | null>>;
   here: string | null | undefined;
   putBack: (text: string, files: File[]) => void;
   drafts: Record<string, Draft>;
   setDrafts: React.Dispatch<React.SetStateAction<Record<string, Draft>>>;
-  start: UseMutationResult<{ sessionId: string | null; message: string; running?: boolean | undefined; starting?: boolean | undefined; finishing?: boolean | undefined; }, Error, string | undefined, unknown>;
+  start: ReturnType<typeof useStartHelp>;
   startIn: (workspace: string) => string | undefined;
+  /** The focus a new conversation starts with, where the person chose one before its first words. */
+  startFocus: () => Place | undefined;
   helper: string | null;
   mine: Session[];
   readiedLive: boolean;
-  readying: UseMutationResult<{ sessionId: string | null; message: string; running?: boolean | undefined; starting?: boolean | undefined; finishing?: boolean | undefined; }, Error, string | undefined, unknown>;
+  readying: ReturnType<typeof useStartHelp>;
   opening: AskOpening | null | undefined;
   editDraft: (key: string, change: (was: Draft) => Draft) => void;
   onOpened: (() => void) | undefined;
@@ -205,19 +207,18 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   const onSend = (text: string, files: File[]) => {
     logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && (live || goesOn) ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The one running, or one that ended the person chose and that goes on in itself; never another workspace's,
-    // whose box is not drawn, and a question handed in from another door starts one in this window's instead.
-    if (shown && (live || goesOn) && !elsewhere) {
+    // The one running, or one that ended the person chose and that goes on in itself, whichever workspace it started in.
+    if (shown && (live || goesOn)) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
       deliver(shown.id, text, files);
       return;
     }
 
-    // A start is in the window's workspace, read now. A window that shows several asks which first, and
-    // never starts one in `default` by itself: the words go back in the box once the composer has cleared it, and wait there.
+    // A start is in the window's workspace, read now; while this machine's workspaces are still read the words go back in the
+    // box once the composer has cleared it, and wait there until they are.
     if (typeof here !== 'string') {
       queueMicrotask(() => putBack(text, files));
-      setChoosing({ unknown: here === undefined });
+      setChoosing({ unknown: true });
       return;
     }
     startWith(text, files, here);
@@ -258,7 +259,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     const before = helpSessions.map((session) => session.id);
     setFirstWords({ words: said, files, circle });
     const handTo = (id: string) => handFirst(id, said, files, circle);
-    const begin = () => start.mutate(startIn(circle), {
+    const begin = () => start.mutate({ workspace: startIn(circle), focus: startFocus() }, {
       // The driver's own sentence when it cannot: no agent named, the agent signed out, one already
       // running elsewhere. Shown where the person pressed send, whole.
       onSuccess: (answer) => {
@@ -326,7 +327,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     if (openedAhead.current.has(key)) return;
     openedAhead.current.add(key);
     const circle = here;
-    const answer = readying.mutateAsync(startIn(circle)).then(
+    const answer = readying.mutateAsync({ workspace: startIn(circle), focus: startFocus() }).then(
       // One the driver hands back as running is carried on, not opened ahead: the list shows it as it is.
       (started) => (started?.sessionId && !started.running ? started.sessionId : null),
       () => null,
@@ -392,8 +393,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   const onNew = () => {
     if (end.isPending) return;
     setChoosing(null);
-    // Another workspace's running conversation is that workspace's to finish: the panel only clears.
-    if (shown && live && !elsewhere) {
+    if (shown && live) {
       // The host owns the ending. Keep its conversation and draft until it accepts the request.
       end.mutate(shown.id, {
         onSuccess: (answer) => {
@@ -433,13 +433,13 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     setHistoryOpen(false);
     setFocusHead((was) => was + 1);
   };
-  // In the window's workspace, read at the press, whatever the earlier one's workspace; a window that shows several asks
-  // which first, the history closed so the question is seen.
+  // In the window's workspace, read at the press, whatever the earlier one's workspace; while this machine's workspaces are
+  // read it waits for them, the history closed so the wait is seen.
   const beginFrom = (id: string, chosenIn?: string) => {
     setHistoryRefusal(null);
     const circle = chosenIn ?? (typeof here === 'string' ? here : null);
     if (circle === null) {
-      setChoosing({ from: id });
+      setChoosing({ from: id, unknown: true });
       setHistoryOpen(false);
       return;
     }

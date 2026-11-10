@@ -18,6 +18,8 @@ import { useHelpMode } from './ask/useHelpMode';
 import { useHelpSend } from './ask/useHelpSend';
 import { useHelpHistory } from './ask/useHelpHistory';
 import { useHelpPlace } from './ask/useHelpPlace';
+import type { Place } from './focus';
+import { useHelpFocus } from './focus/useHelpFocus';
 
 /**
  * Ask Daoris's conversation: the organism that holds the newest help session's record
@@ -63,8 +65,10 @@ export function useAskConversation(
   /** Where a go the person applied takes them: the starters' own door, so nothing else changes. */
   onGo?: (door: StarterDoor) => void,
 ) {
-  const { here, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, elsewhere, startIn, mine, newest, shownIn, i18n, setWorkspace } = useHelpPlace();
-  const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here, registered, helper, chosen, setChosen, shown, live, picked });
+  const { here, every, scoped, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, startIn, mine, newest, shownIn, i18n } = useHelpPlace();
+  const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here: every ? null : here, registered, helper, chosen, setChosen, shown, live, picked });
+  // The focus a start carries, read at its press from the focus hook below, which needs the opening round this one keeps.
+  const startFocus = useRef<() => Place | undefined>(() => undefined);
   // Where the person left the list from: the row they opened and the list's scroll, put back as they return; and
   // what is put back the next time the list opens.
   const [left, setLeft] = useState<{ row: string; scroll: number } | null>(null);
@@ -167,7 +171,7 @@ export function useAskConversation(
     setRefusal(why);
     putBack(text, files);
   };
-  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choose, choosing, startChosen, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, elsewhere, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
+  const { onNew, closeHistory, openRow, beginFrom, setRound, onGoOnBrief, joining, onSend, choose, choosing, setChoosing, openHistory } = useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus: () => startFocus.current(), helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed });
   const history = (
     <AskHistory
       rows={shownListing?.conversations ?? []}
@@ -214,6 +218,10 @@ export function useAskConversation(
     />
   );
   const { access, whatItHas, offered, selectedMode } = useHelpMode({ shown, known, live, picked, setChosen, readied, readiedLive, setRound, t, onGo });
+  const focusing = useHelpFocus({
+    shown, known, shownIn, here, window: every ? null : scoped ?? here ?? null, readied: readiedLive ? readied : null, setRound, onGo: onGo ?? (() => {}),
+  });
+  startFocus.current = focusing.startFocus;
 
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   const conversation = shown ? (<>
@@ -241,9 +249,8 @@ export function useAskConversation(
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
 
   // No box under one the person chose that cannot go on, or is still being checked: words typed there started a
-  // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view. None
-  // under another workspace's either: its words are written once the window has switched to it.
-  const composer = readOnly || elsewhere ? null : (
+  // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view.
+  const composer = readOnly ? null : (
     <Composer
       key={draftKey}
       // A message always reaches something: the one running, or the one it starts.
@@ -288,7 +295,7 @@ export function useAskConversation(
     <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
   );
   const ended = shown !== null && !live;
-  const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, elsewhere, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, registered, choosing, start, startChosen, setChoosing, here, setWorkspace });
+  const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, choosing, setChoosing });
 
   // What the open conversation's head calls it: the history's title, else the person's first words, else a conversation.
   const title = !shown ? null
@@ -298,7 +305,8 @@ export function useAskConversation(
     body: conversation, proposals: <><AskHeld session={shown?.id} live={live} />{proposed}</>, published, composer, ended,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
       : limitLine ? <>{limitLine}{note}</> : note,
-    onNew: shown ? onNew : undefined,
+    // A new conversation from the head takes the shown one's applied focus.
+    onNew: shown ? () => { focusing.inherit(); onNew(); } : undefined,
     newPending: end.isPending,
     tail: tail && !tail.atTail ? <BackToBottom onPress={tail.toTail} /> : undefined,
     title,
@@ -308,6 +316,9 @@ export function useAskConversation(
     history, historyOpen,
     onHistory: end.isPending ? undefined : openHistory,
     access, wired: whatItHas, full: offered && selectedMode === 'full',
+    // No chip where no words can go: one that cannot go on has no box, and its head still names the focus.
+    focus: helper !== null && composer ? focusing.chip : undefined,
+    crumb: focusing.crumb,
   };
   return slot;
 }
