@@ -206,9 +206,8 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
     }
 
     /// <summary>
-    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id),
-    /// <c>hold</c> beside it (a start that holds what it opens), and <c>delegate</c> (a session's proof, <see cref="PipeDelegateClaim"/>);
-    /// null where the line is no request.
+    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id), <c>hold</c> (a start that
+    /// holds what it opens) and <c>delegate</c> (<see cref="PipeDelegateClaim"/>); null where the line is no request.
     /// </summary>
     private static (IpcRequest Request, string? Key, bool Hold, PipeDelegateClaim? Claim)? Parse(string line)
     {

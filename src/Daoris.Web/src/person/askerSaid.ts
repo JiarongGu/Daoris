@@ -7,8 +7,8 @@ import type { TFunction } from 'i18next';
 export type PipeAsker = { process?: string | null; pid?: number | null; session?: string | null; help?: boolean | null };
 
 /**
- * Who asks, in a card's words: Ask Daoris, or the session, where its press proved that session's key; else the process, as the record
- * kept it for a press waiting again after a restart.
+ * Who asks, in a card's words: Ask Daoris, or the session, where its press proved that session's key; else the process, said as the
+ * record's for a press waiting again after a restart, which a process of the account could have written.
  */
 export function askerSaid(t: TFunction, asker: PipeAsker | null | undefined, restored = false): string {
   if (asker?.help) return t('person.asker.help');

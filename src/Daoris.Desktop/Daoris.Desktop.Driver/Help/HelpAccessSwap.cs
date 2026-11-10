@@ -41,8 +41,7 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
                 continue;
             }
 
-            // Due first and judged idle after, so a turn ending between the two is ended by TurnChanged, and once. Its delegate key goes
-            // now: what it presses from here is refused, and its next start is handed a new one under the access chosen.
+            // Due first and judged idle after, so a turn ending between the two is ended by TurnChanged, and once; its keys go at once.
             context.HelpEnding[sessionId] = true;
             context.Processes.Delegates.Forget(sessionId);
             var idle = !wiring.Taking(sessionId);

@@ -10,7 +10,6 @@ internal sealed class PipeReserved(
     /// <summary>That it is sent with <c>hold: true</c>: its card says the Confirm also lets its terminal hold what it opens.</summary>
     public bool Hold { get; } = hold;
 
-    /// <summary>Who its card and its record name as asking: the session its delegate key proved, else the connection's process.</summary>
     public PipeAsker Asker { get; } = asker ?? connection.Asker;
 
     public IpcRequest Request { get; } = request;

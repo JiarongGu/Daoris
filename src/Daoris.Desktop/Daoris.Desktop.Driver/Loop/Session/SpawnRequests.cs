@@ -8,7 +8,6 @@ namespace Daoris.Driver;
 internal static class SpawnRequests
 {
     /// <summary>A driven start's request: the target's posture and asked choice, its home, and whose work it serves.</summary>
-    /// <param name="delegates">Where the start's delegate key is drawn and its hash kept; none, a test's request, draws none.</param>
     public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null) =>
         new(target.Repository, target.Root, target.ServiceUrl)
         {
@@ -30,10 +29,7 @@ internal static class SpawnRequests
                 delegates),
         };
 
-    /// <summary>
-    /// Every kind's identity handed its delegate key in this one place, beside its record's id: a key of its own for each start, so no kind
-    /// that names its session is missed.
-    /// </summary>
+    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id.</summary>
     private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates)
     {
         delegates?.Hand(identity);

@@ -40,10 +40,7 @@ export type Confirmation = {
   asker?: PipeAsker | null;
   /** When it is asked. It waits, whichever its source, until the person answers or its asker takes it back. */
   asked?: string | null;
-  /**
-   * Whether it is shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
-   * since its door hears none.
-   */
+  /** Whether it is shown: a terminal's press by any window's word; the service's by this window's own judgement, its door hearing none. */
   shown?: boolean;
   /** Whether a terminal still waits on its line for a terminal's press (§8.1); null where the shell does not say. */
   waitedOn?: boolean | null;
@@ -409,7 +406,6 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
           </div>
         )}
         <p className="m-0 text-small text-ink-soft">
-          {/* A restored press's asker is said as its record's, which a process of the account could have written. */}
           {askerSaid(t, asker, restored)}
           {waiting.asked
             ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
@@ -424,7 +420,6 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
         </p>
         {/* The one Confirm that lets a terminal speak in this conversation says so plainly. */}
         {waiting.hold === true && <p className="m-0 text-small font-semibold text-ink">{t('person.hold')}</p>}
-        {/* A press that proved its session's key is known to be that session's; any other could be the person's or an agent's. */}
         {!asker?.session && <p className="m-0 text-small">{t('person.cannotTell')}</p>}
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
           {checking ? (

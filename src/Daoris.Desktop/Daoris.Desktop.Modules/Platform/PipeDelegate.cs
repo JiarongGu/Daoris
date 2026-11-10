@@ -45,7 +45,7 @@ internal enum PipeDelegateTier
 internal sealed record PipeDelegateJudgement(PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null);
 
 /// <summary>
-/// A person's press a session's verb sent with the proof of the delegate key its start was handed (<see cref="DelegateKey"/>), judged
+/// A person's press a session's verb sends with the proof of the delegate key handed to its start (<see cref="DelegateKey"/>), judged
 /// by the session's tier: an Ask Daoris conversation in full access presses as the person, at once; one in restricted mode, and every
 /// other kind, asks the person on the card, named as asking; a proof that does not hold over this connection's nonce, a nonce already
 /// used, or a session holding no key is refused.

@@ -188,7 +188,6 @@ public static class InstanceDoor
         JsonElement? answer;
         // `--no-wait` leaves the line once the instance says the press waits, the id already said.
         using var leave = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        // A session's person's press carries the proof of the key its start was handed, over this connection's nonce and its own bytes.
         Func<string, object>? delegated = route.Class == RouteClass.Person && world.Delegate() is { } held && look.Nonce is { } nonce
             ? text => new { session = held.Session, proof = DelegateProof.Prove(held.Key, nonce, route.Module, route.Route, text, key) }
             : null;

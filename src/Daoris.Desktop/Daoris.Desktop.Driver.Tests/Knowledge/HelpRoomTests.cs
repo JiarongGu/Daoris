@@ -172,7 +172,6 @@ public sealed class HelpRoomTests : IDisposable
         // Archiving or unarchiving sessions, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
-        // Its one command is Daoris's own verb, each change of which waits on the person's card.
         Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }

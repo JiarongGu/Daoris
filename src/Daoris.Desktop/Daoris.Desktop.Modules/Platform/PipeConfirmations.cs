@@ -7,8 +7,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The terminal that asks, as the operating system names the pipe's client: its process's name and id, never a word the
 /// asker wrote. Null where the system would not say. <see cref="Session"/> is the session whose delegate key its press proved, and
-/// <see cref="Help"/> that it is an Ask Daoris conversation: what Daoris knows of the key it handed that start, so the card names the
-/// session, or Ask Daoris, as asking; null and false for every other press.
+/// <see cref="Help"/> that it is Ask Daoris's, so the card names it as asking.
 /// </summary>
 public sealed record PipeAsker(string? Process, int? Pid, string? Session = null, bool Help = false);
 

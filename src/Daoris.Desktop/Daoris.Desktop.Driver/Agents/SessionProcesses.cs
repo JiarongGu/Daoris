@@ -61,7 +61,7 @@ public sealed class SessionProcesses(string? markers = null)
         /// </summary>
         public bool Launched;
 
-        /// <summary>How many delegate keys were drawn as it was tracked: its session's last process ending forgets those.</summary>
+        /// <summary>How many delegate keys are drawn as it is tracked: its session's last process ending forgets those.</summary>
         public long Drawn;
     }
 

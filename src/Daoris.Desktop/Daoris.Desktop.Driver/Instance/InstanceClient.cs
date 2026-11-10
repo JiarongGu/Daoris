@@ -139,10 +139,7 @@ public sealed class InstanceClient : IAsyncDisposable
     /// One request, and its answer's whole envelope; null where the connection is lost or nothing answers within
     /// <paramref name="within"/>. Each notification naming it on the way is handed to <paramref name="told"/>.
     /// </summary>
-    /// <param name="delegated">
-    /// The <c>delegate</c> field sent beside the envelope, made from the payload's JSON text exactly as the line carries it, which a
-    /// session's proof is over (<see cref="DelegateProof"/>); null sends none.
-    /// </param>
+    /// <param name="delegated">The <c>delegate</c> field, made from the payload's text as the line carries it; null sends none.</param>
     public async Task<JsonElement?> RequestAsync(
         string id, string module, string type, object? payload, string? key, Action<JsonElement>? told, TimeSpan within,
         CancellationToken ct = default, Func<string, object>? delegated = null)
@@ -222,11 +219,8 @@ public sealed class InstanceClient : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// A press's line with its proof beside it: the payload written as the very text the proof was made over, never serialized again, so
-    /// the pipe reads the same bytes.
-    /// </summary>
-    private static string DelegatedLine(string id, string module, string type, string payload, string key, Func<string, object> delegated)
+    /// <summary>A press's line with its proof beside it, the payload written as the very text the proof is over.</summary>
+    internal static string DelegatedLine(string id, string module, string type, string payload, string key, Func<string, object> delegated)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream))

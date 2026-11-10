@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// The spawn, prepared for either kind of session: the adapter's process, the toolchain's environment on it, and for a dsh home
 /// Daoris made, its profile written. Shared by a quest's session and an ask's intake, so neither can forget a line the other carries.
 /// </summary>
-/// <param name="delegates">Where each start's delegate key is drawn: the driver's processes' own.</param>
 internal sealed class SessionEquipment(string home, DriverConfig config, SessionDelegates delegates)
 {
     /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>

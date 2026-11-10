@@ -64,10 +64,7 @@ public sealed class InstanceWorld : IToolTerminal
     /// </summary>
     public Func<bool> RoleTerminal { get; init; } = () => TerminalRole.Held;
 
-    /// <summary>
-    /// The delegate key this terminal's session was handed and the entry took (<see cref="DelegateKey.Taken"/>), unless a test names its
-    /// own; null where this is no session's terminal. A person's press from it carries its proof.
-    /// </summary>
+    /// <summary>The delegate key the entry took (<see cref="DelegateKey.Taken"/>), whose proof a person's press carries.</summary>
     public Func<DelegateHeld?> Delegate { get; init; } = () => DelegateKey.Taken;
 
     /// <summary>A person's press sent through <see cref="InstanceDoor.PressAsync"/> from this terminal.</summary>

@@ -57,10 +57,7 @@ public sealed class HelpAccessTests : IDisposable
         Assert.Contains($"`{Adapter(name).FullPosture}`", access.Said);
     }
 
-    /// <summary>
-    /// Restricted runs Daoris's own verb unasked, in both forms the harness matches, since each change it presses waits on the person's
-    /// card; the room's allow-list and each start's rules name it.
-    /// </summary>
+    /// <summary>Restricted runs Daoris's own verb unasked, in both forms the harness matches: each change it presses is carded.</summary>
     [Fact]
     public void Restricted_runs_Daoris_s_own_verb_unasked()
     {

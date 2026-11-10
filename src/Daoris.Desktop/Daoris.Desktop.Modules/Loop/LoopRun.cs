@@ -241,8 +241,6 @@ internal sealed class LoopRun(
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
             served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
             served.Grounds = new LoopGrounds(loop, served);
-            // A press proved by a session's delegate key reads that session as it is now: the keys held for it, and its Ask Daoris
-            // start's mode, never kept beside a key.
             served.Delegates = session => new PipeDelegateSession(
                 loop.Processes.Delegates.Of(session), loop.Chat?.HelpModeOf(session), route => loop.Chat?.HelpPressed(session, route));
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;

@@ -438,7 +438,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>The mode a running Ask Daoris conversation's start got; null for any other session, or one not running here.</summary>
     public string? HelpModeOf(string sessionId) => _context.HelpModes.GetValueOrDefault(sessionId);
 
-    /// <inheritdoc cref="HelpPressed.Tell"/>
     public void HelpPressed(string sessionId, string route) => global::Daoris.Driver.HelpPressed.Tell(_context.Output, sessionId, route);
 
     /// <inheritdoc cref="HelpAccessSwap.TurnChanged"/>

@@ -227,13 +227,9 @@ public sealed class InstancePipe : IDisposable
     /// </summary>
     public IPipeGroundWorld? Grounds { get; set; }
 
-    /// <summary>
-    /// The sessions Daoris started, as a press proved by one's delegate key reads them: the loop's, handed as the grounds are. None
-    /// refuses every proof (<see cref="PipeDelegate.Unproved"/>).
-    /// </summary>
+    /// <summary>The sessions Daoris started, as a proved press reads them, the loop's; none refuses every proof.</summary>
     public Func<string, PipeDelegateSession?>? Delegates { get; set; }
 
-    /// <summary>A press a session's verb proved, judged by that session's tier.</summary>
     internal PipeDelegate Delegate { get; }
 
     internal PipeState State { get; } = new();

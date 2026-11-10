@@ -599,11 +599,7 @@ function agentNamed(harness: string, tools: readonly Tool[] = []): string {
   return door?.door.product || door?.tool.product || harness;
 }
 
-/**
- * A terminal's press waiting for the window, in its card's own words: what it asks, by its route's act where the page
- * has one; what sent it; and that it runs only on the card's Confirm, and waits until the person answers. Never a value
- * it carries.
- */
+/** A terminal's press waiting for the window, in its card's words: what it asks, what sent it, that it runs only on Confirm; no value. */
 function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
   const act = `person.route.${waiting.route}`;
   return {

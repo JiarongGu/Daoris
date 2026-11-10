@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of its own beside its id, whose hash Daoris keeps for that session; every Daoris executable's entry and every other start drops it,
 /// an inherited one included; and it is forgotten as the session's process ends.
 /// </summary>
+[Trait("Category", "Census")]
 public sealed class DelegateKeyStripTests
 {
     private const string Sentinel = "de1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7ede1e6a7e";
@@ -92,7 +93,7 @@ public sealed class DelegateKeyStripTests
     public void Every_other_start_s_hand_drops_the_key()
     {
         Assert.Contains(DelegateKey.Variable, GitWiring.Removed);
-        var started = new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true };
+        var started = new ProcessStartInfo("stand-command") { UseShellExecute = false, CreateNoWindow = true };
         started.Environment[DelegateKey.Variable] = Sentinel;
         GitWiring.Hand(started);
         Assert.False(started.Environment.ContainsKey(DelegateKey.Variable));
@@ -140,10 +141,7 @@ public sealed class DelegateKeyStripTests
         Assert.Contains("DelegateKey.Take();", host, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// The session's process ending forgets what was drawn for it; a key drawn after that process was tracked, for a start still coming,
-    /// is kept.
-    /// </summary>
+    /// <summary>The session's process ending forgets its keys; one drawn after that process is tracked, a start still coming, is kept.</summary>
     [Fact]
     public void The_session_s_process_end_forgets_its_keys()
     {
@@ -173,6 +171,25 @@ public sealed class DelegateKeyStripTests
         {
             SessionProcesses.EndIfRunning(process);
         }
+    }
+
+    /// <summary>The verb's line carries the payload as the very text its proof is over, so the pipe reads the same bytes back.</summary>
+    [Fact]
+    public void The_verb_s_line_carries_the_payload_its_proof_is_over()
+    {
+        var delegates = new SessionDelegates();
+        var key = delegates.Draw("s1");
+        var nonce = SupervisorProof.Nonce();
+        var payload = System.Text.Json.JsonSerializer.Serialize(new { quest = "q1", note = "naïve ✓ \"quoted\"" });
+        var line = InstanceClient.DelegatedLine("id1", "DAORIS.DRIVER", "WORK_PAUSE", payload, "k1",
+            text => new { session = "s1", proof = DelegateProof.Prove(key, nonce, "DAORIS.DRIVER", "WORK_PAUSE", text, "k1") });
+
+        using var sent = System.Text.Json.JsonDocument.Parse(line);
+        var said = sent.RootElement.GetProperty(DelegateProof.Field);
+        Assert.Equal("s1", said.GetProperty("session").GetString());
+        Assert.True(DelegateProof.Verify(
+            delegates.Of("s1"), nonce, "DAORIS.DRIVER", "WORK_PAUSE", sent.RootElement.GetProperty("payload").GetRawText(),
+            sent.RootElement.GetProperty("key").GetString()!, said.GetProperty("proof").GetString()));
     }
 
     /// <summary>A proof is over the press's own bytes: its route, its payload and its key, by the session's key alone.</summary>

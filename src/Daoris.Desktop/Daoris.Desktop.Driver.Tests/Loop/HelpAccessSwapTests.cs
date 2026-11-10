@@ -138,10 +138,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(1, chat.Finished);
     }
 
-    /// <summary>
-    /// A swap forgets the conversation's delegate key at once, so what its running turn presses is refused from then, and its next start
-    /// draws a new one; a conversation whose access did not change keeps its own.
-    /// </summary>
+    /// <summary>A swap forgets the conversation's delegate key at once; one whose access did not change keeps its own.</summary>
     [Fact]
     public async Task A_swap_forgets_the_conversation_s_delegate_key_and_leaves_the_others()
     {
@@ -160,10 +157,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         chat.Turn.SetResult();
     }
 
-    /// <summary>
-    /// A press Ask Daoris made in full access is said once on its own conversation's console, naming the route as the person's own press;
-    /// the conversation's run being over forgets its keys and its mode together.
-    /// </summary>
+    /// <summary>A full-access press is said on its own conversation's console; its run's end forgets its keys and its mode together.</summary>
     [Fact]
     public void A_full_access_press_is_said_on_its_conversation_and_its_run_s_end_forgets_its_keys()
     {

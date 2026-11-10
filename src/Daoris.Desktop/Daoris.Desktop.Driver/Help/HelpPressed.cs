@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A press Ask Daoris's verb made in full access, proved by its conversation's delegate key and run with no card: the person's own act,
-/// said once on that conversation's console, so what it pressed is read where it was asked for.
+/// said once on that conversation's console, so what it pressed is read where the person asked for it.
 /// </summary>
 internal static class HelpPressed
 {

@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A person's press a session's verb sends with the proof of the delegate key its start was handed: an Ask Daoris conversation in full
+/// A person's press a session's verb sends with the proof of the delegate key handed to its start: an Ask Daoris conversation in full
 /// access presses as the person, with no card, said on its console and logged; one in restricted mode asks on a card naming Ask Daoris;
 /// every other kind asks naming its session; a proof that does not hold, a nonce used already, or a session holding no key is refused,
 /// nothing asked or run; and a press with no proof is asked as before.

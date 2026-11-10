@@ -43,8 +43,8 @@ public sealed class SessionDelegates
     public void Forget(string session) => _held.TryRemove(session, out _);
 
     /// <summary>
-    /// The keys of <paramref name="session"/> drawn up to <paramref name="upTo"/> forgotten, as its last process ends; one drawn after that
-    /// process was tracked is a start still coming, and is kept.
+    /// The keys of <paramref name="session"/> drawn up to <paramref name="upTo"/> forgotten, as its last process ends; one drawn since that
+    /// process is tracked is a start still coming, and is kept.
     /// </summary>
     public void Forget(string session, long upTo)
     {

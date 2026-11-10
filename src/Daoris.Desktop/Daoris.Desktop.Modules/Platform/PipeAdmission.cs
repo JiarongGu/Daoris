@@ -24,7 +24,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     /// once the press it begins or joins answers. A press is admitted only where the connection has room for one more under way.
     /// </summary>
     /// <param name="hold">That it is sent with <c>hold: true</c>: a start that holds what it opens, once the person confirms it.</param>
-    /// <param name="claim">The <c>delegate</c> it is sent with: a session's proof of the key its start was handed (<see cref="PipeDelegate"/>).</param>
+    /// <param name="claim">The <c>delegate</c> it is sent with: a session's proof of its delegate key (<see cref="PipeDelegate"/>).</param>
     public (string? Now, Task<string>? Later) Accept(
         IpcRequest request, string? key, PipeConnection connection, bool hold = false, PipeDelegateClaim? claim = null)
     {
@@ -117,8 +117,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // no card, so nothing is shaped for one; every other press asks as before.
         var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
-        // A press proved by the delegate key its session's start was handed is judged by that session's tier, its nonce used up: run as
-        // the person's with no card, asked naming the session, or refused.
+        // A press proving its session's delegate key is judged by that session's tier: run with no card, asked naming it, or refused.
         PipeDelegateJudgement? delegated = null;
         if (claim is not null && @class == PipeClass.Person && !holding && !asked && !covered)
         {
