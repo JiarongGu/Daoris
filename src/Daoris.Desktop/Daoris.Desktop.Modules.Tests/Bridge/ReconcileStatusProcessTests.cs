@@ -94,7 +94,7 @@ public sealed class ReconcileStatusProcessTests : DriverModuleBridge
 
     private async Task<System.Text.Json.JsonElement> PlanAsync()
     {
-        (StaffedRoles.Config("claude-code-acp")).WithDrivable("engine", true).WithTrees("engine", true).Save(DriverConfigPath);
+        (StaffedRoles.Config("claude-code-acp")).WithDrivable("engine", true).Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { SetupWorlds = _ => _world, Patience = TimeSpan.FromMinutes(2) };
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SetupStandIn.EmptyHost())));
