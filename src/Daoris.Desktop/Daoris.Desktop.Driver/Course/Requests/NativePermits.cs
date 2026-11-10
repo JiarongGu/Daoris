@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>What became of a native session's permission ask: the tool, whether it is allowed, why the hold ended, and its words.</summary>
-/// <param name="Why">One of <see cref="PermissionWhy"/>'s, or <c>held</c> where the same ask was held already.</param>
+/// <param name="Why">One of <see cref="PermissionWhy"/>'s, or <c>held</c> where the same ask is already held.</param>
 public sealed record PermitAnswer(string Tool, bool Allowed, string Why, string Said);
 
 /// <summary>

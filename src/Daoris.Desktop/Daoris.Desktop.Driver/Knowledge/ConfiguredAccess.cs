@@ -37,10 +37,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>The acts' grant, the page's <c>HelpGrantId</c>: its operations are the families of acts (<see cref="ActFamilies"/>).</summary>
     public const string ActsGrant = "acts";
 
-    /// <summary>
-    /// The families of acts chosen, in <see cref="ActFamilies.Built"/>'s order, once each; none by default. A proved press of a chosen
-    /// family runs with no card in restricted mode, read at the press.
-    /// </summary>
+    /// <summary>The families of acts chosen, in <see cref="ActFamilies.Built"/>'s order; a press of one runs with no card, read at the press.</summary>
     public IReadOnlyList<string> Acts { get; init; } = [];
 
     /// <summary>Where the file keeps the checkouts turned off: a list of repository names.</summary>
@@ -99,10 +96,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         _ => [],
     };
 
-    /// <summary>
-    /// Whether <paramref name="other"/> chose the same operations of every grant a start is handed, in the same order. The acts are read at
-    /// each press, never handed, so a change of them asks no running conversation to start again.
-    /// </summary>
+    /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order; the acts are read at each press, so are left out.</summary>
     public bool Same(ConfiguredAccess other) =>
         Housekeeping.SequenceEqual(other.Housekeeping, StringComparer.Ordinal) && Settings.SequenceEqual(other.Settings, StringComparer.Ordinal)
         && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);

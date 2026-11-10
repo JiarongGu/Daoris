@@ -73,7 +73,6 @@ internal static class DriverStateAnswer
             {
                 Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
                 Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
-                // The families of acts, read at each press: a change is never pending a conversation's next turn.
                 new HelpGrantRow(ConfiguredAccess.ActsGrant, access.Acts, ActFamilies.Built, false, false, null),
                 new HelpGrantRow(
                     ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,

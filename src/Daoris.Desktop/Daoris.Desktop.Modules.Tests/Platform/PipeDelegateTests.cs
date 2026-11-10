@@ -167,10 +167,7 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
     }
 
-    /// <summary>
-    /// A working session whose repository's access setup is unrestricted presses with no card as itself: run at once, logged as the
-    /// session's, said on no conversation, and naming nothing the owner's while it runs.
-    /// </summary>
+    /// <summary>A working session whose repository's access setup is unrestricted presses with no card as itself, naming nothing the owner's.</summary>
     [Fact]
     public async Task An_unrestricted_working_session_s_press_runs_at_once_as_its_own_and_marks_nothing_the_owner_s()
     {
@@ -225,10 +222,7 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Empty(Logged(PipeDelegate.SessionPressedEvent));
     }
 
-    /// <summary>
-    /// A family of acts the person granted Ask Daoris in restricted mode runs its press with no card, as the person's own; a press outside
-    /// every granted family still asks.
-    /// </summary>
+    /// <summary>A granted family of acts runs Ask Daoris's press with no card in restricted mode; a press outside it still asks.</summary>
     [Fact]
     public async Task A_restricted_Ask_Daoris_press_in_a_granted_family_runs_at_once_and_one_outside_asks()
     {
@@ -258,10 +252,7 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(("h1", true), (Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Session, Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Help));
     }
 
-    /// <summary>
-    /// The driver's stand-in: every press is counted by its route and answered done, and the session it ran as and whether it named
-    /// anything the owner's are kept.
-    /// </summary>
+    /// <summary>The driver's stand-in: each press counted by route and answered done, with the session it ran as and whether it named the owner's.</summary>
     private sealed class StandIn : ModuleBase
     {
         private readonly ConcurrentDictionary<string, int> _ran = new(StringComparer.Ordinal);

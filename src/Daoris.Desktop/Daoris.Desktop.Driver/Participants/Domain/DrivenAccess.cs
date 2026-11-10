@@ -97,7 +97,6 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             var own = !adapter.Can.SetAtOpen ? "the permission mode driven sessions always ran in there"
                 : adapter.Postures.Ordinary is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
-            // The judged default keeps the adapter's own modes, marked so a request its harness asks is held for the person (D253).
             return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Id.Value}`, {own} (D81); {keeps}.")
             {
                 Posture = adapter.Can.SetAtOpen ? PostureAsked.Held(adapter.Postures.Ordinary) : null,

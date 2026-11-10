@@ -43,7 +43,6 @@ public sealed class DrivenAccessTests : IDisposable
     [InlineData("claude-code", AccessRules.Auto, null, null)]
     [InlineData("claude-code", AccessRules.Asking, null, "default")]
     [InlineData("claude-code", AccessRules.Unrestricted, null, "bypassPermissions")]
-    // The judged default keeps the adapter's own modes, marked so the protocol door holds each request its harness asks for the person.
     [InlineData("claude-code-acp", AccessRules.Auto, "?auto|acceptEdits", null)]
     // AUTONOMY1b3a: the asking mode's posture is marked too, so the protocol door holds each request for the person.
     [InlineData("claude-code-acp", AccessRules.Asking, "!?default", null)]

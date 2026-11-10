@@ -11,8 +11,7 @@ namespace Daoris.Driver;
 public sealed record HandedRules(RuleLists Rules, IReadOnlyList<string> HardDeny, TreeGuardHook? Guard, string? Lineage)
 {
     /// <summary>
-    /// That a call its harness would ask about is asked of the person through Daoris, where its door has no wire to hold one on (D253):
-    /// a working session's or a conversation's on the native door. A provider whose door holds on its wire hands nothing for it.
+    /// That a call its harness would ask about is asked of the person through Daoris, where its door has no wire to hold one on.
     /// </summary>
     public bool Asked { get; init; }
 }

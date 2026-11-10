@@ -15,7 +15,6 @@ const choice = (id: HelpGrantId, chosen: string[], extra: Partial<HelpGrantChoic
 describe('the grants', () => {
   it('are the table’s six, in its order, each operation chosen on its own and the checkouts the driver’s to name', () => {
     expect(GRANTS.map((grant) => grant.id)).toEqual(['housekeeping', 'browser', 'checkouts', 'settings', 'acts', 'shell']);
-    // The families of acts the driver grants (`ActFamilies.Built`).
     expect(spec('acts').operations).toEqual(['pause']);
     expect(spec('housekeeping').operations).toEqual(['inspect', 'clean-up', 'discard-branch', 'drop-recovery']);
     // One box a checkout, by its repository's name, as the driver serves them.

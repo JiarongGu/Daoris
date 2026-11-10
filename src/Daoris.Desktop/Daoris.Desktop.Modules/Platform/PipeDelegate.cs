@@ -33,10 +33,7 @@ internal sealed record PipeDelegateClaim(string Session, string Proof, string Pa
 /// </summary>
 public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? HelpMode, Action<string>? Say = null)
 {
-    /// <summary>
-    /// A working session's tier: its repository's permission prompts as its access setup resolves them now (<see cref="AccessRules.Permissions"/>);
-    /// null where it names no repository, read as the judged default.
-    /// </summary>
+    /// <summary>A working session's tier: its repository's permission prompts now (<see cref="AccessRules.Permissions"/>); null where it names none.</summary>
     public string? Permissions { get; init; }
 
     /// <summary>The families of acts the person granted Ask Daoris in restricted mode, read now (<see cref="ConfiguredAccess.Acts"/>).</summary>
@@ -51,10 +48,7 @@ internal enum PipeDelegateTier
     Refused,
 }
 
-/// <summary>
-/// A proved press's tier, who its card names as asking, and, for one run with no card, its session and where it is said. <paramref name="Own"/>
-/// marks a working session's press run as its own, never the person's.
-/// </summary>
+/// <summary>A proved press's tier, who its card names as asking, and, for one run with no card, its session and where it is said; <paramref name="Own"/> is a working session's.</summary>
 internal sealed record PipeDelegateJudgement(
     PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false);
 
@@ -108,10 +102,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         };
     }
 
-    /// <summary>
-    /// A press run with no card, in the machine log by its codes: Ask Daoris's as the person's, said once on its conversation's console
-    /// and kept for the window's list; a working session's as its own (<c>by: session &lt;id&gt;</c>).
-    /// </summary>
+    /// <summary>A press run with no card, in the machine log: Ask Daoris's as the person's, a working session's as its own.</summary>
     internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request, Task<string> answer)
     {
         var route = $"{request.Module}.{request.Type}";

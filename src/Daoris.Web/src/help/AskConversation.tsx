@@ -295,7 +295,6 @@ export function useAskConversation(
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
-    // Its own held tool calls first, since its turn stands still on them, then what it proposed.
     body: conversation, proposals: <><AskHeld session={shown?.id} live={live} />{proposed}</>, published, composer, ended,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
       : limitLine ? <>{limitLine}{note}</> : note,

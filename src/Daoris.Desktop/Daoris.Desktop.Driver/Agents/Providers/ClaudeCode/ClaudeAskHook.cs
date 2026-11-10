@@ -16,10 +16,8 @@ public sealed record AskHook(string Script, string Requests, string Session)
 }
 
 /// <summary>
-/// Claude Code's permission ask on the native door (D253): a script its settings file runs before every tool call, which asks Daoris
-/// about a call the harness would ask about, through the session requests box (<see cref="SessionMove.Permit"/>), and answers the
-/// harness allow or refuse once the person (or the allow supervisor) answers the hold, or its bound refuses it. The protocol door
-/// holds on its wire and is handed none.
+/// Claude Code's permission ask on the native door: a script run before every tool call, which asks Daoris through the session
+/// requests box (<see cref="SessionMove.Permit"/>) and answers the harness allow or refuse. The protocol door holds on its wire.
 /// </summary>
 public static class ClaudeAskHook
 {

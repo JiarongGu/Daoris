@@ -54,11 +54,7 @@ public static class SessionMove
     /// </summary>
     public const string Read = "read";
 
-    /// <summary>
-    /// A native session's permission ask (<see cref="ClaudeAskHook"/>): a tool call its harness would ask about, the tool in
-    /// <see cref="SessionRequest.Operation"/> and the call in <see cref="SessionRequest.Text"/>, held for the person by the loop running
-    /// the session (<see cref="NativePermits"/>) and answered beside the request in housekeeping's answer's fields. Keyed as a say is.
-    /// </summary>
+    /// <summary>A native session's permission ask (<see cref="ClaudeAskHook"/>): the tool in Operation, the call in Text; keyed as a say is.</summary>
     public const string Permit = "permit";
 
     public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit;

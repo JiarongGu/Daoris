@@ -52,7 +52,6 @@ export const GRANTS: readonly GrantSpec[] = [
     id: 'settings', operations: ['notify', 'language', 'cap', 'cooloff', 'quiet'],
     byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'settings',
   },
-  // Families of Daoris's acts whose press Ask Daoris makes with no card, as yours, read at each press: held on every agent.
   { id: 'acts', operations: ['pause'], byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'operations' },
   { id: 'shell', operations: [], byDefault: 'off', needsRules: false, later: true, onPlugin: false, door: null },
 ];

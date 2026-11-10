@@ -1,11 +1,8 @@
-// Daoris's permission ask (D253): on the native door a session's harness refuses under `-p` a tool call its rules do not allow,
-// having no wire to ask on, so this hook asks Daoris instead. Shipped inside the driver and written under the Daoris home; the
-// harness runs it as
+// Daoris's permission ask: under `-p` the harness refuses a call its rules do not allow, having no wire to ask on, so this hook asks
+// Daoris instead. Run on `PreToolUse` for every tool as
 //  node permission-ask.mjs <requests folder> <session> <settings file> <bound seconds>
-// on `PreToolUse` for every tool, with the hook's input as JSON on stdin. For a call the harness would ask about (one its mode does
-// not take unasked and no rule allows or denies), it writes a `permit` request to the session requests box, which the loop running
-// the session holds for the person (or the allow supervisor) as the protocol door holds a request, and waits for the answer beside it
-// up to the hold's bound: allow lets the call run, anything else refuses it, saying why.
+// with the hook's input as JSON on stdin. For a call the harness would ask about it writes a `permit` request to the session
+// requests box and waits beside it up to the hold's bound: allow lets the call run, anything else refuses it, saying why.
 // Zero dependencies: it runs inside every session that is handed it.
 // 🔴 A call it does not judge as asked gets no word from it: nothing on stdout, exit 0, and the harness decides as its rules say.
 
@@ -53,7 +50,7 @@ export function covers(rule, tool, input) {
   return false;
 }
 
-/** Whether the harness would ask about this call under `permission_mode`, given the rules it was handed. */
+/** Whether the harness would ask about this call under `permission_mode`, given the rules. */
 export function wouldAsk(input, rules) {
   const tool = String(input?.tool_name ?? '');
   const mode = String(input?.permission_mode ?? 'default');

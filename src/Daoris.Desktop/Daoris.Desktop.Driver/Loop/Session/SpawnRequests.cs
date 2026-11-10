@@ -20,7 +20,6 @@ internal static class SpawnRequests
     /// rather than an empty one, which would read as an id that failed to parse; its own record, so a connector its agent
     /// starts from the repository's server list marks this conversation.
     /// </summary>
-    /// <param name="workspace">The workspace the conversation's repository's access setup resolves in, which its tier reads.</param>
     public static SpawnRequest Chat(
         string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null, string? workspace = null) =>
         new(repository, root, serviceUrl)

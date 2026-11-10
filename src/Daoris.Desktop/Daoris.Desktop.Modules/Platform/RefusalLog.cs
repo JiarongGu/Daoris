@@ -110,10 +110,7 @@ public static class PipeDoor
 
     private static readonly AsyncLocal<string?> Working = new();
 
-    /// <summary>
-    /// The working session whose own press the request this call runs for is (<see cref="PipeDelegate"/>): its target is never made the
-    /// owner's. Null for every other request, the person's own and a role's among them.
-    /// </summary>
+    /// <summary>The working session whose own press this request is (<see cref="PipeDelegate"/>), never made the owner's; null for every other.</summary>
     public static string? Worker => Current.Value == Terminal ? Working.Value : null;
 
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>

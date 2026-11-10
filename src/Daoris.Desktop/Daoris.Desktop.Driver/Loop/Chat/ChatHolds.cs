@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's permission requests on the protocol door, held for the person below full access as a driven session's are (D253):
-/// its posture marked so its session holds them (<see cref="PostureAsked.PersonAnswers"/>), and the registry's door it holds them
-/// through. Ask Daoris in full access runs its harness's mode that asks nothing, and is handed neither.
+/// A conversation's permission requests on the protocol door, held for the person below full access: its posture marked so its
+/// session holds them (<see cref="PostureAsked.PersonAnswers"/>), and the registry's door it holds them through.
 /// </summary>
 internal static class ChatHolds
 {

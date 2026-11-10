@@ -45,7 +45,7 @@ public sealed class SessionDelegates
     public IReadOnlyList<byte[]> Of(string session) =>
         _held.TryGetValue(session, out var held) ? [.. held.Select(each => each.Hash)] : [];
 
-    /// <summary>Where <paramref name="session"/>'s last start was handed its key; null where it named no repository.</summary>
+    /// <summary>Where <paramref name="session"/>'s last start's key is held; null where it named no repository.</summary>
     public SessionPlace? PlaceOf(string session) => _places.GetValueOrDefault(session);
 
     /// <summary>Every key of <paramref name="session"/> forgotten: its access changed, so its next start is handed a new one.</summary>

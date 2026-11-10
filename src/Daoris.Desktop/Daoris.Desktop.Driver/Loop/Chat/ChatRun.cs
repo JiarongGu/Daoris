@@ -82,7 +82,6 @@ internal sealed class ChatRun(
             // Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
             (place, modeSaid, helpMode) = HelpPlacement.UnderMode(place, agent, config, ran);
-            // Below full access its protocol door holds each permission request for the person (ChatHolds).
             place = place with { Posture = ChatHolds.Posture(place.Posture ?? agent.Posture, helpMode) };
 
             // One going on under another mode than it last ran under runs under the new one, and its record says so before anything is spawned,

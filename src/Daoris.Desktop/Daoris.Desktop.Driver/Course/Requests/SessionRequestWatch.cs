@@ -124,11 +124,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<CheckoutAnswer>>? Checkout { get; init; }
 
-    /// <summary>
-    /// A loop's half of a native session's permission ask (<see cref="NativePermits"/>): handed each one taken for a session its registry
-    /// runs and never waited for here, since its hold waits on the person for up to its bound while the session's other requests go on.
-    /// Null takes none.
-    /// </summary>
+    /// <summary>Holds a native session's permission ask (<see cref="NativePermits"/>) without waiting here, so other requests go on; null takes none.</summary>
     public Func<SessionRequest, Task>? Permit { get; init; }
 
     /// <summary>
