@@ -212,7 +212,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         _ = connection.WriteAsync(Waits(id, why, checking: true));
         Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
 
-        _ = stewardsAsk is null ? Card() : pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client);
+        _ = stewardsAsk is not null ? pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client)
+            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session } ? pipe.SessionPresses.RaiseAsync(reserved, Card, session, repository)
+            : Card();
         return (null, Held(answer));
     }
 

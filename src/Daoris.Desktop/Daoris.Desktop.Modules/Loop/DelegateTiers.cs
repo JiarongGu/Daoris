@@ -16,6 +16,7 @@ internal static class DelegateTiers
         {
             Families = mode == HelpModes.Restricted ? ConfiguredAccess.Read(loop.Home).Acts : [],
             Permissions = mode is null ? Permissions(loop, loop.Processes.Delegates.PlaceOf(session)) : null,
+            Repository = mode is null ? loop.Processes.Delegates.PlaceOf(session)?.Repository : null,
         };
     }
 

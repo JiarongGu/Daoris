@@ -25,10 +25,11 @@ export function ruleOf(text) {
   return match ? { tool: match[1], spec: match[2] } : null;
 }
 
-/** Whether `rule` covers the call: its tool, and a specifier it reads (a Bash command's prefix or exact form, a fetch's domain). */
-export function covers(rule, tool, input) {
+/** Whether `rule` covers the call: its tool, and a specifier it reads (a Bash command, a fetch's domain, a path pattern). */
+export function covers(rule, tool, input, cwd) {
   if (!rule) return false;
-  if (rule.tool !== tool && !(rule.tool.startsWith('mcp__') && (tool === rule.tool || tool.startsWith(`${rule.tool.replace(/__\*$/, '')}__`)))) {
+  const edit = rule.tool === 'Edit' && EDITS.has(tool);
+  if (rule.tool !== tool && !edit && !(rule.tool.startsWith('mcp__') && (tool === rule.tool || tool.startsWith(`${rule.tool.replace(/__\*$/, '')}__`)))) {
     return false;
   }
   if (rule.spec === undefined || rule.spec === '*' || rule.spec === '') return true;
@@ -46,8 +47,57 @@ export function covers(rule, tool, input) {
       return false;
     }
   }
-  // A path's pattern this hook does not read: never taken as covering, so the call is asked rather than let through.
-  return false;
+  const target = pathOf(input);
+  return target !== null && pathMatches(rule.spec, target, cwd);
+}
+
+/** The file a call names, for the tools a path rule covers; null where it names none. */
+function pathOf(input) {
+  const named = input?.file_path ?? input?.notebook_path ?? input?.path;
+  return typeof named === 'string' && named ? named : null;
+}
+
+const slashed = (text) => (process.platform === 'win32' ? text.replace(/\\/g, '/').toLowerCase() : text);
+
+/** A gitignore-style pattern as a regular expression: `**` crosses folders, `*` and `?` stay inside one. */
+function patternOf(pattern) {
+  let source = '';
+  for (let at = 0; at < pattern.length; at++) {
+    const here = pattern[at];
+    if (here === '*' && pattern[at + 1] === '*') {
+      const folders = pattern[at + 2] === '/';
+      source += folders ? '(?:.*/)?' : '.*';
+      at += folders ? 2 : 1;
+    } else if (here === '*') source += '[^/]*';
+    else if (here === '?') source += '[^/]';
+    else source += here.replace(/[\\^$.|+()[\]{}]/g, '\\$&');
+  }
+  return new RegExp(`^${source}$`);
+}
+
+/**
+ * Whether a path rule's pattern covers `target`, as the harness reads one: `//x` from the filesystem root, `~/x` from the home, `/x`
+ * and `x` from the session's folder (`cwd`), and a pattern with no slash at any depth. A pattern it cannot place covers nothing.
+ */
+export function pathMatches(spec, target, cwd, home = process.env.HOME ?? process.env.USERPROFILE ?? '') {
+  const base = typeof cwd === 'string' && cwd ? slashed(cwd).replace(/\/+$/, '') : null;
+  const absolute = (text) => /^([a-z]:)?\//i.test(text);
+  let pattern = slashed(spec.trim());
+  if (pattern.startsWith('//')) pattern = pattern.slice(1);
+  else if (pattern.startsWith('~/')) pattern = `${slashed(home).replace(/\/+$/, '')}/${pattern.slice(2)}`;
+  else if (pattern.startsWith('/')) {
+    if (base === null) return false;
+    pattern = `${base}${pattern}`;
+  } else {
+    if (base === null) return false;
+    pattern = pattern.startsWith('./') ? `${base}/${pattern.slice(2)}` : pattern.includes('/') ? `${base}/${pattern}` : `${base}/**/${pattern}`;
+  }
+  let file = slashed(target);
+  if (!absolute(file)) {
+    if (base === null) return false;
+    file = `${base}/${file.replace(/^\.\//, '')}`;
+  }
+  return patternOf(pattern).test(file);
 }
 
 /** Whether the harness would ask about this call under `permission_mode`, given the rules. */
@@ -56,7 +106,7 @@ export function wouldAsk(input, rules) {
   const mode = String(input?.permission_mode ?? 'default');
   if (!tool || UNASKED.has(mode) || READS.has(tool)) return false;
   if (mode === 'acceptEdits' && EDITS.has(tool)) return false;
-  const any = (list) => (Array.isArray(list) ? list : []).some((text) => covers(ruleOf(text), tool, input?.tool_input));
+  const any = (list) => (Array.isArray(list) ? list : []).some((text) => covers(ruleOf(text), tool, input?.tool_input, input?.cwd));
   if (any(rules?.deny)) return false;
   if (any(rules?.ask)) return true;
   return !any(rules?.allow);

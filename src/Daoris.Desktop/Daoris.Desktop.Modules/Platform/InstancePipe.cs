@@ -196,6 +196,7 @@ public sealed class InstancePipe : IDisposable
         Asking = new PipeAsking(this);
         TakeBacks = new PipeTakeBacks(this);
         StewardAllows = new StewardAllows(this);
+        SessionPresses = new SessionPressAllows(this);
         Holding = new PipeHolding(this, bus);
         HeavyRuns = new PipeHeavyRuns(this);
         Delegate = new PipeDelegate(this);
@@ -244,6 +245,9 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>A steward's act outside its grants, offered to the allow supervisor before the person's card.</summary>
     public StewardAllows StewardAllows { get; }
+
+    /// <summary>A working session's asked press, offered to the allow supervisor before the person's card.</summary>
+    public SessionPressAllows SessionPresses { get; }
 
     /// <summary>A terminal's hold of a conversation: the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
     public PipeHolding Holding { get; }
@@ -391,6 +395,7 @@ public sealed class InstancePipe : IDisposable
         }
 
         StewardAllows.Close();
+        SessionPresses.Close();
         Holding.CloseAsks();
         foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
     }

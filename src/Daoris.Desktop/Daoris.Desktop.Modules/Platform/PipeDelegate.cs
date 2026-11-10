@@ -38,6 +38,9 @@ public sealed record PipeDelegateSession(IReadOnlyList<byte[]> Hashes, string? H
 
     /// <summary>The families of acts the person granted Ask Daoris in restricted mode, read now (<see cref="ConfiguredAccess.Acts"/>).</summary>
     public IReadOnlyList<string> Families { get; init; } = [];
+
+    /// <summary>The repository a working session's start serves, whose allow supervisor may answer its asked press.</summary>
+    public string? Repository { get; init; }
 }
 
 /// <summary>How a proved press is taken: run as the person's own with no card, put to the person on a card, or refused.</summary>
@@ -50,7 +53,8 @@ internal enum PipeDelegateTier
 
 /// <summary>A proved press's tier, who its card names as asking, and, for one run with no card, its session and where it is said; <paramref name="Own"/> is a working session's.</summary>
 internal sealed record PipeDelegateJudgement(
-    PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false);
+    PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false,
+    string? Repository = null);
 
 /// <summary>
 /// A person's press a session's verb sends with the proof of the delegate key handed to its start (<see cref="DelegateKey"/>), judged
@@ -98,6 +102,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
             HelpModes.Restricted when granted => new(PipeDelegateTier.Covered, Session: claim.Session, Say: session.Say),
             HelpModes.Restricted => new(PipeDelegateTier.Asked, asker with { Help = true }),
             null when session.Permissions == AccessRules.Unrestricted => new(PipeDelegateTier.Covered, Session: claim.Session, Own: true),
+            null => new(PipeDelegateTier.Asked, asker, claim.Session, Repository: session.Repository),
             _ => new(PipeDelegateTier.Asked, asker),
         };
     }

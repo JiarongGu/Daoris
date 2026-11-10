@@ -26,6 +26,21 @@ test('a call the harness would ask about is asked, and one it takes unasked is l
   assert.equal(wouldAsk(call('Bash', 'bypassPermissions', { command: 'npm test' }), rules), false, 'full access asks nothing');
 });
 
+test('a path rule allows the edits under its pattern and no others, read as the harness reads it', () => {
+  const rules = { allow: ['Edit(/src/**)', 'Edit(//data/shared/*.json)', 'Edit(notes.md)'] };
+  const edit = (file_path, tool = 'Edit') => ({ ...call(tool, 'default', { file_path }), cwd: '/work/tree' });
+
+  assert.equal(wouldAsk(edit('/work/tree/src/a/b.ts'), rules), false, '/ is the session folder, ** crosses folders');
+  assert.equal(wouldAsk(edit('/work/tree/src/a/b.ts', 'Write'), rules), false, 'an Edit rule covers every edit tool');
+  assert.equal(wouldAsk(edit('src/a.ts'), rules), false, 'a relative call path is the session folder\'s');
+  assert.equal(wouldAsk(edit('/work/tree/lib/a.ts'), rules), true, 'outside the pattern');
+  assert.equal(wouldAsk(edit('/data/shared/x.json'), rules), false, '// is the filesystem root');
+  assert.equal(wouldAsk(edit('/data/shared/deep/x.json'), rules), true, '* stays inside one folder');
+  assert.equal(wouldAsk(edit('/work/tree/docs/notes.md'), rules), false, 'a bare name matches at any depth');
+  assert.equal(wouldAsk({ ...edit('/work/tree/src/a.ts'), cwd: undefined }, rules), true, 'no session folder places nothing');
+  assert.equal(wouldAsk(call('Bash', 'default', { command: 'rm -rf /work/tree/src' }), rules), true, 'an edit rule never covers a command');
+});
+
 test('an ask rule asks even where an allow covers the call', () => {
   assert.equal(wouldAsk(call('Bash', 'default', { command: 'npm test' }), { allow: ['Bash'], ask: ['Bash(npm test)'] }), true);
 });

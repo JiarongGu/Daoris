@@ -87,7 +87,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
    takes there. The `allow` kind decides a permission request held in the asking mode at its session's repository (`allow.once`,
    `allow.reject`, ended through the hold's own end) and a widening at its rule's reach (`allow.standing`, `allow.reject`,
-   settled recorded by the role), each taking effect at its keeping (`AllowKind`) and kept as an allow decision (below). The `files` kind decides an act a person's `ask`
+   settled recorded by the role), and a working session's asked press `{ press }` at its session's repository (`allow.once`, offered before
+   the person's card and run as the session's own; a leave or ten minutes falls to the card; Ask Daoris's press is never offered), each taking effect at its keeping (`AllowKind`) and kept as an allow decision (below). The `files` kind decides an act a person's `ask`
    in the rule file held at a start (`files.allow-run`, `files.allow-copy` at the repository, `files.allow-share` at the narrowest
    place covering both repositories), by writing the held act's own text, never the `ask`'s pattern, into the person's own layer
    of each repository it reaches in one write of the file (all layers or none), never the machine's, with the role and the decision (`FilesKind`, `FileAllows`); an ask naming
