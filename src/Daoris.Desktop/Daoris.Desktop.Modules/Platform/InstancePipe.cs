@@ -232,7 +232,6 @@ public sealed class InstancePipe : IDisposable
 
     internal PipeDelegate Delegate { get; }
 
-    /// <summary>Tells every window the driver's state moved (<c>STATE_CHANGED</c>), so what it reads of the roles' judge is asked again.</summary>
     internal void TellDriverState() => StatePublisher.Publish(_bus, StateScopes.Driver);
 
     internal PipeState State { get; } = new();

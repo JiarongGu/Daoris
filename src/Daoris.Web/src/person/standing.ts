@@ -38,7 +38,7 @@ export type HelpPressNow = {
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */
 export type HelpReverse = 'resume';
 
-/** The reverse press of a press Ask Daoris made: only a pause that was done, naming the quest or ask its resume carries. */
+/** The reverse press of a press Ask Daoris made: only a done pause, naming the quest or ask its resume carries. */
 export function helpReverse(press: HelpPressNow): HelpReverse | null {
   return press.route === 'WORK_PAUSE' && press.outcome === 'done' && (press.scope === 'quest' || press.scope === 'ask') && press.target ? 'resume' : null;
 }
