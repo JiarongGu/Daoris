@@ -127,7 +127,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         service.Add(new JsonObject
         {
             ["id"] = "q3", ["from"] = "backend", ["to"] = "engine", ["title"] = "Keep the note's author too",
-            ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1", ["parent"] = "q1",
+            ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1", ["parent"] = "q2",
         });
         service.Entries["q3"] = "ask:a1/engine";
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
@@ -233,7 +233,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                 new JsonObject
                 {
                     ["id"] = "q2", ["from"] = "engine", ["to"] = "backend", ["title"] = "What does the notes endpoint take?",
-                    ["body"] = "We need the contract.", ["status"] = "Open",
+                    ["body"] = "We need the contract.", ["status"] = "Open", ["parent"] = "q1",
                 },
             ];
             _serving = ServeAsync();

@@ -2,9 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The runs an observed event told under a branch is for. A branch carries one run's work, and its event is that run's. A branch two graph runs
-/// worked before each run had a tree of its own is each one's subject, and is told once for both: its event goes to each run whose own node of
+/// share is each one's subject, and is told once for both: its event goes to each run whose own node of
 /// the event's step is begun on that branch at the event's commit, and where none is, to each run whose graph names that step, never to
-/// whichever run the branch was mapped to first.
+/// whichever run the branch maps to first.
 /// </summary>
 internal static class ToldRuns
 {

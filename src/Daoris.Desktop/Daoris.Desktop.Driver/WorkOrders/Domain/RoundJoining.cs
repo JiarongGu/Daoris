@@ -17,8 +17,8 @@ internal sealed class RoundJoining(PlanRound round)
         var parts = EntryParts.Earlier(key, quest, snapshot);
         if (parts.Count == 0) return start;
 
-        var entry = new EntryParts(key, parts);
         var own = LineRuns.Own(quest, parts, snapshot);
+        var entry = new EntryParts(key, parts) { Run = own };
         if (own.Count == 0)
         {
             return start with

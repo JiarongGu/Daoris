@@ -44,16 +44,17 @@ public sealed class SharedRunBranchTests : NodeRunFixture
         Assert.DoesNotContain(pass.Said, line => line.Contains("neither governs it", StringComparison.Ordinal));
     }
 
-    /// <summary><c>claimed</c>, then a plugin's observed deploy on the run's branch.</summary>
+    /// <summary><c>claimed</c>, then a plugin's observed deploy on the run's branch, then the landing.</summary>
     private const string ClaimedDeployed = """
-        {"schemaVersion":2,"entries":["claimed"],"end":"deployed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
-         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"}]}
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>d","kind":"after","from":"claimed","to":"deployed"},{"id":"d>h","kind":"after","from":"deployed","to":"handed"}]}
         """;
 
     /// <summary>
     /// A plugin's event on a branch two runs share, told once for both, goes to the run whose own node awaits it there, never to the run the
-    /// branch maps to first: the earlier run's deploy was stopped, and the later run's is reached by the event.
+    /// branch maps to first: the earlier run's deploy is stopped, and the later run's is reached by the event.
     /// </summary>
     [Fact]
     public async Task An_event_on_a_shared_branch_goes_to_the_run_whose_node_awaits_it()

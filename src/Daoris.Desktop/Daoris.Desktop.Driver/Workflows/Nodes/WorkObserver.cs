@@ -111,7 +111,6 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             return ([], "", "", WorkRefusals.NotWatched);
         }
 
-        // A branch two runs share is told once for both: the event is each run's whose own node awaits it there.
         var kind = heard.Plugin + "/" + step;
         var runs = ToldRuns.Of(mapped, governed, told[0].Unit!, kind, frame.Commit, records.Read);
         var unit = runs[0];
