@@ -103,6 +103,9 @@ internal static class DriveUsagePlace
           repository connect [--workspace <name>] [--dry-run]
               register this checkout's repository with a knowledge service, any address: what it owns and what it
               accepts, so siblings know what to ask of it; --workspace wires it on this machine, in no tracked file.
+          repository add <folder> [--workspace <name>] [--exclude <glob>]... [--dry-run]
+              register a folder that is no git repository as a department worked in place, with its own daoris.json
+              read from disk where it holds one; --exclude names files its manifest passes by beside the defaults.
           repository register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `repository connect` would; a start and a line Daoris moves do the same on their own.

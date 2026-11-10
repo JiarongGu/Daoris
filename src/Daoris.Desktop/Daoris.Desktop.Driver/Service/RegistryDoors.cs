@@ -21,6 +21,7 @@ public sealed class RegistryDoors
         new(repo.Repository ?? "", repo.Adopted, repo.Root, RemoteTarget.Workspace(repo.Workspace))
         {
             Lanes = [.. (repo.Lanes ?? []).Select(lane => lane.Id).OfType<string>().Where(id => id.Length > 0)],
+            Excludes = repo.Excludes ?? [],
         };
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from.</summary>
@@ -119,6 +120,15 @@ public sealed class RegistryDoors
     public async Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default)
     {
         var plan = RegistryConnect.Plan(root, workspace, _service.BaseUrl);
+        var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
+        return new ConnectDone(plan, sent.Answer?.Workspace);
+    }
+
+    /// <summary>A folder that is no git checkout, registered as <see cref="FolderAdd.Plan"/> composes it: the window's add through its route.</summary>
+    public async Task<ConnectDone> AddFolderAsync(string root, string? workspace, IReadOnlyList<string> excludes, CancellationToken ct = default)
+    {
+        var plan = FolderAdd.Plan(root, workspace, excludes, _service.BaseUrl);
         var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
         if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
         return new ConnectDone(plan, sent.Answer?.Workspace);

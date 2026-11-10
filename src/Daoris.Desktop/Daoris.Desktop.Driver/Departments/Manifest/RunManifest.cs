@@ -21,6 +21,9 @@ public sealed record RunManifest(string Kind, string? Head, string? Branch, Date
     /// </summary>
     public IReadOnlyList<string>? Own { get; init; }
 
+    /// <summary>The person's own excludes a folder's manifest passed by, so its end and its review read the files its start did.</summary>
+    public IReadOnlyList<string>? Excludes { get; init; }
+
     /// <summary>A folder past the manifest's bounds: it lists nothing, and what changed there is not followed.</summary>
     public bool TooLarge { get; init; }
 

@@ -139,7 +139,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var place = context.Trees.Holds(workTree)
                 ? null
                 : await PlaceTurns.StartAsync(
-                    home, RemoteTarget.Workspace(start.Workspace), quest.To, folder, sessionId, continues?.Session ?? prior?.Session, ct).ConfigureAwait(false);
+                    home, RemoteTarget.Workspace(start.Workspace), quest.To, folder, sessionId, continues?.Session ?? prior?.Session, ct,
+                    PlaceExcludes.Of(registry.FirstOrDefault(view => string.Equals(view.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Excludes)).ConfigureAwait(false);
             var target = StartTargets.WithAccess(StartTargets.WithLanguage(asking, config, start.Workspace), access) with
             {
                 Place = place,

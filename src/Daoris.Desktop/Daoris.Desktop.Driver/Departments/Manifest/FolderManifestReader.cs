@@ -25,8 +25,10 @@ public static class FolderManifestReader
 
     /// <summary>The manifest of the folder at <paramref name="root"/>, its hashes reused from <paramref name="last"/> where they still stand.</summary>
     /// <returns>The manifest, or one that lists nothing and says it is too large where <paramref name="bounds"/> stop it.</returns>
-    public static RunManifest Read(string root, ContentStore content, RunManifest? last, ManifestBounds bounds, CancellationToken ct = default)
+    public static RunManifest Read(
+        string root, ContentStore content, RunManifest? last, ManifestBounds bounds, PlaceExcludes? excludes = null, CancellationToken ct = default)
     {
+        excludes ??= PlaceExcludes.Default;
         var at = DateTimeOffset.UtcNow;
         var clock = Stopwatch.StartNew();
         var known = last is { Kind: PlaceKind.Folder, TooLarge: false }
@@ -37,8 +39,8 @@ public static class FolderManifestReader
         {
             ct.ThrowIfCancellationRequested();
             if (entries.Count >= bounds.Files || clock.Elapsed > bounds.Time) return TooLarge(root, at);
-            if (FolderExcludes.Passes(file.Name)) continue;
             var path = Path.GetRelativePath(root, file.FullName).Replace(Path.DirectorySeparatorChar, '/');
+            if (excludes.Passes(path)) continue;
             var time = new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero);
             var sha = known.TryGetValue(path, out var was) && was.Size == file.Length && was.Time == time && last!.At - time > Racy
                 ? was.Sha256
@@ -46,7 +48,11 @@ public static class FolderManifestReader
             entries.Add(new ManifestEntry(path, "", sha, file.Length) { Time = time });
         }
 
-        return new RunManifest(PlaceKind.Folder, null, null, at, [.. entries.OrderBy(entry => entry.Path, StringComparer.Ordinal)]) { Root = root };
+        return new RunManifest(PlaceKind.Folder, null, null, at, [.. entries.OrderBy(entry => entry.Path, StringComparer.Ordinal)])
+        {
+            Root = root,
+            Excludes = excludes.Own,
+        };
     }
 
     private static RunManifest TooLarge(string root, DateTimeOffset at) =>

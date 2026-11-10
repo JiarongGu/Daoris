@@ -9,9 +9,36 @@ namespace Daoris.Desktop;
 /// <c>daoris repository register --repository &lt;name&gt;</c>. The page's bridge file for
 /// this domain is <c>bridge/registry.ts</c>.
 /// </summary>
-public sealed class RegistryRoutes(DriverLoop loop)
+public sealed class RegistryRoutes(DriverContext context)
 {
-    private readonly DriverLoop _loop = loop;
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly OpenFolder? _openFolder = context.OpenFolder;
+
+    // *Open* on a department's page: the folder the registry names for the repository, through the window kit's launcher. The module
+    // names the folder, never the page, and nothing machine-local comes back but whether it opened.
+    [DriverRoute("REGISTRY_OPEN_FOLDER", PipeClass.Window)]
+    [Owner("REGISTRY_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
+    private async Task<object?> RegistryOpenFolderAsync(RegistryOpenFolder press, CancellationToken cancellationToken)
+    {
+        var repository = (press.Repository ?? "").Trim();
+        var service = _loop.Service ?? throw NotReady();
+        var folder = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, null)
+            .Select(row => row.Root).FirstOrDefault();
+        if (folder is null) throw new DriverException($"`{repository}` has no folder here, so there is none to open.");
+        if (!Directory.Exists(folder)) throw new DriverException($"the folder of `{repository}` is not there now.");
+        if (_openFolder is null) return new { Opened = false };
+        try
+        {
+            await _openFolder.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            throw new DriverException($"the folder of `{repository}` would not open: {error.Message}");
+        }
+
+        return new { Opened = true };
+    }
 
     // One repository registered from what its line declares, as `connect` would send it, through the loop's own client, so
     // its outcome reaches this machine's log as every follow's does. A refusal is an answer, as a landing's is: what the

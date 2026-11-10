@@ -95,7 +95,8 @@ one job each, checked by `verify`.
     root is machine-local: answered to loopback callers only and stripped from anything that syncs. A registration's `kind` is
     `git` or `folder`: an import and the page's add say it from the root, the driver's follow reads a folder's again and registers
     one that became a git checkout as `git`, `connect`'s silence keeps the row's, and a row that never said is a repository's,
-    held where its root stops being one. (from D34, D48, D70, D254)
+    held where its root stops being one. A folder's registration also keeps the person's own `excludes`, globs its manifest passes by
+    beside the defaults: silence preserves them, an empty list clears them. (from D34, D48, D70, D254)
 
 **The connector**
 
