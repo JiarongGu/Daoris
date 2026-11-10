@@ -23,7 +23,6 @@
   "work.parts.spent.unsaid": "{{count}} turn, its tokens not said",
   "work.parts.spent.unsaid_other": "{{count}} turns, their tokens not said",
   "work.parts.began.asked": "asked by {{repository}}",
-  "work.parts.began.askedByAsk": "published by this line's own ask #{{ask}}",
   "work.parts.began.askedUnnamed": "asked by another session",
   "work.parts.began.recorded": "`{{began}}`, shown as recorded",
   "work.parts.label": "How this line of work's parts follow one another",

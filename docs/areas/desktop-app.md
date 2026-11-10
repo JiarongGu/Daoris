@@ -181,7 +181,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     that opens it, the quest, the ask it came from, the earlier session a hand-over or a go-on continues; a conversation names its
     repository and Ask Daoris its room and workspace (`work/head/startedFrom.tsx`). *Details* repeats it and has *Started with*,
     the requirement it began with, whole, said by the record it is: the quest's requirements, else the quest's words, else the
-    ask's, else a conversation's first message; the "How this came to be" fold says it where the trace draws no requirements. A
+    ask's, else a conversation's first message, and beside any of them the *Handed brief* its start was given (folded, read from
+    `SESSION_OPENINGS`' `briefs`); the "How this came to be" fold says it where the trace draws no requirements. A
     rail row of a line holding several quests names the quest its own session holds.
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)

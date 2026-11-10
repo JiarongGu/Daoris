@@ -111,7 +111,7 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
+  session, quest, opening, brief, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
@@ -307,6 +307,7 @@ export function SessionHead({
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
+  brief?: string | null;
   resolving?: boolean;
   /**
    * How a parked session is finished or declined, and a finish's close of its quest. Absent where nothing can
@@ -578,7 +579,7 @@ export function SessionHead({
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           // Where it came from and the requirement it started with, each said by the record that holds it.
-          ...startedRows(t, origins, startingOf(quest, ask, session, opening)),
+          ...startedRows(t, origins, startingOf(quest, ask, session, opening, brief)),
           // Whom it helps, the record's own link, a door where the frame holds it.
           linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
           // Its heavy run: the head's line opens to its gates here, or its wait with the holder a door.
