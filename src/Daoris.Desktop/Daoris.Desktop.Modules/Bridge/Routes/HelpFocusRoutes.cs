@@ -33,15 +33,28 @@ public sealed class HelpFocusRoutes(DriverContext context)
         if (press.Said)
         {
             var focus = new HelpVerbAsk("focus") { Id = press.Session, Text = asked.Said };
-            return await SessionsVerbs.HelpSaidAsync(_context, focus, cancellationToken).ConfigureAwait(false);
+            var said = await SessionsVerbs.HelpSaidAsync(_context, focus, cancellationToken).ConfigureAwait(false);
+            Swap(press.Session);
+            return said;
         }
 
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
         var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
-        return new HelpFocusing(_loop.Home)
-            .Choose(press.Session, records, registry, _loop.Events, adapter => SessionsVerbs.Resumes(_loop, adapter), asked)
-            .Wire();
+        var answer = new HelpFocusing(_loop.Home)
+            .Choose(press.Session, records, registry, _loop.Events, adapter => SessionsVerbs.Resumes(_loop, adapter), asked);
+        if (answer.Refused is null) Swap(press.Session);
+        return answer.Wire();
+    }
+
+    /// <summary>
+    /// A change waiting takes the next turn, as a change of access does: a running conversation's agent ends at its turn's end, or
+    /// now where idle, and its next words resume it under the new focus (<see cref="HelpFocusTurn"/>).
+    /// </summary>
+    private void Swap(string session)
+    {
+        if (!SessionEventText.IsId(session)) return;
+        _loop.Chat?.HelpFocusChosen(session, new HelpConversations(_loop.Home).Read(session).FocusNext is not null);
     }
 
     /// <summary>The place a press names, or null where it names none or a shape that is none.</summary>

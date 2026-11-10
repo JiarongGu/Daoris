@@ -303,8 +303,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await owner.TakenBackAsync(record, ct).ConfigureAwait(false);
+        // The focus these words take (ASKSCOPE2c), a change told in one line ahead of them.
+        var change = HelpFocusTurn.Apply(_context.Home, sessionId, record.Workspace, await FocusRegistryAsync(ct).ConfigureAwait(false));
         var ask = new ResumeAsk(
-            kept.Conversation, words,
+            kept.Conversation, change is null ? words : HelpFocusTurn.Ahead(words, change.Line),
             woke is { } until
                 ? LimitNotes.Resumed(until)
                 : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false),
@@ -321,5 +323,18 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         return await _runner.RunAsync(
             record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", new ChatAgent(_context.Harnesses.Adapters, adapter), selection, config,
             _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
+    }
+
+    /// <summary>The registry a focus is resolved against; null where the service did not answer, which widens nothing.</summary>
+    private async Task<IReadOnlyList<RepoView>?> FocusRegistryAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await _context.Service.RegistryAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }
