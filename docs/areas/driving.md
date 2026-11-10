@@ -421,7 +421,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     publish names the session that made it (a session's terminal names its own) and says when it carries no requirement. (from D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards
     only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
-    landing of it stays offered. (from D132)
+    landing of it stays offered; the home migration's `abandoned-runs` step does the same once for the runs of a declined quest or a
+    closed ask that an older build left live. A run with a step waiting on the person (an Accept, a task or approval, a
+    go-ahead, a held attempt) lists its newest session here in To review for an Accept and in Waiting on you otherwise, whatever
+    that session's own ending or archive mark, in the window and in `daoris session list` alike. (from D132)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
     forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
 

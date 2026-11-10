@@ -51,7 +51,7 @@ public static class SessionsCommand
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
         ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
-            "lands", "discards", "calling"];
+            "lands", "discards", "calling", "waits"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field.</summary>
     public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "head", "opens", "parts"];
