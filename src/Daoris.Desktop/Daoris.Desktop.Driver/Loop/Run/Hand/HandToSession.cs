@@ -296,7 +296,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 if (carried is not null) LimitCarried.Compact(spawn, carried);
                 var served = adapter.ServerHanding()?.Hand(spawn, home, connectors);
                 // The skills plugins hand sessions, composed under the home, gone with the session.
-                var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions);
+                var (skills, skillPlugins) = SpawnSkills.Hand(
+                    context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions, OwnTools.Machine(home, spawn));
 
                 // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
                 // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block

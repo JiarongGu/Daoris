@@ -164,7 +164,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
 15. A Claude session keeps the account's auto-memory, synced skills, synced plugins and connectors: its settings file says none
     of them, so the account's own settings decide, as by hand. Daoris writes no account home, vendor folder or the person's tool
-    home. (from D230, D253)
+    home. It is handed what the person's own run reads from that tool home (`CLAUDE_CONFIG_DIR`, else `.claude` in the profile,
+    its global file beside it), each family unless the person switches its default off (`OwnHomeDefaults`, `ClaudeOwnHome`):
+    the skills, subagents and commands copied into one harness plugin `own` beside Daoris's plugins (`own-skills`); the global
+    file's user-scope servers in that plugin's `.mcp.json`, but one named as Daoris's connector or whose environment names a
+    `DAORIS_` variable, and none to a pass held to Daoris's connector alone (`own-servers`); each plugin its user settings
+    enable at its user-scope install folder, read in place (`own-plugins`); and its Chrome switch as `--chrome` on the native
+    door (`own-chrome`). Nothing is handed to a session in the person's own home, on a plugin's door or under a scratch home.
+    Its settings file, its memory file and Codex's home are not handed. (from D230, D253, D262)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in
     its own file and the prompt names it. (from D230)
@@ -174,7 +181,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 **Permissions and posture**
 
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
-    defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
+    defaults `connector`, `commit`, `no-push`, `no-publish`, `tree-guard` and the four of the person's own tool home (rule 15),
+    each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
     the harness's own precedence decides, and `deny` wins. `tree-guard` refuses a write outside the session's tree and its declared
     targets, but a subagent's in the worktree its harness made for it beside the repository's main checkout
