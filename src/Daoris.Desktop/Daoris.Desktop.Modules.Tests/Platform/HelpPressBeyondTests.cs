@@ -46,6 +46,22 @@ public sealed class HelpPressBeyondTests
     }
 
     [Fact]
+    public void A_press_naming_only_a_quest_is_placed_at_the_repository_the_quest_asks()
+    {
+        var games = HelpFocus.OfWorkspace("Games");
+        var questOnly = Press("WORK_PAUSE", """{"quest":"q1"}""").Payload;
+        Assert.Equal("q1", HelpPressPlace.QuestOnly(questOnly));
+        Assert.Null(HelpPressPlace.QuestOnly(Press("WORK_PAUSE", """{"quest":"q1","workspace":"Work"}""").Payload));
+        Assert.Null(HelpPressPlace.QuestOnly(Press("SET_HOLD", """{"repository":"api"}""").Payload));
+
+        var api = HelpPressPlace.Of(questOnly, games, Registry, questTo: "api");
+        Assert.Equal((HelpFocus.OfRepository("Work", "api"), true), (api!.Place, api.Beyond));
+        var engine = HelpPressPlace.Of(questOnly, games, Registry, questTo: "engine");
+        Assert.Equal((HelpFocus.OfRepository("Games", "engine"), false), (engine!.Place, engine.Beyond));
+        Assert.Null(HelpPressPlace.Of(questOnly, games, Registry, questTo: "gone"));
+    }
+
+    [Fact]
     public void A_placed_press_keeps_its_place_and_whether_it_was_beyond_and_answers_them()
     {
         var record = new HelpPressRecord(new Clock(Noon));

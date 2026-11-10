@@ -460,8 +460,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     are held for the person (agents-and-harnesses 23). No settings grant reaches a role. (from D183, D205, D253)
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console, logged `help.pressed` and kept in this run's memory (`HelpPressRecord`: route, conversation,
-    when, outcome, and the workspace or repository it named with whether that was beyond its conversation's focus at the press,
-    `HelpPressPlace`; the newest 100, a restart empties it) and told to the windows, which list it in *Notifications* beside the
+    when, outcome, and the workspace or repository it named, or for a press naming only a quest the repository that quest asks,
+    with whether that was beyond its conversation's focus at the press, `HelpPressPlace`; the newest 100, a restart empties it) and told to the windows, which list it in *Notifications* beside the
     steward's line, each row opening its conversation and offering a pause's *Resume*. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
     Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)

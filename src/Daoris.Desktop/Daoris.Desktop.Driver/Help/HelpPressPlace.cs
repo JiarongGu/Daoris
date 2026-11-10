@@ -10,16 +10,25 @@ namespace Daoris.Driver;
 public sealed record HelpPressPlace(HelpFocus Place, bool Beyond)
 {
     /// <summary>
-    /// The place a press's payload named, its <c>workspace</c> and <c>repository</c> as a call's are read (<see cref="HelpBeyond.Place"/>);
-    /// null where it named neither, or a repository the registry does not hold.
+    /// The place a press's payload named, its <c>workspace</c> and <c>repository</c> as a call's are read (<see cref="HelpBeyond.Place"/>),
+    /// or, for a press naming only a quest, the repository that quest asks (<paramref name="questTo"/>); null where it named neither, or
+    /// a repository the registry does not hold.
     /// </summary>
-    public static HelpPressPlace? Of(JsonElement? payload, HelpFocus focus, IReadOnlyList<RepoView> registry)
+    public static HelpPressPlace? Of(JsonElement? payload, HelpFocus focus, IReadOnlyList<RepoView> registry, string? questTo = null)
     {
         if (payload is not { ValueKind: JsonValueKind.Object } named) return null;
         var workspace = Json.NonEmpty(named, "workspace")?.Trim();
         var repository = Json.NonEmpty(named, "repository")?.Trim();
+        if (workspace is null && repository is null) repository = QuestOnly(payload) is null ? null : questTo?.Trim();
         if (workspace is null && repository is null) return null;
         var place = HelpBeyond.Place(new HelpPlaceNote(DateTimeOffset.MinValue, "press", workspace, repository, null), focus, registry);
         return place is null ? null : new(place, HelpBeyond.Outside(focus, place));
     }
+
+    /// <summary>The quest a press names where it names no workspace or repository, whose repository is then its place; else null.</summary>
+    public static string? QuestOnly(JsonElement? payload) =>
+        payload is { ValueKind: JsonValueKind.Object } named
+        && Json.NonEmpty(named, "workspace") is null && Json.NonEmpty(named, "repository") is null
+            ? Json.NonEmpty(named, "quest")?.Trim()
+            : null;
 }
