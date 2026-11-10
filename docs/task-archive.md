@@ -5,6 +5,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CODESTRREV3a, b and KNOWREV3a, b — a lock's holder by pid and start, a deleted session's staged memory dropped, a fair memory search (2026-11-10)
+
+> **CODESTRREV3a, b** (tools): Outcome: the gate tree's and the CI watch's locks record their holder's process start beside its pid, and `running` means the pid lives and is that holder (`tools/merge-branch/holder.mjs`: `processStart`, `sameHolder`, `holderRuns`); a take-over ends only the children created after the dead holder began and before its pid was taken again (`endOrphans(parent, since, until)`). Proof: `tool-test/merge-branch/holder.test.ts` (not seen failing first).
+> **KNOWREV3a, b** (service, connector): Outcome: deleting a session drops its staged memory rows in the same transaction, nothing staged applying by itself, and an awaiting replacement whose session is gone is listed as a wait with no session; a memory search across repositories takes its ten places round-robin across the members, each engine's order kept within. Proof: `MemoryDecisionTests` (seen failing first), `McpMemoryToolsTests`.
+
+## PLACEWORK1b — the design for work in place under a writer's lease (2026-11-10)
+
+> **PLACEWORK1b** (records; D254, D258): Outcome: `docs/2026-11-10-place-work-design.md`. The writer's lease is the ledger's, held by a running turn and, in a git place, by a line's uncommitted work; a manifest at each turn's start and end with a text content store; four place kinds (git, jj, folder, system); an `isolate` node kind with `kind`, `at-once` and `overlap` and four providers, each place kind's return (git's landing, a folder's or jj's `return`); systems through plan, review and `apply`; the migration (`PlaceWorkStep` converts `trees` and `overlap`). D258: the count on the step, not a place setting; the lease lasts a turn. Rows 1c-1j wait for the owner's read.
+
+---
+
 ## ASKFULL1a — a delegate key for every session, its press judged by its tier (2026-11-10)
 
 > **ASKFULL1a** (driver, modules, web; D253 points 1, 5, 6): Outcome: every session Daoris starts is handed its own delegate key (`DAORIS_DELEGATE_KEY`, drawn per start in `Platform/DelegateKey.cs`, its hash held by session in `Agents/SessionDelegates.cs`, forgotten at the process's end, the conversation's end and an access swap; stripped at every executable's entry and dropped from every other start beside `DAORIS_ROLE_KEY`); the `daoris` verb takes it at its entry and proves a person's press over the hello's nonce (`Instance/DelegateProof.cs`, one keyed-proof type `Platform/KeyedProof.cs` shared with the holder key and the supervisor's proof). The pipe judges a proved press by its tier (`Modules/Platform/PipeDelegate.cs`, seam `InstancePipe.Delegates`): a full-access Ask Daoris press runs with no card, said on its conversation (`HelpPressed`) and logged `help.pressed`; restricted's goes to the card naming Ask Daoris; another kind's to a card naming its session; a bad proof, a reused nonce or a session with no key is refused `delegate-unproved`. Restricted Ask Daoris runs `daoris` (`Bash(daoris:*)`, `PowerShell(daoris:*)`), and the room says full access acts as the person and restricted asks. The person-route words ASKFULL1b's routes lacked are in both catalogues. Proof: `PipeDelegateTests`, `DelegateKeyStripTests`, `SessionProcessesProcessTests`, `HelpAccessSwapTests`, the room goldens, both projects' censuses. Not seen in the window.
