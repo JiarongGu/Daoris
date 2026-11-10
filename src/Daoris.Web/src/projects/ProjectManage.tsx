@@ -5,6 +5,8 @@ import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
 import { FolderExcludesField, parseExcludes } from './FolderExcludesField';
+import { SystemChoiceField, systemsOffered } from './SystemChoiceField';
+import { usePlugins } from '../bridge/plugins';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
@@ -48,15 +50,41 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
   const [found, setFound] = useState<FolderInspection | null>(null);
   const [workspace, setWorkspace] = useState(initialWorkspace ?? '');
   const [excludes, setExcludes] = useState('');
+  // A system reached only through its console, chosen in place of a folder: it has no folder to pick.
+  const [system, setSystem] = useState<string | null>(null);
+  const [systemName, setSystemName] = useState('');
+  const plugins = usePlugins({ enabled: system !== null });
   const filled = Boolean(initialWorkspace);
 
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
-    onSuccess: (inspection) => { if (inspection) setFound(inspection); },
+    onSuccess: (inspection) => { if (inspection) { setFound(inspection); setSystem(null); } },
     onError: failure(notify),
   });
 
+  const addSystem = (chosen: string) => {
+    const name = systemName.trim() || (chosen.split('/')[1] ?? chosen);
+    register.mutate({
+      repository: name,
+      adopted: false,
+      kind: 'system',
+      system: chosen,
+      ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
+    }, {
+      onSuccess: (registered) => {
+        notify(t('projects.manage.added', { name, workspace: registered.workspace }));
+        onAdded?.(registered.repository);
+        onClose();
+      },
+      onError: failure(notify),
+    });
+  };
+
   const add = () => {
+    if (system) {
+      addSystem(system);
+      return;
+    }
     if (!found) return;
     register.mutate({
       repository: found.name,
@@ -111,7 +139,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
         <div className="flex items-center gap-2">
           <Button
             variant="primary"
-            disabled={!found?.exists || register.isPending}
+            disabled={(system === null ? !found?.exists : !system) || register.isPending}
             onClick={add}
           >
             {t('projects.manage.register')}
@@ -122,11 +150,27 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     >
       <p className="text-body text-ink-soft">{t('projects.manage.addBody')}</p>
 
-      <Button className="mt-3" onClick={choose} disabled={pick.isPending}>
-        {t('projects.manage.choose')}
-      </Button>
+      <div className="mt-3 flex gap-2">
+        <Button onClick={choose} disabled={pick.isPending}>
+          {t('projects.manage.choose')}
+        </Button>
+        <Button onClick={() => { setSystem(''); setFound(null); }}>{t('projects.manage.chooseSystem')}</Button>
+      </div>
 
-      {!found && filled && <div className="mt-4 border-t border-line pt-3.5">{field}</div>}
+      {system !== null && (
+        <div className="mt-4 border-t border-line pt-3.5">
+          <SystemChoiceField
+            offered={systemsOffered(plugins.data?.plugins ?? [])}
+            system={system}
+            name={systemName}
+            onSystem={setSystem}
+            onName={setSystemName}
+          />
+          {field}
+        </div>
+      )}
+
+      {!found && system === null && filled && <div className="mt-4 border-t border-line pt-3.5">{field}</div>}
 
       {found && (
         <div className="mt-4 border-t border-line pt-3.5">

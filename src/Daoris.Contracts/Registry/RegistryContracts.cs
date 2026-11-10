@@ -12,9 +12,7 @@ namespace Daoris.Contracts.Registry;
 /// registrations are the family. <c>Workspace</c> is null when the client said nothing, which preserves the row; <c>DefaultBranch</c>
 /// likewise. The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
 /// <c>Adopted</c> is false only from a door that looked and found no manifest. <c>Lanes</c> are the words of the lanes it declares,
-/// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> (<c>git</c>, <c>folder</c> or <c>system</c>) does,
-/// and a null <c>System</c>, a system department's adapter as <c>&lt;plugin&gt;/&lt;system&gt;</c>.
-/// </summary>
+/// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> and <c>System</c> (its adapter, plugin/system) do.</summary>
 public sealed record RegisterRepository(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,

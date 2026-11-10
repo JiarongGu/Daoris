@@ -61,10 +61,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
         Assert.Equal(expected.Order(StringComparer.Ordinal), Served(new SessionWork(work)));
     }
 
-    /// <summary>
-    /// A quest's session in a system department is served <c>system_plan</c> beside its own; one in a repository or a folder is refused it,
-    /// so a build session's definitions stay within the measure below.
-    /// </summary>
+    /// <summary>A quest's session in a system department alone is served <c>system_plan</c>, keeping a build session within the measure below.</summary>
     [Theory]
     [InlineData(ParticipantWork.Build)]
     [InlineData(ParticipantWork.Design)]

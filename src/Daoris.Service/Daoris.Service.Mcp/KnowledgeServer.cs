@@ -58,7 +58,6 @@ public static class KnowledgeServer
         // And its chosen settings (HELPMODE1c3): the same kind of request, each setting refused unless the person granted it.
         typeof(ChosenSettingsTools),
         typeof(CheckoutTools),
-        // A system department's plan, which the driver hands to the system's adapter.
         typeof(SystemPlanTools),
     ];
 

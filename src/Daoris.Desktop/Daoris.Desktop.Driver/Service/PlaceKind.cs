@@ -8,8 +8,6 @@ public static class PlaceKind
 {
     public const string Git = "git";
     public const string Folder = "folder";
-
-    /// <summary>A system reached only through its console: no folder, its adapter named on the registration (<see cref="SystemPlace"/>).</summary>
     public const string System = "system";
 
     /// <summary>The kind a registration's word names, where it names one this side reads; null otherwise.</summary>

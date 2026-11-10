@@ -28,7 +28,6 @@ const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];
 const CONVERSING = ['go_ahead_ask', 'handover_propose', 'opinion_answer', 'permission_propose'];
-// A quest's session in a system department is served `system_plan` beside these, which no column below shows.
 const WORKING = [...CONVERSING, 'question_ask', 'review_ready', 'review_serve'];
 const without = (tools: readonly string[], left: readonly string[]) => tools.filter((tool) => !left.includes(tool));
 

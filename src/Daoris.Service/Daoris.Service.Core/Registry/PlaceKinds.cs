@@ -1,9 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A department's kind on its registration: a git checkout's top, any other folder, which is driven in place with a manifest in
-/// place of git, or a system reached only through its console, which has no folder and names its adapter's system instead. Its twin
-/// is the driver's <c>PlaceKind</c>, which reads a registration's word and a root the same way.
+/// A department's kind on its registration: a git checkout's top, any other folder, driven in place with a manifest, or a system
+/// reached through its console, which names its adapter. Its twin is the driver's <c>PlaceKind</c>.
 /// </summary>
 public static class PlaceKinds
 {
@@ -20,10 +19,7 @@ public static class PlaceKinds
         _ => null,
     };
 
-    /// <summary>
-    /// A system department's <c>&lt;plugin&gt;/&lt;system&gt;</c>, trimmed, or null where the word is not two ids about one slash: what
-    /// a registration keeps of its adapter, never a path. Whether that plugin is installed is the driver's to judge.
-    /// </summary>
+    /// <summary>A system's adapter, <c>&lt;plugin&gt;/&lt;system&gt;</c> trimmed, or null where the word is not two ids about one slash.</summary>
     public static string? SystemOf(string? word)
     {
         var trimmed = word?.Trim() ?? "";

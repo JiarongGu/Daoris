@@ -204,7 +204,6 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("memory_write")]
     [InlineData("memory_end")]
     [InlineData("memory_propose")]
-    // A system department's plan, which changes nothing in the system until the person's review is applied.
     [InlineData("system_plan")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
