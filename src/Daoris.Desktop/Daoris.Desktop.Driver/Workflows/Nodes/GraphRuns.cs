@@ -196,7 +196,7 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
 
     /// <summary>
     /// The branch the subjects of its gates, its landing and its plugin's nodes before the landing are: the one its newest work quest's session
-    /// worked, found by its records whether its tree stands or not; null where none, or where it is held (two runs produced it).
+    /// worked, found by its records whether its tree stands or not; null where none, or where it is held (Current's work is on it too).
     /// </summary>
     public WorkUnit? Branch { get; init; }
 
@@ -289,8 +289,8 @@ public static class RunSubjects
 }
 
 /// <summary>
-/// Who owns each quest and branch a pass reads, between Current's graphs and the runs bound to graph versions: a quest whose run is a graph run is that run's; a branch is a run's where every quest that produced it is of that one run, held
-/// where they name two runs and one of them is a graph run, and Current's otherwise. While the work's attribution is not read, no branch of a
+/// Who owns each quest and branch a pass reads, between Current's graphs and the runs bound to graph versions: a quest whose run is a graph run is that run's; a branch is each run's whose quests produced it where all
+/// of them are graph runs, held where Current's work is on it beside a graph run's, and Current's otherwise. While the work's attribution is not read, no branch of a
 /// repository holding an open graph run is Current's. Pure.
 /// </summary>
 public sealed class RunOwners
@@ -345,12 +345,16 @@ public sealed class RunOwners
             .Distinct(StringComparer.Ordinal),
     ];
 
-    /// <summary>The graph run a branch unit is, where every quest that produced it is of that one run; null otherwise.</summary>
-    public GraphRun? Owns(WorkUnit branch) => RunsOf(branch) is [var only] ? _runs.GetValueOrDefault(only) : null;
+    /// <summary>
+    /// The graph runs a branch unit is the subject of: each run whose quests produced it, where every one of them is a graph run's, as when a
+    /// later run's session works in the tree an earlier run's opened; none where Current's work is on it too.
+    /// </summary>
+    public IReadOnlyList<GraphRun> Governing(WorkUnit branch) =>
+        RunsOf(branch) is { Count: > 0 } runs && runs.All(_runs.ContainsKey) ? [.. runs.Select(run => _runs[run])] : [];
 
     /// <summary>
-    /// Why no graph governs a branch unit, or null where Current may: it is a graph run's, two runs produced it and one is a graph run's, or
-    /// its repository holds an open graph run while the work's attribution is not read.
+    /// Why no graph governs a branch unit, or null where Current may: it is a graph run's, or its runs', Current's work and a graph run's are on
+    /// it, or its repository holds an open graph run while the work's attribution is not read.
     /// </summary>
     public string? Keeps(WorkUnit branch)
     {
@@ -358,13 +362,16 @@ public sealed class RunOwners
         if (branch.Owner.Repository is { } repository && _unreadIn.Contains(repository)) return Unread;
         var runs = RunsOf(branch);
         if (!runs.Any(_runs.ContainsKey)) return null;
-        return runs.Count == 1 ? Run : Held;
+        return runs.All(_runs.ContainsKey) ? Run : Held;
     }
 
-    /// <summary>A graph run's branch: its graph holds what it wants done on it, and its repository's landing cycle does not run there.</summary>
+    /// <summary>
+    /// A graph run's branch, or several graph runs': each run's graph holds what it wants done on it, and its repository's landing cycle does not
+    /// run there.
+    /// </summary>
     public const string Run = "run";
 
-    /// <summary>Two runs' work on one branch, one of them a graph run's: neither engine governs it, said.</summary>
+    /// <summary>Current's work and a graph run's on one branch: neither engine governs it, said.</summary>
     public const string Held = "held";
 
     /// <summary>A branch whose work's attribution is not read in a repository holding an open graph run: never handed to Current on a guess.</summary>
