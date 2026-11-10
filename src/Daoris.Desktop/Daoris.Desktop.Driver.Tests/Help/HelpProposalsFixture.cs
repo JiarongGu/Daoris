@@ -144,15 +144,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Asked);
     }
 
-    /// <summary>What the browser's door refuses with, as the Browser screen's route would; null to make the change.</summary>
-    public string? BrowserRefusal { get; init; }
-
-    public void ChangeBrowser(string setting, string value, string? address, string? title)
-    {
-        if (BrowserRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
-    }
-
     public HistoryOutcome? HistoryCleared { get; set; }
 
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)

@@ -442,14 +442,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
     held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules
-    (`settings notify|cap|cooloff|quiet|keep`). A press of Ask Daoris's that
-    no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
+    (`settings notify|cap|cooloff|quiet|keep`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
+    favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
+    the terminal sends where Daoris runs and writes alone where it does not). A press of Ask Daoris's that
+    no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
+    a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
+    kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting kind is gone; the ask, agent, plugin, browser, sync,
-    clear, workflow, setup and role kinds remain, with `go`; the agent kind keeps `update` and `pin`, whose verbs run at the
-    terminal and have no press yet). `sessions archive --ended` stays a terminal's own, an archive being
+    whole, tool to card, with the change that gives its route a view (the setting, agent and browser kinds are gone; the ask, plugin,
+    sync, clear, workflow, setup and role kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
