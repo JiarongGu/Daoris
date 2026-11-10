@@ -15,7 +15,7 @@ public sealed class AcpAttemptedChainTests
         var first = prompting.Attempted(Word("w1", () => throw new InvalidOperationException("the record answered nonsense")));
         var second = prompting.Attempted(Word("w2", () => Task.FromResult<IReadOnlyList<string>>(["w2"])));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => first);
+        await Assert.ThrowsAsync<AcpWordsUnmarked>(() => first);
         Assert.True(await second);
     }
 }
