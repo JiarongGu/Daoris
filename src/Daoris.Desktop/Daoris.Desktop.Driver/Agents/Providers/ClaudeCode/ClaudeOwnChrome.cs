@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// session as <c>--chrome</c>, the flag their own run reads the same way. The browser and its extension are the person's own.
 /// </summary>
 /// <remarks>
-/// Handed on the native door alone: the protocol door's adapter starts <c>claude</c> itself and takes no flag of Daoris's for it.
+/// The native door is handed the flag, the protocol door the SDK's <c>extraArgs</c> (<see cref="ClaudeProtocolDialect"/>).
 /// </remarks>
 internal static class ClaudeOwnChrome
 {

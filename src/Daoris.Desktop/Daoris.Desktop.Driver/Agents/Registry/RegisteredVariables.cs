@@ -51,6 +51,9 @@ internal static class RegisteredVariables
         ];
     }
 
+    public static bool Registered(string name) =>
+        Built.Value.Concat(ByProvider).Any(entry => entry.Value.Contains(name, StringComparer.OrdinalIgnoreCase));
+
     /// <summary>What <paramref name="provider"/> declares; its doors' account agents' keys read through <paramref name="registry"/> where one is given.</summary>
     internal static IReadOnlyList<string> Declared(Provider provider, ProviderRegistry? registry) =>
     [

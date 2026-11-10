@@ -436,13 +436,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
     archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
-    pause and resume of an ask's or a quest's work, and an account's model and effort (`agent settings`). A press of Ask Daoris's that
+    pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
+    used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), and a repository's drive, hold and
+    own-tree switches (`place drive|undrive|hold|resume|trees`). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, ask, agent, account, plugin, browser, sync,
-    clear, workflow, setup and role kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
+    whole, tool to card, with the change that gives its route a view (the setting, ask, agent, plugin, browser, sync,
+    clear, workflow, setup and role kinds remain, with `go`; the agent kind keeps `update` and `pin`, whose verbs run at the
+    terminal and have no press yet). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request

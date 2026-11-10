@@ -12,6 +12,8 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
 
     public IReadOnlySet<string> Owing(string home) => WorkflowObligations.Owing(home);
 
+    public IReadOnlyList<PersonWait> PersonWaits(string home) => PersonWaitReader.Read(home);
+
     public string? Unusable(string home, string workflow)
     {
         if (WorkflowStore.Load(home, workflow) is not { } found)

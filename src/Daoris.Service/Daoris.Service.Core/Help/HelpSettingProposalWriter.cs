@@ -4,7 +4,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes: one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `quiet`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `quiet`, `keep` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
@@ -14,16 +14,14 @@ public sealed record SettingChange(string Door, string? Target, string? Workspac
 internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
-    /// lists them — every <c>daoris place</c>, <c>settings</c>, <c>quest</c> and <c>git</c> setting verb but <c>list</c>.
+    /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c> lists them.
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
+        "line", "across", "standing", "language", "review", "opinion",
         "helpers", "commits", "retry", "notify", "cap", "cooloff", "quiet", "keep", "git-use",
     ];
 
-    /// <summary>The flags a review's words may carry, as <c>daoris place review</c> takes them.</summary>
     private static readonly IReadOnlyList<string> ReviewFlags =
         ["--kind", "--procedure", "--address", "--run", "--drop", "--clear", "--required", "--not-required"];
 
@@ -60,11 +58,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
         var circle = !string.IsNullOrWhiteSpace(change.Workspace);
         switch (door)
         {
-            case "drive" or "undrive" or "hold" or "resume":
-                return named ? null : $"`{door}` names the repository it is for.";
-            case "trees":
-                if (!named) return "`trees` names the repository it is for.";
-                return value is "on" or "off" ? null : "`trees` is set `on` or `off`.";
             case "line":
                 if (named == circle) return "a line is set for a repository or a workspace — name exactly one.";
                 return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;

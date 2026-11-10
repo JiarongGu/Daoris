@@ -20,7 +20,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Points and frames | `Knowledge/Domain/PluginVocabulary.cs` (`HookPoints`), `Plugins/Domain/HookPoints.cs` (`HookFrames`) | The point names, and the one builder of each point's frame |
 | Wire | `Plugins/IHookChannel.cs` (the port), `HookPeer.cs`, `HookChannels.cs`, `HookSet.cs`, `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
 | Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | Whether a plugin performs pull-request steps; `work/state` at its occasions; a pull request's address is written from its `pull-request` step's evidence (`PullRequestRecords`) |
-| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PlacedWork.cs`, `Plugins/PlaceHostTokens.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
+| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PlacedWork.cs`, `Plugins/PlaceHostTokens.cs`, `Plugins/HandRefusals.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
 | Harness | `Plugins/PluginDoors.cs`, `Plugins/PluginAgentSkills.cs` | A manifest's harness converted to Agents' `DeclaredDoor` (its named fields alone, its `posture`, `fullPosture` and `askingPosture` among them), which Agents' `DeclaredDoors` makes a protocol-transport contract door and the registry places by its `accountOf`; the sound skills each contributing plugin hands a destination, as `SkillSource` values a door's skill layout lays out at spawn |
 | Install | `Plugins/PluginInstall.cs` | Add, add an offer, plan and apply an update, replace, remove; every swap staged beside |
 | Source record | `Plugins/Domain/PluginSource.cs` | `.daoris-source.json` (folder, offer with digest, or package); an update's change rows |
@@ -86,7 +86,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 17a. The two pull-request plugins perform one step, `pull-request`, on `work/perform` and answer `work/state`, through their
     service's REST API with `DAORIS_HOST_TOKEN`: the API token of the identity serving origin (`PluginHostToken`), set by `HookProcess`
     around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
-    serves origin, the identity is read only, Write denies, no API token) is not started. They run no git, `gh` or `az`, and declare
+    serves origin, the identity is read only, Write denies, no API token) is not started: the refusal is logged as `refused`, never as a
+    start that failed (`unstartable`), counts as no exit toward unsound, and the hand is asked again a minute later (`HandRefusals`), so a
+    token set later starts the process with no press. `plugin try` takes no hand, so it passes a plugin the loop refuses. They run no git, `gh` or `az`, and declare
     node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
     unsound mark and idle stop are its place's own, and `PlaceHostTokens` (given to `HookSet` by the loop and the headless host) reads
@@ -143,7 +145,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 **Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`,
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
-`PluginToolsTests`, `PluginToolSetUpTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
+`PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;

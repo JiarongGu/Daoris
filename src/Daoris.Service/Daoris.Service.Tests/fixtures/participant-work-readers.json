@@ -75,6 +75,14 @@
       "reads": "other",
       "note": "a stored session's marks copied onto its view where they hold a value; it tells no work by them"
     },
+    "Transitional/Migration/AbandonedRunsStep.cs": {
+      "reads": "other",
+      "note": "a run's binding names its ask, tested for null to find the ask's close; it tells no session's work by a mark"
+    },
+    "WorkOrders/Domain/PlaceHolders.cs": {
+      "reads": "tells",
+      "note": "tells an ask's, a second opinion's, a helper's or a decision's record, which holds no place, by its marks; no row of this design moves it"
+    },
     "WorkOrders/AtWorkExchangeReading.cs": {
       "reads": "tells",
       "row": "1q",

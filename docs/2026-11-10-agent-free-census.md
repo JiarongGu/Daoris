@@ -34,14 +34,14 @@ names the commit that lifts it, or the row that will where its code is another b
 | 19 | every protocol door | `fs` and `terminal` declared off | `AcpProtocol.Capabilities` | nothing: the harness uses its own file tools and shell | D53 | narrows nothing |
 | 20 | Claude, native | `ENABLE_TOOL_SEARCH=false` | the spawn shell (`Spawning.cs`) | nothing: every tool is listed at the start | D230 | narrows nothing |
 | 21 | every door | the role variables cleared | the spawn shell | the person's and the holder's keys reaching a session | D208, D253 | **keep**: the person's own keys stay the window's |
-| 22 | every door | every other provider's registered credential and home dropped | the spawn shell | another agent's key or sign-in reached from a session's shell | D49, D172 point 3, agents rule 28 | **keep**: the person's own sign-ins stay the person's; a session reaches another agent through a co-worker or a quest |
-| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**: made for Claude Code (D262): the account's home stays, and the person's skills, subagents, commands, servers and enabled plugins reach both doors and the Chrome switch the native door, each family the person's to switch off; its settings file, its memory file and Codex's home stay open (the design below) |
+| 22 | every door | every other provider's registered credential and home dropped | the spawn shell | another agent's key or sign-in reached from a session's shell | D49, D172 point 3, agents rule 28 | **keep**, confirmed with row 23 made: a session runs on the account the walk chose, and another agent's key in its shell would start that agent on the person's own sign-in, which Daoris never starts work on and whose limits it never reads; the harness's every tool still runs, and another agent is reached as a co-worker or a quest on an account of its own set. The person's settings and Codex's home are handed with the same floor (no sign-in, provider or home variable) |
+| 23 | every door | a configuration home Daoris owns, per account | the spawn shell, agents rule 17 | the person's own tool home: its user-level skills, subagent definitions, servers, settings (Claude in Chrome's switch among them), its memory file; Codex's own configuration and its servers | D175, D197: a start runs on the account the walk chose | **lift**: made (D262, D266): the account's home stays, and the person's skills, subagents, commands, servers, enabled plugins, settings, memory file and Chrome switch reach both of Claude Code's doors, and Codex's configuration, instructions, skills and prompts its door, each family the person's to switch off; Codex's own servers stay open (the design below) |
 | 24 | Claude, both | a driven session's mode: `auto`, else `acceptEdits` (protocol), `acceptEdits` (pipe); `agent` on Codex | agents rule 21 | a tool call outside the mode's reach: refused on the pipe door and in the judged modes | D81, D184 | mode **keep** (the person's access setup chooses another); the refusal **lift**, held by ASKFULL1 (D253 points 5-6: held for the person, never refused) |
 | 25 | Claude, Lyntai's layer | the three flow tools a headless turn cannot answer, always denied | `ClaudeDrivenLayer` | asking the person a question, entering and leaving plan mode | AGENTLYNTAI1s-ii | open: the owner's measurement decides (that row) |
 | 26 | Codex | no rule language, so none of the person's denies | agents rule 19 | nothing; it holds fewer narrowings than Claude's doors | D72, D213 | narrows nothing |
 | 27 | every door | full access and the asking mode only on the person's setting | agents rule 22 | nothing a hand run has by default | D183, D184 | **keep**: the person's rule |
 | 28 | every door | writes to another checkout only where the person declared it | agents rule 25, `AcrossRules` | a write in another registered checkout | D107 | **keep**: the person's rule |
-| 29 | Claude, native | the repository's `.mcp.json` servers, approved in the person's own home, not in an account's | agents rule 13, contradiction 12 | unmeasured: whether an account's home holds the approval the person gave by hand | D72 | to measure under row 23's design |
+| 29 | Claude, native | the repository's `.mcp.json` servers, approved in the person's own home, not in an account's | agents rule 13, contradiction 12 | nothing on the native door: measured on Claude Code 2.1.322 signed out, with no model call, a `-p` run in a home holding no approval and a folder never trusted starts the repository's `.mcp.json` server, while `claude mcp list` there says it waits for approval | D72 | **keep**, nothing to lift: a by-hand approval is not needed under `-p`, and one the person gave in their user settings reaches the session with them (`own-settings`); the protocol door runs the same program through the SDK, unmeasured there until a signed-in open names a repository server |
 
 ## What the lifts change
 
@@ -50,15 +50,14 @@ names the commit that lifts it, or the row that will where its code is another b
 - Row 5: the tree guard lets a write through when the call is a subagent's (`agent_id` present), its working directory is
   a worktree under the harness's own subagent folder (`.claude/worktrees/<name>`) of the session tree's main checkout, and
   that worktree's git directory is the session's repository's. The session's own agent still writes only in its tree.
-- Row 23: a Claude session is handed what the person's own run reads from its tool home, family by family, as the design below
-  says; nothing of it is written, and each family is a default of the person's rules.
+- Row 23: a Claude or Codex session is handed what the person's own run reads from its tool home, family by family, as the design
+  below says; nothing of it is written, and each family is a default of the person's rules.
 
 ## Rows for other builders
 
-- Row 23's open pieces: the person's settings file and memory file, the Chrome switch on the protocol door, and Codex's home.
+- Row 23's open piece: Codex's own servers, which must join the open's connector plan as a source of their own (the design below).
 - Row 24's refusal is ASKFULL1's (D253 points 5-6).
 - Row 25 is AGENTLYNTAI1s-ii's measurement.
-- Row 29 is measured with row 23.
 
 ## Row 23's design: the person's own tool home
 
@@ -76,15 +75,18 @@ under the variable, else `.claude.json` in the profile).
 | skills, subagents, commands | `skills/`, `agents/`, `commands/` | copied into one harness plugin, `own`, beside Daoris's plugins, named by `--plugin-dir` or the open's meta; its pieces are named `own:<name>` | `own-skills` | copies only: the person's folder is read, never linked or written |
 | servers | the global file's `mcpServers` (user scope) | the same plugin's `.mcp.json` | `own-servers` | a server named as Daoris's connector, or whose environment names a Daoris variable (its identity, its keys), is left out; a pass held to Daoris's connector alone (rule 13) is handed none |
 | plugins | each plugin the user settings' `enabledPlugins` enables, at its user-scope install folder (`plugins/installed_plugins.json`) | the install folder by the same door, read in place as by hand | `own-plugins` | none beyond the plugin's own |
-| the Chrome switch | `claudeInChromeDefaultEnabled` in the global file | `--chrome` on the native door | `own-chrome` | none: the browser is the person's own |
-| settings, memory file | `settings.json`, `CLAUDE.md` | not handed | — | the one `--settings` tier is Daoris's rules file, and merging the person's file into it would raise their user tier over the repository's, which no by-hand run does; a memory file has no session-only door but `--add-dir`, which grants the folder's files too |
+| the Chrome switch | `claudeInChromeDefaultEnabled` in the global file | `--chrome` on the native door; on the protocol door the SDK's `extraArgs` (`{ chrome: null }`) in the open's options | `own-chrome` | none: the browser is the person's own |
+| settings | `settings.json` | merged into the session's rules file beneath what outranks it: a list joins Daoris's (the harness joins lists across tiers), a value comes in only where Daoris's file, the repository's `.claude/settings.json` and `settings.local.json` in the session's folder and the account's own `settings.json` set none | `own-settings` | nothing that signs in (`apiKeyHelper`, the login and cloud keys), sets the mode (`permissions.defaultMode`), names plugins or switches hooks off; no variable the session's process holds, a Daoris one, any provider's home, key or pin, or a sign-in one; a pass shaped for one job takes no allow, extra folder, hook or project-server approval |
+| memory file | `CLAUDE.md` | appended to the system prompt: `--append-system-prompt-file` naming the file on the native door, its text on the SDK's `claude_code` preset (`systemPrompt.append`) on the protocol door | `own-memory` | read where it lies; an `@` import is handed as written |
 
 Each switch is a default of the person's rules (agents rule 18), on until they switch it off. The global file is read for the
 named keys alone: its sign-in and its project entries are never read, and no other account's home is read at all.
 
 **Codex** reads `CODEX_HOME`, else `.codex` in the profile: `config.toml` (its servers, profiles, features), `AGENTS.md`,
-`skills/`, `prompts/`. Its doors have no plugin folder and no settings tier, and its servers would ride the open's `session/new`
-from the plan once `config.toml` is read; not built here.
-
-Row 29 stays unmeasured: a repository's `.mcp.json` approval is kept in the global file of the home that gave it, an account's
-for a session.
+`skills/`, `prompts/`. Its door has no plugin folder and no settings tier; its one session-only door is the adapter's `CODEX_CONFIG`,
+a JSON configuration codex-acp (2.1.1) passes as each thread's configuration over the account's `config.toml`. The spawn sets it from
+the person's home: `config.toml`'s keys where the account's sets none (`own-settings`), without the provider, the sign-in, the
+approval policy, the sandbox or the trusted projects, in a profile either; and `developer_instructions` holding the account's own,
+then the person's `AGENTS.md` (`own-memory`) and a sentence naming their `skills/` and `prompts/` folders (`own-skills`). Its servers
+are not handed there: the adapter replaces the configuration's `mcp_servers` with the open's whenever the open names any, and
+Daoris's connector always rides it, so they wait for a source of their own in the open's connector plan.

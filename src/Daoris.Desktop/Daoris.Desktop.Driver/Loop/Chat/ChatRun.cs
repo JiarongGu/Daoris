@@ -141,6 +141,7 @@ internal sealed class ChatRun(
                 if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
                 var guard = PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(home, workTree, place.Also) : null;
                 guarded = guard is not null;
+                var own = OwnTools.Machine(home, info);
                 rules = language.Write(home, sessionId, new HandedRules(
                     composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop.
@@ -148,9 +149,11 @@ internal sealed class ChatRun(
                 {
                     // On a door with no wire, a call its harness would ask about is asked of the person through Daoris below full access.
                     Asked = !agent.Abilities.HeldOnWire && helpMode != HelpModes.Full,
+                    Own = own,
+                    Folder = workTree,
                 });
                 if (!agent.Abilities.RulesOnWire) agent.HandSettings(info, rules);
-                else meta = agent.Meta(rules, skillPlugins);
+                else meta = agent.Meta(rules, skillPlugins, own);
             }
 
             // The plugins' servers, resolved once for both doors, with Daoris's own browser brought up for one that drives it, or that one

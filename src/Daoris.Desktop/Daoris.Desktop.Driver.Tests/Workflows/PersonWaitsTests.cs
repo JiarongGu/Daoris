@@ -24,13 +24,13 @@ public sealed class PersonWaitsTests : NodeRunFixture
         _branchTips["daoris/s1"] = Tip1;
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
         await RunPassAsync(Runtime());
-        Assert.Empty(PersonWaits.Of([], Files.Read));
+        Assert.Empty(PersonWaitReader.Of([], Files.Read));
 
-        var waits = PersonWaits.Read(_home);
+        var waits = PersonWaitReader.Read(_home);
         Assert.Equal([(RunId, "look", PersonWaits.Task)], waits.Select(wait => (wait.Run, wait.Node, wait.Why)));
         Assert.Equal(RunStatus("look").Since, waits[0].Since);
 
         Assert.True(RunNodeWords.Word(Files, RunId, "look", NodeWordActs.Stop, "not wanted", () => _now).Done);
-        Assert.Empty(PersonWaits.Read(_home));
+        Assert.Empty(PersonWaitReader.Read(_home));
     }
 }

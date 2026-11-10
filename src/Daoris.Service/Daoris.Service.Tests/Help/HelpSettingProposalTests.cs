@@ -301,8 +301,8 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
-    [InlineData("drive", null, null, null, "names the repository")]
-    [InlineData("trees", "engine", null, "sometimes", "`on` or `off`")]
+    [InlineData("drive", "engine", null, null, "is not a door")]
+    [InlineData("trees", "engine", null, "on", "is not a door")]
     [InlineData("line", null, null, "develop", "a repository or a workspace")]
     [InlineData("line", "engine", "work", "develop", "a repository or a workspace")]
     [InlineData("line", "engine", null, null, "a branch, or `--clear`")]

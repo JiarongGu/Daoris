@@ -176,6 +176,8 @@ public sealed class WorkOrdersPortsTests : IDisposable
 
         public IReadOnlySet<string> Owing(string home) => Owes;
 
+        public IReadOnlyList<PersonWait> PersonWaits(string home) => [];
+
         public string? Unusable(string home, string workflow)
         {
             Unusables.Add(home);

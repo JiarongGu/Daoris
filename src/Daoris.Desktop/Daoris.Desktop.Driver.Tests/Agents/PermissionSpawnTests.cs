@@ -363,7 +363,7 @@ public sealed class PermissionSpawnTests : IDisposable
 
         public ProcessRecipe Chat(SpawnRequest request) => _stub.Chat(request) with { Input = true };
 
-        public object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins)
+        public object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own)
         {
             Handed = settingsFile;
             HandedText = File.ReadAllText(settingsFile);

@@ -24,13 +24,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 {
     public string Kind => "setting";
 
-    // It proposes, and the person applies.
     public string Tool => "setting_propose";
 
     /// <summary>The `daoris place`, `settings`, `quest` and `git` verbs it takes, in the order the service's twin lists them (<c>HelpSettingProposalWriter.Doors</c>).</summary>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
+        "line", "across", "standing", "language", "review", "opinion",
         "helpers", "commits", "retry", "notify", "cap", "cooloff", "quiet", "keep", "git-use",
     ];
 
@@ -85,29 +84,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.", "", "");
         }
 
-        // A workspace in a command is spelled for any shell; a repository's name is not.
         var scope = workspace is { Length: > 0 } ? $"--workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : target ?? "";
         var whose = workspace is { Length: > 0 } ? $"workspace `{workspace}`" : $"`{target}`";
         (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) planned;
         switch (proposal.Door)
         {
-            case "drive":
-                planned = ($"Drive `{target}`: a quest for it starts a session on this machine.", $"daoris place drive {target}", c => c.WithDrivable(target!, true));
-                break;
-            case "undrive":
-                planned = ($"Stop driving `{target}`.", $"daoris place undrive {target}", c => c.WithDrivable(target!, false));
-                break;
-            case "hold":
-                planned = ($"Hold `{target}`: nothing new starts there until it is resumed.", $"daoris place hold {target}", c => c.WithHold(target!, true));
-                break;
-            case "resume":
-                planned = ($"Resume `{target}`.", $"daoris place resume {target}", c => c.WithHold(target!, false));
-                break;
-            case "trees":
-                planned = value == "on"
-                    ? ($"Sessions in `{target}` open their own tree.", $"daoris place trees {target} on", c => c.WithTrees(target!, true))
-                    : ($"Sessions in `{target}` work in its checkout.", $"daoris place trees {target} off", c => c.WithTrees(target!, false));
-                break;
             case "line":
             {
                 var branch = value == "--clear" ? null : value;
@@ -138,9 +119,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             }
             case "language":
             {
-                // The work's session language, for a repository or a workspace, judged by the closed
-                // table as `SET_LANGUAGE` and `daoris place language` judge it. Its service writer
-                // checks only the shape; the registry and the workspace are judged here.
+                // The session language, judged by the closed table as `SET_LANGUAGE` judges it.
                 var circle = workspace is { Length: > 0 };
                 if (circle == target is { Length: > 0 })
                 {

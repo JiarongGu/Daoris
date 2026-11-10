@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// person changed meanwhile, which the session is told; the end against the start, with what the line carried in, is what of its own
 /// stays uncommitted, the mark it keeps the place with. A commit clears it, and an end is read once.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PlaceTurnsTests : IDisposable
 {
@@ -47,6 +48,21 @@ public sealed class PlaceTurnsTests : IDisposable
         Assert.Equal(["draft.md", "notes.md"], told.Others);
         Assert.Equal(["draft.md", "notes.md"], PlaceTurns.Others(Home, "s-bbbbbbbb"));
         Assert.Empty(PlaceTurns.Others(Home, "s-aaaaaaaa"));
+    }
+
+    [Fact]
+    public async Task A_commit_the_person_made_between_turns_is_told_as_changed_outside_Daoris()
+    {
+        await RepositoryAsync();
+        await StartAsync("s-aaaaaaaa");
+        await EndAsync("s-aaaaaaaa");
+
+        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's committed line\n");
+        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "theirs");
+        var told = await StartAsync("s-bbbbbbbb");
+
+        Assert.Equal(["notes.md"], told!.Outside);
+        Assert.Empty(told.Others);
     }
 
     [Fact]

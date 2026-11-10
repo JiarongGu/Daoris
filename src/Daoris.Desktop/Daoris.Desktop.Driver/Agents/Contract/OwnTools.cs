@@ -19,6 +19,12 @@ public enum OwnFamilies
 
     /// <summary>Its Claude in Chrome switch.</summary>
     Chrome = 8,
+
+    /// <summary>Its user settings: its rules, environment and preferences.</summary>
+    Settings = 16,
+
+    /// <summary>Its memory file, the instructions its every run reads.</summary>
+    Memory = 32,
 }
 
 /// <summary>
