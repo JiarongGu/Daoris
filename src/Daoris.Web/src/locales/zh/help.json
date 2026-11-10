@@ -188,6 +188,7 @@
   "help.focus.find": "查找工作区或仓库",
   "help.focus.list": "聚焦",
   "help.focus.every": "全部工作区",
+  "help.focus.count_one": "{{count}} 个仓库",
   "help.focus.count_other": "{{count}} 个仓库",
   "help.focus.other": "其他工作区",
   "help.focus.nothing": "没有与“{{typed}}”匹配的工作区或仓库。",
