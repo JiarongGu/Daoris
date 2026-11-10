@@ -108,8 +108,9 @@ internal sealed class HeldClock : TimeProvider
 
 /// <summary>
 /// The loop's readers of a press's grounds as a test holds them: each world fact a dictionary the test moves between
-/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set), every read
-/// counted, and the whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
+/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set; the list's
+/// <c>SESSION_GROUPS</c> places each session asked, as a session press's view reads it at the ask), every read counted, and the
+/// whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
 /// </summary>
 internal sealed class StubGrounds : IPipeGroundWorld
 {
@@ -159,6 +160,12 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
+    public StubGrounds Parking(string quest)
+    {
+        Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
+        return this;
+    }
+
     private async Task Read(CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref _reads);
@@ -181,7 +188,10 @@ internal sealed class StubGrounds : IPipeGroundWorld
     public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken)
     {
         await Read(cancellationToken);
-        return [.. Placed.Select(each => new PipeRegistered(each.Key, each.Value))];
+        return [
+            .. Placed.Select(each => new PipeRegistered(each.Key, each.Value)),
+            .. Registered.Where(name => !Placed.ContainsKey(name)).Select(name => new PipeRegistered(name, null)),
+        ];
     }
 
     /// <summary>The machine a rule's view reads: the driver's file and the facts, as the test sets them.</summary>
@@ -239,7 +249,30 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         var asked = payload is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(payload, Shenora.Core.Ipc.IpcJson.Options);
-        return JsonSerializer.SerializeToElement(Reads.TryGetValue(route, out var answer) ? answer(asked) : new { }, Shenora.Core.Ipc.IpcJson.Options);
+        var answered = Reads.TryGetValue(route, out var answer) ? answer(asked) : route == "SESSION_GROUPS" ? Listed(asked) : new { };
+        return JsonSerializer.SerializeToElement(answered, Shenora.Core.Ipc.IpcJson.Options);
+    }
+
+    /// <summary>Each session asked (else each held) as listed, deletable: a held one by its state, any other ended.</summary>
+    private object Listed(JsonElement? asked)
+    {
+        IEnumerable<string> ids = asked is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("ids", out var named)
+            ? named.EnumerateArray().Select(each => each.GetString() ?? "")
+            : Sessions.Keys;
+        return new
+        {
+            sessions = ids.Select(id => new
+            {
+                session = id,
+                group = (Sessions.TryGetValue(id, out var held) ? held.State : null) switch
+                {
+                    "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
+                    "awaiting-person" => Daoris.Driver.SessionGroup.You,
+                    _ => Daoris.Driver.SessionGroup.Ended,
+                },
+                deletable = true,
+            }).ToArray(),
+        };
     }
 
     public async Task<string?> HeldAsync(string wait, JsonElement? payload, CancellationToken cancellationToken)

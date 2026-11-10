@@ -76,7 +76,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
 
     /// <summary>
     /// The measure (CONTEXTONE1d2): each kind's served definitions, as <c>tools/list</c> answers them, against every tool's. The core set
-    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 28,341 and at most 39,229, of 102,191 for
+    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 29,042 and a build session's at 39,856, of 85,561 for
     /// every tool); the sizes are written to the test's output and recorded in the changelog, so a description grown past the budget is
     /// seen here.
     /// </summary>

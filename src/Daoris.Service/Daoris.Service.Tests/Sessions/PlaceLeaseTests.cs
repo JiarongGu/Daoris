@@ -143,7 +143,7 @@ public sealed class PlaceLeaseTests : IAsyncLifetime
     {
         await Running("In place");
 
-        var copy = await _ledger.OpenAsync((await Publish("Apart")).Id, "stub", Now, tree: "/home/work/trees/reports/s-1a2b3c4d");
+        var copy = await _ledger.OpenAsync((await Publish("Apart")).Id, "stub", Now, tree: "/srv/daoris/trees/reports/s-1a2b3c4d");
 
         Assert.Equal(SessionOpenRefusal.None, copy.Refusal);
     }

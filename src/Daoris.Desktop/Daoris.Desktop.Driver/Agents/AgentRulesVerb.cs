@@ -146,13 +146,14 @@ internal static class AgentRulesVerb
         if (file.Problem is not null) Say($"  ⚠ {file.Problem}");
         Say("");
         Say("Defaults");
+        var width = PermissionRules.Defaults.Max(shipped => shipped.Id.Length);
         foreach (var shipped in PermissionRules.Defaults)
         {
             var on = PermissionRules.IsOn(file, shipped);
             var what = shipped.Hook is { } hook ? $"a hook on {hook}"
                 : shipped.Rules.Count == 0 ? "a sentence to auto mode's classifier"
                 : string.Join(", ", shipped.Rules);
-            Say($"  {shipped.Id,-10} {(on ? "on " : "off")}  {shipped.List.ToString().ToLowerInvariant()}  {what}");
+            Say($"  {shipped.Id.PadRight(width)} {(on ? "on " : "off")}  {shipped.List.ToString().ToLowerInvariant()}  {what}");
         }
 
         void Show(string title, RuleLists held)

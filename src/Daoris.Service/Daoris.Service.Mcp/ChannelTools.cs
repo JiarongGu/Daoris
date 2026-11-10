@@ -20,16 +20,16 @@ public sealed class ChannelTools(ChannelDesk? channel = null, IntakeScope? intak
         "Say something to the other sessions working with you and to the person: on the ask's one channel where your work is on an "
         + "ask, else on your own line's channel, which the sessions on the quests your line published read too. A fact this "
         + "repository knows that another needs, what you did or found, that a contract changed, a question you can go on without, an "
-        + "answer. Another part of your own line of work running beside you (a lane part, or the lead it works for) is addressed by "
-        + "its session id in `to`, and only that part reads it. A message asks nothing of anyone and never starts, reopens or extends "
-        + "a session: the session that reads it decides, in its own repository, what it means. Work, a change in another repository, "
-        + "and any answer you cannot go on without are not messages: publish a quest with quest_publish, and wait on it. Say in a "
-        + "message that asks another repository for a change only that it needs a quest.")]
+        + "answer. A message asks nothing of anyone and never starts, reopens or extends a session: the session that reads it decides, "
+        + "in its own repository, what it means. Work, a change in another repository, and any answer you cannot go on without are "
+        + "not messages: publish a quest with quest_publish, and wait on it. Say in a message that asks another repository for a "
+        + "change only that it needs a quest.")]
     public async Task<string> PostAsync(
         [Description("Your words, in at most 4000 characters. A link is text; a file does not travel. No machine paths.")] string? text,
         [Description(
             "Optional: one of this channel's repositories, to address the message to it; or the session id of another part of your own "
-            + "line of work, to that part alone. Left out, or `everyone`, it is to all.")]
+            + "line of work running beside you (a lane part, or the lead it works for), to that part alone. Left out, or `everyone`, it "
+            + "is to all.")]
         string? to = null,
         [Description("Optional: the id of the message this answers.")] string? re = null,
         [Description("Optional: true to mark this a question, which the page shows open until a message answers it.")] bool? question = null,

@@ -17,7 +17,7 @@ public sealed class ManifestStore
 
     public ManifestStore(string home, string workspace, string department)
     {
-        var place = Path.Combine(home, "work", "places", workspace, department);
+        var place = DaorisHome.Entry(home, HomeEntry.Places, workspace, department);
         _manifests = Path.Combine(place, "manifests");
         Content = new ContentStore(Path.Combine(place, "blobs"));
     }

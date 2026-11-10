@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The service, driver and modules reds after the place work, and the session head's height (2026-11-11)
+
+> **CI reds, part B** (service, driver, modules, web): Outcome: the route-view press tests' grounds hold the sessions, registry and quests their presses name, the shared cause of the two-minute timeouts; the sessions slice pushes `holdsPlace` again, so the work page's place-hold line shows (FIX-LOG); the release-place door is classed Person; the home tables name `places`, read by the manifest and turn stores; the place tests use neutral tree paths; the scope door tests read D253's rule. `CapCountTickTests` stays with the process-half reds. Proof: the censuses, `StructureTests`, the CLI home census and `npm run quick`, green.
+>
+> **The session head's height** (web): Outcome: *Started from* sits on the Details line as one press, so the head keeps its measured height at every width; the ask scope tests read the mark the history draws. Proof: the measured head spec, 30 of 30.
+
+---
+
 ## ASKSCOPE2's receipt — what a turn reached beyond its focus (2026-11-11)
 
 > **ASKSCOPE2's receipt** (service, driver, modules, web): Outcome: a connector bound to a workspace notes each answered call that names a workspace or repository in the session's `places.jsonl` (Service `Mcp/CallPlace*`); the driver judges each against the focus held then, from the marks, and a full-access press keeps its place and whether it lay beyond (`Help/HelpPlaceNotes.cs`, `HelpBeyond.cs`, `HelpPressPlace.cs`); `HELP_BEYOND` answers it (told by event); the page folds one receipt under each turn with *Make … the focus* through the chip's choice (`help/focus/BeyondReceipt.tsx`), and Notifications says *in X, outside its focus*; the Showing picker marks *this window* and unfolds workspaces (`useFolds`), and the chip says when the driver widened the focus. Proof: `CallPlaceFilterTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `BeyondReceipt.test`, `ShowingPicker.test`, `focusPlaces.test`, `HelpPressLine.test`, each seen failing first.

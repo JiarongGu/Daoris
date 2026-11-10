@@ -42,7 +42,7 @@ internal static class CodexOwnHome
         var own = Place(tools);
         if (tools.Families == OwnFamilies.None || !Directory.Exists(own) || InOwnHome(tools)) return null;
 
-        var account = tools.Session(HomeVariable) is { Length: > 0 } home ? Read(Path.Combine(home, "config.toml")) : null;
+        var account = tools.Session(HomeVariable) is { Length: > 0 } codex ? Read(Path.Combine(codex, "config.toml")) : null;
         var config = new JsonObject();
         if (tools.Families.HasFlag(OwnFamilies.Settings) && Read(Path.Combine(own, "config.toml")) is { } person)
         {
