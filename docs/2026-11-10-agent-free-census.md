@@ -58,3 +58,32 @@ names the commit that lifts it, or the row that will where its code is another b
 - Row 24's refusal is ASKFULL1's (D253 points 5-6).
 - Row 25 is AGENTLYNTAI1s-ii's measurement.
 - Row 29 is measured with row 23.
+
+## Row 23's design: the person's own tool home
+
+A session runs in its account's home (agents rule 17) and Daoris writes no account home (rule 15), so what the person's own run
+reads from its tool home never reaches it. The spawn reads the person's tool home where their own run would and hands what it
+holds by the harness's session-only doors, writing only under the session's spawn folder, removed with it. Nothing is handed to a
+session that runs in the person's own home (a conversation begun there), whose harness loads it all itself, nor under a scratch
+home (a test's, a probe's).
+
+**Claude Code** reads `CLAUDE_CONFIG_DIR`, else `.claude` in the profile, with its global file beside it (`<home>/.claude.json`
+under the variable, else `.claude.json` in the profile).
+
+| Family | A by-hand run loads | A session is handed (both doors) | The person's switch | The floor |
+|---|---|---|---|---|
+| skills, subagents, commands | `skills/`, `agents/`, `commands/` | copied into one harness plugin, `own`, beside Daoris's plugins, named by `--plugin-dir` or the open's meta; its pieces are named `own:<name>` | `own-skills` | copies only: the person's folder is read, never linked or written |
+| servers | the global file's `mcpServers` (user scope) | the same plugin's `.mcp.json` | `own-servers` | a server named as Daoris's connector, or whose environment names a Daoris variable (its identity, its keys), is left out; a pass held to Daoris's connector alone (rule 13) is handed none |
+| plugins | each plugin the user settings' `enabledPlugins` enables, at its user-scope install folder (`plugins/installed_plugins.json`) | the install folder by the same door, read in place as by hand | `own-plugins` | none beyond the plugin's own |
+| the Chrome switch | `claudeInChromeDefaultEnabled` in the global file | `--chrome` on the native door | `own-chrome` | none: the browser is the person's own |
+| settings, memory file | `settings.json`, `CLAUDE.md` | not handed | — | the one `--settings` tier is Daoris's rules file, and merging the person's file into it would raise their user tier over the repository's, which no by-hand run does; a memory file has no session-only door but `--add-dir`, which grants the folder's files too |
+
+Each switch is a default of the person's rules (agents rule 18), on until they switch it off. The global file is read for the
+named keys alone: its sign-in and its project entries are never read, and no other account's home is read at all.
+
+**Codex** reads `CODEX_HOME`, else `.codex` in the profile: `config.toml` (its servers, profiles, features), `AGENTS.md`,
+`skills/`, `prompts/`. Its doors have no plugin folder and no settings tier, and its servers would ride the open's `session/new`
+from the plan once `config.toml` is read; not built here.
+
+Row 29 stays unmeasured: a repository's `.mcp.json` approval is kept in the global file of the home that gave it, an account's
+for a session.
