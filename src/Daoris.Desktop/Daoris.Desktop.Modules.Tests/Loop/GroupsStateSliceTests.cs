@@ -167,6 +167,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Deletable = true, Lands = new LandOffer("daoris/s1", "s1", 3, 1),
             Discards = new DiscardOffer("daoris/s1", "s1", new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/kept/s1", null)),
             Calling = new RunningCall("npm test", At),
+            Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At)],
         };
         var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Later, "s1",
             [new EntryPart("s1", "q1", "completed", SessionGroup.Later, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }]) { Head = "s1" };

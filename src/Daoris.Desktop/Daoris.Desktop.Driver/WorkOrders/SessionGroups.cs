@@ -541,7 +541,6 @@ public static class SessionGroups
             if (record.AwaitsHelper) return Rest(row with { Group = SessionGroup.Later, Shown = ShownState.AwaitingHelper });
 
             var held = ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds ? work : null;
-            // A step of its run waits on the person, whatever this record's own ending or mark.
             if (_runWaits.TryGetValue(record.Id, out var waits)) return row.WaitedOn(waits, held);
             if (held is not null) return row with { Group = SessionGroup.Review, Work = held };
 

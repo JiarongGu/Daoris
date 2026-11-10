@@ -80,10 +80,7 @@ public sealed record SessionLook(
     /// </summary>
     public IReadOnlySet<string> SupervisorHeld { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
-    /// <summary>
-    /// The run steps waiting on the person (<see cref="PersonWaits"/>): the window's from the runs its runtime reads, the terminal's own look's
-    /// from the files; none where nothing read them.
-    /// </summary>
+    /// <summary>The run steps waiting on the person (<see cref="PersonWaits"/>); none where nothing read them.</summary>
     public IReadOnlyList<PersonWait> RunWaits { get; init; } = [];
 
     /// <summary>Whether a held decision holds <paramref name="record"/>: one is held, and no word of the owner's waits (the planner's own rule).</summary>

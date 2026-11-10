@@ -143,7 +143,6 @@ public sealed class NodeRuntime(
     /// <summary>The runs waiting on a person's task, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
     public IReadOnlyList<HumanTask> HumanTasks() => _governed is { } governed ? Daoris.Driver.HumanTasks.Of(governed.Values, records.Read) : [];
 
-    /// <summary>The run steps waiting on the person, from the runs bound here as this runtime reads them and each run's node record read now.</summary>
     public IReadOnlyList<PersonWait> PersonWaits() => Daoris.Driver.PersonWaits.Of(_graphRuns.Read(), records.Read);
 
     /// <summary>
