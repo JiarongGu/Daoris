@@ -206,4 +206,14 @@ public sealed class HelpFocusTests : IDisposable
         Assert.Equal(HelpFocus.OfWorkspace("Games"), row.Focus);
         Assert.Equal(Engine, row.FocusNext);
     }
+
+    [Fact]
+    public void A_row_answers_the_messages_that_carried_a_change()
+    {
+        Said("h1", "What blocks the release?");
+        var mark = new HelpFocusMark("w2", Monday, HelpFocus.OfWorkspace("Games"), Engine, false);
+        new HelpConversations(_home).Change("h1", kept => kept with { Marks = [mark] });
+        var row = Assert.Single(new HelpConversations(_home).List([Help("h1")], Events, _ => false).Conversations);
+        Assert.Equal([mark], row.Marks);
+    }
 }

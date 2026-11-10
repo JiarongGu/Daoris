@@ -90,6 +90,9 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>The place chosen for its next words, or null.</summary>
     public HelpFocus? FocusNext { get; init; }
 
+    /// <summary>Each message that carried a change of focus, first to last: what the transcript draws its dividers from.</summary>
+    public IReadOnlyList<HelpFocusMark> Marks { get; init; } = [];
+
     /// <summary>The earlier conversation it started from, or null.</summary>
     public string? From { get; init; }
 
@@ -353,6 +356,7 @@ public sealed class HelpConversations(string home)
                 Workspace = each.Record.Workspace,
                 Focus = foci.Focus,
                 FocusNext = foci.FocusNext,
+                Marks = each.Kept.Marks,
                 Resumable = conversation is not null && resumes(conversation.Adapter),
                 From = each.Kept.From,
                 Handed = each.Kept.Handed,

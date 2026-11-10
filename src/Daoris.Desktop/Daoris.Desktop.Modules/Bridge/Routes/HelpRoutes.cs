@@ -531,7 +531,8 @@ public sealed class HelpRoutes(DriverContext context)
         {
             // the mode it ran under, its record's, after whether it runs, then the workspace it started in, then its focus.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
-            Focus = row.Focus.Wire(), FocusNext = row.FocusNext?.Wire(), row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
+            Focus = row.Focus.Wire(), FocusNext = row.FocusNext?.Wire(),
+            Marks = row.Marks.Select(mark => mark.Wire()).ToArray(), row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),
         listing.Cut,
         listing.Total,

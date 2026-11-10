@@ -10,7 +10,7 @@ import { type HelpConversationRow, sameWorkspace } from '../history';
 import { type StarterDoor } from '../starters';
 import { FocusCrumb } from './FocusCrumb';
 import { FocusPicker } from './FocusPicker';
-import { type PlaceRepository } from './focusPlaces';
+import { type PlaceRepository, repositoriesOf } from './focusPlaces';
 import { keepFocusRecent, readFocusRecent } from './focusRecent';
 
 /**
@@ -47,7 +47,7 @@ export function useHelpFocus({ shown, known, shownIn, here, window, readied, set
   }, [shown?.id]);
 
   const repositories: PlaceRepository[] | undefined = Array.isArray(registry.data)
-    ? registry.data.map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
+    ? repositoriesOf(registry.data)
     : registry.isError ? [] : undefined;
   const fallback = window === null || here === undefined ? MACHINE : homeFocus(here);
   const focus = shown ? known?.focus ?? homeFocus(shownIn) : ahead ?? fallback;

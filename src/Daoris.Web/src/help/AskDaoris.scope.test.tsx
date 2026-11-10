@@ -255,13 +255,16 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     expect(within(list).queryByText(/in games/)).toBeNull();
     expect(sent('HELP_CONVERSATIONS')).toContainEqual({ workspace: 'games' });
 
-    await userEvent.click(within(list).getByRole('button', { name: 'All workspaces' }));
+    await userEvent.click(within(list).getByRole('button', { name: 'Showing: This workspace · games' }));
+    await userEvent.click(screen.getByRole('option', { name: 'All workspaces' }));
     expect(await within(list).findByText('and the remote?')).toBeInTheDocument();
-    expect(within(list).getByText(/in work/)).toBeInTheDocument();
-    expect(within(list).getByText(/in default/)).toBeInTheDocument();
+    expect(within(list).getByRole('heading', { name: 'work' })).toBeInTheDocument();
+    expect(within(list).getByRole('heading', { name: 'default' })).toBeInTheDocument();
+    expect(within(list).getByRole('heading', { name: 'games · this window' })).toBeInTheDocument();
     expect(sent('HELP_CONVERSATIONS')).toContainEqual({});
 
-    await userEvent.click(within(list).getByRole('button', { name: 'games' }));
+    await userEvent.click(within(list).getByRole('button', { name: 'Showing: All workspaces' }));
+    await userEvent.click(screen.getByRole('option', { name: 'This workspace · games' }));
     await userEvent.type(within(list).getByRole('searchbox', { name: 'Search Ask Daoris’s conversations' }), 'remote');
     expect(await within(list).findByText('No conversation holds “remote”.')).toBeInTheDocument();
     expect(within(list).getByText(/Every conversation in games was searched/)).toBeInTheDocument();
@@ -276,7 +279,8 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     show('games');
 
     const list = await openHistory();
-    await userEvent.click(within(list).getByRole('button', { name: 'All workspaces' }));
+    await userEvent.click(within(list).getByRole('button', { name: 'Showing: This workspace · games' }));
+    await userEvent.click(screen.getByRole('option', { name: 'All workspaces' }));
     await userEvent.click(await within(list).findByRole('button', { name: /^and the remote\?/ }));
 
     const head = await screen.findByRole('navigation', { name: 'Focus' });
@@ -297,6 +301,7 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     expect(await screen.findByRole('button', { name: '问道衍的聚焦：本机' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '返回对话历史' }));
     const list = await screen.findByRole('region', { name: '对话历史' });
-    expect(await within(list).findByText(/在 work 中/)).toBeInTheDocument();
+    expect(await within(list).findByRole('heading', { name: 'work' })).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: '显示：全部工作区' })).toBeInTheDocument();
   });
 });
