@@ -23,7 +23,6 @@ public abstract class HelpProposalsFixture : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>A folder beside the home, never inside it, removed with the home when the test ends.</summary>
     protected string Beside(string suffix)
     {
         var folder = _home + suffix;
@@ -34,9 +33,7 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static readonly HelpMachineFacts Facts = new(
         Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"])
     {
-        // What the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
         Parked = [new ParkedQuest("q1a2b3c4", "engine")],
-        // What its last look held by the person's stop, and the session each is stopped in.
         Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
     };
 
@@ -63,19 +60,6 @@ public abstract class HelpProposalsFixture : IDisposable
     /// </summary>
     protected static readonly HelpMachineFacts Machine = Facts with
     {
-        Doors =
-        [
-            new HelpDoorFacts("claude-code")
-            {
-                Present = true, Updates = "tool", Channel = "claude-code-releases",
-            },
-            new HelpDoorFacts("claude-code-acp")
-            {
-                Present = true, Updates = "pin", Pinned = "0.84.0", Package = "@agentclientprotocol/claude-agent-acp",
-            },
-            new HelpDoorFacts("dsh") { Present = true },
-            new HelpDoorFacts("codex-acp") { Present = false, Updates = "tool", Package = "@zed-industries/codex-acp" },
-        ],
         Quests =
         [
             new HelpQuestFacts("q1a2b3c4", "Cap the chunk budget", "engine", "Open", Deletable: true),
@@ -150,19 +134,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    public Action<int, string?>? Ended { get; private set; }
-
-    /// <summary>An action that ends before its start is answered: a pin already installed does.</summary>
-    public bool EndsAtOnce { get; init; }
-
-    public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
-    {
-        Calls.Add($"HARNESS_ACTION {harness} {action} {version}".TrimEnd());
-        Ended = ended;
-        if (EndsAtOnce) ended(0, null);
-        return Task.CompletedTask;
-    }
-
     /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
 
@@ -182,7 +153,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
     }
 
-    /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
     public HistoryOutcome? HistoryCleared { get; set; }
 
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
@@ -241,15 +211,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
-    public List<HelpGitUse> GitUses { get; } = [];
-
-    public Task UseGitAsync(HelpGitUse use, CancellationToken ct)
-    {
-        GitUses.Add(use);
-        Calls.Add("git-use");
-        return Task.CompletedTask;
-    }
-
     public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices)
     {
         Config = ActorChoices.With(Config, actor, choices);
@@ -268,7 +229,6 @@ public sealed class HelpStandInDoors : IHelpDoors
     public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         if (SyncRefusal is { } refused) throw new DriverException(refused);
-        // The workspace is recorded only where one is named, so a call without one records none.
         Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
         return Task.FromResult(Listed);
     }

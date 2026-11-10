@@ -34,7 +34,6 @@ public sealed class HelpProposalFacts(DriverContext context)
     public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
 
-    /// <summary>Whether any proposal is a place's set-up, judged by the place's plan.</summary>
     public static bool JudgedAgainstPlaces(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "setup" && proposal.Door == "place" && proposal.Place is not null);
 
@@ -83,10 +82,7 @@ public sealed class HelpProposalFacts(DriverContext context)
             [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names)
         {
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
-            // A landing rule naming a plugin is judged by the catalogue the landing route reads.
             Plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names),
-            // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token.
-            GitIdentities = [.. GitIdentities.Read(_loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
             // harness this build carries — what `daoris plugin add` refuses.
             Home = _loop.Home,
@@ -94,38 +90,10 @@ public sealed class HelpProposalFacts(DriverContext context)
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = ProviderRegistry.Built().Names,
-            // The install's own plugins, which an add may name by id, and where an offer's update reads.
             OffersFolder = context.OffersFolder,
             Offers = PluginOffers.Load(context.OffersFolder, _loop.Home, ProviderRegistry.Built().Names),
-            // A retry names a quest the last tick parked by its strikes, the verdict the drawer shows Retry by.
-            Parked = _loop.Parked.Latest,
-            // Or one its last look held by the person's stop, released from the session that look named.
-            Held = HeldQuest.From(_loop.Look.Latest),
-            // A review's procedure is looked for in the checkouts it reaches, as `SET_REVIEW` looks.
             Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
-
-        if (proposals.Any(proposal => proposal.Kind == "agent"))
-        {
-            var roster = await _loop.Harnesses.RosterAsync(config, ct: ct).ConfigureAwait(false);
-            var settings = _loop.Harnesses.Settings;
-            facts = facts with
-            {
-                Doors = [.. roster.Select(report =>
-                {
-                    var toolchain = _loop.Harnesses.AgentOf(report.Adapter);
-                    var pinned = settings.ResolveVersion(report.Adapter, null, null);
-                    return new HelpDoorFacts(report.Adapter)
-                    {
-                        Present = report.Present,
-                        Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
-                        Pinned = pinned,
-                        Package = toolchain?.Program.Package,
-                        Channel = toolchain?.Program.Channel,
-                    };
-                })],
-            };
-        }
 
         if (JudgedAgainstRecords(proposals))
         {
@@ -133,7 +101,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             facts = facts with { Quests = quests, Asks = asks };
         }
 
-        // This machine's own sessions as the Sessions list reads them, read only when a go names one.
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
@@ -167,7 +134,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             {
                 Workflows = workflows,
                 WorkflowRuns = BoundRuns(_loop.Home),
-                // A graph that asks with done or steward is judged by the gates the accepted declaration names.
                 AcceptedGates = await IntegrateChoice.ReadForCardsAsync(config, workflows, facts.Registered, ct).ConfigureAwait(false),
             };
         }
@@ -194,7 +160,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             facts = facts with { Places = places };
         }
 
-        // Daoris's browser's files as the Browser screen reads them, read only when a browser change is pending.
         if (proposals.Any(proposal => proposal.Kind == "browser"))
         {
             facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };

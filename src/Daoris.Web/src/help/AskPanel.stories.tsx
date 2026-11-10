@@ -81,7 +81,7 @@ export const Proposing: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           <ProposalCard
             proposal={{
-              id: 'p1a2b3c4', kind: 'setting',
+              id: 'p1a2b3c4', kind: 'role',
               describe: 'Land `engine`\'s accepted work on a branch `feature/{quest}-{slug}`, its tree removed once landed.',
               terminal: 'daoris place landing engine branch feature/{quest}-{slug} --tidy',
               why: 'you asked for its work on feature branches',
@@ -96,8 +96,7 @@ export const Proposing: Story = {
 };
 
 /**
- * A card for each door built since — an agent's update, an account's model and effort, a delete of
- * a record made by mistake, and a go to a screen, which changes nothing and carries no command.
+ * A card for each door built since — a plugin, and a go to a screen, which changes nothing and carries no command.
  */
 export const ProposingEveryKind: Story = {
   args: {
@@ -107,11 +106,6 @@ export const ProposingEveryKind: Story = {
       proposals: (
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           {[
-            {
-              id: 'u1', kind: 'agent' as const,
-              describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
-              terminal: 'daoris agent update claude-code-acp', why: 'you asked for the newest',
-            },
             {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',

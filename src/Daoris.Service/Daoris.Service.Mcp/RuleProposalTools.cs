@@ -14,8 +14,8 @@ public sealed class RuleProposalTools(RuleProposalBox? proposals = null, IntakeS
 {
     [McpServerTool(Name = "permission_propose")]
     [Description(
-        "Propose a change to what the agents Daoris starts may do on this machine — its permission rules, "
-        + "in Claude Code's own shape. Use it when you were refused something you needed, or when a rule "
+        "Propose a change to what the agents Daoris starts may do on this machine — its permission rules. "
+        + "Use it when you were refused something you needed, or when a rule "
         + "lets agents do more than they should. A change that NARROWS (a new deny or ask, an allow "
         + "removed, an allowing default switched off) is applied at the driver's next tick; one that "
         + "WIDENS waits for the person's yes. Either way it records which session proposed it, and why. "
@@ -24,11 +24,11 @@ public sealed class RuleProposalTools(RuleProposalBox? proposals = null, IntakeS
     public string ProposePermission(
         [Description("add (a rule to a list), remove (a rule from a scope), or default (switch one of Daoris's defaults).")]
         string action,
-        [Description("Where it reaches: machine (every session here), workspace (every session in one workspace), or repository (one repository). Prefer the narrowest that is enough.")]
+        [Description("Where it reaches: machine (every session here), workspace (every session in one workspace), or repository (one repository).")]
         string scope,
         [Description("Why: what you were doing, and what the change would allow or stop. The person decides on this.")]
         string why,
-        [Description("For add: allow, ask or deny. An ask is refused for anything Daoris starts — nobody is there to answer it.")]
+        [Description("For add: allow, ask or deny. An ask is refused for anything Daoris starts.")]
         string? list = null,
         [Description("For add and remove: the rule, like `Bash(npm run test:*)`, `Edit(/docs/**)` or `mcp__daoris-knowledge__quest_list`.")]
         string? rule = null,

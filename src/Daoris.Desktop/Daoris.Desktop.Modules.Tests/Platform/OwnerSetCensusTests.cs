@@ -50,7 +50,6 @@ public sealed class OwnerSetCensusTests
         ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names
     };
 
-    // The fields that name a target, as a handler reads them: what the sweep tells a naming route by.
     private static readonly string[] TargetFields = ["repository", "workspace", "quest", "session", "id", "ids", "ask", "entry", "unit"];
 
     private const StateScopes RoleScopes = StateScopes.Driver | StateScopes.Sessions | StateScopes.Landing | StateScopes.Lines;
@@ -112,23 +111,15 @@ public sealed class OwnerSetCensusTests
         Assert.DoesNotContain(Sweep(PipeTargets.Daoris.Marks, Exemptions, handlers), each => each.StartsWith("SESSION_OPEN_FOLDER:", StringComparison.Ordinal));
     }
 
-    /// <summary>Every door of the setting and set-up kinds declares its target.</summary>
-    [Theory]
-    [InlineData("setting")]
-    [InlineData("setup")]
-    public void Every_apply_door_declares_its_target(string kind)
+    [Fact]
+    public void Every_apply_door_declares_its_target()
     {
-        foreach (var door in HelpProposals.DoorsOf(kind))
+        foreach (var door in HelpProposals.DoorsOf("setup"))
         {
-            var target = door == "retry" ? "#q1" : "engine";
-            var owned = HelpProposals.Owned(new HelpProposal("p1", kind, door, target, null, null, null, "", null, "proposed"));
-            Assert.True(owned.Repositories.Count + owned.Quests.Count > 0, $"{kind}.{door} declares no target");
-            if (door == "retry") Assert.Equal(["q1"], owned.Quests);
-            else Assert.Equal(["engine"], owned.Repositories);
+            var owned = HelpProposals.Owned(new HelpProposal("p1", "setup", door, "engine", null, null, null, "", null, "proposed"));
+            Assert.True(owned.Repositories.Count + owned.Quests.Count > 0, $"setup.{door} declares no target");
+            Assert.Equal(["engine"], owned.Repositories);
         }
-
-        var workspace = HelpProposals.Owned(new HelpProposal("p2", "setting", "landing", null, "games", "merge", null, "", null, "proposed"));
-        Assert.Equal(["games"], workspace.Workspaces);
     }
 
     /// <summary>

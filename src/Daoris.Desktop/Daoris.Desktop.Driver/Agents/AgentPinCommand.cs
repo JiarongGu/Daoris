@@ -1,9 +1,12 @@
+using System.Text.Json.Nodes;
+
 namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris agent pin</c> and <c>update</c>: the managed toolchain from a
-/// terminal, the words <c>daoris agent pin|update …</c> hands this program. No route takes either: each acts on the terminal's word,
-/// refused from a session's terminal, and holds no lease at its top. A pin from a maker's channel is staged under
+/// terminal, the words <c>daoris agent pin|update …</c> hands this program. The machine's own press is <c>HARNESS_ACTION</c>'s; a
+/// workspace's pin, and a run with no Daoris, act on the terminal's word,
+/// refused from a session's terminal, and hold no lease at its top. A pin from a maker's channel is staged under
 /// its process's name while it downloads and published under the home's lease, the one folder move and the pin's write; a pin
 /// through npm installs in place under the version's folder at this terminal, which nothing resolves until the pin, published the same
 /// way, names it. A pinned <c>update</c> moves the pin to the newest release, published as a pin; an unpinned one runs the
@@ -19,6 +22,33 @@ internal static class AgentPinCommand
 
     private const string NothingPinned =
         "  Nothing was pinned: a pin naming a version that is not there would run a different tool than the one you asked for.";
+
+    /// <summary>
+    /// The press of <c>pin</c> or <c>update</c>: where Daoris runs and the machine's own pin is meant, <c>HARNESS_ACTION</c> starts the
+    /// action and says so; else (a workspace's pin, a named wiring home, no Daoris) the verb runs here, at this terminal.
+    /// </summary>
+    internal static AgentPress Press(IReadOnlyList<string> args, AgentsWorld world)
+    {
+        var verb = args[0];
+        var (name, _, _, _) = AgentsCommand.Agent(args, verb, "<agent>", world, AgentsCommand.WiringPath(world));
+        var workspace = AgentsCommand.FlagValue(args, "--workspace");
+        var payload = new JsonObject { ["action"] = verb, ["door"] = name };
+        if (verb == "pin")
+        {
+            payload["version"] = AgentsCommand.Operand(args, 2)
+                ?? throw new AgentWords("`agent pin` needs <agent> <version> — e.g. `daoris agent pin claude-code`");
+        }
+
+        return new AgentPress(verb, workspace is null ? AgentRoutes.Harness : null, AgentsCommand.Isolated(args, world.Instance.Environment), payload,
+            async ct => verb == "pin" ? await PinAsync(args, world, ct).ConfigureAwait(false) : await UpdateAsync(args, world, ct).ConfigureAwait(false),
+            _ => null,
+            done =>
+            {
+                if (done is int exit) return exit;
+                world.Instance.Out.WriteLine($"{Prefix}: the {verb} of `{name}` started on this machine; its progress and its end are shown under Agents.");
+                return 0;
+            });
+    }
 
     /// <summary>
     /// <c>pin &lt;agent&gt; &lt;version&gt; [--workspace &lt;name&gt;]</c>: that version installed where Daoris keeps it, then
@@ -44,7 +74,6 @@ internal static class AgentPinCommand
         {
             try
             {
-                // Refused HERE, before a single byte is fetched.
                 ReleaseChannels.RefuseVersion(channel, version);
             }
             catch (DriverException refused)
@@ -86,7 +115,6 @@ internal static class AgentPinCommand
         switch (plan.Way)
         {
             case PinWay.Present:
-                // An install already in place is the proof it verified — the channel moves it there only after every check.
                 Say($"{Prefix}: `{name}` {version} is already installed where Daoris keeps it — nothing was downloaded.");
                 Say($"  {plan.Present}");
                 break;

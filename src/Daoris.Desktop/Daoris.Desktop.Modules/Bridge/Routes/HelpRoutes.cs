@@ -331,7 +331,7 @@ public sealed class HelpRoutes(DriverContext context)
         if (plan.Refusal is null && Card(proposal, plan).Revision != shown)
         {
             var changed = $"The plan for `#{id}` changed since this card was drawn, so nothing was applied. It now reads: {plan.Describe}. Look at the new card and press Apply on it.";
-            return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
+            return new { Message = changed, Applied = false, Go = (object?)null, Stands = true, Changed = true };
         }
 
         // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word.
@@ -386,11 +386,6 @@ public sealed class HelpRoutes(DriverContext context)
         // the driver judged filled, or New conversation with the repository and words it judged, or an Agents
         // place's Setup with its set-up open on the ask; each null on any other go.
         Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
-        // The action an update or a pin started, so the Agents screen follows its console and its end. A default
-        // is a file edit that starts nothing, so there is nothing to follow.
-        HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
-            ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
-            : null,
         // The card stands for another press: a sync card's look settles nothing, so the page logs no settlement.
         applied.Stands,
     };
