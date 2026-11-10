@@ -47,7 +47,9 @@ public static class WorkflowObligations
         if (Directory.Exists(NodeRecordFiles.FolderOf(home)))
         {
             var nodes = new NodeRecordFiles(home, () => false);
-            foreach (var record in nodes.All().Records.Where(record => record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled))) owing.Add(record.Unit);
+            var records = nodes.All().Records;
+            foreach (var record in records.Where(record => record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled))) owing.Add(record.Unit);
+            foreach (var held in records.SelectMany(RunHeldUnits.Of)) owing.Add(held);
             foreach (var unread in nodes.Unread()) if (unread.Unit is { } unit) owing.Add(unit);
         }
 

@@ -335,6 +335,7 @@ public static class AttentionStateSlice
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
             // The parks a supervisor's held or released decision answers for, from the decisions' memory.
             Supervised = loop.Supervisor.Answering(),
+            StoppedQuests = StoppedRuns.Quests(loop.Home),
         };
     }
 

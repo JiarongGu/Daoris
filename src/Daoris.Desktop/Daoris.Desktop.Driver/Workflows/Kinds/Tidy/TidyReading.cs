@@ -14,6 +14,11 @@ public static class TidyReading
     {
         if (NodeObserving.OfBranch(reading) is { } refused) return refused;
         var landing = NodeObserving.LandingOf(reading.Unit);
+        if (TidiedByTheLook.Of(landing, reading.Unit))
+        {
+            return NodeObserving.Reached(reading, NodeSource.Landing, landing!.Tip, LandedBranches.FileName, landing.Branch, TidiedByTheLook.Said(landing));
+        }
+
         if (!Tidied(landing)) return NodeObserving.Seen(reading, null, "its chain's parts were not tidied yet");
 
         var parts = landing!.Tidied!.Parts;

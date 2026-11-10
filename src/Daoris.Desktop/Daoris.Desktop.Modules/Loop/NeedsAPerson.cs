@@ -159,6 +159,7 @@ public static class NeedsAPerson
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
+            if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
             var row = Row("review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
