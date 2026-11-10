@@ -127,18 +127,6 @@ export const REACH = Object.freeze([
     why: 'every desktop project builds with it: the suites, the headless host the family rehearsal drives, and the deployed shell',
   },
   { paths: ['src/Daoris.Desktop/README.md'], gates: ['modules', 'service'], why: "the modules' route test reads its table, and the service's suite reads this repository's documents" },
-  // Before the driver's tests, which would place it first: the service's tool test reads it too. No Process class reads it.
-  {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'],
-    gates: ['driver', 'service'],
-    why: "the driver's ReviewRulesTests and the service's HelpSettingProposalTests read the review rules' table (REVIEWENV1c4); the CLI's twin runs in verify",
-  },
-  // XAGENT1f4: the same for the second-opinion rules' table, whose `gate` rows the service's tool test reads too.
-  {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'],
-    gates: ['driver', 'service'],
-    why: "the driver's OpinionRulesTests and the service's HelpSettingProposalTests read the second-opinion rules' table (XAGENT1f4); the CLI's twin runs in verify",
-  },
   // BRAINSTORM1a2: the brainstorm answers' table sits among the driver's tests, and the service's twin validator reads it too.
   // BRAINSTORM1a3: so does the brainstorm files' table, which the service's brainstorm desk reads.
   {
