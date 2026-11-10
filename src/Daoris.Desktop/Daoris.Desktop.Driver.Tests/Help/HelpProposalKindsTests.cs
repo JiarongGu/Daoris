@@ -22,9 +22,7 @@ public sealed partial class HelpProposalKindsTests
     /// </summary>
     private static readonly (string Kind, string Tool)[] Table =
     [
-        ("setting", "setting_propose"),
         ("ask", "ask_propose"),
-        ("agent", "agent_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -47,7 +45,6 @@ public sealed partial class HelpProposalKindsTests
         ["draft"] = """WriteString("draft",""",
     };
 
-    /// <summary>The workflow file's optional <c>name</c> is read by the judge, so its twin is held to writing it.</summary>
     [Fact]
     public void The_workflow_writer_writes_its_name()
     {
@@ -63,7 +60,6 @@ public sealed partial class HelpProposalKindsTests
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
-    /// <summary>The service core's source folder: its files sit in module folders, so a reader finds one by name.</summary>
     internal static string CoreFolder() => Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
     internal static string CoreFile(string name) =>
@@ -80,10 +76,8 @@ public sealed partial class HelpProposalKindsTests
     [Fact]
     public void Every_kind_is_a_class_in_a_file_of_its_own()
     {
-        // The kinds' folder is the one the first kind's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpProposalKinds.All[0].GetType().Name}.cs"))!;
 
-        // A kind's plans may sit in parts beside it (`HelpRetrySetting`,`HelpWorkflowCard`…); what declares a kind is one file per kind.
         Assert.Equal(
             HelpProposalKinds.All.Select(kind => $"{kind.GetType().Name}.cs").Order(StringComparer.Ordinal),
             Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories)
@@ -123,7 +117,7 @@ public sealed partial class HelpProposalKindsTests
 
     /// <summary>
     /// Each kind's doors, which Ask Daoris's coverage is held against, are doors its twin writes: each
-    /// spelled in the service's writer of that kind, and the setting's, a list on both sides, the same list.
+    /// spelled in the service's writer of that kind.
     /// </summary>
     [Fact]
     public void Every_kinds_doors_are_the_ones_its_twin_writes()
@@ -137,19 +131,6 @@ public sealed partial class HelpProposalKindsTests
                 Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
             }
         }
-
-        var listed = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpSettingProposalWriter.cs")));
-        Assert.True(listed.Success, "the service's setting doors are a list, `Doors`.");
-        Assert.Equal(
-            new HelpSettingProposals().Doors,
-            Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
-
-        var agent = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpAgentProposalWriter.cs")));
-        Assert.True(agent.Success, "the service's agent doors are a list, `Doors`.");
-        Assert.Equal(
-            new HelpAgentProposals().Doors,
-            Regex.Matches(agent.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
-        Assert.DoesNotContain("default", new HelpAgentProposals().Doors);
     }
 
     /// <summary>The page's card takes exactly the kinds this side judges: the <c>kind</c> of its proposal type.</summary>
@@ -174,7 +155,4 @@ public sealed partial class HelpProposalKindsTests
 
     [GeneratedRegex(@"export type HelpProposal = \{[^}]*?\bkind:\s*([^;]+);", RegexOptions.Singleline)]
     private static partial Regex CardKinds();
-
-    [GeneratedRegex(@"IReadOnlyList<string> Doors\s*=\s*\[([^\]]*)\]")]
-    private static partial Regex ServiceSettingDoors();
 }

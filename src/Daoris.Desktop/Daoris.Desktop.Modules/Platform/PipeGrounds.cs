@@ -10,7 +10,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public enum PipeGroundKind
 {
-    /// <summary>A session's record: its state and when it last moved.</summary>
     Session,
 
     /// <summary>A setting's value where it is kept.</summary>
@@ -83,6 +82,9 @@ public interface IPipeGroundWorld
     Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken);
+
+    /// <summary>The driver's file and the names the machine holds, which a rule's view is judged against.</summary>
+    Task<PipeMachine> MachineAsync(CancellationToken cancellationToken);
 
     /// <summary>A quest's status by its id; null where the service has none.</summary>
     Task<string?> QuestAsync(string id, CancellationToken cancellationToken);

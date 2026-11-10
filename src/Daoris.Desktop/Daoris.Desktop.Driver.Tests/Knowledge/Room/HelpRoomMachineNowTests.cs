@@ -136,7 +136,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: `#q1a2b3c4` (to `engine`), "
             + "`#q5e6f7a8` (to `game`).", some);
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("`retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below", some);
+        Assert.Contains("`daoris quest retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below", some);
     }
 
     /// <summary>

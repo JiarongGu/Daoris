@@ -227,7 +227,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append('\n');
         text.Append("Each changes the setting at once, with no Apply, through the same checks and writer as Settings, and the change\n");
         text.Append("is recorded. Do it only when the person asks for it, and say what you changed, and to what. Any other setting is\n");
-        text.Append("still proposed with `setting_propose` for their Apply. A tool the person has not granted is refused.\n\n");
+        text.Append("still pressed with its `daoris` verb for their Confirm. A tool the person has not granted is refused.\n\n");
         return text.ToString();
     }
 

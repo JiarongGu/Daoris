@@ -189,6 +189,17 @@ internal sealed class StubGrounds : IPipeGroundWorld
         ];
     }
 
+    /// <summary>The machine a rule's view reads: the driver's file and the facts, as the test sets them.</summary>
+    public Daoris.Driver.DriverConfig Config { get; set; } = Daoris.Driver.DriverConfig.Empty;
+
+    public Daoris.Driver.HelpMachineFacts Facts { get; set; } = new([], [], []);
+
+    public async Task<PipeMachine> MachineAsync(CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return new PipeMachine(Config, Facts);
+    }
+
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
     {
         await Read(cancellationToken);

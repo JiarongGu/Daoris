@@ -65,7 +65,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
     [Fact]
     public void A_tool_outside_a_kinds_row_is_refused_naming_the_core_set()
     {
-        var refusal = CallTable.Refusal(new SessionWork(ParticipantWork.Build), "agent_propose");
+        var refusal = CallTable.Refusal(new SessionWork(ParticipantWork.Build), "go_propose");
         var chat = CallTable.Refusal(new SessionWork(ParticipantWork.Chat), "question_ask");
 
         Assert.Equal(CallTable.ForbiddenWork, refusal?.Code);

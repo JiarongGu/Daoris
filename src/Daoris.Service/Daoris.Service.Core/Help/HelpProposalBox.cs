@@ -26,9 +26,7 @@ public sealed class HelpProposalBox(string? home)
     /// </summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
-        ("setting", "setting_propose"),
         ("ask", "ask_propose"),
-        ("agent", "agent_propose"),
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("browser", "browser_propose"),
@@ -45,23 +43,13 @@ public sealed class HelpProposalBox(string? home)
 
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
-    /// <summary>The driver's named home first — where what this would change lives — then the account's.</summary>
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
 
-    /// <inheritdoc cref="HelpSettingProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSetting(SettingChange change, string why, string? session, DateTimeOffset at) =>
-        new HelpSettingProposalWriter(file).Propose(change, why, session, at);
-
-    /// <inheritdoc cref="HelpAskProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeAsk(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
         string? review = null, string? reviewWords = null, string? shortTitle = null) =>
         new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
-
-    /// <inheritdoc cref="HelpAgentProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeAgent(string action, string agent, string? version, string why, string? session, DateTimeOffset at) =>
-        new HelpAgentProposalWriter(file).Propose(action, agent, version, why, session, at);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(

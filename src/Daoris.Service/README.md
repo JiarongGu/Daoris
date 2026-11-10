@@ -538,9 +538,7 @@ did not start*. A malformed rule, a scope with no name or an empty reason is ref
 written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers `setting_propose` (one of the setting doors still proposed: `review`, `opinion`, `helpers`, `commits`, `retry` and
-`git-use`, shape-checked by the flags their verbs take; every other setting verb is pressed, never proposed; the tool says a repository's own instructions only seed a
-proposal the person applies) and `ask_propose` (something to start, as
+offers `ask_propose` (something to start, as
 an ask at a workspace; since ENTRY1c with the review choice the person said and their words, as the
 composer sends them, and never a kind or a workflow, which are the person's), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
 version; an account's use, order and cool-off are pressed with `daoris agent account`, never proposed) and `go_propose` (a place to open, changing nothing: a view, a Settings domain, or a part
