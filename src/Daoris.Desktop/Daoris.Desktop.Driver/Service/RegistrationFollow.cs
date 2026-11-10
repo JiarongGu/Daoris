@@ -99,7 +99,7 @@ public static class RegistrationFollow
     public static string? EventLine(RegistrationFollowed followed) =>
         followed.Outcome switch
         {
-            RegistryOutcome.Unchanged or RegistryOutcome.NotSetUp or RegistryOutcome.NoLine or RegistryOutcome.NoCheckout => null,
+            RegistryOutcome.Unchanged or RegistryOutcome.NotSetUp or RegistryOutcome.NoLine or RegistryOutcome.NoCheckout or RegistryOutcome.Folder => null,
             RegistryOutcome.Registered or RegistryOutcome.DeclaresNothing when !followed.Sent => null,
             _ => $"registry  {followed.Repository}: {followed.Said}",
         };
@@ -128,6 +128,7 @@ public static class RegistrationFollow
                 + "never registered. Register the repository from its main tree.");
         }
 
+        if (await FolderFollow.OneAsync(world, row, ct).ConfigureAwait(false) is { } folder) return folder;
         var files = await world.ReadLineAsync(row, ct).ConfigureAwait(false);
         if (files.Line is null || files.Commit is null)
         {

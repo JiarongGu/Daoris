@@ -12,11 +12,12 @@ public static class TreesReviewWires
     /// <summary>The landing plan's count of uncommitted paths in the session's own tree: 0 where clean or not asked.</summary>
     public static int UncommittedCount(int? held) => held ?? 0;
 
-    /// <summary>Where a review's files are read from: the session's own tree, or its landed branch once the tree cannot be read.</summary>
+    /// <summary>Where a review's files are read from: the session's own tree, its landed branch once the tree is gone, or a folder's manifests.</summary>
     public static class ReviewSource
     {
         public const string Tree = "tree";
         public const string Branch = "branch";
+        public const string Place = "place";
     }
 
     /// <summary>

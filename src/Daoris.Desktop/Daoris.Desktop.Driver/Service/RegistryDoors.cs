@@ -54,6 +54,7 @@ public sealed class RegistryDoors
             {
                 // The service's own word: a workspace plan's *set up*, never recomputed on this side.
                 Registered = repo.Registered,
+                Kind = repo.Kind,
             }),
         ];
     }
