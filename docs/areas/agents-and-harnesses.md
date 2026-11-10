@@ -245,7 +245,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     every window), never mid-turn, and not again within 30 minutes of its last curve move. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home. A start on
-    another agent is on another account, whatever the names. (from D131, D137)
+    another agent is on another account, whatever the names. A resume judges that account as the walk does: its reading at a whole
+    window with the reset ahead cools it until then, unless the person picked it. (from D131, D137, D206)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (from D125, D150)
 
 **Usage, limits and errors**
