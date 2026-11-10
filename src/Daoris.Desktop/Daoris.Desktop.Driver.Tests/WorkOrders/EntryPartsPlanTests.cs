@@ -72,7 +72,7 @@ public sealed class EntryPartsPlanTests
         return new Snapshot(
             [Quest("3068f747", "db", "Taken") with { Awaits = "711d2524" },
                 new QuestView("711d2524", "db", "app", "Ask 711d2524", "Why.", "Taken") { PublishedBy = "283ef343", Awaits = "01ba2c71" },
-                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2" }],
+                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2", Parent = "3068f747" }],
             Repos,
             [new SessionView("8eba4af2", "app", "working") { Tree = a3.Tree, Quest = "711d2524" }])
         {
@@ -107,6 +107,27 @@ public sealed class EntryPartsPlanTests
     }
 
     /// <summary>
+    /// A request of the line that is a run of its own never goes into another run's tree, free or not: it starts in a tree and on a branch
+    /// of its own, a further part of the line, so no two runs work one branch.
+    /// </summary>
+    [Fact]
+    public void A_request_of_its_own_run_starts_in_a_tree_of_its_own_beside_the_lines_free_tree()
+    {
+        var snapshot = At0759();
+        var own = snapshot.Quests[2] with { Parent = null };
+
+        var started = Assert.Single(
+            Planner.Plan(snapshot with { Quests = [snapshot.Quests[0], snapshot.Quests[1], own] }, Config()), c => c.Quest.Id == "01ba2c71");
+
+        Assert.Equal(StartVerdict.Start, started.Verdict);
+        var entry = Assert.IsType<EntryParts>(started.Entry);
+        Assert.Equal(DbEntry, entry.Key);
+        Assert.Null(entry.Into);
+        Assert.Null(entry.HeldBy);
+        Assert.Contains("its own run's branch", started.Reason);
+    }
+
+    /// <summary>
     /// A part that ended waiting on its own helper still holds its tree, as a park does, though it
     /// is completed and in no live list: it goes on there with the answer. A further part of its entry starts alongside, in a tree of its own,
     /// and never into that one while its quest is taken; one whose quest is no longer taken holds nothing.
@@ -122,7 +143,7 @@ public sealed class EntryPartsPlanTests
             Quests =
             [
                 Quest("3068f747", "db", status),
-                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2" },
+                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2", Parent = "3068f747" },
             ],
             Active = [],
             LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["3068f747"] = waiting },
@@ -157,7 +178,7 @@ public sealed class EntryPartsPlanTests
     public void Two_requests_of_one_entry_at_one_look_take_its_tree_once()
     {
         var snapshot = At0759();
-        var second = new QuestView("7c2b9e10", "app", "db", "Ask 7c2b9e10", "Why.", "Open") { PublishedBy = "8eba4af2" };
+        var second = new QuestView("7c2b9e10", "app", "db", "Ask 7c2b9e10", "Why.", "Open") { PublishedBy = "8eba4af2", Parent = "3068f747" };
 
         var plan = Planner.Plan(snapshot with { Quests = [.. snapshot.Quests, second] }, Config());
 
