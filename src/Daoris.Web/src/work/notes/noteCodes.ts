@@ -337,8 +337,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
   'browser.none-up': { values: [] },
-  // The line a chat's agent is told of the browser it is handed: the line follows as a program's words.
+  // The line a chat's agent is told of the browser it is handed, and of the place it works in: each follows as a program's words.
   'chat.told-browser': { values: [] },
+  'chat.told-place': { values: [] },
   // The repository's process a chat in a tree of its own is told: its commit rule's mode and where it is set,
   // the words following as a program's.
   'chat.told-process': { values: ['mode', 'source'] },

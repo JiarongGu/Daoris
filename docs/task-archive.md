@@ -5,6 +5,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1h (part) — an unguarded system read back, and the kit's system plugin (2026-11-11)
+
+> **PLACEWORK1h, third part** (driver, web, examples): Outcome: a system declaring its precondition `none` is read before each write (`plan/read` for that one change) and read back after it (`Plugins/Systems/SystemReadBack.cs`): a moved version is `stale` and nothing is written, a read-back that differs is `changed`, set by Daoris alone, and fails the node with *changed while applying* naming what the resource holds now; the department's row says *unguarded*; the "nothing to write" answer is `unchanged`, so `none` is only the precondition; `daoris plugin new` scaffolds a system adapter and `plugin try` checks `plan/read` and `apply/perform` (both in `HookPoints.All`), the examples' tests regenerated from the kit; the stand-in declares `stand-in-unguarded`. Proof: `SystemReadBackTests`, `SystemReadBackProcessTests` (stale, changed while applying, applied), `PluginKitSystemTests`, the stand-in's own tests and the web tests, each seen failing first.
+
+---
+
+## A conversation's place told under a note of its own, and the merged words to the glossary (2026-11-11)
+
+> **The told place and the catalogue reds** (driver, web): Outcome: the place a conversation is told before its first words rides its own field (`ChatMessage.Place`) and is kept under `chat.told-place`, so the page no longer says the agent was told of Daoris's browser (FIX-LOG); the pressed settings', isolate and apply words follow the glossary (委托 for a quest, 智能体 for an agent, 本机, counts said in their number, *Apply the reviewed changes*), *Work apart* accepted as the isolate step's own name, the browser's *profile* as the browser's word. Proof: `ChatAttachmentTests` (red before), `noteToldPlace.test`, `i18n.test`, `names.test`, `noteLines.test`, `i18n:check` and `names:check --strict`.
+
+---
+
 ## ASKFULL1g-v's role half — `daoris role` pressed, the role kind gone (2026-11-11)
 
 > **ASKFULL1g-v, role** (modules, service, driver, web): Outcome: each role verb (set, remove, default, policy, rules, a supervisor's set) presses `SET_ROLE`, judged at the ask by the role door's own judges and refused with no card where they refuse; the Confirm card draws the place's rules and the supervisor's record before and after (`RoleChangeView`, `PressView`'s `Rules` and `Supervisor`, web `person/view/RulesChange|SupervisorChange`); the role proposal kind, its service tool and writer, its box row, call-table column, room line and card kind are gone whole. Proof: `RoleChangeViewTests` (seen failing first), the moved card tests in both languages, the room goldens; rules 9, 40, 41 and 56 rewritten.

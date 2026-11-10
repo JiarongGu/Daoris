@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The system points' frames and the reading of their answers, by shape: <see cref="HookPoints.PlanRead"/> takes the intended changes and
 /// answers typed operations, each with its precondition; <see cref="HookPoints.ApplyPerform"/> takes the reviewed operations and answers
-/// applied, stale or failed. An answer of any other shape is none, never a guess.
+/// applied, unchanged, stale or failed. An answer of any other shape is none, never a guess.
 /// </summary>
 public static class SystemWire
 {
@@ -61,7 +61,7 @@ public static class SystemWire
         {
             case SystemApplyStates.Applied:
                 return new SystemApplied(state, applied, null, [], null);
-            case SystemApplyStates.None:
+            case SystemApplyStates.Unchanged:
                 return applied.Count == 0 ? new SystemApplied(state, [], null, [], null) : null;
             case SystemApplyStates.Stale:
                 if (Text(answer, "refused") is not { Length: > 0 } refused || !answer.TryGetProperty("present", out var listed) || listed.ValueKind != JsonValueKind.Array) return null;

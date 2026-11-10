@@ -36,11 +36,11 @@ public static class HookPoints
     public const string StateChanged = "state/changed";
 
     /// <summary>
-    /// Every point, in the order they were added: a point is additive, so a new one goes last. The work wire's three joined
-    /// with their kit entries, so the kit scaffolds, tests and tries them as it does the rest; who speaks them is still
-    /// <see cref="Work"/>'s rule.
+    /// Every point, in the order they were added: a point is additive, so a new one goes last. The work wire's three and the system
+    /// points joined with their kit entries, so the kit scaffolds, tests and tries them as it does the rest; who speaks them is still
+    /// <see cref="Work"/>'s rule and <see cref="System"/>'s.
     /// </summary>
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, State, StateChanged, Watch, Step, Perform, Event];
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, State, StateChanged, Watch, Step, Perform, Event, PlanRead, ApplyPerform];
 
     /// <summary>
     /// The points the driver loop's set speaks at — a plugin that speaks on none of them is not kept running beside it. The
@@ -83,7 +83,7 @@ public static class HookPoints
     /// <summary>A system adapter's request: a reviewed change set applied under its preconditions, answered applied, stale or failed.</summary>
     public const string ApplyPerform = "apply/perform";
 
-    /// <summary>Asked of a plugin declaring <c>systems</c> by a plan and an apply alone; outside <see cref="All"/>, which the kit scaffolds.</summary>
+    /// <summary>Asked of a plugin declaring <c>systems</c> by a plan and an apply alone, never by the loop's set; in <see cref="All"/> too, whose every point the kit scaffolds and tries.</summary>
     public static readonly IReadOnlyList<string> System = [PlanRead, ApplyPerform];
 }
 

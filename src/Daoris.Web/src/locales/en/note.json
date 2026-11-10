@@ -274,6 +274,7 @@
   "note.chat.option-set": "You set {{option}} to {{chosen}} for this conversation.",
   "note.chat.told-where": "The agent was told where you are:",
   "note.chat.told-browser": "The agent was told it has Daoris's browser:",
+  "note.chat.told-place": "The agent was told about the place it works in:",
   "note.chat.told-process": "The agent was told this repository's process, its commit rule `{{mode}}` ({{source}}):",
   "note.chat.told-block": "The agent was told Daoris's standing block:",
   "note.chat.told-draft": "The agent was told the workflow draft open in your editor:",

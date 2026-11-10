@@ -260,6 +260,8 @@ public static class WorkflowRunWords
             // A declined request is yours to ask again or go on without; its quest's note is what the receiver said.
             WorkflowGraphDetails.Failed when node == NodeKinds.Request && step.Code == RequestOptions.DeclinedCode =>
                 "The repository it asked declined the quest: ask again, or go on without it with your words.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Apply && step.Code == ApplyDoor.ChangedWhileApplying =>
+                "Changed while applying: something else wrote to the system as it applied, so the work plans again from the system as it stands.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",

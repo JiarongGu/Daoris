@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A conversation's place was recorded as Daoris's browser
+
+- **Symptom:** `ChatAttachmentTests.A_chat_handed_no_browser_is_told_nothing_of_one` found a `chat.told-browser` note on a conversation
+  handed no browser; the page read "The agent was told it has Daoris's browser:" above the folder's `## Your place` section.
+- **Root cause:** 2f4845d53b told a conversation in its place by appending the place's words to the message's `Briefing`, the browser's
+  field, and the record keeps everything in that field under the browser's lead (`ChatRecorded.ToldBrowser`).
+- **Fix:** the place is a field of its own (`ChatMessage.Place`), handed after the browser's line as before and kept under its own note
+  code, `chat.told-place`, with its lead in both catalogues.
+- **Verify:** that test, red first; `ChatPlaceToldTests` and `noteLines.test.ts` hold the place's own lead.
+
 ## 2026-11-11 - A review the page left kept its git running
 
 - **Symptom:** `DriverModuleReviewLeaveTests`' leave and window-destroyed cases timed out waiting for the read's git to exit: the caller

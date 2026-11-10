@@ -31,11 +31,14 @@ public static class SystemApplyStates
     public const string Failed = "failed";
 
     /// <summary>Nothing to change: every resource already held what the plan asks, so the system wrote nothing.</summary>
-    public const string None = "none";
+    public const string Unchanged = "unchanged";
+
+    /// <summary>Daoris's own, never an adapter's: an unguarded system's resource read back other than its write, changed by another writer.</summary>
+    public const string Changed = "changed";
 }
 
 /// <summary>
-/// What an apply came to: the resources applied in order, and on <c>stale</c> the first refused with what each stale resource is now,
-/// or on <c>failed</c> the adapter's words.
+/// What an apply came to: the resources applied in order, and on <c>stale</c> or <c>changed</c> the resource it stopped at with what
+/// each such resource is now, or on <c>failed</c> the adapter's words.
 /// </summary>
 public sealed record SystemApplied(string State, IReadOnlyList<string> Applied, string? Refused, IReadOnlyList<SystemPresent> Present, string? Message);
