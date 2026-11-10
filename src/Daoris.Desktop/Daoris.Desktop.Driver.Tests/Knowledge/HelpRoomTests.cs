@@ -101,7 +101,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("`settings_language`", granted);
         Assert.DoesNotContain("`settings_cap`", granted);
         Assert.Contains("no Apply", granted);
-        Assert.Contains("`setting_propose`", granted);
+        Assert.Contains("Every setting is pressed, never proposed", granted);
         Assert.DoesNotContain("housekeeping_", granted);
         Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language], Rules = HelpRuleFacts.Read(_home) }), granted);
 
@@ -155,7 +155,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__knowledge_search", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
         // It proposes, and the person applies — never a rule proposal, whose narrowing applies itself.
-        Assert.Contains("mcp__daoris-knowledge__setting_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__setting_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
         // The four further kinds, each a card the person applies.
         Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);

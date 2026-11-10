@@ -14,7 +14,6 @@ public sealed class HelpProposalBoxKindsTests
 {
     private static readonly (string Kind, string Tool)[] Table =
     [
-        ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
         ("go", "go_propose"),

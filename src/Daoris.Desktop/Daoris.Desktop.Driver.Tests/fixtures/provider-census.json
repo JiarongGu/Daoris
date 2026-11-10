@@ -50,7 +50,6 @@
     ["Daoris.Desktop.Driver/Agents/StructuredOutput.cs", "ClaudeStreams", "k", "behaviour", "the native dialect's output, by type"],
     ["Daoris.Desktop.Driver/Help/HelpWired.cs", "\"protocol\"", "i", "behaviour", "Ask Daoris's wired receipt names its transport by the transport's word, as DoorFailures says it"],
     ["Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs", "ClaudeReleases", "f", "behaviour", "the proposal reads Claude Code's release source by type"],
-    ["Daoris.Desktop.Driver/Help/Proposals/HelpRuleSettings.cs", "id in a sentence", "-", "words", "an id as the example in a proposal's command"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "\"claude\"", "-", "permanent", "Claude Code's signed channel's binary name, Install's own source (AGT2b; row f keeps it in Install)"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "ClaudeReleaseDownloads", "-", "permanent", "Claude Code's signed channel, Install's own source (AGT2b)"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "ClaudeReleases", "-", "permanent", "Claude Code's signed channel, Install's own source (AGT2b)"],

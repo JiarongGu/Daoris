@@ -30,7 +30,7 @@ public sealed class HelpRoomDoorsTests
             "daoris place across <repository> read on|off|--clear", "daoris place across <repository> write-to <other> [--clear]",
             // Every setting verb that changes something, and the doors Ask Daoris owes, named where they are,
             // and a stop's release, which names the session stopped.
-            "daoris quest retry <quest>", "daoris quest retry <quest> --session <id>", "daoris settings cap <n>",
+            "daoris quest retry <quest>", "daoris settings cap <n>",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // The one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
             "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
@@ -81,7 +81,7 @@ public sealed class HelpRoomDoorsTests
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes: a card the person applies, through the connector's two tools.
-        Assert.Contains("`setting_propose`", agents);
+        Assert.Contains("Every setting is pressed, never proposed", agents);
         Assert.Contains("`ask_propose`", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
@@ -308,10 +308,9 @@ public sealed class HelpRoomDoorsTests
         foreach (var door in new[] { helpers, commits })
         {
             Assert.Contains("`--workspace <name>` for a whole workspace", door.Terminal);
-            Assert.IsType<HelpDoorAsk.Proposes>(door.Ask);
+            Assert.Null(door.Ask);
         }
 
-        Assert.Contains("from the repository's own instructions", commits.To);
         Assert.Contains("`{ticket}`", landing.To + landing.Terminal);
         Assert.Contains("`--key <shape>|--no-key`", landing.Terminal);
         Assert.Contains("`--squash|--no-squash`", landing.Terminal);

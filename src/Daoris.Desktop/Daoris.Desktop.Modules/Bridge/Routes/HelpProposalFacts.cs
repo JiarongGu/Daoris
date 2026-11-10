@@ -85,8 +85,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
             // A landing rule naming a plugin is judged by the catalogue the landing route reads.
             Plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names),
-            // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token.
-            GitIdentities = [.. GitIdentities.Read(_loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
             // harness this build carries — what `daoris plugin add` refuses.
             Home = _loop.Home,
@@ -97,11 +95,6 @@ public sealed class HelpProposalFacts(DriverContext context)
             // The install's own plugins, which an add may name by id, and where an offer's update reads.
             OffersFolder = context.OffersFolder,
             Offers = PluginOffers.Load(context.OffersFolder, _loop.Home, ProviderRegistry.Built().Names),
-            // A retry names a quest the last tick parked by its strikes, the verdict the drawer shows Retry by.
-            Parked = _loop.Parked.Latest,
-            // Or one its last look held by the person's stop, released from the session that look named.
-            Held = HeldQuest.From(_loop.Look.Latest),
-            // A review's procedure is looked for in the checkouts it reaches, as `SET_REVIEW` looks.
             Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
 

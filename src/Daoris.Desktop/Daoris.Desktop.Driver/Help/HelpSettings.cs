@@ -47,8 +47,8 @@ public sealed class HelpSettings(string home, Func<ServiceClient?> service)
         if (!ConfiguredAccess.Read(home).Settings.Contains(setting))
         {
             return SettingAnswer.Refusal(setting, SettingAnswer.NotGranted,
-                $"The person has not granted `{tool}` under Ask Daoris's configured access, so it is not yours to change: propose it with "
-                + "`setting_propose` for their Apply, or say where they change it.");
+                $"The person has not granted `{tool}` under Ask Daoris's configured access, so it is not yours to change: press it with "
+                + "its `daoris` verb for their Confirm, or say where they change it.");
         }
 
         if (!(new HelpWired(home).Read(request.Session).FirstOrDefault()?.Settings ?? []).Contains(setting))
@@ -70,11 +70,8 @@ public sealed class HelpSettings(string home, Func<ServiceClient?> service)
         var value = setting == ConfiguredAccess.Language && string.Equals(request.Value?.Trim(), "clear", StringComparison.OrdinalIgnoreCase)
             ? "--clear"
             : request.Value?.Trim() ?? "";
-        var proposal = new HelpProposal(
-            "", "setting", setting, request.Repository?.Trim(), request.Workspace?.Trim(), value, null, "", request.Session, "proposed");
-        var kind = new HelpSettingProposals();
         var path = DriverConfig.ResolvePath(home);
-        var plan = kind.Plan(proposal, DriverConfig.Load(path), facts);
+        var plan = HelpChosenSettingPlan.Plan(setting, request.Repository, request.Workspace, value, facts);
         if (plan.Refusal is { } refused) return SettingAnswer.Refusal(setting, SettingAnswer.Refused, $"{Capital(refused.TrimEnd('.'))}.");
 
         plan.Apply!(DriverConfig.Load(path)).Save(path);

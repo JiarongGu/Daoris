@@ -84,6 +84,9 @@ public interface IPipeGroundWorld
 
     Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken);
 
+    /// <summary>The driver's file and the names the machine holds, which a rule's view is judged against.</summary>
+    Task<PipeMachine> MachineAsync(CancellationToken cancellationToken);
+
     /// <summary>A quest's status by its id; null where the service has none.</summary>
     Task<string?> QuestAsync(string id, CancellationToken cancellationToken);
 

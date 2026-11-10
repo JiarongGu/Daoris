@@ -75,15 +75,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_setting_naming_another_workspace_s_repository_is_judged_by_its_kind()
-    {
-        Reaches(Setting("drive", target: "game"));
-        Reaches(Setting("helpers", workspace: "beta", value: "--mode on"));
-        Reaches(Setting("commits", target: "engine", value: "--mode ask"));
-        Assert.Contains("not registered", Refusal(Setting("drive", target: "nowhere")));
-    }
-
-    [Fact]
     public void A_setup_a_move_and_a_workflow_naming_another_workspace_are_judged_by_their_kinds()
     {
         Reaches(Of("setup", "setup", "game"));
@@ -126,16 +117,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("go", "go", "sessions") with { Item = "#sb1beta0" });
 
         Assert.Null(Refusal(Of("go", "go", "sessions") with { Item = "sb1beta0" }));
-    }
-
-    /// <summary>A retry of a quest of another workspace is judged as its own is; a quest in neither list is its kind's own refusal.</summary>
-    [Fact]
-    public void A_retry_of_another_workspace_s_quest_is_judged_as_its_own_is()
-    {
-        Reaches(Setting("retry", target: "qb1beta0"));
-        Reaches(Setting("retry", target: "#QB1BETA0"));
-        Reaches(Setting("retry", target: "qa1alpha"));
-        Assert.Contains("neither parked nor held", Refusal(Setting("retry", target: "zz000000")));
     }
 
     [Fact]

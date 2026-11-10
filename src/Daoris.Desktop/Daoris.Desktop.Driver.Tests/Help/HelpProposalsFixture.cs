@@ -241,15 +241,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
-    public List<HelpGitUse> GitUses { get; } = [];
-
-    public Task UseGitAsync(HelpGitUse use, CancellationToken ct)
-    {
-        GitUses.Add(use);
-        Calls.Add("git-use");
-        return Task.CompletedTask;
-    }
-
     public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices)
     {
         Config = ActorChoices.With(Config, actor, choices);

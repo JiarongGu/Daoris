@@ -91,7 +91,6 @@ internal static class HelpProposalKinds
 {
     public static readonly IReadOnlyList<IHelpProposalKind> All =
     [
-        new HelpSettingProposals(),
         new HelpAskProposals(),
         new HelpAgentProposals(),
         new HelpGoProposals(),

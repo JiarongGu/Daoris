@@ -37,22 +37,19 @@ internal static class HelpDoorRowsMachine
         ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget and the work a choice takes",
             "Agents → Roles → Working roles, a role's Edit",
             "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--clear]`"),
-        // The quest's drawer is a page. A stop's release names its session, since the terminal cannot see which hold a quest is under.
-        ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
-        ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
-            + "whose *Sitting* names the session", "`daoris quest retry <quest> --session <id>`"),
+        // The quest's drawer is a page; the press judges from the planner's verdict whether to mark the quest forgiven or release the stop.
+        ("start a quest again that its failed sessions parked or your stop holds", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
         // The terminal's door onto the default cool-off.
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris settings cooloff <minutes>`"),
         // The one quiet setting: a session runs as long as it works, and this is how long it may say nothing before Daoris looks in.
         ("set how long a session may say nothing and run nothing before Daoris looks in on it", "Settings → Driver → Look in on a quiet session after",
             "`daoris settings quiet <minutes>`"),
-        // A repository's remote or a workspace's host pointed at a git identity that exists, Ask Daoris's `setting` kind's `git-use`;
-        // never the person's own sign-ins, never an identity set up, tested or removed.
-        new("point a repository's remote, or a workspace's host, at a git identity already set up",
+        // A repository's remote or a workspace's host pointed at a git identity that exists, pressed; setting one up, testing or
+        // removing it is the person's own act.
+        ("point a repository's remote, or a workspace's host, at a git identity already set up",
             "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
-            "`daoris git use <repository> [--remote <name>] <identity>|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|--clear`",
-            new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
+            "`daoris git use <repository> [--remote <name>] <identity>|own|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|own|--clear`"),
         // How long each kind Daoris keeps is kept.
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → Disk space → a kind's Change…",
             "`daoris settings keep <kind> <rule>`"),

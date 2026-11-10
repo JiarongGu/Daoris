@@ -52,7 +52,6 @@ public static class KnowledgeServer
         typeof(HelpGoTool),
         typeof(HelpPluginTool),
         typeof(HelpRoleTool),
-        typeof(HelpSettingTool),
         typeof(HelpSetupTool),
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),

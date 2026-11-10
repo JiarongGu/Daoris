@@ -14,9 +14,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 
     public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
-    public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
-        ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
-
     // The ask composer's door, `POST /api/asks`, with its review choice and words; an environment the workspace does not declare is refused first.
     public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {

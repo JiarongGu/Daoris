@@ -208,7 +208,7 @@ public sealed record HelpMachineFacts(
     /// <summary>The install's offers, as the Plugins place lists them under Daoris's own plugins.</summary>
     public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
 
-    // The setting kind's.
+    // The rule views'.
 
     /// <summary>
     /// The quests the loop's last tick parked by their failed sessions, which a retry must name: the verdict
@@ -224,7 +224,7 @@ public sealed record HelpMachineFacts(
 
     /// <summary>
     /// Each registered repository with its workspace and its checkout here, or none: what a <c>review</c>'s
-    /// procedure is looked for in, the one repository it names or each of the workspace's. Empty where not asked.
+    /// procedure is looked for in, the one repository it names or each of the workspace's, and where a go or a workflow finds a repository's workspace. Empty where not asked.
     /// </summary>
     public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
 
@@ -293,11 +293,6 @@ public sealed record HelpDoorFacts(string Name)
 /// <remarks>What only one kind's card or Apply needs is read by that kind in its file; the members stay in this one declaration, under a comment per kind.</remarks>
 public sealed record HelpPlan(string? Refusal, string Describe, string Terminal, Func<DriverConfig, DriverConfig>? Apply)
 {
-    // The setting kind's.
-
-    /// <summary>A git identity a setting proposal points a repository's remote or a workspace's host at, applied through the pointer's own write; null for every other plan.</summary>
-    public HelpGitUse? GitUse { get; init; }
-
     // The clear kind's.
 
     /// <summary>What a clear proposal's Apply sends; null where the card changes nothing, and for every other kind.</summary>
@@ -370,7 +365,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
     IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpPluginDoors, IHelpSettingDoors, IHelpSyncDoors
+    IHelpPluginDoors, IHelpConfigDoors, IHelpSyncDoors
 {
 }
 

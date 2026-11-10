@@ -9,7 +9,7 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 // A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
-  id: 'p1a2b3c4', kind: 'setting' as const,
+  id: 'p1a2b3c4', kind: 'role' as const,
   describe: 'Land workspace `work`\'s accepted work on a branch `feature/{quest}-{slug}`.',
   terminal: 'daoris place landing --workspace work branch feature/{quest}-{slug}',
   why: 'the person asked for feature branches',

@@ -45,8 +45,8 @@ public sealed class HelpRoomDoorAsksTests
         Assert.Equal(drive.Act, drive.To);
 
         var helpers = Row("`daoris place helpers <repository> --mode");
-        Assert.Equal(new HelpDoorAsk.Proposes("setting", "helpers"), helpers.Ask);
-        Assert.Equal($"{helpers.Act} (Ask Daoris proposes it)", helpers.To);
+        Assert.Null(helpers.Ask);
+        Assert.Equal(helpers.Act, helpers.To);
 
         var accept = Row("`daoris quest accept <id>`");
         Assert.Equal(new HelpDoorAsk.Never("the yes is yours"), accept.Ask);

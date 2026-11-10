@@ -93,8 +93,8 @@ public sealed class GitIdentityCommandTests : IDisposable
     [InlineData(new[] { "identity", "remove", "W" }, true)]
     [InlineData(new[] { "use", "engine", "own" }, true)]
     [InlineData(new[] { "use", "--machine", "--host", "github.com", "own" }, true)]
-    [InlineData(new[] { "use", "engine", "W" }, false)]
-    [InlineData(new[] { "use", "engine", "--clear" }, false)]
+    [InlineData(new[] { "use", "engine", "W" }, true)]
+    [InlineData(new[] { "use", "engine", "--clear" }, true)]
     [InlineData(new[] { "default", "github.com", "W" }, false)]
     public void The_widenings_are_named(string[] args, bool widens)
     {

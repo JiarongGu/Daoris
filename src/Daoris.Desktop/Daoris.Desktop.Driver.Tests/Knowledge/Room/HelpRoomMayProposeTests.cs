@@ -196,7 +196,9 @@ public sealed class HelpRoomMayProposeTests
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("a review, a second opinion, a helpers rule, a commit rule, a retry and a git identity. Every other setting is", proposes);
+        Assert.Contains("Every setting is pressed, never proposed, its card the press's own sentence and command", proposes);
+        Assert.Contains("`daoris place review|opinion|helpers|commits <repository> …`", proposes);
+        Assert.DoesNotContain("setting_propose", proposes);
         Assert.Contains("`daoris place drive|undrive|hold|resume <repository>`", proposes);
         Assert.Contains("`daoris place trees <repository> on|off`", proposes);
         Assert.Contains("`daoris place across <repository> read|write-to …`", proposes);

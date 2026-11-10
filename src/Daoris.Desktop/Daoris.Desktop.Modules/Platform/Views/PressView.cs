@@ -61,6 +61,12 @@ public static class PressViews
         new PlaceStandingView(),
         PlaceAcrossView.Read(),
         PlaceAcrossView.WriteTo(),
+        new PlaceReviewView(),
+        new PlaceOpinionView(),
+        new PlaceHelpersView(),
+        new PlaceCommitsView(),
+        new RetryQuestView(),
+        new GitUseView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

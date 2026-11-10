@@ -923,7 +923,7 @@ describe('Ask Daoris, with an agent named', () => {
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'p1a2b3c4', kind: 'setting', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
+      id: 'p1a2b3c4', kind: 'role', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
       terminal: 'daoris place drive engine', why: 'the person asked for engine to be driven',
     }];
     bridge();

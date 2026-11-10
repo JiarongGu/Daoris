@@ -22,7 +22,6 @@ public sealed partial class HelpProposalKindsTests
     /// </summary>
     private static readonly (string Kind, string Tool)[] Table =
     [
-        ("setting", "setting_propose"),
         ("ask", "ask_propose"),
         ("agent", "agent_propose"),
         ("go", "go_propose"),
@@ -83,7 +82,7 @@ public sealed partial class HelpProposalKindsTests
         // The kinds' folder is the one the first kind's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpProposalKinds.All[0].GetType().Name}.cs"))!;
 
-        // A kind's plans may sit in parts beside it (`HelpRetrySetting`,`HelpWorkflowCard`…); what declares a kind is one file per kind.
+        // A kind's plans may sit in parts beside it (`HelpWorkflowCard`…); what declares a kind is one file per kind.
         Assert.Equal(
             HelpProposalKinds.All.Select(kind => $"{kind.GetType().Name}.cs").Order(StringComparer.Ordinal),
             Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories)
@@ -123,7 +122,7 @@ public sealed partial class HelpProposalKindsTests
 
     /// <summary>
     /// Each kind's doors, which Ask Daoris's coverage is held against, are doors its twin writes: each
-    /// spelled in the service's writer of that kind, and the setting's, a list on both sides, the same list.
+    /// spelled in the service's writer of that kind, and the agent's, a list on both sides, the same list.
     /// </summary>
     [Fact]
     public void Every_kinds_doors_are_the_ones_its_twin_writes()
@@ -137,12 +136,6 @@ public sealed partial class HelpProposalKindsTests
                 Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
             }
         }
-
-        var listed = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpSettingProposalWriter.cs")));
-        Assert.True(listed.Success, "the service's setting doors are a list, `Doors`.");
-        Assert.Equal(
-            new HelpSettingProposals().Doors,
-            Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
 
         var agent = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpAgentProposalWriter.cs")));
         Assert.True(agent.Success, "the service's agent doors are a list, `Doors`.");
