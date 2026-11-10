@@ -18,7 +18,7 @@ public static class FolderTurns
         var store = new ManifestStore(home, workspace, department);
         var last = store.Last();
         if (last is { Kind: not PlaceKind.Folder }) return null;
-        var start = FolderManifestReader.Read(root, store.Content, last, bounds ?? ManifestBounds.Default, excludes);
+        var start = FolderManifestReader.Read(root, store.Content, last, bounds ?? ManifestBounds.Of(home), excludes);
         store.Keep(record, ManifestMoment.Start, start with { Own = [] });
         var outside = last is null ? [] : FolderChanges.Between(last, start).All;
         return new PlaceTold(outside, []) { Kind = PlaceKind.Folder, TooLarge = start.TooLarge };
@@ -26,9 +26,9 @@ public static class FolderTurns
 
     /// <summary>Read and keep the end's manifest of a folder turn whose start is <paramref name="start"/>.</summary>
     /// <returns>No path: a folder is held by its turn alone.</returns>
-    public static IReadOnlyList<string> End(ManifestStore store, string record, RunManifest start)
+    public static IReadOnlyList<string> End(string home, ManifestStore store, string record, RunManifest start)
     {
-        var end = FolderManifestReader.Read(start.Root!, store.Content, start, ManifestBounds.Default, PlaceExcludes.Of(start.Excludes));
+        var end = FolderManifestReader.Read(start.Root!, store.Content, start, ManifestBounds.Of(home), PlaceExcludes.Of(start.Excludes));
         store.Keep(record, ManifestMoment.End, end with { Own = [] });
         return [];
     }

@@ -58,4 +58,19 @@ public sealed class MachineSettingViewTests
         Assert.Null(refused.View);
         Assert.Contains("minutes", refused.Refusal);
     }
+
+    [Fact]
+    public async Task The_manifest_bound_is_shown_as_the_one_it_sets_and_judged_by_its_own_bounds()
+    {
+        var files = await View(MachineSettingView.Manifest(), new { files = 50000 });
+        Assert.Equal(("manifest-files", "daoris settings manifest files 50000"), (files.View!.Kind, files.View.Command));
+        Assert.Equal("50000", files.View.Facts["files"]);
+
+        var minutes = await View(MachineSettingView.Manifest(), new { minutes = 3 });
+        Assert.Equal(("manifest-minutes", "daoris settings manifest minutes 3"), (minutes.View!.Kind, minutes.View.Command));
+
+        Assert.Contains("files", (await View(MachineSettingView.Manifest(), new { files = 5 })).Refusal);
+        Assert.Contains("minutes", (await View(MachineSettingView.Manifest(), new { minutes = 99 })).Refusal);
+        Assert.Contains("files", (await View(MachineSettingView.Manifest(), new { })).Refusal);
+    }
 }
