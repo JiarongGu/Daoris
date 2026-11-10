@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -96,7 +97,16 @@ public sealed record WorkStepFrame(
 /// <summary>A <see cref="HookPoints.Perform"/> request's params: one attempt, with the key the plugin deduplicates it by.</summary>
 public sealed record WorkPerformCall(
     string Unit, string Step, int StepVersion, string Invocation, string IdempotencyKey, string SubjectRevision,
-    IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt);
+    IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt)
+{
+    /// <summary>
+    /// The performed node's options as its graph writes them (<see cref="NodeDeclaration.Options"/>): each name with its JSON value's
+    /// text. The host fills them at each send from the declaration it performs, so they are never kept on the attempt's record.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Options { get; init; } = None;
+
+    private static readonly IReadOnlyDictionary<string, string> None = ImmutableSortedDictionary<string, string>.Empty;
+}
 
 /// <summary>A <c>work/reconcile</c> request's params: what became of one attempt.</summary>
 public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision);
@@ -214,18 +224,32 @@ public static class WorkWire
         })]),
     };
 
-    /// <summary><see cref="HookPoints.Perform"/>'s params, as its example writes them.</summary>
-    public static JsonObject Perform(WorkPerformCall call) => new()
+    /// <summary>
+    /// <see cref="HookPoints.Perform"/>'s params, as its example writes them. The step's <c>options</c> follow where it has any: an object
+    /// of each option's JSON value, or its text as written where that is not JSON.
+    /// </summary>
+    public static JsonObject Perform(WorkPerformCall call)
     {
-        ["unit"] = call.Unit,
-        ["step"] = call.Step,
-        ["stepVersion"] = call.StepVersion,
-        ["invocation"] = call.Invocation,
-        ["idempotencyKey"] = call.IdempotencyKey,
-        ["subjectRevision"] = call.SubjectRevision,
-        ["inputs"] = Strings(call.Inputs),
-        ["deadlineAt"] = Time(call.DeadlineAt),
-    };
+        var written = new JsonObject
+        {
+            ["unit"] = call.Unit,
+            ["step"] = call.Step,
+            ["stepVersion"] = call.StepVersion,
+            ["invocation"] = call.Invocation,
+            ["idempotencyKey"] = call.IdempotencyKey,
+            ["subjectRevision"] = call.SubjectRevision,
+            ["inputs"] = Strings(call.Inputs),
+            ["deadlineAt"] = Time(call.DeadlineAt),
+        };
+        if (call.Options.Count > 0)
+        {
+            var options = new JsonObject();
+            foreach (var (name, text) in call.Options.OrderBy(pair => pair.Key, StringComparer.Ordinal)) options[name] = OptionValue(text);
+            written["options"] = options;
+        }
+
+        return written;
+    }
 
     /// <summary><c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>.</summary>
     public static JsonObject Reconcile(WorkReconcileCall call) => new()
@@ -403,8 +427,30 @@ public static class WorkWire
         && Text(@params, "invocation") is { } invocation && Text(@params, "idempotencyKey") is { } key
         && Text(@params, "subjectRevision") is { } revision && StringList(@params, "inputs") is { } inputs
         && Text(@params, "deadlineAt") is { } deadline && ReadTime(deadline) is { } deadlineAt
-            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt)
+        && ReadOptions(@params) is { } options
+            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt) { Options = options }
             : null;
+
+    /// <summary>A perform call's <c>options</c> read back as each value's JSON text: absent or null is none; null where it is not an object.</summary>
+    private static IReadOnlyDictionary<string, string>? ReadOptions(JsonElement @params)
+    {
+        if (!@params.TryGetProperty("options", out var said) || said.ValueKind == JsonValueKind.Null) return ImmutableSortedDictionary<string, string>.Empty;
+        if (said.ValueKind != JsonValueKind.Object) return null;
+        return said.EnumerateObject().ToDictionary(option => option.Name, option => option.Value.GetRawText(), StringComparer.Ordinal);
+    }
+
+    /// <summary>An option's text as its JSON value, or the text itself where it is not JSON: <c>true</c> is a boolean, <c>squash</c> the word.</summary>
+    private static JsonNode? OptionValue(string text)
+    {
+        try
+        {
+            return JsonNode.Parse(text);
+        }
+        catch (JsonException)
+        {
+            return JsonValue.Create(text);
+        }
+    }
 
     /// <summary><c>work/reconcile</c>'s params read back, or null where they are not its shape.</summary>
     public static WorkReconcileCall? ReadReconcile(JsonElement @params) =>

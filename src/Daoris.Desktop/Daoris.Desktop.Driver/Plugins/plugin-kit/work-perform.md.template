@@ -6,6 +6,9 @@ promises of it:
 
 - **`idempotent`**: an attempt Daoris sends again under the same `idempotencyKey`, after a restart or a lost answer, never
   does the work twice. `work.mjs` writes each key to its journal before `act()` is called, and calls it once per key.
+- **`options`**: the options the workflow graph's node writes for the step reach `act()` as `call.options`, an object of each
+  option's name and JSON value (text that is not JSON arrives as the word it is). A node with none sends none, so `call.options`
+  is `{}`; a plugin reads an option where it is present and keeps its default where it is not.
 - **`reconcile`**: asked `work/reconcile` about an attempt, it answers what became of it: `done` with its outcome,
   `not-started`, `running`, `failed` with its outcome, or `unknown`. `work.mjs` answers from its journal, and asks `check()`
   only about an attempt a process before this one began, which only the platform can tell.
