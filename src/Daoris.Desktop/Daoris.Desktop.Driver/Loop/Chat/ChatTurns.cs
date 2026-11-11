@@ -34,10 +34,7 @@ internal sealed class ChatTurns : IChatTurns
     private readonly TurnHolds _holds;
 
     /// <summary>A conversation's turns over its door.</summary>
-    /// <param name="ready">
-    /// Whether the door can take a turn — the protocol door's session open. False means it never will, and
-    /// everything waiting is dropped.
-    /// </param>
+    /// <param name="ready">Whether the door can take a turn (its session open); false, it never will, and what waits is dropped.</param>
     /// <param name="take">
     /// Send one turn and complete when it ends. It calls its second argument the moment the turn is on the
     /// wire; a turn it could not send completes without calling it.
@@ -64,6 +61,7 @@ internal sealed class ChatTurns : IChatTurns
     /// the turn is found to have ended: the door settles there what those words' own turns came to, so a word taken whose turn failed
     /// transient is tried again inside the turn, which lasts. Never faults the pump. Null for a door that settles nothing.
     /// </param>
+    /// <param name="cutsIn">Whether <paramref name="interrupt"/> keeps the conversation, so *Send now* cuts in (<see cref="TurnCutIn"/>).</param>
     internal ChatTurns(
         Func<Task<bool>> ready,
         Func<ChatMessage, Action, Task> take,
@@ -72,12 +70,13 @@ internal sealed class ChatTurns : IChatTurns
         Func<ChatMessage, Task?>? steer = null,
         Func<ChatMessage, Task?>? steerNow = null,
         Func<bool>? nextStep = null,
-        Func<Task>? settled = null)
+        Func<Task>? settled = null,
+        bool cutsIn = false)
     {
         _state = new TurnState(changed);
         _stops = new TurnStops(_state, interrupt);
         _pump = new TurnPump(_state, _stops, ready, take, settled);
-        _takes = new TurnTakes(_state, _pump, steer, steerNow, nextStep);
+        _takes = new TurnTakes(_state, _pump, steer, steerNow, nextStep, cutsIn ? new TurnCutIn(_state, _stops.StopKeepingAsync) : null);
         _keeps = new TurnKeeps(_state, _takes, _pump, steer, steerNow);
         _holds = new TurnHolds(_state, _pump);
     }

@@ -398,6 +398,7 @@ function TurnMeter({ turn }: { turn: Turn }) {
 const heldKey = (reaches: string | null | undefined, chat: boolean, level?: Level) => {
   if (reaches === 'next-step') return 'work.conversation.held.nextStep';
   if (reaches === 'now') return 'work.conversation.held.now';
+  if (reaches === 'next-turn') return 'work.conversation.held.nextTurn';
   if (reaches === 'resume') return chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume';
   if (level === 'urgent') return 'work.conversation.held.urgentTurnEnd';
   if (level === 'now') return 'work.steer.notNowTurnEnd';

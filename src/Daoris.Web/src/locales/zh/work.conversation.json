@@ -39,6 +39,8 @@
   "work.conversation.attached": "附件",
   "work.conversation.held.nextStep": "已暂存：等当前这一步结束后，它会在下一步读到。",
   "work.conversation.held.now": "已立即发送：它在当前这一轮中直接读到了这条。",
+  "work.conversation.held.nextTurn": "已立即发送：正在停止本轮，这条会作为下一轮送达。",
+  "work.conversation.cutIn": "已立即发送：为这条停止了上一轮，这条开启了新的一轮。",
   "work.conversation.held.turnEnd": "已暂存：它会在本轮结束时读到。",
   "work.conversation.held.urgentTurnEnd": "紧急，已暂存：它的接入方式只在本轮结束时接收消息。",
   "work.conversation.held.never": "它在读到这条之前就结束了。",

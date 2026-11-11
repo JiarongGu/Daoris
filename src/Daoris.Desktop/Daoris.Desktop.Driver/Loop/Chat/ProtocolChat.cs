@@ -69,7 +69,8 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             steer: Steer,
             steerNow: SteerNow,
             nextStep: () => Words is { NextStep: true },
-            settled: SettleSteeredAsync);
+            settled: SettleSteeredAsync,
+            cutsIn: true);
     }
 
     /// <summary>
