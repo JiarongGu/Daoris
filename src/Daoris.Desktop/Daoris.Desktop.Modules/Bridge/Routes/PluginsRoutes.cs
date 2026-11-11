@@ -120,6 +120,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Skills = SkillsOf(offer.Manifest, offer.Folder),
                     Steps = StepsOf(offer.Manifest),
                     Resources = ResourcesOf(offer.Manifest),
+                    offer.Manifest.Interfaces,
                     offer.Needs,
                     offer.Installed,
                 };

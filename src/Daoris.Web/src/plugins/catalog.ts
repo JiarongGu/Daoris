@@ -1,4 +1,5 @@
 import type { PluginSourceShown } from './PluginUpdate';
+import type { InterfacesShown, SwitchWord } from './interfaces';
 
 /**
  * A server a plugin offers Ask Daoris, as the driver's `PLUGINS` answers it: its name, the tools
@@ -165,6 +166,10 @@ export type PluginShown = {
   resources?: ResourceShown[];
   /** The tools it declares as its manifest says them; nothing is found by reading. Left out where there is none. */
   tools?: ToolShown[];
+  /** What Daoris reaches it through besides its points, each entry refused alone; left out by an older driver. */
+  interfaces?: InterfacesShown;
+  /** The person's words on its parts, by part and place; none where every part is on everywhere. */
+  switches?: SwitchWord[];
 };
 
 /** One of Daoris's own plugins the install carries, with what its manifest declares and its README needs. */
@@ -190,6 +195,7 @@ export type OfferShown = {
   /** Its declared icon as its bytes; none where it declares none. */
   icon?: string | null;
   iconProblem?: string | null;
+  interfaces?: InterfacesShown;
 };
 
 /**

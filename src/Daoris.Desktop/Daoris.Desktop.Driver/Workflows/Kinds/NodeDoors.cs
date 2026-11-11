@@ -25,6 +25,8 @@ public sealed class NodeDoors
             if (unit is IStarts starts && starts.Door(wiring) is { } door) doors = doors.SetItem(unit.Row.Kind, door);
         }
 
+        if (((IStarts)new PluginStep()).Door(wiring) is { } agents) doors = doors.SetItem(StepAgents.Door, agents);
+
         return new NodeDoors(doors);
     }
 

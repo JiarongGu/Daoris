@@ -5,6 +5,12 @@ namespace Daoris.Driver;
 /// <summary>Whom a session's plugin tools serve: the session, the place its switches are read at, and its language.</summary>
 public sealed record PluginToolsAt(string Session, PluginPlace Place, string Language)
 {
+    /// <summary>The one plugin whose tools are listed, for a step's session; null lists every plugin's.</summary>
+    public string? Plugin { get; init; }
+
+    /// <summary>The attempt a step's session performs, whose <c>step_answer</c> is listed beside the plugin's tools; null for none.</summary>
+    public string? Step { get; init; }
+
     /// <summary>A quest's session in its repository and workspace, in the repository's session language (English where none is set or it is another).</summary>
     public static PluginToolsAt OfQuest(string session, DriverConfig config, string repository, string? workspace) =>
         new(session, new PluginPlace(repository, workspace), SessionLanguages.Resolve(config, repository, workspace)?.Code is "zh" ? "zh" : "en");
@@ -49,8 +55,49 @@ public sealed class PluginToolsServer(
             return 2;
         }
 
-        await new PluginToolsServer(home, at.Session, at.Place, at.Language, new PluginLog(log)).RunAsync(input, output, ct).ConfigureAwait(false);
+        await new PluginToolsServer(home, at, new PluginLog(log)).RunAsync(input, output, ct).ConfigureAwait(false);
         return 0;
+    }
+
+    public PluginToolsServer(string home, PluginToolsAt at, PluginLog log, PluginCommandRun.Starter? start = null)
+        : this(home, at.Session, at.Place, at.Language, log, start) => _at = at;
+
+    private IReadOnlyList<PluginToolCommand> Tools() =>
+        [.. PluginToolList.At(home, _at.Place).Where(tool => _at.Plugin is null || tool.Plugin.Manifest.Id == _at.Plugin)];
+
+    private static readonly object AnswerSchema = new
+    {
+        type = "object",
+        properties = new Dictionary<string, object>
+        {
+            ["state"] = new { type = "string", @enum = new[] { WorkStates.Reached, WorkStates.Failed } },
+            ["decision"] = new { type = "string", description = "the route it reached by, one the step declares" },
+            ["code"] = new { type = "string", description = "why it failed, a short lowercase code" },
+            ["url"] = new { type = "string", description = "the address of what it made, such as the pull request" },
+            ["message"] = new { type = "string", description = "what happened, in a sentence" },
+            ["outputs"] = new { type = "object", description = "each output the step declares, by name, with its id" },
+        },
+        required = new[] { "state", "message" },
+    };
+
+    private object[] Answering() => _at.Step is null ? [] :
+    [
+        new
+        {
+            name = StepAnswer.Tool, title = "Answer the step",
+            description = "Says what the step came to, once: reached with its evidence, or failed with a code. The step's answer is this call.",
+            inputSchema = AnswerSchema, annotations = new { readOnlyHint = false, openWorldHint = false },
+        },
+    ];
+
+    private object StepAnswered(JsonElement? arguments)
+    {
+        var refused = StepAnswer.AskOf(home, _at.Step!) is { } ask ? StepAnswer.Answer(home, ask, arguments) : "this step's ask is not kept here.";
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["content"] = new[] { new { type = "text", text = refused ?? "The step's answer is kept." } },
+            ["isError"] = refused is not null,
+        };
     }
 
     /// <summary>Answers each line until the input ends, one line out per request, nothing for a notification.</summary>
@@ -88,7 +135,7 @@ public sealed class PluginToolsServer(
         {
             "initialize" => Success(id, Opened(parameters)),
             "ping" => Success(id, new Dictionary<string, object>()),
-            "tools/list" => Success(id, new { tools = PluginToolList.At(home, _at.Place).Select(Listed).ToList() }),
+            "tools/list" => Success(id, new { tools = Tools().Select(Listed).Concat(Answering()).ToList() }),
             "tools/call" => await CalledAsync(id, parameters, ct).ConfigureAwait(false),
             _ => Failure(id, -32601, $"`{method}` is not a method of this server"),
         };
@@ -119,7 +166,9 @@ public sealed class PluginToolsServer(
     private async Task<object> CalledAsync(JsonElement? id, JsonElement? parameters, CancellationToken ct)
     {
         var name = parameters is { } given && given.TryGetProperty("name", out var named) && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
-        if (PluginToolList.At(home, _at.Place).FirstOrDefault(tool => tool.Name == name) is not { } tool)
+        if (name == StepAnswer.Tool && _at.Step is not null)
+            return Success(id, StepAnswered(parameters!.Value.TryGetProperty("arguments", out var answered) ? answered : null));
+        if (Tools().FirstOrDefault(tool => tool.Name == name) is not { } tool)
             return Failure(id, -32602, $"no tool `{name}` is handed here: it is not a plugin's tool, or its plugin's tools are switched off at {_at.Place.Key}");
         JsonElement? arguments = parameters!.Value.TryGetProperty("arguments", out var args) ? args : null;
         return Success(id, await PluginToolCall.CallAsync(home, tool, arguments, _at, log, ct, start).ConfigureAwait(false));

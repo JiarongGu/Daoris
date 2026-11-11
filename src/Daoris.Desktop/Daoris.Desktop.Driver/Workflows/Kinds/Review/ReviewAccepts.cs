@@ -30,13 +30,12 @@ public static class ReviewAccepts
     }
 
     /// <summary>
-    /// The second check, at the pass: whether the person's <paramref name="word"/> names a revision the work read afresh no longer holds
-    /// (<paramref name="present"/>, by review), or an attempt its review has left.
+    /// The second check, at the pass: whether <paramref name="word"/>, the person's or a supervisor's, names a revision the work read afresh no
+    /// longer holds (<paramref name="present"/>, by review), or the person's names an attempt its review has left.
     /// </summary>
     public static bool MovedFrom(NodeWord word, NodeStatus standing, IReadOnlyDictionary<string, string>? present) =>
-        word.By is null
-        && ((word.Revision is { } named && present?.GetValueOrDefault(word.Review ?? word.Node) is { } now && !string.Equals(named, now, StringComparison.OrdinalIgnoreCase))
-            || (word is { Act: NodeWordActs.Accept, Kept: false, Review: null, Attempt: { } attempt } && attempt != standing.Attempt));
+        (word.Revision is { } named && present?.GetValueOrDefault(word.Review ?? word.Node) is { } now && !string.Equals(named, now, StringComparison.OrdinalIgnoreCase))
+        || (word is { By: null, Act: NodeWordActs.Accept, Kept: false, Review: null, Attempt: { } attempt } && attempt != standing.Attempt);
 
     /// <summary>
     /// The revision each review a word on <paramref name="record"/> is bound to reads now: the run's work read as its record is

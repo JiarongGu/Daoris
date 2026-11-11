@@ -143,7 +143,7 @@ internal static class NodeGoverning
             var under = node with
             {
                 Perform = step.Perform, Retry = node.Retry ?? step.Retry, TimeoutSeconds = node.TimeoutSeconds ?? step.TimeoutSeconds,
-                Evidence = node.Evidence ?? step.Evidence,
+                Evidence = node.Evidence ?? step.Evidence, Goal = step.Goal,
             };
             if (NodeDeclarations.Problem(under) is not null) continue;
             declared[node.Id] = under;

@@ -110,6 +110,20 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1h's second part — a run's step outcomes in Done and failed (2026-11-12, D273)
+
+> **REVIEWUX1h, second part** (driver, web): Outcome: each watched step after a run's review, once reached or failed, is one *Done and failed* line keyed `outcome:<run>/<node>/<attempt>` (`RunOutcomeNotices`), read from the run's record at every look and claimed once through the news by the look's last pass (`RunOutcomesLook`), so a dismissed one stays dismissed and one a lost write left is kept at the next look; it is said by its step's kind and its run in both languages. Proof: `RunOutcomeNoticesTests` and the outcome words test, each seen failing first; the look's pass order census.
+
+---
+
+## REVIEWUX1e's second part and REVIEWUX1i — the review read whole, the supervisor on every kind (2026-11-12, D273)
+
+> **REVIEWUX1e, second part** (driver, modules, web): Outcome: the run's review answers the values its sentence of its kind is worded from (`RunReviewSays`), the steps before the review with their states, and each following step's wire, outcome, door and the recovery its attempt takes; `RUN_REVIEW_FILE` draws a branch's or a checkout's file from the commits the record names (`ReviewCommits`), never the checkout as it stands; the page reads the review through `useRunReview`. Proof: `RunReviewsTests` and `ReviewCommitsTests` (a real repository whose branch moved past the review), the web typecheck.
+>
+> **REVIEWUX1i, but the card** (driver, modules): Outcome: a landing supervisor decides a run's step from any session of the run's chain (`LandingKind`, by `QuestRuns.Of`), reads the review record's facts on every kind alike (`LandingReviewFacts`), and keeps its decision naming the record's revision (`SupervisorReviewBinding`): released only while the attempt's record holds it, carried onto the run's record and dropped `stale` `moved` at the pass where the work read afresh holds another; one naming no revision stands on a branch's review alone, so a held decision from before the record is dropped. Proof: `SupervisorReviewBindingTests` seen failing first, the supervisor landing and landing kind suites.
+
+---
+
 ## REVIEWUX1e's first part and REVIEWUX1h's `choose` — a run's review read by run; a return's choice a person wait (2026-11-12, D273)
 
 > **REVIEWUX1e, first part** (driver, modules): Outcome: `RUN_REVIEW { run | session, attempt }` (modules `RunReviewRoutes`, told by event) answers a run's review read by `RunReviews` from the run's binding, node record and review records alone, so it opens after its trees and sessions are gone: the newest record or an attempt named, where the review stands, the presses only on the attempt it stands on, a newer record with the paths whose content it changed, the steps an Accept may start with their states, the run's end; a session opens its run's review by the run its quest is (`QuestRuns.Of`), an earlier part's included; `RUN_REVIEW_FILE` draws a folder's or a copy's file at the record's hash from the content store, or from the place only while it still hashes so, else refused `moved` (`ReviewContent`). Proof: `RunReviewsTests` (driver), `DriverModuleRunReviewTests` seen failing first (the route refused unknown), the held reads' payloads.
@@ -139,9 +153,21 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1e's runtime half — a plugin step performed by an agent (2026-11-12, D274)
+
+> **PLUGINEXT1e (runtime)** (driver, examples): Outcome: a plugin step whose manifest declares a `goal` is recorded as its plugin's attempt and, from its first delivery, sent to the step agents (`StepAgents`, `plugin.step` among the doors) where the loop wires them: its ask kept under `workflows/agent-steps/`, its session started off the pass handed that plugin's `daoris-plugins` server alone with `step_answer`, which keeps one answer in the wire's reconcile shape (a declared decision, the evidence's url and message under the step's schema, the outputs' ids), read by the performer as the plugin's completion; a session that ends unanswered, or one a restart left, fails the step `no-answer`; an attempt already on `work/perform` is its plugin's to settle; unwired, a goal step stays on `work/perform`. Both pull-request examples (3.2.0) declare the goal; the release step declares none. `PluginsTextTests` holds `switch` and its usage line. Proof: `StepAgentPerformTests`, `PluginToolsServerTests`' step case, `PluginInterfacesTests`, `StepAgentProcessTests` (a stand-in agent starting the step's server through the built program, seeing the Azure DevOps tools and `step_answer` alone, and answering the step reached), each example's `node --test`.
+
+---
+
 ## PLUGINEXT1d — a plugin's commands as a session's tools (2026-11-12, D274)
 
 > **PLUGINEXT1d** (driver): Outcome: a quest's session, at its start and its going on, is handed one MCP server, `daoris-plugins` (`daoris plugin tools --session <id> --repository <id> --workspace <name> --language en|zh`, the desktop's program from the install's `app/daoris-driver/`), only where its place lists a tool; it lists each command marked `tool` and not interactive of each plugin on, sound and speaking, where `commands` and `tools` are on at the session's place, read again at each call, as `<plugin>_<command>` with the `about` and `title` in the session's language, a schema from `args` and a read-only mark unless it `writes`; a call is one round `from: agent` with the session and place, `said` the text, `data` the structured content, an exit an error, an ask or a missing argument refused before a second round or any process, a `plugin.command` line by names alone. Proof: `PluginToolsServerTests` (could not compile before the units), `PluginToolsProcessTests` (a stand-in session's client calling the Azure DevOps example's `status` through the built program, and nothing listed or run once switched off at the repository).
+
+---
+
+## PLUGINEXT1a and c, the window halves — the Set up tab and the round card (2026-11-12, D274)
+
+> **PLUGINEXT1a, PLUGINEXT1c (web)** (web, modules): Outcome: a plugin that declares interfaces opens at *Set up* (设置), *About* (关于) beside it with the old sections: each command with *Run* (运行), a refused entry drawn *not read* (未读入) with its reason and nothing to press, storage with what it keeps and its sign-out, *Where it is on* (在哪里启用) as a box per part and place pressing `PLUGIN_SWITCH`; *Run* or a palette row (*Plugin X: Sign in*) opens the round card over `PLUGIN_COMMAND`: the plugin's lines, *Open the page* in the person's own browser with the host shown, a code with *Copy*, a hidden field for a masked prompt, *Go on* (继续) and *Cancel* (取消), then *Done.* or the exit code; *Remove…* offers *Ask it to sign out first*; the offer lists its interfaces and the update plan marks *asks more of you* (需要你更多授权); `PLUGINS` sends each offer's interfaces. Proof: `pluginCommand.test` and `RoundCard.test` (red first), 315 tests across the plugin, bridge and menu folders; the Azure DevOps sign-in proved against a stand-in plugin, not yet on the window.
 
 ---
 

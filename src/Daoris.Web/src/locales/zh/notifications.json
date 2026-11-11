@@ -50,6 +50,8 @@
   "notifications.done.lost_other": "Daoris 重启后无法恢复 {{count}} 个终端的请求，它们未被执行",
   "notifications.done.lostKeyed": "一个终端的请求带有密钥，因此未在 Daoris 重启后继续等待：{{act}}，它未被执行",
   "notifications.done.newer": "一个来自较新版本 Daoris 的终端请求在等待该版本",
+  "notifications.done.outcome.reached": "进展 {{run}} 的{{step}}已完成",
+  "notifications.done.outcome.failed": "进展 {{run}} 的{{step}}失败了",
   "notifications.done.other": "有事项已结束",
   "notifications.done.ago": "{{age}}前",
   "notifications.done.unread": "未读",

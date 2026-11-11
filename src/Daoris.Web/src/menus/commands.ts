@@ -4,6 +4,7 @@ import type { IconName } from '../design/ui';
 import { languages } from '../locales/index';
 import { languageName } from '../locales/languages';
 import { ZOOM_DEFAULT, ZOOM_LEVELS } from '../design/zoom';
+import { PLUGIN_COMMANDS, type PluginCommandRow } from './pluginCommands';
 
 // The one table of verbs. The menus, the palette, the key handler and the *Keyboard
 // shortcuts* drawer read it, so the four never disagree. Pure, so "what can I do right now" is a value a test asserts
@@ -105,6 +106,7 @@ export type CommandState = {
   language: string;
   /** Each agent installed here, by its id and its product's name: the palette goes to each one's page. */
   agents: readonly { name: string; label: string }[];
+  pluginCommands?: readonly PluginCommandRow[];
   /** Settings' domains this window offers, by id, their name's key and their rows' keys: the palette opens each by any of them. */
   domains: readonly { id: string; label: string; rows?: readonly string[] }[];
   /** The mode Knowledge shows, or opens in where it is not in front: Search or Convergence. */
@@ -171,6 +173,7 @@ export type CommandDoors = {
   agent: (name: string) => void;
   /** A part of an agent's page, on the agent that has it: its accounts, what it may do, its usage. */
   agentPart: (part: 'accounts' | 'rules' | 'usage') => void;
+  pluginCommand?: (plugin: string, command: string) => void;
   region: (previous: boolean) => void;
   /** An act on the attended session, by its owner (`sessionActs.ts`), as its header's button presses it. */
   sessionAct: (act: string) => void;
@@ -635,6 +638,7 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
       paletteOnly: true as const, keywords: row.keywords, run: row.run,
     })),
   },
+  PLUGIN_COMMANDS,
 ];
 
 /** A row of the table as this window reads it now: translated, its keys this surface's, applied or not, runnable. */

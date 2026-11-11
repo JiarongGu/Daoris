@@ -444,7 +444,7 @@ describe("a plugin's page", () => {
       await userEvent.click(moves[1]!);
       expect(onCancelRemove).toHaveBeenCalled();
       await userEvent.click(moves[0]!);
-      expect(onRemove).toHaveBeenCalledWith('acme.gate', expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
+      expect(onRemove).toHaveBeenCalledWith('acme.gate', expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }), false);
     });
 
     /** The ask takes the focus on opening, waits for its answer, and says a refusal inside, staying open. */
