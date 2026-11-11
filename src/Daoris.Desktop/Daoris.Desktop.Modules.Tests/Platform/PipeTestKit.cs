@@ -239,6 +239,15 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return Asks.GetValueOrDefault(id);
     }
 
+    /// <summary>A repository's remotes by name, each with its address; a repository left out has no checkout here.</summary>
+    public Dictionary<string, IReadOnlyDictionary<string, string?>> Remotes { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public async Task<IReadOnlyDictionary<string, string?>?> RemotesAsync(string repository, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Remotes.GetValueOrDefault(repository);
+    }
+
     public async Task<bool?> QuestDeletableAsync(string id, CancellationToken cancellationToken)
     {
         await Read(cancellationToken);
