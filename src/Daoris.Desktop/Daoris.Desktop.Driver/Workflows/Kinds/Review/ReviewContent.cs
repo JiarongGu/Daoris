@@ -13,7 +13,7 @@ public static class ReviewContent
 
     public const string After = "after";
 
-    /// <summary>The file has moved since this revision, and its content then was not kept.</summary>
+    /// <summary>The file has moved since this revision, and its content then is not kept.</summary>
     public const string Moved = "moved";
 
     /// <summary>The record lists no such file, or its side has no content (an added file's before, a removed one's after).</summary>

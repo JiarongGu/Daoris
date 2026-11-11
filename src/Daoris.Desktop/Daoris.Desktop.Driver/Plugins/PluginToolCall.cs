@@ -43,7 +43,8 @@ public static class PluginToolCall
             return Error(failed.Message);
         }
 
-        if (round.Ask is { } asked)
+        var asked = round.Ask;
+        if (asked is not null)
         {
             log.Commanded(plugin, command.Name, CommandWire.Agent, at.Session, exit: null, clock.ElapsedMilliseconds);
             return Error($"`{tool.Name}` asked for `{asked.Name}`, and no person answers a tool call: the person runs "

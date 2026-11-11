@@ -370,7 +370,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 ? $"— {unopened}"
                 : null;
             var (servers, browserNotice, drivesBrowser) = await SessionServers.HandAsync(
-                _context.Home, _context.Servers, _context.Browser, _context.Log, ct, PluginToolsAt.OfQuest(sessionId, config, quest.To, start.Workspace)).ConfigureAwait(false);
+                _context.Home, _context.Servers, _context.Browser, _context.Log, ct, PluginToolsHand.OfQuest(_context.Home, sessionId, config, quest.To, start.Workspace)).ConfigureAwait(false);
             browserNotice = Driver.JoinNotices(browserNotice, tabNotice);
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);

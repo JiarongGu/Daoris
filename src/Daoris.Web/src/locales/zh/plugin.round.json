@@ -1,0 +1,18 @@
+{
+  "plugin.round.title": "{{plugin}}：{{command}}",
+  "plugin.round.run": "运行",
+  "plugin.round.goOn": "继续",
+  "plugin.round.cancel": "取消",
+  "plugin.round.required": "（必填）",
+  "plugin.round.working": "进行中…",
+  "plugin.round.done": "完成。",
+  "plugin.round.failed": "它以退出码 {{exit}} 结束。",
+  "plugin.round.cancelled": "已取消。已在进行的一轮会在插件自己的进程里结束，不再发送任何内容。",
+  "plugin.round.open": "打开页面",
+  "plugin.round.code": "代码",
+  "plugin.round.copy": "复制",
+  "plugin.round.copied": "已复制",
+  "plugin.round.masked": "输入时隐藏；之后不再显示，也不会保存或记录。",
+  "plugin.round.data": "它交回的内容",
+  "plugin.round.go": "它要求显示它的视图 `{{view}}`，此版本尚不绘制它。"
+}

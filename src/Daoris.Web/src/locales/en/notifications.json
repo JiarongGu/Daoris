@@ -50,6 +50,8 @@
   "notifications.done.lost_other": "{{count}} presses from a terminal could not be restored after Daoris restarted, and were not done",
   "notifications.done.lostKeyed": "A terminal's press to {{act}} carried a key, so it did not wait across Daoris's restart, and was not done",
   "notifications.done.newer": "A terminal's press from a newer Daoris waits for it",
+  "notifications.done.outcome.reached": "{{step}} of run {{run}} is done",
+  "notifications.done.outcome.failed": "{{step}} of run {{run}} failed",
   "notifications.done.other": "Something ended",
   "notifications.done.ago": "{{age}} ago",
   "notifications.done.unread": "Unread",

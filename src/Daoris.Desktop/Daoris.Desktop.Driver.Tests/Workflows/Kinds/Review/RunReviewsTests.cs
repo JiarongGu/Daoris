@@ -60,6 +60,38 @@ public sealed class RunReviewsTests : IDisposable
     }
 
     [Fact]
+    public void The_review_says_its_kinds_values_the_steps_before_it_and_each_following_steps_way_door_and_recovery()
+    {
+        Recorded(standing: 2);
+        var unit = RunUnits.IdOf("q1");
+        var files = new NodeRecordFiles(_home, () => true);
+        var record = files.Read(unit)!;
+        files.Write(record with
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(record.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value), StringComparer.Ordinal)
+            {
+                ["apply"] = new(unit, "apply", NodeStates.Unknown) { Attempt = 1 },
+            },
+        });
+
+        var review = RunReviews.Read(_home, "q1", null)!;
+
+        Assert.Equal((ReviewKinds.Folder, 2, 0), (review.Says.Kind, review.Says.Files, review.Says.Parts));
+        Assert.Equal(("work", NodeStates.Reached), (Assert.Single(review.Before).Node, review.Before[0].State));
+        var apply = Assert.Single(review.Follows);
+        Assert.Equal((WireKinds.After, NodeStates.Unknown), (apply.Via, apply.State));
+        Assert.Contains(HeldResolutions.Happened, apply.Offers);
+    }
+
+    [Fact]
+    public void A_reached_steps_door_is_its_evidence()
+    {
+        var acceptance = new NodeAcceptance(RunUnits.IdOf("q1"), "t", "gph-x", "apply", 1, 1) { Evidence = new NodePort("pull-request", "https://host.example/pr/7", null, null) };
+
+        Assert.Equal("https://host.example/pr/7", RunReviews.DoorOf(new NodeStatus(RunUnits.IdOf("q1"), "apply", NodeStates.Reached) { Acceptance = acceptance }));
+    }
+
+    [Fact]
     public void An_earlier_attempt_offers_no_press_and_announces_the_newer_record_with_the_paths_it_changed()
     {
         Recorded(standing: 2);

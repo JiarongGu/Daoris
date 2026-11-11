@@ -30,6 +30,7 @@ public sealed class PluginCommandRoutes(DriverLoop loop)
 
     [DriverRoute("PLUGIN_COMMAND", PipeClass.Window)]
     [Owner("PLUGIN_COMMAND", None = OwnerNone.ActsOnNothing)]
+    [Publishes("PLUGIN_COMMAND", StateScopes.Plugins)]
     private async Task<object?> PluginCommandAsync(PluginCommandPress press, CancellationToken cancellationToken)
     {
         var place = PluginPlace.FromKey(string.IsNullOrWhiteSpace(press.Place) ? null : press.Place.Trim())

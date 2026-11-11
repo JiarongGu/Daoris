@@ -55,7 +55,7 @@ public static class LandingCode
     public const string Refused = "refused";
 
     /// <summary>
-    /// The work's head moved past the tip its <c>land</c> was judged at, so nothing lands what nobody accepted: tried again once the tree
+    /// The work's head moved past the tip its <c>land</c> is judged at, so nothing lands what nobody accepted: tried again once the tree
     /// moves, and judged again at its new tip, as the return and the apply refuse a record that moved.
     /// </summary>
     public const string Moved = "moved";

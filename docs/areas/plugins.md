@@ -46,6 +46,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Agents' tools | `Plugins/PluginToolList.cs`, `Plugins/PluginToolCall.cs`, `Plugins/PluginToolsServer.cs`, `Plugins/PluginToolsHand.cs`; `Agents/SessionServers.cs` | A session's `daoris-plugins` server: the tool commands at its place, a call as one round `from: agent`, `daoris plugin tools`, the entry a session is handed |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
+| Page's interfaces | `plugins/interfaces.ts`, `PluginSetup.tsx`, `RoundCard.tsx`, `usePluginCommands.tsx`, `commandAsks.ts`; `bridge/pluginCommand.ts`, `bridge/pluginSwitch.ts`; `menus/pluginCommands.ts` | The *Set up* tab, the round card over `PLUGIN_COMMAND`, the switches over `PLUGIN_SWITCH`, the palette's plugin commands |
 
 Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
@@ -103,12 +104,17 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `daoris-github`, `daoris-azure-devops` and `daoris-in-app-browser`. None installs without a press. The driver looks beside the
     application first, then beside the home. An offer is listed as installed where its id or one it was formerly is
     (`PluginOffers.For`). (from D103, D274)
-17a. Daoris's GitHub and Azure DevOps plugins perform a `pull-request` step on `work/perform` and answer `work/state`. The Azure DevOps one's step
+17a. Daoris's GitHub and Azure DevOps plugins (3.2.0) declare a `goal` on their `pull-request` step and carry `create-pull-request`,
+    `pull-request-status` and `complete-pull-request` as tools, so a loop that wires the step agents has an agent perform it (workflows
+    area, rule 31a); elsewhere they perform it on `work/perform`, and they answer `work/state`. The Azure DevOps one's step
     sets the pull request to auto-complete by the token's own identity where its options say `autoComplete: true` (with `mergeStrategy`,
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
     the classic release made from it, or the pipeline run's own stages, and watches each awaited stage to its end, starting one by `deploy`
-    where nothing started it, a pending approval said and waited on. Both plugins call their
+    where nothing started it, a pending approval said and waited on. With no options it serves a repository whose build several release
+    definitions take: it watches the releases made from that build by the definitions whose CD trigger takes its branch (a release whose
+    stages all start by hand left alone), and a merge no pipeline builds (every CI trigger off or its branch and path filters, a YAML
+    pipeline's read at the merge commit, leaving it out) reaches saying nothing is to release. Both plugins call their
     service's REST API with the token their own `login` command keeps in their private storage (rule 29), and say a refused one at
     `status`. A place whose hand is refused (no origin, the identity serving it read only, Write denied: `PlaceHands`) is not started:
     the refusal is logged as `refused`, never as a start that failed (`unstartable`), counts as no exit toward unsound, and the hand is
@@ -180,6 +186,23 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     drawn in an `<img>`, never a path; else a monogram on a hue hashed from the id. (from D140)
 27. The page is a catalogue: installed (refused while on, then on, then off), then Daoris's own not installed. Name,
     description and version stay as declared. No plugin adds a view or runs code in the page. (from D119, D140, D52)
+27a. A plugin's page has the tabs *Set up* and *About* where it declares an interface or a point (*Set up* first where it declares
+    an interface; *About* holds today's sections), and no tab row otherwise. *Set up* lists each command (its authored title in the
+    viewer's language, its name, *asks you*, *changes things*, *for agents*, *takes a git identity's token*, and *Run*, disabled with
+    the reason where the plugin is off or refused or its commands are off at the window's place), each entry refused alone drawn with
+    *not read* and the reader's sentence and nothing to press, the storage's `for` and whether a removal signs it out, the views as
+    declared, the interfaces this build does not know, and *Where it is on*: a box per interface and point and per place (the machine,
+    each place holding a word, each the person adds), read as the resolver reads it, `storage` at the machine alone, a press sending
+    `PLUGIN_SWITCH`. An offer's page lists the same commands, storage and views before *Install*; the update plan names an interface
+    row by its interface and entry and marks *asks more of you*. A command runs in the round card under the page's header, at the
+    window's scope's workspace else the machine: its arguments and its `confirm` asked first where it has either, then each round's
+    `said` in order, a page to open in the person's own browser with its host, a code with *Copy*, a field per ask (a password field
+    where masked, its value sent with the answers so far and never drawn back), *Go on* and *Cancel*; its end says done or the exit,
+    `data` as handed back, and `then` (`reload`, the default, asks `PLUGINS` again; `back` closes the card; `stay` does nothing).
+    The palette lists each command of a plugin on, sound and with commands on at the machine (`run.pluginCommand:<id>/<command>`,
+    `PLUGINS` asked only while the palette is open), and a row opens the plugin's page at its card. *Remove…* where `storage.forget`
+    names a command offers *Ask it to sign out … first*, ticked, which runs that command one round from the window before
+    `PLUGIN_ACTION` removes it, saying whether the plugin confirmed; a disabled `forget` says why. (from D274)
 28. Every plugin press is the person's: a session's terminal is refused. With Daoris running a verb takes the route,
     else it acts alone under the home's lease. (from D194)
 29. A manifest's `interfaces` names what the plugin implements that Daoris reaches it through besides its points: `commands` (each
@@ -204,14 +227,14 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     running commands (rule 30); its words are the arguments as `--<name> <value>` (a boolean's flag alone true) or in declared order,
     a required one not given asked by its title; it asks each value at the terminal, hidden where `masked`, and refuses a session's
     terminal. The window's door is `PLUGIN_COMMAND` (`Window`, `PluginCommandRoutes`): one round per call, `from: window`, at the
-    place it names, an argument missing refused before any process starts, the answer handing back the run's id. `storage` is `profiles/plugins/<id>/`,
+    place it names, an argument missing refused before any process starts, the answer handing back the run's id, and the plugins slice pushed after each round, since a command may move a plugin's health or state. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
     nothing in it. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`: `SessionServers` hands a quest's
-    session, at its start and its going on, the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
+    session, at its start and its going on, the entry its caller built (`PluginToolsHand.OfQuest`, which `Agents` cannot name): the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
     [--workspace <name>] --language en|zh`, the home in the entry's own variables, only where its place lists a tool and the program is
     found (the install's `app/daoris-driver/`, else the running program where it is that one; `PluginToolsHand`). It lists
     (`PluginToolList`) each command marked `tool` and not `interactive` of each installed plugin that is on, not refused and speaks,
@@ -223,7 +246,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     other than 0 an error; a round that asks is refused and never answered, since no person answers a tool call; an argument missing or
     not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round is a `plugin.command`
     line by names alone (plugin, command, from, session, exit, ms). No call asks an approval: the switch `tools` per place is the
-    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. (from D274)
+    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. Started for an agent-performed step's session
+    (`--plugin <id> --step <invocation>`, `PluginToolsHand.StepEntry`), it lists that plugin's tools alone and `step_answer`, which
+    keeps the step's answer (workflows area, rule 31a). (from D274)
 30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
     `daoris-azure-devops`, `daoris-in-app-browser`), and anyone else's uses its own family, never `daoris-`. A manifest's `formerly`
     names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The family is the word before

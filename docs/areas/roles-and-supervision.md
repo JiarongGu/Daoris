@@ -379,11 +379,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     or `approve` or `reject` of a `human` approval (`LandingSteps`, the kit saying which kinds offer which acts and which hold a run
     for the person alone), is kept against the step as it waits on that attempt, refused `answered` once it has moved,
     `go-ahead-open` on a run a `go-ahead` holds, and `owner-held` on a line the person stopped or whose quest they paused
-    (`LandingJudge`, which reads no plan: a `land` names no plugin, and an approval is judged by its step alone). The look after the courses
-    (`LandingReleaseLook`) reads the step, the admission and `OwnerHolds` again and keeps the node's own word on the run's
-    record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision) and attempt; the decision is live,
+    (`LandingJudge`, which reads no plan: a `land` names no plugin, and an approval is judged by its step alone). Any session of the run's
+    chain in its repository decides it, an earlier part's included (`LandingKind`, the session's quest read to its run by `QuestRuns.Of`);
+    on a review it reads the review record's facts on every kind alike (`LandingReviewFacts`: the work's kind, the revision, the rows with
+    their marks, what was not read, how far back the rows reach, every handback with its checks), and the decision is kept naming that
+    record's revision (`SupervisorReviewBinding`). The look after the courses
+    (`LandingReleaseLook`) reads the step, the record, the admission and `OwnerHolds` again, so a decision whose record moved, or one
+    naming no revision on work that is no branch, goes `stale` `moved`, and keeps the node's own word on the run's
+    record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision), attempt and revision; the decision is live,
     `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
-    moved or the decision is not live in this run. A person's word on the node replaces a supervisor's pending one and the
+    moved, the work read afresh holds another revision (`moved`, `ReviewAccepts.MovedFrom`), or the decision is not live in this run. A
+    `return`'s per-file choice offers a supervisor no act. A person's word on the node replaces a supervisor's pending one and the
     decision moves `superseded`. A restart empties memory, so the first pass drops a word it left, and the start's sweep records a
     decision whose word the record shows applied as made and closes the rest stale. The head's card says *The supervisor
     accepted this; it lands at 14:10.* with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`).
@@ -623,6 +629,7 @@ Web: `agents/roles/*.test.ts(x)`, `agents/setup/*.test.tsx` and `help/goLink.tes
 
 ## Open
 
+- **THROUGH1 (D277):** Ask Daoris presses an ask's `--require`, `--through` and `ask through`, never a run's step (`skip`, `accept`, `changes`, `done`, `approve`, `reject`, `fix` stay the person's); its brief says to carry the person's words on the ask. Not built.
 - **GROWDEPT1:** only the person creates a repository or a room; a request needing a part of its own is done inside one Ask Daoris turn.
   Designed in `docs/2026-11-11-grow-department-design.md` (D276): any agent's press creates one (unasked in full access, a card in
   restricted mode, held to asked or off per project by a person-only switch), its hand ending before content, adoption and the work going

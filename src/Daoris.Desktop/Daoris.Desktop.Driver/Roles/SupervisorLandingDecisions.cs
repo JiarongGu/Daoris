@@ -15,6 +15,9 @@ public sealed record SupervisorLanding(
     string? Bound = null)
 {
     public SupervisorSubject Subject => SupervisorSubject.Landing(Session, Run, Node, Attempt);
+
+    /// <summary>The revision of the review record the decision read (<see cref="SupervisorReviewBinding"/>); null on a step that keeps none.</summary>
+    public string? Revision { get; init; }
 }
 
 /// <summary>A landing decision as memory keeps it: one per step and attempt, held for the window, released as the node's word, then applied or closed.</summary>
@@ -34,12 +37,17 @@ internal sealed class SupervisorLandingDecision
     public DateTimeOffset StateAt { get; set; }
     public string? Why { get; set; }
 
+    public string? Revision { get; init; }
+
     public SupervisorSubject Subject => SupervisorSubject.Landing(Session, Run, Node, Attempt);
 }
 
-/// <summary>A held landing decision whose moment came, as the release hands it to the node's door.</summary>
+/// <summary>A held landing decision whose moment came, as the release hands it to the node's door, with the review record's revision it read.</summary>
 public sealed record SupervisorLandingDue(
-    string Id, string Session, string Run, string Node, int Attempt, string Repository, string Do, string Generation, string Words);
+    string Id, string Session, string Run, string Node, int Attempt, string Repository, string Do, string Generation, string Words)
+{
+    public string? Revision { get; init; }
+}
 
 /// <summary>
 /// The node's side of a landing release: whether the step still waits for the decision's act and the person's holds on its line allow it

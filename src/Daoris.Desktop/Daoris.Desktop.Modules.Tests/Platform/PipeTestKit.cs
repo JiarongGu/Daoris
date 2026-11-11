@@ -165,6 +165,12 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
+    public StubGrounds Workspace(string name)
+    {
+        Placed["Held-" + name] = name;
+        return this;
+    }
+
     public StubGrounds Parking(string quest)
     {
         Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
