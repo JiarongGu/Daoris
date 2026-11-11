@@ -2,7 +2,7 @@
 // an earlier attempt asked of a platform that is down, and that the plugin runs no git, gh or az.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { POINTS, STEP, TOKEN, WEB, checkout, folder, performed, standIn, start, tip, unitAt } from './stand-in.mjs';
 
@@ -87,7 +87,8 @@ test('an attempt an earlier process began is running while Azure DevOps is down 
 });
 
 test('it runs no git, gh or az, and declares no tool for them', () => {
-  const source = ['plugin.mjs', 'azure.mjs'].map((file) => readFileSync(join(folder, file), 'utf8')).join('\n');
+  const source = readdirSync(folder).filter((file) => file.endsWith('.mjs') && !file.endsWith('.test.mjs') && file !== 'stand-in.mjs')
+    .map((file) => readFileSync(join(folder, file), 'utf8')).join('\n');
   const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
   assert.equal(/child_process|spawn|execFile|execSync/.test(source), false);

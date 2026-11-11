@@ -3,9 +3,9 @@
 // handed the API token of the git identity serving origin, for this process alone, in DAORIS_HOST_TOKEN, and is not started where
 // no identity serves origin, the identity is read only, git access denies Write, or the identity has no API token.
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
-//  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the active one already
-//  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
-//  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it.
+//  - `work/perform` for its two steps, once per idempotency key (the kit's work.mjs keeps that): `pull-request` opens the pull request
+//  from the pushed branch, or finds the active one, and sets auto-complete where its options ask (auto-complete.mjs); `release` watches
+//  what the merged commit's release takes to its end (release.mjs). The branch and checkout come from the units `work/watch` tells it.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
 //  DAORIS_HOST_TOKEN the identity's personal access token: never logged, never written, sent only to the API as Basic's password
@@ -13,6 +13,7 @@
 import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
+import { release } from './release.mjs';
 import { work } from './work.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
@@ -27,10 +28,15 @@ let units = [];
 const HOW = { noFastForward: 'merge', squash: 'squash', rebase: 'rebase', rebaseMerge: 'rebase-merge' };
 const STATE = { active: 'open', completed: 'completed', abandoned: 'abandoned' };
 
+const stepOf = (attempt) => String(attempt.step).split('/').pop();
+
+/** The unit an attempt is made for: the one awaiting its step at its tip, else any at that tip. */
+const unitOf = (attempt) => units.find((each) => each.tip === attempt.subjectRevision && (each.awaiting ?? []).some((step) => step.split('/').pop() === stepOf(attempt)))
+  ?? units.find((each) => each.tip === attempt.subjectRevision);
+
 /** The `pull-request` step: the active pull request from the pushed branch, opened here where there is none. */
 async function pullRequest(attempt) {
-  const unit = units.find((each) => each.tip === attempt.subjectRevision && (each.awaiting ?? []).some((step) => step === 'pull-request' || step.endsWith('/pull-request')))
-    ?? units.find((each) => each.tip === attempt.subjectRevision);
+  const unit = unitOf(attempt);
   if (!unit) return failed('no-unit', `no unit awaits this step at ${attempt.subjectRevision}`);
   try {
     const repo = located(unit);
@@ -114,11 +120,13 @@ const kit = work({
   send,
   say,
   act: async (attempt) => {
-    if (String(attempt.step).split('/').pop() !== 'pull-request') return failed('unknown-step', `no step ${attempt.step}`);
-    return pullRequest(attempt);
+    if (stepOf(attempt) === 'pull-request') return pullRequest(attempt);
+    if (stepOf(attempt) === 'release') return release(attempt, unitOf(attempt), say);
+    return failed('unknown-step', `no step ${attempt.step}`);
   },
-  // An attempt an earlier process began: the pull request active from its branch says whether the attempt made one.
+  // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.
   check: async (attempt) => {
+    if (stepOf(attempt) === 'release') return { state: 'not-started' };
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
     try {

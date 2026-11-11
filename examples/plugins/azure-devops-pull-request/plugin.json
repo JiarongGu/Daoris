@@ -20,6 +20,16 @@
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
       "timeoutSeconds": 300
+    },
+    {
+      "id": "release",
+      "title": { "en": "Watch the release", "zh": "跟踪发布" },
+      "about": { "en": "After the merge, finds the build Azure DevOps ran for the merged commit on the target branch, then the classic release made from it or the pipeline run's own stages, and watches each stage to its end. It can start a stage no trigger starts; Azure DevOps' approvals and checks still decide.", "zh": "合并之后，找到 Azure DevOps 为目标分支上的合并提交运行的构建，再找到由它创建的经典发布或流水线运行自身的阶段，并跟踪每个阶段直到结束。它可以启动没有触发器启动的阶段；审批和检查仍由 Azure DevOps 决定。" },
+      "reach": "performed",
+      "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] },
+      "timeoutSeconds": 3600
     }
   ],
   "tools": [
