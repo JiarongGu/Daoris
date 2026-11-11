@@ -6,20 +6,22 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A graph run's turns in its places, each kept as it ends in a file of its own under <c>workflows/units/&lt;key&gt;.turns/</c> beside the
-/// run's record and never rewritten: a record's next turn writes its start's manifest again, so only this log keeps a checkout's and a
-/// folder's earlier intervals. And the run's baseline: its first turn's start manifest, kept in the place's manifest store as the named
-/// record <c>run-&lt;key&gt;-base</c>, so the store's sweep counts its blobs while the tidy is told a review record names it.
+/// A graph run's turns in its place, each kept as it ends in a file of its own under the place's <c>turns/&lt;key&gt;/</c> and never
+/// rewritten: a record's next turn writes its start's manifest again, so only this log keeps a checkout's and a folder's earlier
+/// intervals. And the run's baseline: its first turn's start manifest, kept in the place's manifest store as the named record
+/// <c>run-&lt;key&gt;-base</c>, so the store's sweep counts its blobs while the tidy is told a review record names it.
 /// </summary>
 public static class RunTurns
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    public static string FolderOf(string home, string run) =>
-        Path.Combine(NodeRecordFiles.FolderOf(home), NodeRecordFiles.KeyOf(RunUnits.IdOf(run)) + ".turns");
+    public static string FolderOf(string home, string workspace, string department, string run) =>
+        DaorisHome.Entry(home, HomeEntry.Places, workspace, department, "turns", KeyOf(run));
 
     /// <summary>The name of <paramref name="run"/>'s baseline in its place's manifest store.</summary>
-    public static string BaselineOf(string run) => $"run-{NodeRecordFiles.KeyOf(RunUnits.IdOf(run))}-base";
+    public static string BaselineOf(string run) => $"run-{KeyOf(run)}-base";
+
+    private static string KeyOf(string run) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(run)))[..32];
 
     /// <summary>Keep <paramref name="start"/> as its run's baseline where the run keeps none in this place yet, so it is its first turn's.</summary>
     public static void Began(ManifestStore store, RunManifest start)
@@ -41,16 +43,16 @@ public static class RunTurns
             Digest = DigestOf(end),
             TooLarge = start.TooLarge || end.TooLarge,
         };
-        var folder = FolderOf(home, run);
+        var folder = FolderOf(home, store.Workspace, store.Department, run);
         Directory.CreateDirectory(folder);
         var name = $"{start.At.UtcTicks.ToString("D20", CultureInfo.InvariantCulture)}-{record}.json";
         AtomicFile.TryCreateText(Path.Combine(folder, name), JsonSerializer.Serialize(turn, Json) + "\n");
     }
 
-    /// <summary><paramref name="run"/>'s turns in the order they started; a file that does not read is left out.</summary>
-    public static IReadOnlyList<RunTurn> Of(string home, string run)
+    /// <summary><paramref name="run"/>'s turns in its place, in the order they started; a file that does not read is left out.</summary>
+    public static IReadOnlyList<RunTurn> Of(string home, string workspace, string department, string run)
     {
-        var folder = FolderOf(home, run);
+        var folder = FolderOf(home, workspace, department, run);
         if (!Directory.Exists(folder)) return [];
         var turns = new List<RunTurn>();
         foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))

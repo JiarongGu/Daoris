@@ -28,7 +28,7 @@ public sealed record ReviewWork(string Kind, string Place, ReviewReference Refer
         var (run, place, parts) = (scope.Run.Binding.Run, scope.Run.Binding.Repository, Handbacks(scope.Quests));
         if (scope.Branch?.Records.Branch is { } grown) return new(ReviewKinds.Branch, place, new() { Branch = grown.Branch, Line = grown.Line, Tip = tip }, parts);
         if (PlanReview.Reference(home, scope.Sessions) is { } plan) return new(ReviewKinds.Plan, place, plan, parts);
-        var turns = RunTurns.Of(home, run);
+        var turns = RunTurns.Of(home, RemoteTarget.Workspace(scope.Run.Binding.Workspace), place, run);
         if (turns.LastOrDefault() is not { } newest) return new(ReviewKinds.Answer, place, new(), parts);
         if (newest.Kind == PlaceKind.Git) return new(ReviewKinds.Checkout, place, CheckoutReview.Reference(turns), parts);
         return FolderCopies.At(home, newest.Root) is { } copy
@@ -39,7 +39,7 @@ public sealed record ReviewWork(string Kind, string Place, ReviewReference Refer
     /// <summary>The record of attempt <paramref name="attempt"/> of <paramref name="node"/>, its rows and what is incomplete composed by its kind's reader.</summary>
     public ReviewRecord Compose(string home, string run, string node, int attempt, DateTimeOffset at)
     {
-        var turns = Kind is ReviewKinds.Folder or ReviewKinds.Copy ? RunTurns.Of(home, run) : [];
+        var turns = Kind is ReviewKinds.Folder or ReviewKinds.Copy ? RunTurns.Of(home, Reference.Workspace!, Reference.Department!, run) : [];
         var (rows, incomplete, coverage) = Kind switch
         {
             ReviewKinds.Folder => FolderReview.Rows(home, Reference, turns),

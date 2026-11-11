@@ -10,7 +10,7 @@ public sealed class ReviewRecordRunTests : NodeRunFixture
 {
     private const string Workspace = "default";
 
-    private const string Department = "designs";
+    private const string Department = RunHome.Repository;
 
     private string Folder => Path.Combine(_home, "folder");
 

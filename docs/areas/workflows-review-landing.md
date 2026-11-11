@@ -181,7 +181,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     run's baseline to its newest turn's end, a path a later turn's start found changed marked *changed outside its turns*; a copy against its
     base, a file the folder changed too marked (`FolderReview`); a checkout by its turns' `HEAD` intervals and its own uncommitted paths
     (`CheckoutReview`); a system by its sessions' newest plan's record, number and digest (`PlanReview`). The run's turns are kept as each
-    ends under `workflows/units/<key>.turns/` (`RunTurns`), and its first turn's start manifest as the named record `run-<key>-base` in the
+    ends under its place's `turns/<key>/` (`RunTurns`), and its first turn's start manifest as the named record `run-<key>-base` in the
     place's manifest store, kept by the store's tidy while a review record names it (`ReviewRecords.Manifests`). (from D273)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
     came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as
