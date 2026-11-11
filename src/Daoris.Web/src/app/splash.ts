@@ -16,13 +16,15 @@ export const SPLASH_QUIET_MS = 150;
 
 /**
  * The roots of the queries the first screen draws: a start lands on Overview or
- * Sessions (`rememberedView`), and those views and the frame around them read the service's status, the repositories and
- * the registry, the driver's state, the quests, asks and sessions (the list's groups among them), and what needs the person
- * and the notices. Not the harnesses' probes nor the lines (`['driver', 'lines']`), which queue behind the driver's first
- * looks: the splash waited on them, and on every tick's refetch, until its bound.
+ * Sessions (`rememberedView`), and those views and the frame around them read the service's status and the registry, the
+ * driver's state, the quests, asks and sessions (the list's groups among them), and the notices. Not what waits on work this
+ * word itself releases or on the service's index: what needs the person is judged over the machine's facts, which start on this
+ * word, so waiting on it held the word to the driver's bound at every start; the repositories' first answer waits on the
+ * service reading every checkout's index; the harnesses' probes and the lines (`['driver', 'lines']`) queue behind the
+ * driver's first looks. Each draws as loading until it lands.
  */
 const FIRST_SCREEN_ROOTS: ReadonlySet<string> = new Set([
-  'status', 'repositories', 'registry', 'quests', 'asks', 'sessions', 'attention', 'notices',
+  'status', 'registry', 'quests', 'asks', 'sessions', 'notices',
 ]);
 
 /** Whether a query is one the first screen draws: a root of {@link FIRST_SCREEN_ROOTS}, or the driver's state itself. */

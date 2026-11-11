@@ -99,6 +99,13 @@ describe('the splash lifts once the first screen has its data', () => {
     expect(isFirstScreen(['harnesses'])).toBe(false);
   });
 
+  it('waits on nothing that waits on the word itself or on the index being read', () => {
+    // What needs you is judged over the machine's facts, which start on this word: waiting on it waited out the bound at every start.
+    expect(isFirstScreen(['attention'])).toBe(false);
+    // The repositories' first answer waits on the service reading every checkout's index, 22-29 s after a start.
+    expect(isFirstScreen(['repositories'])).toBe(false);
+  });
+
   it('loses nothing where no window is here: the call rejects and the page goes on', async () => {
     closeSplash.mockImplementationOnce(() => Promise.reject(new Error('NO_ROUTE')));
     mount(Promise.resolve('shell'), Promise.resolve('view'));
