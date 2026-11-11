@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>The refusals are fixed.</b> The same refusals in the same words, a copy staged beside and renamed in, links neither
-/// followed nor copied, and the data folder untouched, all held by <c>fixtures/plugins-text.json</c>.</para>
+/// followed nor copied, and the data folder untouched, held by the install's tests and the command's rows.</para>
 ///
 /// <para><b>One difference, deliberate:</b> <see cref="Add(string, string, IEnumerable{string})"/> adds, and never replaces an
 /// installed plugin. Replacing one wholesale is <c>daoris plugin add</c>'s at a terminal, <see cref="Replace"/>, which no route
