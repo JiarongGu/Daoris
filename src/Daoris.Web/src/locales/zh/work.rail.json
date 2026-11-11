@@ -51,6 +51,7 @@
   "work.rail.runWaits.task": "它的进展停在 {{node}}，等你完成",
   "work.rail.runWaits.goAhead": "它的进展停在 {{node}}，等你放行",
   "work.rail.runWaits.held": "它的进展中 {{node}} 被扣住，等你发话",
+  "work.rail.runWaits.choose": "它的进展停在 {{node}}，有些文件两边都改了，等你逐个选择",
   "work.rail.runWaits.other": "它的进展停在 {{node}}，等你处理",
   "work.rail.runWaitsTip": "这个会话所代表的进展中有一步在等你，不论会话自己如何结束：打开它，在进展上处理。",
   "work.rail.reviewTip": "它自己的工作树里有你的分支还没有的工作。审阅它，然后落地、退回或丢弃。",
