@@ -244,7 +244,8 @@ public static class RunNodeWords
                     continue;
                 }
 
-                var mark = word.Act == NodeWordActs.Send ? SendKey(node.Id, standing.Attempt) : ReturnNode.ChoiceKey(node.Id, standing.Attempt, word.Act, word.Words ?? "");
+                var mark = word.Act == NodeWordActs.Send ? SendKey(node.Id, standing.Attempt)
+                    : ReturnNode.ChoiceKey(node.Id, standing.Attempt, word.Act, word.Words ?? "", ReturnHolds.Read(standing.Holds).Waiting.GetValueOrDefault(word.Words ?? ""));
                 next = next with { Fired = [.. next.Fired, mark] };
                 applied.Add((word, null));
                 continue;

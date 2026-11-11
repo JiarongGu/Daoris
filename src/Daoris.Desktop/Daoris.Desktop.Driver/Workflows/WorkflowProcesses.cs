@@ -104,8 +104,8 @@ public static class WorkflowProcesses
     /// (<see cref="LandNodes.RuleOf"/>) and its gates read from the node options (<see cref="GraphGates"/>), each choosing among what the
     /// repository declares, and the graph carried beside, as its file holds it and never decoded, which the landing's graph part and the run's
     /// view read from the run's record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>). A graph with no <c>land</c>
-    /// that ends at a <c>review</c> is work in place, accepted there and landed by nothing (<see cref="InPlaceProcess"/>); any other
-    /// lands nothing, so no chain's work follows it; a gate node whose option does not read holds the run, saying which; so does a graph that
+    /// that observes a chain's work is work in place, whatever carries it out after its review (<see cref="InPlaceProcess"/>); one that observes
+    /// none, a verification pipeline's, lands nothing, so no chain's work follows it; a gate node whose option does not read holds the run, saying which; so does a graph that
     /// closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet. Its
     /// <c>claimed</c> node's options are its sessions' either way. A graph whose <c>integrate</c> or plugin nodes the
     /// repository's declarations cannot carry (<see cref="IntegrateCarry.Cannots"/>) holds the run too, each case its sentence.
@@ -117,10 +117,8 @@ public static class WorkflowProcesses
         var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
         held = held with { Claimed = claimed, Graph = graph };
         var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
-        var inPlace = landNode is null && graph.Nodes.Any(node => node.Id == graph.End && node.Kind == NodeKinds.Review);
-        if (landNode is null && !inPlace)
+        if (landNode is null && graph.Nodes.All(node => node.Kind != NodeKinds.Claimed))
         {
-            // A verification pipeline's graph lands nothing, so no chain's work follows it.
             return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Land}`), so no chain's work lands by it." };
         }
 

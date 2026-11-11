@@ -31,7 +31,7 @@ public sealed record ReviewWork(string Kind, string Place, ReviewReference Refer
         var turns = RunTurns.Of(home, RemoteTarget.Workspace(scope.Run.Binding.Workspace), place, run);
         if (turns.LastOrDefault() is not { } newest) return new(ReviewKinds.Answer, place, new(), parts);
         if (newest.Kind == PlaceKind.Git) return new(ReviewKinds.Checkout, place, CheckoutReview.Reference(turns), parts);
-        return FolderCopies.At(home, newest.Root) is { } copy
+        return FolderCopies.IdAt(home, newest.Root) is { } copy
             ? new(ReviewKinds.Copy, place, FolderReview.CopyReference(copy, newest), parts)
             : new(ReviewKinds.Folder, place, FolderReview.Reference(run, turns), parts);
     }

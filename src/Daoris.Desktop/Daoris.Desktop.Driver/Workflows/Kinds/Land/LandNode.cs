@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s.
 /// </summary>
 [NodeKind(NodeKinds.Land, NodeGroup.Git)]
-internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding, IAsksReads
+internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding, IAsksReads, IWritesWork
 {
     public PassRead Asks => PassRead.Content;
 

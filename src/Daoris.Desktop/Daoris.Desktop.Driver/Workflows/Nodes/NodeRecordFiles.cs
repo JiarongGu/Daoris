@@ -261,6 +261,11 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteStartObject("ended");
             writer.WriteString("quest", ended.Quest);
             writer.WriteString("at", Moments.Write(ended.At));
+            foreach (var (name, value) in new[] { ("outcome", ended.Outcome), ("node", ended.Node), ("by", ended.By) })
+            {
+                if (value is not null) writer.WriteString(name, value);
+            }
+
             writer.WriteEndObject();
         }
 
@@ -533,7 +538,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             if (root.TryGetProperty("ended", out var end))
             {
                 if (end.ValueKind != JsonValueKind.Object || Text(end, "quest") is not { } quest || Moments.Read(end, "at") is not { } endedAt) return null;
-                ended = new RunEnd(quest, endedAt);
+                ended = new RunEnd(quest, endedAt) { Outcome = Text(end, "outcome"), Node = Text(end, "node"), By = Text(end, "by") };
             }
 
             var pending = new List<NodeWord>();

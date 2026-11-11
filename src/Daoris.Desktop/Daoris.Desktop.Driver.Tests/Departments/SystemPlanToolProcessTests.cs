@@ -59,7 +59,10 @@ public sealed class SystemPlanToolProcessTests : IDisposable
                 [Apply.Id] = new(unit, Apply.Id, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = new NodeAcceptance(unit, null, "graph-1", Apply.Id, 1, 1) },
             },
         });
-        await door.PerformAsync(new ApplyStart(Run(unit, record), Apply, 1) { Authority = StepAuthority.OfDoor(unit, Apply.Id, 1) }, CancellationToken.None);
+        await door.PerformAsync(new ApplyStart(Run(unit, record), Apply, 1)
+        {
+            Authority = StepAuthority.OfDoor(unit, Apply.Id, 1), Record = EffectRecords.Planned(_home, [record]),
+        }, CancellationToken.None);
         return new NodeRecordFiles(_home, () => true).Read(unit)!.Statuses[Apply.Id];
     }
 

@@ -47,13 +47,14 @@ public sealed class NodeKit
     public static INodeKind? Of(string kind) => Built.Find(kind);
 
     /// <summary>
-    /// What the save refuses by the kinds: the protected order the gate kinds share (<see cref="ProtectedOrder"/>), then each node's kind's own
-    /// rules of where it stands, each said against the node it is about, then, for a graph a person saves now, what the landing's readers need
+    /// What the save refuses by the kinds: the protected order the gate kinds share (<see cref="ProtectedOrder"/>), the effects' order and end
+    /// (<see cref="EffectOrder"/>), each kind's own rules of where its node stands, then, for a graph saved now, what the landing's readers need
     /// (<see cref="LandingRules"/>). The rules every graph is held to are <see cref="NodeGraphs.Problems"/>'.
     /// </summary>
     internal static IReadOnlyList<WireProblem> Problems(GraphStanding standing, NodeGraph graph, bool savedNow = false, NodeKit? kit = null) =>
     [
         .. ProtectedOrder.Problems(standing),
+        .. EffectOrder.Problems(standing, graph.End),
         .. standing.ById.Values.SelectMany(node => Of(node.Kind)?.Problems(graph, node) ?? []),
         .. savedNow ? LandingRules.Problems(standing) : [],
         .. savedNow ? ArrivingKinds.Problems(graph, kit ?? Built) : [],

@@ -273,8 +273,9 @@ internal static class NodeGoverning
 
         var root = read.Roots.GetValueOrDefault(repository) ?? "";
         var identity = IdentityOf(identities, root);
+        List<string> sessions = [.. work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal)];
         var self = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, WorkflowRunBindings.Folder, WorkRecord.DriverWriter),
-            new WorkSubject(binding.Run, null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its graph runs"), []);
+            new WorkSubject(binding.Run, null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its graph runs"), []) { Executors = sessions };
         var scope = new RunScope(run, self)
         {
             Quest = chat is not null ? CandidateUnit(binding, chat, branch) : newest is null ? null : units.GetValueOrDefault(QuestUnits.IdOf(newest.Id)),
@@ -283,11 +284,8 @@ internal static class NodeGoverning
             Branches = branches,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
-            // The quests a session serving the run's work published, which its `work.requests` holds the work on.
-            Requests = WorkRequestsReading.Published(quests,
-                work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal),
-                work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
-            Sessions = [.. work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal)],
+            Requests = WorkRequestsReading.Published(quests, sessions, work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
+            Sessions = sessions,
             Root = root,
             Identity = identity,
         };

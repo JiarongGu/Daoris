@@ -175,8 +175,9 @@ public sealed class NodeGraphsTests
         var codes = typeof(GraphRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
         Assert.Empty(codes.Intersect(typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!)));
-        // The save's own refusals are proved apart from the rows, by SavesRefusedTests and ArrivingKindsTests.
-        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([GraphRefusal.LandMethod, GraphRefusal.Arriving]));
+        // The save's own refusals are proved apart from the rows: by SavesRefusedTests and ArrivingKindsTests, the effects' by EffectOrderTests, the return's by ReturnDoorTests.
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except(
+            [GraphRefusal.LandMethod, GraphRefusal.Arriving, GraphRefusal.ReturnIsolate, GraphRefusal.ReviewOrder, GraphRefusal.ReviewAmbiguous, GraphRefusal.EffectPastEnd]));
     }
 
     /// <summary>
