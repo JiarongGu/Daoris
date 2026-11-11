@@ -48,8 +48,14 @@ internal sealed class NodeRunKeeping(
         {
             var status = WorkPerformer.StatusOf(record, repair.Node);
             if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip }) continue;
+            if (!CarriedRepairs.Stands(records.Home, scope, repair, tip))
+            {
+                RunRepairs.Take(records, governed.Unit.Id, repair.Node);
+                continue;
+            }
+
             if (!await RunRepairs.ContinuesAsync(scope.Root, repair, tip, ct).ConfigureAwait(false)) continue;
-            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, null, clock).Done)
+            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, CarriedRepairs.Receipt(records.Home, governed.Run, repair, tip), clock).Done)
             {
                 RunRepairs.Take(records, governed.Unit.Id, repair.Node);
             }

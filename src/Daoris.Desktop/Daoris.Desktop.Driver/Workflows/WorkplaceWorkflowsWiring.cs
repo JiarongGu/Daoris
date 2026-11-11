@@ -41,22 +41,25 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
     public string? SkippedLook(string home, string run, string? node) =>
         LookReading.SkippedWords(new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), node);
 
-    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null)
+    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null)
     {
         if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)
         {
             return new ReviewWord(false, false, null, null, null);
         }
 
-        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, words, () => now);
+        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, words, () => now, revision: revision);
         var kept = word.Done || word.Refused == RunNodeWords.Worded;
         // A review that does not wait for the word yet (not active) is no refusal: the word is given again when it does.
         var said = kept || word.Refused == NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);
-        return new ReviewWord(true, kept, RunUnits.IdOf(run), review.Id, said);
+        return new ReviewWord(true, kept, RunUnits.IdOf(run), review.Id, said) { Moved = word.Refused == ReviewAccepts.Moved ? word.Detail ?? "" : null };
     }
 
-    public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at) =>
-        RunRepairs.Keep(new NodeRecordFiles(home, holdsLease), unit, new NodeRepair(review, tip, turn, carries, at));
+    public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)
+    {
+        var records = new NodeRecordFiles(home, holdsLease);
+        RunRepairs.Keep(records, unit, CarriedRepairs.Named(records.Read(unit), new NodeRepair(review, tip, turn, carries, at)));
+    }
 
     public void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review) =>
         RunRepairs.Take(new NodeRecordFiles(home, holdsLease), unit, review);

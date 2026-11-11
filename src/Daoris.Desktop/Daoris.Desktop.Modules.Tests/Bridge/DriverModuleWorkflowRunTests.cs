@@ -407,7 +407,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             (moved.GetProperty("done").GetBoolean(), moved.GetProperty("refused").GetString(), moved.GetProperty("revision").GetString()));
         var named = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", revision = "feedc0de0123456789", @unchecked = true });
         Assert.Equal(UncheckedAccepts.NoneUnchecked, named.GetProperty("refused").GetString());
-        var kept = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes", words = "Shorter, please.", part = "q1" });
+        var notReview = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "handed", act = "stop", whole = true });
+        Assert.Equal((false, RunNodeWords.NotReview), (notReview.GetProperty("done").GetBoolean(), notReview.GetProperty("refused").GetString()));
+        var graphed = new GraphRuns(files).Find("q1")!.Version.Graph!;
+        Assert.Equal((true, false), (AcceptWaits.Waits(graphed, "review"), AcceptWaits.Waits(graphed, "handed")));
+        var kept =await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes", words = "Shorter, please.", part = "q1" });
         Assert.True(kept.GetProperty("done").GetBoolean());
         var word = Assert.Single(files.Read(unit)!.Pending);
         Assert.Equal(("review", NodeWordActs.Changes, "Shorter, please.", "q1"), (word.Node, word.Act, word.Words, word.Part));

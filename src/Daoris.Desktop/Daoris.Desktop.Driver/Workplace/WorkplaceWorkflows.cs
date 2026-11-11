@@ -51,7 +51,8 @@ internal interface IWorkplaceWorkflows
     /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.
     /// </summary>
     /// <param name="words">What the word carries: for a head's combined Accept, the operation bringing sessions together it delivers.</param>
-    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null);
+    /// <param name="revision">The review record the press drew, which a review standing on another refuses <c>moved</c>; null for the one standing.</param>
+    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null, string? revision = null);
 
     /// <summary>Keeps the repair a carried review Accept waits on, on the run's record (see <c>RunRepairs.Keep</c>).</summary>
     void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at);
@@ -78,7 +79,11 @@ internal interface IWorkplaceWorkflows
 /// <param name="Unit">The run's own unit, whose record holds the review.</param>
 /// <param name="Review">The review node's id.</param>
 /// <param name="Said">Why the word is refused, as a sentence; null where it is kept, or where the review does not wait for it yet.</param>
-public sealed record ReviewWord(bool HasReview, bool Kept, string? Unit, string? Review, string? Said);
+public sealed record ReviewWord(bool HasReview, bool Kept, string? Unit, string? Review, string? Said)
+{
+    /// <summary>The review stands on another record than the one drawn: refused alone, the revision standing named.</summary>
+    public string? Moved { get; init; }
+}
 
 internal static class WorkplaceWorkflows
 {
