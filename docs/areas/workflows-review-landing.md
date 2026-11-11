@@ -306,8 +306,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answered for. What a landing leaves to deliver is `NothingToDeliver`'s, Daoris's skip on the path with its sentence, held while the landing
     holds: a session that committed nothing makes no branch (its session branch held `empty`), so every step after the `land` not started yet
     is passed over as nothing to deliver, and a `push` already begun is passed over by the landing record (`SkipBy` `landing`); a landed
-    branch the line already holds passes over its `push` and pull-request steps not started yet, and its monitor reads it merged
-    (`NothingToDeliverTests`). The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
+    branch the line already holds passes over its `push` and pull-request steps not started yet, and one that failed too (the
+    table's `failed>skipped` by Daoris, for that rule alone: a pull request opened and merged another way after its step failed
+    for want of a token), so the run goes on to its monitor, which reads it merged, and the held list clears (`NothingToDeliverTests`). The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
     `tidy` and `when closed` to a person's task (`human`); the page says those outcomes, and the task's `done` and `approved`, in its own words
     (`workflow.outcome.<kind>.<outcome>`, read by the editor's rows, ways and causes, the chart's ports and edges and the run view's outcome line and
     routes by the kind of the step they leave, the raw name left as identity and as the words of a kind with none). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the

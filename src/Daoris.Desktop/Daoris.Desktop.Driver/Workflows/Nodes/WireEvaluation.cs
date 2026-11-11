@@ -210,7 +210,7 @@ public static class WireEvaluation
                 continue;
             }
 
-            if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated && Undelivered(node) is { } nothing)
+            if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated or NodeStates.Failed && Undelivered(node) is { } nothing)
             {
                 Make(node, nothing, WireWhy.Path, null);
                 continue;

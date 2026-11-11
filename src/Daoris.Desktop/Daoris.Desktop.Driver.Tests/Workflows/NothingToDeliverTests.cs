@@ -116,6 +116,35 @@ public sealed class NothingToDeliverTests
         Assert.Equal(["closed"], routed.NotTaken);
     }
 
+    /// <summary>
+    /// A pull-request step that failed (no token, not transient) and whose request was then opened and merged another way: the line's hold
+    /// passes the failed step over as nothing to deliver, so the run reaches its monitor, which reads it merged; held no longer, it stays failed.
+    /// </summary>
+    [Fact]
+    public void A_failed_pull_request_step_whose_branch_the_line_holds_is_passed_over_and_the_run_goes_on()
+    {
+        var g = Run(UnitOf(null, Landing()));
+        g.Through("landing");
+        g.Through("push");
+        g.Start(g.Evaluate(), "pull-request");
+        g.Fail("pull-request");
+
+        g.Evaluate();
+        Assert.Equal(NodeStates.Failed, g.State("pull-request"));
+
+        g.Run = g.Run with { Units = new Dictionary<string, WorkUnit> { [Unit] = UnitOf(null, Landing(Held(LandedKind.OnLine, "t1"))) } };
+        g.Evaluate();
+
+        var request = g.Statuses["pull-request"];
+        Assert.Equal((NodeStates.Skipped, NodeSource.Path, (string?)null), (request.State, request.By, request.Code));
+        Assert.Contains("`feature/q1-fix` is on `origin/main` already", request.Words);
+
+        g.Start(g.Evaluate(), "monitor");
+        g.Evaluate();
+        Assert.Equal((NodeStates.Reached, PullRequestReading.Merged), (g.State("monitor"), g.Statuses["monitor"].Acceptance?.Outcome));
+        Assert.Equal(NodeStates.Ready, g.State("tidy"));
+    }
+
     /// <summary>The line's hold reads merged only where the plugin gave no answer: its own answer stands.</summary>
     [Fact]
     public void A_plugins_answer_stands_over_the_lines_hold()
