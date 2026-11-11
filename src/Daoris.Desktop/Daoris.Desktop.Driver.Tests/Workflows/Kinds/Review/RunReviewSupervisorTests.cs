@@ -60,6 +60,26 @@ public sealed class RunReviewSupervisorTests : IDisposable
         Assert.Equal("went-on", RunReviewSupervisor.Of(decisions.LandingOn("q7", "review", 1), record)!.State);
     }
 
+    [Theory]
+    [InlineData(ReviewKinds.Branch)]
+    [InlineData(ReviewKinds.Checkout)]
+    [InlineData(ReviewKinds.Folder)]
+    [InlineData(ReviewKinds.Copy)]
+    [InlineData(ReviewKinds.Plan)]
+    [InlineData(ReviewKinds.Answer)]
+    public async Task The_heads_card_reads_an_accept_by_the_kind_of_work_its_attempts_record_holds(string kind)
+    {
+        ReviewRecords.Keep(_home, new ReviewRecord("q7", "review", 1, kind, Revision, At) { Place = "reports" });
+        var decisions = Decisions();
+        await decisions.LandingAsync(Landing(), "reports", null, At);
+        await decisions.LandingAsync(Landing() with { Node = "approval", Do = SupervisorLandingActs.Approve }, "reports", null, At);
+
+        var landings = decisions.LandingsOf("s2");
+
+        Assert.Equal(kind, Assert.Single(landings, view => view.Node == "review").Work);
+        Assert.Null(Assert.Single(landings, view => view.Node == "approval").Work);
+    }
+
     [Fact]
     public async Task One_naming_another_revision_is_drawn_off_the_record_and_none_is_drawn_on_another_attempt()
     {

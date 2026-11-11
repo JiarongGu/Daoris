@@ -53,6 +53,8 @@ export type LandingRead = {
   node: string;
   attempt: number;
   do: string;
+  /** An Accept's kind of work, as its attempt's review record holds it (`branch`, `checkout`, `folder`, `copy`, `plan`, `answer`). */
+  work?: string | null;
   state: string;
   why?: string | null;
   holder?: { kind: string; parent?: string | null } | null;
@@ -104,9 +106,10 @@ export function readSupervision(answer: unknown): LineSupervision {
 export const allowSays = (t: TFunction, allow: AllowRead): string =>
   t(`work.supervision.allow.${allow.do}`, { when: ago(allow.keptAt), defaultValue: allow.do });
 
-/** What the supervisor did with the step and when it takes effect, in one sentence. */
+/** What the supervisor did with the step and when it takes effect, in one sentence: an Accept says the kind of work it took. */
 export const landingSays = (t: TFunction, landing: LandingRead): string =>
-  t(`work.supervision.landing.${landing.do}`, { at: stamp(landing.goesOnAt), defaultValue: landing.do });
+  t(landing.do === 'accept' && landing.work ? `work.supervision.landing.accept.${landing.work}` : `work.supervision.landing.${landing.do}`,
+    { at: stamp(landing.goesOnAt), defaultValue: landing.do });
 
 /** A rule's place in the person's words: this Daoris, a line, or the repository or workspace by its name. */
 export function placeWord(t: TFunction, place: string): string {

@@ -16,6 +16,9 @@ public sealed record SupervisorLandingView(
     /// <summary>The revision of the review record the decision read (<see cref="SupervisorReviewBinding"/>); null on a step that keeps none.</summary>
     public string? Revision { get; init; }
 
+    /// <summary>An Accept's kind of work (<see cref="ReviewKinds"/>), as its attempt's review record holds it, which the card's sentence is worded by.</summary>
+    public string? Work { get; init; }
+
     /// <summary>The view with memory's state over the file's: memory alone decides where a live decision stands.</summary>
     internal SupervisorLandingView Over(SupervisorLandingDecision live) => this with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false };
 
@@ -48,6 +51,7 @@ public sealed record SupervisorLandingView(
                 id, session, run, node, attempt, act, SupervisorHolders.Read(root), kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why, Earlier: true)
             {
                 Revision = Json.Text(landing, "revision"),
+                Work = act == SupervisorLandingActs.Accept ? ReviewRecords.Read(files.Home, run, node, attempt)?.Kind : null,
             };
         }
         catch (JsonException)

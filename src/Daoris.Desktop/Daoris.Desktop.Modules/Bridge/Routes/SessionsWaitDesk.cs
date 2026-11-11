@@ -136,6 +136,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         view.Node,
         view.Attempt,
         view.Do,
+        view.Work,
         Holder = new { view.Holder.Kind, view.Holder.Parent },
         State = SupervisorStates.Spell(view.State),
         view.Why,
