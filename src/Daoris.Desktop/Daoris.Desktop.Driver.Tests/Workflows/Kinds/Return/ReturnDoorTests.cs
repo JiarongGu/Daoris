@@ -25,7 +25,7 @@ public sealed class ReturnDoorTests : IDisposable
         Directory.CreateDirectory(Place);
         File.WriteAllText(Path.Combine(Place, "notes.md"), "first\n");
         var copy = FolderCopies.Make(Home, "default", "reports", Place, ManifestBounds.Default).Copy!;
-        FolderCopies.Owned(Home, copy.Folder, "rec-1");
+        FolderCopies.Owned(Home, copy.Folder, "rec-1", "r1");
         return copy;
     }
 
