@@ -260,6 +260,21 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // The bounds of a folder's manifest read, one at a time: whole files or whole minutes in the setting's bounds, the same `manifest`
+    // `daoris settings manifest files|minutes <n>` edits. Both, neither, or one out of its bounds is the driver's refusal.
+    [DriverRoute("SET_MANIFEST", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_MANIFEST", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_MANIFEST", nameof(PipeReads.Manifest))]
+    [Publishes("SET_MANIFEST", StateScopes.Driver)]
+    private object? SetManifest(SetManifest press)
+    {
+        if (press.Files is null == press.Minutes is null) throw new DriverException(ManifestSetting.OneRefusal);
+        var files = press.Files is { } f ? (ManifestSetting.TakesFiles(f) ? (int)f : throw new DriverException(ManifestSetting.FilesRefusal)) : (int?)null;
+        var minutes = press.Minutes is { } m ? (ManifestSetting.TakesMinutes(m) ? (int)m : throw new DriverException(ManifestSetting.MinutesRefusal)) : (int?)null;
+        _context.Change(config => config.WithManifest(files, minutes));
+        return State(_loop);
+    }
+
     // One kind's keep rule: the set-aside folders' days, `whole` or not, the
     // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris settings keep` edits, judged by the
     // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the

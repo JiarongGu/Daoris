@@ -83,7 +83,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline, and keeps the blob id of the accepted
    `daoris.gates.json`. A route changed applies to the next run. (from D192)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`, a plan of one) are two presses. *Set up…* alone saves the shipped copy
-   and chooses it, in one receipt-kept Apply. (from D221, D227)
+   and chooses it, in one receipt-kept Apply. A choice is refused, nothing written, where a department it reaches (the one named, or
+   each of the workspace's that its own choice does not replace) cannot run one of its steps by its place's kind, the refusal naming
+   the department, the step, its kind and where it runs (`place-kind`, `WorkflowPlaceKinds`, `PlaceKindUnserved`). Each kind declares
+   its places (`INodeKind.Places`): `land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`,
+   `merge`, `isolate` (its kinds make a worktree) and Daoris's half of a plugin's `pull-request` run in a git repository alone, `apply`
+   in a system alone, and every other kind and any other plugin step in every kind of place, since no plugin declares where its step
+   runs. (from D221, D227, D264)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`

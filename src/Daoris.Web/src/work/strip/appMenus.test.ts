@@ -19,11 +19,11 @@ const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), 
 const labels = (rows: { label: string }[]) => rows.map((row) => row.label);
 
 describe('the menus, row by row', () => {
-  it('holds 70 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
+  it('holds 71 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
     const all = entries();
     const rows = MENUS.flatMap((menu) => menuRows(all, menu.id));
-    // The 66th, View's Workflow; the 67th, View's Notifications; the 68th to the 70th, View's zoom.
-    expect(rows).toHaveLength(70);
+    // The 66th, View's Workflow; the 67th, View's Notifications; the 68th to the 70th, View's zoom; the 71st, Help's Change focus.
+    expect(rows).toHaveLength(71);
     expect(rows.filter((row) => row.shortcut)).toHaveLength(33);
   });
 

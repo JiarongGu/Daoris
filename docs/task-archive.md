@@ -5,6 +5,30 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vi's clear and sync — pressed, their kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, clear and sync** (driver, modules, service, web): Outcome: a clear presses `HISTORY_CLEAR`, its card the route's view (`HistoryClearView`, refusing at the ask what the verb would keep, in its words, then counting the plain list); `daoris tree sync --yes` presses the running Daoris's `TREES_SYNC` with fetch and follow (`Driver.Host/TreesSyncVerb.cs`), its card listing each row the route's list moves and refusing a place this machine lacks (`TreesSyncView`); both proposal kinds are gone whole (tools, writers, judges, doors, room lines, goldens, call tables, card parts, words, README rows). Proof: `HistoryClearViewTests`, `TreesSyncViewTests`, `HistoryClear.test` and `TreesSync.test` in both languages, seen failing first; the room, proposal, tool and `CoreSetTests`.
+
+---
+
+## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
+
+> **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.
+
+---
+
+## PLACEWORK1e's place-kind at the bind (2026-11-11)
+
+> **PLACEWORK1e, place-kind** (driver, modules): Outcome: each node kind declares the kinds of place it runs in (`INodeKind.Places`): git's own steps (land, push, rebase, isolate and the rest) in a git repository, `apply` in a system, every other step and any plugin step anywhere (D264); choosing a workflow a department cannot run (`daoris workflow use`, `WORKFLOW_USE`) is refused with nothing written, naming the department, the step and where it runs (`place-kind`, `WorkflowPlaceKinds`). Proof: `NodePlacesTests`, `WorkflowUsePlaceKindTests` (seen failing first), `npm run quick`, the module tests.
+
+---
+
+## The fast halves' reds after the day's merges (2026-11-11)
+
+> **CI reds, fast halves** (tools, driver, modules, web): Outcome: the lane table reaches the rehearsal's `rehearsal-apart.mjs` and the moved landing-says fixture from the suites that read them; the review and second-opinion rules' rows no longer name the service; `helpBeyond` is served through `shell.ts`; the place usage names the gone trees verb again while it still answers; the Help menu says *Change focus…*; the plan step's Chinese words carry 计划; the trees cases are gone or moved to the hold; the steward allow tests' stand-in registers the repository its hold names; the glossary drops the plugin kind's title and says 采纳 for accept (FIX-LOG, one entry per cause). Proof: each class filtered, `npm run quick`, `i18n:check`, `names:check --strict`, `test-map --check`, the web typecheck and the reach tool-tests.
+
+---
+
 ## PLACEWORK1c whole, and 1e's unattributed paths (2026-11-11)
 
 > **PLACEWORK1c's rest and 1e's part** (driver, service, web): Outcome: in a repository's own checkout a pull or promotion waits only for the lease's holder — a turn running, or a parked line with uncommitted paths of its own — and in a session's own tree for any session there, as before (`CheckoutBeside`; driving rule 12 rewritten to the design); a person's commit or stash releases a parked line's marked paths that no longer differ from HEAD and the place once none is left, and the person's acts in the checkout are refused only while a turn runs (git rule 39); a path the turn changed that none of its tools named is listed above the session's review and told to the line at its next turn. Proof: real-git tests for the pull and promotion wait (two seen failing first), the service lease tests and a real-git release test, the review's web test (seen failing first).

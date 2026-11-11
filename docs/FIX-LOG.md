@@ -19,6 +19,22 @@ repository.
   it taken. *What needs you* lists it by the quest (`unclosed`), its door the quest's *Mark done…*, and a word to the session goes on
   with it; the work in its tree stays to review.
 - **Verify:** `UnclosedQuestTests` and `UnclosedQuestRowsTests`, red first; `attention.unclosed.test.ts` words the row in both languages.
+## 2026-11-11 - Changes left their censuses behind, and the fast half went red
+
+- **Symptom:** the CI run at a29752d failed the lane table's two reach tool-tests, the bridge's barrel test, the menus' count and
+  budget, the driver's refusal-row, ledger-rule and usage tests, and a dozen modules tests, six of the steward's allow cases timing
+  out at two minutes; on main's tip the plugin kit's two system glosses failed the names check as well.
+- **Root cause:** each change met a census it did not run. 9e044efade added `tools/rehearsal-apart.mjs`, which the family
+  rehearsal imports, with no lane-table row, and dropped `place trees` from the tree's usage while the place group still answers it;
+  feaf22de29 moved `LandingSaysTwinTests` to the modules with the table left among the driver's fixtures; 2f61c7735d added
+  `bridge/helpBeyond.ts` without its barrel line; 9655acc66d gave the `isolate` kind a refusal with no `graph-problems.json` row and
+  a ledger reach the lifecycle rule did not name, and removed `SET_TREES` and the steward's trees act under tests still pressing them;
+  8607c93d9c gave `SET_HOLD` a view that reads the registry, and 06654eb671's repair missed the allow tests' stand-in;
+  172210a04e labelled the Help menu's row with the palette's 25-character title; 73a6654275 said *plan* in Chinese without 计划;
+  65096c2482 deleted the service's last reader of the review and second-opinion rules' tables and kept their rows naming it.
+- **Fix:** the rows, the barrel line and the usage's gone-verb note added; the trees cases removed or moved onto `SET_HOLD` and the
+  hold act; the stand-in registers the held repository; the menu row says *Change focus…*; the glosses follow the glossary.
+- **Verify:** each listed class filtered, red first on the tip and green after; `npm run quick`, `i18n:check`, `names:check --strict`.
 
 ## 2026-11-11 - A conversation's place was recorded as Daoris's browser
 

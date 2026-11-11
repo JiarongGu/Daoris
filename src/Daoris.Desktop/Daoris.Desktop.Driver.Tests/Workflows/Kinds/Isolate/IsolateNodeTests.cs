@@ -65,6 +65,13 @@ public sealed class IsolateNodeTests
     }
 
     [Fact]
+    public void It_is_reached_on_the_ledgers_take_and_never_ends_a_graph()
+    {
+        var row = NodeKit.Row(NodeKinds.Isolate)!;
+        Assert.Equal((NodeSource.Ledger, false), (row.ReachBy, row.MayEnd));
+    }
+
+    [Fact]
     public void It_comes_before_the_work_in_the_editors_first_group_and_waits_on_its_count_and_overlap()
     {
         Assert.Equal([NodeKinds.Isolate, NodeKinds.Claimed], NodeKit.Built.Order.Take(2).Select(part => part.Name));

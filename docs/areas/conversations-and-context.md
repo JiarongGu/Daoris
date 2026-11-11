@@ -267,7 +267,7 @@ of everything it handed, section by section.
     repositories by the focus picker's keys (`useFolds`): this workspace's by day, the others grouped by home with the window's first,
     a row's focus chip only where its focus is not its home. A row carries the messages that changed its focus (`marks`),
     and the transcript draws a divider above each from them, *Focus widened* where the driver widened it. The palette's
-    *Change focus…* opens the picker. They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
+    *Ask Daoris: Change focus…*, the Help menu's *Change focus…*, opens the picker. They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
     words* carries the words alone. A start its agent refuses at the open, before a word took the brief, hands it to its

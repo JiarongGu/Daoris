@@ -12,6 +12,7 @@ internal static class RepositoryConsole
         "usage: daoris repository connect [--workspace <name>] [--dry-run]  ·  daoris repository retire [<name>] [--dry-run]\n"
         + "       daoris repository add <folder> [--workspace <name>] [--exclude <glob>]... [--dry-run]\n"
         + "       daoris repository add --system <plugin>/<system> [<name>] [--workspace <name>] [--dry-run]\n"
+        + "       daoris repository excludes <folder> [--add <glob>]... [--remove <glob>]...   (none: says them)\n"
         + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]";
 
     public static async Task<int> RunAsync(string[] args)
@@ -95,6 +96,14 @@ internal static class RepositoryConsole
                     return await RepositoryPresses.PressWireAsync(operands[0], workspace, service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
                 }
 
+                case "excludes" when operands.Count == 1:
+                {
+                    var (add, remove) = (Flags(words, "--add"), Flags(words, "--remove"));
+                    if (add.Count == 0 && remove.Count == 0) return await RepositoryPresses.ExcludesListAsync(operands[0], service, Console.Out, Console.Error).ConfigureAwait(false);
+                    return await RepositoryPresses.PressExcludesAsync(
+                        operands[0], add, remove, DriverConfig.HomeOf(DriverConfig.ResolvePath()), service, Console.Out, InstanceHost.World("repository")).ConfigureAwait(false);
+                }
+
                 case "import" when operands.Count <= 1:
                 {
                     // Absolute, always: the service is another process, which may sit in another folder.
@@ -135,13 +144,13 @@ internal static class RepositoryConsole
     private static List<string> Flags(string[] words, string name) =>
         [.. words.Select((word, at) => (word, at)).Where(each => each.word == name && each.at + 1 < words.Length).Select(each => words[each.at + 1])];
 
-    /// <summary>The words that are neither a flag nor a value of <c>--workspace</c>, <c>--exclude</c> or <c>--system</c>.</summary>
+    /// <summary>The words that are neither a flag nor a value of <c>--workspace</c>, <c>--exclude</c>, <c>--system</c>, <c>--add</c> or <c>--remove</c>.</summary>
     private static List<string> Operands(string[] words)
     {
         List<string> found = [];
         for (var at = 0; at < words.Length; at++)
         {
-            if (words[at] is "--workspace" or "--exclude" or "--system") at++;
+            if (words[at] is "--workspace" or "--exclude" or "--system" or "--add" or "--remove") at++;
             else if (!words[at].StartsWith('-')) found.Add(words[at]);
         }
 

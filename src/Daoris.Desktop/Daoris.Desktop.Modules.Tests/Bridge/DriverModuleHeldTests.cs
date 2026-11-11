@@ -35,6 +35,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["CONVERT_PLAN"] = new { },
         ["KEPT_READS"] = new { },
         ["HELP_PROPOSALS"] =new { session = "a1b2c3d4" },
+        ["HELP_BEYOND"] = new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
         ["INTEGRATION"] = new { repository = "engine" },

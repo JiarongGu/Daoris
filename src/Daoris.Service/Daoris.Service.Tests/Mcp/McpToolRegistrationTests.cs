@@ -17,14 +17,14 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     private static readonly string[] Advertised =
     [
         "ask_propose", "brainstorm_give", "brainstorm_synthesize", "channel_post",
-        "channel_read", "checkout_read", "clear_propose", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
+        "channel_read", "checkout_read", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
         "review_ready", "review_serve", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_quiet", "setup_propose", "sync_propose", "system_plan",
+        "settings_language", "settings_notify", "settings_quiet", "setup_propose", "system_plan",
         "workflow_propose",
     ];
 
@@ -80,8 +80,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpAskTool", "HelpClearTool",
-                "HelpGoTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
+                "HelpAskTool",
+                "HelpGoTool", "HelpSetupTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",
             ],
