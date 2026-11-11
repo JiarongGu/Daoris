@@ -14,7 +14,7 @@ public sealed class PluginCommandProcessTests : IDisposable
 
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-cmdproc-" + Guid.NewGuid().ToString("N")[..8]);
 
-    /// <summary>The stand-in: answers the handshake and says the command it was asked, with its arguments.</summary>
+    /// <summary>The stand-in: answers the handshake and says the command it is asked, with its arguments.</summary>
     private const string Script = """
         import { createInterface } from 'node:readline';
         const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');

@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The migration's <c>review-records</c> step: a word an older build kept on a branchless review, before a review had a record to name, is kept
-/// as legacy only where the run's pinned graph has nothing after its review, its receipt saying it was given before Daoris drew a revision;
+/// as legacy only where the run's pinned graph has nothing after its review, its receipt saying it came before Daoris drew a revision;
 /// under any other graph it is dropped and said on the run, and a supervisor's such word is dropped stale either way. A branch run's words stand.
 /// </summary>
 public sealed class ReviewRecordsStepTests : IDisposable
