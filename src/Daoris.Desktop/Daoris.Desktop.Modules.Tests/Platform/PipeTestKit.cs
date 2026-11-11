@@ -125,6 +125,8 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     public Dictionary<string, string?> Placed { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    public Dictionary<string, IReadOnlyList<string>> Folders { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, string> Asks { get; } = new(StringComparer.Ordinal);
@@ -190,6 +192,7 @@ internal sealed class StubGrounds : IPipeGroundWorld
         await Read(cancellationToken);
         return [
             .. Placed.Select(each => new PipeRegistered(each.Key, each.Value)),
+            .. Folders.Select(each => new PipeRegistered(each.Key, "default", "folder", each.Value)),
             .. Registered.Where(name => !Placed.ContainsKey(name)).Select(name => new PipeRegistered(name, null)),
         ];
     }

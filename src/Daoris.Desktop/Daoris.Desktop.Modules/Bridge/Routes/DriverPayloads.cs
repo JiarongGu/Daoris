@@ -26,6 +26,9 @@ public sealed record SetQuiet(long? Minutes);
 /// <summary>No count, or none whole, is the driver's refusal, as less than one is.</summary>
 public sealed record SetCap(long? Cap);
 
+/// <summary>One of the two bounds of a folder's manifest read; both, or neither, or one out of its bounds is the driver's refusal.</summary>
+public sealed record SetManifest(long? Files, long? Minutes);
+
 /// <summary>One kind's keep rule, each value one of its kind's: <c>KeepRules.Apply</c> judges which a kind takes.</summary>
 public sealed record SetKeep(
     string Kind, long? Days, bool Never = false, bool? Whole = null, bool Default = false, long? Gb = null, long? Percent = null, bool Off = false);

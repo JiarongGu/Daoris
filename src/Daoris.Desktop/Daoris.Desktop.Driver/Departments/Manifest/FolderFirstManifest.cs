@@ -10,6 +10,6 @@ public static class FolderFirstManifest
     {
         var store = new ManifestStore(home, workspace, department);
         store.Keep(Record, ManifestMoment.End,
-            FolderManifestReader.Read(root, store.Content, null, ManifestBounds.Default, PlaceExcludes.Of(excludes)) with { Own = [] });
+            FolderManifestReader.Read(root, store.Content, null, ManifestBounds.Of(home),PlaceExcludes.Of(excludes)) with { Own = [] });
     }
 }

@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
+
+> **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.
+
+---
+
 ## PLACEWORK1e's place-kind at the bind (2026-11-11)
 
 > **PLACEWORK1e, place-kind** (driver, modules): Outcome: each node kind declares the kinds of place it runs in (`INodeKind.Places`): git's own steps (land, push, rebase, isolate and the rest) in a git repository, `apply` in a system, every other step and any plugin step anywhere (D264); choosing a workflow a department cannot run (`daoris workflow use`, `WORKFLOW_USE`) is refused with nothing written, naming the department, the step and where it runs (`place-kind`, `WorkflowPlaceKinds`). Proof: `NodePlacesTests`, `WorkflowUsePlaceKindTests` (seen failing first), `npm run quick`, the module tests.

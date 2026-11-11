@@ -58,6 +58,9 @@ internal static class DriverStateAnswer
             CoolOff = (int)config.CoolOff.TotalMinutes,
             // How long a session may be quiet before Daoris looks in, in minutes: the file's, or the default.
             Quiet = (int)QuietSetting.Of(config).TotalMinutes,
+            // The bounds of a folder's manifest read: the file's, or the defaults.
+            ManifestFiles = config.Manifest.Bounds.Files,
+            ManifestMinutes = (int)config.Manifest.Bounds.Time.TotalMinutes,
             config.Forgiven,
             // The stops the person released, the quest against the session, as the terminal lists them.
             config.Released,

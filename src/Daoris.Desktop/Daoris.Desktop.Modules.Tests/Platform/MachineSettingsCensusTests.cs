@@ -84,7 +84,7 @@ public sealed class MachineSettingsCensusTests
     [Fact]
     public void Each_field_the_list_names_is_the_one_the_file_writes()
     {
-        var written = DriverConfig.Empty.WithNotify(false).WithCap(3).WithCoolOff(30).WithQuiet(15).ToJson();
+        var written = DriverConfig.Empty.WithNotify(false).WithCap(3).WithCoolOff(30).WithQuiet(15).WithManifest(5000, 2).ToJson();
         foreach (var setting in MachineSettings.All.Where(setting => setting.Key != "keep"))
         {
             Assert.Contains($"\"{setting.File}\":", written);

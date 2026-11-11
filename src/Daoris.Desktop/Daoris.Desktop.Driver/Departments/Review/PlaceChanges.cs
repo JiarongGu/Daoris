@@ -20,7 +20,7 @@ public static class PlaceChanges
         var store = found.Store;
         var end = store.Read(record, ManifestMoment.End) is { } read && read.At >= start.At
             ? read
-            : Directory.Exists(root) ? FolderManifestReader.Read(root, store.Content, start, ManifestBounds.Default, PlaceExcludes.Of(start.Excludes)) : null;
+            : Directory.Exists(root) ? FolderManifestReader.Read(root, store.Content, start, ManifestBounds.Of(home),PlaceExcludes.Of(start.Excludes)) : null;
         if (end is null) return null;
         if (start.TooLarge || end.TooLarge) return new TreeDiff([], TooLarge, "");
 

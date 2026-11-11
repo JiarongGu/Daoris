@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One of the machine's four dials as the card shows it: <c>daoris settings notify</c> (<c>SET_NOTIFY</c>), <c>cap</c> (<c>SET_CAP</c>),
-/// <c>cooloff</c> (<c>SET_COOLOFF</c>) and <c>quiet</c> (<c>SET_QUIET</c>). A value the route would refuse is refused at the ask in the
+/// One of the machine's dials as the card shows it: <c>daoris settings notify</c> (<c>SET_NOTIFY</c>), <c>cap</c> (<c>SET_CAP</c>),
+/// <c>cooloff</c> (<c>SET_COOLOFF</c>), <c>quiet</c> (<c>SET_QUIET</c>) and <c>manifest</c> (<c>SET_MANIFEST</c>), one bound a press. A value the route would refuse is refused at the ask in the
 /// driver's own words, before any card.
 /// </summary>
 public sealed class MachineSettingView : IPressView
@@ -43,6 +43,22 @@ public sealed class MachineSettingView : IPressView
         if (Number(payload, "minutes") is not { } minutes || !QuietSetting.Takes(minutes)) return PressViewed.Refused(QuietSetting.Refusal);
         var text = minutes.ToString(CultureInfo.InvariantCulture);
         return Shown("quiet", new() { ["minutes"] = text }, $"daoris settings quiet {text}");
+    });
+
+    public static MachineSettingView Manifest() => new("SET_MANIFEST", payload =>
+    {
+        var (files, minutes) = (Number(payload, "files"), Number(payload, "minutes"));
+        if (files is null == minutes is null) return PressViewed.Refused(ManifestSetting.OneRefusal);
+        if (files is { } count)
+        {
+            if (!ManifestSetting.TakesFiles(count)) return PressViewed.Refused(ManifestSetting.FilesRefusal);
+            var text = count.ToString(CultureInfo.InvariantCulture);
+            return Shown("manifest-files", new() { ["files"] = text }, $"daoris settings manifest files {text}");
+        }
+
+        if (!ManifestSetting.TakesMinutes(minutes!.Value)) return PressViewed.Refused(ManifestSetting.MinutesRefusal);
+        var time = minutes.Value.ToString(CultureInfo.InvariantCulture);
+        return Shown("manifest-minutes", new() { ["minutes"] = time }, $"daoris settings manifest minutes {time}");
     });
 
     public string Module => DriverModule.Name;

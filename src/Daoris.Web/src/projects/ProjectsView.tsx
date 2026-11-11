@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isFolder, type Registration } from '../data/api';
+import { FolderExcludesSection } from './FolderExcludesSection';
 import { FolderNoGit } from './FolderNoGit';
 import { unguardedSystems } from './SystemChoiceField';
 import { usePlugins } from '../bridge/plugins';
@@ -297,6 +298,7 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
+          excludes={attached && isFolder(shown) ? <FolderExcludesSection registration={shown} notify={notify} /> : undefined}
           // Its branches and its line's history: a shell's, each read only while its tab shows.
           branches={attached && isFolder(shown)
             ? <FolderNoGit />

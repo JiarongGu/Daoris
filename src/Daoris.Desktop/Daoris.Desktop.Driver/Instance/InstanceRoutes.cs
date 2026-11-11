@@ -335,6 +335,9 @@ public static class PersonPresses
     /// <summary><c>repository wire &lt;repository&gt; --workspace &lt;name&gt;</c>: a repository wired to another workspace.</summary>
     public static InstanceRoute RegistryRewire { get; } = Person("REGISTRY_REWIRE");
 
+    /// <summary><c>repository excludes &lt;folder&gt; --add|--remove &lt;glob&gt;</c>: a folder department's excludes rewritten.</summary>
+    public static InstanceRoute RegistryExcludes { get; } = Person("REGISTRY_EXCLUDES");
+
     /// <summary><c>repository import [&lt;folder&gt;]</c>: every repository a folder's subdirectories propose, registered.</summary>
     public static InstanceRoute RegistryImport { get; } = Person("REGISTRY_IMPORT");
 
@@ -398,6 +401,7 @@ public static class PersonPresses
         ("ask review <id> on|<environment>|off [\"…\"]", AskReview),
         ("repository retire [<name>]", RegistryRetire),
         ("repository wire <repository> --workspace <name>", RegistryRewire),
+        ("repository excludes <folder> [--add <glob>]… [--remove <glob>]…", RegistryExcludes),
         ("repository import [<folder>] [--workspace <name>]", RegistryImport),
         ("browser favorite add <address> [--title \"…\"]", BrowserFavorite),
         ("browser favorite remove <address>", BrowserFavorite),

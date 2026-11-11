@@ -559,6 +559,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]
     [InlineData("SET_CAP", "driver", null)]
+    [InlineData("SET_MANIFEST", "driver", null)]
     [InlineData("SET_ROLE", "driver,harnesses", null)]
     [InlineData("SET_ROLES", "driver,harnesses", null)]
     [InlineData("ROLE_STRUCTURE", "", null)]
