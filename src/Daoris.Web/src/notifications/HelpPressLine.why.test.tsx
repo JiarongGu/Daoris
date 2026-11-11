@@ -11,7 +11,7 @@ const press = (id: string, more: Partial<HelpPressNow> = {}): HelpPressNow => ({
   id, module: 'DAORIS.DRIVER', route: 'REGISTRY_CREATE', session: 's1a2b3c4', scope: null, target: null, at: '2026-11-12T10:00:00Z', outcome: 'refused', ...more,
 });
 const standing = (helpPresses: HelpPressNow[]): StandingConfirmationNow =>
-  ({ holds: [], holders: [], stewardActs: [], stewardDesk: [], stewardLands: [], helpPresses });
+  ({ holds: [], holders: [], stewardActs: [], stewardDesk: [], helpPresses });
 
 describe('a press the growth switch refused, in Notifications', () => {
   it('is listed as refused with the switch named in its words', () => {
