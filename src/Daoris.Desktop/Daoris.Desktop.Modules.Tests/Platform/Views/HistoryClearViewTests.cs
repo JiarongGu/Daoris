@@ -95,6 +95,21 @@ public sealed class HistoryClearViewTests
     }
 
     [Fact]
+    public async Task A_workspace_whose_only_take_is_the_intakes_room_is_not_said_to_change_nothing()
+    {
+        var plan = new
+        {
+            scope = "workspace", id = "work", units = Array.Empty<object>(),
+            reading = new { intake = 2048L, takes = new { quests = 0, asks = 0, sessions = 0, teammates = 0, bytes = 2048L }, leftOver = new { count = 0, bytes = 0L } },
+        };
+
+        var viewed = await View(Listing(plan), new { said = true, workspace = "work" });
+
+        Assert.Equal("history-clear-workspace", viewed.View!.Kind);
+        Assert.Equal(["history-clear-room"], viewed.View.Also!.Select(said => said.Kind));
+    }
+
+    [Fact]
     public async Task What_the_list_keeps_is_refused_at_the_ask_in_the_verbs_words_with_no_card()
     {
         var kept = Listing(new { }, code: 1, said: "#q1 stays on this machine: it is still open.");

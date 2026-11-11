@@ -248,6 +248,7 @@
   "person.view.history-clear-workspace": "从本机清除 {{workspace}} 已完成的历史（委托：{{quests}}，需求：{{asks}}，会话：{{sessions}}，队友的副本：{{copies}}，{{size}}），每一项在清除时再判断一次。无法找回。",
   "person.view.history-clear-workspace-nothing": "{{workspace}} 已完成的历史现在没有可清除的，所以这次不会改变任何东西。",
   "person.view.history-clear-leftover": "它还会清除 {{count}} 个没有记录指向的残留文件。",
+  "person.view.history-clear-room": "同时清除该工作区的受理会话空间：其中不再保留任何需求。",
   "person.view.history-clear-workspace-keeps": "它在本机保留其中 {{count}} 个委托和需求，各有原因：仍未处理或已领取、正在运行，或在等你。",
   "person.view.sync-repository": "以你的身份从 origin 把 {{repository}} 更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。",
   "person.view.sync-workspace": "以你的身份从 origin 把工作区 {{workspace}} 的仓库更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。",
