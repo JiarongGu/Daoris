@@ -22,6 +22,17 @@ internal static class HelpDoorRowsSetup
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
             "Agents → Setup → *Set up…* (adoption ticked)",
             "`daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`"),
+        // A department and a room are opened by a press the work calls for (the growth section's table); neither has a screen of its own,
+        // the Confirm card where it waits on one being the person's view of it.
+        ("open a department the work needs: a repository or a folder, made with an empty history, registered and driven, its set-up "
+            + "quest asked of its own session and the work that follows chained behind it (`--plan` shows what it would make, and writes nothing)",
+            "(no screen of its own: the Confirm card where it waits on your yes)",
+            "`daoris repository create <name> --purpose \"…\" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] "
+            + "[--work \"…\"] [--plan]`"),
+        ("ask a repository for a room, a folder with instructions and checks of its own: one quest to its own session (`--plan` shows the quest, "
+            + "and asks nothing)",
+            "(no screen of its own: the Confirm card where it waits on your yes)",
+            "`daoris place <repository> --room <path> --purpose \"…\" --plan`, then `--apply`"),
         // The workspace plan's terminal door; its screen and Ask Daoris's doors are owed.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",

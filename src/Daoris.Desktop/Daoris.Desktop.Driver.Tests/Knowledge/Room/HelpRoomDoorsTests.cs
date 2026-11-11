@@ -32,6 +32,8 @@ public sealed class HelpRoomDoorsTests
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // The one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
             "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
+            "daoris repository create <name> --purpose \"…\" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work \"…\"] [--plan]",
+            "daoris place <repository> --room <path> --purpose \"…\" --plan",
             // The order, *Try now* and the default cool-off, the terminal's doors (on the screen too).
             "daoris agent account order <agent> <profile>…|--clear",
             "daoris agent account ready <agent> <profile>|--own", "daoris settings cooloff <minutes>", "daoris settings quiet <minutes>",

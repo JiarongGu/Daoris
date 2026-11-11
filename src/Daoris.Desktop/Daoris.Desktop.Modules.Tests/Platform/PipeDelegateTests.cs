@@ -18,19 +18,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris. The keys are
 /// a registry of the test's own, as the driver's processes hold them. The pipe is Windows': elsewhere a test returns at once.
 /// </remarks>
-public sealed class PipeDelegateTests : Bridge
+public sealed class PipeDelegateTests : PipeDelegateHarness
 {
-    private const string Archived = "s1a2b3c4";
-
-    private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
-    private readonly SessionDelegates _delegates = new();
-    private readonly ConcurrentDictionary<string, string> _modes = new(StringComparer.Ordinal);
-    private readonly ConcurrentQueue<(string Session, string Route)> _said = new();
-    private readonly ConcurrentDictionary<string, string> _access = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _families = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, HelpPressPlace> _places = new(StringComparer.Ordinal);
-
     [Fact]
     public async Task A_full_access_Ask_Daoris_press_runs_at_once_with_no_card_said_on_its_conversation_and_logged()
     {
@@ -482,103 +471,5 @@ public sealed class PipeDelegateTests : Bridge
         await UntilAsync(() => driver.Ran("SET_NOTIFY") == 1);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
         Assert.Equal(("h1", $"{DriverModule.Name}.SET_NOTIFY"), Assert.Single(_said));
-    }
-
-    /// <summary>The driver's stand-in: each press counted by route and answered done, with the session it ran as and whether it named the owner's.</summary>
-    private sealed class StandIn : ModuleBase
-    {
-        private readonly ConcurrentDictionary<string, int> _ran = new(StringComparer.Ordinal);
-
-        public override string ModuleName => DriverModule.Name;
-
-        public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
-
-        public int Ran(string route) => _ran.GetValueOrDefault(route);
-
-        protected override Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
-        {
-            _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
-            Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
-            return Task.FromResult<object?>(request.Type == "REGISTRY_CREATE"
-                ? new { Done = true, Receipt = new { Kind = "opened", Repository = "ledger", Workspace = "aurora", Folder = "/work/aurora/ledger", Line = "main", Quests = new[] { "q7" }, Done = true } }
-                : new { Done = true });
-        }
-    }
-
-    private async Task<(InstancePipe Pipe, PipeClient Client, string Nonce, StandIn Driver, ServiceProvider Services, MachineLog Log)> ServeAsync(
-        bool delegates = true)
-    {
-        var log = new MachineLog(Home, "desktop");
-        var driver = new StandIn();
-        var services = new ServiceCollection();
-        services.AddSingleton<IEventBus>(Bus);
-        services.AddSingleton<IIpcRequestTracker>(new IpcRequestTracker(Bus, new IpcRequestTrackerOptions { GracePeriod = TimeSpan.FromMilliseconds(50) }));
-        services.AddSingleton<IIpcModule>(driver);
-        services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
-        var provider = services.BuildServiceProvider();
-        var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, version: "9.9.9-test", clock: new HeldClock())
-        {
-            Grounds = new StubGrounds().Session(Archived, "completed"),
-        };
-        if (delegates)
-        {
-            pipe.Delegates = session => new PipeDelegateSession(
-                _delegates.Of(session), _modes.GetValueOrDefault(session), route => _said.Enqueue((session, route)))
-            {
-                Permissions = _access.GetValueOrDefault(session),
-                Families = _families.GetValueOrDefault(session) ?? [],
-                PlaceOf = _places.TryGetValue(session, out var place) ? (_, _) => Task.FromResult<HelpPressPlace?>(place) : null,
-            };
-        }
-
-        var client = await PipeClient.ConnectAsync(pipe.Serve()!);
-        var hello = await client.HelloAsync(HomeIdentity.Read(Home)!);
-        return (pipe, client, hello.GetProperty("data").GetProperty("nonce").GetString()!, driver, provider, log);
-    }
-
-    /// <summary>A driver press as the verb sends a session's: its text proved (or <paramref name="proofOver"/>), beside <c>delegate: { session, proof }</c>.</summary>
-    private static async Task<string> SendProvedAsync(
-        PipeClient client, string route, object payload, string session, string key, string nonce, string? proofOver = null)
-    {
-        var id = Guid.NewGuid().ToString();
-        var requestKey = Guid.NewGuid().ToString("N");
-        var text = JsonSerializer.Serialize(payload, Wire);
-        var proof = DelegateProof.Prove(key, nonce, DriverModule.Name, route, proofOver ?? text, requestKey);
-        var said = JsonSerializer.Serialize(new { session, proof }, Wire);
-        await client.SendLineAsync(
-            $$"""{"id":"{{id}}","module":"{{DriverModule.Name}}","type":"{{route}}","payload":{{text}},"key":"{{requestKey}}","{{DelegateProof.Field}}":{{said}}}""");
-        return id;
-    }
-
-    private static string? Code(JsonElement answer) =>
-        answer.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object ? error.GetProperty("code").GetString() : null;
-
-    /// <summary>The machine log's <paramref name="event"/> lines' data, in order.</summary>
-    private List<string> Logged(string @event)
-    {
-        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
-        if (!Directory.Exists(folder)) return [];
-        return
-        [
-            .. Directory.GetFiles(folder).SelectMany(path =>
-            {
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                using var reader = new StreamReader(stream);
-                return reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            })
-            .Select(line => JsonDocument.Parse(line).RootElement)
-            .Where(line => line.GetProperty("event").GetString() == @event)
-            .Select(line => line.GetProperty("data").GetRawText()),
-        ];
-    }
-
-    private static async Task UntilAsync(Func<bool> condition)
-    {
-        var patience = DateTime.UtcNow + Poll.Patience;
-        while (!condition())
-        {
-            Assert.True(DateTime.UtcNow < patience, "the condition never held");
-            await Task.Delay(25);
-        }
     }
 }

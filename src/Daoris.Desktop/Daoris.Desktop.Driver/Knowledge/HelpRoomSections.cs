@@ -30,6 +30,7 @@ internal static class HelpRoomSections
         new HelpRoomInFocus(),
         new HelpRoomMayDo(),
         new HelpRoomVerbs(),
+        new HelpRoomGrowth(),
         new HelpRoomMakingAPlugin(),
         new HelpRoomOwnPlugins(),
         new HelpRoomDoors(),

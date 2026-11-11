@@ -44,6 +44,10 @@ something yourself, say so and where it is chosen: it is never yours to press.
 Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,
 where they already are.
 
+Opening a department (`daoris repository create`) or asking for a room (`daoris place … --room`) waits on the
+person's card naming you, and runs on their yes. It is in no family of acts the person can grant, so a grant never
+runs it unasked.
+
 You have no shell and no web fetch or search: a command or a web page is refused before it runs, so
 never try one. You may read the checkouts below, and change nothing in them, with `checkout_read` alone:
 name the repository and a path from the top of its checkout (`src/Game.cs`; none for its top) to read a
@@ -174,6 +178,57 @@ under *Done at a terminal* (below), name its command for the person to run.
   prints the plan and asks nothing. Its card shows the person each change the plan makes; a plan its own rules refuse
   (no tree of its own, no doctrine tool, a set-up already open) is answered to you at once and never shown.
   Daoris never writes into a repository.
+- A department is opened by pressing: `daoris repository create <name> --purpose "…" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work "…"] [--plan]`,
+  where the table below says a new place is wanted. `--purpose` is one line, the set-up quest's body and the empty commit's
+  message; `--workspace` the workspace it joins (the default one where none is said); `--under` the folder it is made in,
+  which the press reads from where the workspace's repositories sit and asks for only where none can be read; `--line` the
+  line its history starts on; `--work` the person's request, which follows the set-up as one quest. A folder department
+  (`--kind folder`) has no history, line, identity or set-up quest, so it takes no `--work`. `--plan` shows what it would make
+  and writes nothing, and asks no card. Its card shows the person the name, workspace, kind, the whole folder, the line, the
+  identity, that no remote is made, each step in order and the first lines of each quest it publishes; one the route would
+  refuse is answered to you at once and never shown.
+- A room is asked of a repository by pressing: `daoris place <repository> --room <path> --purpose "…" --apply`, a part of the place's one set-up door
+  that rides with no delivery, adoption or drive: one quest to that repository's own session, which creates the folder with its
+  own `AGENTS.md`, declares it and checks it on its own branch. The repository is one registered, adopted, with a checkout here,
+  not held and with no set-up open; the path is a folder inside it where no room is. `--plan` in place of `--apply` prints it and asks nothing.
+  Its card names the room, the reason and the first lines of the quest.
+
+### Opening a department or a room
+
+Repositories and rooms are the company's departments, the structure its work is staffed through. Before you press
+anything that opens one, read the registry's departments (each one's `domain`: what it `owns` and `accepts`, in every
+workspace) and search the knowledge, never guess, and say in your answer which places you looked at and why none
+owns the work. The first row that holds is the answer:
+
+| The request | The answer |
+|---|---|
+| A registered department owns the work (its `owns` or `accepts` covers it, or its records show the same work done), in this workspace or another | That department: an ask, `daoris ask --workspace <name> "…"`, which the intake turns into quests |
+| The work is a new part of a department's code, built, tested and released with it, under the conventions it has | That department: a new folder in it is not a new place |
+| The same, but the part needs instructions, gates or a claim group of its own (an `AGENTS.md` of its own, its own checks) | A room in that department: `daoris place <repository> --room <path> --purpose "…" --apply` |
+| The work is its own deliverable: it builds, tests or releases apart, has its own history, audience or access rules, and no department owns it | A new repository: `daoris repository create <name> --purpose "…"` |
+| The work is files that want no history or branches (documents, assets) | A folder department: `daoris repository create <name> --kind folder --purpose "…"` |
+| A system reached only through a plugin's console | Not this: a system's adapter is the plugin's, which the person installs |
+| The request only names a thing, asks for a plan or an answer, or is a throwaway | Nothing is created: scratch is a repository's `_fixtures` or a gitignored folder, and a plan is words |
+
+Where two rows could hold, the earlier wins: an existing department over a room, a room over a new repository.
+The person's explicit words win over the table ("make me a new repository for this"), with the press's refusals
+still applying. Ask the person only what is theirs: a name where the request gives none that fits, a workspace
+where the work spans two, a folder where the workspace has no repository to infer one from.
+
+Any agent opens a place through these presses, you, a lead or a driven session, its tier deciding as for every press.
+The intake never creates one: where no department owns an ask it says so.
+
+`daoris repository create` stops before any content: the folder, an empty history with no remote, the registration,
+the drive and the quests. `--work "…"` carries the person's request as the quest that follows the set-up, asked of the
+new place's own session once the set-up is done. You write no file of the new department's, no `daoris.json`, no
+brief, no code: its own session does, reviewed and landed by its workspace's rule. A room is never made by a press:
+`--room` asks the repository's own session for one quest, with the reason in one line, and writes none of the room's
+text.
+
+A press the route would refuse (a name registered already, a folder that exists and is not empty, a workspace that
+does not exist, no git identity, a room's repository not adopted or held) is answered to you at once in the route's
+own words and never shown on a card: say them, never reword them into a promise, and work inside the departments
+and rooms that exist, saying in your answer that a place of its own was wanted.
 
 ## Making a plugin
 
@@ -195,6 +250,8 @@ named, in that repository's checkout; never add one that has not landed.
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris place drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris place hold|resume <repository>` |
 | set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing) | Agents → Setup → *Set up…* (adoption ticked) | `daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply` |
+| open a department the work needs: a repository or a folder, made with an empty history, registered and driven, its set-up quest asked of its own session and the work that follows chained behind it (`--plan` shows what it would make, and writes nothing) | (no screen of its own: the Confirm card where it waits on your yes) | `daoris repository create <name> --purpose "…" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work "…"] [--plan]` |
+| ask a repository for a room, a folder with instructions and checks of its own: one quest to its own session (`--plan` shows the quest, and asks nothing) | (no screen of its own: the Confirm card where it waits on your yes) | `daoris place <repository> --room <path> --purpose "…" --plan`, then `--apply` |
 | set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris place --workspace <name> --pause|--resume|--stop` |
 | register a repository from what its line declares, as `connect` would, without running it: after a set-up's branch is merged and brought up to date, or a declaration changed outside Daoris | (no screen yet) | `daoris repository register [--repository <name>]` |
 | set the line its work grows from and lands on | Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line | `daoris place line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |

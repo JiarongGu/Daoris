@@ -125,7 +125,22 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         text.Append("  repository is not driven here, its quest starts alone and nothing else of it does. `--plan` in place of `--apply`\n");
         text.Append("  prints the plan and asks nothing. Its card shows the person each change the plan makes; a plan its own rules refuse\n");
         text.Append("  (no tree of its own, no doctrine tool, a set-up already open) is answered to you at once and never shown.\n");
-        text.Append("  Daoris never writes into a repository.\n\n");
+        text.Append("  Daoris never writes into a repository.\n");
+        // A department and a room are the growth section's table, pressed; each route judges its own press at the ask.
+        text.Append("- A department is opened by pressing: `daoris repository create <name> --purpose \"…\" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work \"…\"] [--plan]`,\n");
+        text.Append("  where the table below says a new place is wanted. `--purpose` is one line, the set-up quest's body and the empty commit's\n");
+        text.Append("  message; `--workspace` the workspace it joins (the default one where none is said); `--under` the folder it is made in,\n");
+        text.Append("  which the press reads from where the workspace's repositories sit and asks for only where none can be read; `--line` the\n");
+        text.Append("  line its history starts on; `--work` the person's request, which follows the set-up as one quest. A folder department\n");
+        text.Append("  (`--kind folder`) has no history, line, identity or set-up quest, so it takes no `--work`. `--plan` shows what it would make\n");
+        text.Append("  and writes nothing, and asks no card. Its card shows the person the name, workspace, kind, the whole folder, the line, the\n");
+        text.Append("  identity, that no remote is made, each step in order and the first lines of each quest it publishes; one the route would\n");
+        text.Append("  refuse is answered to you at once and never shown.\n");
+        text.Append("- A room is asked of a repository by pressing: `daoris place <repository> --room <path> --purpose \"…\" --apply`, a part of the place's one set-up door\n");
+        text.Append("  that rides with no delivery, adoption or drive: one quest to that repository's own session, which creates the folder with its\n");
+        text.Append("  own `AGENTS.md`, declares it and checks it on its own branch. The repository is one registered, adopted, with a checkout here,\n");
+        text.Append("  not held and with no set-up open; the path is a folder inside it where no room is. `--plan` in place of `--apply` prints it and asks nothing.\n");
+        text.Append("  Its card names the room, the reason and the first lines of the quest.\n\n");
         return text.ToString();
     }
 }

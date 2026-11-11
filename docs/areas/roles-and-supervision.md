@@ -501,7 +501,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *Notifications*. A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Every change Ask Daoris asks for is a press of the verb, and it has no
-    proposal tool; the room's *What you may do* names the verbs alone (`HelpRoomVerbs`). A workflow's version: the agent writes the
+    proposal tool; the room's *What you may do* names the verbs alone (`HelpRoomVerbs`). Which place a request calls for is the room's one
+    table (`HelpRoomGrowth`), asked of the registry's departments (their `domain`'s `owns` and `accepts`) and the knowledge search, never of a
+    classifier, and said in the turn (the places looked at, and why none owns the work): the department that owns the work, by an ask; a room in it,
+    where the part needs instructions or checks of its own, by `place <repository> --room`; a new repository, where the work is its own
+    deliverable; a folder department (`repository create --kind folder`), where it wants no history; nothing, for a name, a plan or a
+    throwaway; and not this, for a system a plugin reaches. The earlier row wins, the person's own words go ahead of the table (the presses'
+    refusals still applying), and the person is asked only what is theirs: a name where the request gives none, a workspace where the work
+    spans two, a folder where the workspace has no repository to infer one from. Any agent opens a place through the two presses (Ask Daoris,
+    a lead, a driven session), its tier deciding as for every press; each runs at once in full access, said once and kept, and waits on a
+    card in restricted mode, and the room says so in *What you may do* (`HelpRoomMayDo`); a refusal is the route's own words, answered at once
+    and never carded; the intake never creates one. A workflow's version: the agent writes the
     graph in the room's `drafts/` folder and presses `daoris workflow apply <id> drafts/<id>.json --base <version>`, whose card shows the
     graph as the editor draws it and its changes (`WorkflowSaveView`, the view of `WORKFLOW_SAVE`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
@@ -514,7 +524,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     granted family's verbs (`HelpRoomFamilies`). A look (`tree clean` with no `--yes`) is a read and asks no grant. A record an older
     build kept with `housekeeping` and `settings` lists is converted into the families by the home's migration
     (`ConfiguredAccessStep`), and those lists grant nothing before it. Its tool calls outside its allow-list are held for the person
-    (agents-and-harnesses 23). No family reaches a role. (from D183, D205, D253, D261)
+    (agents-and-harnesses 23). No family reaches a role, and none reaches a department's creation or a room's ask (`REGISTRY_CREATE`,
+    `PLACE_APPLY`): restricted mode carries a card for them whatever is granted, and the room says so (`HelpRoomMayDo`). (from D183, D205, D253, D261)
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console, logged `help.pressed` and kept in this run's memory (`HelpPressRecord`: route, conversation,
     when, outcome, and the workspace or repository it named, or for a press naming only a quest the repository that quest asks,
