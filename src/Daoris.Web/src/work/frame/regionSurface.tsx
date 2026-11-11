@@ -30,6 +30,7 @@ import type { useHeadAsks } from '../head/useHeadAsks';
 import { SessionTimeline } from '../head/SessionTimeline';
 import { ownTree, sessionTitle } from '../identity';
 import { DiffPane } from '../review/DiffPane';
+import { RunReviewPage } from '../review/run/RunReviewPage';
 import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
 import { takesWords } from '../say';
@@ -47,8 +48,9 @@ import type { useFrameLayout } from './useFrameLayout';
  */
 export function useRegionSurfaces({
   t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
-  session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek,
+  session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
 }: {
+  reviewRun?: string | null;
   t: TFunction;
   notify: Notify;
   ask?: ReactNode;
@@ -175,7 +177,15 @@ export function useRegionSurfaces({
   const reviewSurface = () => {
     // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands.
     const followingEntry = following ? entryOfSession(entries, following.id) : null;
-    return withWhose(
+    if (reviewRun || following) {
+      return withWhose(
+        <RunReviewPage key={reviewRun ?? following?.id} run={reviewRun} session={following?.id ?? null} fallback={ownChanges(followingEntry)} />,
+      );
+    }
+    return withWhose(ownChanges(followingEntry));
+  };
+
+  const ownChanges = (followingEntry: ReturnType<typeof entryOfSession>) => (
       <DiffPane
         // The session's one press, where the part reviewed is the attended one.
         entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
@@ -193,9 +203,8 @@ export function useRegionSurfaces({
         // Work the line holds by content offers the head's discard in Accept's place, through the head's press.
         discards={following && following.id === attended?.id ? discards : null}
         onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
-      />,
-    );
-  };
+      />
+  );
 
   const workflowSurface = () => {
     // Where the followed session's work stands in its workflow. Its look's presses are the review's

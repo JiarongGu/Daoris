@@ -65,7 +65,6 @@ public sealed class RunReviewsTests : IDisposable
     {
         Recorded(standing: 1);
         new SystemPlans(_home).Keep("s1", "sample-dns", [new SystemOperation("record/www", "update", "10.0.0.4", "10.0.0.9", new("version", "3"))], T);
-        // The fixture's first record is a folder's; the plan's are the next two attempts.
         ReviewRecords.Keep(_home, new ReviewRecord("q1", "review", 2, ReviewKinds.Plan, "ccccccc3", T.AddMinutes(2))
         {
             Place = "sample-dns", Reference = PlanReview.Reference(_home, ["s1"])!,

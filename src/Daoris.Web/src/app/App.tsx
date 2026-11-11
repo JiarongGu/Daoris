@@ -153,7 +153,7 @@ export function App() {
   const { plugins, agents } = useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open });
   const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout, palette });
   useShortcuts({ commandState, commandDoors, translate, openMenu, attached, setMnemonics, setOpenMenu });
-  const { openInWork, openRun, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
+  const { openInWork, openRun, openReview, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
   const { quests, projects, knowledge } = useWorkViews({ lists, view, notify, attached, openInWork, openRun, openAtWork, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked });
   // What Ask Daoris is handed wherever it stands: what is on the screen — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
@@ -401,7 +401,10 @@ export function App() {
                   onVisible={setNotificationsOpen}
                   notices={notices}
                   onRead={(ids) => markNoticesRead.mutate(ids)}
-                  onOpenNotice={(notice) => { if (notice.session) openInWork(notice.session); }}
+                  onOpenNotice={(notice) => {
+                    if (notice.kind === 'outcome' && notice.quest) openReview(notice.quest, notice.session);
+                    else if (notice.session) openInWork(notice.session);
+                  }}
                   onDismiss={(notice) => dismissNotice.mutate(notice.id)}
                   messages={messages.asks}
                   answered={messages.answered}

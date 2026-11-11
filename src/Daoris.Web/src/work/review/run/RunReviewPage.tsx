@@ -1,0 +1,111 @@
+import { type ReactNode, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useRunReview, useRunReviewFile, useSessionRunReview } from '../../../bridge/repositories/runReview';
+import type { ReviewRow, RunReviewAnswer } from './runReviewWire';
+import { useOverruleSupervisor } from '../../../bridge/sessions/supervision';
+import { useRunNodeWord, useSessionDiff } from '../../../bridge/shell';
+import { sentence } from '../../../locales/format';
+import { languageOf } from '../codeLines';
+import type { DiffLayout } from '../PatchView';
+import { DiffLines } from '../PatchView';
+import { ReviewFiles } from '../ReviewFrame';
+import { lineDiff } from './lineDiff';
+import { RunReview } from './RunReview';
+import { contentOf, useViewedMarks } from './viewedMarks';
+
+/** A folder's or a copy's file at the record's two versions, compared line by line, or why it is not drawn. */
+function RecordFileDiff({ run, attempt, row }: { run: string; attempt: number; row: ReviewRow }) {
+  const { t } = useTranslation();
+  const before = useRunReviewFile(run, attempt, row.path, 'before', { enabled: Boolean(row.before) });
+  const after = useRunReviewFile(run, attempt, row.path, 'after', { enabled: Boolean(row.after) });
+  const refused = (row.before ? before.data?.refused : null) ?? (row.after ? after.data?.refused : null);
+  if (refused) return <p className="m-0 px-3 pb-2 text-small text-ink-faint">{t(`work.runReview.fileRefused.${refused}`, { defaultValue: refused })}</p>;
+  if ((row.before && before.isPending) || (row.after && after.isPending)) {
+    return <p className="m-0 px-3 pb-2 text-small text-ink-faint">{t('work.runReview.fileReading')}</p>;
+  }
+  const { lines, whole } = lineDiff(before.data?.text ?? null, after.data?.text ?? null);
+  return (
+    <div className="px-3 pb-2">
+      {!whole && <p className="m-0 pb-1 text-meta text-ink-faint">{t('work.runReview.fileTooLarge')}</p>}
+      <DiffLines lines={lines} language={languageOf(row.path)} />
+    </div>
+  );
+}
+
+/** A branch's or a checkout's files with their diffs, read from the session that made the newest part, marked viewed by content. */
+function GitFiles({ session, viewed }: { session: string | null; viewed: ReturnType<typeof useViewedMarks> }) {
+  const diff = useSessionDiff(session);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [layout, setLayout] = useState<DiffLayout>('unified');
+  const files = diff.data?.files ?? [];
+  const content = Object.fromEntries(files.map((file) => [file.path, contentOf(file)]));
+  return (
+    <ReviewFiles
+      files={files}
+      open={open}
+      viewed={Object.fromEntries(files.map((file) => [file.path, viewed.isViewed(file.path, content[file.path])]))}
+      layout={layout}
+      onLayout={setLayout}
+      onToggle={(path) => setOpen((was) => ({ ...was, [path]: !was[path] }))}
+      onViewed={(path, next) => viewed.mark(path, content[path] ?? '', next)}
+      truncated={diff.data?.truncated}
+    />
+  );
+}
+
+/** The bar's *Overrule*, through the session the supervisor's decision names. */
+function useOverrule(answer: RunReviewAnswer | undefined) {
+  const overrule = useOverruleSupervisor(answer?.supervisor?.session ?? '');
+  const [said, setSaid] = useState<string | null>(null);
+  return {
+    busy: overrule.isPending,
+    said,
+    press: answer?.supervisor ? (decision: string) => overrule.mutate(decision, {
+      onSuccess: (answered) => setSaid(answered.done ? null : answered.state),
+      onError: (error) => setSaid(sentence(error)),
+    }) : undefined,
+  };
+}
+
+/**
+ * **The review page, `review/<run>`**: a run's review read by its run, or by the session in view where its quest is a run's, the newest
+ * record until the person reads another. A session no run governs reads its own changes (`fallback`), as it does until its read answers.
+ *
+ * @remarks
+ * **Never swapped under the reader**: the attempt read is kept until *Read it* names the newer one, and a run named anew starts at its
+ * newest. An organism: the bridge's reads and presses, handed to `RunReview`.
+ */
+export function RunReviewPage({ run, session, fallback }: { run: string | null; session: string | null; fallback?: ReactNode }) {
+  const { t } = useTranslation();
+  const bySession = useSessionRunReview(run ? null : session);
+  const named = run ?? (bySession.data && !bySession.data.refused ? bySession.data.run : null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => setAttempt(0), [named]);
+  const review = useRunReview(named, attempt);
+  const word = useRunNodeWord();
+  const viewed = useViewedMarks();
+  const overrule = useOverrule(review.data);
+
+  // Until the session's read names its run, and where none governs it, the session's own changes stand.
+  if (!named) return <>{fallback}</>;
+  const answer = review.data;
+  if (!answer) {
+    return <p className="m-0 p-3 text-small text-ink-faint">{review.error ? sentence(review.error) : t('work.runReview.reading')}</p>;
+  }
+  if (answer.refused) return <p className="m-0 p-3 text-small text-ink-faint">{t('work.runReview.notRun')}</p>;
+  const record = answer.record ?? null;
+  const newest = record?.parts.at(-1)?.session ?? null;
+  return (
+    <RunReview
+      answer={answer}
+      viewed={viewed}
+      onWord={(ask) => word.mutateAsync(ask)}
+      onRead={setAttempt}
+      onOverrule={overrule.press}
+      overruling={overrule.busy}
+      overruleSaid={overrule.said}
+      fileBody={record ? (row) => <RecordFileDiff run={record.run} attempt={record.attempt} row={row} /> : undefined}
+      gitFiles={record && (record.kind === 'branch' || record.kind === 'checkout') ? <GitFiles session={newest} viewed={viewed} /> : null}
+    />
+  );
+}

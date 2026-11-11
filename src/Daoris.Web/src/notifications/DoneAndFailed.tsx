@@ -60,7 +60,7 @@ export function DoneAndFailed({ notices, onRead, onOpen, onDismiss, now = Date.n
   notices: Notice[];
   /** The notices shown, *Opened* or named by *Mark all read*, read. */
   onRead: (ids: string[]) => void;
-  /** A notice's door: its session's page; absent where it names none. */
+  /** A notice's door: a run's outcome its run's review, any other its session's page; absent where it names neither. */
   onOpen?: (notice: Notice) => void;
   onDismiss: (notice: Notice) => void;
   /** The clock its ages are read by. */
@@ -98,7 +98,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
   const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.kind === 'look'
     || notice.state === 'failed';
-  const opens = onOpen && notice.session ? () => {
+  const opens = onOpen && (notice.session || (notice.kind === 'outcome' && notice.quest)) ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);
   } : null;
