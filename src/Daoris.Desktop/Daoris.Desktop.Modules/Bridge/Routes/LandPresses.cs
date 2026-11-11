@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What an Accept that waits for its run's landing says where nothing landed yet, and how it reads the gate it was judged by: the node door's
+/// What an Accept that waits for its run's landing says where nothing landed yet, and how it reads the gate that judged it: the node door's
 /// (<see cref="AcceptWaits"/>) and a conversation's (<see cref="ChatAccepts"/>) alike.
 /// </summary>
 public static class LandPresses

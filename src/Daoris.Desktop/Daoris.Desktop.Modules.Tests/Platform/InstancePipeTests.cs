@@ -130,8 +130,8 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead,
-    /// and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
+    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window, as
+    /// <c>PipeConfirmTests</c> holds, so here it is shown and never run.
     /// </summary>
     [Fact]
     public async Task A_window_route_and_a_module_nobody_classed_are_refused_and_a_person_route_runs_nothing_unconfirmed()
