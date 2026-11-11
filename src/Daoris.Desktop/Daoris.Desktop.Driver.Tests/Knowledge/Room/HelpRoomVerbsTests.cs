@@ -43,7 +43,7 @@ public sealed class HelpRoomVerbsTests
     [InlineData("- Repositories are brought up to date after a pull request merged by pressing", "row that moves. Daoris never pushes.")]
     [InlineData("- A repository registered here is moved to a workspace by pressing:", "one the registry would refuse is answered to you at once and never shown.")]
     [InlineData("- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing:", "an ask goes with every quest it became, or not at all")]
-    [InlineData("- Sessions are archived or unarchived by pressing: `daoris sessions archive <id>…` and", "A session still running, in Waiting on you or in To review is never")]
+    [InlineData("- Sessions are archived or unarchived by pressing: `daoris sessions archive <id>…` and", "Only a done or failed session is archived; one working, pending or needing you never is")]
     [InlineData("- One ask's work, or one quest's, is paused on this machine or resumed by pressing:", "Resume lifts the pause and releases its stops")]
     [InlineData("- Finished history is cleared from this machine by pressing", "A quest an ask asked is cleared with its ask, never alone")]
     [InlineData("- A workflow's new version is saved by pressing,", "press `daoris workflow apply <id> drafts/<id>.json --base <version>`")]

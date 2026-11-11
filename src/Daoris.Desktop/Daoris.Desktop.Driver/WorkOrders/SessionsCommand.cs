@@ -31,7 +31,7 @@ public static class SessionsCommand
 {
     public const string Usage =
         """
-        usage: daoris session [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
+        usage: daoris session [--group needs-you|working|pending|failed|done|archived] [--repository <name>] [--json]
                daoris session stop <id> [--turn]  ·  session finish <id> [--note "…"]  ·  session decline <id> --reason "…"
                daoris session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>
                daoris session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
@@ -50,7 +50,7 @@ public static class SessionsCommand
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
+        ["session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
             "lands", "discards", "calling", "waits"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field.</summary>

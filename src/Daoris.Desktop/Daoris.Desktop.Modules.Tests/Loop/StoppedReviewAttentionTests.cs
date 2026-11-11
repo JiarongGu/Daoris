@@ -5,14 +5,14 @@ using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session whose run's review the person stopped is no work ready for them: *Ready for you* keeps no row for it, though Sessions'
-/// list still places its tree to review. The stopped runs are read from the node records (<see cref="StoppedRuns"/>), by the quests
-/// their nodes are bound on.
+/// A session whose run's review the person stopped is no work ready for them: *What needs you* keeps no review row for it, whatever
+/// Sessions' list last placed. The stopped runs are read from the node records (<see cref="StoppedRuns"/>), by the quests their nodes
+/// are bound on.
 /// </summary>
 public sealed class StoppedReviewAttentionTests
 {
     private static JsonObject Placed() => With(
-        """{"session":"r3v13w00","group":"review","shown":"completed","archived":false,"teammate":false,"work":{"commits":3,"uncommitted":0}}""", "{}");
+        """{"session":"r3v13w00","group":"needs-you","state":"needs-you","reason":"review","shown":"completed","archived":false,"teammate":false}""", "{}");
 
     private static AttentionFacts Facts(IReadOnlySet<string> stopped) => new()
     {

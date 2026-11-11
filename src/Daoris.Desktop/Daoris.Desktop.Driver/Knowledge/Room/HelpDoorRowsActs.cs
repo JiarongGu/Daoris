@@ -59,7 +59,7 @@ internal static class HelpDoorRowsActs
             "`daoris quest delete <id>`, `daoris ask --delete <id>`"),
         // Sessions' archive, archive what ended and unarchive; a session's stop is its own conversation, named on its page.
         ("archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed "
-            + "first; or unarchive one (a session running, waiting on you or to review is never archived)",
+            + "first; or unarchive one (only a done or failed session is archived)",
             "Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived",
             "`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`"),
         // A session's delete.

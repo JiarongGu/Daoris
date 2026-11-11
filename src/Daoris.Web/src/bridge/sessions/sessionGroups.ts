@@ -53,8 +53,8 @@ const groupPlace = (row: PushedRow) => {
 };
 
 /**
- * The reader's order (`SessionGroups.Ordered`): the groups in `GROUP_ORDER`; waiting on you and
- * resuming later oldest move first; to review and working by repository without case, then when each began; ended and archived
+ * The reader's order (`SessionGroups.Ordered`): the groups in `GROUP_ORDER`; needing you and pending
+ * oldest move first; working by repository without case, then when each began; failed, done and archived
  * newest move first; every tie by the session's id by unit.
  */
 const inReaderOrder = (a: PushedRow, b: PushedRow) => {
@@ -62,10 +62,9 @@ const inReaderOrder = (a: PushedRow, b: PushedRow) => {
   if (group !== 0) return group;
   const id = byUnit(a.session, b.session);
   switch (a.group) {
-    case 'you':
-    case 'later':
+    case 'needs-you':
+    case 'pending':
       return byInstant(a.updated, b.updated) || id;
-    case 'review':
     case 'working':
       return byUnit(folded(a.repository), folded(b.repository)) || byInstant(a.created, b.created) || id;
     default:

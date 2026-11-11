@@ -138,13 +138,13 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
 
         var page = await AnswerAsync(module, "SESSION_GROUPS", new { });
         var verb = await AnswerAsync(module, "SESSION_GROUPS", new { group = (string?)null, repository = (string?)null, json = false, said = true });
-        var named = await AnswerAsync(module, "SESSION_GROUPS", new { group = SessionGroup.You, said = true });
+        var named = await AnswerAsync(module, "SESSION_GROUPS", new { group = SessionGroup.NeedsYou, said = true });
         var written = await AnswerAsync(module, "SESSION_GROUPS", new { json = true, said = true });
 
         Assert.Equal(["sessions", "entries"], page.EnumerateObject().Select(each => each.Name));
         Assert.Equal(["sessions", "entries", "said"], verb.EnumerateObject().Select(each => each.Name));
         Assert.Equal(["sessions: no session on this machine."], Said(verb).Out);
-        Assert.Equal(["sessions: nothing waits on you."], Said(named).Out);
+        Assert.Equal(["sessions: nothing needs you."], Said(named).Out);
         Assert.Equal(0, Said(verb).Code);
         // `--json` is the page's own answer, field for field, as `SessionsCommand.Json` writes it.
         Assert.Equal(SessionsCommand.Json([], []), Said(written).Out.Single());

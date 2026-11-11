@@ -40,7 +40,7 @@ export const AwaitingPerson: Story = { args: { session: { ...SESSION, state: 'aw
 export const Parked: Story = {
   args: {
     session: { ...SESSION, state: 'failed', kind: 'driven', quest: '7a82cc' },
-    grouping: { session: SESSION.id, group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 },
+    grouping: { session: SESSION.id, group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3 },
   },
 };
 

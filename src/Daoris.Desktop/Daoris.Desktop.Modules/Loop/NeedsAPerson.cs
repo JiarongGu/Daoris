@@ -153,9 +153,9 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // What Sessions' list places To review, from the groups the list reads: never a reader of its own. Ask Daoris's
-        // conversations are reached from its own panel, never from Sessions.
-        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == "review"))
+        // A run whose every wait is the person's Accept, one row by the session Sessions' list places for it in Needs you: never a
+        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions.
+        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") == SessionReason.Review))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;

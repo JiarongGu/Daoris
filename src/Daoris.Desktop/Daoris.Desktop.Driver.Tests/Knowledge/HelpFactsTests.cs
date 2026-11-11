@@ -592,7 +592,7 @@ public sealed class HelpFactsTests : IDisposable
             read.Sessions.Trees.Keys.Order(StringComparer.Ordinal));
         // Keyed as the Sessions list keys them, whatever the case a path is asked in.
         Assert.Equal(2, read.Sessions.Trees[SessionGroups.Normal(engineTree).ToUpperInvariant()].Commits);
-        Assert.Contains(", 2 to review, 0 working, 0 resuming later, 1 ended.\n", HelpRoom.Render(Describe(read, DriverConfig.Empty)));
+        Assert.Contains(": 0 needing you, 0 working, 0 pending, 0 failed, 3 done.\n", HelpRoom.Render(Describe(read, DriverConfig.Empty)));
     }
 
     /// <summary>A repository the registry no longer names drops its part of the trees; what is left is read whole.</summary>
@@ -755,8 +755,8 @@ public sealed class HelpFactsTests : IDisposable
 
         Assert.Empty(walked);
         Assert.Equal([SessionGroups.Normal(siteTree), SessionGroups.Normal(engineTree)], read.Trees.Keys.Order(StringComparer.Ordinal));
-        var groups = SessionGroups.Read(read).ToDictionary(row => row.Session, row => row.Group);
-        Assert.Equal((SessionGroup.Review, SessionGroup.Ended, SessionGroup.Review), (groups["e1"], groups["e2"], groups["s3"]));
+        var lands = SessionGroups.Read(read).ToDictionary(row => row.Session, row => row.Lands?.Commits);
+        Assert.Equal((2, null, null), (lands["e1"], lands["e2"], lands["s3"]));
         Assert.Equal(
             [SessionGroups.Normal(engineTree), SessionGroups.Normal(quietTree)],
             facts.Current.Value<HelpTrees>(HelpFacts.Trees, "engine")!.Asked.Order(StringComparer.Ordinal));

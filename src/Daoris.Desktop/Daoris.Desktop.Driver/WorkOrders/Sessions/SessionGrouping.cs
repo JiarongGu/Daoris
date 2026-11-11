@@ -1,10 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>Where one session is listed, and what its row's second line says.</summary>
-/// <param name="Group">One of <see cref="SessionGroup"/>.</param>
+/// <param name="Group">One of <see cref="SessionGroup"/>: its <see cref="State"/>, or Archived where its mark moved it to the fold.</param>
 /// <param name="Shown">The record's state, or one of <see cref="ShownState"/>.</param>
 public sealed record SessionGrouping(string Session, string Group, string Shown) : IWorkplaceSessionRow
 {
+    /// <summary>Which of the five states it is in, as <see cref="SessionStateReader"/> reads it: never Archived, which is a mark.</summary>
+    public string State { get; init; } = SessionGroup.Done;
+
+    /// <summary>
+    /// The finer reason inside its state: its <see cref="Shown"/> word, a <see cref="SessionReason"/>, the <see cref="WordsHold"/> code
+    /// that holds a pending one, or the first of its run's waits that is not an Accept.
+    /// </summary>
+    public string Reason { get; init; } = "";
+
     /// <summary>Whether this machine's archive mark stands. A session that needs the person is shown in its group whatever the mark says.</summary>
     public bool Archived { get; init; }
 
@@ -23,7 +32,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// <summary>And the repository that quest is addressed to, where the service still lists it.</summary>
     public string? AwaitsOf { get; init; }
 
-    /// <summary>For a session to review: what its own tree holds.</summary>
+    /// <summary>For a session whose run waits on the person: what its own tree holds.</summary>
     public TreeWork? Work { get; init; }
 
     /// <summary>
@@ -75,13 +84,15 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     public IReadOnlyList<PersonWait>? Waits { get; init; }
 
     /// <summary>
-    /// This row placed by its run's <paramref name="waits"/>: To review where each waits for an Accept, with what its tree holds where it
-    /// holds any, else Waiting on you, whatever the session's own ending or archive mark.
+    /// This row with its run's <paramref name="waits"/> and what its tree holds where it holds any; its reason is the first wait
+    /// that is not an Accept, else the person's review.
     /// </summary>
-    public SessionGrouping WaitedOn(IReadOnlyList<PersonWait> waits, TreeWork? work) =>
-        waits.All(wait => wait.Why == PersonWaits.Accept)
-            ? this with { Waits = waits, Group = SessionGroup.Review, Work = work }
-            : this with { Waits = waits, Group = SessionGroup.You };
+    public SessionGrouping WaitedOn(IReadOnlyList<PersonWait> waits, TreeWork? work) => this with
+    {
+        Waits = waits,
+        Work = work,
+        Reason = waits.FirstOrDefault(wait => wait.Why != PersonWaits.Accept)?.Why ?? SessionReason.Review,
+    };
 
     /// <summary>Whether *Delete…* would be taken: the ledger would delete its record, and this machine holds neither its tree nor a landing of it. The page offers the act only here.</summary>
     public bool Deletable { get; init; }

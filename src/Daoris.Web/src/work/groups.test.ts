@@ -74,24 +74,24 @@ describe('the list by state', () => {
   ];
   // The reader's answer, in its order: the groups in the order the person acts on them, and each in its own.
   const groupings = [
-    grouping({ session: 'p1', group: 'you', shown: 'awaiting-person' }),
-    grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
-    grouping({ session: 'r1', group: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } }),
-    grouping({ session: 'w1', group: 'working', shown: 'working' }),
-    grouping({ session: 'a1', group: 'later', shown: 'awaiting-reply', awaits: 'q9', awaitsOf: 'game' }),
-    grouping({ session: 'c2', group: 'ended', shown: 'completed' }),
-    grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
+    grouping({ session: 'p1', group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person' }),
+    grouping({ session: 'r1', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } }),
+    grouping({ session: 'w1', group: 'working', state: 'working', shown: 'working' }),
+    grouping({ session: 'a1', group: 'pending', state: 'pending', shown: 'awaiting-reply', awaits: 'q9', awaitsOf: 'game' }),
+    grouping({ session: 'f1', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
+    grouping({ session: 'c2', group: 'done', state: 'done', shown: 'completed' }),
+    grouping({ session: 'c1', group: 'done', state: 'done', shown: 'completed' }),
   ];
 
-  /** Five groups in the order the person acts on them, each in the reader's order. */
+  /** The five states in the order the person acts on them, each in the reader's order. */
   it('lists each group in the reader\'s order, and leaves an empty group out', () => {
     const groups = sessionsByState(sessions, groupings, { selected: null, archived: false });
 
-    expect(groups.map((group) => group.group)).toEqual(['you', 'review', 'working', 'later', 'ended']);
-    expect(groups.map((group) => ids(group.sessions))).toEqual([['p1', 'f1'], ['r1'], ['w1'], ['a1'], ['c2', 'c1']]);
-    expect(GROUP_ORDER).toEqual(['you', 'review', 'working', 'later', 'ended', 'archived']);
+    expect(groups.map((group) => group.group)).toEqual(['needs-you', 'working', 'pending', 'failed', 'done']);
+    expect(groups.map((group) => ids(group.sessions))).toEqual([['p1', 'r1'], ['w1'], ['a1'], ['f1'], ['c2', 'c1']]);
+    expect(GROUP_ORDER).toEqual(['needs-you', 'working', 'pending', 'failed', 'done', 'archived']);
 
-    const only = sessionsByState([sessions[0]!], [groupings[3]!], { selected: null, archived: false });
+    const only = sessionsByState([sessions[0]!], [groupings[2]!], { selected: null, archived: false });
     expect(only.map((group) => group.group)).toEqual(['working']);
   });
 
@@ -100,7 +100,7 @@ describe('the list by state', () => {
     const marked = [...groupings.slice(0, 6), grouping({ session: 'c1', group: 'archived', shown: 'completed', archived: true })];
 
     expect(sessionsByState(sessions, marked, { selected: null, archived: false }).map((group) => group.group))
-      .toEqual(['you', 'review', 'working', 'later', 'ended']);
+      .toEqual(['needs-you', 'working', 'pending', 'failed', 'done']);
     expect(ids(sessionsByState(sessions, marked, { selected: null, archived: true }).at(-1)!.sessions)).toEqual(['c1']);
     const attended = sessionsByState(sessions, marked, { selected: 'c1', archived: false });
     expect(attended.at(-1)).toEqual({ group: 'archived', sessions: [sessions[3]] });
@@ -122,11 +122,13 @@ describe('the list by state', () => {
     const groups = sessionsByState(fresh, groupings, { selected: null, archived: false });
     const of = (name: string) => ids(groups.find((group) => group.group === name)!.sessions);
 
-    expect(of('you')).toEqual(['p1', 'f1', 'n2']);
+    expect(of('needs-you')).toEqual(['p1', 'r1', 'n2']);
     // A teammate's park waits on them, as the reader lists it; one the person answered goes on at the
     // driver's next look.
-    expect(of('working')).toEqual(['w1', 'n1', 'team/n4', 'n5']);
-    expect(of('ended')).toEqual(['n3', 'c2', 'c1']);
+    expect(of('working')).toEqual(['w1', 'team/n4', 'n5']);
+    expect(of('pending')).toEqual(['a1', 'n1']);
+    expect(of('failed')).toEqual(['n3', 'f1']);
+    expect(of('done')).toEqual(['c2', 'c1']);
   });
 
   /** The page lists what its scope holds: the reader answers for every record, and one the page does not hold is not drawn. */
@@ -141,8 +143,8 @@ describe('the list by state', () => {
 });
 
 /**
- * *Archive what ended…* takes every session the reader placed in Ended that is not archived, and
- * says what stays in the list because it needs the person, by the headings the person sees.
+ * *Archive what ended…* takes every session the reader placed in Failed or Done that is not archived, and
+ * says how many stay in the list because they need the person.
  */
 describe('what Archive what ended takes', () => {
   const sessions = [
@@ -156,34 +158,34 @@ describe('what Archive what ended takes', () => {
     session({ id: 'x1', state: 'completed', updated: at(90) }),
   ];
   const groupings = [
-    grouping({ session: 'p1', group: 'you', shown: 'awaiting-person' }),
-    grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
-    grouping({ session: 'r1', group: 'review', shown: 'stopped', work: { commits: 1, uncommitted: 0 } }),
-    grouping({ session: 'w1', group: 'working', shown: 'working' }),
-    grouping({ session: 'a1', group: 'later', shown: 'awaiting-reply', awaits: 'q9' }),
-    grouping({ session: 'c2', group: 'ended', shown: 'declined' }),
-    grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
+    grouping({ session: 'p1', group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person' }),
+    grouping({ session: 'r1', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 1, uncommitted: 0 } }),
+    grouping({ session: 'w1', group: 'working', state: 'working', shown: 'working' }),
+    grouping({ session: 'a1', group: 'pending', state: 'pending', shown: 'awaiting-reply', awaits: 'q9' }),
+    grouping({ session: 'f1', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
+    grouping({ session: 'c2', group: 'done', state: 'done', shown: 'declined' }),
+    grouping({ session: 'c1', group: 'done', state: 'done', shown: 'completed' }),
     grouping({ session: 'x1', group: 'archived', shown: 'completed', archived: true }),
   ];
 
-  /** Never a live session, never what needs the person, never one already archived: only Ended, in its order. */
-  it('takes what the reader placed in Ended, and counts what stays because it needs you', () => {
-    expect(endedToArchive(sessions, groupings)).toEqual({ going: ['c2', 'c1'], kept: { you: 2, review: 1 } });
+  /** Never a live session, never what needs the person, never one already archived: only Failed and Done, in the list's order. */
+  it('takes what the reader placed in Failed or Done, and counts what stays because it needs you', () => {
+    expect(endedToArchive(sessions, groupings)).toEqual({ going: ['f1', 'c2', 'c1'], kept: 2 });
   });
 
-  /** A record the reader has not answered for may yet be to review, so the list that archives leaves it to the next look. */
+  /** A record the reader has not answered for may yet be placed otherwise, so the list that archives leaves it to the next look. */
   it('leaves a session the reader has not answered for', () => {
     const since = session({ id: 'n1', state: 'completed', updated: at(0) });
-    expect(endedToArchive([...sessions, since], groupings).going).toEqual(['c2', 'c1']);
+    expect(endedToArchive([...sessions, since], groupings).going).toEqual(['f1', 'c2', 'c1']);
   });
 
   /** The page's scope: a session the page does not hold is not archived from it. */
   it('takes only what the page holds', () => {
-    expect(endedToArchive([sessions[5]!], groupings)).toEqual({ going: ['c1'], kept: { you: 0, review: 0 } });
+    expect(endedToArchive([sessions[5]!], groupings)).toEqual({ going: ['c1'], kept: 0 });
   });
 
   it('takes nothing where no reader answered', () => {
-    expect(endedToArchive(sessions, undefined)).toEqual({ going: [], kept: { you: 1, review: 0 } });
+    expect(endedToArchive(sessions, undefined)).toEqual({ going: [], kept: 1 });
   });
 });
 
@@ -226,7 +228,7 @@ describe('the list by repository', () => {
   /** It takes the reader's words: *parked* sorts with *waiting on you*, and archived is hidden unless shown. */
   it('sorts a parked session with waiting on you, and hides what is archived', () => {
     const groupings = [
-      grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
+      grouping({ session: 'f1', group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
       grouping({ session: 'c1', group: 'archived', shown: 'completed', archived: true }),
     ];
     const { live, ended } = sessionsByRepository(sessions, groupings, { selected: null, archived: false });
@@ -271,10 +273,10 @@ describe('the strip', () => {
     session({ id: 'c1', state: 'completed' }),
   ];
   const groupings = [
-    grouping({ session: 'p1', group: 'you', shown: 'awaiting-person' }),
-    grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
+    grouping({ session: 'p1', group: 'needs-you', shown: 'awaiting-person' }),
+    grouping({ session: 'f1', group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
     grouping({ session: 'w1', group: 'working', shown: 'working' }),
-    grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
+    grouping({ session: 'c1', group: 'done', shown: 'completed' }),
   ];
 
   /** What waits on the person first, then what runs, in the open list's order; what ended is the open list's. */
@@ -346,13 +348,13 @@ describe('a row as the list shows it', () => {
     const failed = session({ id: 'f1', state: 'failed' });
     const chat = session({ id: 'c1', state: 'working', kind: 'chat' });
 
-    expect(shownOf(failed, grouping({ session: 'f1', group: 'you', shown: 'parked' }), undefined)).toBe('parked');
-    expect(shownOf(session({ id: 'a1', state: 'completed' }), grouping({ session: 'a1', group: 'later', shown: 'awaiting-reply' }), undefined))
+    expect(shownOf(failed, grouping({ session: 'f1', group: 'failed', reason: 'parked', shown: 'parked' }), undefined)).toBe('parked');
+    expect(shownOf(session({ id: 'a1', state: 'completed' }), grouping({ session: 'a1', group: 'pending', shown: 'awaiting-reply' }), undefined))
       .toBe('awaiting-reply');
     expect(shownOf(failed, null, undefined)).toBe('failed');
     expect(shownOf(chat, grouping({ session: 'c1', group: 'working', shown: 'working' }), false)).toBe('idle');
     // A word a newer host derives that this page does not know reads as the record's own.
-    expect(shownOf(failed, grouping({ session: 'f1', group: 'later', shown: 'account-cooling' }), undefined)).toBe('failed');
+    expect(shownOf(failed, grouping({ session: 'f1', group: 'pending', shown: 'account-cooling' }), undefined)).toBe('failed');
   });
 
   /**
@@ -383,8 +385,8 @@ describe('a row as the list shows it', () => {
    */
   it('shows a record held for an account’s reset as its wait, by the reader’s word', () => {
     const ended = session({ id: 'e2', state: 'completed' });
-    expect(shownOf(ended, grouping({ session: 'e2', group: 'later', shown: 'limit-waits' }), undefined)).toBe('limit-waits');
-    expect(shownOf(ended, grouping({ session: 'e2', group: 'ended', shown: 'completed' }), undefined)).toBe('completed');
+    expect(shownOf(ended, grouping({ session: 'e2', group: 'pending', shown: 'limit-waits' }), undefined)).toBe('limit-waits');
+    expect(shownOf(ended, grouping({ session: 'e2', group: 'done', shown: 'completed' }), undefined)).toBe('completed');
     expect(shownOf(ended, null, undefined)).toBe('completed');
   });
 
@@ -394,14 +396,14 @@ describe('a row as the list shows it', () => {
    */
   it('shows a session waiting on its own helper as awaiting helper, never as waiting on the person', () => {
     const waiting = session({ id: 'h1', state: 'completed' });
-    const placed = grouping({ session: 'h1', group: 'later', shown: 'awaiting-helper' });
+    const placed = grouping({ session: 'h1', group: 'pending', shown: 'awaiting-helper' });
     expect(shownOf(waiting, placed, undefined)).toBe('awaiting-helper');
     expect(waitsOnYou(waiting, placed)).toBe(false);
   });
 
   it('says what waits on the person: a session parked to ask, or a parked quest\'s last session', () => {
     expect(waitsOnYou(session({ id: 'p1', state: 'awaiting-person' }), null)).toBe(true);
-    expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);
+    expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'failed', reason: 'parked', shown: 'parked' }))).toBe(true);
     expect(waitsOnYou(session({ id: 'w1', state: 'working' }), null)).toBe(false);
     // Answered, it goes on at the driver's next look, and nothing about it waits on the person.
     expect(waitsOnYou(session({ id: 'p2', state: 'awaiting-person', said: said('carry on.') }), null)).toBe(false);

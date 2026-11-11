@@ -94,6 +94,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1g — a session moves through five states: pending, working, needs you, done, failed (2026-11-11, D273)
+
+> **REVIEWUX1g** (driver, modules, web): Outcome: the owner's word that the states were a mess and that there is no landing task any more is met: every session is in one of five states on the wire (`state`, with its finer `reason`), mapped from the old records in D273's table; the driver's suites, the archive and the room use them; `daoris session list` prints Needs you, Working, Pending, Failed, Done and refuses the old `--group` words naming the five; the window's list groups by them in that order, a row's reason on its line, the head leading with the state word; *parts to land* and *landing* words are gone; a line of work whose failure a later part retried reads done; the Ask Daoris places point at `sessions/needs-you` and `sessions/failed`. Words: Needs you 等你处理, Working 工作中, Pending 待开始, Failed 失败, Done 已完成. Proof: `SessionsGroupWordsTests` and the entry-order case (red first), the rail, head and help suites in both languages, `HelpPlacesTests`.
+
+---
+
 ## KEEPDATA1's second part — tree records, pid markers, the old bin place, account leftovers, the store's log, no convert verb (2026-11-11)
 
 > **KEEPDATA1 C, K, F, H, E and L** (driver, service): Outcome: a tree's files record and its `<id>.*.log` files are forgotten by the set-aside move, `TreeRemovals`, the sweeps' press and a failed open, and the `tree-records` and `unbound-records` migration steps remove the records already left (the install's audit counted 172 records, 311 MB, naming trees gone); `DeadMarkers` removes a `.pid` marker whose process and session are gone, from the orphan sweep; the `old-bin` step removes `data/bin` once `app/` carries both hosts; `agent account list` names a leftover lock folder and the remove verb that takes it; both stores keep a 32 MB `journal_size_limit`, and the knowledge store's open truncates its checkpointed log and vacuums when at least 8 MB and a quarter of the file is free (`StoreCompaction`; the install's log stood at a 131 MB high-water mark); the `convert` usage line, help-room row, `--as-graph` flag and the words naming them are gone, as no such verb exists. Proof: `TreeFilesForgottenGitTests` (red first), `LeftRecordsStepsTests`, `DeadMarkersTests`, `OldBinStepTests`, `AccountLeftoversTests`, `StoreCompactionTests` (its small-store case corrected at the merge to judge the second open, the first writing the schema).

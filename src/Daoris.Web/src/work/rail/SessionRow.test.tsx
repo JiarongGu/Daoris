@@ -390,7 +390,7 @@ describe("a row as the list's reader places it", () => {
   /** A parked quest's last session waits on the person: open's hue and the waiting mark, never the failure's red. */
   it('says parked in the waiting hue, and how many sessions failed before its quest parked', () => {
     render(
-      <SessionRow session={session({ state: 'failed', quest: '7a82cc' })} quest={quest()} grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />,
+      <SessionRow session={session({ state: 'failed', quest: '7a82cc' })} quest={quest()} grouping={placed({ group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 })} />,
     );
 
     const word = screen.getByText('parked');
@@ -400,7 +400,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   it('says a parked quest parked after its failed sessions where the count is not known', () => {
-    render(<SessionRow session={session({ state: 'failed' })} grouping={placed({ group: 'you', shown: 'parked', strikes: null })} />);
+    render(<SessionRow session={session({ state: 'failed' })} grouping={placed({ group: 'failed', reason: 'parked', shown: 'parked', strikes: null })} />);
     expect(screen.getByText(/after its failed sessions/)).toBeInTheDocument();
   });
 
@@ -409,29 +409,29 @@ describe("a row as the list's reader places it", () => {
       <SessionRow
         session={session({ state: 'completed', quest: '7a82cc' })}
         quest={quest()}
-        grouping={placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' })}
+        grouping={placed({ group: 'pending', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' })}
       />,
     );
 
     expect(screen.getByText('awaiting reply').className).not.toMatch(/(?:st|ink)-open/);
     expect(screen.getByText(/waits on #q9q9q9, asked of game/)).toBeInTheDocument();
 
-    rerender(<SessionRow session={session({ state: 'completed' })} grouping={placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9' })} />);
+    rerender(<SessionRow session={session({ state: 'completed' })} grouping={placed({ group: 'pending', shown: 'awaiting-reply', awaits: 'q9q9q9' })} />);
     expect(screen.getByText(/waits on #q9q9q9/)).toBeInTheDocument();
   });
 
   /** To review keeps its own state's word; its line says what its tree holds that no branch of the person's does. */
   it('says what a session to review left in its tree, under its own word', () => {
     const stopped = session({ state: 'stopped' });
-    const { rerender } = render(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } })} />);
+    const { rerender } = render(<SessionRow session={stopped} grouping={placed({ group: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } })} />);
     expect(screen.getByText('stopped')).toBeInTheDocument();
     expect(screen.getByText(/3 commits to review/)).toBeInTheDocument();
 
-    rerender(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: 0, uncommitted: 2 } })} />);
+    rerender(<SessionRow session={stopped} grouping={placed({ group: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 0, uncommitted: 2 } })} />);
     expect(screen.getByText(/uncommitted changes/)).toBeInTheDocument();
 
     // A count git could not give is still work: said as work, never as nothing.
-    rerender(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: null, uncommitted: null } })} />);
+    rerender(<SessionRow session={stopped} grouping={placed({ group: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: null, uncommitted: null } })} />);
     expect(screen.getByText(/work to review/)).toBeInTheDocument();
   });
 
@@ -446,7 +446,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText('going on')).toBeInTheDocument();
 
     const held = (holds: SessionGrouping['holds']) =>
-      rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds })} />);
+      rerender(<SessionRow session={ended} grouping={placed({ group: 'pending', shown: 'completed', holds })} />);
     held({ why: 'hold', reason: '`engine` is held by the person.', repository: 'engine' });
     expect(screen.getByText(/goes on with your words once engine is no longer held/)).toBeInTheDocument();
     held({ why: 'cap', reason: 'the concurrency cap (2) is spent — it frees as sessions finish.' });
@@ -468,7 +468,7 @@ describe("a row as the list's reader places it", () => {
     const ended = session({ state: 'completed', quest: '7a82cc' });
     const until = '2026-10-04T12:30:00Z';
     const held = (holds: SessionGrouping['holds']) =>
-      <SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds })} />;
+      <SessionRow session={ended} grouping={placed({ group: 'pending', shown: 'completed', holds })} />;
     const named = { why: 'cooling', reason: 'its account is cooling.', until, account: 'account-2', accountName: 'Work' };
     const { rerender } = render(held(named));
     expect(screen.getByText((said) => said.includes(`Waiting for a limit to reset: it resumes by itself at ${moment(until)}, on Work.`))).toBeInTheDocument();
@@ -498,7 +498,7 @@ describe("a row as the list's reader places it", () => {
     const ended = session({ state: 'completed', quest: '7a82cc' });
     const until = '2026-10-04T12:30:00Z';
     const held = { why: 'cooling', reason: 'its account is cooling.', until, account: 'account-2', accountName: 'Work' };
-    const { rerender } = render(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'limit-waits', holds: held })} />);
+    const { rerender } = render(<SessionRow session={ended} grouping={placed({ group: 'pending', shown: 'limit-waits', holds: held })} />);
     expect(screen.getByText('waiting for a limit to reset')).toBeInTheDocument();
     expect(screen.queryByText('completed')).toBeNull();
     // The line beside it still says when and on which account.
@@ -506,7 +506,7 @@ describe("a row as the list's reader places it", () => {
 
     await i18n.changeLanguage('zh');
     try {
-      rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'limit-waits', holds: held })} />);
+      rerender(<SessionRow session={ended} grouping={placed({ group: 'pending', shown: 'limit-waits', holds: held })} />);
       expect(screen.getByText('正在等待额度重置')).toBeInTheDocument();
       expect(screen.queryByText('已完成')).toBeNull();
     } finally {
@@ -514,9 +514,9 @@ describe("a row as the list's reader places it", () => {
     }
 
     // Held for the person's hold, or for nothing, a completed record still reads completed.
-    rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds: { why: 'hold', reason: 'held.', repository: 'engine' } })} />);
+    rerender(<SessionRow session={ended} grouping={placed({ group: 'pending', shown: 'completed', holds: { why: 'hold', reason: 'held.', repository: 'engine' } })} />);
     expect(screen.getByText('completed')).toBeInTheDocument();
-    rerender(<SessionRow session={ended} grouping={placed({ group: 'ended', shown: 'completed' })} />);
+    rerender(<SessionRow session={ended} grouping={placed({ group: 'done', shown: 'completed' })} />);
     expect(screen.getByText('completed')).toBeInTheDocument();
     expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
   });
@@ -526,7 +526,7 @@ describe("a row as the list's reader places it", () => {
     render(
       <SessionRow
         session={session({ state: 'stopped' })}
-        grouping={placed({ group: 'later', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' }, holds: { why: 'paused', reason: 'paused.' } })}
+        grouping={placed({ group: 'pending', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' }, holds: { why: 'paused', reason: 'paused.' } })}
       />,
     );
     expect(screen.getByText(/paused with ask #a1b2c3/)).toBeInTheDocument();
@@ -553,7 +553,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.queryByText(/running/)).toBeNull();
     rerender(<SessionRow session={session({ kind: 'chat' })} taking={false} grouping={placed({ group: 'working', shown: 'working', calling })} />);
     expect(screen.queryByText(/running/)).toBeNull();
-    rerender(<SessionRow session={session({ state: 'awaiting-person' })} grouping={placed({ group: 'you', shown: 'awaiting-person', calling })} />);
+    rerender(<SessionRow session={session({ state: 'awaiting-person' })} grouping={placed({ group: 'needs-you', shown: 'awaiting-person', calling })} />);
     expect(screen.queryByText(/running/)).toBeNull();
   });
 
@@ -641,7 +641,7 @@ describe("a row as the list's reader places it", () => {
       expect(line.getAttribute('title')).toBe(`${LONG_COMMAND}\n它的智能体正在进行的工具调用，以及已运行多久，以驱动最近一次所说为准。`);
       long.unmount();
 
-      render(<SessionRow session={session({ state: 'failed' })} place="engine" grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />);
+      render(<SessionRow session={session({ state: 'failed' })} place="engine" grouping={placed({ group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 })} />);
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText(/^engine · 3 个会话失败后挂起/)).toBeInTheDocument();
 
@@ -763,7 +763,7 @@ describe("a row's acts", () => {
     const act = vi.fn();
     render(
       <SessionRow
-        session={session({ state: 'completed' })} grouping={placed({ group: 'ended', shown: 'completed' })}
+        session={session({ state: 'completed' })} grouping={placed({ group: 'done', shown: 'completed' })}
         acts={['archive', 'copy']} onAct={act}
       />,
     );
@@ -782,7 +782,7 @@ describe("a row's acts", () => {
     render(
       <SessionRow
         session={session({ quest: null, kind: 'chat', state: 'completed' })}
-        grouping={placed({ group: 'ended', shown: 'completed', deletable: true })}
+        grouping={placed({ group: 'done', shown: 'completed', deletable: true })}
         acts={['archive', 'delete', 'copy']} onAct={act}
       />,
     );
@@ -797,14 +797,14 @@ describe("a row's acts", () => {
 
   /** A hold, said where the row is: a stop that holds its quest says so, with how it moves again. */
   it('says a stop holds its quest here until you try again, and why in its tip', () => {
-    render(<SessionRow session={session({ state: 'stopped' })} grouping={placed({ group: 'ended', shown: 'stopped', holdsQuest: true })} />);
+    render(<SessionRow session={session({ state: 'stopped' })} grouping={placed({ group: 'done', shown: 'stopped', holdsQuest: true })} />);
     const line = screen.getByText(/held here until you try again/);
     expect(line.getAttribute('title')).toMatch(/Try again/);
   });
 
   /** A session whose quest a pause holds says whose pause, before a stop's hold, and why in its tip. */
   it('says whose pause holds its quest, before a stop’s hold, and offers Resume in its ⋯', async () => {
-    const paused = placed({ group: 'review', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'ask', id: 'a1b2c3' } });
+    const paused = placed({ group: 'needs-you', reason: 'review', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'ask', id: 'a1b2c3' } });
     const act = vi.fn();
     render(<SessionRow session={session({ state: 'stopped' })} grouping={paused} acts={['resumeAsk', 'copy']} onAct={act} />);
     const line = screen.getByText(/paused with ask #a1b2c3/);

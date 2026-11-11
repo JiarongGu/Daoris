@@ -28,19 +28,23 @@ const SESSIONS: Session[] = [
   session({ id: 'f41led00', state: 'failed', quest: 'q1' }),
   session({ id: 'st0pp3d0', state: 'stopped', tree: 'C:/somewhere/.daoris/trees/default/engine/st0pp3d0' }),
   session({ id: 'aw41t000', state: 'completed', quest: 'q2', repository: 'game' }),
+  session({ id: 'qu3u3d00', state: 'queued', repository: 'tools' }),
   session({ id: 'd0ne0000', state: 'completed', updated: at(30) }),
   session({ id: 'd0ne0001', state: 'declined', updated: at(10) }),
 ];
 
-/** The reader's answer, in its order (`SessionGroups.Read`). */
+/** The reader's answer, in its order (`SessionGroups.Read`): the five states, each with its finer reason. */
 const GROUPINGS: SessionGrouping[] = [
-  placed({ session: 'p4rk3d00', group: 'you', shown: 'awaiting-person' }),
-  placed({ session: 'f41led00', group: 'you', shown: 'parked', strikes: 3 }),
-  placed({ session: 'st0pp3d0', group: 'review', shown: 'stopped', work: { commits: 2, uncommitted: 0 } }),
-  placed({ session: 'w0rk1ng0', group: 'working', shown: 'working' }),
-  placed({ session: 'aw41t000', group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'engine' }),
-  placed({ session: 'd0ne0001', group: 'ended', shown: 'declined' }),
-  placed({ session: 'd0ne0000', group: 'ended', shown: 'completed' }),
+  placed({ session: 'p4rk3d00', group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person' }),
+  placed({ session: 'st0pp3d0', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 2, uncommitted: 0 } }),
+  placed({ session: 'w0rk1ng0', group: 'working', state: 'working', reason: 'working', shown: 'working' }),
+  placed({
+    session: 'aw41t000', group: 'working', state: 'working', reason: 'awaiting-reply', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'engine',
+  }),
+  placed({ session: 'qu3u3d00', group: 'pending', state: 'pending', reason: 'queued', shown: 'queued' }),
+  placed({ session: 'f41led00', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
+  placed({ session: 'd0ne0001', group: 'done', state: 'done', reason: 'declined', shown: 'declined' }),
+  placed({ session: 'd0ne0000', group: 'done', state: 'done', reason: 'completed', shown: 'completed' }),
 ];
 
 const facts = (sessions: Session[]): SessionRowFacts[] => sessions.map((row) => ({ session: row }));
@@ -72,19 +76,27 @@ describe("Sessions' list by state", () => {
   it('lists the five groups in the order the person acts on them, each counted', () => {
     list();
 
-    expect(headings()).toEqual(['Waiting on you (2)', 'To review (1)', 'Working (1)', 'Resumes later (1)', 'Ended (2)']);
-    expect(groupRows('Waiting on you (2)').map((row) => within(row).getAllByText(/./)[0]!.textContent))
-      .toEqual(['waiting on you', 'parked']);
-    expect(within(groupRows('Ended (2)')[0]!).getByText('declined')).toBeInTheDocument();
+    expect(headings()).toEqual(['Needs you (2)', 'Working (2)', 'Pending (1)', 'Failed (1)', 'Done (2)']);
+    expect(groupRows('Needs you (2)').map((row) => within(row).getAllByText(/./)[0]!.textContent))
+      .toEqual(['waiting on you', 'stopped']);
+    expect(within(groupRows('Failed (1)')[0]!).getByText('parked')).toBeInTheDocument();
+    expect(within(groupRows('Done (2)')[0]!).getByText('declined')).toBeInTheDocument();
+  });
+
+  /** None of the old groups is drawn: a session is in one of the five by its state. */
+  it('draws none of the groups the five states replaced', () => {
+    list();
+
+    expect(headings().join(' ')).not.toMatch(/Waiting on you|To review|Resumes later|Ended/);
   });
 
   /** No group header names a repository, so each row's line does; the group headers carry no repository facts. */
   it("says each row's repository on its line, and no repository's facts on a group", () => {
     list();
 
-    expect(within(groupRows('Working (1)')[0]!).getByText(/^tools · driven/)).toBeInTheDocument();
-    expect(within(groupRows('Resumes later (1)')[0]!).getByText(/^game · waits on #q9q9q9, asked of engine/)).toBeInTheDocument();
-    expect(within(groupRows('To review (1)')[0]!).getByText(/^engine · 2 commits to review/)).toBeInTheDocument();
+    expect(within(groupRows('Working (2)')[0]!).getByText(/^tools · driven/)).toBeInTheDocument();
+    expect(within(groupRows('Working (2)')[1]!).getByText(/^game · waits on #q9q9q9, asked of engine/)).toBeInTheDocument();
+    expect(within(groupRows('Needs you (2)')[1]!).getByText(/^engine · 2 commits to review/)).toBeInTheDocument();
     expect(screen.queryByText('drives here')).toBeNull();
   });
 
@@ -112,13 +124,13 @@ describe("Sessions' list by state", () => {
     const reviewer = session({ id: 'r3v13w00', state: 'completed', kind: 'chat', repository: 'tools', opinion: 'o1' });
     list({
       rows: [...facts(SESSIONS), { session: helper, helps: 'Session' }, { session: reviewer, reads: 'Session' }],
-      groupings: [...GROUPINGS, placed({ session: 'h3lp3r00', group: 'working' }), placed({ session: 'r3v13w00', group: 'ended', shown: 'completed' })],
+      groupings: [...GROUPINGS, placed({ session: 'h3lp3r00', group: 'working' }), placed({ session: 'r3v13w00', group: 'done', shown: 'completed' })],
       serving: { h3lp3r00: 'w0rk1ng0', r3v13w00: 'w0rk1ng0' },
     });
 
-    expect(headings()).toEqual(['Waiting on you (2)', 'To review (1)', 'Working (1)', 'Resumes later (1)', 'Ended (2)']);
-    const working = groupRows('Working (1)');
-    expect(working).toHaveLength(3);
+    expect(headings()).toEqual(['Needs you (2)', 'Working (2)', 'Pending (1)', 'Failed (1)', 'Done (2)']);
+    const working = groupRows('Working (2)');
+    expect(working).toHaveLength(4);
     const under = screen.getByRole('list', { name: 'Working for Session' });
     expect(within(under).getAllByRole('listitem')).toHaveLength(2);
     expect(within(under).getByText('Helper')).toBeInTheDocument();
@@ -127,7 +139,7 @@ describe("Sessions' list by state", () => {
     expect(within(under).getByText(/^chat · moved/)).toBeInTheDocument();
     expect(within(under).getByText(/^second opinion · moved/)).toBeInTheDocument();
     expect(screen.queryByText(/helps|reads/)).toBeNull();
-    expect(groupRows('Ended (2)').map((row) => row.textContent)).not.toContain(expect.stringContaining('Second opinion'));
+    expect(groupRows('Done (2)').map((row) => row.textContent)).not.toContain(expect.stringContaining('Second opinion'));
   });
 
   it('keeps a helper its own place, naming whom it helps, where that row is not drawn', () => {
@@ -138,43 +150,43 @@ describe("Sessions' list by state", () => {
       serving: { h3lp3r00: 'd0ne0000' },
     });
 
-    expect(within(groupRows('Working (2)')[1]!).getByText(/^engine · chat · helps Session · /)).toBeInTheDocument();
+    expect(within(groupRows('Working (3)')[2]!).getByText(/^engine · chat · helps Session · /)).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: /^Working for/ })).toBeNull();
   });
 
   it('leaves out a group with nothing in it', () => {
-    list({ rows: facts([SESSIONS[0]!]), groupings: [GROUPINGS[3]!] });
+    list({ rows: facts([SESSIONS[0]!]), groupings: [GROUPINGS[2]!] });
     expect(headings()).toEqual(['Working (1)']);
   });
 
   /** Archived is out of the way unless shown, and shown last, in the reader's order. */
   it('hides what is archived unless it is shown', () => {
-    const marked = [...GROUPINGS.slice(0, 6), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
+    const marked = [...GROUPINGS.slice(0, 7), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
 
     const { unmount } = list({ groupings: marked });
-    expect(headings()).toEqual(['Waiting on you (2)', 'To review (1)', 'Working (1)', 'Resumes later (1)', 'Ended (1)']);
+    expect(headings()).toEqual(['Needs you (2)', 'Working (2)', 'Pending (1)', 'Failed (1)', 'Done (1)']);
     unmount();
 
     list({ groupings: marked, archived: true });
     expect(headings().at(-1)).toBe('Archived (1)');
   });
 
-  /** Ended shows twelve, then a press that shows the rest; the attended session is never cut out of it. */
-  it('shows twelve of a long Ended group, then the rest on a press', async () => {
+  /** Done shows twelve, then a press that shows the rest; the attended session is never cut out of it. */
+  it('shows twelve of a long Done group, then the rest on a press', async () => {
     const ended = Array.from({ length: 15 }, (_, index) => session({ id: `e${String(index).padStart(7, '0')}`, state: 'completed', updated: at(index + 1) }));
-    list({ rows: facts(ended), groupings: ended.map((row) => placed({ session: row.id, group: 'ended', shown: 'completed' })) });
+    list({ rows: facts(ended), groupings: ended.map((row) => placed({ session: row.id, group: 'done', shown: 'completed' })) });
 
-    expect(groupRows('Ended (15)')).toHaveLength(12);
+    expect(groupRows('Done (15)')).toHaveLength(12);
     await userEvent.click(screen.getByRole('button', { name: 'Show 3 more' }));
-    expect(groupRows('Ended (15)')).toHaveLength(15);
+    expect(groupRows('Done (15)')).toHaveLength(15);
     expect(screen.queryByRole('button', { name: /^Show \d+ more$/ })).toBeNull();
   });
 
-  it('keeps the attended session in a long Ended group past its twelve', () => {
+  it('keeps the attended session in a long Done group past its twelve', () => {
     const ended = Array.from({ length: 15 }, (_, index) => session({ id: `e${String(index).padStart(7, '0')}`, state: 'completed', updated: at(index + 1) }));
-    list({ rows: facts(ended), groupings: ended.map((row) => placed({ session: row.id, group: 'ended', shown: 'completed' })), selected: 'e0000014' });
+    list({ rows: facts(ended), groupings: ended.map((row) => placed({ session: row.id, group: 'done', shown: 'completed' })), selected: 'e0000014' });
 
-    expect(groupRows('Ended (15)')).toHaveLength(13);
+    expect(groupRows('Done (15)')).toHaveLength(13);
     expect(screen.getByRole('button', { name: 'Show 2 more' })).toBeInTheDocument();
     expect(screen.getAllByRole('button').find((button) => button.getAttribute('aria-current') === 'true')).toBeDefined();
   });
@@ -183,7 +195,7 @@ describe("Sessions' list by state", () => {
     const choose = vi.fn();
     list({ onSelect: choose });
 
-    await userEvent.click(within(groupRows('Working (1)')[0]!).getAllByRole('button')[0]!);
+    await userEvent.click(within(groupRows('Working (2)')[0]!).getAllByRole('button')[0]!);
     expect(choose).toHaveBeenCalledWith('w0rk1ng0');
   });
 
@@ -196,7 +208,7 @@ describe("Sessions' list by state", () => {
     await i18n.changeLanguage('zh');
     try {
       list();
-      expect(headings()).toEqual(['等你处理（2）', '待审阅（1）', '工作中（1）', '稍后继续（1）', '已结束（2）']);
+      expect(headings()).toEqual(['等你处理（2）', '工作中（2）', '待开始（1）', '失败（1）', '已完成（2）']);
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText('等回复')).toBeInTheDocument();
     } finally {
@@ -210,7 +222,7 @@ describe("Sessions' list by state", () => {
  * archived; an archived row under no Archived heading says it is archived on its line (by repository).
  */
 describe("Sessions' list, archived", () => {
-  const marked = [...GROUPINGS.slice(0, 6), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
+  const marked = [...GROUPINGS.slice(0, 7), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
 
   it('says nothing is archived under Archived when it is shown and empty', () => {
     list({ archived: true });
@@ -245,19 +257,24 @@ describe("Sessions' list, archived", () => {
     expect(act).toHaveBeenCalledWith('unarchive', 'd0ne0000');
   });
 
-  it('offers Archive on what ended, and on nothing that waits on you', async () => {
+  it('offers Archive on what is done or failed, and on nothing that needs you', async () => {
     const act = vi.fn();
     list({ actsFor: actsBy(GROUPINGS), onAct: act });
     const user = userEvent.setup();
 
-    within(groupRows('Waiting on you (2)')[1]!).getByRole('button', { name: /^more for / }).focus();
+    within(groupRows('Needs you (2)')[1]!).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     expect(screen.queryByRole('menuitem', { name: 'Archive' })).toBeNull();
-    // A parked quest's last session offers Try again where its row is.
-    expect(screen.getByRole('menuitem', { name: 'Try again' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
 
-    within(groupRows('Ended (2)')[0]!).getByRole('button', { name: /^more for / }).focus();
+    // A parked quest's last session offers Try again where its row is, and Archive: it failed.
+    within(groupRows('Failed (1)')[0]!).getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('menuitem', { name: 'Try again' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Archive' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+
+    within(groupRows('Done (2)')[0]!).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
     expect(act).toHaveBeenCalledWith('archive', 'd0ne0001');
@@ -267,7 +284,7 @@ describe("Sessions' list, archived", () => {
   it('says an archived row is archived on its line by repository', () => {
     list({ arrangement: 'repository', archived: true, groupings: marked });
 
-    const ended = screen.getByRole('region', { name: 'Ended' });
+    const ended = screen.getByRole('region', { name: 'Failed and done' });
     expect(within(ended).getByText(/^archived · driven · /)).toBeInTheDocument();
   });
 
@@ -289,7 +306,7 @@ describe("Sessions' list, archived", () => {
  */
 describe("Archive what ended's first press", () => {
   const ask = (props: Partial<Parameters<typeof ArchiveEndedAsk>[0]> = {}) => render(
-    <ArchiveEndedAsk going={['d0ne0001', 'd0ne0000']} kept={{ you: 2, review: 1 }} onArchive={() => {}} onCancel={() => {}} {...props} />,
+    <ArchiveEndedAsk going={['d0ne0001', 'd0ne0000']} kept={2} onArchive={() => {}} onCancel={() => {}} {...props} />,
   );
 
   it('says what it would archive and what it keeps, and archives what it said on the second press', async () => {
@@ -297,7 +314,7 @@ describe("Archive what ended's first press", () => {
     ask({ onArchive: archive });
 
     const group = screen.getByRole('group', { name: 'Archive what ended…' });
-    expect(group).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 2 waiting on you, 1 to review.');
+    expect(group).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 2 needing you.');
     await userEvent.click(within(group).getByRole('button', { name: 'Archive 2' }));
     expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000'], expect.objectContaining({ done: expect.any(Function) }));
   });
@@ -327,28 +344,28 @@ describe("Archive what ended's first press", () => {
     const archive = vi.fn();
     const { rerender } = ask({ onArchive: archive });
 
-    rerender(<ArchiveEndedAsk going={['d0ne0001', 'd0ne0000', 'n3wly000']} kept={{ you: 0, review: 0 }} onArchive={archive} onCancel={() => {}} />);
+    rerender(<ArchiveEndedAsk going={['d0ne0001', 'd0ne0000', 'n3wly000']} kept={0} onArchive={archive} onCancel={() => {}} />);
     expect(screen.getByRole('group', { name: 'Archive what ended…' })).toHaveTextContent('Archives 2 sessions that ended.');
     await userEvent.click(screen.getByRole('button', { name: 'Archive 2' }));
     expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000'], expect.objectContaining({ done: expect.any(Function) }));
   });
 
   it('names only what it keeps, one session in the singular', () => {
-    const { unmount } = ask({ going: ['d0ne0001'], kept: { you: 0, review: 3 } });
-    expect(screen.getByText('Archives 1 session that ended. Kept in the list: 3 to review.')).toBeInTheDocument();
+    const { unmount } = ask({ going: ['d0ne0001'], kept: 3 });
+    expect(screen.getByText('Archives 1 session that ended. Kept in the list: 3 needing you.')).toBeInTheDocument();
     unmount();
 
-    ask({ kept: { you: 0, review: 0 } });
+    ask({ kept: 0 });
     expect(screen.getByText('Archives 2 sessions that ended.')).toBeInTheDocument();
   });
 
   /** Nothing to archive: it says so, and offers no press that would archive nothing. */
   it('says when nothing has ended to archive, and offers only to close', async () => {
     const cancel = vi.fn();
-    ask({ going: [], kept: { you: 1, review: 0 }, onCancel: cancel });
+    ask({ going: [], kept: 1, onCancel: cancel });
 
     const group = screen.getByRole('group', { name: 'Archive what ended…' });
-    expect(group).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 waiting on you.');
+    expect(group).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 needing you.');
     expect(within(group).getAllByRole('button').map((button) => button.textContent)).toEqual(['Close']);
     await userEvent.click(within(group).getByRole('button', { name: 'Close' }));
     expect(cancel).toHaveBeenCalled();
@@ -371,7 +388,7 @@ describe("Archive what ended's first press", () => {
     try {
       ask();
       const group = screen.getByRole('group', { name: '归档已结束的会话…' });
-      expect(group).toHaveTextContent('将归档 2 个已结束的会话。仍留在列表中：2 个等你处理，1 个待审阅。');
+      expect(group).toHaveTextContent('将归档 2 个已结束的会话。仍留在列表中：2 个等你处理。');
       expect(within(group).getByRole('button', { name: '归档 2 个' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
@@ -387,7 +404,7 @@ describe("Sessions' list by repository", () => {
       repositoryFacts: (repository) => ({ drivable: repository === 'engine' }),
     });
 
-    const ended = screen.getByRole('region', { name: 'Ended' });
+    const ended = screen.getByRole('region', { name: 'Failed and done' });
     expect(headings().filter((heading) => !ended.contains(screen.getByText(heading!)))).toEqual(['engine', 'tools']);
     expect(screen.getByText('drives here')).toBeInTheDocument();
     const engine = within(screen.getByRole('heading', { level: 3, name: 'engine' }).closest('section')!).getAllByRole('listitem');
@@ -415,7 +432,7 @@ describe("Sessions' list by repository", () => {
   /** The monitor's list is the present tense only: nothing ended, and no parked row with no tile to go to. */
   it('lists only what is running where it is live', () => {
     list({ arrangement: 'repository', groupings: undefined, live: true });
-    expect(screen.queryByRole('region', { name: 'Ended' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Failed and done' })).toBeNull();
     expect(screen.queryByText('parked')).toBeNull();
   });
 });
@@ -432,8 +449,10 @@ describe("Sessions' strip", () => {
     const strip = screen.getByRole('navigation', { name: 'Sessions' });
     expect(within(strip).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'Chat · engine · waiting on you',
+      'Session · engine · stopped',
       '#q1 · engine · parked',
       'Session · tools · working',
+      '#q2 · game · awaiting reply',
     ]);
   });
 });

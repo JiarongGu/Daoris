@@ -58,7 +58,7 @@ public static class GroupsStateSlice
     {
         ["row"] =
         [
-            "session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
+            "session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
             "deletable", "lands", "discards", "waits", "repository", "created", "updated",
         ],
         ["waits"] = ["run", "node", "why", "since"],
@@ -185,13 +185,13 @@ public static class GroupsStateSlice
     }
 
     /// <summary>
-    /// The sort inputs a row of <paramref name="group"/> carries, as <c>SessionGroups.Ordered</c> orders the group: waiting
-    /// and resuming oldest first by when the record last moved; to review and working by repository without case, then when it began;
-    /// ended and archived newest first by when it last moved. The session's id breaks every tie.
+    /// The sort inputs a row of <paramref name="group"/> carries, as <c>SessionGroups.Ordered</c> orders the group: needing you
+    /// and pending oldest first by when the record last moved; working by repository without case, then when it began; failed,
+    /// done and archived newest first by when it last moved. The session's id breaks every tie.
     /// </summary>
     public static IReadOnlyList<string> OrderedBy(string group) => group switch
     {
-        SessionGroup.Review or SessionGroup.Working => ["repository", "created"],
+        SessionGroup.Working => ["repository", "created"],
         _ => ["updated"],
     };
 

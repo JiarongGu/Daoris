@@ -17,7 +17,7 @@ public sealed class HelpPlacesTests
             ["start", "appearance", "driver", "ai", "git", "browser", "space", "updates", "wiring", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
-                "sessions/waiting", "sessions/review", "sessions/new", "quests/asks", "quests/held",
+                "sessions/needs-you", "sessions/failed", "sessions/new", "quests/asks", "quests/held",
                 "projects/add", "projects/import", "projects/setup", "projects/branches", "projects/history",
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
                 "projects/workspace-defaults", "projects/workspace-remote",
