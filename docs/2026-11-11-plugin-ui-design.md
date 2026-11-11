@@ -385,9 +385,10 @@ method-not-found draws *It does not do this*.
 ### 3.4 Commands as agents' tools
 
 - **One server per session.** A session in a place is handed one MCP server, `daoris-plugins`, which the driver serves for that
-  session (`daoris-driver plugins tools --session <id>`), as a plugin's declared server is handed today (rule 24). It lists each `tool`
+  session (`daoris plugin tools --session <id>`), as a plugin's declared server is handed today (rule 24). It lists each `tool`
   command of each plugin that is installed, on and sound, with `commands` and `tools` on at the session's place, named
-  `<plugin>.<command>`. It is handed only where it lists one.
+  `<plugin>_<command>` (built: the model APIs' tool names take no dot, and no id or command name holds an underscore). It is handed
+  only where it lists one.
 - **Each tool.** Its description is the command's `about` in the session's language, its input schema comes from `args`, and its
   annotations say `writes`. A call is one round, `from: agent`, with the session's id and place. `said` is the text content, `data` the
   structured content, and an exit other than 0 an error result with `said`.
@@ -397,6 +398,16 @@ method-not-found draws *It does not do this*.
 - **The agent-performed step.** A workflow's plugin step may be performed by an agent session that holds the plugin's tools and is
   given the step's goal, instead of Daoris calling `work/perform` alone (D274 point 1). Its evidence is the session's record and its
   outcome the agent's answer. It is designed with the workflows area in its own row (§11 e), after the tools reach a session.
+  Built for it: the tools reach a quest's session (row d), and both pull-request examples carry `create-pull-request`,
+  `pull-request-status` and `complete-pull-request` as tools naming the repository by its origin's address. Settled (D274's note of
+  2026-11-12): (1) which steps an agent performs: a step declaring it, its manifest's `goal` (authored) beside `outcomes`, while a step
+  whose work outlives a round and a session's attention (a release watched for hours) stays on `work/perform`, which D228 then reads as
+  two declared jobs, not two ways to one; (2) the session: a part of the run started by the pass on the step's door, at the work's
+  place, with no tree of its own, staffed as the place's other sessions are, holding only its plugin's tools (`daoris plugin tools --plugin <id>`) and handed the step's goal, the run's record, the
+  branch, origin's address, the line and the landing's evidence; (3) its answer: a tool of the same server (`step_answer` with the
+  outcome code, the evidence's `url` and `message`, and the outputs) read as the step's completion, the plugin named as its source,
+  the session's record its evidence, a session that ends unanswered failing the step; (4) the migration: an attempt a `pull-request`
+  step began on `work/perform` and has not settled is reconciled by the step's own `check` before the plugin stops answering it.
 
 ## 4. How a plugin's UI is drawn
 

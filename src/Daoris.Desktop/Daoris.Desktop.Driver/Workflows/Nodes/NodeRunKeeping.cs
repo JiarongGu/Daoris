@@ -169,7 +169,7 @@ internal sealed class NodeRunKeeping(
             foreach (var (word, code) in applied!)
             {
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
-                said.Add(code == ReviewAccepts.Moved ? ReviewAccepts.DroppedSaid(unit, word, present) : RunNodeWords.AppliedSaid(unit, word, code));
+                said.Add(code == ReviewMoved.Word ? ReviewAccepts.DroppedSaid(unit, word, present) : RunNodeWords.AppliedSaid(unit, word, code));
 
                 // The person's changes on a review with no way back on its rejection go to the work all the same, as the look's not-yet does;
                 // one with a way back is told as that wire is taken, and only where it goes back to the work.

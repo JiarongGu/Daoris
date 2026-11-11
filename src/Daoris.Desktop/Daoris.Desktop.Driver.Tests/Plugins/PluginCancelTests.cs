@@ -37,9 +37,9 @@ public sealed class PluginCancelTests : IDisposable
         var folder = Scaffold("acme-cancelled", HookPoints.State, out var pidFile);
         var script = Path.Combine(folder, "plugin.mjs");
         var text = File.ReadAllText(script);
-        const string answer = "      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });";
+        const string answer = "    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });";
         Assert.Contains(answer, text);
-        File.WriteAllText(script, text.Replace(answer, "      // silence", StringComparison.Ordinal));
+        File.WriteAllText(script, text.Replace(answer, "    // silence", StringComparison.Ordinal));
         using var window = new CancellationTokenSource();
 
         var trial = PluginTrials.TryFolderAsync(Path.Combine(_scratch, "home"), folder, new TrialOptions(Patience: TimeSpan.FromSeconds(30)), window.Token);

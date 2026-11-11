@@ -96,7 +96,7 @@ public static class EntryPartOutcome
     /// </summary>
     public const string Accepted = "accepted";
 
-    public const string Moved = ReviewAccepts.Moved;
+    public const string Moved = ReviewMoved.Word;
 }
 
 /// <summary>One part's outcome at an entry's Accept, with its landing's answer where it is tried.</summary>
@@ -229,7 +229,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
 
             planned.Add(new EntryPartPlan(part.Session,
                 await lands.PlanAsync(part.Tree, Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target), ct,
-                    part.Gate?.Process).ConfigureAwait(false)) { Run = (part.Gate?.Process as WorkflowProcess)?.BoundRun });
+                    part.Gate?.Process).ConfigureAwait(false)) { Run = part.Gate?.Process?.BoundRun });
             var full = Path.GetFullPath(part.Tree);
             var (workspace, repository) = context.OwnerOf(full);
             var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
