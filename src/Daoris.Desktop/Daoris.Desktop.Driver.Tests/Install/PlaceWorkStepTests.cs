@@ -19,22 +19,24 @@ public sealed class PlaceWorkStepTests : IDisposable
 
     private IWorkflowStore Store => WorkflowPorts.Store(_home);
 
-    private void Home(string[] trees, string? waitsIn, params string[] repositories)
+    private void Home(string[] trees, string? waitsIn, params string[] repositories) => HomeOf("flow", trees, waitsIn, repositories);
+
+    private void HomeOf(string flow, string[] trees, string? waitsIn, params string[] repositories)
     {
-        var config = repositories.Aggregate(DriverConfig.Empty, (each, repository) => WorkflowSelection.Apply(each, new WorkflowUse("flow", repository, null, null)));
+        var config = repositories.Aggregate(DriverConfig.Empty, (each, repository) => WorkflowSelection.Apply(each, new WorkflowUse(flow, repository, null, null)));
         Directory.CreateDirectory(Path.GetDirectoryName(DriverFile)!);
         config.Save(DriverFile);
         var root = JsonNode.Parse(File.ReadAllText(DriverFile))!.AsObject();
         root["trees"] = new JsonArray([.. trees.Select(name => JsonValue.Create(name))]);
         if (waitsIn is not null) root["linePolicies"] = new JsonObject { [waitsIn] = new JsonObject { ["integrate"] = new JsonObject { ["overlap"] = "wait" } } };
         File.WriteAllText(DriverFile, root.ToJsonString());
-        Store.Write("flow", JsonNode.Parse("""
-            {"id":"flow","name":"Flow","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["work"],"end":"line",
+        Store.Write(flow, JsonNode.Parse("""
+            {"id":"__FLOW__","name":"Flow","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["work"],"end":"line",
              "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
                       {"id":"line","kind":"line","version":1,"reach":"observed"}],
              "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"line"}]}}]}
-            """)!);
+            """.Replace("__FLOW__", flow))!);
         Registered(repositories);
     }
 
@@ -119,6 +121,38 @@ public sealed class PlaceWorkStepTests : IDisposable
         Run();
 
         Assert.Equal(IsolateStep.Trees, Newest("flow"));
+    }
+
+    [Fact]
+    public void A_copy_for_a_long_workflow_id_keeps_the_id_within_its_limit_and_is_chosen()
+    {
+        var flow = "a-workflow-whose-name-is-thirty-eight";
+        Assert.True(WorkflowNamed.IsId(flow));
+        HomeOf(flow, ["engine"], null, "engine", "site");
+
+        Run();
+
+        var config = DriverConfig.Load(DriverFile);
+        var chosen = WorkflowSelection.Resolve(config, "engine", "default", null).Workflow;
+        Assert.NotEqual(flow, chosen);
+        Assert.True(WorkflowNamed.IsId(chosen));
+        Assert.Equal(IsolateStep.Trees, Newest(chosen));
+        Assert.Equal(flow, WorkflowSelection.Resolve(config, "site", "default", null).Workflow);
+    }
+
+    [Fact]
+    public void A_repository_whose_workflow_cannot_take_the_step_is_not_pointed_at_a_copy_that_was_never_saved()
+    {
+        Home(["engine"], null, "engine", "site");
+        Store.Write("flow", JsonNode.Parse("""
+            {"id":"flow","name":"Flow","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["work","other"],"end":"work",
+             "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"other","kind":"claimed","version":1,"reach":"observed"}],"wires":[]}}]}
+            """)!);
+
+        Run();
+
+        var config = DriverConfig.Load(DriverFile);
+        Assert.Equal("flow", WorkflowSelection.Resolve(config, "engine", "default", null).Workflow);
     }
 }
 

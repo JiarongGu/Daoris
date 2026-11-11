@@ -52,8 +52,11 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
 
             foreach (var overlap in overlaps)
             {
-                var copy = $"{flow.Key}-apart{(overlap == IsolateStep.Wait ? "-wait" : "")}";
+                var suffix = overlap == IsolateStep.Wait ? "-apart-wait" : "-apart";
+                var copy = flow.Key[..Math.Min(flow.Key.Length, 40 - suffix.Length)].TrimEnd('-') + suffix;
                 if (store.Load(copy) is null && IsolatedFiles.Copy(saved, copy, overlap) is { } made) store.Write(copy, made);
+                // A workflow the step cannot be put in, or a name another workflow holds, leaves the repository on the workflow it follows.
+                if (IsolateSteps.In(store.Load(copy)?.Read.Versions.LastOrDefault()?.Graph) is null) continue;
                 foreach (var each in apart.Where(each => Overlap(each) == overlap))
                 {
                     config = WorkflowSelection.Apply(config, new WorkflowUse(copy, each.Repository, null, null));
