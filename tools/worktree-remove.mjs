@@ -50,7 +50,9 @@ function removeLinkOnly(path) {
   }
 }
 
-const entriesOf = (path) => {
+const samePath = (a, b) => resolve(a).toLowerCase() === resolve(b).toLowerCase();
+
+const entriesOf =(path) => {
   try {
     return readdirSync(path).length;
   } catch {
@@ -67,7 +69,21 @@ function targetOf(path) {
   }
 }
 
+/** The path in the form Windows accepts past 260 characters; other systems keep it. */
+const longPath = (path) => (process.platform === 'win32' && !path.startsWith('\\\\?\\') ? `\\\\?\\${resolve(path)}` : path);
+
+/** Removes what is left of `path` without following a link: each link as a link, each folder after its entries. */
+function sweep(path) {
+  const stat = lstatSyncSafe(path);
+  if (!stat) return;
+  if (stat.isSymbolicLink()) return removeLinkOnly(path);
+  if (!stat.isDirectory()) return unlinkSync(path);
+  for (const name of readdirSync(path)) sweep(join(path, name));
+  rmdirSync(path);
+}
+
 function git(cwd, args) {
+  args = ['-c', 'core.longpaths=true', ...args];
   const run = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return { status: run.status, out: (run.stdout ?? '').trim(), err: (run.stderr ?? run.error?.message ?? '').trim() };
 }
@@ -98,12 +114,25 @@ export function removeWorktree(repo, path, { force = false, removeLink = removeL
   }
   const deletedBefore = deletedIn(repo);
   const run = git(repo, ['worktree', 'remove', ...(force ? ['--force'] : []), path]);
+  // Git can drop the registration yet leave the folder where a delete failed; what it left goes by the link-safe walk.
+  const registered = git(repo, ['worktree', 'list', '--porcelain']).out.split('\n').some((line) => samePath(line.replace(/^worktree /, ''), path));
+  let leftover = '';
+  if (!registered && lstatSyncSafe(path)) {
+    const longRoot = longPath(path);
+    try {
+      for (const link of findLinks(longRoot)) removeLink(link);
+      sweep(longRoot);
+    } catch (error) {
+      leftover = `what git left of ${path} could not be removed (${error?.code ?? error?.message})`;
+    }
+  }
   afterRemove();
   const lost = [...deletedIn(repo)].filter((file) => !deletedBefore.has(file));
   if (lost.length) {
     return { ok: false, links, why: `the main checkout lost tracked files: ${lost.slice(0, 10).join(', ')}${lost.length > 10 ? ` and ${lost.length - 10} more` : ''}; restore them with git checkout` };
   }
-  if (run.status !== 0) return { ok: false, links, why: run.err || run.out || 'git refused to remove the worktree' };
+  if (leftover) return { ok: false, links, why: leftover };
+  if (run.status !== 0 && (registered || lstatSyncSafe(path))) return { ok: false, links, why: run.err || run.out || 'git refused to remove the worktree' };
   return { ok: true, links, why: '' };
 }
 

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { removeWorktree } from './worktree-remove.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const scratch = join(here, '..', 'local', 'scratch', 'worktree-remove-test');
+const scratch = join(here, '..', '_fixtures', 'worktree-remove-test');
 rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 after(() => rmSync(scratch, { recursive: true, force: true }));
@@ -104,6 +104,25 @@ test('a tracked file of the main checkout deleted by the removal is reported', (
   const result = removeWorktree(repo, tree, { afterRemove: () => rmSync(join(repo, 'tracked.txt')) });
   assert.equal(result.ok, false);
   assert.match(result.why, /tracked\.txt/);
+});
+
+test('a worktree holding a path past 260 characters is removed whole, its link as a link', () => {
+  const { repo, tree, shared } = fixture();
+  link(shared, join(tree, 'node_modules'));
+  const long = process.platform === 'win32' ? (path) => `\\\\?\\${path}` : (path) => path;
+  let deep = tree;
+  for (let i = 0; i < 6; i++) deep = join(deep, `segment-${i}-${'x'.repeat(50)}`);
+  assert.ok(deep.length > 260);
+  mkdirSync(long(deep), { recursive: true });
+  writeFileSync(long(join(deep, 'leaf.txt')), 'leaf');
+  const result = removeWorktree(repo, tree, { force: true });
+  assert.equal(result.ok, true, result.why);
+  assert.equal(result.links.length, 1);
+  assert.equal(existsSync(tree), false);
+  assert.deepEqual(readdirSync(shared).sort(), ['a.txt', 'deep']);
+  assert.equal(existsSync(join(shared, 'deep', 'b.txt')), true);
+  assert.equal(existsSync(join(repo, 'tracked.txt')), true);
+  assert.doesNotMatch(git(repo, 'worktree', 'list'), /case\d+\/tree/);
 });
 
 test('a worktree with changes is kept unless forced', () => {
