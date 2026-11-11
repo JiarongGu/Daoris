@@ -112,7 +112,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.True(told);
     }
 
-    // ——— A hand-over's files (HandOverFiles, HandOverAskFiles).
 
     /// <summary><see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
     [Fact]
@@ -153,7 +152,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("a1b2c3d4", HandOverAskStates.Waiting, "codex-acp"), (state!.Id, state.State, state.Agent));
     }
 
-    // ——— A helper's and a partner's files.
 
     /// <summary><see cref="HelperFiles.ReadState"/> (HelperFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
     [Fact]

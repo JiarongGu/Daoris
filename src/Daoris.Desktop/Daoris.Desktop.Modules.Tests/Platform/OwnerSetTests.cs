@@ -39,7 +39,6 @@ public sealed class OwnerSetTests : IDisposable
     // A log still held by a pipe that closes after us is waited for, then left: the scratch is the checkout's, and its parent is ignored.
     public void Dispose() => GitSeed.Discard(_home);
 
-    // ——— What the owner's doors name and mark.
 
     [Fact]
     public async Task A_mark_by_repository_and_by_quest_holds_the_steward_back_from_each()
@@ -68,7 +67,6 @@ public sealed class OwnerSetTests : IDisposable
         var judge = Judge();
         var (_, key) = Appointed(judge);
 
-        // s2 is s1's successor (a retry, a hand-over, a carry-on, a new part): the same quest.
         await MarkAsync(judge, route, JsonDocument.Parse(payload).RootElement);
 
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Quest, "q1")));

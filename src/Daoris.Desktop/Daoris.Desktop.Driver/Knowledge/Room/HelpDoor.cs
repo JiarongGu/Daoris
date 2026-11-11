@@ -17,10 +17,8 @@ internal sealed record HelpDoor(string Act, string Screen, string Terminal, Help
 /// </summary>
 internal abstract record HelpDoorAsk
 {
-    /// <summary>The words the row ends on, in brackets.</summary>
     public abstract string Said { get; }
 
-    /// <summary>Ask Daoris never asks it on the card.</summary>
     public sealed record Never(string Why) : HelpDoorAsk
     {
         public override string Said => $"Ask Daoris never asks it on the card: {Why}";

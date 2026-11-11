@@ -51,7 +51,6 @@ export const OneLine: Story = {
 
 export const LacksNothing: Story = { args: { helper: 'claude-code-acp' } };
 
-/** The conversation takes the panel, and the composer sits at its foot. The record's own look is the conversation's stories'. */
 export const Talking: Story = {
   args: {
     helper: 'claude-code-acp',
@@ -69,7 +68,6 @@ export const Talking: Story = {
   },
 };
 
-/** Ask Daoris says where to go as a link in its words: pressing it opens the place in the window, and changes nothing. */
 export const AGoLink: Story = {
   args: {
     ...Talking.args,

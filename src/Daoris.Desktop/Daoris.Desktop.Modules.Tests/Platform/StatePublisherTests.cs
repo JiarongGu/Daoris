@@ -69,7 +69,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
             PressSteps.Reach(PressSteps.Gate);
             await _gate.Task;
             PressSteps.Reach(PressSteps.Landing);
-            // Reached again: the same step tells nothing new.
             PressSteps.Reach(PressSteps.Landing);
             await _landing.Task;
             return new { Done = true };

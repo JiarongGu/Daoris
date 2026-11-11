@@ -30,7 +30,6 @@ public static class KnowledgeServer
         typeof(HandOverTools),
         typeof(LineTools),
         typeof(HandbackTools),
-        // A repository's memory: read across the session's workspace, changed in its own repository, corrected by proposal.
         typeof(MemoryTools),
         typeof(ChannelTools),
         typeof(OpinionTools),

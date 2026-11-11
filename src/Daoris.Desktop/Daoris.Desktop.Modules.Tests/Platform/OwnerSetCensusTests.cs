@@ -136,7 +136,6 @@ public sealed class OwnerSetCensusTests
         }
     }
 
-    // ——— The sweep.
 
     /// <summary>What the sweep reads of a handler: what its route declares a successful answer changed, and the target fields its body reads.</summary>
     internal sealed record HandlerFacts(StateScopes Changes, string? Session, IReadOnlyList<string> Fields, string Body, string File);

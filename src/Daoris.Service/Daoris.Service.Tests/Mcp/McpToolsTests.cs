@@ -699,7 +699,6 @@ public sealed class McpToolsTests : McpToolsFixture
         var tree = Path.Combine(_root, "trees", "setup");
         Directory.CreateDirectory(Path.Combine(tree, "dist"));
         var session = (await ledger.OpenAsync(setUp.Id, "stub", DateTimeOffset.UtcNow, tree: tree)).Session!;
-        // The set-up step's session holds both classes on its one connector: its quest's and the review's.
         ReviewTools Connector(string? id) => new(new IntakeScope(null, id), ledger);
         var quests = new QuestTools(
             _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger);

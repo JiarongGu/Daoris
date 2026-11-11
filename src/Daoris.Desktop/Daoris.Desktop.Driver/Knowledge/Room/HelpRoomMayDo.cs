@@ -29,7 +29,6 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("screen and where on it, and the command — and, where the person wants it made, press it with the command\n");
         text.Append("(the verbs below). Daoris judges each press first by the rules of the screen that makes the same change,\n");
         text.Append("and one those rules would refuse never reaches the person: you are told why instead. What a press did\n");
-        // A press no line waits on is said once it settles, as Daoris's word, never the person's.
         text.Append("answers on its command's line, or, where none waits on it, comes back to you as Daoris's word, starting\n");
         text.Append("`Daoris:` and naming by id any ask or quest it published. Read the family through\n");
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");

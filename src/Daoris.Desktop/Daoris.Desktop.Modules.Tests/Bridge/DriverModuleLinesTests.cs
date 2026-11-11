@@ -420,7 +420,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public void The_screens_discard_is_the_drivers_one_discard()
     {
-        // The bridge's files: its domains' handler classes.
         var sources = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 

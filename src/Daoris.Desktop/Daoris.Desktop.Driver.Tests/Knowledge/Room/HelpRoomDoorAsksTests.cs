@@ -2,7 +2,6 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>A door's row says where Ask Daoris never asks its act on the card, from its typed answer; a row with none is pressed, asked on the card.</summary>
 public sealed class HelpRoomDoorAsksTests
 {
     private static HelpDoor Row(string command) =>

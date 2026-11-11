@@ -17,7 +17,6 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class WindowCensusTests
 {
-    /// <summary>The reads that answer only from memory, each with what it reads.</summary>
     private static readonly Dictionary<string, string> Held = new(StringComparer.Ordinal)
     {
         ["STATE_SLICE"] = "a pushed slice's snapshot, held by its owner",

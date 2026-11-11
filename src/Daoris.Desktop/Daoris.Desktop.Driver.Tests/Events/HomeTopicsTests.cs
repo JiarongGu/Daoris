@@ -9,7 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HomeTopicsTests
 {
-    // Never created: an answer only says where a topic's files are, and a place's folder is read when its stamps are.
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-home-topics-" + Guid.NewGuid().ToString("N")[..8]);
 
     [Fact]

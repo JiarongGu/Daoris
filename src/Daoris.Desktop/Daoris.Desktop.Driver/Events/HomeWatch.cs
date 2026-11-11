@@ -9,10 +9,8 @@ namespace Daoris.Driver;
 /// <param name="Stamps">What the topic's judge reads: each file's full path and its stamp, in whatever order.</param>
 public sealed record HomePart(string Folder, bool Subfolders, Func<string, ChangeKind, bool> Hears, Func<IEnumerable<KeyValuePair<string, string>>> Stamps)
 {
-    /// <summary>
-    /// Files the judge reads by name alone, never by listing a folder, each stamped present or absent: a name entering or
-    /// leaving this list is the list's change, never the file's, so it moves nothing. None by default.
-    /// </summary>
+    /// <summary>Files the judge reads by name alone, never by listing a folder, each stamped present or absent: a name entering or
+    /// leaving this list is the list's change, never the file's, so it moves nothing. None by default.</summary>
     public Func<IEnumerable<string>>? ByName { get; init; }
 
     /// <summary>One file of a folder, heard by its final name alone: a writer's temporary and its neighbours are not it.</summary>
@@ -28,10 +26,8 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     }
 
 
-    /// <summary>
-    /// Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp: a record
-    /// arriving, leaving or written again moves it, so each writer in this process marks its own (<see cref="HomeWrites"/>).
-    /// </summary>
+    /// <summary>Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp: a record
+    /// arriving, leaving or written again moves it, so each writer in this process marks its own (<see cref="HomeWrites"/>).</summary>
     public static HomePart Records(string folder, bool subfolders)
     {
         var full = Path.GetFullPath(folder);
@@ -45,10 +41,8 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
                 : []);
     }
 
-    /// <summary>
-    /// The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
-    /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.
-    /// </summary>
+    /// <summary>The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
+    /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.</summary>
     public static HomePart Files(string folder, IReadOnlyList<string> names, IReadOnlyList<string> ways)
     {
         var full = Path.GetFullPath(folder);
@@ -97,10 +91,8 @@ public sealed class HomeWatch : IAsyncDisposable
         _chain = new Chain(_changes).Bind(ChainRanks.Read, ReadAsync);
     }
 
-    /// <summary>
-    /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
-    /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).
-    /// </summary>
+    /// <summary>The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
+    /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).</summary>
     public static HomeWatch ForDriver(
         string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
     {
@@ -159,10 +151,8 @@ public sealed class HomeWatch : IAsyncDisposable
         return watch;
     }
 
-    /// <summary>
-    /// A topic whose judge is its own: handed nothing of what moved, it answers whether it woke anything, and the watch keeps
-    /// no stamps of its own for it. Before <see cref="Start"/>.
-    /// </summary>
+    /// <summary>A topic whose judge is its own: handed nothing of what moved, it answers whether it woke anything, and the watch keeps
+    /// no stamps of its own for it. Before <see cref="Start"/>.</summary>
     public void Topic(string topic, string subject, Func<bool> judge, params HomePart[] parts)
     {
         lock (_gate) _heard[topic] = new Heard(subject, parts, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)) { Judge = judge };
@@ -184,10 +174,8 @@ public sealed class HomeWatch : IAsyncDisposable
     /// <summary>The watch under the topics, which a test steps and settles.</summary>
     internal ChangeWatch Changes => _changes;
 
-    /// <summary>
-    /// A topic: <paramref name="subject"/> is the name its wake carries, and <paramref name="parts"/> the places it hears. What its files
-    /// hold now is taken as read, so only what moves after is a wake. Before <see cref="Start"/>.
-    /// </summary>
+    /// <summary>A topic: <paramref name="subject"/> is the name its wake carries, and <paramref name="parts"/> the places it hears. What its files
+    /// hold now is taken as read, so only what moves after is a wake. Before <see cref="Start"/>.</summary>
     public void Topic(string topic, string subject, params HomePart[] parts)
     {
         var (stamps, named) = Read(parts);

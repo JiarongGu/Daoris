@@ -192,7 +192,6 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
             return Task.CompletedTask;
         });
 
-        // Nothing held yet, and the work held back: the ask answers pending, at once.
         var clock = Stopwatch.StartNew();
         var first = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");

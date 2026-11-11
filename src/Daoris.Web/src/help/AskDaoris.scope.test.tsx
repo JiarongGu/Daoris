@@ -49,7 +49,6 @@ const row = (session: string, workspace: string, title: string, live = false) =>
 const ACTIVE = ['queued', 'starting', 'working', 'awaiting-person'];
 let SESSIONS: ReturnType<typeof help>[] = [];
 let ROWS: (ReturnType<typeof row> & { focus?: Payload; focusNext?: Payload | null })[] = [];
-// Two workspaces, so the window's switcher offers a choice between them, and *every workspace* is a choice of its own.
 const REGISTRY = [{ repository: 'engine', workspace: 'games' }, { repository: 'ledger', workspace: 'work' }];
 
 function respond(url: string): Response {

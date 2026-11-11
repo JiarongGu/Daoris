@@ -223,7 +223,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         var id = Guid.NewGuid().ToString();
         var presses = new SentPresses(_home);
         presses.Keep(new SentPress(id, "key-1", "SESSION_INPUT", now));
-        // A sent press is kept in its own home entry; `run/pipe/sent` is read only as a fallback.
         var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.PipeSent), id + ".json");
 
         using (MoveHold.Take(path))

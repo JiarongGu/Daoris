@@ -63,7 +63,6 @@ let world: World = FRESH;
  * them, unless a test hands it one.
  */
 let conversing = false;
-/** What Ask Daoris's conversation holds, as its history answers it. */
 let said: unknown[] = [];
 
 function respond(url: string): Response {

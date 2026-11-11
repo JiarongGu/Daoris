@@ -95,7 +95,6 @@ export const useRegistry = (reach: 'window' | 'machine' = 'window') => {
   });
 };
 
-/** A repository's code map — asked only once a person opens one. */
 export const useCodeMap = (repository: string | null) =>
   useQuery({
     queryKey: keys.codeMap(repository ?? ''),

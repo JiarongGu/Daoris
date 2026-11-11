@@ -7,8 +7,7 @@ internal static class KnowledgeRoomPaths
 {
     internal const string Folder = "help";
 
-    /// <summary>The room's folder for a workflow's drafts: the graph a <c>daoris workflow apply</c> press names, which changes nothing until the person's yes.</summary>
-    internal const string Drafts = "drafts";
+    internal const string Drafts = "drafts"; // a workflow's drafts, the graph a `daoris workflow apply` press names
 
     /// <summary>
     /// The longest a named workspace's part of its room's folder name is spelled out; a longer one keeps its first

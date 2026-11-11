@@ -896,10 +896,7 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(starts()).toBe(2));
   });
 
-  /**
-   * Ask Daoris says where to go as a link in its words: pressing it opens the place through the starters' door, and sends
-   * nothing to the driver, since a go changes nothing.
-   */
+  /** A go changes nothing, so its link sends the driver nothing. */
   it('takes the person to the place a go link in its words names, and sends nothing', async () => {
     SESSIONS = [HELP];
     bridge();

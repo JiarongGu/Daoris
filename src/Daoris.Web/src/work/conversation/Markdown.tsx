@@ -16,8 +16,7 @@ import { CodeBlock } from './CodeBlock';
  * **A link leaves the application**, through `ExternalLink`: in the system's browser, or in Daoris's
  * where the person chose that. A plain link would navigate the whole window away, which is the
  * drop-a-file failure in another form. **An image is never fetched** — it is
- * a link to what it names, opened only on purpose. **A go link stays in the window** (`daoris:go?…`, which Ask Daoris writes):
- * it opens the place it names where the panel provides an opener, and is words alone anywhere else.
+ * a link to what it names, opened only on purpose. **A go link (`daoris:go?…`) stays in the window**, or is words alone.
  *
  * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
  * wrote, and nothing here translates it.
@@ -63,7 +62,6 @@ function keepLineBreaks() {
   return walk;
 }
 
-/** The renderer's own address rule, but for a link's go address, whose scheme it would blank. */
 const keepGoLinks = (url: string, key: string) => (key === 'href' && goPlace(url) ? url : defaultUrlTransform(url));
 
 type Components = ComponentProps<typeof ReactMarkdown>['components'];

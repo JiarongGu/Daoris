@@ -374,8 +374,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Handed = new("handed", HomeCategory.Data, "data/handed", "handed");
     public static readonly HomeEntry Setup = new("setup", HomeCategory.Data, "data/setup", "setup");
     public static readonly HomeEntry Workflows = new("workflows", HomeCategory.Data, "data/workflows", "workflows");
-    // A deleted box, named only so the home migration's `help-proposals` step finds a stored folder to remove.
-    public static readonly HomeEntry HelpProposals = new("help-proposals", HomeCategory.Data, "data/help/proposals", "help/proposals");
+    public static readonly HomeEntry HelpProposals = new("help-proposals", HomeCategory.Data, "data/help/proposals", "help/proposals"); // a deleted box, for HelpProposalsStep
     public static readonly HomeEntry ConfiguredAccess = new("configured-access", HomeCategory.Data, "data/configured-access.json", "configured-access.json");
     public static readonly HomeEntry OpinionGates = new("opinion-gates", HomeCategory.Data, "data/opinions/gates", "opinions/gates");
     public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "data/opinions/due.json", "opinions/due.json");
