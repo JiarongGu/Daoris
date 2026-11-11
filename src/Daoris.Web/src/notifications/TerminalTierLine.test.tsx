@@ -44,7 +44,7 @@ describe("Notifications' line of the terminal's tier", () => {
   it.each([
     ['en', "A terminal's presses", 'A press from a terminal on this machine runs at once as yours, with no card.', 'Turned on by Ask Daoris, with no card', 'Back to ask',
       'Presses a terminal made as yours', 'Interrupted: Daoris stopped while it ran, so whether it was done is not known', 'Not done (driver-refused)', 'Done'],
-    ['zh', '终端的操作', '本机终端发来的操作会直接以你的名义执行，不经确认卡。', '由 Ask Daoris 未经确认卡开启', '改回询问',
+    ['zh', '终端的操作', '本机终端发来的操作会直接以你的名义执行，不经确认卡。', '由 Ask Daoris 未经确认卡启用', '改回询问',
       '终端以你的名义执行的操作', '已中断：运行中 Daoris 停止了，无法确定是否已完成', '未完成（driver-refused）', '已完成'],
   ])('says who turned act on, offers Back to ask and lists each press with how it ended (%s)', async (language, label, act, by, back, list, interrupted, failed, done) => {
     await i18n.changeLanguage(language);

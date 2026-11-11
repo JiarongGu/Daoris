@@ -173,8 +173,8 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** Whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
   it('words every way a resumed conversation’s first line says whose words', () => {
     const resumed = reasons('Resumed');
-    // Daoris's own words alone are an eighth; the supervisor's answer a ninth.
-    expect(resumed.length).toBe(9);
+    // Daoris's own words alone are an eighth, a restart's a ninth; the supervisor's answer a tenth.
+    expect(resumed.length).toBe(10);
     const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...resumed].sort(byKey));

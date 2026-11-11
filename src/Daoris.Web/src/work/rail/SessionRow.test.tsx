@@ -10,9 +10,7 @@ import { menuActs, rightClick } from '../../test/contextMenu';
 import type { SessionGrouping } from '../groups';
 import { SessionRow } from './SessionRow';
 
-// A molecule, so every state below is reached by PASSING it. There is no
-// bridge here, no query client and no provider — if this file ever needed one, the rule that makes
-// the working surface reviewable would already have been broken.
+// A molecule, so every state below is reached by passing it: no bridge, query client or provider.
 
 const NOW = new Date('2026-09-21T12:00:00Z');
 
@@ -51,8 +49,7 @@ const STATES: SessionState[] = [
 ];
 
 describe('a session row', () => {
-  // The clock is pinned: every duration below is a fact about the fixture, not about when the
-  // suite ran. userEvent drives the same fake clock rather than waiting on a real one.
+  // The clock is pinned, so every duration below is a fact about the fixture; userEvent drives the same fake clock.
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
