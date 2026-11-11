@@ -73,6 +73,8 @@ export type DriverState = {
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;
+  /** The most megabytes a folder may hold to be copied for a session its workflow sets apart. */
+  manifestCopy?: number;
   cap?: number;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;

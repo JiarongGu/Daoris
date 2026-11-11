@@ -3,15 +3,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The kinds of place each node kind runs in (design §3.6): git's own steps in a git repository alone, the apply in a system alone, every
-/// other kind and a plugin's step anywhere; and the bind's refusal (<c>place-kind</c>) of a graph with a step its place cannot run.
+/// The kinds of place each node kind runs in (design §3.6): git's own steps in a git repository alone, the apply in a system alone, the
+/// isolate in a git repository and a folder, the return in a folder alone, every other kind and a plugin's step anywhere; and the bind's refusal (<c>place-kind</c>) of a graph with a step its place cannot run.
 /// </summary>
 public sealed class NodePlacesTests
 {
     private static readonly string[] GitAlone =
     [
         NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy, NodeKinds.Integrate, NodeKinds.Line, NodeKinds.ContentHolds,
-        NodeKinds.Rebase, NodeKinds.Resolve, NodeKinds.Merge, NodeKinds.Isolate,
+        NodeKinds.Rebase, NodeKinds.Resolve, NodeKinds.Merge,
     ];
 
     /// <summary>Every built-in kind says where it runs, each place one the registration names, so a kind added says so too.</summary>
@@ -25,6 +25,8 @@ public sealed class NodePlacesTests
             Assert.All(unit.Places, place => Assert.Contains(place, PlaceKind.Every));
             IReadOnlyList<string> expected = GitAlone.Contains(kind) ? [PlaceKind.Git]
                 : kind == NodeKinds.Apply ? [PlaceKind.System]
+                : kind == NodeKinds.Isolate ? [PlaceKind.Git, PlaceKind.Folder]
+                : kind == NodeKinds.Return ? [PlaceKind.Folder]
                 : PlaceKind.Every;
             Assert.True(expected.SequenceEqual(unit.Places), $"`{kind}` runs in {string.Join(", ", unit.Places)}");
         }
@@ -48,8 +50,8 @@ public sealed class NodePlacesTests
     [InlineData(PlaceKind.Folder, NodeKinds.Land, "a folder", "a git repository")]
     [InlineData(PlaceKind.Folder, NodeKinds.Push, "a folder", "a git repository")]
     [InlineData(PlaceKind.Folder, NodeKinds.Rebase, "a folder", "a git repository")]
-    [InlineData(PlaceKind.System, NodeKinds.Isolate, "a system", "a git repository")]
     [InlineData(PlaceKind.Git, NodeKinds.Apply, "a git repository", "a system")]
+    [InlineData(PlaceKind.Git, NodeKinds.Return, "a git repository", "a folder")]
     public void A_step_its_place_cannot_run_refuses_the_bind_naming_the_step_and_the_place(string place, string kind, string placeSaid, string servesSaid)
     {
         var problem = PlaceKindUnserved.Of(Graph(NodeKinds.Claimed, kind), place, "flow", 3);
@@ -66,6 +68,13 @@ public sealed class NodePlacesTests
     [InlineData(PlaceKind.System)]
     public void Steps_every_place_runs_bind_anywhere(string place) =>
         Assert.Null(PlaceKindUnserved.Of(Graph(NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.QuestHolds, NodeKinds.Review, "acme.deploy/deploy"), place, "flow", 1));
+
+    [Theory]
+    [InlineData(PlaceKind.Git, true)]
+    [InlineData(PlaceKind.Folder, true)]
+    [InlineData(PlaceKind.System, false)]
+    public void The_isolate_step_binds_in_a_git_repository_and_a_folder(string place, bool binds) =>
+        Assert.Equal(binds, PlaceKindUnserved.Of(Graph(NodeKinds.Isolate, NodeKinds.Claimed), place, "flow", 1) is null);
 
     [Fact]
     public void A_place_whose_kind_is_not_known_binds_anything() =>

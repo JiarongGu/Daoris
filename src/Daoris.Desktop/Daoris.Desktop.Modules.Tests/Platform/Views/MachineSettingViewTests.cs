@@ -69,6 +69,9 @@ public sealed class MachineSettingViewTests
         var minutes = await View(MachineSettingView.Manifest(), new { minutes = 3 });
         Assert.Equal(("manifest-minutes", "daoris settings manifest minutes 3"), (minutes.View!.Kind, minutes.View.Command));
 
+        var copy = await View(MachineSettingView.Manifest(), new { copy = 4096 });
+        Assert.Equal(("manifest-copy", "daoris settings manifest copy 4096"), (copy.View!.Kind, copy.View.Command));
+        Assert.Contains("megabytes", (await View(MachineSettingView.Manifest(), new { copy = 0 })).Refusal);
         Assert.Contains("files", (await View(MachineSettingView.Manifest(), new { files = 5 })).Refusal);
         Assert.Contains("minutes", (await View(MachineSettingView.Manifest(), new { minutes = 99 })).Refusal);
         Assert.Contains("files", (await View(MachineSettingView.Manifest(), new { })).Refusal);

@@ -46,7 +46,7 @@ internal sealed class IsolateNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Work;
 
-    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+    public override IReadOnlyList<string> Places { get; } = [PlaceKind.Git, PlaceKind.Folder];
 
     public override bool EndsByTheLine => true;
 

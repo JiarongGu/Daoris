@@ -18,6 +18,9 @@ public sealed record ManifestBounds(int Files, TimeSpan Time)
     /// <summary>The most bytes a folder's followed files may hold together and still be copied for a session working apart.</summary>
     public long Copy { get; init; } = CopyDefault;
 
+    /// <summary>The most files a folder may hold and still be copied, 20,000 as the design proposes: each costs the copy its own creation.</summary>
+    public int CopyFiles { get; init; } = 20_000;
+
     /// <summary>The bounds this machine's <c>driver.json</c> sets under <paramref name="home"/>, each the default where it sets none.</summary>
     public static ManifestBounds Of(string home) => DriverConfig.Load(DriverConfig.ResolvePath(home)).Manifest.Bounds;
 }

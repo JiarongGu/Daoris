@@ -21,6 +21,19 @@ public sealed class DriverModuleManifestTests : DriverModuleBridge
         Assert.Equal((40000, 3), (DriverConfig.Load(DriverConfigPath).Manifest.Files, DriverConfig.Load(DriverConfigPath).Manifest.Minutes));
     }
 
+    [Fact]
+    public async Task The_copy_bound_is_set_alone_in_megabytes_and_answered_with_the_state()
+    {
+        Assert.Equal(2048, (await AnswerAsync(Module(), "STATE")).GetProperty("manifestCopy").GetInt32());
+
+        var state = await AnswerAsync(Module(), "SET_MANIFEST", new { copy = 4096 });
+
+        Assert.Equal(4096, state.GetProperty("manifestCopy").GetInt32());
+        Assert.Equal(4096L << 20, DriverConfig.Load(DriverConfigPath).Manifest.Bounds.Copy);
+        Assert.StartsWith(Refusals.DriverRefused, await RefusalAsync(Module(), "SET_MANIFEST", new { copy = 0 }));
+        Assert.StartsWith(Refusals.DriverRefused, await RefusalAsync(Module(), "SET_MANIFEST", new { files = 5000, copy = 10 }));
+    }
+
     [Theory]
     [InlineData(999, null)]
     [InlineData(null, 0)]

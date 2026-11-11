@@ -22,8 +22,10 @@ public static class FolderReturn
         var store = new ManifestStore(home, copy.Workspace, copy.Department);
         var based = FolderCopies.Base(home, copy) ?? throw new DriverException($"copy `{copy.Id}` has no manifest of its making, so nothing can be brought back.");
         var excludes = PlaceExcludes.Of(based.Excludes);
-        var copied = FolderManifestReader.Read(copy.Folder, store.Content, based, bounds, excludes);
-        var place = FolderManifestReader.Read(copy.Root, store.Content, store.Last(copy.Root) ?? based, bounds, excludes);
+        // Both sides hashed afresh from their bytes: a return writes on what it read, never on a size and time that held still.
+        var copied = FolderManifestReader.Read(copy.Folder, store.Content, null, bounds, excludes);
+        var place = FolderManifestReader.Read(copy.Root, store.Content, null, bounds, excludes);
+        if (copied.TooLarge || place.TooLarge) throw new DriverException($"copy `{copy.Id}` or its folder could not be read whole, so nothing is brought back yet.");
         var inCopy = FolderChanges.Between(based, copied).All;
         if (inCopy.Count == 0) return new([], [], Nothing: true);
 
@@ -32,9 +34,16 @@ public static class FolderReturn
         foreach (var path in inCopy)
         {
             var (session, folder) = (copied.Listed(path)?.Sha256, place.Listed(path)?.Sha256);
-            if (!inPlace.Contains(path))
+            var unread = (copied.Listed(path) is not null && session is null) || (place.Listed(path) is not null && folder is null);
+            if (!inPlace.Contains(path) && !unread)
             {
-                Settle(path, Write(home, copy, path, based.Listed(path)?.Sha256, session), written, waiting);
+                Settle(path, Write(home, copy, path, folder, session), written, waiting);
+                continue;
+            }
+
+            if (unread && !choices.ContainsKey(path))
+            {
+                waiting.Add(path);
                 continue;
             }
 

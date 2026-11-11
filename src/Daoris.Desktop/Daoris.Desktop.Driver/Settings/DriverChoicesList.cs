@@ -33,8 +33,9 @@ internal static class DriverChoicesList
             : $"  quiet      {QuietSetting.Default} minutes before Daoris looks in on a session  (the default — "
               + "`daoris settings quiet <minutes>` changes it)");
         var manifest = choices.Manifest.Bounds;
-        Say($"  manifest   {manifest.Files} files and {(int)manifest.Time.TotalMinutes} minutes before a folder is too large to follow"
-            + (choices.Manifest == ManifestSetting.Unset ? "  (the default — `daoris settings manifest files|minutes <n>` changes either)" : ""));
+        Say($"  manifest   {manifest.Files} files and {(int)manifest.Time.TotalMinutes} minutes before a folder is too large to follow, "
+            + $"{HistoryCommand.Size(manifest.Copy)} before it is too large to copy"
+            + (choices.Manifest == ManifestSetting.Unset ? "  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)" : ""));
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "

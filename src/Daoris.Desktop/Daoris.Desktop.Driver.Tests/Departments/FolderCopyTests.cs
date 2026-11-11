@@ -63,6 +63,20 @@ public sealed class FolderCopyTests : IDisposable
     }
 
     [Fact]
+    public void A_folder_of_more_files_than_the_copy_bound_is_refused_and_its_session_waits_rather_than_work_in_the_folder()
+    {
+        Write(Place, "a.md", "a");
+        Write(Place, "b.md", "b");
+        Write(Place, "c.md", "c");
+
+        var made = FolderCopies.Make(Home, "default", "reports", Place, Bounds with { CopyFiles = 2 });
+
+        Assert.Null(made.Copy);
+        Assert.Contains("3 files, past the copy bound of 2 files", made.Refused);
+        Assert.Contains("its session waits", made.Refused);
+    }
+
+    [Fact]
     public void The_return_takes_back_a_file_changed_only_in_the_copy_and_keeps_one_changed_only_in_the_folder()
     {
         var copy = Copy();

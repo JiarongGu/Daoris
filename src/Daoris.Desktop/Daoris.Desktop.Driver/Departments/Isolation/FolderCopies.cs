@@ -24,12 +24,17 @@ public static class FolderCopies
         var store = new ManifestStore(home, workspace, department);
         var made = FolderManifestReader.Read(root, store.Content, store.Last(root), bounds, excludes);
         var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
-        if (made.TooLarge) return new(null, $"`{name}` is too large to follow, so it is not copied: its session works in the folder itself when the folder is free.");
+        const string Then = "so it is not copied and its session waits: raise the bound with `daoris settings manifest copy <megabytes>`, "
+            + "or choose a workflow for it with no isolate step, whose sessions work in the folder itself one at a time.";
+        if (made.TooLarge) return new(null, $"`{name}` is too large to follow, {Then}");
         var size = made.Entries.Sum(entry => entry.Size ?? 0);
-        if (size > bounds.Copy)
+        if (size > bounds.Copy) return new(null, $"`{name}` holds {HistoryCommand.Size(size)}, past the copy bound of {HistoryCommand.Size(bounds.Copy)}, {Then}");
+        if (made.Entries.Count > bounds.CopyFiles) return new(null, $"`{name}` holds {made.Entries.Count} files, past the copy bound of {bounds.CopyFiles} files, {Then}");
+        // Small files cost far more than their bytes on disk, so the copy asks for twice the folder free beside the home.
+        if (Free(home) is { } free && free < 2 * size)
         {
-            return new(null, $"`{name}` holds {HistoryCommand.Size(size)}, past the copy bound of {HistoryCommand.Size(bounds.Copy)}, so it is not copied: "
-                + "its session works in the folder itself when the folder is free (`daoris settings manifest copy <megabytes>` sets the bound).");
+            return new(null, $"`{name}` holds {HistoryCommand.Size(size)} and the home's disk has {HistoryCommand.Size(free)} free, less than twice that, "
+                + "so it is not copied and its session waits: free some space, or choose a workflow for it with no isolate step.");
         }
 
         var id = "c-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant();
@@ -49,10 +54,18 @@ public static class FolderCopies
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             TryDelete(folder);
-            return new(null, $"`{name}` could not be copied ({error.Message.TrimEnd().TrimEnd('.')}): its session works in the folder itself when the folder is free.");
+            return new(null, $"`{name}` could not be copied ({error.Message.TrimEnd().TrimEnd('.')}), so its session waits and the copy is tried again at a later look.");
         }
 
-        store.Keep(id, ManifestMoment.Start, made);
+        // The return's base is the bytes the copy holds, every file hashed afresh, never a reading reused from size and time.
+        var based = FolderManifestReader.Read(folder, store.Content, null, bounds, excludes);
+        if (based.TooLarge || based.Entries.Count != made.Entries.Count || based.Entries.Any(entry => entry.Sha256 is null))
+        {
+            TryDelete(folder);
+            return new(null, $"`{name}` could not be copied whole (a file could not be read), so its session waits and the copy is tried again at a later look.");
+        }
+
+        store.Keep(id, ManifestMoment.Start, based with { Root = root });
         var copy = new FolderCopy(id, folder, root, workspace, department);
         Save(copy);
         return new(copy, null);
@@ -100,6 +113,18 @@ public static class FolderCopies
         try { File.Delete(copy.Folder + ".json"); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
+    private static long? Free(string home)
+    {
+        try
+        {
+            return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(home))!).AvailableFreeSpace;
+        }
+        catch (Exception error) when (error is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     private static void Save(FolderCopy copy) => AtomicFile.WriteText(copy.Folder + ".json", JsonSerializer.Serialize(copy, Json));
 
     private static FolderCopy? Read(string file)
@@ -130,7 +155,7 @@ public static class FolderCopies
 /// <summary>A copy of a folder department, made for its sessions working apart.</summary>
 /// <param name="Id">Its name, <c>c-&lt;8 hex&gt;</c>: its folder's, and its base manifest's record in the place's store.</param>
 /// <param name="Folder">Where the copy is.</param>
-/// <param name="Root">The folder it was copied from, which its return writes into.</param>
+/// <param name="Root">The folder it is a copy of, which its return writes into.</param>
 public sealed record FolderCopy(string Id, string Folder, string Root, string Workspace, string Department)
 {
     /// <summary>The records that worked in it.</summary>

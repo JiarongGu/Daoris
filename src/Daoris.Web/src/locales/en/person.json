@@ -63,6 +63,7 @@
   "person.view.quiet": "Looks in on a session that says nothing and runs nothing for {{minutes}} minutes; none is ever stopped for running long.",
   "person.view.manifest-files": "Stops listing a folder's files at {{files}}: a folder with more is too large to follow, and still works in place, one session at a time.",
   "person.view.manifest-minutes": "Stops listing a folder's files after {{minutes}} minutes: a folder that takes longer is too large to follow, and still works in place, one session at a time.",
+  "person.view.manifest-copy": "Copies a folder for a session working apart only up to {{copy}} MB: a larger folder's session works in the folder itself, one at a time.",
   "person.view.folder-excludes": "Changes what {{repository}} leaves out of its manifest ({{change}}): it will leave out {{now}}, beside the defaults. One row of this machine's registry changes, and its manifest is read again.",
   "person.view.folder-excludes-none": "Changes what {{repository}} leaves out of its manifest ({{change}}): it will leave out only the defaults. One row of this machine's registry changes, and its manifest is read again.",
   "person.view.keep": "Sets how long one kind of thing is kept: {{rule}}.",

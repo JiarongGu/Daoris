@@ -55,6 +55,12 @@ public static class RunNodeWords
     /// <summary>A <c>done</c>, <c>approve</c> or <c>reject</c> of a task that does not wait for that press where it stands now.</summary>
     public const string NotWaiting = "not-waiting";
 
+    /// <summary>The word is a choice of a file changed on both sides, which only a <c>return</c> waiting on one takes.</summary>
+    public const string NotReturn = "not-return";
+
+    /// <summary>The acts kept as a mark of the node's attempt, moving no state: a request's send and a return's choices.</summary>
+    private static bool Marked(string act) => act == NodeWordActs.Send || NodeWordActs.Choices.Contains(act, StringComparer.Ordinal);
+
     /// <summary>The presses a node takes only while it waits for them: a person's task's.</summary>
     private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject];
 
@@ -120,9 +126,10 @@ public static class RunNodeWords
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
             var word = new NodeWord(node, act, words, now) { By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by) };
-            if (act == NodeWordActs.Send)
+            if (Marked(act))
             {
-                if (!Offers(declared, status, NodeWordActs.Send)) return (null, Refuse(NotSendable) with { State = status.State });
+                if (!Offers(declared, status, act)) return (null, Refuse(act == NodeWordActs.Send ? NotSendable : NotWaiting) with { State = status.State });
+                if (act != NodeWordActs.Send && words is null) return (null, Refuse(NodeRefusal.NoWords));
             }
             else
             {
@@ -131,7 +138,8 @@ public static class RunNodeWords
                 if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             }
 
-            return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), word] }, new NodeWorded(run, node, act, null));
+            var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
+            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null));
         });
         return refused is null ? result! : Refuse(refused);
     }
@@ -197,15 +205,16 @@ public static class RunNodeWords
                 continue;
             }
 
-            if (word.Act == NodeWordActs.Send)
+            if (Marked(word.Act))
             {
-                if (!Offers(node, standing, NodeWordActs.Send))
+                if (!Offers(node, standing, word.Act))
                 {
-                    applied.Add((word, NotSendable));
+                    applied.Add((word, word.Act == NodeWordActs.Send ? NotSendable : NotWaiting));
                     continue;
                 }
 
-                next = next with { Fired = [.. next.Fired, SendKey(node.Id, standing.Attempt)] };
+                var mark = word.Act == NodeWordActs.Send ? SendKey(node.Id, standing.Attempt) : ReturnNode.ChoiceKey(node.Id, standing.Attempt, word.Act, word.Words ?? "");
+                next = next with { Fired = [.. next.Fired, mark] };
                 applied.Add((word, null));
                 continue;
             }

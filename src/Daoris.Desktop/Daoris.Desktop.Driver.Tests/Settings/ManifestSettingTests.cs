@@ -61,7 +61,7 @@ public sealed class ManifestSettingTests : IDisposable
     public async Task The_terminal_sets_each_bound_and_the_list_says_them()
     {
         Assert.Equal(0, await DriverChoicesCommand.RunAsync(["list"], World(), CancellationToken.None));
-        Assert.Contains("  manifest   250000 files and 5 minutes before a folder is too large to follow  (the default", _out.ToString());
+        Assert.Contains("  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default", _out.ToString());
 
         _out.GetStringBuilder().Clear();
         Assert.Equal(0, await DriverChoicesCommand.RunAsync(["manifest", "files", "50000"], World(), CancellationToken.None));
@@ -74,8 +74,13 @@ public sealed class ManifestSettingTests : IDisposable
         Assert.Equal((50000, 3), (DriverConfig.Load(Config).Manifest.Files, DriverConfig.Load(Config).Manifest.Minutes));
 
         _out.GetStringBuilder().Clear();
+        Assert.Equal(0, await DriverChoicesCommand.RunAsync(["manifest", "copy", "512"], World(), CancellationToken.None));
+        Assert.Contains("a folder of more than 512 MB is not copied", _out.ToString());
+        Assert.Equal(512L << 20, DriverConfig.Load(Config).Manifest.Bounds.Copy);
+
+        _out.GetStringBuilder().Clear();
         Assert.Equal(0, await DriverChoicesCommand.RunAsync(["list"], World(), CancellationToken.None));
-        Assert.Contains("  manifest   50000 files and 3 minutes before a folder is too large to follow", _out.ToString());
+        Assert.Contains("  manifest   50000 files and 3 minutes before a folder is too large to follow, 512 MB before it is too large to copy", _out.ToString());
         Assert.DoesNotContain("the default", _out.ToString().Split('\n').Single(line => line.StartsWith("  manifest")));
     }
 

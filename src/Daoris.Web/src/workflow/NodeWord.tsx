@@ -4,15 +4,16 @@ import { sentence } from '../locales/format';
 import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
+import { isReturnAct, RETURN_ACTS, ReturnChoice, waitingPaths } from './return/ReturnChoice';
 import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
-  'not-task', 'not-waiting',
+  'not-task', 'not-waiting', 'not-return',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -59,6 +60,7 @@ export function NodeWord({ run, step, onWord }: {
   }
 
   const acts = (step.acts ?? []).filter((act): act is NodeAct => ACTS.includes(act as NodeAct));
+  const choosing = acts.some(isReturnAct) && waitingPaths(step).length > 0;
   if (!onWord || acts.length === 0) return null;
 
   const close = () => { setAsking(null); setWords(''); };
@@ -71,6 +73,8 @@ export function NodeWord({ run, step, onWord }: {
 
   return (
     <div className="grid min-w-0 gap-1.5">
+      {/* A folder's return waiting on files changed on both sides offers each its three choices. */}
+      {choosing && asking === null && <ReturnChoice run={run} step={step} onWord={onWord} refusal={(answer) => nodeWordRefused(t, answer)} />}
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
           {/* A waiting task's Done, or an approval's Approve and Reject, lead. */}
