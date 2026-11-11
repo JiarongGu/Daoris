@@ -399,6 +399,17 @@ describe('the palette reads the same table (D152 §2)', () => {
     expect(palette.find((each) => each.id === 'help.log')).toMatchObject({ title: 'command.settingsAt(settings.domain.logs)' });
   });
 
+  it('offers each plugin command in the palette alone, by its plugin and title, and runs it on its plugin\'s page', () => {
+    const on = { ...doors(), pluginCommand: vi.fn() };
+    const entries = table({ pluginCommands: [{ plugin: 'acme-boards', pluginName: 'Acme boards', command: 'login', title: 'Sign in' }] }, on);
+    const row = entries.find((each) => each.id === 'run.pluginCommand:acme-boards/login')!;
+    expect(row).toMatchObject({ title: 'command.pluginCommand(Acme boards,Sign in)', palette: true, menuItem: false });
+    row.run();
+    expect(on.pluginCommand).toHaveBeenCalledWith('acme-boards', 'login');
+    const browser = table({ attached: false, pluginCommands: [{ plugin: 'acme-boards', pluginName: 'Acme boards', command: 'login', title: 'Sign in' }] });
+    expect(browser.some((each) => each.id.startsWith('run.pluginCommand:') && each.palette)).toBe(false);
+  });
+
   /** What the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
   it('keeps the Agents menu\'s sections as palette rows on a shell, and in no menu', () => {
     const on = doors();

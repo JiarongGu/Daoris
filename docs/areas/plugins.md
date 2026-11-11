@@ -45,6 +45,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/Domain/CommandCall.cs`, `Plugins/Domain/CommandArgs.cs`, `Plugins/PluginCommandRun.cs`, `Modules/Bridge/Routes/PluginCommandRoutes.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
+| Page's interfaces | `plugins/interfaces.ts`, `PluginSetup.tsx`, `RoundCard.tsx`, `usePluginCommands.tsx`, `commandAsks.ts`; `bridge/pluginCommand.ts`, `bridge/pluginSwitch.ts`; `menus/pluginCommands.ts` | The *Set up* tab, the round card over `PLUGIN_COMMAND`, the switches over `PLUGIN_SWITCH`, the palette's plugin commands |
 
 Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
@@ -179,6 +180,23 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     drawn in an `<img>`, never a path; else a monogram on a hue hashed from the id. (from D140)
 27. The page is a catalogue: installed (refused while on, then on, then off), then Daoris's own not installed. Name,
     description and version stay as declared. No plugin adds a view or runs code in the page. (from D119, D140, D52)
+27a. A plugin's page has the tabs *Set up* and *About* where it declares an interface or a point (*Set up* first where it declares
+    an interface; *About* holds today's sections), and no tab row otherwise. *Set up* lists each command (its authored title in the
+    viewer's language, its name, *asks you*, *changes things*, *for agents*, *takes a git identity's token*, and *Run*, disabled with
+    the reason where the plugin is off or refused or its commands are off at the window's place), each entry refused alone drawn with
+    *not read* and the reader's sentence and nothing to press, the storage's `for` and whether a removal signs it out, the views as
+    declared, the interfaces this build does not know, and *Where it is on*: a box per interface and point and per place (the machine,
+    each place holding a word, each the person adds), read as the resolver reads it, `storage` at the machine alone, a press sending
+    `PLUGIN_SWITCH`. An offer's page lists the same commands, storage and views before *Install*; the update plan names an interface
+    row by its interface and entry and marks *asks more of you*. A command runs in the round card under the page's header, at the
+    window's scope's workspace else the machine: its arguments and its `confirm` asked first where it has either, then each round's
+    `said` in order, a page to open in the person's own browser with its host, a code with *Copy*, a field per ask (a password field
+    where masked, its value sent with the answers so far and never drawn back), *Go on* and *Cancel*; its end says done or the exit,
+    `data` as handed back, and `then` (`reload`, the default, asks `PLUGINS` again; `back` closes the card; `stay` does nothing).
+    The palette lists each command of a plugin on, sound and with commands on at the machine (`run.pluginCommand:<id>/<command>`,
+    `PLUGINS` asked only while the palette is open), and a row opens the plugin's page at its card. *Remove…* where `storage.forget`
+    names a command offers *Ask it to sign out … first*, ticked, which runs that command one round from the window before
+    `PLUGIN_ACTION` removes it, saying whether the plugin confirmed; a disabled `forget` says why. (from D274)
 28. Every plugin press is the person's: a session's terminal is refused. With Daoris running a verb takes the route,
     else it acts alone under the home's lease. (from D194)
 29. A manifest's `interfaces` names what the plugin implements that Daoris reaches it through besides its points: `commands` (each

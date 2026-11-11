@@ -1,5 +1,6 @@
 {
   "command.goTo": "转到：{{place}}",
+  "command.pluginCommand": "插件 {{plugin}}：{{command}}",
   "command.scope": "工作区：{{workspace}}",
   "command.settingsAt": "设置：{{domain}}",
   "command.theme": "主题：{{theme}}",
