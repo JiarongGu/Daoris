@@ -77,9 +77,9 @@ finishes first and the whole set runs once.
    conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
    send from `AskDoorViews`. The session doors are `SessionRoutes` (the list, answered by `SessionListAnswers`, which keeps each
    answer with the store's `StoreMark` in a `MarkedAnswers` and makes it again once any writer of the file has moved the mark; one
-   record by its id, answered as the list answers it; the list's change since a mark it answered, `SessionListChanges`, which holds
+   record by its id, answered as the list answers it; the list's change since a mark it answered, `ListChanges<T>`, which holds
    the last few answers and answers each record whose written answer moved with every id in the list's order, kept on the driver's
-   side by `SessionListKept`; the two opens and the state move, on both hosts, with
+   side by `SessionListKept` (a `KeptList<T>`); the two opens and the state move, on both hosts, with
    a keyed open's refusal in the answer's own record), `SessionKeepRoutes` (a local host's opens for the conversations the driver
    starts itself, and what it learned of a start), `SessionStoreRoutes` (a finished tree's record, a session's memory and its
    delete) and `SessionWordRoutes` (the person's words on a session); a refusal in a record of its own (a say's word, a delete's

@@ -11,10 +11,15 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class UncheckedDones
 {
+    private const string Lead = "its done is unchecked";
+
+    /// <summary>Whether a hold's reason kept on its node (<see cref="NodeStatus.Holds"/>) is this one.</summary>
+    public static bool Says(string? holds) => holds?.Contains(Lead, StringComparison.Ordinal) == true;
+
     /// <summary>Why <paramref name="quest"/>'s done waits unchecked, or null where it carries a requirement or no ask published it.</summary>
     public static string? Of(QuestView quest) =>
         quest.Requirements.Count == 0 && AskSender.AskOf(quest.From) is { } ask
-            ? $"its done is unchecked: ask #{ask} gave its quest no requirement, so nothing compared the done with what you asked; read its "
+            ? $"{Lead}: ask #{ask} gave its quest no requirement, so nothing compared the done with what you asked; read its "
               + $"handback (quest #{quest.Id}'s done note) and pass this step with your words where it does what you asked"
             : null;
 }

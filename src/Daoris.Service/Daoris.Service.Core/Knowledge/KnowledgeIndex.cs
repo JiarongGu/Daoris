@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 /// material is already in the store and one forgotten filter discloses it; withholding at ingest
 /// means it is never there to leak.
 /// </remarks>
-public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null, TimeProvider? time = null)
+public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null, TimeProvider? time = null, string? scanner = null)
 {
     private readonly IDisclosurePolicy _disclosure = disclosure ?? DisclosurePolicy.LocalOnly;
 
@@ -53,7 +53,10 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         generations ??= await store.GenerationsAsync(ct).ConfigureAwait(false);
         var at = _time.GetUtcNow();
         ReadingWrite Reading(string repository, string? commit = null, RootSignature? signature = null) =>
-            new(generations.TryGetValue(repository, out var generation) ? generation : 0, commit, signature, Fed: false, at);
+            new(generations.TryGetValue(repository, out var generation) ? generation : 0, commit, signature, Fed: false, at)
+            {
+                Scanner = signature is null ? null : scanner,
+            };
         var refused = new HashSet<string>(StringComparer.Ordinal);
 
         // Some roots alone: a root that moved is replaced and the others stand. No ghost is retired from a
@@ -100,9 +103,7 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         var seen = new HashSet<string>(byRepository.Select(g => g.Key), StringComparer.Ordinal);
         if (!partial && (byRepository.Count > 0 || stillRegistered is not null))
         {
-            var held = (await store.AllAsync(ct).ConfigureAwait(false))
-                .Select(e => e.Repository)
-                .Distinct(StringComparer.Ordinal);
+            var held = (await store.CountByRepositoryAsync(ct).ConfigureAwait(false)).Keys;
             foreach (var ghost in held.Where(repository => !seen.Contains(repository)
                 && (byRepository.Count > 0 || !stillRegistered!(repository))))
             {

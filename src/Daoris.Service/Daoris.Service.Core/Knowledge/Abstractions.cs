@@ -52,6 +52,27 @@ public interface IKnowledgeStore
     /// <summary>One repository's reading as stored, or null where none is.</summary>
     Task<IndexReading?> ReadingAsync(string repository, CancellationToken ct = default);
 
+    /// <summary>Every repository's reading as stored. A store that answers it in one read overrides this.</summary>
+    async Task<IReadOnlyList<IndexReading>> ReadingsAsync(CancellationToken ct = default)
+    {
+        var readings = new List<IndexReading>();
+        foreach (var repository in (await GenerationsAsync(ct).ConfigureAwait(false)).Keys)
+        {
+            if (await ReadingAsync(repository, ct).ConfigureAwait(false) is { } reading) readings.Add(reading);
+        }
+
+        return readings;
+    }
+
+    /// <summary>
+    /// How many entries each repository holds, by workspace and provenance. A store that counts them without reading every body
+    /// overrides this.
+    /// </summary>
+    async Task<IReadOnlyList<HeldCount>> HeldCountsAsync(CancellationToken ct = default) =>
+        [.. (await AllAsync(ct).ConfigureAwait(false))
+            .GroupBy(entry => (entry.Repository, entry.Workspace, entry.Provenance))
+            .Select(group => new HeldCount(group.Key.Repository, group.Key.Workspace, group.Key.Provenance, group.Count()))];
+
     /// <summary>
     /// The entries by these ids, each with its file's entries where <paramref name="withFile"/> says so, and each repository's
     /// reading, read together in one read: no write lands between the three.
@@ -91,7 +112,17 @@ public interface IKnowledgeStore
 /// <param name="Commit">The commit read or fed; null where none is named (a retirement, a folder that is no checkout).</param>
 /// <param name="Signature">The root's signature taken before reading; null where none is taken.</param>
 public sealed record IndexReading(
-    string Repository, long Generation, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At);
+    string Repository, long Generation, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At)
+{
+    /// <summary>
+    /// What read the root (<see cref="KeptReadings.Stamp"/>), where the row's last write said so; null where it did not (a build
+    /// before the stamp, a retirement, a feed), and such a reading is read again rather than taken by a later process.
+    /// </summary>
+    public string? Scanner { get; init; }
+}
+
+/// <summary>How many entries of one provenance a repository holds in one workspace.</summary>
+public sealed record HeldCount(string Repository, string Workspace, Provenance Provenance, int Count);
 
 /// <summary>What a write of a repository's entries says of the reading it stores.</summary>
 /// <param name="Expected">
@@ -100,6 +131,9 @@ public sealed record IndexReading(
 /// </param>
 public sealed record ReadingWrite(long? Expected, string? Commit, RootSignature? Signature, bool Fed, DateTimeOffset At)
 {
+    /// <summary>What read the root, stored as <see cref="IndexReading.Scanner"/>; null where the write says nothing of it.</summary>
+    public string? Scanner { get; init; }
+
     /// <summary>A write that reads no source and names no commit: a retirement, a withdrawal, a seeded store.</summary>
     public static ReadingWrite Taken(DateTimeOffset at) => new(null, null, null, false, at);
 }

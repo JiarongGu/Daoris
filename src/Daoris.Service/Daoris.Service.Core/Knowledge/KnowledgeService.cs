@@ -55,7 +55,9 @@ public sealed class KnowledgeService(
     IWorkRecordSearch? records = null,
     // Whether one record file of a root differs from its commit: a citation's recheck asks it of the cited file
     // alone. Null leaves every recheck of a read reading inconclusive, as a host that cannot ask git.
-    Func<string, string, bool?>? fileUncommitted = null)
+    Func<string, string, bool?>? fileUncommitted = null,
+    // What reads the roots (KeptReadings.Stamp): a host over the registered roots given it takes the readings it stamped at its first use.
+    string? scanner = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -79,7 +81,7 @@ public sealed class KnowledgeService(
     /// <summary>When the last refresh finished, on <see cref="_time"/>; what the reread window is measured from.</summary>
     private DateTimeOffset _refreshedAt;
 
-    private readonly KnowledgeIndex _index = new(store, disclosure, time);
+    private readonly KnowledgeIndex _index = new(store, disclosure, time, scanner);
 
     /// <summary>
     /// ONE detector, not one per call.
@@ -223,7 +225,7 @@ public sealed class KnowledgeService(
     {
         RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        var all = await store.AllAsync(ct).ConfigureAwait(false);
+        var all = await store.HeldCountsAsync(ct).ConfigureAwait(false);
         // One read for the whole table rather than one per repository: it is a small table, and the
         // alternative is a query inside a projection.
         var fed = registrations is null
@@ -236,9 +238,9 @@ public sealed class KnowledgeService(
             .GroupBy(e => e.Repository, StringComparer.Ordinal)
             .Select(g => new RepositorySummary(
                 g.Key,
-                g.Count(),
-                g.Count(e => e.Provenance == Provenance.Local),
-                g.Count(e => e.Provenance == Provenance.Canonical),
+                g.Sum(e => e.Count),
+                g.Where(e => e.Provenance == Provenance.Local).Sum(e => e.Count),
+                g.Where(e => e.Provenance == Provenance.Canonical).Sum(e => e.Count),
                 g.Select(e => e.Workspace).First(),
                 fed.TryGetValue(g.Key, out var provenance) ? provenance : null,
                 read.TryGetValue(g.Key, out var reading) ? reading.ReadAt : null,
@@ -660,7 +662,7 @@ public sealed class KnowledgeService(
         try
         {
             var now = _time.GetUtcNow();
-            if (!_everRefreshed)
+            if (!_everRefreshed && !await TakeKeptReadingsAsync(ct).ConfigureAwait(false))
             {
                 await RefreshReadingAsync(ct).ConfigureAwait(false);
                 return;
@@ -688,6 +690,22 @@ public sealed class KnowledgeService(
         {
             _refreshLock.Release();
         }
+    }
+
+    /// <summary>Holds the readings <see cref="KeptReadings"/> takes, under the refresh's lock; false where none may be taken.</summary>
+    private async Task<bool> TakeKeptReadingsAsync(CancellationToken ct)
+    {
+        if (scanner is null) return false;
+        await ReloadRegistryAsync(ct).ConfigureAwait(false);
+        if (await KeptReadings.TakeAsync(store, LocalRoots(), scanner, ct).ConfigureAwait(false) is not { } taken) return false;
+        lock (_readings)
+        {
+            foreach (var (root, reading) in taken) _readings[root] = new RootReading(reading.Repository, reading.At, reading.Commit, reading.Signature);
+        }
+
+        _everRefreshed = true;
+        _refreshedAt = _time.GetUtcNow();
+        return true;
     }
 
     /// <summary>When and from which commit each registered repository is read, by repository name.</summary>

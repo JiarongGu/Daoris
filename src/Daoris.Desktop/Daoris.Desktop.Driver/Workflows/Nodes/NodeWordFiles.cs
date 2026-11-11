@@ -27,6 +27,9 @@ internal static class NodeWordFiles
         if (word.Supersedes is { } supersedes) writer.WriteString("supersedes", supersedes);
         if (word.Kept) writer.WriteBoolean("kept", true);
         if (word.Tip is { } tip) writer.WriteString("tip", tip);
+        if (word.Revision is { } revision) writer.WriteString("revision", revision);
+        if (word.Review is { } review) writer.WriteString("review", review);
+        if (word.Part is { } part) writer.WriteString("part", part);
         writer.WriteEndObject();
     }
 
@@ -59,6 +62,7 @@ internal static class NodeWordFiles
         return new NodeWord(node, act, Text(each, "words"), at)
         {
             By = by, Attempt = attempt, Supersedes = Text(each, "supersedes"), Kept = kept, Tip = Text(each, "tip"),
+            Revision = Text(each, "revision"), Review = Text(each, "review"), Part = Text(each, "part"),
         };
     }
 

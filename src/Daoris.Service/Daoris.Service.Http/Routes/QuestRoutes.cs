@@ -10,11 +10,26 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
 {
     private readonly QuestAnswers _answers = new(host);
 
+    private QuestListAnswers? _list;
+
+    private QuestListAnswers List => LazyInitializer.EnsureInitialized(ref _list, () => new(host, _answers))!;
+
+    private ListChanges<QuestResponse>? _changes;
+
+    private ListChanges<QuestResponse> Changes => LazyInitializer.EnsureInitialized(
+        ref _changes, () => new((local, ct) => List.ListAsync(null, true, null, local, ct), quest => quest.Id))!;
+
     private ComposedService Service => host.Service;
 
     public void Map(RouteMap routes)
     {
-        routes.Map<ListQuests, QuestResponse[]>(ListAsync);
+        routes.Map<ListQuests, QuestResponse[]>(async (request, http, ct) =>
+            await List.ListAsync(request.Repository, request.IncludeClosed ?? false, request.Workspace, host.MachineLocal(http), ct));
+        routes.Map<ListQuestChanges, QuestChangesResponse>(async (request, http, ct) =>
+        {
+            var (mark, order, changed, whole) = await Changes.SinceAsync(request.Since, host.MachineLocal(http), ct);
+            return new QuestChangesResponse(mark, order, changed, whole);
+        });
         routes.Map<ReadQuestMoves, QuestMovesResponse>(async (request, _, ct) =>
             QuestAnswers.MovesOf(request.Id.TrimStart('#'), QuestMoves.Read(await Service.Quests.HistoryAsync(request.Id.TrimStart('#'), ct))));
         routes.Map<PublishQuest, QuestActionResponse>(PublishAsync);
@@ -34,16 +49,6 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
             await StateAsync(http, await Service.Exchange.ContinueAsync(request.Id, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<ForwardConflict, QuestActionResponse>(ForwardAsync);
         routes.Map<PostQuestEvidence, QuestActionResponse>(EvidenceAsync);
-    }
-
-    private async Task<Answer<QuestResponse[]>> ListAsync(ListQuests request, HttpContext http, CancellationToken ct)
-    {
-        var quests = await Service.Quests.ListAsync(request.Repository, request.IncludeClosed ?? false, request.Workspace, ct);
-        var deletable = await _answers.DeletableAsync(quests, ct);
-        var takes = await Service.Quests.ReadTakesAsync(quests, ct);
-        var local = host.MachineLocal(http);
-        var here = _answers.HereFor(http);
-        return quests.Select(q => QuestAnswers.ToQuest(q, Service.Files, local, deletable.Contains(q.Id), takes.GetValueOrDefault(q.Id), here)).ToArray();
     }
 
     private async Task<Answer<QuestActionResponse>> PublishAsync(PublishQuest request, HttpContext http, CancellationToken ct)

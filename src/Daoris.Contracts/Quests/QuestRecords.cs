@@ -130,6 +130,8 @@ public sealed record QuestSubmissionWire(
 /// </summary>
 public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, string? Sha256, long? Bytes);
 
+public sealed record QuestChangesResponse(string Mark, IReadOnlyList<string> Order, IReadOnlyList<QuestResponse> Changed, bool Whole);
+
 /// <summary>What a quest door did: the quest as it now stands, and the exchange's sentence.</summary>
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 
