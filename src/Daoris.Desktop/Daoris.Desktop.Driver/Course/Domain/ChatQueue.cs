@@ -181,8 +181,8 @@ public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 /// <c>turn-end</c>; null where no turn ran and they are its turn at once, or where the door is not known yet.
 /// </param>
 /// <param name="Now">
-/// The press is carried out: steered into the running turn, or taken at once because no turn ran. Never a turn stopped: no word
-/// stops one, and the keeping stop is the person's own press.
+/// The press is carried out: steered into the running turn, taken at once because no turn ran, or, on a door that takes no word into
+/// a running turn but stops one keeping the conversation, the turn stopped and the words its next (<see cref="SendNowWhy.NextTurn"/>).
 /// </param>
 /// <param name="Why">Where it is not, why, by a <see cref="SendNowWhy"/> code; null where it is.</param>
 public sealed record SentNow(string? Reaches, bool Now, string? Why);
@@ -191,10 +191,9 @@ public sealed record SentNow(string? Reaches, bool Now, string? Why);
 public static class SendNowWhy
 {
     /// <summary>
-    /// A turn runs on a door whose agent does not steer, and no word interrupts it: the words go at its
-    /// next step on a door that takes words then, and are held for its turn's end on any other (a protocol door that holds words,
-    /// Claude Code's conversation, the native door's driven run), or go at once on a text-only door. Where the door can stop a turn
-    /// and keep the session, the keeping stop is the person's own press beside the held words.
+    /// A turn runs on a door whose agent does not steer and that cannot stop it keeping the session: the words go at its
+    /// next step on a door that takes words then, and are held for its turn's end on any other (the native door's driven run), or
+    /// go at once on a text-only door. A conversation's door that stops a turn keeping it cuts in instead (<see cref="NextTurn"/>).
     /// </summary>
     public const string NoInterrupt = "no-interrupt";
 
@@ -208,6 +207,9 @@ public static class SendNowWhy
     /// Where the agent steers, the words are steered past them instead.
     /// </summary>
     public const string Behind = "behind";
+
+    /// <summary>The reach of words *Send now* cut in with: the turn stopped, they are the next one's first (<see cref="TurnCutIn"/>).</summary>
+    public const string NextTurn = "next-turn";
 
     /// <summary>A reach in the record's spelling, <c>now</c> for a steer.</summary>
     public static string? Spelled(DrivenReach? reach) => reach switch

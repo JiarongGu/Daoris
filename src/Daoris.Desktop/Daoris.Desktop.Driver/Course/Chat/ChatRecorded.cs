@@ -103,6 +103,7 @@ internal static class ChatRecorded
         Origin = "person",
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(file => file.Name)] : null,
+        Level = message.StoppedFor ? MessageLevels.Now : null,
     };
 
     /// <summary>

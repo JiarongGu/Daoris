@@ -32,7 +32,7 @@ of everything it handed, section by section.
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops; the one door of its parts |
 | `TurnState` | `Loop/Chat/Turns/TurnState.cs` | The turns' state under its one gate: what it guards, the keep's lock before it, what a race would break |
-| `TurnPump`, `TurnTakes`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
+| `TurnPump`, `TurnTakes`, `TurnCutIn`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the person's *Send now* on a door that takes no word mid-turn but stops one keeping the conversation (the native wire's interrupt, `codex-acp`'s cancel): first among what waits, the turn stopped, the word the next turn's first, its ask recorded at level `now`; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
 | `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
@@ -354,7 +354,9 @@ of everything it handed, section by section.
 
 - **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
   edit and retry, folded thinking and tools). Needs a design.
-- **ASKPUSH1:** a word typed mid-turn waits for the turn's end; nothing delivers it now, into the turn or by stopping it.
+- **ASKPUSH1:** a conversation's *Send now* cuts in on the native wire and `codex-acp` with fast tests only; the real-process proof
+  of the cut-in and of a steered turn on each harness is not written, and a driven session's *Send now* on a door that cannot steer
+  still waits for the turn's end.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);
@@ -382,4 +384,4 @@ of everything it handed, section by section.
   folder's watch for them are gone, so a window reads every conversation's queue from the instance alone. A `*.turn` mark an
   older build left is removed once at the start by the home migration's `turn-marks` step
   (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
-- **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.
+- **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
