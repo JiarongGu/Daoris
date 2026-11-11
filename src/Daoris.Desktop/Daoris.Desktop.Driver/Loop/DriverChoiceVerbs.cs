@@ -28,5 +28,6 @@ public static class DriverChoiceVerbs
         new BrainstormsVerb(),
         new CommitsVerb(),
         new KeepVerb(),
+        new TerminalVerb(),
     ];
 }

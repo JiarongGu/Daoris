@@ -96,6 +96,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("cap 4")]
     [InlineData("cooloff 30")]
     [InlineData("quiet 25")]
+    [InlineData("terminal ask")]
     [InlineData("line engine develop")]
     [InlineData("line --workspace aurora --clear")]
     [InlineData("across engine read off")]
@@ -118,6 +119,22 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("commits --workspace aurora --mode at-end")]
     public async Task A_standing_choice_says_and_writes_the_same_alone_and_through_its_route(string words) =>
         await BothWaysAsync(Module(), words);
+
+    /// <summary>A terminal's act is granted only through its route, whose press the person confirms; alone, with no card to show, it is refused.</summary>
+    [Fact]
+    public async Task A_terminal_s_act_is_set_through_its_route_and_refused_alone()
+    {
+        Before().Save(DriverConfigPath);
+        var text = File.ReadAllText(DriverConfigPath);
+
+        var alone = await AloneAsync(text, ["terminal", "act"]);
+        var route = await RouteAsync(Module(), text, ["terminal", "act"]);
+
+        Assert.Equal((1, TerminalTiers.Ask), (alone.Exit, DriverConfig.Parse(alone.File!).Terminal));
+        Assert.Contains(TerminalVerb.AloneAct, alone.Error);
+        Assert.Equal((0, TerminalTiers.Act), (route.Exit, DriverConfig.Parse(route.File!).Terminal));
+        Assert.StartsWith("daoris: a press from a terminal on this machine that no Daoris session owns runs at once as yours", route.Out);
+    }
 
     /// <summary>
     /// *Try again* both ways: from the same verdicts the operation marks a parked quest at its failures, releases a
