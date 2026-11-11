@@ -7,7 +7,7 @@ its words in English and Chinese, the record and the wire, what goes, and the ro
 start at `src/Daoris.Web/src/`, driver paths at `src/Daoris.Desktop/Daoris.Desktop.Driver/`, modules paths at
 `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 
-**Widths.** **N** is 300 px, the side bar's floor at every window width (`docs/2026-10-20-ui-ux-design.md` §3.4). **D** is 24rem
+**Widths.** **N** is 300 px, the side bar's floor at every window width (`docs/archive/2026-10-20-ui-ux-design.md` §3.4). **D** is 24rem
 (384 px), the panel's own default (`help/AskPanel.tsx:208`). **W** is the side bar at 45% of a 1546 px window. A region lays out by
 its own width (R7).
 

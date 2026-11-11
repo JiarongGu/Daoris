@@ -1,4 +1,4 @@
-/* The design language's tokens (docs/2026-09-19-platform-ux.md, D41), as the Tailwind theme (D42).
+/* The design language's tokens (docs/archive/2026-09-19-platform-ux.md, D41), as the Tailwind theme (D42).
    Warm paper, thin ink, one bronze accent; the quest-state palette is computed, not tasted — both
    themes pass all six checks of the visualization validator, and a status never appears color-alone.
    The runtime variables flip with the OS theme; `@theme inline` hands them to the utilities. */

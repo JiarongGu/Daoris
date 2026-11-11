@@ -1,7 +1,7 @@
 # RPC1g: a terminal's conversation is the running Daoris's
 
 Status: proposed 2026-11-06 for the owner's yes (D238), read on main at `c24a9a7a5`. It finishes the terminal RPC design
-(`docs/2026-10-16-terminal-rpc-design.md`, D171 point 3), whose §7.1 left `chat` and `help resume` alone "until RPC1g" and whose
+(`docs/archive/2026-10-16-terminal-rpc-design.md`, D171 point 3), whose §7.1 left `chat` and `help resume` alone "until RPC1g" and whose
 §11 put a conversation's turn in the instance with the terminal a viewer. It adds area **T** to ONEWAY1's census (D228) and is
 laid out as the ONEWAY1 design's §3: each job's one way, what is kept, what retires, the records and what the person sees. The
 reading was read-only; no test was run. Paths: `Drv/` `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Host/` `…Driver.Host/`,

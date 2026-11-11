@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// A Chromium's debug endpoint, standing in for the review's serving: its pages, the browser's socket with
 /// flattened sessions, <c>Fetch</c> interception per session, and a page's request walked through every interception that holds
 /// it before it reaches the network, a real loopback socket. What it models is measured on a real one
-/// (<c>docs/2026-10-09-review-serving-evidence.md</c>): interceptions chain on one tab, the one attached last first, a
+/// (<c>docs/archive/2026-10-09-review-serving-evidence.md</c>): interceptions chain on one tab, the one attached last first, a
 /// client's own ending with its socket; one that fulfils answers, one that lets the request go on hands it to the next.
 /// </summary>
 internal sealed class StandInChromium : IDisposable

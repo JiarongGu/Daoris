@@ -1,8 +1,8 @@
 # SETUPUX1: setting work up, composing its workflow and staffing it
 
-Status: accepted by the steward 2026-11-01 (D221), revised after both reads (docs/2026-11-01-setup-ux-reads.md)
+Status: accepted by the steward 2026-11-01 (D221), revised after both reads (docs/archive/2026-11-01-setup-ux-reads.md)
 
-**Standing.** This is the synthesis of `2026-11-01-setup-ux-proposal-opus.md` and `2026-11-01-setup-ux-proposal-codex.md`, answering `2026-11-01-setup-ux-brief.md`. It has been revised to carry both reads and the steward's settlement in `2026-11-01-setup-ux-reads.md`. §7 names the settlements it follows.
+**Standing.** This is the synthesis of `archive/2026-11-01-setup-ux-proposal-opus.md` and `archive/2026-11-01-setup-ux-proposal-codex.md`, answering `archive/2026-11-01-setup-ux-brief.md`. It has been revised to carry both reads and the steward's settlement in `archive/2026-11-01-setup-ux-reads.md`. §7 names the settlements it follows.
 
 Web paths start at `src/Daoris.Web/src/`, driver paths at `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and modules paths at `src/Daoris.Desktop/Daoris.Desktop.Modules/`. Each file:line was checked in the code on 2026-11-01.
 
@@ -673,7 +673,7 @@ Each row writes its line of D221's note and its own translations, checked agains
    - The words and the cutover come last.
    - The flag is lit only after the installed window shows every flow.
 
-**After the reads** (`2026-11-01-setup-ux-reads.md` §3)
+**After the reads** (`archive/2026-11-01-setup-ux-reads.md` §3)
 1. **The preview.** It sends `plan` only where a read announces it (1c, 1p).
 2. ***Use the workspace's*** clears the default alone, and says what the kinds keep. A kind's clear is its own press.
 3. **The landed route** keeps `WORKFLOW_LANDED` and its choices, in Workflow's folds beside the second opinion and your look. The heavy gates move to More.

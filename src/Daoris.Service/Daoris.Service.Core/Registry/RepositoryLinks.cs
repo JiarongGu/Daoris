@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Links, and links held as text, in a repository the scanner reads (`docs/2026-10-01-agent-layout-design.md` §5.5 and §5.4's last table).
+/// Links, and links held as text, in a repository the scanner reads (`docs/archive/2026-10-01-agent-layout-design.md` §5.5 and §5.4's last table).
 /// </summary>
 /// <remarks>
 /// <para><b>Skipped, never followed.</b> A link in a repository points somewhere its own files are not:

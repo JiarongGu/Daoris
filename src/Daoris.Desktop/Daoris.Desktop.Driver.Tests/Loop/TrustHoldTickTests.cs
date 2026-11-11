@@ -57,7 +57,7 @@ public sealed class TrustHoldTickTests : IDisposable
 
     /// <summary>
     /// 🔴 <b>Measured (2026-09-24): the rules Daoris hands over at spawn reach an untrusted session, on
-    /// both doors</b> (`docs/2026-09-24-deploy1-acp-trust-evidence.md`). With the `connector`
+    /// both doors</b> (`docs/archive/2026-09-24-deploy1-acp-trust-evidence.md`). With the `connector`
     /// default carried, the session can take and close its quest in a folder nobody trusted, so there
     /// is nothing to hold for: trust then decides only whether the repository's OWN allow-list counts.
     /// </summary>

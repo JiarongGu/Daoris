@@ -34,9 +34,13 @@ public sealed record KnowledgeQuery(string Text = "")
     /// <summary>How many hits to return.</summary>
     public int Limit { get; init; } = 20;
 
+    /// <summary>Restrict to the present (true) or to the rest (false), by <see cref="PresentFirst.TenseOf"/>.</summary>
+    public bool? Present { get; init; }
+
     /// <summary>Whether this entry passes the query's filters, ignoring its text.</summary>
     public bool Admits(KnowledgeEntry entry) =>
         (Kinds is null || Kinds.Contains(entry.Kind))
+        && (Present is null || (PresentFirst.TenseOf(entry) == EntryTense.Present) == Present)
         && (Repositories is null || Repositories.Contains(entry.Repository))
         && (Provenance is null || Provenance == entry.Provenance)
         && (Workspace is null || Workspaces.Same(Workspace, entry.Workspace));
@@ -101,7 +105,8 @@ public sealed record KnowledgeHit(KnowledgeEntry Entry, double Score, string? Ex
 /// how to ask for them.
 /// </param>
 public sealed record SearchAnswer(
-    IReadOnlyList<KnowledgeHit> Hits, bool Lexical, bool Semantic, string? Failure = null, bool MoreIndex = false)
+    IReadOnlyList<KnowledgeHit> Hits, bool Lexical, bool Semantic, string? Failure = null, bool MoreIndex = false,
+    bool PresentAhead = false)
 {
     /// <summary>The tier as a token for a wire: `lexical+semantic`, `lexical`, `semantic`, or `none`.</summary>
     public string Tier => (Lexical, Semantic) switch

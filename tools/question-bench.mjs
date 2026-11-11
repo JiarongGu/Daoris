@@ -7,7 +7,7 @@
  *
  * Beside each item a park or a closing note brings, a review shows what may already answer it, and a model's
  * review never answers in the person's place until a replay over recorded questions shows it classes them as a person
- * did. The knowledge-use evidence (`docs/2026-10-03-knowledge-use-evidence.md` §4) classed 46 such questions: K a
+ * did. The knowledge-use evidence (`docs/archive/2026-10-03-knowledge-use-evidence.md` §4) classed 46 such questions: K a
  * knowledge document answers it, R the repository's documents require asking, B the ticket, the code or a look settles
  * it, O only the person (a credential, an account, a choice left to them, a go-ahead), D drift or Daoris's own
  * mechanics, and S a choice the session decides itself, a name or which of two sound ways:

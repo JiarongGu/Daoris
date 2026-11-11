@@ -11,7 +11,7 @@
  * ## Why
  *
  * Every turn re-reads the whole context, so a branch's cost is its context summed over its turns: orienting before the
- * first edit grows the context, and every turn after carries that load (`docs/2026-10-10-subagent-load-evidence.md`).
+ * first edit grows the context, and every turn after carries that load (`docs/archive/2026-10-10-subagent-load-evidence.md`).
  * This reports the numbers a change to that is judged by:
  * the context at the first turn (the fixed startup), at the first edit of the work (the orientation load), and at
  * the end, by agent type and model, so a scout-and-worker run can be compared with the runs before it.

@@ -73,6 +73,24 @@ found the right entry within three for most word questions but ranked it first f
 the largest) and the index's `README.md` (20.0 KB): **81 KB at the median area, 142 KB at the largest.** The canon's day-one shape is
 a brief of 1,500 words, an area of 600 and a row of 60.
 
+**After the first steps (2026-11-12).** The scratch question set was not kept, so twelve present questions (one rule in each of
+twelve areas) and twelve history questions (six by identifier, six by words) were written again as data,
+`tools/read-path-bench-questions.json`. `tools/read-path-bench.mjs` asks them of the floor and measures M4;
+`PresentFirstBenchTests` asks them of the knowledge server over this checkout (SQLite, words only, local entries).
+
+| | Before | After |
+|---|---|---|
+| Knowledge server, present questions: the area first, within three | 1/12 first (the words' own rank) | 9/12, 11/12 (present first) |
+| Knowledge server, history questions: the record first, within three | 6/12, 10/12 | 6/12, 10/12 |
+| Floor over the present and the dated documents: first, within three | 3/12, 9/12 | 6/12, 10/12 (designs filed) |
+| Floor over the present alone: first, within three | 9/12, 11/12 | 9/12, 11/12 |
+| Dated documents at `docs/`'s top | 315, 16.4 MB | 73, 5.8 MB |
+| The bytes at a change's start, at the median area and the largest | 79.5 KB, 138.2 KB | 74.6 KB, 133.3 KB |
+
+The filing moved 242 designs with `tools/file-designs.mjs --unclaimed --skip-refused`: 1,469 citations respelled in 407 files,
+242 router rows moved to the archive's router. Ten unclaimed designs stay at the top: two `daoris.lanes.json` cites, six whose
+respelling would grow a file past the size ratchet, one a test writes as its fixture and one whose name a fixture path shares.
+
 ## 4. The candidates
 
 1. **A present search** (adopted). A question about how something works now is searched in what is true now (the brief, the area
@@ -133,7 +151,8 @@ again shows memory at least as good. Asked of Lyntai, with the bench's numbers:
 - **The change-cost run.** The same change done by a real session on this repository and on its fresh copy, compared in tokens,
   wall time, bytes before the first edit and wrong turns, with the knowledge bench's harness (`tools/knowledge-bench.mjs`) over two
   fixtures. M1 to M4 are its proxies; this run is the measurement the owner named.
-- **The history bench as a tool.** M2 and M3's scripts become a bench beside the question bench, its cases from real lookups, run
-  again at each Lyntai answer and after each step of §6.
-- **A present scope in the knowledge server's search.** Its search answers present and history together today; a present scope
-  first, history on asking.
+- **The bench against memory.** `tools/read-path-bench.mjs` measures the floor and the files; M3's memory half (each record
+  remembered into `memory.db` and asked through `LyntaiMemory`) is not a tool yet, and is run again at each Lyntai answer.
+- **The ten designs left at the top.** Each needs its citing file changed first: the lanes file's `_why`, a file under the
+  size ratchet shrunk, a fixture renamed.
+- **Each area cut to 4,500 words, the backlog to open rows, the examples** (§6, steps 3 to 5).

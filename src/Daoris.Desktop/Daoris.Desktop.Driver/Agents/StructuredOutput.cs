@@ -100,7 +100,7 @@ public interface IStreamsReader
 
 /// <summary>
 /// Claude Code's <c>stream-json</c> output, in Daoris's vocabulary — every shape read off the
-/// binary first (docs/2026-09-25-stream-json-evidence.md).
+/// binary first (docs/archive/2026-09-25-stream-json-evidence.md).
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The words arrive twice</b> with partial messages on: as <c>text_delta</c>s, and again whole

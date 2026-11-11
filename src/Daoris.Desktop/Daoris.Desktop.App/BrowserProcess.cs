@@ -15,7 +15,7 @@ namespace Daoris.Desktop;
 /// <para><b>Decided before anything else in <c>Main</c></b>: a process runs one Chromium, the window's or the browser's, so nothing here
 /// composes the app, reads the install's home, or opens the window's log. With no profile folder it refuses, rather than let the engine
 /// pick one under the user profile.</para>
-/// <para><b>The first window is made over CDP</b>, as an agent's is (`docs/2026-09-28-chromium-embedding-evidence.md` §2): only a target
+/// <para><b>The first window is made over CDP</b>, as an agent's is (`docs/archive/2026-09-28-chromium-embedding-evidence.md` §2): only a target
 /// made that way gets its own tabs, history and devtools. The port it is given is the kit's relay, which announces a new tab as a
 /// <c>page</c> from the start, so an agent's browser MCP can open tabs.</para>
 /// <para><b>Every task started here and not awaited is observed</b>: the machine log's <c>Observe</c> writes its failure as a line saying

@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// **dsh and codex as configurations of the protocol door**. Everything here is keyless,
 /// and every claim about somebody else's program is established against an installed artefact at an
-/// exact version — `docs/2026-09-22-acp3-probe-evidence.md` is the record, and it says which facts
+/// exact version — `docs/archive/2026-09-22-acp3-probe-evidence.md` is the record, and it says which facts
 /// came from a live wire and which from a shipped bundle.
 /// </summary>
 /// <remarks>

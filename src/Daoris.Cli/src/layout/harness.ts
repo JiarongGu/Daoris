@@ -73,12 +73,12 @@ export const HARNESSES: Record<string, Harness> = {
   },
 
   /**
-   * The agents layout (`docs/2026-10-01-agent-layout-design.md` §2). Knowledge and skills live
+   * The agents layout (`docs/archive/2026-10-01-agent-layout-design.md` §2). Knowledge and skills live
    * under `.agents/`, the always-loaded tier stays the region in `AGENTS.md`, and the vocabulary
    * does not move: no canon file names a layout, which is what makes this a descriptor rather than an
    * edit to the doctrine.
    *
-   * Measured before relied on (`docs/2026-10-01-entry-point-evidence.md`): codex reads
+   * Measured before relied on (`docs/archive/2026-10-01-entry-point-evidence.md`): codex reads
    * `.agents/skills/` from the project root down, dsh reads it at the root, and Claude Code reads only
    * `.claude/skills/`, and `AGENTS.md` only through `CLAUDE.md`'s import. So the two things the
    * reference links, Daoris writes: the pointer, and the mirror.

@@ -75,7 +75,7 @@ public enum GoAheadMatch
 /// How an act is named, so two wordings of one act join, with no model, by words only.
 /// </summary>
 /// <remarks>
-/// <para><b>Three parts, from the evidence's thirteen asks</b> (`docs/2026-10-03-knowledge-use-evidence.md` §4): one
+/// <para><b>Three parts, from the evidence's thirteen asks</b> (`docs/archive/2026-10-03-knowledge-use-evidence.md` §4): one
 /// production configuration write asked three times, display writes asked four times, and one report's production entries
 /// and release asked six. Each named a kind of act (a write, a release, a sign-in, a push, a run against a system's data),
 /// where it lands (production, every time), and what it touches (the configuration, the display, the menu entries). The

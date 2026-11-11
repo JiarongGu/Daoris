@@ -82,7 +82,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         var said = await _tools.SearchAsync("SESSION_GO_ON_NEW", kinds: "index", workspace: "all");
 
         Assert.Contains("### Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW", said);
-        Assert.Contains("`atlas` · Index · `docs/index/routes.md:7`", said);
+        Assert.Contains("`atlas` · Index · present · `docs/index/routes.md:7`", said);
         var excerpt = ExcerptLine().Match(said);
         Assert.True(excerpt.Success, said);
         Assert.Equal(7, int.Parse(excerpt.Groups[1].Value));
@@ -136,7 +136,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         var said = await _tools.SearchAsync("handler", workspace: "all");
 
         Assert.Equal(2, Regex.Count(said, "· Index ·"));
-        Assert.Contains("`atlas` · Decision · `docs/DECISIONS.md:5`", said);
+        Assert.Contains("`atlas` · Decision · history · `docs/DECISIONS.md:5`", said);
         Assert.Contains("kinds `index`", said);
     }
 

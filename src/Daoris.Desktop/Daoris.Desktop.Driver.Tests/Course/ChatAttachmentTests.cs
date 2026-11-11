@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// What a person attaches to a message: kept for the session under the home, granted read at
 /// spawn, and referenced the way each door reads best — measured first
-/// (docs/2026-09-25-message-content-evidence.md).
+/// (docs/archive/2026-09-25-message-content-evidence.md).
 /// </summary>
 /// <remarks>
 /// The stand-in harnesses write down what reached them — the message, the blocks, and the settings they

@@ -1,5 +1,5 @@
 {
-  "about": "A constructed fixture for tools/question-bench.mjs (KNOWUSE2): one question of each shape the knowledge-use evidence classed (docs/2026-10-03-knowledge-use-evidence.md §4), about an invented repository. A K a word search finds, a K it misses, a B the ask's words settle, an O, an R and a D. Nothing here is from a recorded session.",
+  "about": "A constructed fixture for tools/question-bench.mjs (KNOWUSE2): one question of each shape the knowledge-use evidence classed (docs/archive/2026-10-03-knowledge-use-evidence.md §4), about an invented repository. A K a word search finds, a K it misses, a B the ask's words settle, an O, an R and a D. Nothing here is from a recorded session.",
   "knowledge": "knowledge",
   "asks": {
     "panel": "Build the humidity panel for the greenhouse dashboard.\nThe ticket says:\n- The target line comes from each greenhouse's configured threshold.\n- Compute each daily figure from the day's totals, never by averaging hourly percentages.\n- Missing readings show as gaps, never as zero.\nNothing goes to production without the owner's yes."
