@@ -106,6 +106,9 @@ public sealed class StateSlice
     private bool _judged;
     private long _judgements;
 
+    /// <summary>The last judgement compared; read and written only within a judgement's turn.</summary>
+    private IReadOnlyList<SliceJudged>? _lastJudged;
+
     /// <summary>Whether the last judgement failed; read and written only within a judgement's turn.</summary>
     private bool _failing;
 
@@ -239,8 +242,10 @@ public sealed class StateSlice
 
             _failing = false;
             lock (_gate) _why = null;
-            // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged.
-            if (judged is null) return;
+            // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged. The very list last judged
+            // (JudgedOnce) is what is held already.
+            if (judged is null || ReferenceEquals(judged, _lastJudged)) return;
+            _lastJudged = judged;
 
             // Written and compared outside the lock (a keyed partition may be megabytes): a judgement's turn is the one writer of
             // what is held, so it reads it here unlocked, and the lock is held only to swap.

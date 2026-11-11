@@ -74,9 +74,14 @@ public static class SessionsStateSlice
         new("DRIVER_READY"),
     ];
 
-    /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers.</summary>
-    public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await service.SessionList.Kept.ReadAsync(ct).ConfigureAwait(false)) : null)
+    /// <summary>
+    /// The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers. The kept list is the same object
+    /// while nothing moved, which is judged once (<see cref="JudgedOnce{TList}"/>): a period with no change does no work.
+    /// </summary>
+    public static StateSlice Of(DriverLoop loop, IEventBus bus)
+    {
+        var judged = new JudgedOnce<IReadOnlyList<JsonObject>>(Judge);
+        return new(Name, bus, async ct => loop.Service is { } service ? judged.Of(await service.SessionList.Kept.ReadAsync(ct).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -84,6 +89,7 @@ public static class SessionsStateSlice
             // The service away or refusing: the windows keep the last judgement, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
+    }
 
     /// <summary>
     /// One judgement of what the service answered: a partition per workspace, named by it, each record under its id with the fields
