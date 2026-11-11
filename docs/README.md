@@ -306,6 +306,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-20-ui-ux-design.md`|Accepted contract: screen rules
 |`2026-10-21-notification-design.md`|Accepted design: notifications
 |`2026-10-22-park-ask-design.md`|Built: parked session's ask
+|`2026-11-11-plugin-ui-design.md`|Proposed design: PLUGINEXT1, a plugin's own UI, commands and sign-in (D274)
 
 ## Studies and evidence
 
