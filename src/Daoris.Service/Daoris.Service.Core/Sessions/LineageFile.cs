@@ -72,12 +72,12 @@ public sealed class LineageFile
     public static LineageFile FromEnvironment() => FromEnvironment(Environment.GetEnvironmentVariable);
 
     /// <summary>One call, with what its harness carried of its lineage, or none. Never throws.</summary>
-    public void Call(string? tool, CallLineage? lineage, DateTimeOffset at)
+    public void Call(string? tool, CallLineage? lineage, DateTimeOffset at, string? act = null)
     {
         if (Path is null) return;
         try
         {
-            Append(Path, Line(tool, lineage, at, Proc));
+            Append(Path, Line(tool, lineage, at, Proc, act));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -86,10 +86,10 @@ public sealed class LineageFile
     }
 
     /// <summary>
-    /// The line for one call: its moment, its tool where that is shaped as a name, the ids its harness wrote, and the process it
-    /// runs under.
+    /// The line for one call: its moment, its tool where shaped as a name, the ids its harness wrote, the process it runs under,
+    /// and the act its door words it as, which the second check of Ask Daoris's acts selects by.
     /// </summary>
-    public static string Line(string? tool, CallLineage? lineage, DateTimeOffset at, string? proc = null)
+    public static string Line(string? tool, CallLineage? lineage, DateTimeOffset at, string? proc = null, string? act = null)
     {
         var line = new JsonObject
         {
@@ -110,6 +110,7 @@ public sealed class LineageFile
         }
 
         Put(line, "proc", CallLineage.Id(proc));
+        Put(line, "act", act);
         return line.ToJsonString();
     }
 

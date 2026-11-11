@@ -194,6 +194,11 @@ public sealed record RoleHold(string Kind, IReadOnlyList<string> Acts, string? H
             return new("bad-record", $"`{outside}` is an act of a kind `{role.Id}` does not decide: it decides {string.Join(", ", hold.Decides)}.");
         }
 
+        if (role.Scope.Kind != RoleScope.Machine && hold.Decides.FirstOrDefault(SupervisorKinds.MachineOnly) is { } machine)
+        {
+            return new("machine-only", $"`{role.Id}` decides `{machine}`, whose every subject is this machine's: only a supervisor placed at the machine decides it.");
+        }
+
         if (kind == AppointedRoles.Steward && hold.Holder == RoleHolders.Agent)
         {
             return new("appointed-not-configurable", $"`{role.Id}` is the steward, which no agent holds: a terminal holds it, or no one.");

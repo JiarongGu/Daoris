@@ -88,6 +88,12 @@ public sealed class RoleChangeView : IPressView
         if (change is RoleChange.SetRole && choices is { Count: 0 }) also.Add(new PressSaid("role-choices-off"));
         else if (change is RoleChange.SetRole && choices is { Count: > 0 }) also.Add(new PressSaid("role-choices", ("choices", Choices(choices))));
         if (policy is null) also.AddRange(PolicyMoved(change, choices, staffing));
+        if (change is RoleChange.SetRole { Role: var reader })
+        {
+            var order = choices ?? (staffing.Read()?.Actors.TryGetValue(reader.Id, out var staffed) == true ? staffed : null);
+            also.AddRange(SecondCheckOnSaid.Of(reader, order, policy?.Policy ?? staffing.Policy(reader.Id).Policy));
+        }
+
         return PressViewed.Shown(also.Count > 0 ? view with { Also = also } : view);
     }
 
@@ -117,8 +123,9 @@ public sealed class RoleChangeView : IPressView
         var said = new StringBuilder($"daoris role set {role.Id} {NameFlags(role.Name)}");
         if (role.Hold is { } hold)
         {
-            said.Append($" --scope {Scope(role.Scope)} --decides {(hold.Generic ? "every" : string.Join(",", hold.Decides))}")
-                .Append($" --acts {(hold.Acts.Count == 0 ? "\"\"" : string.Join(",", hold.Acts))} --holder {hold.Holder ?? RoleHolders.Rules} --window {hold.Window}");
+            said.Append($" --scope {Scope(role.Scope)}")
+                .Append(hold.Kind == AppointedRoles.Steward ? "" : $" --decides {(hold.Generic ? "every" : string.Join(",", hold.Decides))}")
+                .Append($" --acts {(hold.Acts.Count == 0 ? "\"\"" : string.Join(",", hold.Acts))} --holder {hold.Holder ?? (hold.Kind == AppointedRoles.Steward ? "none" : RoleHolders.Rules)} --window {hold.Window}");
         }
         else said.Append($" --takes {string.Join(",", role.Takes)} --scope {Scope(role.Scope)}");
 

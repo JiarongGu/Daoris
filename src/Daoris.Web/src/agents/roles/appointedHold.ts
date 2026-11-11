@@ -10,7 +10,10 @@ export const DECISION_KINDS: Readonly<Record<string, readonly string[]>> = {
   allow: ['allow.once', 'allow.reject', 'allow.standing', 'allow.steward'],
   files: ['files.allow-run', 'files.allow-copy', 'files.allow-share'],
   landing: ['landing.accept', 'landing.approve', 'landing.reject'],
+  'ask-daoris': ['ask-daoris.report'],
 };
+
+export const MACHINE_ONLY: readonly string[] = ['ask-daoris'];
 
 export const AT_ONCE: readonly string[] = ['allow', 'files'];
 

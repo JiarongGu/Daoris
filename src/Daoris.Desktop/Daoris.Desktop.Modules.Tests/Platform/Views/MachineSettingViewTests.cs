@@ -30,6 +30,8 @@ public sealed class MachineSettingViewTests
 
     [Theory]
     [InlineData("""{"cap":0}""")]
+    [InlineData("""{"cap":null}""")]
+    [InlineData("""{"cap":"3"}""")]
     [InlineData("""{}""")]
     public async Task A_cap_below_one_or_none_is_refused_with_no_card(string json)
     {

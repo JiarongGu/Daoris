@@ -161,6 +161,7 @@
     { "kind": "work", "detail": "", "said": "Shown as recorded: working, —." },
     { "kind": "work", "state": "paused", "detail": "queued", "said": "Shown as recorded: paused, queued." },
     { "kind": "landing", "state": "not-reached", "detail": "", "said": null },
+    { "kind": "landing", "node": "land", "state": "done", "detail": "reached", "words": "Reached on the line `main` at `22222222`: it already holds all 2 commit(s) as the same change.", "said": "Reached on the line `main` at `22222222`: it already holds all 2 commit(s) as the same change." },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "words": "its tree is locked", "said": "Cannot start: its tree is locked" },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "code": "exists", "said": "Cannot land automatically: the branch it would make already stands." }
   ],

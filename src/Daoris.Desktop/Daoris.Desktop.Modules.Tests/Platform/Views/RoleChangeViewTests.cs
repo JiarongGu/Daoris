@@ -132,6 +132,48 @@ public sealed class RoleChangeViewTests : DriverModuleBridge
         Assert.Equal("daoris role set gatekeeper --name Gatekeeper --scope workspace:w1 --decides allow --acts allow.once --holder terminal --window 10", view.Command);
     }
 
+    [Theory]
+    [InlineData("terminal", "terminal")]
+    [InlineData(null, "none")]
+    public async Task A_steward_set_is_spelled_as_the_verb_takes_it_no_decides_and_no_holder_as_none(string? holder, string spelled)
+    {
+        var viewed = await View(new
+        {
+            change = "set", id = "steward", revision = 0,
+            role = new
+            {
+                name = new { en = "Tidier" }, scope = new { kind = "machine" }, filled = "appointed", kind = "steward",
+                authority = new[] { "drive" }, holder, window = 5,
+            },
+        });
+
+        Assert.True(viewed.View is not null, viewed.Refusal);
+        Assert.Equal($"daoris role set steward --name Tidier --scope machine --acts drive --holder {spelled} --window 5", viewed.View!.Command);
+    }
+
+    [Fact]
+    public async Task Turning_the_second_check_on_names_its_readers_providers_in_order_and_what_they_spend()
+    {
+        HomeMigration.Run(Home, [new SupervisorStep(() => null), new SecondCheckStep()]);
+        object Role(string holder) => new
+        {
+            name = new { en = "Second check", zh = "复核" }, scope = new { kind = "machine" }, filled = "appointed", kind = "supervisor",
+            decides = new[] { "ask-daoris" }, authority = new[] { "ask-daoris.report" }, holder, window = 5,
+        };
+        var choices = new object[] { new { agent = "codex" }, new { agent = "claude-code", model = "opus", effort = "high" } };
+
+        var viewed = await View(new { change = "set", id = SecondCheck.Role, revision = 0, role = Role("agent"), choices });
+        var kept = await View(new { change = "set", id = SecondCheck.Role, revision = 0, role = Role("rules") });
+
+        Assert.Null(viewed.Refusal);
+        var also = viewed.View!.Also!;
+        var on = Assert.Single(also, said => said.Kind == "second-check-on");
+        Assert.Equal("Codex (OpenAI), Claude Code (Anthropic)", on.Facts["readers"]);
+        Assert.Equal("40", Assert.Single(also, said => said.Kind == "second-check-spend").Facts["starts"]);
+        Assert.Null(kept.Refusal);
+        Assert.DoesNotContain(kept.View!.Also ?? [], said => said.Kind.StartsWith("second-check", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void The_role_route_has_its_view()
     {

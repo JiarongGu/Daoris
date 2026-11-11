@@ -48,16 +48,18 @@ public sealed class PlaceAcrossView : IPressView
     {
         var other = PressPayload.Text(payload, "to");
         if (other.Length == 0) return PressViewed.Refused("`across … write-to` names the repository sessions write into — `daoris place across <repository> write-to <other>`.");
+        var allow = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("allow", out var flag) && flag.ValueKind == JsonValueKind.True;
         var registry = await world.RegistryAsync(cancellationToken).ConfigureAwait(false);
-        if (registry.FirstOrDefault(row => string.Equals(row.Repository, other, StringComparison.OrdinalIgnoreCase)) is not { } found)
+        var found = registry.FirstOrDefault(row => string.Equals(row.Repository, other, StringComparison.OrdinalIgnoreCase));
+        if (found is null && allow)
         {
             return PressViewed.Refused($"`{other}` is not registered on this machine — use a repository's name as Repositories lists it.");
         }
 
-        var allow = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("allow", out var flag) && flag.ValueKind == JsonValueKind.True;
+        var target = found?.Repository ?? other;
         try
         {
-            _ = DriverConfig.Empty.WithWriteAcross(scoped.Repository!, found.Repository, allow);
+            _ = DriverConfig.Empty.WithWriteAcross(scoped.Repository!, target, allow);
         }
         catch (DriverException refused)
         {
@@ -65,8 +67,8 @@ public sealed class PlaceAcrossView : IPressView
         }
 
         var facts = scoped.Facts();
-        facts["other"] = found.Repository;
+        facts["other"] = target;
         return PressViewed.Shown(new PressView(allow ? "across-write-to" : "across-write-clear", facts,
-            $"daoris place across {scoped.Words} write-to {ShellWord.Of(found.Repository, ShellWord.Name)}{(allow ? "" : " --clear")}"));
+            $"daoris place across {scoped.Words} write-to {ShellWord.Of(target, ShellWord.Name)}{(allow ? "" : " --clear")}"));
     }
 }

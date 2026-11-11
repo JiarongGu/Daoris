@@ -14,10 +14,14 @@ public static class SupervisorKinds
     public const string Files = "files";
     public const string Landing = "landing";
 
+    /// <summary>Ask Daoris's acts, read after its turns, observed and never decided; not the working role <c>ask-daoris</c>.</summary>
+    public const string AskDaoris = "ask-daoris";
+
     /// <summary>The acts a holder's routes make today: an answer to a question, a line's go-on, and a move to another choice.</summary>
     public const string Answer = "answer";
     public const string GoOn = "go-on";
     public const string Move = "move";
+    public const string Report = "report";
 
     private static readonly IReadOnlyDictionary<string, string[]> Named = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
@@ -27,10 +31,13 @@ public static class SupervisorKinds
         [Allow] = ["once", "reject", "standing", "steward"],
         [Files] = ["allow-run", "allow-copy", "allow-share"],
         [Landing] = ["accept", "approve", "reject"],
+        [AskDaoris] = [Report],
     };
 
     /// <summary>Every kind, in the editor's order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing];
+    public static IReadOnlyList<string> All { get; } = [Question, Course, Limit, Allow, Files, Landing, AskDaoris];
+
+    public static bool MachineOnly(string kind) => kind == AskDaoris;
 
     /// <summary>Every kind's acts, qualified, in the kinds' order: the supervisor's <c>authority</c> vocabulary.</summary>
     public static IReadOnlyList<string> Acts { get; } = [.. All.SelectMany(ActsOf)];

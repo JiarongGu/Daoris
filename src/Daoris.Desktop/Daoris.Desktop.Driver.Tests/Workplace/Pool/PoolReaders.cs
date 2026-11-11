@@ -45,6 +45,9 @@ internal static class PoolReaders
     [
         new(Driver + "Workplace/TidyHolders.cs", InUse, "c", "the tidy's in-use set and the trees sessions hold"),
         new(Driver + "Workplace/BranchTidying.cs", InUse, "c", "the tidy's front over that set"),
+        new(Driver + "Workplace/CopyTidying.cs", InUse, "c", "the seam that gives the copies' tidy that set"),
+        new(Driver + "Workflows/Kinds/Return/OrphanCopies.cs", InUse, "c", "the copies' tidy handed that set"),
+        new(Driver + "Departments/Isolation/CopyTidy.cs", InUse, "c", "the copies' tidy's test of a copy's folder against the set"),
         new(Driver + "Loop/Watch/WatchRun.cs", InUse, "c", "the headless look's set"),
         new(Driver + "Loop/Watch/WatchNodes.cs", InUse, "c", "the rebase door's test of a run's tree against the set"),
         new(Driver + "Help/HelpHousekeeping.cs", InUse, "c", "Ask Daoris's housekeeping set"),
