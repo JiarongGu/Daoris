@@ -374,7 +374,7 @@ public static class PluginKit
           "hooks": {
             "command": ["node", "${plugin}/{{Script}}"],
             "points": [{{string.Join(", ", points.Select(point => Json(point.Name)))}}]
-          },{{Declared(id, points)}}{{PluginKitSystems.Declared(name, points)}}
+          },{{PluginKitInterfaces.Declared(name)}}{{Declared(id, points)}}{{PluginKitSystems.Declared(name, points)}}
           "tools": []
         }
 

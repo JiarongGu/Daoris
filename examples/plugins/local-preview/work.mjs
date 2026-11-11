@@ -1,15 +1,8 @@
-// The kit's half of a plugin that works: what Daoris's plugin kit
-// promises every plugin at the work points, so its author writes only the external calls, in plugin.mjs.
-// Daoris's plugin kit wrote this file, and `daoris plugin new` writes it again for a newer build: change plugin.mjs, not
-// this. README.md says what each part promises; `node --test` here checks it (plugin.test.mjs, plugin.contract.test.mjs).
-// What it keeps, it keeps in the plugin's data folder, in `work-journal.json`, one record at a time under the kit's storage.mjs lock,
-// before anything it records is said, and read fresh each time, so the processes of the plugin's places sharing that folder never
-// write over each other's records:
-//  - each attempt by its idempotency key, written BEFORE the external call, so a redelivered key never calls it twice;
-//  - each attempt's outcome, so `work/reconcile` answers from it and a resync sends the same event again;
-//  - each resource's cleanup, so a repeated cleanup is `already-gone`, never a second removal;
-//  - each observation it reported, so the same one is never reported under a new id.
-// A journal that does not read stops the plugin rather than starting afresh: forgetting an attempt is how an effect happens twice.
+// The kit's half of a plugin that works, so its author writes only the external calls, in plugin.mjs; `daoris plugin new` writes
+// it again for a newer build, so change plugin.mjs, not this. It keeps `work-journal.json` in the data folder through storage.mjs, a
+// record at a time and before anything it records is said: each attempt by its key BEFORE the external call, and its outcome; each
+// cleanup; each observation reported. Several processes of one plugin share that folder, and each record they write is kept. A
+// journal that does not read stops the plugin rather than starting afresh: forgetting an attempt is how an effect happens twice.
 import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

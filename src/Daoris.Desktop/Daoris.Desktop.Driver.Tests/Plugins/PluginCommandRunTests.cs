@@ -75,10 +75,6 @@ public sealed class PluginCommandRunTests : IDisposable
         else Assert.Contains(refused, Assert.Throws<DriverException>(read).Message, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// A round's lines are bounded in all, in UTF-8 bytes, under the shortest frame a plugin's answer is read within (a work-speaking
-    /// plugin's 64 KiB): forty lines of two thousand characters each would pass a bound per line and be lost to the frame's.
-    /// </summary>
     [Fact]
     public void A_round_s_lines_are_bounded_in_all_under_every_frame_a_plugin_is_read_in()
     {
@@ -88,7 +84,6 @@ public sealed class PluginCommandRunTests : IDisposable
         Assert.True(CommandWire.SaidBytes * 4 < WorkBounds.FrameBytes);
         Assert.Equal(8, Said([.. Enumerable.Repeat(new string('x', CommandWire.SaidBytes / 8), 8)]).Said.Count);
         Assert.Contains("longer than 8 KiB in all", Assert.Throws<DriverException>(() => Said([.. Enumerable.Repeat(new string('x', 1500), 6)])).Message, StringComparison.Ordinal);
-        // Counted in bytes: two thousand characters of three bytes each are 6 KB a line.
         Assert.Throws<DriverException>(() => Said(new string('阶', 2000), new string('阶', 2000)));
     }
 

@@ -16,7 +16,7 @@ internal static class PluginInterfaceFields
         !row.TryGetProperty(name, out var value) ? false
         : value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null };
 
-    /// <summary>Authored words (D222), or <paramref name="unwritten"/> where absent; false where present and not words of that bound.</summary>
+    /// <summary>Authored words, or <paramref name="unwritten"/> where absent; false where present and not words of that bound.</summary>
     public static bool Words(JsonElement row, string name, int most, bool oneLine, AuthoredText? unwritten, out AuthoredText? words)
     {
         words = unwritten;

@@ -171,7 +171,6 @@ public sealed record PluginChange(string What, string Was, string Now)
 
     public string? Name { get; init; }
 
-    /// <summary>Whether the entry asks more of the person than the installed one did (<see cref="PluginInterfaceChanges"/>).</summary>
     public bool AsksMore { get; init; }
 
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written.</summary>

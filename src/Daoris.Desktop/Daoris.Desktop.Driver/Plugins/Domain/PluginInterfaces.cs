@@ -14,16 +14,13 @@ public sealed record PluginCommandDeclared(string Name, AuthoredText About, bool
     /// <summary>What the window shows it as: its name where unwritten.</summary>
     public AuthoredText Title { get; init; } = AuthoredText.Of(Name);
 
-    /// <summary>Its typed arguments, in declared order.</summary>
     public IReadOnlyList<PluginCommandArg> Args { get; init; } = [];
 
-    /// <summary>The records whose menus offer it (<see cref="PluginCommandReader.Records"/>).</summary>
     public IReadOnlyList<string> On { get; init; } = [];
 
     /// <summary>Whether it changes something outside the plugin, which the install plan says and an agent's tool is annotated with.</summary>
     public bool Writes { get; init; }
 
-    /// <summary>The question the window asks once before it runs; null to ask none.</summary>
     public AuthoredText? Confirm { get; init; }
 }
 
@@ -57,13 +54,11 @@ public sealed record PluginInterfacesDeclared(IReadOnlyList<PluginCommandDeclare
 
     public IReadOnlyList<PluginViewDeclared> Views { get; init; } = [];
 
-    /// <summary>Each entry refused and why, in the manifest's order.</summary>
     public IReadOnlyList<PluginInterfaceRefusal> Refused { get; init; } = [];
 
     /// <summary>The interfaces it names that this build does not know, each once, skipped.</summary>
     public IReadOnlyList<string> Unknown { get; init; } = [];
 
-    /// <summary>The interfaces' names it declares, in <see cref="PluginInterfaces.All"/>'s order.</summary>
     public IReadOnlyList<string> Names =>
     [
         .. Commands.Count > 0 ? [PluginInterfaces.Commands] : Array.Empty<string>(),

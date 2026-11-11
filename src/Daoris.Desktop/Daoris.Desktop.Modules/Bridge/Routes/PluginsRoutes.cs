@@ -78,7 +78,6 @@ public sealed class PluginsRoutes(DriverContext context)
                     // The steps it declares and what they create, which its page lists.
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
-                    // What it implements that Daoris reaches it through, each entry refused alone and named with its problem.
                     plugin.Manifest.Interfaces,
                     // Its tools as written; nothing is found or run by this read, the person's Check does.
                     Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),

@@ -7,8 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The kit a session makes a plugin with. `new` writes a folder a plugins repository can hold —
-/// a manifest, a wire script, its self-contained wire test and a README — and `try` starts a plugin as
+/// The kit a session makes a plugin with. `new` writes a folder a plugins repository can hold, and `try` starts a plugin as
 /// the driver would and checks every answer by the driver's own reader.
 /// </summary>
 /// <remarks>
@@ -332,8 +331,8 @@ public sealed class PluginKitTests : IDisposable
         Assert.True(trial.Passed, Describe(trial));
         Assert.Equal(0, trial.ExitCode);
         Assert.Equal("acme-fresh", trial.Plugin);
-        Assert.Equal(["handshake", .. points, "shutdown", "stdout"], trial.Steps.Select(step => step.Name));
-        Assert.Contains("listens on", trial.Steps[0].Sentence);
+        Assert.Equal(["interfaces", "handshake", .. points, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
+        Assert.Contains("listens on", trial.Steps[1].Sentence);
         Assert.Contains("left when told", trial.Steps.Single(step => step.Name == "shutdown").Sentence);
     }
 
@@ -454,7 +453,7 @@ public sealed class PluginKitTests : IDisposable
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
-        var step = Assert.Single(trial.Steps);
+        var step = trial.Steps.Single(s => !s.Ok);
         Assert.Equal("handshake", step.Name);
         Assert.False(step.Ok);
         Assert.Contains("exited (code 1) before answering `initialize`", step.Sentence);
@@ -503,9 +502,9 @@ public sealed class PluginKitTests : IDisposable
         var trial = await PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.QuestConsider, Frame: frame));
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.Equal(["handshake", HookPoints.QuestConsider, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
-        Assert.Contains("hold", trial.Steps[1].Sentence);
-        Assert.Contains("the title says so", trial.Steps[1].Sentence);
+        Assert.Equal(["interfaces", "handshake", HookPoints.QuestConsider, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
+        Assert.Contains("hold", trial.Steps[2].Sentence);
+        Assert.Contains("the title says so", trial.Steps[2].Sentence);
     }
 
     /// <summary>
@@ -671,7 +670,7 @@ public sealed class PluginKitTests : IDisposable
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.Equal(["tool node", "node check 1", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
+        Assert.Equal(["tool node", "node check 1", "interfaces", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
         Assert.Matches(@"^Node\.js \d+\.\d+\.\d+, the system's, in its range \(18 or newer\)\.$", trial.Steps[0].Sentence);
         Assert.Equal("ready: It runs a script.", trial.Steps[1].Sentence);
     }
@@ -698,7 +697,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.False(trial.Passed);
         Assert.Equal(1, trial.ExitCode);
         Assert.Equal(
-            ["tool node", "node check 1", "tool 2", "tool acme-missing", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"],
+            ["tool node", "node check 1", "tool 2", "tool acme-missing", "interfaces", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"],
             trial.Steps.Select(s => s.Name));
         Assert.Matches(@"needs 999 or newer; this is \d+\.\d+\.\d+\.$", Failed(trial, "tool node").Sentence);
         Assert.StartsWith("not ready: It exits clean. `node -e process.exit(3)` exited 3. Run `node -e", Failed(trial, "node check 1").Sentence);
@@ -726,7 +725,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(1, await PluginKitCommand.RunAsync(["try", bad], failed, home: Home));
         Assert.Contains("fail  tool node", failed.ToString());
         Assert.Contains("tool `node`'s `versions` must be a range", failed.ToString());
-        Assert.Contains("failed 1 of 5 checks", failed.ToString());
+        Assert.Contains("failed 1 of 6 checks", failed.ToString());
     }
 
     // ——— the two checkers agree
@@ -845,7 +844,7 @@ public sealed class PluginKitTests : IDisposable
         var failed = new StringWriter();
         Assert.Equal(1, await PluginKitCommand.RunAsync(["try", bad], failed, home: Home));
         Assert.Contains("fail  quest/consider", failed.ToString());
-        Assert.Contains("failed 1 of 4 checks", failed.ToString());
+        Assert.Contains("failed 1 of 5 checks", failed.ToString());
     }
 
     [Theory]
@@ -1053,7 +1052,7 @@ public sealed class PluginKitTests : IDisposable
         var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default with { Deadline = TimeSpan.FromSeconds(1) });
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.Equal(["handshake", HookPoints.Watch, HookPoints.Step, HookPoints.Perform, "shutdown", "stdout"], trial.Steps.Select(step => step.Name));
+        Assert.Equal(["interfaces", "handshake", HookPoints.Watch, HookPoints.Step, HookPoints.Perform, "shutdown", "stdout"], trial.Steps.Select(step => step.Name));
         Assert.Contains("acknowledged `i-0fda18a2b3c4`", trial.Steps.Single(step => step.Name == HookPoints.Perform).Sentence);
         Assert.True(cycle.Passed, Describe(cycle));
         Assert.Equal(["handshake", "eligible", "duplicate", "failure", "timeout", "handshake again", "restart", "stale", "cleanup", "shutdown", "stdout"],

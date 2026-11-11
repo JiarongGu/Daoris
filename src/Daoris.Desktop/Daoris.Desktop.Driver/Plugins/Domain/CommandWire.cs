@@ -29,10 +29,6 @@ public static class CommandWire
     /// <summary>The most rounds one run takes before it is stopped as a command that never ends.</summary>
     public const int Rounds = 8;
 
-    /// <summary>
-    /// The most a round's lines hold in all, in UTF-8 bytes: well under the shortest frame a plugin's answer is read within
-    /// (<see cref="WorkBounds.FrameBytes"/>), so a long answer is refused here in words rather than dropped unread by the wire.
-    /// </summary>
     public const int SaidBytes = 8 * 1024;
 
     /// <summary>How long a round may take, a call to the plugin's platform among it.</summary>

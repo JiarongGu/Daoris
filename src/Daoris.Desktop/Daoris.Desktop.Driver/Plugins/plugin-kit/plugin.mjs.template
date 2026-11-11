@@ -16,7 +16,9 @@
 //   DAORIS_PLUGIN_FOLDER  the install folder
 //   DAORIS_PLUGIN_DATA    the data folder beside it, which an update never touches
 //   DAORIS_HOME           the Daoris home the driver runs against
+//   DAORIS_PLUGIN_PRIVATE its private storage, where plugin.json declares `interfaces.storage` and the person left it on
 import { createInterface } from 'node:readline';
+import { records } from './storage.mjs';
 {{imports}}
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
@@ -30,8 +32,29 @@ const points = {
 {{handlers}}
 };
 
-// What it answers: its points, and the requests asked beside them that no manifest names.
-const answers = { ...points{{calls}} };
+// What it implements beside its points (plugin.json's `interfaces`), each asked of a process started for that ask alone, so a
+// command keeps between its rounds only what it writes to its storage:
+//   command/run  one round of a command it declares, `daoris {{id}} hello` at a terminal: { command, args, answers, from } answered
+//                { said: [lines], exit } where it ends, or { said, ask: { name, prompt, masked } } where it asks the person a value
+//   view/read    what a view it declares shows: a tree Daoris draws in its own look, { ui: 1, body: [nodes] }
+const interfaces = {
+  'command/run': async ({ command }) => {
+    if (command !== 'hello') return { said: [`${id} has no command ${command}.`], exit: 2 };
+    const storage = process.env.DAORIS_PLUGIN_PRIVATE;
+    if (!storage) return { said: [`${id}'s storage is switched off, so it keeps nothing.`], exit: 1 };
+    const kept = records(`${storage}/state.json`);
+    const asked = (kept.get('hello', 'asked') ?? 0) + 1;
+    kept.put('hello', 'asked', asked);
+    return { said: [`Hello from {{name}}: asked ${asked} time${asked === 1 ? '' : 's'}.`], exit: 0 };
+  },
+  'view/read': async () => ({
+    ui: 1,
+    body: [{ kind: 'section', title: '{{name}}', children: [{ kind: 'text', text: 'Say here what this plugin shows.' }] }],
+  }),
+};
+
+// What it answers: its points, the requests asked beside them that no manifest names, and its interfaces.
+const answers = { ...points{{calls}}, ...interfaces };
 
 // One frame answered once its handler settles, never after the frame before it: a slow read holds back no other answer, and
 // Daoris waits 10 s for each. A handler that throws is a refusal, which the driver says in this plugin's name. Never silence.
