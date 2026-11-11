@@ -29,11 +29,11 @@ internal static class HelpRoomSections
         new HelpRoomIntro(),
         new HelpRoomInFocus(),
         new HelpRoomMayDo(),
-        new HelpRoomMayPropose(),
+        new HelpRoomVerbs(),
         new HelpRoomMakingAPlugin(),
         new HelpRoomOwnPlugins(),
         new HelpRoomDoors(),
-        // The acts done at a terminal that no proposal takes, read beside the doors that exist.
+        // The acts done at a terminal that Ask Daoris never presses, read beside the doors that exist.
         new HelpRoomTerminalActs(),
         new HelpRoomLanding(),
         new HelpRoomPlaces(),

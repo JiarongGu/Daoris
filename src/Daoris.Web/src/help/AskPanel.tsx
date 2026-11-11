@@ -11,8 +11,8 @@ import type { Starter, StarterDoor } from './starters';
 export type AskConversationSlot = {
   /** The newest conversation's record, or null when there is none to show. */
   body: ReactNode | null;
-  /** What it proposes that waits for the person, or null. */
-  proposals?: ReactNode;
+  /** Its tool calls held for the person's answer, or null. */
+  held?: ReactNode;
   /**
    * What it published, each with its live state: a strip under its head, outside the scroll, or absent where it
    * published nothing.
@@ -191,7 +191,7 @@ export function AskPanel({
         {conversation?.wired ?? (talking ? (
           <>
             {conversation!.body}
-            {conversation!.proposals}
+            {conversation!.held}
           </>
         ) : starting)}
       </div>

@@ -534,25 +534,13 @@ which names no session, so its proposal lands under `DAORIS_HOME` as one from *a
 did not start*. A malformed rule, a scope with no name or an empty reason is refused with nothing
 written. With no home at all, every proposal is refused.
 
-**Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers one tool. `go_propose` is a place to open, changing nothing: a view, a Settings domain, or a part
-such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; the front door's
-way to take a person to the place (D161); one quest or ask on Quests as its `item`, which the driver judges
-against the machine's records, or one session on Sessions, judged against the machine's own;
-Repositories' Add repository or Import a folder may carry the `workspace` the drawer opens with, a name and never a folder; Sessions' New conversation, the part `new`,
-may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder. Every
-other change is a press of Daoris's verb, never proposed (D261): a new ask with `daoris ask`, a place's set-up with `daoris place …
+**Ask Daoris proposes nothing here** (D261). A place to open is a link in its answer, which the window opens; every
+change is a press of Daoris's verb: a new ask with `daoris ask`, a place's set-up with `daoris place …
 --apply`, an agent's update or pin and an account's use, order and cool-off with `daoris agent`, a plugin's add, update, switch and approval with
 `daoris plugin` and `daoris plugins approve|withdraw`, bringing repositories up to date with `daoris tree sync --yes`, sessions archived,
 unarchived or deleted with `daoris sessions`, one ask's or quest's work paused or resumed with `daoris ask|quest`, and a clear of finished
 history with `daoris quest|ask clear` and `daoris history clear`, and a workflow's version with `daoris workflow apply <id>
-drafts/<id>.json --base <version>` on a graph written in the room's `drafts/` folder. It writes
-one file under
-`<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
-whether the route would take it is the driver's, which judges it with the route's own rules before
-the person sees a card, and settles it when they press Apply or Not now. Of the sessions Daoris runs,
-only Ask Daoris is listed the tools (CONTEXTONE1d2), only the helper's room allows them, and a proposal is shown only in the
-conversation that made it.
+drafts/<id>.json --base <version>` on a graph written in the room's `drafts/` folder.
 
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the

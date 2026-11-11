@@ -26,7 +26,6 @@ public sealed class OwnerSetCensusTests
         ["REGISTRY_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // opens a department's folder in the file manager; changes nothing
         ["NOTICE_DISMISS"] =OwnerNone.ActsOnNothing, // the owner's news dismissed, by its id or a workspace's
         ["NOTICES_READ"] = OwnerNone.ActsOnNothing, // the owner's news marked read by their ids
-        ["HELP_DISMISS"] = OwnerNone.ActsOnNothing, // a proposal set aside by its id; the Apply is what acts
         ["CHANNEL_MARK"] = OwnerNone.ActsOnNothing, // a read mark on an ask's channel, which never moves back
         ["PERSON_CONFIRM"] = OwnerNone.ActsOnNothing, // a card answered by its id; the press it confirms runs through this dispatcher and is marked
         ["PERSON_CONFIRM_SHOWN"] = OwnerNone.ActsOnNothing, // a card said shown, by its id
@@ -137,7 +136,6 @@ public sealed class OwnerSetCensusTests
         }
     }
 
-    // ——— The sweep.
 
     /// <summary>What the sweep reads of a handler: what its route declares a successful answer changed, and the target fields its body reads.</summary>
     internal sealed record HandlerFacts(StateScopes Changes, string? Session, IReadOnlyList<string> Fields, string Body, string File);
@@ -153,7 +151,7 @@ public sealed class OwnerSetCensusTests
         var failures = new List<string>();
         foreach (var (route, mark) in marks)
         {
-            if (mark.ByPlan || !handlers.TryGetValue(route, out var handler)) continue;
+            if (!handlers.TryGetValue(route, out var handler)) continue;
             var mutating = (handler.Changes & RoleScopes) != 0 || handler.Session is not null;
             var names = handler.Fields.Count > 0;
             // A handler that hands its payload to a helper of its file (the lines' scoped choices, the work's plans) reads it there.

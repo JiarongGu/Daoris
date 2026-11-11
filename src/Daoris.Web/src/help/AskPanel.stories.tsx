@@ -9,7 +9,7 @@ import { BackToBottom } from '../work/conversation/SessionConversation';
 import { AskHistory } from './AskHistory';
 import { type AskConversationSlot, AskPanel } from './AskPanel';
 import type { HelpConversationRow } from './history';
-import { ProposalCard } from './ProposalCard';
+import { GoOpener } from './goLink';
 import { publishedCounts, publishedItems } from './published/published';
 import { PublishedList } from './published/PublishedList';
 import { starters } from './starters';
@@ -51,7 +51,6 @@ export const OneLine: Story = {
 
 export const LacksNothing: Story = { args: { helper: 'claude-code-acp' } };
 
-/** The conversation takes the panel, and the composer sits at its foot. The record's own look is the conversation's stories'. */
 export const Talking: Story = {
   args: {
     helper: 'claude-code-acp',
@@ -69,73 +68,20 @@ export const Talking: Story = {
   },
 };
 
-/** What the conversation proposes sits under it, for the person to apply or not. */
-export const Proposing: Story = {
+export const AGoLink: Story = {
   args: {
     ...Talking.args,
     conversation: {
       ...Talking.args!.conversation!,
-      proposals: (
-        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
-          <ProposalCard
-            proposal={{
-              id: 'p1a2b3c4', kind: 'go',
-              describe: 'Open Repositories → `web-app`, its Workflow.',
-              terminal: '',
-              why: 'you asked where its pull request flow is set',
-            }}
-            onApply={() => {}}
-            onDismiss={() => {}}
-          />
-        </ul>
+      body: (
+        <GoOpener.Provider value={() => {}}>
+          <Markdown text={'Its pull request flow is set on [the workspace\'s Workflow](daoris:go?view=projects&part=workspace-workflow),'
+            + ' and the quest is on [Quests](daoris:go?view=quests&item=q2taken0).'} />
+        </GoOpener.Provider>
       ),
     },
   },
 };
-
-/** A card for each door built since: a go to a screen, which changes nothing and carries no command. */
-export const ProposingEveryKind: Story = {
-  args: {
-    ...Talking.args,
-    conversation: {
-      ...Talking.args!.conversation!,
-      proposals: (
-        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
-          {[
-            {
-              id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
-              why: 'you asked where to name its agent',
-            },
-          ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
-        </ul>
-      ),
-    },
-  },
-};
-
-/** A published quest a session has taken: a go card saying so, *Go there* beside *Dismiss*, which only takes the card away. */
-export const ProposingAGoToATakenQuest: Story = {
-  args: {
-    ...Talking.args,
-    conversation: {
-      ...Talking.args!.conversation!,
-      proposals: (
-        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
-          <ProposalCard
-            proposal={{
-              id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
-              why: 'you asked where the quest went',
-            }}
-            onApply={() => {}}
-            onDismiss={() => {}}
-          />
-        </ul>
-      ),
-    },
-  },
-};
-
-export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
 
 export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },

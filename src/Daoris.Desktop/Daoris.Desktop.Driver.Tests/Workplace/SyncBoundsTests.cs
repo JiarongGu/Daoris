@@ -83,7 +83,7 @@ public sealed partial class SyncBoundsTests
     private static Dictionary<string, double> PageBounds()
     {
         var call = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src", "bridge", "call.ts"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Web", "src", "bridge", "call.ts"));
         var table = HostBounds().Match(call);
         Assert.True(table.Success, "bridge/call.ts holds no `export const hostBounds = { … }`.");
         return BoundRow().Matches(table.Groups[1].Value)

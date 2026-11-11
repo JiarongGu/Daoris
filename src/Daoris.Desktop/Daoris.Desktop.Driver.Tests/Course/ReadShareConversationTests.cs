@@ -112,7 +112,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.True(told);
     }
 
-    // ——— A hand-over's files (HandOverFiles, HandOverAskFiles).
 
     /// <summary><see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
     [Fact]
@@ -153,7 +152,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("a1b2c3d4", HandOverAskStates.Waiting, "codex-acp"), (state!.Id, state.State, state.Agent));
     }
 
-    // ——— A helper's and a partner's files.
 
     /// <summary><see cref="HelperFiles.ReadState"/> (HelperFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
     [Fact]
@@ -297,64 +295,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(["engine"], access.CheckoutsOff);
         Assert.Equal([ActFamilies.Settings], access.Acts);
     }
-
-    // ——— Ask Daoris's proposals, each file as the service's box writes it.
-
-    private static readonly HelpMachineFacts Facts = new(Repositories: ["engine"], Workspaces: ["default", "work"], Agents: ["claude-code"]);
-
-    /// <summary>A proposal's file as the service's <c>HelpProposalBox</c> writes it, moved into place.</summary>
-    private string Proposal(string id, string kind, string door, string? target = null, string? workspace = null)
-    {
-        var path = Path.Combine(HelpProposals.FolderOf(_home), $"{id}.json");
-        Directory.CreateDirectory(HelpProposals.FolderOf(_home));
-        AtomicFile.WriteText(path, new JsonObject
-        {
-            ["id"] = id, ["proposed"] = "2026-10-23T09:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
-            ["kind"] = kind, ["door"] = door, ["target"] = target, ["workspace"] = workspace, ["value"] = null,
-            ["sentence"] = null, ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
-        }.ToJsonString());
-        return path;
-    }
-
-    /// <summary><see cref="HelpProposals.Pending"/> reads a conversation's proposals while their move into place still holds them.</summary>
-    [Fact]
-    public void A_pending_proposal_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Proposal("p1", "sync", "sync", "engine");
-
-        var pending = Held(path, () => HelpProposals.Pending(_home, "h1"));
-
-        var proposal = Assert.Single(pending);
-        Assert.Equal(("p1", "sync", "engine", "the person asked"), (proposal.Id, proposal.Kind, proposal.Target, proposal.Why));
-    }
-
-    /// <summary><see cref="HelpProposals.Find"/> reads a proposal while its move into place still holds it.</summary>
-    [Fact]
-    public void A_proposal_is_found_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Proposal("p1", "sync", "sync", "engine");
-
-        var proposal = Held(path, () => HelpProposals.Find(_home, "p1"));
-
-        Assert.Equal(("sync", "engine", "h1", "proposed"), (proposal!.Kind, proposal.Target, proposal.Session, proposal.State));
-    }
-
-    /// <summary><see cref="HelpProposals.Settle"/> reads the proposal it settles while its move into place still holds it, every other field kept.</summary>
-    [Fact]
-    public async Task A_proposal_is_settled_from_the_file_its_move_into_place_still_holds()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Proposal("p1", "sync", "sync", "engine");
-
-        await HeldWhileRead(path, () => HelpProposals.Settle(_home, "p1", "dismissed", "not now"));
-
-        var settled = HelpProposals.Find(_home, "p1")!;
-        Assert.Equal(("dismissed", "engine", "the person asked"), (settled.State, settled.Target, settled.Why));
-    }
-
-
 
     // ——— A brainstorm's files.
 

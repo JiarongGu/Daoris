@@ -23,7 +23,7 @@ vi.mock('@shenora/react', () => ({
 import { keys } from '../../data/queries';
 import { useHarnesses } from '../agents/agents';
 import { useBrowserSettings } from '../browser';
-import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED, useHelpConversations } from '../help';
+import { HELP_HISTORY, HELP_PUBLISHED, HELP_WIRED, useHelpConversations } from '../help';
 import { historyKey, useHistoryPlan } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { usePlugins } from '../plugins';
@@ -138,12 +138,12 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['plugins', [keys.plugins]],
     // The agents this machine can run, what each start would run on and the accounts, all under the roster's key.
     ['harnesses', [keys.harnesses, keys.allStarts, keys.accounts]],
-    // The remaining presses' families: the tools, with what a switch of git would change; Ask Daoris's history and
-    // what each conversation proposed; the browser's settings.
+    // The remaining presses' families: the tools, with what a switch of git would change; Ask Daoris's history; the
+    // browser's settings.
     ['tools', [[...ALL_TOOLS, 'list', false], [...ALL_TOOLS, 'git', 'system', '', '']]],
     // And the receipts *What it has* shows, which a resume or a change of mode adds while it is open. And
-    // what a conversation published, which an Apply adds.
-    ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1'], [...HELP_WIRED, 'h1'], [...HELP_PUBLISHED, 'h1']]],
+    // what a conversation published, which a press adds.
+    ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_WIRED, 'h1'], [...HELP_PUBLISHED, 'h1']]],
     ['browser', [keys.browserSettings]],
     // How this Daoris is wired, told as a walk starts and as its sizes land.
     ['wiring', [keys.systemWiring, keys.systemSpace]],

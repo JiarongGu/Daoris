@@ -53,7 +53,7 @@ public sealed class AskShortCommandTests
         Assert.Contains("--short goes with a new ask's words", problem);
         Assert.Contains("daoris ask … --short \"…\"", AskArguments.Usage);
         var made = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
         Assert.Contains("shortTitle: ask.Short", made);
     }
 }

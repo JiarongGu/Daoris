@@ -21,7 +21,7 @@ internal sealed class ClassedByAttribute(string route, string field, PipeClass @
 
 /// <summary>
 /// What a person's or a window's route marks <c>owner-set</c>: the payload's fields that name what the owner acts on, by their kind,
-/// or <see cref="None"/> with its closed reason (<see cref="OwnerNone"/>), or <see cref="ByPlan"/>. A route naming two fields of one
+/// or <see cref="None"/> with its closed reason (<see cref="OwnerNone"/>). A route naming two fields of one
 /// kind says the mark twice.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
@@ -50,9 +50,6 @@ internal sealed class OwnerAttribute(string route) : Attribute
     public string? Quest { get; set; }
 
     public string? None { get; set; }
-
-    /// <summary>It marks by the plan it applies, each proposal door declaring its own target (<c>HelpProposals.Owned</c>).</summary>
-    public bool ByPlan { get; set; }
 
     public IEnumerable<OwnerField> Fields()
     {

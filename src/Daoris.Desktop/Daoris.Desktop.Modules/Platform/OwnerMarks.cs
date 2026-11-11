@@ -49,9 +49,9 @@ public sealed record OwnerField(string Field, string Kind, bool Many = false);
 
 /// <summary>
 /// A route's column of <see cref="PipeTargets"/>: the fields that name what it acts on, or <see cref="None"/> with its
-/// closed reason, or <see cref="ByPlan"/> where it marks by the plan it applies (<c>HELP_APPLY</c>).
+/// closed reason.
 /// </summary>
-public sealed record OwnerTarget(IReadOnlyList<OwnerField> Fields, string? None = null, bool ByPlan = false)
+public sealed record OwnerTarget(IReadOnlyList<OwnerField> Fields, string? None = null)
 {
     public static OwnerTarget Of(params OwnerField[] fields) => new(fields);
 
@@ -152,11 +152,11 @@ public static class OwnerMarks
 {
     /// <summary>
     /// What <paramref name="module"/>'s <paramref name="route"/> names in <paramref name="payload"/>, by its row; null where the route has
-    /// no row or marks by its plan. A field another casing spells is read too, as the handler's payload reader reads it.
+    /// no row. A field another casing spells is read too, as the handler's payload reader reads it.
     /// </summary>
     public static IReadOnlyList<OwnerNamed>? Of(string module, string route, JsonElement? payload, PipeTargets? targets = null)
     {
-        if ((targets ?? PipeTargets.Daoris).Mark(module, route) is not { ByPlan: false } row) return null;
+        if ((targets ?? PipeTargets.Daoris).Mark(module, route) is not { } row) return null;
         var named = new List<OwnerNamed>();
         if (payload is not { ValueKind: JsonValueKind.Object } body) return named;
         foreach (var field in row.Fields)

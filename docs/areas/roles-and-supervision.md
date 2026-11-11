@@ -49,7 +49,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpModes`, `HelpSwap`, `ConfiguredAccess`, `ActFamilies`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Knowledge/ConfiguredAccess.cs`, `Knowledge/ActFamilies.cs`, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access and its families of acts, what a start handed |
-| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's one proposal kind, `go`, judged by its route's code and applied by the person |
+| `HelpPlaces`, `HelpRoomPlaces`, `goLink` | `Help/HelpPlaces.cs`, `Knowledge/Room/HelpRoomPlaces.cs`, `Web/help/goLink.tsx` | The places a go link names, the twin of the page's `help/places.ts`; the room's spelling of the link; the page's opener |
 | `SupervisorResolution`, `SupervisorGrants`, `SupervisorKinds`, `SupervisorDeciders`, `SupervisorConversion` | `Roles/Supervisor{Resolution,Grants,Kinds,Deciders,Conversion}.cs` | Who decides a kind at a place; the one grant check; the kinds and their acts; `ROLES`' `deciders`; the door's `not-converted` until the migration record (`Store/MigrationRecord.cs`) lists `supervisor-kinds` |
 | The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, *Who decides here* (`WhoDecidesHere`, `whoDecides.ts`) |
 
@@ -444,11 +444,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 **Ask Daoris**
 
-55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests (`daoris ask`, pressed), presses a change, or proposes a workflow. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
-    it names, every workspace being within its reach (D253 point 3). A quest's or session's own acts stay in its own conversation: accepting a departure and
-    handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
-    verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
+55. Ask Daoris answers from the records, takes the person to a place with a go link in its answer, starts work as an ask the
+    intake turns into quests (`daoris ask`, pressed), or presses a change, a workflow's version included. A go link is
+    `[words](daoris:go?view=…&domain=…&part=…&item=…&workspace=…&repository=…&sentence=…)`, its fields the places the room
+    lists (`HelpPlaces`, the twin of the page's `help/places.ts`); the window opens it on the person's press through the
+    starters' door (`goLink.tsx`, `placeDoor`), and one that names no place this window has, or sits outside Ask Daoris's
+    panel, is its words alone. It asks no yes and changes nothing. A quest it publishes (`daoris:help`, no registry row) is
+    filed in the workspace of the repository it names, every workspace being within its reach (D253 point 3). A quest's or
+    session's own acts stay in its own conversation: accepting a departure and handing a landed branch to a landing plugin
+    are the person's own presses, which a link reaches; a run's Accept has a terminal verb
+    (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253, D261)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
@@ -487,8 +492,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
-    judged default put it on a card naming the session. Only `go` (`go_propose`) is left as a proposal under `Help/Proposals/`, and it
-    changes nothing; every other change Ask Daoris asks for is a press of the verb, a workflow's version included: the agent writes the
+    judged default put it on a card naming the session. Every change Ask Daoris asks for is a press of the verb, and it has no
+    proposal tool; the room's *What you may do* names the verbs alone (`HelpRoomVerbs`). A workflow's version: the agent writes the
     graph in the room's `drafts/` folder and presses `daoris workflow apply <id> drafts/<id>.json --base <version>`, whose card shows the
     graph as the editor draws it and its changes (`WorkflowSaveView`, the view of `WORKFLOW_SAVE`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
@@ -554,9 +559,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *unread: Daoris restarted*. A terminal holder of the kind reads nothing: its ranges stay queued, and the door lists none.
     (from D183, D253, D271, D272)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
-60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
-    of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
-    door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233, D261)
+60. A route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
+    action. The room's doors table says where each change is and, where Ask Daoris never asks it on the card, why
+    (`HelpDoorAsk.Never`); a row that says nothing is one it presses, asked on the card. *Done at a terminal* names the acts it
+    never presses, by their commands. A home an older build kept Ask Daoris's proposals in has that folder removed once by the
+    home's migration (`HelpProposalsStep`), each file copied to the salvage folder and counted in its `home.migrated` line.
+    (from D110, D170, D233, D261)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person
     in restricted mode. A plugin changes Daoris only through the person's presses, each on its card. (from D170, D183, D261)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from
@@ -585,11 +593,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 **Tests that pin it.** Driver: `Roles/*Tests` (catalogue, door, verbs, staffing, walk, judge, ledger, rules, decisions,
 holder key, steward), `Install/HomeMigrationTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
-`Loop/StaffPolicy*TickTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
+`Loop/StaffPolicy*TickTests`, `Help/HelpPlacesTests`, `Install/HelpProposalsStepTests`, and
 `Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleRoleTerminalTests`,
 `Platform/RoleTerminalTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
-`Help/HelpRoleProposalTests`, `Help/HelpProposalBoxKindsTests`, `Mcp/McpRoleFilterTests`, `Sessions/SupervisorWordTests`.
-Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
+`Help/HelpRoleProposalTests`, `Mcp/McpRoleFilterTests`, `Mcp/McpToolRegistrationTests`, `Sessions/SupervisorWordTests`.
+Web: `agents/roles/*.test.ts(x)`, `agents/setup/*.test.tsx` and `help/goLink.test.tsx`.
 
 **Gates that bite.** `driver`, `modules`, `censuses`, `service` (a proposal's twin, the call table), `web-unit` and
 `web`, `cli` (`npm run verify`: the transitional markers, the size ratchet), and `orient-index`, `test-map`, `code-map`.

@@ -22,7 +22,7 @@ public sealed class HelpRoomLandingTests
         Assert.Contains("No plugin that performs pull-request steps is installed here", none);
         Assert.Contains("`daoris plugin add <folder>`", none);
         // The Plugins place is named, and Settings → Plugins is not.
-        Assert.Contains("or the Plugins place), so never propose a workflow naming one", none);
+        Assert.Contains("or the Plugins place), so never press a workflow naming one", none);
         Assert.DoesNotContain("Settings → Plugins", none);
     }
 

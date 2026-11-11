@@ -27,8 +27,8 @@ public sealed class HelpRoomOwnPluginsTests
         Assert.Contains("- `github-pull-request` (GitHub pull request 1.0.0): speaks on `work/perform`, to perform a step of the work, "
             + "once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step opens the pull request of the branch Daoris pushed; needs: gh, signed in: `gh auth login`.", offers);
         Assert.Contains("- `in-app-browser` (In-app browser 1.0.0): hands every session `browser`; needs: node on the PATH.", offers);
-        // No landing plugin installed, and one offered: the helper may propose installing it first.
-        Assert.Contains("this install offers `github-pull-request`, which you may propose installing first.", offers);
+        // No landing plugin installed, and one offered: the helper may press its install first.
+        Assert.Contains("this install offers `github-pull-request`, whose install you may press first.", offers);
         Assert.DoesNotContain("## Daoris's own plugins", HelpRoom.Render(HelpRoomFixture.Machine));
     }
 

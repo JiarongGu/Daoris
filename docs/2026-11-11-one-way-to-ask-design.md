@@ -110,7 +110,7 @@ call table) in the same change; the room names a kind's tool only while its row 
 | g-vi | `ask`, `clear`, `sync`, `setup`: the ask's review choice on `daoris ask` where the verb lacks it; the plan doors the card already has become those routes' views; the four kinds go. |
 | g-vii | `workflow`: a press naming a draft the room writes, viewed as the design's card; after APPROVE1's finisher leaves `Workflows/`. |
 | g-viii | C2: housekeeping and chosen settings as families of acts, the record converted on the person's press, the `housekeeping_*` and `settings_*` tools gone. |
-| g-ix | The box goes: `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `HelpScreenDoors`, `ProposalCard`, the proposals folder cleared; `go` a link of its own; the room's *What you may do* names verbs alone; rule 60's doors table says *asks on the card*. |
+| g-ix | The box goes: `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `HelpScreenDoors`, `ProposalCard`, the proposals folder cleared; `go` a link of its own; the room's *What you may do* names verbs alone; rule 60's doors table says *asks on the card*. *Built.* |
 
 ## 6. Not changed
 

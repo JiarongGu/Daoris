@@ -76,7 +76,6 @@ public sealed class PipeCensusTests
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (leave.Module, PipeCensus.Daoris.Of(leave.Module, leave.Route), leave.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.RoleRoutes.StartTerminal));
-        // The supervisor's one door is two routes beside the steward's one, and nothing else of the class.
         Assert.Equal(
             ["ROLE_ACT", "SUPERVISOR_DECIDE", "SUPERVISOR_LEAVE"],
             PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
@@ -509,7 +508,6 @@ public sealed class PipeCensusTests
     [InlineData("SUPERVISOR_LEAVE", PipeDrain.Passes)]
     // A review's findings: Ask Daoris is told a dismissal as a turn, and a setting can release work the look starts outside the drain's
     // holds of quests (a helper asked under `ask`, now `on`).
-    [InlineData("HELP_DISMISS", PipeDrain.Waits)]
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]

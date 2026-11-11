@@ -12,10 +12,10 @@ namespace Daoris.Driver;
 /// write, since no one else owns it. Never a session tree, and never asked about by git — it is no
 /// repository, and git asked about it walks UP.</para>
 ///
-/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and proposes, and what it is
+/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and presses Daoris's verb, and what it is
 /// handed at spawn reads the checkouts reading across allows, and nothing else: over the protocol
 /// door anything unlisted is refused by construction. A change is the person's, on a screen or at a
-/// terminal; a proposal is a card the person confirms.</para>
+/// terminal; a press waits on the card the person confirms.</para>
 ///
 /// <para><b>By section.</b> What it says is <see cref="HelpRoomSections.All"/>, in order: each section a
 /// file of its own under <c>Knowledge/Room/</c> that says one thing and describes the facts it says, so a new
@@ -56,13 +56,10 @@ public static class HelpRoom
     /// <summary>Daoris's own verb in the forms the harness matches: unasked, since each change it presses waits on the person's card.</summary>
     public static readonly IReadOnlyList<string> Verb = ["Bash(daoris:*)", "PowerShell(daoris:*)"];
 
-    /// <summary>The room's folder for a workflow's drafts: the graph a <c>daoris workflow apply</c> press names, which changes nothing until the person's yes.</summary>
-    public const string Drafts = "drafts";
+    /// <summary>The one write the room allows: a file under <see cref="KnowledgeRoomPaths.Drafts"/>.</summary>
+    public const string DraftsRule = $"Edit(./{KnowledgeRoomPaths.Drafts}/**)";
 
-    /// <summary>The one write the room allows: a file under <see cref="Drafts"/>.</summary>
-    public const string DraftsRule = $"Edit(./{Drafts}/**)";
-
-    /// <summary>The tools the room allows: reading the family, Daoris's own verb and writing a draft in <see cref="Drafts"/>; nothing else that changes the machine.</summary>
+    /// <summary>The tools the room allows: reading the family, Daoris's own verb and writing a draft in <see cref="KnowledgeRoomPaths.Drafts"/>; nothing else that changes the machine.</summary>
     public static readonly IReadOnlyList<string> Allowed =
     [
         .. Verb,
@@ -72,10 +69,6 @@ public static class HelpRoom
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_get",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_repositories",
         $"mcp__{KnowledgeConnector.ServerName}__quest_list",
-        // It proposes, and the person applies: each kind's own tool, in the kinds' order. Never
-        // `permission_propose`: it applies a narrowing at the tick with nobody's press, and every change
-        // here is the person's.
-        .. HelpProposalKinds.All.Select(kind => $"mcp__{KnowledgeConnector.ServerName}__{kind.Tool}"),
     ];
 
     /// <summary><c>default</c>'s room, the whole machine's: <see cref="Folder"/> under the home.</summary>
@@ -118,7 +111,7 @@ public static class HelpRoom
     {
         var room = PathOf(home, machine.Home);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
-        Directory.CreateDirectory(Path.Combine(room, Drafts));
+        Directory.CreateDirectory(Path.Combine(room, KnowledgeRoomPaths.Drafts));
         // The families of acts granted and the checkouts turned off, as the record holds them as this start writes its room.
         var access = ConfiguredAccess.Read(home);
         AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with

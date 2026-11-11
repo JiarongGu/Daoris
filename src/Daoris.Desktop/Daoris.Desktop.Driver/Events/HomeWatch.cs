@@ -9,10 +9,8 @@ namespace Daoris.Driver;
 /// <param name="Stamps">What the topic's judge reads: each file's full path and its stamp, in whatever order.</param>
 public sealed record HomePart(string Folder, bool Subfolders, Func<string, ChangeKind, bool> Hears, Func<IEnumerable<KeyValuePair<string, string>>> Stamps)
 {
-    /// <summary>
-    /// Files the judge reads by name alone, never by listing a folder, each stamped present or absent: a name entering or
-    /// leaving this list is the list's change, never the file's, so it moves nothing. None by default.
-    /// </summary>
+    /// <summary>Files the judge reads by name alone, never by listing a folder, each stamped present or absent: a name entering or
+    /// leaving this list is the list's change, never the file's, so it moves nothing. None by default.</summary>
     public Func<IEnumerable<string>>? ByName { get; init; }
 
     /// <summary>One file of a folder, heard by its final name alone: a writer's temporary and its neighbours are not it.</summary>
@@ -27,62 +25,9 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
             () => [KeyValuePair.Create(full, HomeWrites.Stamp(full))]);
     }
 
-    /// <summary>
-    /// The <c>*.json</c> files of one folder, by their names and their <c>state</c>: a file
-    /// arriving or leaving moves it, and so does its state changing, so a proposal settled by another process (a terminal's Apply,
-    /// another window's Not now) reaches this window's card; a file written again with its state kept, a card's units kept in it, does
-    /// not. A file's state is read again only when its own stamp moved. A claim, a temporary a writer renames away and a folder are not heard.
-    /// </summary>
-    public static HomePart Named(string folder)
-    {
-        var full = Path.GetFullPath(folder);
-        var known = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
-        var gate = new object();
-        return new(
-            full,
-            Subfolders: false,
-            (moved, _) => !moved.Contains('/') && moved.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
-            () =>
-            {
-                if (!Directory.Exists(full)) return [];
-                lock (gate)
-                {
-                    var now = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var file in Directory.EnumerateFiles(full, "*.json"))
-                    {
-                        var stamp = HomeWrites.Stamp(file);
-                        now[file] = known.TryGetValue(file, out var last) && last.Stamp == stamp ? last : (stamp, StateOf(file));
-                    }
 
-                    known.Clear();
-                    foreach (var (file, read) in now) known[file] = read;
-                    return [.. now.Select(entry => KeyValuePair.Create(entry.Key, entry.Value.State))];
-                }
-            });
-    }
-
-    /// <summary>A record's <c>state</c>, or <c>present</c> where it has none or does not read (half-written: its next write moves it).</summary>
-    private static string StateOf(string file)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(file));
-            return document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("state", out var state)
-                && state.ValueKind == JsonValueKind.String
-                ? "state:" + state.GetString()
-                : "present";
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return "present";
-        }
-    }
-
-    /// <summary>
-    /// Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp: a record
-    /// arriving, leaving or written again moves it, so each writer in this process marks its own (<see cref="HomeWrites"/>).
-    /// </summary>
+    /// <summary>Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp: a record
+    /// arriving, leaving or written again moves it, so each writer in this process marks its own (<see cref="HomeWrites"/>).</summary>
     public static HomePart Records(string folder, bool subfolders)
     {
         var full = Path.GetFullPath(folder);
@@ -96,10 +41,8 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
                 : []);
     }
 
-    /// <summary>
-    /// The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
-    /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.
-    /// </summary>
+    /// <summary>The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
+    /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.</summary>
     public static HomePart Files(string folder, IReadOnlyList<string> names, IReadOnlyList<string> ways)
     {
         var full = Path.GetFullPath(folder);
@@ -148,10 +91,8 @@ public sealed class HomeWatch : IAsyncDisposable
         _chain = new Chain(_changes).Bind(ChainRanks.Read, ReadAsync);
     }
 
-    /// <summary>
-    /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
-    /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).
-    /// </summary>
+    /// <summary>The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
+    /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).</summary>
     public static HomeWatch ForDriver(
         string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
     {
@@ -177,19 +118,6 @@ public sealed class HomeWatch : IAsyncDisposable
 
     /// <summary>What a topic's judge lists of <paramref name="parts"/>, each file's full path with its stamp, which a test counts.</summary>
     internal static IReadOnlyDictionary<string, string> Listed(IEnumerable<HomePart> parts) => Read(parts).Stamps;
-
-    /// <summary>
-    /// Ask Daoris's proposals folder alone (<see cref="ChangeTopics.Help"/>): the window's own process watches it, whoever
-    /// holds the home's lease, since the connector writes there whichever loop drives. Not started: the caller starts it, and tells its
-    /// windows once at the start, since a proposal that arrived before the watch opened is in its first read.
-    /// </summary>
-    public static HomeWatch ForProposals(
-        string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
-    {
-        var watch = new HomeWatch(wake, every, source) { Log = log };
-        watch.Topic(ChangeTopics.Help, "proposals", HomeTopics.Of(ChangeTopics.Help, home));
-        return watch;
-    }
 
     /// <summary>
     /// <c>notices.json</c> alone (<see cref="ChangeTopics.Notices"/>): each process's own, whoever holds the home's lease, since
@@ -223,10 +151,8 @@ public sealed class HomeWatch : IAsyncDisposable
         return watch;
     }
 
-    /// <summary>
-    /// A topic whose judge is its own: handed nothing of what moved, it answers whether it woke anything, and the watch keeps
-    /// no stamps of its own for it. Before <see cref="Start"/>.
-    /// </summary>
+    /// <summary>A topic whose judge is its own: handed nothing of what moved, it answers whether it woke anything, and the watch keeps
+    /// no stamps of its own for it. Before <see cref="Start"/>.</summary>
     public void Topic(string topic, string subject, Func<bool> judge, params HomePart[] parts)
     {
         lock (_gate) _heard[topic] = new Heard(subject, parts, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)) { Judge = judge };
@@ -248,10 +174,8 @@ public sealed class HomeWatch : IAsyncDisposable
     /// <summary>The watch under the topics, which a test steps and settles.</summary>
     internal ChangeWatch Changes => _changes;
 
-    /// <summary>
-    /// A topic: <paramref name="subject"/> is the name its wake carries, and <paramref name="parts"/> the places it hears. What its files
-    /// hold now is taken as read, so only what moves after is a wake. Before <see cref="Start"/>.
-    /// </summary>
+    /// <summary>A topic: <paramref name="subject"/> is the name its wake carries, and <paramref name="parts"/> the places it hears. What its files
+    /// hold now is taken as read, so only what moves after is a wake. Before <see cref="Start"/>.</summary>
     public void Topic(string topic, string subject, params HomePart[] parts)
     {
         var (stamps, named) = Read(parts);

@@ -420,7 +420,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public void The_screens_discard_is_the_drivers_one_discard()
     {
-        // The bridge's files: its domains' handler classes.
         var sources = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
@@ -536,7 +535,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             .ToList();
 
         Assert.Contains(presses, press => press.File == "TreesTidyDesk.cs");
-        Assert.Contains(presses, press => press.File == "HelpScreenDoors.cs");
         Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
             $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
     }

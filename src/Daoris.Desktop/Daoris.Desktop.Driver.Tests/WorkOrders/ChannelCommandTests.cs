@@ -250,7 +250,7 @@ public sealed class ChannelCommandTests
             Id = "m1", Repository = "db", Agent = "claude-code", Text = "Which column holds the figure?",
         });
         var page = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src", "work", "channel.ts"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Web", "src", "work", "channel.ts"));
 
         Assert.StartsWith("Another session says, on the ask's channel (", claim);
         Assert.Contains("CHANNEL_CLAIM_OPENING = \"Another session says, on the ask's channel\"", page);

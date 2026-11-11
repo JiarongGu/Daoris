@@ -168,7 +168,7 @@ public sealed class ChainTable
         [
             ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests), ChainEvents.TimerOf(ChangeTopics.Config),
             ChainEvents.TimerOf(ChangeTopics.Plugins), ChainEvents.TimerOf(ChangeTopics.Lines), ChainEvents.TimerOf(ChangeTopics.Words),
-            ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
+            ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Gates),
             ChainEvents.TimerOf(ChangeTopics.Notices), ChainEvents.TimerOf(ChangeTopics.Accounts),
         ], []),
         // The evaluation runtime hears the look's deadline and a plugin's step; it writes only the units' node records, which no

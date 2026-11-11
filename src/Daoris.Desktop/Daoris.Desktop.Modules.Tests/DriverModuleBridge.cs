@@ -21,17 +21,6 @@ public abstract class DriverModuleBridge : Bridge
 
     protected DriverModule Module() => new(Bus, Loop());
 
-    /// <summary>
-    /// The person's Apply on the card as drawn now: the page sends the revision its card showed, so a test that
-    /// is not about the binding draws the card and presses what it shows.
-    /// </summary>
-    protected static async Task<JsonElement> ApplyShownAsync(IIpcModule module, string session, string id)
-    {
-        var drawn = await AnswerAsync(module, "HELP_PROPOSALS", new { session });
-        var card = drawn.GetProperty("proposals").EnumerateArray().First(each => each.GetProperty("id").GetString() == id);
-        return await AnswerAsync(module, "HELP_APPLY", new { id, revision = card.GetProperty("revision").GetString() });
-    }
-
     protected static async Task UntilAsync(Func<bool> condition)
     {
         var patience = DateTime.UtcNow + Poll.Patience;

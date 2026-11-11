@@ -34,7 +34,6 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["RECONCILE_PLAN"] = new { repository = "engine" },
         ["CONVERT_PLAN"] = new { },
         ["KEPT_READS"] = new { },
-        ["HELP_PROPOSALS"] =new { session = "a1b2c3d4" },
         ["HELP_BEYOND"] = new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
@@ -193,7 +192,6 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
             return Task.CompletedTask;
         });
 
-        // Nothing held yet, and the work held back: the ask answers pending, at once.
         var clock = Stopwatch.StartNew();
         var first = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} answered after {clock.Elapsed.TotalMilliseconds} ms");

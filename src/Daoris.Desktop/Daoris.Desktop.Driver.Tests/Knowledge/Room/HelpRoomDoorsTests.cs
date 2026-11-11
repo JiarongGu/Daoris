@@ -78,8 +78,8 @@ public sealed class HelpRoomDoorsTests
         Assert.DoesNotContain("Settings → Plugins", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
-        // It proposes: a card the person applies, through the connector's two tools.
-        Assert.Contains("Every setting is pressed, never proposed", agents);
+        // It presses, and the person says yes on the card.
+        Assert.Contains("Every setting is pressed, its card", agents);
         Assert.Contains("`daoris ask --workspace <name> \"…\"`", agents);
         Assert.DoesNotContain("ask_propose", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
@@ -182,7 +182,7 @@ public sealed class HelpRoomDoorsTests
         foreach (var said in new[]
         {
             "who takes part (agent alone, agent + you, you, automatic)", "where each was set", "what Daoris cannot do of it yet",
-            "or for Current the Setup row that sets it", "Ask Daoris never proposes it",
+            "or for Current the Setup row that sets it", "Ask Daoris never asks it on the card",
         })
         {
             Assert.Contains(said, current.To);
@@ -201,7 +201,7 @@ public sealed class HelpRoomDoorsTests
             Assert.Contains(said, run.Screen);
         }
 
-        foreach (var said in new[] { "each step's state", "the step the run stands at", "Ask Daoris never proposes it", "its owner's" })
+        foreach (var said in new[] { "each step's state", "the step the run stands at", "Ask Daoris never asks it on the card", "its owner's" })
         {
             Assert.Contains(said, run.To);
         }

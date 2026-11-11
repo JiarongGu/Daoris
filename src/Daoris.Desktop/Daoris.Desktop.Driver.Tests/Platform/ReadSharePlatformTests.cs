@@ -223,7 +223,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         var id = Guid.NewGuid().ToString();
         var presses = new SentPresses(_home);
         presses.Keep(new SentPress(id, "key-1", "SESSION_INPUT", now));
-        // A sent press is kept in its own home entry; `run/pipe/sent` is read only as a fallback.
         var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.PipeSent), id + ".json");
 
         using (MoveHold.Take(path))
@@ -264,24 +263,6 @@ public sealed class ReadSharePlatformTests : IDisposable
             Refused(path);
             var hold = Assert.Single(GitHolds.Read(_home));
             Assert.Equal(("origin", "all"), (hold.Remote, hold.Holds));
-        }
-    }
-
-    /// <summary><c>HomeWatch.StateOf</c>, reached through <see cref="HomePart.Named"/>'s stamps, reads a record's state while its move still holds it.</summary>
-    [Fact]
-    public void A_named_record_s_state_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var folder = DaorisHome.Entry(_home, HomeEntry.HelpProposals);
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "p1.json");
-        AtomicFile.WriteText(path, "{\n  \"state\": \"applied\"\n}\n");
-
-        using (MoveHold.Take(path))
-        {
-            Refused(path);
-            var stamp = Assert.Single(HomePart.Named(folder).Stamps());
-            Assert.Equal("state:applied", stamp.Value);
         }
     }
 

@@ -136,8 +136,6 @@ builder.Services.AddSingleton(intake);
 // Where a session's proposal to change the rules goes: the home the driver names on the
 // connector it offers — the one its rules live in — else the account's. A file there, never a row.
 builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
-// And Ask Daoris's, under the same home: a file each, for the person to apply.
-builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
 // And a working session's ask for a helper, and a helper's answer, under the same home: a file each.
 builder.Services.AddSingleton(HelperBox.FromEnvironment());
 // And a partner's answer for its piece, under the same home: one file, beside the driver's ask and state.

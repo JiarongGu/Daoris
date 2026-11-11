@@ -1,51 +1,15 @@
-import type * as React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { sentence } from '../../locales/format';
-import { useEveryAsk, useEveryQuest, useEverySession, useStandingsMark } from '../../data/queries';
-import { type HelpSettled, useHelpProposals, useHelpPublished, useSettleHelp } from '../../bridge/shell';
-import { placeDoor } from '../places';
-import { ProposalCard } from '../ProposalCard';
+import { useEffect, useMemo, useState } from 'react';
+import { useEveryAsk, useEveryQuest, useEverySession } from '../../data/queries';
+import { useHelpPublished } from '../../bridge/shell';
 import { publishedCounts, publishedItems } from '../published/published';
 import { PublishedList } from '../published/PublishedList';
 import { type StarterDoor } from '../starters';
 import { type Session } from '../../data/api';
-import { type TFunction } from 'i18next';
 
-export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
+export function useHelpFollow({ shown, onGo }: {
   shown: Session | null;
-  live: boolean;
-  setRefusal: React.Dispatch<React.SetStateAction<string | null>>;
   onGo: ((door: StarterDoor) => void) | undefined;
-  t: TFunction<"translation", undefined>;
 }) {
-  // What the conversation proposes: each card is judged by the route before it arrives, and
-  // Apply or Not now goes back into the conversation as the person's next message.
-  const proposals = useHelpProposals(shown?.id ?? null, live);
-  const settle = useSettleHelp();
-  const cards = proposals.data ?? [];
-  // What an Apply did beyond the driver's sentence: a go opens its place through the starters' door.
-  const applied = (answer: HelpSettled) => {
-    // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
-    if (answer.changed) setRefusal(answer.message);
-    const door = answer.go ? placeDoor(answer.go) : null;
-    if (door) onGo?.(door);
-  };
-  // A go card's sentence says where its quest, ask or session stands, so the plan its Apply judges
-  // moves with them. While one is shown it is drawn again at each push that moves a standing, never on a clock, so its Apply finds
-  // the plan it shows rather than answering that the plan changed.
-  const goShown = cards.some((card) => card.kind === 'go');
-  const standings = useStandingsMark(goShown);
-  const drawnAt = useRef<string | null>(null);
-  useEffect(() => {
-    if (standings === null) {
-      drawnAt.current = null;
-      return;
-    }
-    if (drawnAt.current !== null && drawnAt.current !== standings) void proposals.refetch();
-    drawnAt.current = standings;
-    // Asked again only as the standings move; the query's handle is read from this render.
-  }, [standings]);
-
   // What the conversation published: its own list, by id, each one's state read from the lists the
   // shell pushes, every workspace's, never asked on a clock. Read only where it published something; a row opens its record on Quests,
   // the door a go uses, and adds no act.
@@ -73,18 +37,5 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
     />
   ) : undefined;
 
-  const proposed = cards.length > 0 ? (
-    <ul aria-label={t('help.proposal.list')} className="m-0 mt-3 grid list-none gap-2.5 p-0">
-      {cards.map((proposal) => (
-        <ProposalCard
-          key={proposal.id}
-          proposal={proposal}
-          pending={settle.isPending}
-          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: applied, onError: (error) => setRefusal(sentence(error)) })}
-          onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
-        />
-      ))}
-    </ul>
-  ) : null;
-  return { proposed, published };
+  return { published };
 }

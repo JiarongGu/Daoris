@@ -69,7 +69,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
             PressSteps.Reach(PressSteps.Gate);
             await _gate.Task;
             PressSteps.Reach(PressSteps.Landing);
-            // Reached again: the same step tells nothing new.
             PressSteps.Reach(PressSteps.Landing);
             await _landing.Task;
             return new { Done = true };
@@ -650,10 +649,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("HELP_PIN", "sessions,help", "id")]
     [InlineData("HELP_FOCUS", "sessions,help", "session")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
-    [InlineData("HELP_DISMISS", "help", null)]
     // A set-up's Apply adds the repository's rule, so an Apply may move the rules too.
-    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,rules,history,registry,plugins,harnesses,help,browser", null)]
-    [InlineData("HELP_PROPOSALS", "", null)]
     [InlineData("HELP_CONVERSATIONS", "", null)]
     // What each start handed, read from the home; it changes nothing.
     [InlineData("HELP_WIRED", "", null)]

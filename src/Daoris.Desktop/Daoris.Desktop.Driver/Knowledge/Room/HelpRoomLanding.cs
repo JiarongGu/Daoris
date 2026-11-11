@@ -27,7 +27,7 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         // The switch is the person's standing say-so for a landing with no press, so the helper
         // proposes it only when they ask for it.
         text.Append("A landing rule may add `--auto-accept`: a quest's done then lands its work with no press, onto a\n");
-        text.Append("branch or into its line. It is the person's standing say-so, so propose it only when they ask for it.\n");
+        text.Append("branch or into its line. It is the person's standing say-so, so press it only when they ask for it.\n");
         // G8: a pull request is a plugin's performed step in the workflow, never a landing method.
         text.Append("A pull request is a step of a workflow, performed by a plugin after Daoris pushes the branch; a landing\n");
         text.Append("rule never names one.\n");
@@ -35,9 +35,9 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         text.Append(machine.LandingPlugins.Count > 0
             ? $"Plugins that perform pull-request steps here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
             : "No plugin that performs pull-request steps is installed here: the person installs one (`daoris plugin add <folder>`,\n"
-              + "or the Plugins place), so never propose a workflow naming one"
+              + "or the Plugins place), so never press a workflow naming one"
               + (offeredLanders.Count > 0
-                  ? $" until it is installed; this install offers {string.Join(" and ", offeredLanders)}, which you may propose installing first.\n\n"
+                  ? $" until it is installed; this install offers {string.Join(" and ", offeredLanders)}, whose install you may press first.\n\n"
                   : ".\n\n"));
         return text.ToString();
     }

@@ -49,7 +49,6 @@ const row = (session: string, workspace: string, title: string, live = false) =>
 const ACTIVE = ['queued', 'starting', 'working', 'awaiting-person'];
 let SESSIONS: ReturnType<typeof help>[] = [];
 let ROWS: (ReturnType<typeof row> & { focus?: Payload; focusNext?: Payload | null })[] = [];
-// Two workspaces, so the window's switcher offers a choice between them, and *every workspace* is a choice of its own.
 const REGISTRY = [{ repository: 'engine', workspace: 'games' }, { repository: 'ledger', workspace: 'work' }];
 
 function respond(url: string): Response {
@@ -80,7 +79,6 @@ function bridge(start: (payload: Payload) => Start | Promise<Start> = () => ({ s
       case 'SESSION_HISTORY': return { session: payload.id, events: [], earlier: false, latest: 0 };
       case 'SESSION_QUEUE': return { session: payload.id, queued: [], taking: false };
       case 'HELP_CONVERSATIONS': return listing(payload);
-      case 'HELP_PROPOSALS': return { session: payload.session, proposals: [] };
       default: return {};
     }
   });

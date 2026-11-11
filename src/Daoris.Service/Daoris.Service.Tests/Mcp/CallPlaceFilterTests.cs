@@ -33,7 +33,7 @@ public sealed class CallPlaceFilterTests : IDisposable
     [InlineData("quest_list", "search")]
     [InlineData("handback_read", "search")]
     [InlineData("checkout_read", "read")]
-    [InlineData("go_propose", "propose")]
+    [InlineData("handover_propose", "propose")]
     [InlineData("quest_publish", "press")]
     public void Each_door_s_call_is_its_act(string tool, string act)
     {
@@ -48,7 +48,7 @@ public sealed class CallPlaceFilterTests : IDisposable
     {
         Assert.Equal("README.md", CallPlace.Of("checkout_read", Arguments(new { repository = "api", path = "README.md" }))!.What);
         Assert.Equal("release", CallPlace.Of("knowledge_search", Arguments(new { query = "release", workspace = "all" }))!.What);
-        Assert.Equal("go", CallPlace.Of("go_propose", Arguments(new { repository = "api" }))!.What);
+        Assert.Equal("handover", CallPlace.Of("handover_propose", Arguments(new { repository = "api" }))!.What);
         var read = CallPlace.Of("checkout_read", Arguments(new { repository = "api" }))!;
         Assert.Equal(("api", (string?)null), (read.Repository, read.Workspace));
     }

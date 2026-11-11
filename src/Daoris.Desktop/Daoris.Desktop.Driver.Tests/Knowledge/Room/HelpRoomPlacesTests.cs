@@ -6,8 +6,8 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomPlacesTests
 {
     /// <summary>
-    /// The places `go_propose` may name are listed from the driver's own table, the one it judges a
-    /// go by — so the room and the judge cannot disagree about which screens exist.
+    /// The places a go link may name are listed from the driver's twin of the page's table, so the room and the window
+    /// that opens the link cannot disagree about which screens exist; the link is spelled as the page reads it.
     /// </summary>
     [Fact]
     public void The_room_lists_every_place_a_go_may_name()
@@ -15,6 +15,9 @@ public sealed class HelpRoomPlacesTests
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
         Assert.Contains("## Where you may take the person", agents);
+        Assert.Contains("`[the words they read](daoris:go?view=<view>&…)`", agents);
+        Assert.Contains("`[Settings → Git](daoris:go?view=settings&domain=git)`", agents);
+        Assert.DoesNotContain("go_propose", agents);
         foreach (var (id, _) in HelpPlaces.Views) Assert.Contains($"`{id}`", agents);
         foreach (var (id, name) in HelpPlaces.Domains) Assert.Contains($"`{id}` ({name})", agents);
         foreach (var (_, id, name) in HelpPlaces.Parts) Assert.Contains($"`{id}` ({name})", agents);
@@ -131,10 +134,7 @@ public sealed class HelpRoomPlacesTests
         Assert.Contains("- Settings domains: `start` (Get started), ", places);
         Assert.DoesNotContain("`plugins` (Plugins), `browser`", places);
         Assert.DoesNotContain("`search` (Search), `agents`", places);
-        foreach (var (was, _) in HelpPlaces.Kept)
-        {
-            Assert.DoesNotContain(HelpPlaces.Views, view => view.Id == was.View && was.Domain is null);
-            Assert.DoesNotContain(HelpPlaces.Domains, domain => domain.Id == was.Domain);
-        }
+        Assert.DoesNotContain(HelpPlaces.Views, view => view.Id is "search" or "convergence");
+        Assert.DoesNotContain(HelpPlaces.Domains, domain => domain.Id is "plugins" or "workspace" or "permissions");
     }
 }

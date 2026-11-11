@@ -128,7 +128,7 @@ export const HOME_ENTRIES = [
   row('handed', 'data', 'data/handed', 'handed'),
   row('setup', 'data', 'data/setup', 'setup'),
   row('workflows', 'data', 'data/workflows', 'workflows'),
-  row('help-proposals', 'data', 'data/help/proposals', 'help/proposals'),
+  row('help-proposals', 'data', 'data/help/proposals', 'help/proposals'), // a deleted box, named so the desktop's migration finds it
   row('configured-access', 'data', 'data/configured-access.json', 'configured-access.json'),
   row('opinion-gates', 'data', 'data/opinions/gates', 'opinions/gates'),
   row('opinion-dues', 'data', 'data/opinions/due.json', 'opinions/due.json'),
