@@ -132,6 +132,8 @@ public static class RunNodeWords
             {
                 By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
+                // The supervisor's word names the record its decision read, as its release found it, for the pass to hold the work to.
+                Revision = by is null ? null : revision?.Trim(),
             };
             if (act == NodeWordActs.Accept && by is null && declared.Kind == NodeKinds.Review)
             {

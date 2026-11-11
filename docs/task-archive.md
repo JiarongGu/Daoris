@@ -110,6 +110,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1e's third part and REVIEWUX1i's card — the supervisor's decision on the review, its sentence by kind (2026-11-12, D273)
+
+> **REVIEWUX1e, third part** (driver, modules): Outcome: `RUN_REVIEW` answers the supervisor's newest decision on the attempt it reads, from any session of the run's chain, as memory keeps it (`RunReviewSupervisor`, `LandingOn`): its act, held with the moment it goes on, then released, gone on or closed, the session *Overrule* names, the kind of work, and whether it names the record read. Proof: `RunReviewSupervisorTests`.
+>
+> **REVIEWUX1i, the card and its runs** (driver, modules, web): Outcome: the head's card says an Accept by the kind of work its attempt's record holds, in both languages, and only when it goes on, since a `go-ahead` after the review still holds the write for the person; a supervisor's word on the run's record carries the revision its decision read (it carried none, so the pass never dropped it `moved`, since 6da5107e6e); the release's check is one unit the look and the proofs share (`LandingReleaseLine`). Proof: `SupervisedPlanRunTests`, full graph runs: a go-ahead after the review holding the apply past the supervisor's Accept until the person's yes, a released Accept whose record moved dropped `moved` (seen failing first), and a decision held from before the record released stale `moved`; the card's test per kind in en and zh (seen failing first); `i18n:check`, `names:check -- --strict`.
+
+---
+
 ## REVIEWUX1h's second part — a run's step outcomes in Done and failed (2026-11-12, D273)
 
 > **REVIEWUX1h, second part** (driver, web): Outcome: each watched step after a run's review, once reached or failed, is one *Done and failed* line keyed `outcome:<run>/<node>/<attempt>` (`RunOutcomeNotices`), read from the run's record at every look and claimed once through the news by the look's last pass (`RunOutcomesLook`), so a dismissed one stays dismissed and one a lost write left is kept at the next look; it is said by its step's kind and its run in both languages. Proof: `RunOutcomeNoticesTests` and the outcome words test, each seen failing first; the look's pass order census.
