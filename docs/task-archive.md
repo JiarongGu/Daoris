@@ -110,6 +110,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1e's second part and REVIEWUX1i — the review read whole, the supervisor on every kind (2026-11-12, D273)
+
+> **REVIEWUX1e, second part** (driver, modules, web): Outcome: the run's review answers the values its sentence of its kind is worded from (`RunReviewSays`), the steps before the review with their states, and each following step's wire, outcome, door and the recovery its attempt takes; `RUN_REVIEW_FILE` draws a branch's or a checkout's file from the commits the record names (`ReviewCommits`), never the checkout as it stands; the page reads the review through `useRunReview`. Proof: `RunReviewsTests` and `ReviewCommitsTests` (a real repository whose branch moved past the review), the web typecheck.
+>
+> **REVIEWUX1i, but the card** (driver, modules): Outcome: a landing supervisor decides a run's step from any session of the run's chain (`LandingKind`, by `QuestRuns.Of`), reads the review record's facts on every kind alike (`LandingReviewFacts`), and keeps its decision naming the record's revision (`SupervisorReviewBinding`): released only while the attempt's record holds it, carried onto the run's record and dropped `stale` `moved` at the pass where the work read afresh holds another; one naming no revision stands on a branch's review alone, so a held decision from before the record is dropped. Proof: `SupervisorReviewBindingTests` seen failing first, the supervisor landing and landing kind suites.
+
+---
+
 ## REVIEWUX1e's first part and REVIEWUX1h's `choose` — a run's review read by run; a return's choice a person wait (2026-11-12, D273)
 
 > **REVIEWUX1e, first part** (driver, modules): Outcome: `RUN_REVIEW { run | session, attempt }` (modules `RunReviewRoutes`, told by event) answers a run's review read by `RunReviews` from the run's binding, node record and review records alone, so it opens after its trees and sessions are gone: the newest record or an attempt named, where the review stands, the presses only on the attempt it stands on, a newer record with the paths whose content it changed, the steps an Accept may start with their states, the run's end; a session opens its run's review by the run its quest is (`QuestRuns.Of`), an earlier part's included; `RUN_REVIEW_FILE` draws a folder's or a copy's file at the record's hash from the content store, or from the place only while it still hashes so, else refused `moved` (`ReviewContent`). Proof: `RunReviewsTests` (driver), `DriverModuleRunReviewTests` seen failing first (the route refused unknown), the held reads' payloads.
