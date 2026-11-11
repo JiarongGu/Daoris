@@ -3,6 +3,7 @@ import { GrantTools, type PressGrant } from './view/GrantTools';
 import { PluginRuns, type PressPlugin } from './view/PluginRuns';
 import { type PressRules, RulesChange } from './view/RulesChange';
 import { type PressSupervisor, SupervisorChange } from './view/SupervisorChange';
+import { type PressWorkflow, WorkflowDesign } from './view/WorkflowDesign';
 
 /**
  * What a terminal's press means, as its route's view read it at the ask (`PressView`): the kind its sentence is worded by
@@ -19,6 +20,7 @@ export type PressView = {
   supervisor?: PressSupervisor | null;
   plugin?: PressPlugin | null;
   grant?: PressGrant | null;
+  workflow?: PressWorkflow | null;
 };
 
 /** A press's view on its card: its sentence in the window's language, then the command it is, above every value it carries. */
@@ -34,6 +36,7 @@ export function PressViewLine({ view }: { view: PressView }) {
       {view.supervisor && <SupervisorChange supervisor={view.supervisor} />}
       {view.plugin && <PluginRuns plugin={view.plugin} />}
       {view.grant && <GrantTools grant={view.grant} />}
+      {view.workflow && <WorkflowDesign workflow={view.workflow} {...(view.facts.base ? { base: view.facts.base } : {})} />}
       <code className="break-all text-small text-ink-soft">{view.command}</code>
     </div>
   );
