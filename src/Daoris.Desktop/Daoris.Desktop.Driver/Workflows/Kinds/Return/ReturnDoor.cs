@@ -46,8 +46,6 @@ public sealed class ReturnDoor(
         try
         {
             using var held = TreeLock.TryStarting(home, copy.Root, StartIn.In(copy.Root));
-            // A turn in the copy itself waits it out too: the return would write what the session has yet to change and then remove the
-            // folder under it.
             if (held is null || (turning is not null
                     && (await turning(ct).ConfigureAwait(false)).Any(folder => TreeGit.SamePath(folder, copy.Root) || TreeGit.SamePath(folder, copy.Folder))))
             {

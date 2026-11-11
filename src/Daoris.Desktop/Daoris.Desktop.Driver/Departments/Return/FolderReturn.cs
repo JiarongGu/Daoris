@@ -45,8 +45,6 @@ public static class FolderReturn
                 continue;
             }
 
-            // A copy's file that could not be read has no bytes to take: only Keep yours settles it, since every other choice would read
-            // it as a removal or as nothing, and the copy goes once the return is done.
             var copyUnread = copied.Listed(path) is not null && session is null;
             if ((copyUnread && choices.GetValueOrDefault(path) != ReturnChoices.KeepYours) || (unread && !choices.ContainsKey(path)))
             {
@@ -66,7 +64,6 @@ public static class FolderReturn
                     var beside = Beside(path, copy.Id);
                     var there = place.Listed(beside)?.Sha256;
                     if (there is not null && !string.Equals(there, session, StringComparison.Ordinal)) refused[path] = ReturnRefusal.Collision;
-                    // A write that did not hold waits on the path the person chose for, not on the name beside it, which has no choice to make.
                     else if (there is null) Settle(path, writes.Write(new(beside, null, session, From: path)), written, waiting, wrote: beside);
                     break;
                 case ReturnChoices.KeepBoth:
