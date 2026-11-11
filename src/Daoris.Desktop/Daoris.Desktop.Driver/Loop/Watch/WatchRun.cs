@@ -138,7 +138,7 @@ internal sealed class WatchRun(
         _tidy = watch.Tidying ?? new BranchTidying(Home)
         {
             ConfigPath = ConfigPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = watch.Processes, Events = watch.Events,
-            Caches = watch.Browser as IBrowserCaches, Volume = SpaceVolumes.Read,
+            Caches = watch.Browser as IBrowserCaches, Volume = SpaceVolumes.Read, Copies = new OrphanCopies(Home),
         };
 
         _counted = wakes.Count;

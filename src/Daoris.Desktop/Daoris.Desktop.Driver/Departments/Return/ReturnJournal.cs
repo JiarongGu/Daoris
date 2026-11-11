@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A return's journal, beside the run's record (<c>workflows/units/&lt;key&gt;.return/&lt;copy&gt;/</c>): each file's decision written
+/// A return's journal, in the folder the run that returns it keeps beside its record: each file's decision written
 /// before its write and its effect after, one line each, and every byte a write replaced or a removal took kept under <c>kept/</c>. A
 /// return cut off between the two lines is taken up from them (<see cref="ReturnWrite.Resume"/>), so it neither writes a file twice nor
 /// guesses at one half written.
@@ -21,10 +21,6 @@ public sealed class ReturnJournal(string folder)
 
     /// <summary>Cut off before anything of the folder moved: the next return decides it afresh.</summary>
     public const string Undone = "undone";
-
-    /// <summary>The folder of <paramref name="unit"/>'s return of copy <paramref name="copy"/>, beside the run's record.</summary>
-    public static string FolderOf(string home, string unit, string copy) =>
-        Path.Combine(NodeRecordFiles.FolderOf(home), NodeRecordFiles.KeyOf(unit) + ".return", copy);
 
     private string Lines => Path.Combine(folder, "journal.jsonl");
 

@@ -25,6 +25,13 @@ public sealed class ReturnDoor(
         return true;
     });
 
+    /// <summary>
+    /// The folder of <paramref name="unit"/>'s return of copy <paramref name="copy"/>, beside the run's record
+    /// (<c>workflows/units/&lt;key&gt;.return/&lt;copy&gt;/</c>): its journal, and what its writes replaced or removed under <c>kept/</c>.
+    /// </summary>
+    public static string JournalOf(string home, string unit, string copy) =>
+        Path.Combine(NodeRecordFiles.FolderOf(home), NodeRecordFiles.KeyOf(unit) + ".return", copy);
+
     /// <summary>Completes once every return started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 
@@ -48,7 +55,7 @@ public sealed class ReturnDoor(
                 return;
             }
 
-            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home), start.Unit.Id);
+            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home), JournalOf(home, start.Unit.Id, copy.Id));
             if (returned.Waiting.Count > 0 || returned.Refused.Count > 0)
             {
                 if (returned.Waiting.Count > 0)

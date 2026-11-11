@@ -25,6 +25,9 @@ public sealed class CopyTidyTests : IDisposable
         return copy;
     }
 
+    private IReadOnlyList<CopySetAside> Tidy(params string[] inUse) =>
+        new OrphanCopies(Home).Tidy(new HashSet<string>(inUse, StringComparer.OrdinalIgnoreCase), Now);
+
     private void Ended(string run, string? waits = null) => Records.Write(new NodeRecord(RunUnits.IdOf(run))
     {
         Ended = new RunEnd(run, Now),
@@ -39,13 +42,13 @@ public sealed class CopyTidyTests : IDisposable
         var copy = Copy();
         Ended("q1");
 
-        var tidied = Assert.Single(CopyTidy.Tidy(Home, new HashSet<string>(), Now));
+        var tidied = Assert.Single(Tidy());
 
         Assert.False(Directory.Exists(copy.Folder));
         Assert.False(File.Exists(copy.Folder + ".json"));
         Assert.True(File.Exists(Path.Combine(tidied.MovedTo!, "notes.md")));
-        Assert.Contains("its run ended and nothing returns it", CopyTidy.Said(tidied, 14), StringComparison.Ordinal);
-        Assert.StartsWith("tidy  reports: ", CopyTidy.Said(tidied, 14), StringComparison.Ordinal);
+        Assert.Contains("its run ended and nothing returns it", tidied.Said(14), StringComparison.Ordinal);
+        Assert.StartsWith("tidy  reports: ", tidied.Said(14), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -54,7 +57,7 @@ public sealed class CopyTidyTests : IDisposable
         var copy = Copy();
         Records.Write(new NodeRecord(RunUnits.IdOf("q1")));
 
-        Assert.Empty(CopyTidy.Tidy(Home, new HashSet<string>(), Now));
+        Assert.Empty(Tidy());
         Assert.True(Directory.Exists(copy.Folder));
     }
 
@@ -64,7 +67,7 @@ public sealed class CopyTidyTests : IDisposable
         var copy = Copy();
         Ended("q1", ReturnNode.BothChanged);
 
-        Assert.Empty(CopyTidy.Tidy(Home, new HashSet<string>(), Now));
+        Assert.Empty(Tidy());
         Assert.True(Directory.Exists(copy.Folder));
     }
 
@@ -73,11 +76,11 @@ public sealed class CopyTidyTests : IDisposable
     {
         var copy = Copy();
         Ended("q1");
-        Assert.Empty(CopyTidy.Tidy(Home, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { copy.Folder }, Now));
+        Assert.Empty(Tidy(copy.Folder));
         Assert.True(Directory.Exists(copy.Folder));
 
         var unnamed = Copy(run: null);
-        Assert.DoesNotContain(CopyTidy.Tidy(Home, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { copy.Folder }, Now), each => each.Copy.Id == unnamed.Id);
+        Assert.DoesNotContain(Tidy(copy.Folder), each => each.Copy == unnamed.Id);
         Assert.True(Directory.Exists(unnamed.Folder));
     }
 }

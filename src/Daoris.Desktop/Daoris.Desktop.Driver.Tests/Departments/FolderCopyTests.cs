@@ -87,7 +87,7 @@ public sealed class FolderCopyTests : IDisposable
         File.Delete(Path.Combine(copy.Folder, "kept.txt"));
         Write(Place, "plan/q4.md", "the person's plan\n");
 
-        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, Unit);
+        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id));
 
         Assert.Empty(returned.Waiting);
         Assert.Equal(["kept.txt", "new.md", "notes.md"], returned.Written);
@@ -96,7 +96,7 @@ public sealed class FolderCopyTests : IDisposable
         Assert.Equal("the person's plan\n", Read(Place, "plan/q4.md"));
         Assert.False(File.Exists(Path.Combine(Place, "kept.txt")));
         // What the return overwrote or removed is kept first under the home, so nothing in the folder is destroyed.
-        var kept = Path.Combine(ReturnJournal.FolderOf(Home, Unit, copy.Id), "kept");
+        var kept = Path.Combine(ReturnDoor.JournalOf(Home, Unit, copy.Id), "kept");
         Assert.Equal("first\n", Read(kept, "notes.md"));
         Assert.Equal("kept\n", Read(kept, "kept.txt"));
     }
@@ -110,7 +110,7 @@ public sealed class FolderCopyTests : IDisposable
         Write(copy.Folder, "plan/q4.md", "agreed\n");
         Write(Place, "plan/q4.md", "agreed\n");
 
-        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, Unit);
+        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id));
 
         Assert.Equal(["notes.md"], returned.Waiting);
         Assert.Empty(returned.Written);
@@ -126,16 +126,16 @@ public sealed class FolderCopyTests : IDisposable
         var copy = Copy();
         Write(copy.Folder, "notes.md", "the session's\n");
         Write(Place, "notes.md", "the person's\n");
-        Assert.Equal(["notes.md"], FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, Unit).Waiting);
+        Assert.Equal(["notes.md"], FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id)).Waiting);
 
-        var chosen = FolderReturn.Run(Home, copy, new Dictionary<string, string> { ["notes.md"] = choice }, Bounds, Unit);
+        var chosen = FolderReturn.Run(Home, copy, new Dictionary<string, string> { ["notes.md"] = choice }, Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id));
 
         Assert.Empty(chosen.Waiting);
         Assert.Equal(folder, Read(Place, "notes.md"));
         var besideFile = Path.Combine(Place, $"notes ({copy.Id}).md");
         Assert.Equal(beside, File.Exists(besideFile) ? File.ReadAllText(besideFile) : null);
         // Asked again, the return finds nothing more to do.
-        Assert.Empty(FolderReturn.Run(Home, copy, new Dictionary<string, string> { ["notes.md"] = choice }, Bounds, Unit).Written);
+        Assert.Empty(FolderReturn.Run(Home, copy, new Dictionary<string, string> { ["notes.md"] = choice }, Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id)).Written);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public sealed class FolderCopyTests : IDisposable
         var copy = Copy();
         Write(Place, "notes.md", "the person's\n");
 
-        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, Unit);
+        var returned = FolderReturn.Run(Home, copy, new Dictionary<string, string>(), Bounds, ReturnDoor.JournalOf(Home, Unit, copy.Id));
 
         Assert.True(returned.Nothing);
         Assert.Equal("the person's\n", Read(Place, "notes.md"));

@@ -29,7 +29,7 @@ public sealed class FolderReturnRefusalTests : IDisposable
     }
 
     private FolderReturned Return(FolderCopy copy, IReadOnlyDictionary<string, string>? choices = null) =>
-        FolderReturn.Run(Home, copy, choices ?? new Dictionary<string, string>(), ManifestBounds.Default, Unit);
+        FolderReturn.Run(Home, copy, choices ?? new Dictionary<string, string>(), ManifestBounds.Default, ReturnDoor.JournalOf(Home, Unit, copy.Id));
 
     [Fact]
     public void A_rename_that_changes_only_case_is_refused_and_the_folder_keeps_its_file()

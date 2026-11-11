@@ -46,6 +46,9 @@ public sealed class BranchTidying(string home)
     /// <summary>How often a pass looks, at most; a test's is zero.</summary>
     public TimeSpan Pace { get; init; } = DefaultPace;
 
+    /// <summary>The tidy of a folder department's copies, after the repositories; none, and no copy is judged.</summary>
+    public ICopyTidying? Copies { get; init; }
+
     /// <summary>
     /// The look's classing, by which each line is classed as it is made: what the tidy removed or kept, which the session's
     /// page, its branch's line and This Daoris's cards say, is what moved; what it could not do now, a later look's. None by default.
@@ -122,18 +125,18 @@ public sealed class BranchTidying(string home)
             IReadOnlySet<string>? held = null;
             try
             {
-                held = await InUseAsync(ct).ConfigureAwait(false);
+                if (Copies is not null) held = await InUseAsync(ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
             {
                 // The sessions could not be read: no copy is judged this look, as no branch is.
             }
 
-            foreach (var copy in held is null ? [] : CopyTidy.Tidy(home, held, Clock()))
+            foreach (var copy in held is null ? [] : Copies!.Tidy(held, Clock()))
             {
-                if (copy.Kept is not null && !First(met, copy.Copy.Department, copy.Copy.Id, TidyKept.Busy)) continue;
-                lines.Add(Look.Progress("tidy", CopyTidy.Said(copy, Policy(home).SetAside.Days.TotalDays)));
-                log?.Info("copy.tidied", ("workspace", copy.Copy.Workspace), ("department", copy.Copy.Department), ("copy", copy.Copy.Id), ("moved", copy.MovedTo is not null));
+                if (copy.Kept is not null && !First(met, copy.Department, copy.Copy, TidyKept.Busy)) continue;
+                lines.Add(Look.Progress("tidy", copy.Said(Policy(home).SetAside.Days.TotalDays)));
+                log?.Info("copy.tidied", ("workspace", copy.Workspace), ("department", copy.Department), ("copy", copy.Copy), ("moved", copy.MovedTo is not null));
             }
 
             lines.AddRange(await Keeping.KeepAsync(trees, service, log, met, ct).ConfigureAwait(false));

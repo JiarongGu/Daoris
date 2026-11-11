@@ -32,9 +32,9 @@ public sealed class FolderReturnProcessTests : IDisposable
     }
 
     private FolderReturned Return(FolderCopy copy, Action<string>? passed = null) =>
-        FolderReturn.Run(Home, copy, new Dictionary<string, string>(), ManifestBounds.Default, Unit, passed);
+        FolderReturn.Run(Home, copy, new Dictionary<string, string>(), ManifestBounds.Default, ReturnDoor.JournalOf(Home, Unit, copy.Id), passed);
 
-    private string Kept(FolderCopy copy, string path) => Path.Combine(ReturnJournal.FolderOf(Home, Unit, copy.Id), "kept", path);
+    private string Kept(FolderCopy copy, string path) => Path.Combine(ReturnDoor.JournalOf(Home, Unit, copy.Id), "kept", path);
 
     [Theory]
     [InlineData(ReturnSteps.Staged)]

@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A folder copy's return, file by file against the manifest read at the copy's making (its base): a file changed only in the copy is
 /// written into the folder, one changed only in the folder is left, one changed alike on both is nothing, and one changed differently on
-/// both waits for the person's choice (<see cref="NodeWordActs.Choices"/>), never chosen here. A path it cannot bring back without
+/// both waits for the person's choice (<see cref="ReturnChoices"/>), never chosen here. A path it cannot bring back without
 /// guessing (a link, a file turned folder, a rename onto the same name, a path outside the folder) is refused with what was found
 /// (<see cref="ReturnRefusal"/>), and settled by the person's <i>Keep yours</i> alone. Every write is conditioned on the folder's file
 /// still holding what the return read, else that path waits too (<see cref="ReturnWrite"/>); each is journalled beside the run's record
@@ -13,13 +13,13 @@ namespace Daoris.Driver;
 public static class FolderReturn
 {
     /// <summary>Bring <paramref name="copy"/>'s changes back into its folder, a file changed on both sides settled by <paramref name="choices"/>.</summary>
-    /// <param name="choices">The person's choice by path, one of <see cref="NodeWordActs.Choices"/>.</param>
-    /// <param name="unit">The run whose return this is, beside whose record its journal is kept.</param>
+    /// <param name="choices">The person's choice by path, one of <see cref="ReturnChoices.All"/>.</param>
+    /// <param name="journal">The folder of this return's journal, which the run that returns it keeps beside its record.</param>
     /// <param name="passed">Told each boundary of a file's write as it is passed (<see cref="ReturnSteps"/>).</param>
     public static FolderReturned Run(
-        string home, FolderCopy copy, IReadOnlyDictionary<string, string> choices, ManifestBounds bounds, string unit, Action<string>? passed = null)
+        string home, FolderCopy copy, IReadOnlyDictionary<string, string> choices, ManifestBounds bounds, string journal, Action<string>? passed = null)
     {
-        var writes = new ReturnWrite(copy, new ReturnJournal(ReturnJournal.FolderOf(home, unit, copy.Id)), passed);
+        var writes = new ReturnWrite(copy, new ReturnJournal(journal), passed);
         // Taken up before either side is read, so nothing a cut-off write left beside a file reads as the person's.
         List<string> written = [.. writes.Resume()];
         var store = new ManifestStore(home, copy.Workspace, copy.Department);
@@ -40,7 +40,7 @@ public static class FolderReturn
         {
             if (refusals.TryGetValue(path, out var found))
             {
-                if (choices.GetValueOrDefault(path) != NodeWordActs.KeepYours) refused[path] = found;
+                if (choices.GetValueOrDefault(path) != ReturnChoices.KeepYours) refused[path] = found;
                 continue;
             }
 
@@ -61,19 +61,19 @@ public static class FolderReturn
             if (string.Equals(session, folder, StringComparison.Ordinal)) continue;
             switch (choices.GetValueOrDefault(path))
             {
-                case NodeWordActs.KeepYours:
+                case ReturnChoices.KeepYours:
                     break;
-                case NodeWordActs.TakeSession:
+                case ReturnChoices.TakeSession:
                     Settle(path, writes.Write(new(path, folder, session)), written, waiting);
                     break;
-                case NodeWordActs.KeepBoth when session is not null:
+                case ReturnChoices.KeepBoth when session is not null:
                     var beside = Beside(path, copy.Id);
                     var there = place.Listed(beside)?.Sha256;
                     // A file of the person's already under the beside name is never written over.
                     if (there is not null && !string.Equals(there, session, StringComparison.Ordinal)) refused[path] = ReturnRefusal.Collision;
                     else if (there is null) Settle(beside, writes.Write(new(beside, null, session, From: path)), written, waiting);
                     break;
-                case NodeWordActs.KeepBoth:
+                case ReturnChoices.KeepBoth:
                     break;
                 default:
                     waiting.Add(path);
