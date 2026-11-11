@@ -394,7 +394,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 42. *Set up…* offers *Not driven* and the shipped deliveries marked `setUp`: merge after accept, a branch to push, a pull request,
     integrated. It suggests integrated where the line declares integration, else merge after accept; a pull request is only chosen,
     and refused where no plugin performing steps serves the remote's platform. *Keep how it lands* writes no landing and no choice. (from D221, D227)
-43. `PLACE_APPLY` is the one adoption door. `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227)
+43. `PLACE_APPLY` is the one door of a place's set-up: its adoption, and a room asked of an adopted repository (`--room`, a part that rides with no
+    other and is a quest to that repository's own session, driving rule 53). `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227, D276)
 44. The release's one migration converts the workflow records once through `WorkflowMigration.Convert`, its `workflows` step
     reading the repositories from the service's registry table: each steps, `handed` or `land`+`accept` newest gets the next
     version as a graph; each place on the landing rules follows the home default or a saved copy of what its rules drew; a rule's

@@ -19,6 +19,11 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
     public int? AtOnce { get; init; }
 
     public int? Pilot { get; init; }
+
+    /// <summary>A room asked of the one repository (<see cref="PlaceRooms"/>): a part of its own that rides with no delivery.</summary>
+    public string? Room { get; init; }
+
+    public string? Purpose { get; init; }
 }
 
 /// <summary>What a place's plan reads: the service's registry and quests, and each repository's line as its checkout here holds it.</summary>
@@ -31,6 +36,9 @@ public interface IPlaceWorld
 
     /// <summary>The line's tip and its declaration, read as git objects, and the host of its <c>origin</c>; never a fetch.</summary>
     Task<PlaceTip> TipAsync(RepoView repository, DriverConfig config, CancellationToken ct);
+
+    /// <summary>The line's declaration of rooms and what stands at <paramref name="path"/> there, as git objects like <see cref="TipAsync"/>.</summary>
+    Task<PlaceRoomRead> RoomAsync(RepoView repository, DriverConfig config, string path, CancellationToken ct);
 }
 
 /// <summary>
@@ -114,6 +122,12 @@ public static class PlacePlans
     /// <summary>The key of the changes an adoption part makes: the set-up press's, which writes no configuration.</summary>
     public const string SetupPressKey = "SETUP_PRESS";
 
+    public const string RoomPressKey = "ROOM_PRESS";
+
+    public const string Room = "room";
+
+    public static bool IsPress(string key) => key is SetupPressKey or RoomPressKey;
+
     /// <summary>The key of the change that saves a copy of a shipped default, its own operation in the receipt (<c>WORKFLOW_SAVE</c>).</summary>
     public const string WorkflowSaveKey = "WORKFLOW_SAVE";
 
@@ -133,6 +147,11 @@ public static class PlacePlans
     public static IReadOnlyList<PlaceRefusal> AskRefusals(PlaceAsk ask)
     {
         var refusals = new List<PlaceRefusal>();
+        if (ask.Room is null && ask.Purpose is not null)
+        {
+            refusals.Add(new(null, Room, PlaceRoomRefusals.Purpose, "`--purpose` is a room's reason: ask for `--room <path>` too, or leave it out."));
+        }
+
         if (ask.Repositories.Count == 0) refusals.Add(new(null, Delivery, "no-place", "name the repositories the plan is for."));
         if (ask.Preset == SetupPresets.Keep)
         {
@@ -362,6 +381,7 @@ public static class PlacePlans
     public static async Task<PlacePlanned> PlanAsync(
         IPlaceWorld world, DriverConfig config, string home, IWorkplacePluginCatalog plugins, bool unadopted, PlaceAsk ask, CancellationToken ct = default)
     {
+        if (ask.Room is not null) return await PlaceRooms.PlanAsync(world, config, home, unadopted, ask, ct).ConfigureAwait(false);
         var names = ask.Repositories.Select(each => each.Trim()).Where(each => each.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         ask = ask with { Repositories = names };
         var refusals = AskRefusals(ask).ToList();
@@ -489,5 +509,6 @@ public static class PlacePlans
     }
 
     /// <summary>The terminal's twin of a plan: <c>daoris place … --plan</c>, in the order its usage names the words.</summary>
-    public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris", "place", .. PlaceCommand.ArgsOf(ask)]);
+    public static string Terminal(PlaceAsk ask) =>
+        string.Join(' ', ["daoris", "place", .. PlaceCommand.ArgsOf(ask).Select(word => word.StartsWith("--", StringComparison.Ordinal) ? word : ShellWord.Of(word, ShellWord.Name))]);
 }

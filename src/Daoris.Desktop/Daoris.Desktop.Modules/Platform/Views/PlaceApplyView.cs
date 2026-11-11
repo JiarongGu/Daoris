@@ -32,11 +32,13 @@ public sealed class PlaceApplyView : IPressView
             Drive = Flag(payload, "drive"),
             AtOnce = Number(payload, "atOnce"),
             Pilot = Number(payload, "pilot"),
+            Room = PressPayload.Text(payload, "room") is { Length: > 0 } room ? room : null,
+            Purpose = PressPayload.Text(payload, "purpose") is { Length: > 0 } purpose ? purpose : null,
         };
         var plan = await world.ReadAsync(Module, "PLACE_PLAN", new
         {
             repositories = ask.Repositories, preset = ask.Preset, opinion = ask.Opinion, look = ask.Look, adoption = ask.Adoption,
-            builds = ask.Builds, drive = ask.Drive, atOnce = ask.AtOnce, pilot = ask.Pilot,
+            builds = ask.Builds, drive = ask.Drive, atOnce = ask.AtOnce, pilot = ask.Pilot, room = ask.Room, purpose = ask.Purpose,
         }, cancellationToken).ConfigureAwait(false);
         var refusals = PressPayload.Rows(plan, "refusals").Select(row => PressPayload.Field(row, "sentence")).Where(sentence => sentence.Length > 0).ToList();
         if (refusals.Count > 0) return PressViewed.Refused(string.Join(' ', refusals));
@@ -55,8 +57,15 @@ public sealed class PlaceApplyView : IPressView
             .Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase);
         var facts = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["repositories"] = string.Join(", ", ask.Repositories), ["workspace"] = string.Join(", ", workspaces), ["preset"] = ask.Preset,
+            ["repositories"] = string.Join(", ", ask.Repositories), ["workspace"] = string.Join(", ", workspaces),
         };
+        if (ask.Room is null) facts["preset"] = ask.Preset;
+        else
+        {
+            facts["room"] = ask.Room;
+            facts["purpose"] = ask.Purpose ?? "";
+        }
+
         var command = string.Join(' ', ["daoris", "place", .. PlaceCommand.ApplyArgsOf(ask, accepted)
             .Select(word => word.StartsWith("--", StringComparison.Ordinal) ? word : ShellWord.Of(word, ShellWord.Name))]);
         return PressViewed.Shown(new PressView("place-apply", facts, command, [.. Changes(plan), .. Riders(ask), .. accepted.Select(Accepted)]));

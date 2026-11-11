@@ -27,6 +27,8 @@ export type PlaceAsk = {
   adoption: boolean;
   builds?: string;
   drive: boolean;
+  room?: string | null;
+  purpose?: string | null;
 };
 
 export type PlaceChange = { key: string; part: string; said: string; before: string; after: string };

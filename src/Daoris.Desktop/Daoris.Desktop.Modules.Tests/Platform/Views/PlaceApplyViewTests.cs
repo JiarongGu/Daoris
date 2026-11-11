@@ -81,6 +81,43 @@ public sealed class PlaceApplyViewTests
         Assert.Equal($"the plan offers no `{purpose}` acceptance for `{repository}`, so nothing was written.", viewed.Refusal);
     }
 
+    /// <summary>A room is the same apply, judged by the same plan; the card names the room and the reason beside the one change the plan makes.</summary>
+    [Fact]
+    public async Task A_rooms_apply_asks_the_plan_for_the_room_and_shows_the_one_change_it_makes_and_the_command_it_is()
+    {
+        var asked = new List<JsonElement>();
+        var grounds = Planned(Plan([new { change = new { key = "ROOM_PRESS", part = "room", said = "a room at `tools/web` asked of its repository's own session", before = "no room", after = "asked" }, repositories = new[] { "engine" } }]));
+        var plan = grounds.Reads["PLACE_PLAN"];
+        grounds.Reads["PLACE_PLAN"] = payload =>
+        {
+            asked.Add(payload!.Value);
+            return plan(payload);
+        };
+
+        var viewed = await View(grounds, new { repositories = new[] { "engine" }, room = "tools/web", purpose = "the web app needs its own conventions", said = true });
+
+        var sent = Assert.Single(asked);
+        Assert.Equal(("tools/web", "the web app needs its own conventions"), (sent.GetProperty("room").GetString(), sent.GetProperty("purpose").GetString()));
+        Assert.Equal("place-apply", viewed.View!.Kind);
+        Assert.Equal(("tools/web", "the web app needs its own conventions"), (viewed.View.Facts["room"], viewed.View.Facts["purpose"]));
+        Assert.False(viewed.View.Facts.ContainsKey("preset"));
+        Assert.Equal(["place-change"], viewed.View.Also!.Select(said => said.Kind));
+        Assert.Equal(("no room", "asked"), (viewed.View.Also![0].Facts["before"], viewed.View.Also![0].Facts["after"]));
+        Assert.Equal("daoris place engine --room tools/web --purpose \"the web app needs its own conventions\" --apply", viewed.View.Command);
+    }
+
+    /// <summary>The route's own refusals reach the person at the ask in the route's words, with no card: the view adds none of its own.</summary>
+    [Fact]
+    public async Task A_rooms_apply_the_plan_refuses_is_refused_at_the_ask_in_the_plans_words()
+    {
+        var plan = Plan([], [new { repository = "engine", part = "room", code = "room-exists", sentence = "`engine` already has a room at `tools/web` (`daoris.json`'s `rooms`)." }]);
+
+        var viewed = await View(Planned(plan), new { repositories = new[] { "engine" }, room = "tools/web", purpose = "why" });
+
+        Assert.Null(viewed.View);
+        Assert.Equal("`engine` already has a room at `tools/web` (`daoris.json`'s `rooms`).", viewed.Refusal);
+    }
+
     [Fact]
     public void It_is_the_view_of_the_apply()
     {

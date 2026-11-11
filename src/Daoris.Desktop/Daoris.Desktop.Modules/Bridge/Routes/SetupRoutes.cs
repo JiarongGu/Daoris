@@ -27,7 +27,7 @@ public sealed class SetupRoutes(DriverContext context)
     private async Task<object?> PlacePlanAsync(PlacePlanRead read, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        var ask = PlaceAskOf(read.Repositories, read.Repository, read.Preset, read.Opinion, read.Look, read.Adoption, read.Builds, read.Drive, read.AtOnce, read.Pilot);
+        var ask = PlaceAskOf(read.Repositories, read.Repository, read.Preset, read.Opinion, read.Look, read.Adoption, read.Builds, read.Drive, read.AtOnce, read.Pilot, read.Room, read.Purpose);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names);
         var world = new PlaceWorld(service);
@@ -60,7 +60,7 @@ public sealed class SetupRoutes(DriverContext context)
 
         var service = _loop.Service ?? throw NotReady();
         var digest = press.Digest ?? "";
-        var ask = PlaceAskOf(press.Repositories, null, press.Preset, press.Opinion, press.Look, press.Adoption, press.Builds, press.Drive, press.AtOnce, press.Pilot);
+        var ask = PlaceAskOf(press.Repositories, null, press.Preset, press.Opinion, press.Look, press.Adoption, press.Builds, press.Drive, press.AtOnce, press.Pilot, press.Room, press.Purpose);
         IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
         var doors = new PlaceApplyDoors(
@@ -149,9 +149,11 @@ public sealed class SetupRoutes(DriverContext context)
     /// <summary>The ask a plan or an apply carries: the <c>repositories</c> named as a list, or the one <c>repository</c>.</summary>
     private static PlaceAsk PlaceAskOf(
         IReadOnlyList<string>? repositories, string? repository, string? preset, bool opinion, bool look, bool adoption, string? builds, bool drive,
-        long? atOnce, long? pilot) =>
+        long? atOnce, long? pilot, string? room, string? purpose) =>
         new(repositories ?? (repository is { } one ? new[] { one } : Array.Empty<string>()), preset ?? "")
         {
+            Room = room,
+            Purpose = purpose is { Length: > 0 } ? purpose : null,
             Opinion = opinion,
             Look = look,
             Adoption = adoption,

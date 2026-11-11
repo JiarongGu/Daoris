@@ -371,5 +371,13 @@ public sealed class PlacePlanTests
             Asked.Add($"tip {repository.Repository}");
             return Task.FromResult(Tips[repository.Repository]);
         }
+
+        public Dictionary<string, PlaceRoomRead> Rooms { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public Task<PlaceRoomRead> RoomAsync(RepoView repository, DriverConfig config, string path, CancellationToken ct)
+        {
+            Asked.Add($"room {repository.Repository} {path}");
+            return Task.FromResult(Rooms.TryGetValue(repository.Repository, out var read) ? read : new PlaceRoomRead("main", Commit, repository.Adopted, [], [], [], null, false));
+        }
     }
 }

@@ -147,11 +147,11 @@ internal static class PipeReads
 
     /// <summary>The plan the person read, by its digest, which pins each repository's changes and the acceptances offered.</summary>
     public static PipeGround PlacePlan() => Plan("PLACE_PLAN",
-        ["repositories", "preset", "opinion", "look", "adoption", "builds", "drive", "digest", "accept"],
+        ["repositories", "preset", "opinion", "look", "adoption", "builds", "drive", "room", "purpose", "digest", "accept"],
         p => new
         {
             repositories = Field(p, "repositories"), preset = Text(p, "preset"), opinion = Field(p, "opinion"), look = Field(p, "look"),
-            adoption = Field(p, "adoption"), builds = Text(p, "builds"), drive = Field(p, "drive"),
+            adoption = Field(p, "adoption"), builds = Text(p, "builds"), drive = Field(p, "drive"), room = Text(p, "room"), purpose = Text(p, "purpose"),
         },
         (a, _) => Fp(Text(At(a, "digest"))),
         TimeSpan.FromMinutes(2));

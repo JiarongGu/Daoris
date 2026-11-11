@@ -506,9 +506,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     written and nothing is pushed.
 52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one repository
     with its receiver named, as the person's, carrying `SetupPlan.Then`, a `SetupThen` (title and body) the service chains behind the quest as
-    its one step to the same repository, or none. `place --adoption`, a workspace plan's tick and `repository create` publish through it;
-    only a creation sets `Then`. The ask door's `then` (`PostAsk.Then`, `AskRequest.Then`) is judged by the exchange as any chain is, and
+    its one step to the same repository, or none. `place --adoption`, a workspace plan's tick, `repository create` and `place --room` publish through it;
+    only a creation sets `Then`, and a room's quest has none. The ask door's `then` (`PostAsk.Then`, `AskRequest.Then`) is judged by the exchange as any chain is, and
     refused as `BadChain` where it names no receiver.
+53. A room is asked, never made: `daoris place <repository> --room <path> --purpose "…"` is a part of `PLACE_APPLY` (`PlaceAsk.Room`, `Purpose`), so a
+    place's set-up stays one door, and its whole is one quest to that repository's own session; Daoris writes none of a room's text (`PlaceRooms`,
+    `PlaceRoomApplies`, `RoomBrief`, `Setup/Room/`). It rides with no delivery, second opinion, look, adoption, driving or pace (`room-alone`), asks one
+    repository (`room-one`) with a reason of one line (`room-purpose`), and refuses, with every refusal said at once and nothing written, a path that is
+    not a folder inside the repository (`room-path`: empty, rooted, on a drive, with `..` or a character Windows refuses, inside `.git`, `.agents` or
+    `.claude`, through a link or a submodule on the line, or onto a file), a room already there (`room-exists`: the line's `daoris.json` `rooms`, a folder
+    with its own `AGENTS.md`, or a room the lanes file declares, read as git objects at its tip by `IPlaceWorld.RoomAsync`), a repository not registered,
+    not adopted on the registry or its line, with no checkout here, held (`held`) or with a set-up open, and a line that cannot be read (`unread`). Its one
+    change is `ROOM_PRESS` (a second line says the quest is admitted alone where the repository is not driven), so the card, `--plan` and the receipt say it
+    with no case of their own; its receipt is the quest's one `room` operation, found by the plan's key on a retry, judged again where it is asked, with no
+    configuration written and no chain. The quest's body (`RoomBrief`) names the repository, the path, the person's reason, the canon's `rooms-and-classes`
+    convention (four of its lines quoted, which a test holds to the canon's text) and the repository's own declaration as its line holds it, and asks only
+    for `daoris --version`, `sync` and `check` (`SetupPressRules.RoomRules`, added to the repository's scope beside the rules its set-up added).
 
 ## Where a change goes
 

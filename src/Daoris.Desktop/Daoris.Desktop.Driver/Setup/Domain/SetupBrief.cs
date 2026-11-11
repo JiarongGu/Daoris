@@ -25,6 +25,8 @@ public enum SetupCase
     /// never found from the line, only asked for (<see cref="SetupPress.PlanReconcileAsync"/>).
     /// </summary>
     Reconcile,
+
+    Room,
 }
 
 /// <summary>What the quest is composed from.</summary>
@@ -78,6 +80,7 @@ public static class SetupBrief
             SetupCase.Whole => SetupQuests.SetUp,
             SetupCase.Move => SetupQuests.Move,
             SetupCase.Declare => SetupQuests.Declare,
+            SetupCase.Room => throw new ArgumentException("a room's quest is RoomBrief's, not a set-up's", nameof(input)),
             _ => throw new ArgumentException("a repository already set up has no set-up to ask for", nameof(input)),
         };
 

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] (--plan | --apply
-/// [--accept &lt;repository&gt;:landed|integration,…])</c>: <c>PLACE_PLAN</c>'s and
+/// [--accept &lt;repository&gt;:landed|integration,…])</c>, or <c>daoris place &lt;repository&gt; --room &lt;path&gt; --purpose "…" (--plan | --apply)</c>: <c>PLACE_PLAN</c>'s and
 /// <c>PLACE_APPLY</c>'s terminal twin, the same plan and the same apply from the same code in English. Through the running Daoris where one answers,
 /// alone otherwise. <c>--plan</c> reads and writes nothing. <c>--apply</c> is the person's press: through a running Daoris it waits for their Confirm on
 /// the window's card, once, and runs only then; alone it is the person's own terminal acting as the window's press would.
@@ -20,12 +20,13 @@ public static class PlaceCommand
     public const string Usage =
         "usage: daoris place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] "
         + "(--plan | --apply [--accept <repository>:landed|integration,…])\n"
+        + "       daoris place <repository> --room <path> --purpose \"…\" (--plan | --apply)\n"
         + "       " + WorkspaceSetupCommand.Forms;
 
     /// <summary>The flag naming what the repository builds (<see cref="SetupBuilds"/>), which shapes the adoption quest's safe work.</summary>
     public const string BuildsFlag = "--what-it-builds";
 
-    private const string PlanFlag = "--plan", ApplyFlag = "--apply", AcceptFlag = "--accept", AdoptionFlag = "--adoption";
+    private const string PlanFlag = "--plan", ApplyFlag = "--apply", AcceptFlag = "--accept", AdoptionFlag = "--adoption", RoomFlag = "--room", PurposeFlag = "--purpose";
 
     private static readonly string[] Riders = ["opinion", "look"];
 
@@ -45,7 +46,7 @@ public static class PlaceCommand
         var names = new List<string>();
         var with = new List<string>();
         var accept = new List<PlaceAccept>();
-        string? preset = null, builds = null;
+        string? preset = null, builds = null, room = null, purpose = null;
         int? atOnce = null, pilot = null;
         bool plan = false, apply = false, drive = false, accepting = false, adoption = false;
         for (var at = 0; at < args.Count; at++)
@@ -77,6 +78,12 @@ public static class PlaceCommand
                     break;
                 case "--drive":
                     drive = true;
+                    break;
+                case RoomFlag:
+                    if ((room = Value()) is null) return (null, $"`{RoomFlag}` names the folder the room is made in, a path inside the repository: `{RoomFlag} <path>`.");
+                    break;
+                case PurposeFlag:
+                    if ((purpose = Value()) is null) return (null, $"`{PurposeFlag}` says why the room is wanted, in quotes: `{PurposeFlag} \"…\"`.");
                     break;
                 case "--preset":
                     if ((preset = Value()) is null) return (null, $"`--preset` names a delivery: {Presets()}.");
@@ -119,11 +126,13 @@ public static class PlaceCommand
         }
 
         if (names.Count == 0) return (null, "name the repositories the plan is for.");
-        if (preset is null) return (null, $"name the delivery with `--preset`: {Presets()}.");
+        if (preset is null && room is null) return (null, $"name the delivery with `--preset`: {Presets()}.");
         if (plan == apply) return (null, plan ? "`--plan` and `--apply` are two things: read the plan, or apply it." : "name `--plan` to read the plan, or `--apply` to apply it.");
         if (accepting && !apply) return (null, "`--accept` chooses acceptances for an apply, so it goes with `--apply`.");
-        return (new PlaceWords(new PlaceAsk(names, preset)
+        return (new PlaceWords(new PlaceAsk(names, preset ?? "")
         {
+            Room = room,
+            Purpose = purpose,
             Opinion = with.Contains("opinion"),
             Look = with.Contains("look"),
             Adoption = adoption,
@@ -146,7 +155,8 @@ public static class PlaceCommand
 
     private static List<string> AskWords(PlaceAsk ask)
     {
-        var words = new List<string>(ask.Repositories) { "--preset", ask.Preset };
+        var words = new List<string>(ask.Repositories);
+        if (ask.Preset.Length > 0) words.AddRange(["--preset", ask.Preset]);
         var with = Riders.Where(rider => rider == "opinion" ? ask.Opinion : ask.Look).ToList();
         if (with.Count > 0) words.AddRange(["--with", string.Join(',', with)]);
         if (ask.Adoption) words.Add(AdoptionFlag);
@@ -154,6 +164,8 @@ public static class PlaceCommand
         if (ask.AtOnce is { } atOnce) words.AddRange(["--at-once", atOnce.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
         if (ask.Pilot is { } pilot) words.AddRange(["--pilot", pilot.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
         if (ask.Drive) words.Add("--drive");
+        if (ask.Room is { } room) words.AddRange([RoomFlag, room]);
+        if (ask.Purpose is { } purpose) words.AddRange([PurposeFlag, purpose]);
         return words;
     }
 
@@ -180,7 +192,7 @@ public static class PlaceCommand
                     instance, PersonPresses.PlaceApply,
                     InstanceDoor.Said(
                         ("repositories", ask.Repositories), ("preset", ask.Preset), ("opinion", ask.Opinion), ("look", ask.Look), ("adoption", ask.Adoption),
-                        ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot),
+                        ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot), ("room", ask.Room), ("purpose", ask.Purpose),
                         ("accept", words.Accept.Select(each => new { repository = each.Repository, purpose = each.Purpose }).ToArray())),
                     () => ApplyAloneAsync(words, output, apply, instance, ct), output, ct)
                 .ConfigureAwait(false);
@@ -190,7 +202,7 @@ public static class PlaceCommand
                 instance, OpenRoutes.PlacePlan,
                 InstanceDoor.Said(
                     ("repositories", ask.Repositories), ("preset", ask.Preset), ("opinion", ask.Opinion), ("look", ask.Look), ("adoption", ask.Adoption),
-                    ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot)),
+                    ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot), ("room", ask.Room), ("purpose", ask.Purpose)),
                 async () => Say(await PlacePlans.PlanAsync(world, config, home, plugins, unadopted, ask, ct).ConfigureAwait(false), output), output, ct)
             .ConfigureAwait(false);
     }
@@ -233,6 +245,7 @@ public static class PlaceCommand
     public static IReadOnlyList<string> Lines(PlacePlanned plan, bool applying = false)
     {
         var ask = plan.Asked;
+        if (ask.Room is not null) return PlaceRooms.Lines(plan, applying);
         var lines = new List<string>();
         var delivery = ask.Preset == SetupPresets.Keep ? SetupPresets.KeepName : SetupPresets.Of(ask.Preset)?.Name ?? $"`{ask.Preset}`";
         var riders = new[] { ask.Opinion ? "a second opinion" : null, ask.Look ? "your look" : null }.OfType<string>().ToList();

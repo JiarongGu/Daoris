@@ -144,7 +144,7 @@ public static class PlaceApplies
             Workflow = save.Id, Default = save.Default, Opinion = save.Opinion, Look = save.Look,
         }));
         var configured = plan.Changes
-            .Where(each => each.Change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey)).Select(each => each.Change.Said).Distinct().ToList();
+            .Where(each => Written(each.Change)).Select(each => each.Change.Said).Distinct().ToList();
         if (configured.Count > 0 || chosen.Count > 0)
         {
             var said = string.Join("; ", configured.Concat(chosen.Select(each => $"accepts `{each.Repository}`'s declaration for {each.Purpose}")));
@@ -157,6 +157,7 @@ public static class PlaceApplies
                 PlaceOperations.AdoptionOf(row.Repository), PlaceOperations.Adoption, row.Repository, "a set-up asked of its own session", PlaceOutcomes.Pending)));
         }
 
+        operations.AddRange(PlaceRoomApplies.OperationsOf(plan));
         var receipt = new PlaceReceipt(digest, DateTimeOffset.UtcNow, plan.Asked, chosen, operations);
         receipts.Write(receipt);
         return new Begun(receipt, plan, null);
@@ -246,6 +247,11 @@ public static class PlaceApplies
             {
                 receipt = await AdoptAsync(doors, receipts, receipt, operation, ct).ConfigureAwait(false);
             }
+        }
+
+        foreach (var operation in receipt.Operations.Where(each => each.Kind == PlaceOperations.Room && each.Outcome == PlaceOutcomes.Pending).ToList())
+        {
+            receipt = await PlaceRoomApplies.AskAsync(doors, receipts, receipt, operation, ct).ConfigureAwait(false);
         }
 
         var done = receipt.Operations.All(each => each.Outcome == PlaceOutcomes.Done);
@@ -366,8 +372,8 @@ public static class PlaceApplies
         return config;
     }
 
-    /// <summary>A change the configuration's edit makes: not the copy saved before it, nor the set-up press.</summary>
-    private static bool Written(PlaceChange change) => change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey);
+    /// <summary>A change the configuration's edit makes: not the copy saved before it, nor a quest the apply asks (a set-up's or a room's).</summary>
+    private static bool Written(PlaceChange change) => !PlacePlans.IsPress(change.Key) && change.Key != PlacePlans.WorkflowSaveKey;
 
     /// <summary>The acceptance made through its own door's edit: the landed route's, with the gates it verifies by, or the integration's blob.</summary>
     private static DriverConfig Accepted(string home, DriverConfig config, PlaceAccept accept, string workspace)
@@ -464,7 +470,7 @@ public static class PlaceApplies
     }
 
     /// <summary>The quest to <paramref name="repository"/> whose body carries the plan's key, or null where none does.</summary>
-    private static async Task<string?> KeyedAsync(PlaceApplyDoors doors, string digest, string repository, CancellationToken ct)
+    internal static async Task<string?> KeyedAsync(PlaceApplyDoors doors, string digest, string repository, CancellationToken ct)
     {
         var key = KeyOf(digest);
         var quests = await doors.Setup.QuestsAsync(ct).ConfigureAwait(false);
@@ -549,6 +555,7 @@ public static class PlaceApplies
         {
             PlaceOperations.Configuration => $"configuration {Word(each, "applied", "not applied")}",
             PlaceOperations.WorkflowSave => $"workflow `{each.Workflow}` {Word(each, "saved", "not saved")}",
+            PlaceOperations.Room => $"room {Word(each, "asked", "refused")}",
             _ => $"adoption{(adoptions > 1 ? $" of `{each.Repository}`" : "")} {Word(each, "asked", "refused")}",
         }).ToList();
         var notes = receipt.Operations.Where(each => (each.Outcome is PlaceOutcomes.Failed or PlaceOutcomes.Uncertain) && each.Note is { Length: > 0 }).Select(each => each.Note!);

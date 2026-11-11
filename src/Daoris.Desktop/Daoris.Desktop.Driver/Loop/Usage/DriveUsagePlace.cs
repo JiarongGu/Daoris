@@ -15,6 +15,12 @@ internal static class DriveUsagePlace
               part, the work driving releases and each declaration to accept. --plan writes nothing;
               --apply is your press, and an adoption of more repositories than --at-once asks is paced
               by a workspace plan the loop works.
+          place <repository> --room <path> --purpose "…" (--plan | --apply)
+              a room: a folder of an adopted repository with an AGENTS.md of its own, asked of that
+              repository's own session as one quest carrying the doctrine's room convention, the
+              repository's own declaration and your reason; Daoris writes none of the room. It rides
+              with no other part, and is refused for a path outside the repository, a room already
+              there, a repository not registered, held or not adopted. --apply is your press.
           place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
           place --workspace <name> --pause | --resume | --stop
               adopt a workspace one repository at a time, the ones other work touches first: a press

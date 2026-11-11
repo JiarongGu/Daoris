@@ -657,6 +657,8 @@ public sealed class PlaceApplyTests : IDisposable
             _reads[repository.Repository] = _reads.GetValueOrDefault(repository.Repository) + 1;
             return TipAfter?.Invoke(repository.Repository, _reads[repository.Repository]) ?? await Inner.TipAsync(repository, config, ct);
         }
+
+        public Task<PlaceRoomRead> RoomAsync(RepoView repository, DriverConfig config, string path, CancellationToken ct) => Inner.RoomAsync(repository, config, path, ct);
     }
 
     /// <summary>The set-up press's world: its registry, line, tools and quests, and an ask door that keeps what it is asked.</summary>
