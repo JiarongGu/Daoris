@@ -305,8 +305,8 @@ public sealed class RoleStaffingTests : IDisposable
                 "../Daoris.Desktop.Modules/Platform/Views/RoleChangeView.cs",
                 "Course/Chat/LimitMove.cs",
                 "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
-                // The release's migration writes an older home's orders into the family once.
-                "Transitional/Migration/StaffingStep.cs",
+                // The release's migrations write into the family once: the second check's first choices, and an older home's orders.
+                "Transitional/Migration/SecondCheckStep.cs", "Transitional/Migration/StaffingStep.cs",
             ],
             naming);
     }

@@ -47,6 +47,8 @@ public sealed class LandingPlugins(
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="ProblemOf"/>).</summary>
     public string? Problem(string plugin) => ProblemOf(plugin, Catalog());
 
+    public IReadOnlyDictionary<string, string> Formerly() => PluginFormerly.Of(home);
+
     /// <summary>
     /// Why the plugin a landing names cannot land work on this machine, in a sentence, or null when it can: not installed, switched off,
     /// refused by the catalogue, or speaking on no <see cref="HookPoints.Perform"/> point, where a pull request's step is performed.

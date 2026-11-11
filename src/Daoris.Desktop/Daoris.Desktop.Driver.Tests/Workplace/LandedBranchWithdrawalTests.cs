@@ -139,7 +139,7 @@ public sealed class LandedBranchWithdrawalTests : IDisposable
 
         var owners = console.IndexOf("new LandedBranchWithdrawal(trees, home).Owners(named", StringComparison.Ordinal);
         Assert.True(owners > 0);
-        Assert.True(owners < console.IndexOf("var removal = LooksLikePath(named)", StringComparison.Ordinal));
+        Assert.True(owners < console.IndexOf("if (!LooksLikePath(named))", StringComparison.Ordinal));
         Assert.Contains("WithdrawNamedAsync(service, named, repository, why, plan)", console);
         Assert.Contains("TreesWords.Withdraw(withdrawal)", console);
         Assert.Contains("Told(home, PressesTold.WithdrawLanding)", console);

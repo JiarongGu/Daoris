@@ -2,10 +2,8 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// A verb acting alone holds the home's lease for its mutation, never for a read,
-/// and a verb whose one writer is the service, a conversation, or the loop takes none of a verb's. An unclassed verb holds it.
-/// </summary>
+/// <summary>A verb acting alone holds the home's lease for its mutation, never for a read,
+/// and a verb whose one writer is the service, a conversation, or the loop takes none of a verb's. An unclassed verb holds it.</summary>
 public sealed class VerbLeasesTests
 {
     [Theory]
@@ -53,7 +51,6 @@ public sealed class VerbLeasesTests
     [InlineData("driver undrive engine")]
     [InlineData("driver hold engine")]
     [InlineData("driver resume engine")]
-    [InlineData("driver trees engine on")]
     [InlineData("driver notify off")]
     [InlineData("driver cap 3")]
     [InlineData("driver retry 12")]

@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - The tool-tests gate waited two and a half hours on one queue case whose bound did not end its tree
+
+- **Symptom:** in a full CI the merge-queue case *an invocation with no verdict is ended at its bound* ran from 09:03 to 11:38 UTC; its
+  `merge-branch b1 --message` child and that child's queue runner were still alive, and a manual `taskkill /T /F` ended both at once.
+- **Root cause:** the case's bounded invocation ended the child's tree with `endTree`, which ran `taskkill /T /F` with its output
+  ignored and its status unread, and then waited for the child's `close`, which comes only once every process holding its output
+  is gone. When taskkill did not end the tree the promise never resolved, and `node --test` bounds no test by default, so the gate
+  waited without end. The unbounded wait came with the case's helper (240d407a03); why taskkill leaves this tree
+  standing is not yet found: both TOOLTESTHANG1 cases reproduce it alone on a quiet machine.
+- **Fix:** `endTree` reads taskkill's status, asks again twice a second apart, and answers whether the root is gone; the tool tests'
+  bounded invocation (`tool-test/support/bounded-node.ts`) answers a tree that outlives the end after the patience, naming the leak and
+  leaving the child for the case's cleanup; the gate's script bounds each case at thirty minutes and exits once its cases are done.
+- **Verification:** `bounded-node.test.ts` holds a child whose grandchild keeps its output under a refused end, answered after the
+  grace with the leak named, and one the end reaches whole answered at its close; `step-trees.test.ts` holds the statuses read and the
+  tries. The two TOOLTESTHANG1 queue cases now fail in under three minutes naming the leak, where they hung.
+
 ## 2026-11-11 - Hundreds of runs never ended once their quest closed, and every look paid for them
 
 - **Symptom:** an installed copy held 586 open graph runs, every one on a done quest: most stood at `content.holds` ready with their

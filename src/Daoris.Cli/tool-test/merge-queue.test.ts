@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
+import { boundedNode } from './support/bounded-node.ts';
 
 /**
  * The merge queue and its candidates (design §4 and §5.1), the frozen request, the judgement of a red
@@ -122,7 +123,7 @@ const tool = await import(
   REACH: Rule[];
   ruleFor: (path: string, rules: Rule[], lanes: unknown[]) => Rule | null;
   readLanes: (root: string) => { lanes: unknown[] } | null;
-  endTree: (pid: number) => void;
+  endTree: (pid: number) => boolean;
   stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
   watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number; superseded?: () => string | null; taken?: () => void }) => Watch;
   ownerEnded: (environment?: Record<string, string | undefined>, alive?: (pid: number) => boolean) => string | null;
@@ -1367,23 +1368,8 @@ function queueScratch(name: string) {
     : null);
   const admissionFile = join(root, 'local', 'admission.json');
   let probes = 0;
-  /** A node process of the case, bounded by `ms`, ended with its tree at the bound; `extra` over the case's environment. */
-  const node = (args: string[], extra: Record<string, string>, ms: number, cwd: string): Promise<{ status: number | null; out: string }> => {
-    const child = spawn(process.execPath, args, { cwd, env: withEnv(env, extra), windowsHide: true });
-    started.add(child);
-    let out = '';
-    child.stdout.on('data', (chunk) => { out += String(chunk); });
-    child.stderr.on('data', (chunk) => { out += String(chunk); });
-    return new Promise((done) => {
-      const bound = setTimeout(() => {
-        out += `\n[the test ended this invocation: no verdict within ${ms} ms (TOOLTESTHANG1)]\n`;
-        tool.endTree(child.pid!);
-      }, ms);
-      const ended = (status: number | null) => { clearTimeout(bound); started.delete(child); done({ status, out }); };
-      child.on('close', ended);
-      child.on('error', (error) => { out += `${error.message}\n`; ended(null); });
-    });
-  };
+  const node = (args: string[], extra: Record<string, string>, ms: number, cwd: string) =>
+    boundedNode(args, { cwd, env: withEnv(env, extra), ms, end: tool.endTree, started });
   return {
     root,
     /** The case's Daoris home, whose machine admission the runner takes its places in. */
@@ -2065,7 +2051,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const ended = await repo.run(['b1', '--message', 'local/b1.msg'], {}, 5_000);
       assert.notEqual(ended.status, 0, ended.out);
       assert.match(ended.out, /no verdict within 5000 ms/);
-      assert.deepEqual(repo.running(), []);
+      assert.deepEqual(repo.running(), [], ended.out);
     } finally {
       await repo.cleanup();
     }

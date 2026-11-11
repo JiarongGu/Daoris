@@ -24,7 +24,7 @@ export function FolderExcludesRow({ held, busy = false, onSave }: {
   const change = excludesChange(held, typed);
   const changed = change.add.length + change.remove.length > 0;
   return (
-    <div className="grid max-w-prose gap-1.5">
+    <div className="grid gap-1.5">
       <textarea
         aria-label={t('projects.manage.excludes')}
         value={typed}
