@@ -236,9 +236,9 @@ public static class NodeWordActs
     public const string Reject = "reject";
 
     /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>
-    public const string KeepYours = "keep-yours", TakeSession = "take-session", KeepBoth = "keep-both";
+    public const string KeepYours = ReturnChoices.KeepYours, TakeSession = ReturnChoices.TakeSession, KeepBoth = ReturnChoices.KeepBoth;
 
-    public static readonly IReadOnlyList<string> Choices = [KeepYours, TakeSession, KeepBoth];
+    public static readonly IReadOnlyList<string> Choices = ReturnChoices.All;
 
     public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
 }

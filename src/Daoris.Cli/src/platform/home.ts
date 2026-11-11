@@ -192,6 +192,7 @@ export const HOME_ENTRIES = [
   row('deps', 'work', 'work/deps/*', 'work/deps/*'),
   row('tree-files', 'work', 'work/files/trees/*', 'work/files/trees/*'),
   row('places', 'work', 'work/places/*/*', 'work/places/*/*'),
+  row('plans', 'work', 'work/plans/*', 'work/plans/*'),
   row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'cache/tools', 'tools'),
   row('bin', 'cache', 'cache/bin', 'bin'),

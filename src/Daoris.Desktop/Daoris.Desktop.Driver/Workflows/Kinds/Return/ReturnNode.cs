@@ -41,11 +41,19 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
             $"node `{node.Id}`: a `{NodeKinds.Return}` brings back the copy an `{NodeKinds.Isolate}` made, and this graph sets no work apart.");
     }
 
-    /// <summary>The wait an active node's status names, with the paths it waits on.</summary>
-    public override WorkflowRunWait? WaitOf(NodeStatus status) =>
-        status.State == NodeStates.Active && status.Code is PlaceBusy or BothChanged
-            ? new WorkflowRunWait(status.Code, new Dictionary<string, string> { ["paths"] = status.Holds ?? "" }, status.Since)
-            : null;
+    /// <summary>The wait an active node's status names: its paths changed on both sides as <c>paths</c>, those refused as <c>refused</c>.</summary>
+    public override WorkflowRunWait? WaitOf(NodeStatus status)
+    {
+        if (status.State != NodeStates.Active || status.Code is not (PlaceBusy or BothChanged)) return null;
+        var lines = (status.Holds ?? "").Split('\n');
+        var values = new Dictionary<string, string> { ["paths"] = string.Join("\n", lines.Where(line => !line.Contains('\t'))) };
+        if (lines.Any(line => line.Contains('\t'))) values["refused"] = string.Join("\n", lines.Where(line => line.Contains('\t')));
+        return new WorkflowRunWait(status.Code, values, status.Since);
+    }
+
+    /// <summary>The words a return waiting on the person holds: a line for each path, a refused one followed by a tab and its <see cref="ReturnRefusal"/> code.</summary>
+    public static string HoldsOf(FolderReturned returned) =>
+        string.Join("\n", returned.Waiting.Concat(returned.Refused.Select(each => $"{each.Key}\t{each.Value}")));
 
     public INodeDoor? Door(NodeDoorWiring wiring) => new ReturnDoor(wiring.Home, said => wiring.Say("return.run", said), wiring.Turning, wiring.MayStart);
 
@@ -58,7 +66,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
         if (kept.Doors.Door<IReturnDoor>(Row.Kind) is not { } door) return;
         var start = ReturnStart.Of(kept.Governed.Unit, kept.Node, kept.Status, kept.Record, kept.Authority);
         // Waiting on the person, the folders are read again only once they chose for a path it waits on, not at every pass.
-        if (kept.Status.Code == BothChanged && !(kept.Status.Holds ?? "").Split('\n').Any(start.Choices.ContainsKey)) return;
+        if (kept.Status.Code == BothChanged && !(kept.Status.Holds ?? "").Split('\n').Any(line => start.Choices.ContainsKey(line.Split('\t')[0]))) return;
         door.Start(start);
     }
 

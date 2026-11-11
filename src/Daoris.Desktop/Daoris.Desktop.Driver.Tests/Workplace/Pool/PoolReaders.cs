@@ -39,10 +39,8 @@ internal static class PoolReaders
         new(Driver + "Workplace/TreeWorkReads.cs", @"BranchOfTree", "c", "the branch of the tree a work read opens"),
     ];
 
-    /// <summary>
-    /// Every in-use set built from records and every test of a listed folder against one: a slot's folder is no record's path, so each set
-    /// adds, for each held line, the slot the pool names, and the landing's set and the follow's test are among them.
-    /// </summary>
+    /// <summary>Every in-use set built from records and every test of a listed folder against one: a slot's folder is no record's path, so
+    /// each set adds, for each held line, the slot the pool names, and the landing's set and the follow's test are among them.</summary>
     internal static IReadOnlyList<PoolReader> InUseSets { get; } =
     [
         new(Driver + "Workplace/TidyHolders.cs", InUse, "c", "the tidy's in-use set and the trees sessions hold"),
@@ -69,7 +67,6 @@ internal static class PoolReaders
         new(Driver + "Workplace/TreeStrays.cs", InUse, "c", "the strays' busy folders"),
         new(Driver + "Workplace/TreeSweeps.cs", InUse, "c", "the sweep's test of a listed folder against the set"),
         new(Driver + "Workplace/TreeSync.cs", InUse, "c", "the sync's use of the set"),
-        new(Modules + "Bridge/Routes/HelpScreenDoors.cs", InUse, "c", "the help screen's set"),
         new(Modules + "Bridge/Routes/LinesRoutes.cs", InUse, "c", "the lines' set"),
         new(Modules + "Bridge/Routes/TreesTidyDesk.cs", InUse, "c", "the trees desk's set"),
     ];

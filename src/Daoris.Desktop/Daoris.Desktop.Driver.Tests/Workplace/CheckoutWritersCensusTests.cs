@@ -115,16 +115,14 @@ public sealed partial class CheckoutWritersCensusTests
     };
 
     /// <summary>
-    /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions,
-    /// so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
-    /// run's <c>land</c>, whose performer hands it the same; the Accept doors land nothing themselves.
-    /// </summary>
+    /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions, so the write waits for a
+    /// session working in the checkout. A merge rule's press reaches the promotion through the run's <c>land</c>, whose performer hands
+    /// it the same; the Accept doors land nothing themselves.</summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
-        ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull",
+        ["TreesSyncVerb.cs"] = "`daoris tree sync --yes`'s pull where no Daoris runs",
         ["ReviewLandingWorld.cs"] = "a run's `land` performed, a merge rule's move",
-        ["TreesTidyDesk.cs"] = "the window's Bring up to date",
-        ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
+        ["TreesTidyDesk.cs"] = "the window's Bring up to date, and the terminal's and Ask Daoris's press of it",
         ["WatchNodes.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
