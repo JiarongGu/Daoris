@@ -25,6 +25,12 @@ internal static class LandReading
                     + (holding.Tip == bound ? "" : $", squashing {TextBounds.ShortCommit(bound, 8)}"));
             }
 
+            if (binding.SubjectRevision is { } tip && reading.Git?.Content?.Invoke(unit.Id, tip)?.Line is { HoldsAll: true } onLine)
+            {
+                return NodeObserving.ReachedAt(reading, source, tip, onLine.Held.Onto, "git", $"refs/heads/{onLine.Name}", onLine.Said)
+                    with { Words = onLine.Said };
+            }
+
             return branch?.Held is { } joined
                 ? NodeObserving.Reached(reading, source, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
                 : NodeObserving.Seen(reading, null, "nothing was handed on at the bound commit yet");

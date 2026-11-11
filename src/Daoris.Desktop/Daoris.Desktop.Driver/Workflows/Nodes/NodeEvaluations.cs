@@ -241,8 +241,8 @@ internal static class NodeEvaluations
     }
 
     /// <summary>
-    /// <paramref name="reads"/> with what the line holds of a run's branch at the tip this pass read, where its <c>content.holds</c> waits
-    /// active or unknown; as they stand for every other unit, so a run whose hold is settled, or holds none, asks nothing.
+    /// <paramref name="reads"/> with what the line holds of a run's branch at the tip this pass read, where a node asking for content waits
+    /// active or unknown; as they stand for every other unit, so settled nodes ask nothing.
     /// </summary>
     public static async Task<NodeGitReads?> ContentAsync(
         GovernedUnit governed, NodeRecord record, string? tip, Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> content, NodeGitReads? reads,

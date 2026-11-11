@@ -82,7 +82,7 @@ public sealed partial class NodeDispatchCensusTests
         string[] Asking(PassRead read) => [.. NodeKit.Built.Units.Where(unit => unit is IAsksReads asks && asks.Asks.HasFlag(read)).Select(unit => unit.Row.Kind)];
 
         Assert.Equal([NodeKinds.Look, NodeKinds.Opinion], Asking(PassRead.Gates).Order(StringComparer.Ordinal));
-        Assert.Equal([NodeKinds.ContentHolds], Asking(PassRead.Content));
+        Assert.Equal([NodeKinds.ContentHolds, NodeKinds.Land], Asking(PassRead.Content));
         Assert.Equal([NodeKinds.Push], Asking(PassRead.Remote));
         Assert.Equal([NodeKinds.Land], NodeKit.Built.Units.Where(unit => unit is IMakesLanding).Select(unit => unit.Row.Kind));
     }

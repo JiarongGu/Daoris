@@ -15,6 +15,8 @@ public static class HoldReads
         var carried = work is null ? null : DiscardOffer.Of(tree, work);
         var unlanded = work?.Unlanded;
         var ahead = unlanded == 0 ? await trees.AheadOfLineAsync(tree, ct).ConfigureAwait(false) : unlanded;
-        return new HoldContent(carried?.NotLanded, unlanded, ahead);
+        var line = work is null ? null : await LineHolding.ReadAsync(trees.Context, tree, tip, ct).ConfigureAwait(false);
+        return !string.Equals(TreeTips.Read(tree), tip, StringComparison.OrdinalIgnoreCase) ? null
+            : new HoldContent(carried?.NotLanded, unlanded, ahead) { Line = line };
     }
 }

@@ -31,6 +31,11 @@ internal static class ContentHoldsReading
             return HoldReading.Seen(reading, null, "what the line holds of it was not read at the bound commit");
         }
 
+        if (read.Line is { HoldsAll: true } onLine)
+        {
+            return HoldReading.Reached(reading, "git", binding.SubjectRevision, onLine.Said);
+        }
+
         return Held(read, HoldReading.On(node, Line), HoldReading.On(node, Proof)) is { } held
             ? HoldReading.Seen(reading, null, held)
             : HoldReading.Reached(reading, "git", binding.SubjectRevision, $"{read.Unlanded} of its commits no branch of yours holds, and the line does not hold it by content");
