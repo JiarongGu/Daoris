@@ -302,6 +302,8 @@ export const NOTE_VALUES: Readonly<
   // `to` and `from` are a code's accounts where it says so (`NoteCode.accounts`: a move by the curve).
   named: 'text', to: 'text', from: 'text', commit: 'text', who: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
+  // A step's session: the step and run it performs, the attempt's number, and the step's answer.
+  step: 'text', unit: 'id', attempt: 'number', message: 'text', code: 'text',
   // The model an actor's choice named, in the tool's own word, the actor by its name, and which of its choices ran.
   model: 'text', actor: 'actor', n: 'number', entry: 'text', passed: 'text',
   // A supervisor rule's act, the count it reads by name, its bound, its place and its act as the rule says them.

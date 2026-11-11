@@ -12,20 +12,22 @@ namespace Daoris.Driver;
 /// <param name="program">The desktop's program the step's server runs as; null where none is found, and nothing is sent.</param>
 /// <param name="wake">Asks a pass once an answer is kept.</param>
 public sealed class StepAgents(
-    string home, IStepSessions sessions, Func<string, NodeAttempt, NodeDeclaration, StepAgentAsk?> askOf, string? program, Action? wake = null) : IStepAgents
+    string home, IStepSessions sessions, Func<string, NodeAttempt, NodeDeclaration, CancellationToken, Task<StepAgentAsk?>> askOf, string? program,
+    Action? wake = null) : IStepAgents
 {
     /// <summary>The key the door is kept under among the doors, beside the kinds' own.</summary>
     public const string Door = "plugin.step";
 
     private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
 
-    public Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
+    public async Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
     {
         var invocation = attempt.Call.Invocation;
-        if (_running.ContainsKey(invocation)) return Task.CompletedTask;
-        var ask = askOf(unit, attempt, node) ?? throw new DriverException($"{unit} names no work for `{node.Id}` to be performed on");
-        var at = new PluginToolsAt(invocation, new PluginPlace(ask.Repository, ask.Workspace), "en");
-        var tools = PluginToolsHand.StepEntry(home, at, program, ask.Plugin) ?? throw new DriverException("the desktop's program that serves a step's tools is not found");
+        if (_running.ContainsKey(invocation)) return;
+        if (program is null) throw new DriverException("the desktop's program that serves a step's tools is not found");
+        var ask = await askOf(unit, attempt, node, ct).ConfigureAwait(false) ?? throw new DriverException($"{unit} names no work for `{node.Id}` to be performed on");
+        var place = new PluginPlace(ask.Repository, ask.Workspace);
+        ServerEntry Tools(string session) => PluginToolsHand.StepEntry(home, new PluginToolsAt(session, place, "en"), program, ask.Plugin, invocation);
         Directory.CreateDirectory(StepAnswer.Folder(home));
         AtomicFile.WriteText(StepAnswer.AskPath(home, invocation), ask.Write());
         using (ExecutionContext.SuppressFlow())
@@ -34,7 +36,7 @@ public sealed class StepAgents(
             {
                 try
                 {
-                    await sessions.RunAsync(ask, tools, CancellationToken.None).ConfigureAwait(false);
+                    await sessions.RunAsync(ask, Tools, CancellationToken.None).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -44,8 +46,6 @@ public sealed class StepAgents(
                 }
             });
         }
-
-        return Task.CompletedTask;
     }
 
     public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct)

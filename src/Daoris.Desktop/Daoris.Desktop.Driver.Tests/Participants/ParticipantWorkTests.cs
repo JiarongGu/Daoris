@@ -84,7 +84,7 @@ public sealed class ParticipantWorkTests
             Assert.All(row.Disagrees.Values, decision => Assert.Contains(decision, table.Decisions));
         }
 
-        Assert.Equal(["partner-drawn", "supervise-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
+        Assert.Equal(["partner-drawn", "supervise-drawn", "step-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
     }
 
     /// <summary>
@@ -151,9 +151,10 @@ public sealed class ParticipantWorkTests
         Assert.Equal(ParticipantWork.Chat, (await chats.Client().RecordAsync("c2"))!.Work);
     }
 
-    private sealed record Marks(bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null)
+    private sealed record Marks(
+        bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null, string? Performs = null)
     {
-        public WorkMarks Value => new(Mirror, Kind, Repository, Ask, Serves, Piece, Opinion, Decides);
+        public WorkMarks Value => new(Mirror, Kind, Repository, Ask, Serves, Piece, Opinion, Decides, Performs);
     }
 
     [Fact]
@@ -164,6 +165,15 @@ public sealed class ParticipantWorkTests
         Assert.False(ActiveSessions.HoldsSlot(turn));
         Assert.False(ActiveSessions.HoldsSlot("chat", "engine", null, "a1b2c3d4", null, "a-1b2c3d4e5f6"));
         Assert.True(ActiveSessions.HoldsSlot(turn with { Decides = null }));
+    }
+
+    [Fact]
+    public void A_step_s_session_is_read_as_the_step_s_work_from_the_record_the_service_answers()
+    {
+        var step = new SessionView("s1", "engine", "working") { Kind = "chat", Performs = "inv-1" };
+
+        Assert.False(ActiveSessions.HoldsSlot(step));
+        Assert.Equal(ParticipantWork.Step, ParticipantWork.Of(StartAdmission.Marks(new PriorSession("s1", null, "working", Repository: "engine") { Kind = "chat", Performs = "inv-1" })));
     }
 
     private sealed record Answers(bool HoldsSlot, string Drawn, bool ConnectorPartner, bool Help)

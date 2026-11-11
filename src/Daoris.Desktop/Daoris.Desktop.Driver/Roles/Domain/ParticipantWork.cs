@@ -14,8 +14,10 @@ namespace Daoris.Driver;
 /// <param name="Piece">The piece a partner writes, kept only beside <paramref name="Serves"/>.</param>
 /// <param name="Opinion">The second opinion a reviewer reads for.</param>
 /// <param name="Decides">The attempt a supervisor's turn decides for.</param>
+/// <param name="Performs">The plugin step's attempt a step's session performs.</param>
 public readonly record struct WorkMarks(
-    bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null);
+    bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null,
+    string? Performs = null);
 
 /// <summary>
 /// The participant's work: the capability a record is opened for, one closed code read
@@ -67,8 +69,11 @@ public static class ParticipantWork
     /// <summary>A supervisor's one read-only turn, told by the attempt it decides for before every other mark; no place under the cap.</summary>
     public const string Supervise = "supervise";
 
+    /// <summary>The session that performs a plugin's step, told by the attempt it performs; a part of the run, no place under the cap.</summary>
+    public const string Step = "step";
+
     /// <summary>Every work, the closed set.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise, Step];
 
     /// <summary>The work a driven quest starts as, by the weight its publisher declared: a design, an exact build, else a build.</summary>
     public static string OfWeight(string? weight) => weight switch
@@ -88,6 +93,7 @@ public static class ParticipantWork
     {
         if (marks.Mirror) return null;
         if (Marked(marks.Decides)) return Supervise;
+        if (Marked(marks.Performs)) return Step;
         if (Marked(marks.Opinion)) return Review;
         if (Marked(marks.Serves)) return Marked(marks.Piece) ? Partner : Help;
         if (Marked(marks.Ask)) return Intake;

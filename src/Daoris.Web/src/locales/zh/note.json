@@ -1,6 +1,9 @@
 {
   "note.ended.awaits": "已向另一个仓库提出委托 #{{awaits}}，等待答复；答复后委托在同一工作树中继续。",
   "note.ended.exit": "进程退出码为 {{exit}}。",
+  "note.step.performs": "为 {{unit}} 执行 `{{plugin}}` 的步骤 `{{step}}`，第 {{attempt}} 次尝试。",
+  "note.step.reached": "已完成步骤 `{{step}}`：{{message}}",
+  "note.step.failed": "步骤 `{{step}}` 失败（{{code}}）：{{message}}",
   "note.ended.turn-failed-taken": "智能体这一轮失败，委托仍已接下：",
   "note.ended.turn-failed-open": "智能体这一轮在接下委托前失败：",
   "note.ended.provider-refused": "模型的提供方拒绝了这一轮，因此本次运行失败，并像失败的运行一样继续：",

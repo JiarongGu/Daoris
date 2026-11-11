@@ -20,6 +20,12 @@ public sealed record StepAgentAsk(
     /// <summary>The step's evidence schema, which the answer's evidence is named under; null for none.</summary>
     public string? Evidence { get; init; }
 
+    /// <summary>The place's checkout the session runs at, with no tree of its own; null where the run names none.</summary>
+    public string? Root { get; init; }
+
+    /// <summary>The landing's evidence as the run records it; null before a landing.</summary>
+    public string? Landing { get; init; }
+
     /// <summary>The words the session is started with: the goal, then each input it works from, then how it answers.</summary>
     public string Prompt() => string.Join("\n", new[]
     {
@@ -32,6 +38,7 @@ public sealed record StepAgentAsk(
         $"- the branch `{Branch ?? "(none named)"}` at {Tip}",
         $"- origin's address `{Origin ?? "(none read)"}`",
         $"- the line `{Line ?? "(none named)"}`",
+        $"- the landing: {Landing ?? "(none yet)"}",
         "",
         $"Use the plugin's tools (`{Plugin}_<command>`) for its platform, and nothing else outside Daoris. Finish by calling `step_answer` once:"
             + " `reached` with the evidence's address and a message where the goal is met"

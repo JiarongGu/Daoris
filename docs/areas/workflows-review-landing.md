@@ -332,20 +332,28 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `tidy` as merged. The run view marks the step the run stands at as the live one, except a stopped step, which it draws stopped
     (`WorkflowRunView`, `RunViewStopped.test.tsx`). (from D245, D247)
 31a. A plugin's step whose manifest declares a `goal` (authored, at most 1,200 characters, carried onto the governed node beside its
-    `perform`) is performed by an agent where the loop wires the step agents (`StepAgents`, kept among the doors as `plugin.step`, built
-    by `PluginStep` from `NodeDoorWiring.StepSessions` and `StepAsks`): the performer records its attempt as its plugin's, as every
-    plugin step's, and from its first delivery sends it to that port, not the plugin's process, which need not be up. The port keeps
-    the attempt's ask (`StepAgentAsk`: the goal, the run's unit, node and attempt, the repository and workspace, the branch, origin's
-    address, the line, the landed commit, the step's outcomes, outputs and evidence schema) under the home's
-    `workflows/agent-steps/<invocation>.json`, and starts the step's session off the pass (`IStepSessions`) handed one server, the
-    `daoris-plugins` of that plugin alone with `step_answer` (`--plugin <id> --step <invocation>`). `step_answer` keeps the answer
+    `perform`) is performed by an agent through the step agents the loop wires (`StepAgents`, kept among the doors as `plugin.step`,
+    built by `PluginStep` from `NodeDoorWiring.StepSessions` and `StepAsks`, which `WatchNodes` hands): it is started only once they are
+    wired, the performer records its attempt as its plugin's, as every plugin step's, and from its first delivery sends it to that
+    port, not the plugin's process, which need not be up. The port keeps the attempt's ask (`StepAgentAsk`, composed by `StepAsks` from
+    the frame its plugin would be told, `NodeRuntime.StepAskAsync`: the goal, the run's unit, node and attempt, the repository, workspace
+    and checkout, the branch, origin's address read there, the line, the commit, the landing's evidence, the step's outcomes, outputs
+    and evidence schema) under the home's `workflows/agent-steps/<invocation>.json`, and starts the step's session off the pass
+    (`StepSessionTurn`, a supervisor's turn's shape): staffed as the place's builds are (their role's order at the place, the account
+    walk), its record a chat on no quest at the run's place with no tree of its own, marked `performs` with the invocation
+    (`POST /api/step-sessions`, `StepSessionDesk`), read as the work `step`, a part of the run that holds no place's lease, no place
+    among the place's active sessions and no place under the cap; it runs at the place's checkout under the step's read-only rules
+    (`StepPermissions`: the supervisor's shape, with the `daoris-plugins` tools allowed), handed that one server, the `daoris-plugins` of
+    that plugin alone with `step_answer` (`--session <its record> --plugin <id> --step <invocation>`), its first words the ask, refusing
+    the person's words while it runs. Its record says `step.performs` while it works and ends `completed` with `step.reached` where the
+    step was answered reached, `failed` with `step.failed` and the code otherwise (`StepConclusion`), and Sessions titles it *Workflow
+    step* 工作流步骤. `step_answer` keeps the answer
     once, in the wire's reconcile shape (`StepAnswer`): `reached` with a declared `decision`, the evidence's `url` and `message` (its
     `ref` the step's evidence schema by the invocation) and each declared output's id, or `failed` with a code; an answer of another
     shape is refused to the agent. The performer asks it as a check's port is asked, once it is answered or after a restart, and
     applies it as the plugin's completion. A session that ends unanswered, or an ask whose session no longer runs here, fails the step
     `no-answer`; an ask never kept reads as not started. An attempt already delivered on `work/perform` stays its plugin's to settle by
-    its own `check`, and where no loop wires the step agents a goal step is its plugin's on `work/perform`, until the loop's step
-    session start is wired (PLUGINEXT1e). A step that declares no goal, a release watched for hours, stays on `work/perform`. (from D274)
+    its own `check`. A step that declares no goal, a release watched for hours, stays on `work/perform`. (from D274)
 32. A merge runs through the integration transport under the legacy policy: no gates, one at a time, a merge commit. The person's
     press is requested at the `press` door and settled *merged on the person's press*; an automatic `land`'s delivery at its own
     `landing` door (`IntegrationRequester.Landing`), which its delivery's standing authority admits, settled *merged by its workflow's

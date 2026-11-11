@@ -6,6 +6,9 @@ public static class StartNoteCodes
     // A move to a new part that a live Daoris keeps and has not moved for `minutes`, said once: never taken over while that Daoris runs.
     public static readonly NoteCode MoveQuiet = new("move.quiet", ["minutes"]);
 
+    // While a step's session works: the step it performs, for which run and attempt.
+    public static readonly NoteCode StepPerforms = new("step.performs", ["step", "plugin", "unit", "attempt"]);
+
     // ——— While it starts and works, replaced by its end.
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
     public static readonly NoteCode StartedTreeUnrecorded = new("started.tree-unrecorded", []);

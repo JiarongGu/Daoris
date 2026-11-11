@@ -105,8 +105,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     application first, then beside the home. An offer is listed as installed where its id or one it was formerly is
     (`PluginOffers.For`). (from D103, D274)
 17a. Daoris's GitHub and Azure DevOps plugins (3.2.0) declare a `goal` on their `pull-request` step and carry `create-pull-request`,
-    `pull-request-status` and `complete-pull-request` as tools, so a loop that wires the step agents has an agent perform it (workflows
-    area, rule 31a); elsewhere they perform it on `work/perform`, and they answer `work/state`. The Azure DevOps one's step
+    `pull-request-status` and `complete-pull-request` as tools, so the loop's step session performs it (workflows area, rule 31a); an
+    attempt delivered on `work/perform` before stays theirs to settle by their `check`, and they answer `work/state`. The Azure DevOps one's step
     sets the pull request to auto-complete by the token's own identity where its options say `autoComplete: true` (with `mergeStrategy`,
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and

@@ -187,6 +187,9 @@ public sealed record PriorSession(
     /// <summary>The attempt this one decides for, when it is a supervisor's turn; null for every other.</summary>
     public string? Decides { get; init; }
 
+    /// <summary>The plugin step's attempt this one performs, when it is a step's session; null for every other.</summary>
+    public string? Performs { get; init; }
+
     /// <summary>
     /// The session this one continues (its <c>from</c>): a conversation handed over, or a quest's session carried on
     /// after a hand-over or onto another account after a limit; null for every other, and from an older host.
@@ -375,6 +378,9 @@ public sealed record SessionView(
 
     /// <summary>The attempt a supervisor's turn decides for, which takes no place under the cap; answered on loopback alone.</summary>
     public string? Decides { get; init; }
+
+    /// <summary>The plugin step's attempt a step's session performs, which takes no place under the cap; answered on loopback alone.</summary>
+    public string? Performs { get; init; }
 
     /// <summary>The uncommitted paths of its own a parked line keeps its git place with, on loopback alone.</summary>
     public IReadOnlyList<string>? HoldsPlace { get; init; }

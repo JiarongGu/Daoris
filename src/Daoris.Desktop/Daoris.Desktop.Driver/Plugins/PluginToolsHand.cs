@@ -25,11 +25,13 @@ public static class PluginToolsHand
             new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
     }
 
-    /// <summary>A step's session's entry: <paramref name="plugin"/>'s tools alone and <c>step_answer</c> for the attempt it serves, listed or not.</summary>
-    public static ServerEntry? StepEntry(string home, PluginToolsAt at, string? program, string plugin)
+    /// <summary>
+    /// A step's session's entry: <paramref name="plugin"/>'s tools alone and <c>step_answer</c> for the attempt <paramref name="step"/> it
+    /// performs, listed or not, its calls made as the session <paramref name="at"/> names.
+    /// </summary>
+    public static ServerEntry StepEntry(string home, PluginToolsAt at, string program, string plugin, string step)
     {
-        if (program is null) return null;
-        List<string> words = ["plugin", "tools", "--session", at.Session, "--repository", at.Place.Repository ?? "", "--language", at.Language, "--plugin", plugin, "--step", at.Session];
+        List<string> words = ["plugin", "tools", "--session", at.Session, "--repository", at.Place.Repository ?? "", "--language", at.Language, "--plugin", plugin, "--step", step];
         if (at.Place.Workspace is { Length: > 0 } workspace) words.AddRange(["--workspace", workspace]);
         return new ServerEntry(
             PluginToolsServer.Name, program, words,

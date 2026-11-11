@@ -54,7 +54,10 @@ public static class ParticipantWork
     /// <summary>A supervisor's one read-only turn, told by the attempt it decides for, before every other mark.</summary>
     public const string Supervise = "supervise";
 
-    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise];
+    /// <summary>The session that performs a plugin's step, told by the attempt it performs; a part of the run, no place under the cap.</summary>
+    public const string Step = "step";
+
+    public static IReadOnlyList<string> Codes { get; } = [Build, Design, Exact, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm, Supervise, Step];
 
     /// <summary>
     /// The work <paramref name="session"/> is opened for, from its marks; null where it has none here, another machine's record.
@@ -63,6 +66,7 @@ public static class ParticipantWork
     {
         if (session.Origin is not null) return null;
         if (Marked(session.Decides)) return Supervise;
+        if (Marked(session.Performs)) return Step;
         if (Marked(session.Opinion)) return Review;
         if (Marked(session.Serves)) return Marked(session.Piece) ? Partner : Help;
         if (Marked(session.Ask)) return Intake;

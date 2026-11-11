@@ -31,6 +31,18 @@ public sealed record OpenSupervise(
     public static string Path => "/api/supervise";
 }
 
+/// <summary>
+/// The driver opens the record of the session that performs a plugin's step: a chat on no quest at the run's place, with no tree of its
+/// own, marked with the step's attempt.
+/// </summary>
+public sealed record OpenStepSession(
+    string? Performs, string? Repository, string? Workspace, string? Door, string? Account = null, string? DoorVersion = null)
+    : IRoute<HelperActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/step-sessions";
+}
+
 /// <summary>A helper's answer, handed to the session it serves as a word marked as the helper's, once.</summary>
 /// <param name="Text">Daoris's words around the helper's claim.</param>
 /// <param name="Running">The driver that runs a working driven asker hands an urgent ask's answer for its run's next step.</param>
@@ -67,6 +79,7 @@ public sealed record HandPartner(string Partner, string? Text, bool? Settled = n
 [JsonSerializable(typeof(HandHelper))]
 [JsonSerializable(typeof(OpenPartner))]
 [JsonSerializable(typeof(OpenSupervise))]
+[JsonSerializable(typeof(OpenStepSession))]
 [JsonSerializable(typeof(HandPartner))]
 [JsonSerializable(typeof(HelperActionResponse))]
 internal sealed partial class ParticipantJson : JsonSerializerContext;

@@ -35,7 +35,7 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     public IStepSessions? StepSessions { get; init; }
 
     /// <summary>What a step's session works from, composed from its attempt's run.</summary>
-    public Func<string, NodeAttempt, NodeDeclaration, StepAgentAsk?>? StepAsks { get; init; }
+    public Func<string, NodeAttempt, NodeDeclaration, CancellationToken, Task<StepAgentAsk?>>? StepAsks { get; init; }
 
     /// <summary>The desktop's program a step's tools are served by; the install's where none is named.</summary>
     public string? Program { get; init; }
