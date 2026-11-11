@@ -13,7 +13,7 @@ import { contextOffer } from '../menus/press';
 import { usePluginRecordActs } from '../plugins/recordActs';
 import { questName } from '../work/identity';
 import { groupHeading, ListGroup, ListRowDoor } from '../work/frame/ListPane';
-import { questGroups, shownStatus } from './records';
+import { isLeft, questGroups, shownStatus } from './records';
 
 /** What a quest's row says beside the quest itself. */
 export type QuestRowFacts = {
@@ -163,7 +163,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
   // The ask's short title names the work where it gave one; else the quest's own name, as before.
   const name = ask?.short?.trim() ? ask.short.trim() : questName(quest);
   // A done a departure holds still waits on the person, so it reads as live, never dimmed as ended.
-  const ended = (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true;
+  const ended = (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true && !isLeft(quest);
   // Only a hold is the person's to lift here; any other reason is said, and offers nothing.
   const resume = sitting?.verdict === 'Held' ? onResume : undefined;
   // A row offers what it does on a right-click: opening it, its hold's resume, and its id; what is done to
@@ -187,7 +187,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
       <ListRowDoor chosen={chosen} dimmed={ended} onPress={() => onChoose(quest.id)}>
         <span className="flex items-baseline gap-2">
           {/* A closure graph's quest at its submission reads submitted; every other its status. */}
-          <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${shownStatus(quest)}`)}>{t(`status.${shownStatus(quest)}`)}</Pill>
+          <Pill tone={shownStatus(quest) === 'Unfinished' ? 'open' : QUEST_TONE[quest.status]} title={t(`statusHint.${shownStatus(quest)}`)}>{t(`status.${shownStatus(quest)}`)}</Pill>
           <span className="ml-auto flex min-w-0 shrink items-baseline justify-end gap-1.5">
             <CarriedCount links={quest.links?.length ?? 0} files={quest.attachments?.length ?? 0} />
             {/* A week of silence is the signal this view exists to surface. */}

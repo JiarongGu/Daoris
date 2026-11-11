@@ -47,6 +47,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.answered-unfinished': { values: ['awaits', 'exit'] },
   'ended.carried-unfinished': { values: ['exit'] },
   'ended.done': { values: [] },
+  // The quest reached done, and its own answers say part of the work is left: it departed from `left` of its requirements.
+  'ended.done-left': { values: ['left'] },
   // A bound session ended at its `ready`, the result in; worded by its status's hint.
   'ended.submitted': { values: [], key: 'statusHint.Submitted' },
   'ended.declined': { values: [] },

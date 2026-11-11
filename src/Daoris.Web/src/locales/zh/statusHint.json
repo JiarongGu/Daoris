@@ -3,5 +3,6 @@
   "statusHint.Taken": "已由某个仓库的智能体接下",
   "statusHint.Submitted": "它的智能体已交付工作——没有什么拦着它时，在工作流走完时关闭",
   "statusHint.Done": "已了结",
+  "statusHint.Unfinished": "已标为完成，但偏离了你的要求，仍有部分未做完：在做完或你关闭其需求之前，它会一直留在这里",
   "statusHint.Declined": "已谢绝——所附说明才是委托方能据以行动的部分"
 }

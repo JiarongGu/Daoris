@@ -259,6 +259,15 @@ public sealed record Quest(
         : null;
 
     /// <summary>
+    /// Whether it is done and its own record says part of the work is left: it departed from a requirement of the person's. **Derived,
+    /// never stored**, and unlike <see cref="Held"/> not lifted by their yes, which lets what follows go on and finishes nothing, so
+    /// an accepted departure is as unfinished as one still held. A done answering every requirement met, a quest that is not
+    /// done, and one that names no requirement are not left. It is outstanding wherever outstanding work is listed
+    /// (<see cref="QuestReads.ListAsync"/>), and an ask it belongs to is not done (<see cref="AskStandings.Standing"/>).
+    /// </summary>
+    public bool Left => Status == QuestStatus.Done && Answers.Any(answer => answer.IsDeparture);
+
+    /// <summary>
     /// Whether it waits: closed done, held for one of <see cref="Hold"/>'s
     /// causes. What follows it, a chain's next step or a quest waiting on it, waits with it.
     /// </summary>
