@@ -2,6 +2,7 @@
 // and an answer the step cannot go on from thrown as a `Refusal` with the code the step fails by.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
+import { kept, refused } from './credential.mjs';
 
 const VERSION = 'api-version=7.1';
 // Release management and the organization's `connectionData` are asked under a preview version, which a released API also takes.
@@ -58,8 +59,8 @@ export class Refusal extends Error {
 export const TRANSIENT = ['unavailable', 'rate-limited'];
 
 async function ask(method, url, body, version) {
-  const token = process.env.DAORIS_HOST_TOKEN;
-  if (!token) throw new Refusal('no-token', 'no API token was handed to this process');
+  const token = kept()?.token;
+  if (!token) throw new Refusal('no-token', 'no personal access token is kept: run `daoris azure-devops-pull-request login`');
   let response;
   try {
     response = await fetch(`${url}${url.includes('?') ? '&' : '?'}${version}`, {
@@ -82,6 +83,7 @@ async function ask(method, url, body, version) {
   // A refused personal access token is sent on to a sign-in page (203) as often as it is answered 401.
   if ([401, 403, 203].includes(response.status) || (response.status === 200 && json === null)) {
     const why = typeof json?.message === 'string' ? `: ${json.message.slice(0, 160)}` : '';
+    refused();
     throw new Refusal('unauthorized', `Azure DevOps refused the token (${response.status})${why}`);
   }
   if (response.status === 429) throw new Refusal('rate-limited', 'Azure DevOps is limiting this token for now');

@@ -1,7 +1,7 @@
 // GitHub pull request (`github-pull-request`): a plugin that opens and reads a pull request through GitHub's REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
-// handed the API token of the git identity serving origin, for this process alone, in DAORIS_HOST_TOKEN, and is not started where
-// no identity serves origin, the identity is read only, git access denies Write, or the identity has no API token.
+// not started where origin is served by a read-only identity or git access denies Write. It signs in itself: its `login` command keeps a
+// token in its own private storage (credential.mjs), and each API call carries that token.
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the one already
 //  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
@@ -9,13 +9,15 @@
 //  by the tip it is made at.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
-//  DAORIS_HOST_TOKEN the identity's API token: never logged, never written, sent only to the API
+//  DAORIS_PLUGIN_PRIVATE this plugin's own storage, where login keeps the token: never logged, sent only to the API
 //  DAORIS_HOST_API the API's base address where it is not GitHub's (a test's stand-in); else api.github.com, or
 //  https://<host>/api/v3 for a GitHub Enterprise host the origin names
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { work } from './work.mjs';
+import { run } from './commands.mjs';
+import { kept, refused } from './credential.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
@@ -72,8 +74,8 @@ class Refusal extends Error {
 const TRANSIENT = ['unavailable', 'rate-limited'];
 
 async function call(repo, method, path, body) {
-  const token = process.env.DAORIS_HOST_TOKEN;
-  if (!token) throw new Refusal('no-token', 'no API token was handed to this process');
+  const token = kept()?.token;
+  if (!token) throw new Refusal('no-token', 'no token is kept: run `daoris github-pull-request login`');
   let response;
   try {
     response = await fetch(`${apiOf(repo.host)}${path}`, {
@@ -96,6 +98,7 @@ async function call(repo, method, path, body) {
     json = await response.json();
   } catch { /* an answer with no body */ }
   if (response.status === 401 || response.status === 403 && !/rate limit/i.test(json?.message ?? '')) {
+    refused();
     throw new Refusal('unauthorized', `GitHub refused the token (${response.status}): ${json?.message ?? 'no reason given'}`);
   }
   if (response.status === 429 || response.status === 403) throw new Refusal('rate-limited', 'GitHub is limiting this token for now');
@@ -225,7 +228,8 @@ const points = {
   'work/state': state,
 };
 
-const answers = { ...points, ...kit.calls };
+// Its declared commands, asked at `command/run` alone, never a point it claims at the handshake.
+const answers = { ...points, ...kit.calls, 'command/run': run };
 
 const answer = async (frame) => {
   try {
