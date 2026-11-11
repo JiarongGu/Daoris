@@ -303,17 +303,20 @@ test('check reports a room over its ceiling', () => {
   fx.cleanup();
 });
 
-test('check reports a ceiling on a folder, which measures nothing', () => {
+test('check measures each document of a folder against the folder\'s ceiling: the read path grown, never a failure', () => {
   const fx = layoutFixture('documents-report-folder-ceiling');
-  fx.repoFx.write('docs/adr/0001.md', '# One\n');
+  fx.repoFx.write('docs/areas/driving.md', `# Driving\n\n${'word '.repeat(20)}\n`);
+  fx.repoFx.write('docs/areas/web.md', '# The web\n');
+  fx.repoFx.write('docs/areas/old/notes.md', `# Not an area\n\n${'word '.repeat(20)}\n`);
   fx.repoFx.write('TASKS.md', '# Tasks\n');
-  fx.manifest({ documents: { decisions: { path: 'docs/adr', words: 100 }, backlog: 'TASKS.md' } });
+  fx.manifest({ documents: { areas: { path: 'docs/areas', words: 10 }, backlog: 'TASKS.md' } });
   fx.sync();
 
   const { code, out } = fx.cli('check');
 
   assert.equal(code, 0, out);
-  assert.match(out, /docs\/adr \(decisions\) is a folder; its ceiling of 100 words measures nothing/);
+  assert.match(out, /words\s+docs\/areas\/driving\.md \(areas\) is 22 words of 10 — over by 12; the read path has grown/);
+  assert.doesNotMatch(out, /web\.md|notes\.md|measures nothing/);
   fx.cleanup();
 });
 

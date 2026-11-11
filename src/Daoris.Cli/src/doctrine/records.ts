@@ -247,10 +247,8 @@ export interface DriftReport {
   documentsMissing: { role: string; path: string }[];
   /** Declared documents that are a link, or a link held as text: a fact, and never read through. */
   documentLinks: DocumentLinkProblem[];
-  /** Declared documents over their ceiling in words: reported, never failed on. */
+  /** Declared documents over their ceiling in words, a folder's ceiling measuring each document in it: reported, never failed on. */
   documentsOver: { label: string; words: number; ceiling: number }[];
-  /** A ceiling declared on a folder, which no count can measure: reported. */
-  ceilingsUnmeasured: { role: string; path: string; ceiling: number }[];
   /** The canon's most-named records with no path declared, when the repository declares any: reported. */
   recordsUndeclared: string[];
   ok: boolean;

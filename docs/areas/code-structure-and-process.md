@@ -194,9 +194,8 @@ finishes first and the whole set runs once.
 
 ## Open
 
-- DOCDIET1: a long-lived repository develops worse than a fresh start: the canon's records only grow, so what a change reads and what
-  a search returns grow with the repository's age (here: areas up to 99 KB, the backlog twice its budget, the archive and fix log one
-  file each). Needs a design that finds, by measurement against a fresh copy, what improves it; nothing about history is settled first.
+- DOCDIET1 (D278, `docs/2026-11-12-long-lived-repository-design.md` §6, §8): the finished designs filed, each area cut to 4,500
+  words, the backlog to open rows, the examples; the change-cost run against a fresh copy; the history bench; a present scope in search.
 - TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
