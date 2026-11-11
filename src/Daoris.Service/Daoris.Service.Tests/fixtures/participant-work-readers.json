@@ -79,9 +79,9 @@
       "reads": "other",
       "note": "a run's binding names its ask, tested for null to find the ask's close; it tells no session's work by a mark"
     },
-    "WorkOrders/Domain/PlaceHolders.cs": {
+    "Workplace/Domain/PlaceLeases.cs": {
       "reads": "tells",
-      "note": "tells an ask's, a second opinion's, a helper's or a decision's record, which holds no place, by its marks; no row of this design moves it"
+      "note": "tells an ask's, a second opinion's, a helper's or a decision's record, which holds no place's lease, by its marks; no row of this design moves it"
     },
     "WorkOrders/AtWorkExchangeReading.cs": {
       "reads": "tells",
@@ -303,11 +303,6 @@
       "row": "1q",
       "note": "the waiting-session projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation; the other line constructs the repository view moved from HelpRoomWorkspaces.cs; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Help/HelpSettings.cs": {
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
-    },
     "Knowledge/Domain/Trace.Words.cs": {
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
@@ -488,6 +483,18 @@
     "Workflows/WorkflowRunFiles.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
+    },
+    "Loop/Supervise/AskDaorisReadingQueue.cs": {
+      "reads": "other",
+      "note": "Ask Daoris's record's own help mode, said in the second check's packet; it tells no session's work by a mark"
+    },
+    "Plugins/PluginCommandConsole.cs": {
+      "reads": "other",
+      "note": "a plugin command round's own question to the person, not a record's mark"
+    },
+    "Plugins/PluginTokenAdoption.cs": {
+      "reads": "other",
+      "note": "a plugin command round's own question, which leaves the token unadopted, not a record's mark"
     }
   },
   "modules": {

@@ -15,12 +15,12 @@ public sealed class SessionViewsTests
         {
             sessions = new object[]
             {
-                new { session = "s1", group = "ended", deletable = true },
-                new { session = "s2", group = "ended", deletable = false },
+                new { session = "s1", group = "done", deletable = true },
+                new { session = "s2", group = "failed", deletable = false },
                 new { session = "s3", group = "working", deletable = false },
-                new { session = "s4", group = "you", deletable = false },
-                new { session = "s5", group = "review", deletable = false },
-                new { session = "t/s6", group = "ended", teammate = true, deletable = false },
+                new { session = "s4", group = "needs-you", deletable = false },
+                new { session = "s5", group = "pending", deletable = false },
+                new { session = "t/s6", group = "done", teammate = true, deletable = false },
             },
         };
         return grounds;
@@ -62,8 +62,8 @@ public sealed class SessionViewsTests
 
     [Theory]
     [InlineData("s3", "`s3` is still running: stop it first.")]
-    [InlineData("s4", "`s4` is waiting on you, and archive never hides what needs you.")]
-    [InlineData("s5", "`s5` has work to review, and archive never hides what needs you.")]
+    [InlineData("s4", "`s4` needs you, and archive never hides what needs you.")]
+    [InlineData("s5", "`s5` is still running: stop it first.")]
     [InlineData("nope", "there is no session `nope` on this machine.")]
     public async Task An_archive_the_list_would_keep_is_refused_in_its_words(string id, string words)
     {

@@ -2,9 +2,12 @@ namespace Daoris.Driver;
 
 public static class SessionEntries
 {
+    /// <summary>The states a line of work is in while any part of it is: the first of them that one is.</summary>
+    private static readonly string[] Ongoing = [SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Pending];
+
     /// <summary>
-    /// The entries, in the groups' order and, within a group, in the order its leading parts' rows are: each the
-    /// first of the groups any part qualifies for.
+    /// The entries, in the groups' order and, within a group, in the order its leading parts' rows are: each in the first of
+    /// needs you, working and pending any part is in, else failed or done as its newest part outside the Archived fold ended.
     /// </summary>
     /// <remarks>
     /// <para><b>The key is opaque.</b> Records are grouped on the string the service answers, which a record from before it is
@@ -50,7 +53,9 @@ public static class SessionEntries
                 .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
                 .Select(record => (Record: record, Row: rowOf[record.Id]))
                 .ToList();
-            var group = SessionGroup.Order.First(each => placed.Any(part => part.Row.Group == each));
+            var group = Ongoing.FirstOrDefault(each => placed.Any(part => part.Row.Group == each))
+                ?? placed.LastOrDefault(part => part.Row.Group != SessionGroup.Archived).Row?.Group
+                ?? SessionGroup.Archived;
             var lead = placed.Last(part => part.Row.Group == group);
             var parts = Began(placed.Select(part => part.Record).ToList(), placed.Select(part => part.Row).ToList(), quests);
             var key = line.Key;

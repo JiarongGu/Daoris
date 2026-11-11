@@ -41,25 +41,25 @@ export const EVIDENCE_ENTRIES: SessionEntry[] = [
   {
     entry: 'ask:c98a7e/app', origin: 'ask:c98a7e', repository: 'app', group: 'working', leading: 'ap000003', head: 'ap000002', opens: 'ap000003',
     parts: [
-      part('ap000001', 'q0000a', 'failed', 'ended', 'opened'),
-      part('ap000002', 'q0000a', 'completed', 'ended', 'retried', { after: 'ap000001' }),
+      part('ap000001', 'q0000a', 'failed', 'done', 'opened'),
+      part('ap000002', 'q0000a', 'completed', 'done', 'retried', { after: 'ap000001' }),
       part('ap000003', 'q0000c', 'working', 'working', 'asked', { askedBy: 'db' }),
     ],
   },
   {
     entry: 'ask:c98a7e/db', origin: 'ask:c98a7e', repository: 'db', group: 'working', leading: 'db000003', head: 'db000003', opens: 'db000003',
     parts: [
-      part('db000001', 'q0000b', 'completed', 'ended', 'opened'),
-      part('db000002', 'q0000d', 'completed', 'ended', 'asked', { askedBy: 'app' }),
+      part('db000001', 'q0000b', 'completed', 'done', 'opened'),
+      part('db000002', 'q0000d', 'completed', 'done', 'asked', { askedBy: 'app' }),
       part('db000003', 'q0000d', 'working', 'working', 'resumed', { after: 'db000002' }),
     ],
   },
   {
-    entry: 'ask:841c38/app', origin: 'ask:841c38', repository: 'app', group: 'ended', leading: 'ap000013', head: 'ap000013', opens: 'ap000013',
+    entry: 'ask:841c38/app', origin: 'ask:841c38', repository: 'app', group: 'done', leading: 'ap000013', head: 'ap000013', opens: 'ap000013',
     parts: [
-      part('ap000011', 'q0000e', 'stopped', 'ended', 'opened'),
-      part('ap000012', 'q0000e', 'failed', 'ended', 'carried-on', { after: 'ap000011' }),
-      part('ap000013', 'q0000e', 'completed', 'ended', 'retried', { after: 'ap000012' }),
+      part('ap000011', 'q0000e', 'stopped', 'done', 'opened'),
+      part('ap000012', 'q0000e', 'failed', 'done', 'carried-on', { after: 'ap000011' }),
+      part('ap000013', 'q0000e', 'completed', 'done', 'retried', { after: 'ap000012' }),
     ],
   },
 ];
@@ -71,9 +71,9 @@ const row = (session: string, group: SessionGrouping['group'], shown: string): S
 /** The rows `SESSION_GROUPS` answers beside the entries: every record, in the reader's order. */
 export const EVIDENCE_GROUPINGS: SessionGrouping[] = [
   row('ap000003', 'working', 'working'), row('db000003', 'working', 'working'),
-  row('1a000002', 'ended', 'completed'), row('1a000001', 'ended', 'completed'), row('ap000013', 'ended', 'completed'),
-  row('ap000012', 'ended', 'failed'), row('ap000011', 'ended', 'stopped'), row('ap000002', 'ended', 'completed'),
-  row('ap000001', 'ended', 'failed'), row('db000002', 'ended', 'completed'), row('db000001', 'ended', 'completed'),
+  row('1a000002', 'done', 'completed'), row('1a000001', 'done', 'completed'), row('ap000013', 'done', 'completed'),
+  row('ap000012', 'done', 'failed'), row('ap000011', 'done', 'stopped'), row('ap000002', 'done', 'completed'),
+  row('ap000001', 'done', 'failed'), row('db000002', 'done', 'completed'), row('db000001', 'done', 'completed'),
 ];
 
 /** The asks' names, by id, as the page's `askName` gives them. */

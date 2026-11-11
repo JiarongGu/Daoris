@@ -23,7 +23,7 @@ public sealed class PluginCommandProcessTests : IDisposable
           if (frame.method === 'initialize') {
             send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
           } else if (frame.method === 'hook/command/run') {
-            send({ jsonrpc: '2.0', id: frame.id, result: { said: [`ran ${frame.params.command} ${frame.params.args.join(' ')}`], exit: 0 } });
+            send({ jsonrpc: '2.0', id: frame.id, result: { said: [`ran ${frame.params.command} ${Object.entries(frame.params.args).map(([name, value]) => `--${name}=${value}`).join(' ')} at ${JSON.stringify(frame.params.place)} in ${frame.params.language}`], exit: 0 } });
           } else if (frame.method === 'shutdown') {
             process.exit(0);
           }
@@ -66,8 +66,12 @@ public sealed class PluginCommandProcessTests : IDisposable
     {
         var (plugin, _) = PluginCommandRun.Find(_home, Plugin, "status");
 
-        var round = await PluginCommandRun.RoundAsync(_home, plugin, "status", ["--brief"], new Dictionary<string, string>(), "terminal", CancellationToken.None);
+        var call = CommandCall.Plain("status", new Dictionary<string, string>(), CommandWire.Window) with
+        {
+            Args = new Dictionary<string, object?> { ["brief"] = true }, Place = new PluginPlace(Repository: "engine"), Language = "zh",
+        };
+        var round = await PluginCommandRun.RoundAsync(_home, plugin, call, CancellationToken.None);
 
-        Assert.Contains("ran status --brief", string.Join("\n", round.Said));
+        Assert.Contains("""ran status --brief=true at {"kind":"repository","id":"engine"} in zh""", string.Join("\n", round.Said));
     }
 }

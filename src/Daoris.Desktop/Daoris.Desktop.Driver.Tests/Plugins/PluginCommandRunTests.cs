@@ -132,7 +132,7 @@ public sealed class PluginCommandRunTests : IDisposable
         Assert.Equal(2, await PluginCommandConsole.RunAsync(_home, ["acme.tickets", "deploy"], terminal, CancellationToken.None, Start(Login)));
         Assert.Contains("has no command `deploy`: one of login, status", error.ToString(), StringComparison.Ordinal);
 
-        PluginInterfaceSwitch.Set(_home, "acme.tickets", PluginInterfaces.Commands, on: false);
+        PluginSwitches.Set(_home, "acme.tickets", PluginSwitches.Commands, PluginPlace.MachineKey, on: false);
         Assert.Equal(2, await PluginCommandConsole.RunAsync(_home, ["acme.tickets", "status"], terminal, CancellationToken.None, Start(Login)));
         Assert.Contains("commands are switched off", error.ToString(), StringComparison.Ordinal);
         Assert.Empty(_frames);

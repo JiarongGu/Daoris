@@ -48,7 +48,7 @@ public static class PluginRenames
             Part(Storage, Carry(PluginPrivate.Folder(home, former), PluginPrivate.Folder(home, now)));
             var (approved, stayed) = HelpGrants.Renamed(home, former, now);
             Part(Approvals, approved > 0 ? true : stayed > 0 ? false : null);
-            Part(Attempts, PluginRenamedAttempts.Carry(home, former, now));
+            Part(Attempts, PluginRenamedAttempts.Current.Carry(home, former, now));
             if (moved.Count > 0) renames.Add(new PluginRename(now, former, moved, left));
         }
 
@@ -75,7 +75,7 @@ public static class PluginRenames
     {
         try
         {
-            return PluginState.Renamed(home, former, now) | PluginInterfaceSwitch.Renamed(home, former, now) ? true : null;
+            return PluginState.Renamed(home, former, now) | PluginSwitches.Renamed(home, former, now) ? true : null;
         }
         catch (DriverException)
         {

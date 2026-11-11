@@ -47,7 +47,7 @@ type Waits = ReturnType<typeof useAttendedWaits>;
 export function useAttendedHead({
   t, language, attended, here, live, quest, grouping, registry, roster, sheets, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
-  atWorkHeld, heavyPart, heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision,
+  atWorkHeld, heavyPart, heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision,
 }: {
   /** The attended line's counts and its rules' acts: the head's chip where a rule holds the line or is one count from it. */
   supervision: LineSupervision;
@@ -85,8 +85,6 @@ export function useAttendedHead({
   heavyPart: ReturnType<typeof heavyPartOf>;
   heavyTitleOf: (id: string) => string;
   integration: ReturnType<typeof useAttendedRecord>['integration'];
-  entryOffered: number;
-  landsNow: boolean;
   standing: Waits['standing'];
   goToWait: Waits['goToWait'];
   chosen: () => void;
@@ -257,8 +255,6 @@ export function useAttendedHead({
     // Its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
     integration: integration.data ?? null,
-    // Where the work stands, from the same facts the head's waits are drawn from.
-    flow: { parts: entryOffered, landing: landsNow },
   } : null;
   const nextWait = nextPress(standing);
   const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;

@@ -183,14 +183,14 @@ describe('the opener', () => {
    * the view brings into view, and no item in it. A group means nothing to another view, Overview's among them.
    */
   it('opens Sessions or Quests with the group a door names, and only there', () => {
-    expect(opening('sessions', null, { group: 'you' })).toEqual({ view: 'sessions', group: 'you' });
-    expect(opening('sessions', null, { group: 'review' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(opening('sessions', null, { group: 'needs-you' })).toEqual({ view: 'sessions', group: 'needs-you' });
+    expect(opening('sessions', null, { group: 'failed' })).toEqual({ view: 'sessions', group: 'failed' });
     expect(opening('quests', null, { group: 'asks' })).toEqual({ view: 'quests', group: 'asks' });
     expect(opening('quests', null, { group: 'held' })).toEqual({ view: 'quests', group: 'held' });
-    expect(opening('quests', null, { group: 'you' })).toEqual({ view: 'quests' });
+    expect(opening('quests', null, { group: 'needs-you' })).toEqual({ view: 'quests' });
     expect(opening('sessions', null, { group: 'held' })).toEqual({ view: 'sessions' });
-    expect(opening('overview', null, { group: 'you' })).toEqual({ view: 'overview' });
-    expect(doorOpening({ view: 'sessions', group: 'you' })).toEqual(opening('sessions', null, { group: 'you' }));
+    expect(opening('overview', null, { group: 'needs-you' })).toEqual({ view: 'overview' });
+    expect(doorOpening({ view: 'sessions', group: 'needs-you' })).toEqual(opening('sessions', null, { group: 'needs-you' }));
   });
 
   it('keeps no chosen item for a view with no list', () => {

@@ -76,8 +76,8 @@ type RowActs = {
  * **A molecule: every state is reached by its props**. The rail above it holds the queries and
  * hands it the records, the reader's answer and what each row needs; this file only draws them.
  *
- * - **By state**: *Waiting on you*, *To review*, *Working*, *Resumes later* and *Ended*, each a `ListGroup` with
- *   its count, in the reader's order, and *Archived* last where it is shown. No group header names a repository, so a
+ * - **By state**: *Needs you*, *Working*, *Pending*, *Failed* and *Done*, each a `ListGroup` with
+ *   its count, in the reader's order, and *Archived* last where it is shown; a row's line says the finer reason. No group header names a repository, so a
  *   row's line does, and the headers carry no repository facts (*drives here*, *held*, *busy*): those belong to a
  *   repository, on the view by repository and on Repositories' page.
  * - **By repository**: a group per repository with its facts, *waiting on you* first and *parked* with it, and
@@ -247,7 +247,7 @@ export function SessionList({
         {groups.map(({ group, members }) => (
           // Its heading's id is what a door into the group brings into view.
           <ListGroup key={group} id={groupHeading('sessions', group)} title={t(`work.group.${group}`, { count: members.length })}>
-            {group === 'ended' || group === 'archived'
+            {group === 'failed' || group === 'done' || group === 'archived'
               ? ended(members, true, group === 'archived')
               : members.map((each) => drawRow(each, true))}
           </ListGroup>
@@ -311,8 +311,8 @@ export function SessionList({
 export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel }: {
   /** The sessions it would archive, as `endedToArchive` lists them. */
   going: readonly string[];
-  /** How many stay under *Waiting on you* and *To review*. */
-  kept: { you: number; review: number };
+  /** How many stay under *Needs you*. */
+  kept: number;
   /** An archive on its way: the presses wait for it. */
   busy?: boolean;
   /** The second press, sending what the first listed, and how to tell the ask how it ended (UXFIX2b2b). */
@@ -320,14 +320,10 @@ export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const [listed] = useState(() => ({ going: [...going], kept: { ...kept } }));
+  const [listed] = useState(() => ({ going: [...going], kept }));
   const count = listed.going.length;
-  const { you, review } = listed.kept;
   const takes = count > 0 ? t('work.archive.ask', { count }) : t('work.archive.none');
-  const keeps = you > 0 && review > 0 ? t('work.archive.keptBoth', { you, review })
-    : you > 0 ? t('work.archive.keptYou', { count: you })
-      : review > 0 ? t('work.archive.keptReview', { count: review })
-        : null;
+  const keeps = listed.kept > 0 ? t('work.archive.kept', { count: listed.kept }) : null;
 
   return (
     // Nothing is destroyed (an archive is shown again from *Show archived*), so the move wears the primary's hue (UXFIX2b2b).

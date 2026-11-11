@@ -39,12 +39,12 @@ const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, 
 const FORK: SessionEntry = {
   entry: 'quest:q0000a/app', origin: 'quest:q0000a', repository: 'app', group: 'working', leading: 'p5',
   parts: [
-    part('p1', 'q0000a', 'failed', 'ended', 'opened'),
-    part('p2', 'q0000a', 'failed', 'ended', 'retried', { after: 'p1' }),
-    part('p3', 'q0000a', 'completed', 'ended', 'retried', { after: 'p2' }),
+    part('p1', 'q0000a', 'failed', 'done', 'opened'),
+    part('p2', 'q0000a', 'failed', 'done', 'retried', { after: 'p1' }),
+    part('p3', 'q0000a', 'completed', 'done', 'retried', { after: 'p2' }),
     part('p4', null, 'working', 'working', 'handed-over', { after: 'p1' }),
     part('p5', 'q0000c', 'working', 'working', 'asked', { askedBy: 'db' }),
-    part('p6', 'q0000e', 'stopped', 'ended', 'carried-on'),
+    part('p6', 'q0000e', 'stopped', 'done', 'carried-on'),
   ],
 };
 const forkRows = Object.fromEntries(['p1', 'p2', 'p3'].map((id, index) => [id, {
@@ -85,8 +85,8 @@ export const WithTheLandingPlanChinese: Story = {
 const MOVED: SessionEntry = {
   ...RETRY,
   parts: [
-    part('ap000001', 'q0000a', 'failed', 'ended', 'opened'),
-    part('ap000002', 'q0000a', 'completed', 'ended', 'handed-over', { after: 'ap000001' }),
+    part('ap000001', 'q0000a', 'failed', 'done', 'opened'),
+    part('ap000002', 'q0000a', 'completed', 'done', 'handed-over', { after: 'ap000001' }),
     part('ap000003', 'q0000c', 'working', 'working', 'moved', { after: 'ap000002' }),
   ],
 };

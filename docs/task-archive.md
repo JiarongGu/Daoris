@@ -5,6 +5,34 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITREV3a to GITREV3m — thirteen fixes in the driver's git layer (2026-11-11)
+
+> **GITREV3a** (driver): Outcome: a lease file's first line names its package, `GitLibraryLeases.Left` returns each repository with it, and a fault found after an update is journalled under the package that faulted.
+>
+> **GITREV3b** (driver): Outcome: `GitLibrary.AskAsync` reads the fault guard and the admission once it holds a call slot, so a `gc` begun while it queued sends it to git.
+>
+> **GITREV3c** (driver): Outcome: `GitLibraryFaults.Exit` (on `ProcessExit`) closes every open lease, so an orderly exit with a call on the pool is no `native-fault`.
+>
+> **GITREV3d** (driver): Outcome: any exception a library call throws is a failed call and git's; a valueless `branch.*`/`remote.*` key is git's to read; a configuration held open is refused as `configuration`, not `no-repository`.
+>
+> **GITREV3e** (driver): Outcome: only a read shares an identical queued start; a write asked twice runs twice.
+>
+> **GITREV3f** (driver): Outcome: `GitPlace.Bind(pid)` opens the process handle at bind and disposes it at the exit, so a reused pid cannot make an ended git look unended (by reading .NET's lazy open; no test can force a reuse).
+>
+> **GITREV3g** (driver): Outcome: `PipeGrace` gives a pipe two seconds past its child's exit in `ChildProcess` and the two `GitRuns` stderr reads, and `HeldChild` shares its value; a child whose descendant holds the pipe answers at its exit.
+>
+> **GITREV3h** (driver): Outcome: `ActJournal.Launched` re-takes the step's deadline from the moment its git is placed, and `ActSteps` runs the bound from there.
+>
+> **GITREV3i** (driver): Outcome: `GitUnplacedException` is git's failure (exit -1 with its reason) in `PoolGit`, `ActSteps.HeldGitAsync`, `ChildProcess` and `GitIdentityActs`.
+>
+> **GITREV3j** (driver): Outcome: `PoolGit` says its processes did not end when `WaitEmptyAsync` answers no (by reading; the bound is ten minutes, so no test waits it).
+>
+> **GITREV3k** (driver): Outcome: `GitSystemFiles` keeps the system file only from an exit that answers; a start that did not run is asked again.
+>
+> **GITREV3l** (driver): Outcome: a lazy-fetch proof is kept only where both starts ran and the plain one fetched, else the next read asks again; the repository's `promisor` and object format are read through `FileStamp.Parsed`, no write-time cache beside it.
+>
+> **GITREV3m** (driver): Outcome: `GitEndable` is false for a read told `--output`, and `GitObjectReads.Text` takes a UTF-8 mark only, no UTF-16 or UTF-32 one.
+
 ## Parked rows closed in the triage of 2026-11-11
 
 > **The parked backlog triaged** (records): Outcome: each row of `docs/backlog-parked.md` read against the code, the decisions and this archive; 70 closed below, 8 moved back to `TASKS.md` (FABRIC-TRYAGAIN1, PUSH1d2b, SWITCHCTX1, HEAVYRUN1b3, AUTONOMY1b3d, USAGECAP1a3, SUPERVISOR1 with QUESTIONUI1b), the rest kept with their stale conditions corrected. A closed row's full text stands in git at this triage's parent commit.
@@ -93,6 +121,9 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## REVIEWUX1d — runs in flight: a review's words that name no record (2026-11-12, D273)
 
 > **REVIEWUX1d** (driver): Outcome: the `review-records` home step (`ReviewRecordsStep`, `ReviewLegacy`) converts the words an older build kept on a branchless review: a person's Accept given with no commit is kept as legacy only where the run's pinned graph ends at its review with nothing after it, its receipt carried to the review's Accept (*accepted as it stood at …, before Daoris drew a revision*), and is otherwise dropped and said on the run's history; a supervisor's such word is dropped stale; a branch run's words stand; no pinned graph is edited, and the pass gives each standing review its record. Proof: `ReviewRecordsStepTests` (seen failing first), the step run twice changing nothing.
+## HISTCLEAR1 — a workspace's history clear finishes in one press (2026-11-11)
+
+> **HISTCLEAR1** (driver): Outcome: the history clear sends its units to the service in presses of at most five (`HistoryDoors.PressUnits`), one after another within one call, so each answer comes well within the client's 30-second bound and a history of any length is cleared by one `daoris history clear --workspace <w> --yes`, which says what it removed as before; the service judged each unit against every record, so one press naming a long history ran past the bound and stopped `SERVICE_BUSY`, part cleared. Proof: `HistoryClearBatchesTests` (`A_workspaces_clear_of_a_history_longer_than_the_clients_bound_finishes_in_one_press`) (60 units against a service that stalls past 20), seen failing first with the stall.
 
 ---
 
@@ -105,6 +136,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## ASKFULL1g-ix — the proposal box gone, `go` a link of its own (2026-11-11, D261)
 
 > **ASKFULL1g-ix** (service, driver, modules, web): Outcome: the last proposal kind, `go`, is a link in Ask Daoris's words (`daoris:go?view=…`) that its panel draws as a press opening the place (`help/goLink.tsx`), plain words anywhere else; the box is removed whole — `go_propose`, its writer, `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `Help/Proposals/`, `HELP_PROPOSALS`, `HELP_APPLY`, `HELP_DISMISS`, `HelpScreenDoors`, `ProposalCard`, their words — and the room's *What you may do* names the verbs alone (`HelpRoomVerbs`); a run-once home step salvages and clears the proposals folder. Every way Ask Daoris asks the person is now a press viewed on the Confirm card (D261). Proof: the service registration, call-table and brainstorm tests, the web call-table twin and `goLink.test` (seen failing first), `HelpProposalsStepTests`, the room goldens.
+
+---
+
+## PLUGINEXT1b and c's driver half — per-place switches, a command round whole (2026-11-11, D274)
+
+> **PLUGINEXT1b, PLUGINEXT1c (driver)** (driver, modules): Outcome: a plugin's parts are switched on or off per place (`switches` in `plugins.json`, per plugin, per interface or point, per place; the narrowest place's word wins, `storage` at the machine only, `disabled` over everything), read by one resolver at each door (a command's run, the storage folder, the token adoption, `quest/consider`, `session/ended`, the work units); `PLUGIN_SWITCH` and `daoris plugin switch`; an older home's `off` list moved into machine-level switches once by a migration step (`PluginInterfaceSwitch` deleted); a command's frame carries the run, its arguments by name, the place, the language and the session, its answer `then` and `data`; `PLUGIN_COMMAND`. Proof: `PluginSwitchesTests`, `PluginSwitchesStepTests`, `CommandWireTests`, `DriverModulePluginSwitchTests`, `DriverModulePluginCommandProcessTests`.
+
+---
+
+## REVIEWUX1g — a session moves through five states: pending, working, needs you, done, failed (2026-11-11, D273)
+
+> **REVIEWUX1g** (driver, modules, web): Outcome: the owner's word that the states were a mess and that there is no landing task any more is met: every session is in one of five states on the wire (`state`, with its finer `reason`), mapped from the old records in D273's table; the driver's suites, the archive and the room use them; `daoris session list` prints Needs you, Working, Pending, Failed, Done and refuses the old `--group` words naming the five; the window's list groups by them in that order, a row's reason on its line, the head leading with the state word; *parts to land* and *landing* words are gone; a line of work whose failure a later part retried reads done; the Ask Daoris places point at `sessions/needs-you` and `sessions/failed`. Words: Needs you 等你处理, Working 工作中, Pending 待开始, Failed 失败, Done 已完成. Proof: `SessionsGroupWordsTests` and the entry-order case (red first), the rail, head and help suites in both languages, `HelpPlacesTests`.
 
 ---
 

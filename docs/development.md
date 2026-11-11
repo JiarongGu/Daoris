@@ -227,8 +227,10 @@ tip after a merge or batch; fix what it reports. `--gated` runs what the paths r
 is still required before any stage (GATESLIM1, D115).
 
 The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
-kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. `npm
-test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
+kit: `src/Daoris.Cli/tool-test/`) are the `tool-tests` gate, `npm run tooltests`, about four minutes of real git. One case
+fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
+one unbounded; a case's invocation past its bound is ended with its tree, and one whose tree outlives the end is answered
+after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs the gate only when its paths reach it (`tools/merge-branch.mjs`
 and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run it (GATESLIM1). A merge-queue
 case runs on a scratch repository named for its test process, its children with an environment the case builds (no inherited git
 variable that locates a repository, git's ceiling at the fixture), and no case changes the test process's environment: run a

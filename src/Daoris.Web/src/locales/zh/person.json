@@ -469,6 +469,7 @@
   "person.route.BROWSER_FAVORITE": "在 Daoris 浏览器的书签栏上保存或移除一个页面",
   "person.route.BROWSER_SETTING": "更改 Daoris 使用哪个浏览器、链接在哪里打开，或它的扩展设置",
   "person.route.PLUGIN_REPLACE":"用另一个版本替换一个插件",
+  "person.route.PLUGIN_SWITCH": "在一个地方启用或停用插件的某一部分",
   "person.route.QUEST_ACCEPT": "采纳一个已完成委托与你的要求的出入",
   "person.route.QUEST_GO_ON": "让一个重新打开的委托的工作继续",
   "person.route.QUEST_REOPEN": "重新打开一个委托已封存的交付",

@@ -40,10 +40,10 @@ public sealed class PerformedEndsTests : GraphRunFixture
         await PassAsync(root, branch, tree, door: door);
         await door.IdleAsync();
 
-        Assert.Equal([LandingCode.Refused], Codes());
+        Assert.Equal([LandingCode.Moved], Codes());
         var end = EndOf(start);
         Assert.NotNull(end);
-        Assert.False(end.Landed);
+        Assert.Equal((false, LandingCode.Moved), (end.Landed, end.Refusal));
         Assert.Contains("moved since it was judged", end.Message);
     }
 
@@ -62,7 +62,7 @@ public sealed class PerformedEndsTests : GraphRunFixture
         await PassAsync(root, branch, tree, door: door);
         await door.IdleAsync();
 
-        Assert.Equal([LandingCode.Refused, LandingCode.Landed], Codes());
+        Assert.Equal([LandingCode.Moved, LandingCode.Landed], Codes());
         Assert.Equal(start, (await GitAsync(root, "merge-base", "main", start)).Trim());
         Assert.True(EndOf(start)?.Landed);
     }

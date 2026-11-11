@@ -8,7 +8,7 @@ Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_TOKEN", null);
 // A lease left open on purpose, so a test that kills this process finds what a death inside the library leaves.
 if (args[0] == "lease")
 {
-    new GitLibraryLeases(args[1]).Open(args[2]);
+    new GitLibraryLeases(args[1], args[3]).Open(args[2]);
     Console.WriteLine("inside");
     Console.In.ReadToEnd();
     return 0;

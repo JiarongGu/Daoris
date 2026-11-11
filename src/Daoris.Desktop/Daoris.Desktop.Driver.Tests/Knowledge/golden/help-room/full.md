@@ -122,8 +122,8 @@ under *Done at a terminal* (below), name its command for the person to run.
   goes on. Its card shows the person the change; one the role door would refuse is answered to you at once and never shown.
 - Sessions are archived or unarchived by pressing: `daoris sessions archive <id>…` and
   `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record
-  whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never
-  archived: archive never hides what needs the person, and the press is answered to you at once and never shown.
+  whole, and a teammate's may be archived here too. Only a done or failed session is archived; one working, pending or needing you never is:
+  archive never hides what needs the person, and the press is answered to you at once and never shown.
   Stopping a session is never pressed for the person: it is their own, on the session's page, where a link takes them.
   `daoris sessions helper <id> "…"` asks another agent, read-only, one question about one session's work, and
   `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.
@@ -232,7 +232,7 @@ what it needs, which the person sets up themselves.
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → Pause quest…, Pause ask…, Resume quest, Resume ask | `daoris ask pause|--resume <id>`, `daoris quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never asks it on the card: the reason is your answer) | Quests → the ask's page or the quest's page → Abandon… | `daoris ask abandon <id> [--reason "…" --yes]`, `daoris quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris quest delete <id>`, `daoris ask --delete <id>` |
-| archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…` |
+| archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (only a done or failed session is archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…` |
 | delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris session delete <id>` |
 | clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and nothing brings it back | Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history… | `daoris history [--workspace <name>]`, `daoris history clear --workspace <name> [--yes]`, `daoris quest clear <id> [--failed] [--yes]`, `daoris ask clear <id> [--yes]` |
 | accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it (Ask Daoris never asks it on the card: the yes is yours) | Quests → the quest's page → Accept the departure | `daoris quest accept <id>` |
@@ -293,7 +293,7 @@ space written `%20`: `[Settings → Git](daoris:go?view=settings&domain=git)`. A
 
 - Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
 - Settings domains: `start` (Get started), `appearance` (Appearance), `driver` (Driver), `ai` (AI features), `git` (Git), `browser` (Browser), `space` (Disk space), `updates` (Updates), `wiring` (This Daoris), `logs` (Machine log).
-- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).
+- Parts of `sessions`: `needs-you` (Needs you), `failed` (Failed), `new` (New conversation).
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
@@ -363,8 +363,8 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Ask Daoris: you, on `claude-code-acp`.
 - 1 session waits on the person; 2 asks wait for an answer.
 - Sessions waiting on the person: `s9c0d1e2` (in `console-ui`).
-- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: 1 waiting on you, 1 to review, 2 working, 1 resuming later, 12 ended.
-- Ended sessions, newest first: `s1e0f1a2` (in `console-ui`), `s2e0f1a2` (in `engine`), `s3e0f1a2` (in `console-ui`), `s4e0f1a2` (in `engine`), `s5e0f1a2` (in `console-ui`), `s6e0f1a2` (in `engine`), `s7e0f1a2` (in `console-ui`), `s8e0f1a2` (in `engine`), `s9e0f1a2` (in `console-ui`), `s10e0f1a2` (in `engine`), and 2 more.
+- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: 1 needing you, 1 working, 2 pending, 1 failed, 12 done.
+- Failed and done sessions, newest first: `s1e0f1a2` (in `console-ui`), `s2e0f1a2` (in `engine`), `s3e0f1a2` (in `console-ui`), `s4e0f1a2` (in `engine`), `s5e0f1a2` (in `console-ui`), `s6e0f1a2` (in `engine`), `s7e0f1a2` (in `console-ui`), `s8e0f1a2` (in `engine`), `s9e0f1a2` (in `console-ui`), `s10e0f1a2` (in `engine`), and 3 more.
 - Quests parked by their failed sessions, at the driver's last look: `#q5e6f7a8` (to `engine`), `#q6b7c8d9` (to `tools`).
 - Quests held by the person's stop, at the driver's last look: `#q7c8d9e0` (to `console-ui`, session `s8b9c0d1` stopped).
 - Paused on this machine until resumed: ask `#a1b2c3d4`, quest `#q6b7c8d9`.

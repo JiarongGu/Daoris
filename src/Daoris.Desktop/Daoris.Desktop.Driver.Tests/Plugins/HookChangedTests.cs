@@ -80,7 +80,11 @@ public sealed class HookChangedTests : IDisposable
 
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
 
-        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
+        public Task EndedAsync(object payload, CancellationToken ct)
+        {
+            lock (Told) Told.Add(payload);
+            return Task.CompletedTask;
+        }
 
         public async Task ChangedAsync(object payload, CancellationToken ct)
         {
@@ -122,6 +126,34 @@ public sealed class HookChangedTests : IDisposable
     }
 
     private static string Json(object frame) => JsonSerializer.SerializeToNode(frame)!.ToJsonString();
+
+    [Fact]
+    public async Task A_point_switched_off_at_a_place_is_not_told_there_and_is_told_elsewhere()
+    {
+        var held = new HeldChannel([HookPoints.SessionEnded]);
+        await using var set = new HookSet(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(held));
+        await set.ReconcileAsync(Catalog(("acme-desk", [HookPoints.SessionEnded])), CancellationToken.None);
+        PluginSwitches.Set(_home, "acme-desk", HookPoints.SessionEnded, "repository:engine", on: false);
+
+        await set.EndedAsync(new SessionEnded("s1", "engine", "ended", ByPerson: false), CancellationToken.None);
+        await set.EndedAsync(new SessionEnded("s2", "other", "ended", ByPerson: false), CancellationToken.None);
+
+        Assert.Single(held.Told);
+    }
+
+    [Fact]
+    public void A_place_s_work_is_withheld_where_its_work_points_are_switched_off()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(PluginState.PathIn(_home))!);
+        PluginSwitches.Set(_home, "acme-desk", HookPoints.Perform, "repository:engine", on: false);
+        static WatchedUnit Unit(string repository) => new(repository, "home", @"D:\person\" + repository, "main", "abc123", null, null, []);
+        var awaited = new Dictionary<string, IReadOnlyList<WatchedUnit>> { ["acme-desk"] = [Unit("engine"), Unit("other")], ["acme-quiet"] = [Unit("engine")] };
+
+        var kept = WorkSwitched.Kept(awaited, PluginSwitches.Read(_home));
+
+        Assert.Equal(["other"], kept["acme-desk"].Select(unit => unit.Repository));
+        Assert.Single(kept["acme-quiet"]);
+    }
 
     [Fact]
     public void The_point_is_an_observation_added_after_the_others_and_kept_running_beside_the_loop()

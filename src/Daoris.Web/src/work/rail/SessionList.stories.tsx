@@ -10,7 +10,7 @@ import { ListMore, ListPane } from '../frame/ListPane';
 import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
 // Sessions' list on its list pane, in every state: by state with every
-// group, by repository, one group only, a long Ended group and its press, archived shown, empty, loading, 中文 titles,
+// group, by repository, one group only, a long Done group and its press, archived shown, empty, loading, 中文 titles,
 // the strip with what waits on the person first, and laid over the main area. A molecule, so each is reached by
 // passing it: no driver, no service.
 
@@ -50,15 +50,21 @@ const SESSIONS: Session[] = [
 
 /** The driver's one reader on SESSIONS (`SessionGroups.Read`), in its order. */
 const GROUPINGS: SessionGrouping[] = [
-  { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 },
-  { session: 'p4rk3d00', group: 'you', shown: 'awaiting-person', archived: false, teammate: false },
-  { session: 'st0pp3d0', group: 'review', shown: 'stopped', archived: false, teammate: false, work: { commits: 3, uncommitted: 0 } },
-  { session: 'qu3u3d00', group: 'working', shown: 'queued', archived: false, teammate: false },
-  { session: 'w0rk1ng0', group: 'working', shown: 'working', archived: false, teammate: false },
-  { session: 'c4a7c4a7', group: 'working', shown: 'working', archived: false, teammate: false },
-  { session: 'aw41t000', group: 'later', shown: 'awaiting-reply', archived: false, teammate: false, awaits: 'q9q9q9', awaitsOf: 'engine' },
-  { session: 'd0ne0000', group: 'ended', shown: 'completed', archived: false, teammate: false },
-  { session: 'd0ne0001', group: 'ended', shown: 'declined', archived: false, teammate: false },
+  { session: 'p4rk3d00', group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person', archived: false, teammate: false },
+  {
+    session: 'st0pp3d0', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', archived: false, teammate: false,
+    work: { commits: 3, uncommitted: 0 },
+  },
+  { session: 'w0rk1ng0', group: 'working', state: 'working', reason: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'c4a7c4a7', group: 'working', state: 'working', reason: 'working', shown: 'working', archived: false, teammate: false },
+  {
+    session: 'aw41t000', group: 'working', state: 'working', reason: 'awaiting-reply', shown: 'awaiting-reply', archived: false, teammate: false,
+    awaits: 'q9q9q9', awaitsOf: 'engine',
+  },
+  { session: 'qu3u3d00', group: 'pending', state: 'pending', reason: 'queued', shown: 'queued', archived: false, teammate: false },
+  { session: 'f41led00', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3 },
+  { session: 'd0ne0000', group: 'done', state: 'done', reason: 'completed', shown: 'completed', archived: false, teammate: false },
+  { session: 'd0ne0001', group: 'done', state: 'done', reason: 'declined', shown: 'declined', archived: false, teammate: false },
 ];
 
 const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
@@ -174,47 +180,52 @@ export default meta;
 type Story = StoryObj<typeof SessionsListPane>;
 
 /**
- * By state, the default, with every group: *Waiting on you* (a session parked to ask, and a quest parked after three
- * failed sessions, in open's hue), *To review* (a stopped session whose tree holds three commits), *Working* (queued
- * now neutral, a driven session, a chat between turns), *Resumes later* (awaiting a reply) and *Ended*. Each row's
- * line names its repository, since no group header does.
+ * By state, the default, with all five groups: *Needs you* (a session parked to ask, and a stopped session whose tree holds
+ * three commits to review), *Working* (a driven session, a chat between turns, one awaiting a reply), *Pending* (queued),
+ * *Failed* (a quest parked after three failed sessions) and *Done*. Each row's line names its repository, since no group
+ * header does, and says the finer reason.
  */
 export const ByState: Story = {};
+
+/** The five groups in the dark theme. */
+export const ByStateDark: Story = { decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
+
+/** The five groups in 中文. */
+export const ByStateChinese: Story = { decorators: [chinese] };
 
 /** By repository, chosen in the ⋯: each repository's facts on its header, waiting on you and parked first, the ended beneath. */
 export const ByRepository: Story = { args: { arrangement: 'repository' } };
 
 /** One group only: everything is running, and only *Working* is drawn. */
 export const OneGroup: Story = {
-  args: { sessions: SESSIONS.slice(3, 6), groupings: GROUPINGS.slice(3, 6), selected: null },
+  args: { sessions: SESSIONS.slice(3, 5), groupings: GROUPINGS.filter((row) => row.group === 'working'), selected: null },
 };
 
 /**
  * The person answered the park, and for up to one look of the driver's its record is still parked with
- * the answer set. The reader lists it under *Working*, its row *answered* and quiet, and *Waiting on you* holds only the
- * quest parked on its failed sessions. Its ⋯ offers no *Answer…*.
+ * the answer set. The reader lists it under *Working*, its row *answered* and quiet, and *Needs you* holds only the
+ * stopped session to review. Its ⋯ offers no *Answer…*.
  */
 export const AnsweredGoesOn: Story = {
   args: {
     sessions: SESSIONS.map((row) => (row.id === 'p4rk3d00' ? { ...row, said: [{ id: 'w1', text: 'The second: cap it on the chunk API.', at: '2026-10-03T08:00:00Z', files: [] }] } : row)),
-    groupings: [
-      GROUPINGS[0]!,
-      GROUPINGS[2]!,
-      { session: 'p4rk3d00', group: 'working', shown: 'answered', archived: false, teammate: false },
-      ...GROUPINGS.slice(3),
-    ],
+    groupings: GROUPINGS.map((row) => (row.session === 'p4rk3d00'
+      ? { session: 'p4rk3d00', group: 'working' as const, state: 'working' as const, reason: 'answered', shown: 'answered', archived: false, teammate: false }
+      : row)),
   },
 };
 
-/** A long *Ended*: twelve, then *Show 3 more*. */
+/** A long *Done*: twelve, then *Show 3 more*. */
 export const LongEnded: Story = {
   args: {
     sessions: MANY_ENDED, selected: null,
-    groupings: MANY_ENDED.map((row) => ({ session: row.id, group: 'ended' as const, shown: row.state, archived: false, teammate: false })),
+    groupings: MANY_ENDED.map((row) => ({
+      session: row.id, group: 'done' as const, state: 'done' as const, reason: row.state, shown: row.state, archived: false, teammate: false,
+    })),
   },
 };
 
-/** Archived shown: last, after *Ended*, each row's ⋯ offering *Unarchive*. Hidden unless shown. */
+/** Archived shown: last, after *Done*, each row's ⋯ offering *Unarchive*. Hidden unless shown. */
 export const ArchivedShown: Story = {
   args: {
     archived: true,
@@ -236,7 +247,7 @@ export const ArchivedByRepository: Story = {
 
 /**
  * *Archive what ended…*'s first press, under the list's header: what the second press would archive, and what
- * stays because it needs the person: two waiting on you, one to review.
+ * stays because it needs the person: two needing you.
  */
 export const ArchiveWhatEnded: Story = { args: { asking: true, selected: null } };
 
@@ -266,7 +277,7 @@ export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOU
 /**
  * A conversation handed over says on its line the session it continues. And
  * a helper, titled as one, is drawn under the session it helps (out of *Working*, into *Waiting on you* under
- * the parked session that asked it), and a second opinion's reviewer under the work it read (out of *Ended*), their lines
+ * the parked session that asked it), and a second opinion's reviewer under the work it read (out of *Done*), their lines
  * leaving whose work it is to the row above; in English, 中文 and dark.
  */
 const LINKED: Session[] = [
@@ -277,9 +288,9 @@ const LINKED: Session[] = [
 ];
 const LINKED_GROUPINGS: SessionGrouping[] = [
   ...GROUPINGS,
-  { session: 'h4nd3d00', group: 'working', shown: 'working', archived: false, teammate: false },
-  { session: 'h3lp3r00', group: 'working', shown: 'working', archived: false, teammate: false },
-  { session: 'r3v13w00', group: 'ended', shown: 'completed', archived: false, teammate: false },
+  { session: 'h4nd3d00', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'h3lp3r00', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'r3v13w00', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false },
 ];
 export const ContinuesAndHelps: Story = { args: { sessions: LINKED, groupings: LINKED_GROUPINGS, selected: 'h4nd3d00' } };
 export const ContinuesAndHelpsChinese: Story = { ...ContinuesAndHelps, decorators: [chinese] };

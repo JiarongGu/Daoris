@@ -27,6 +27,10 @@ internal sealed class HistoryStandIn : HttpMessageHandler
     /// <summary>Each unit a press sent, <c>kind:id</c>.</summary>
     public List<string> Pressed { get; } = [];
 
+    public List<int> Presses { get; } = [];
+
+    public int Bound { get; init; }
+
     /// <summary>A host from before the door: a bare 404.</summary>
     public bool NoDoor { get; init; }
 
@@ -120,8 +124,10 @@ internal sealed class HistoryStandIn : HttpMessageHandler
         if (path == "/api/trees/record/age") return new HttpResponseMessage(HttpStatusCode.NotFound);
         var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct))!;
         var answers = new JsonArray();
+        Presses.Add(body["units"]!.AsArray().Count);
         foreach (var named in body["units"]!.AsArray())
         {
+            if (Bound > 0 && answers.Count >= Bound) throw new TaskCanceledException("the client's bound ran out", new TimeoutException());
             var key = $"{(string?)named!["kind"]}:{(string?)named["id"]}";
             Pressed.Add(key);
             if (Refusing.TryGetValue(key, out var refused))

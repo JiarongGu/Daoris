@@ -41,8 +41,8 @@ describe("an ask's page lists its sessions by entry", () => {
 
   it('leaves out another ask\'s lines of work and the intake, which has its own section', () => {
     const intake = {
-      entry: 'ask:c98a7e/intake', origin: 'ask:c98a7e', repository: 'intake', group: 'ended' as const, leading: '1a000001',
-      parts: [{ session: '1a000001', quest: null, shown: 'completed', group: 'ended' as const, began: 'opened', after: null, askedBy: null }],
+      entry: 'ask:c98a7e/intake', origin: 'ask:c98a7e', repository: 'intake', group: 'done' as const, leading: '1a000001',
+      parts: [{ session: '1a000001', quest: null, shown: 'completed', group: 'done' as const, began: 'opened', after: null, askedBy: null }],
     };
     expect(askLines([...EVIDENCE_ENTRIES, intake], 'c98a7e').map((line) => line.repository)).toEqual(['app', 'db']);
   });

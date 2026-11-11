@@ -1029,13 +1029,13 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     public void A_departure_is_gone_once_accepted_and_absent_for_a_quest_no_departure_holds() =>
         Assert.Empty(Rows(new() { Quests = [Held("""{"accepted":"2026-09-22T10:00:00Z"}"""), Quest("""{"status":"Done"}""")], Registry = [Registration("engine")] }));
 
-    // ---- work to review ----
+    // ---- a run waiting on your review ----
 
     private static JsonObject Placed(string over = "{}") => With(
-        """{"session":"r3v13w00","group":"review","shown":"completed","archived":false,"teammate":false,"work":{"commits":3,"uncommitted":0}}""", over);
+        """{"session":"r3v13w00","group":"needs-you","reason":"review","shown":"completed","archived":false,"teammate":false}""", over);
 
     [Fact]
-    public void Work_to_review_is_a_row_per_session_the_list_places_to_review_where_since_it_ended_and_its_place()
+    public void A_run_waiting_on_your_Accept_is_a_row_where_since_it_ended_and_its_place()
     {
         var item = Assert.Single(Rows(new()
         {
@@ -1053,7 +1053,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     /// shows it rather than none.
     /// </summary>
     [Fact]
-    public void Work_to_review_whose_record_is_not_in_hand_still_says_what_waits()
+    public void A_review_row_whose_record_is_not_in_hand_still_says_what_waits()
     {
         var item = Assert.Single(Rows(new() { Groups = [Placed()] }));
         Assert.Equal(("review", "", null), (item["kind"]!.GetValue<string>(), item["where"]!.GetValue<string>(), item["since"]));
@@ -1061,13 +1061,13 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     [Fact]
-    public void Only_the_list_s_to_review_is_ready_for_the_person() =>
+    public void Only_a_run_waiting_on_your_Accept_is_a_review_row() =>
         Assert.Equal(
             ["parked:parked", "review:r3v13w00"],
             Keys(Rows(new()
             {
                 Sessions = [Session("""{"id":"parked","state":"awaiting-person","updated":"2026-09-21T12:00:00Z"}""")],
-                Groups = [Placed(), Placed("""{"session":"w0rk1ng0","group":"working"}"""), Placed("""{"session":"end3d000","group":"ended"}""")],
+                Groups = [Placed(), Placed("""{"session":"w0rk1ng0","group":"working"}"""), Placed("""{"session":"g0ahead0","reason":"go-ahead"}""")],
             })));
 
     // ---- a unit's milestone, an agent's ask, a held call, a second opinion ----

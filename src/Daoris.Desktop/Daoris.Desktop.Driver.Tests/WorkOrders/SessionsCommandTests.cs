@@ -213,7 +213,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         var headings = said.Split('\n').Where(line => line.Length > 0 && !line.StartsWith(' ')).ToList();
-        Assert.Equal(["Waiting on you (2)", "Working (3)", "Ended (3)"], headings);
+        Assert.Equal(["Needs you (2)", "Working (3)", "Done (3)"], headings);
         Assert.Contains("p4rk3d00  waiting on you  engine — Expose a streaming budget", said);
         Assert.Contains("c0ffee11  completed  engine — Why is the frame budget 4 ms?", said);
         Assert.Contains("he1p0000  stopped  daoris:help — Ask Daoris", said);
@@ -223,12 +223,11 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Words that wait on an ended record are said where it is listed, under Resumes later, with what
-    /// holds them in the line <c>sessions say</c> prints, from the planner's own verdict: here a repository this machine
-    /// has never been opted into driving.
+    /// Words that wait on an ended record are said under Pending, with what holds them in the line <c>sessions say</c> prints,
+    /// from the planner's own verdict: here a repository this machine has never been opted into driving.
     /// </summary>
     [Fact]
-    public async Task Words_held_on_an_ended_record_are_listed_under_resumes_later_saying_what_holds_them()
+    public async Task Words_held_on_an_ended_record_are_listed_under_pending_saying_what_holds_them()
     {
         var held = Record("h0ld0000", "completed", "q5", minutes: 60);
         held["said"] = new JsonArray(new JsonObject
@@ -239,7 +238,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (exit, said) = await RunAsync(new Ledger([held], [Quest("q5", "Trim the readme", "Done")]), []);
 
         Assert.Equal(0, exit);
-        Assert.Contains("Resumes later (1)", said);
+        Assert.Contains("Pending (1)", said);
         Assert.Contains("h0ld0000  completed  engine — Trim the readme", said);
         Assert.Contains("held: it waits: `engine` has not been opted into driving on this machine.", said);
     }
@@ -277,11 +276,11 @@ public sealed class SessionsCommandTests : IDisposable
 
     /// <summary>
     /// A chat the person wrote to after it ended goes on, since its runner takes the words
-    /// up at once, so it is listed under Working, <i>going on</i>; one its runner held says so under Resumes later, in the
+    /// up at once, so it is listed under Working, <i>going on</i>; one its runner held says so under Pending, in the
     /// runner's own line.
     /// </summary>
     [Fact]
-    public async Task A_chat_whose_words_wait_is_going_on_and_one_its_runner_held_resumes_later()
+    public async Task A_chat_whose_words_wait_is_going_on_and_one_its_runner_held_is_pending()
     {
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         foreach (var chat in new[] { "g01ng000", "h0ld1ng0" })
@@ -305,9 +304,9 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Contains("Working (1)\n  g01ng000  going on  engine — Why is the frame budget 4 ms?", said);
-        Assert.Contains("Resumes later (1)\n  h0ld1ng0  completed  engine — Why is the frame budget 4 ms?", said);
+        Assert.Contains("Pending (1)\n  h0ld1ng0  completed  engine — Why is the frame budget 4 ms?", said);
         Assert.Contains("held: it waits: `engine` has no checkout on this machine any more. Your words wait on it.", said);
-        Assert.DoesNotContain("Ended", said);
+        Assert.DoesNotContain("Done", said);
     }
 
     /// <summary>
@@ -316,7 +315,7 @@ public sealed class SessionsCommandTests : IDisposable
     /// <c>hand-over</c> naming no agent judges it, and says the reset and the door out of the wait as the loop's look would.
     /// </summary>
     [Fact]
-    public async Task Words_whose_own_account_cools_are_listed_under_resumes_later_with_the_door_out()
+    public async Task Words_whose_own_account_cools_are_listed_under_pending_with_the_door_out()
     {
         var reset = DateTimeOffset.UtcNow.AddHours(3);
         var cooling = new CoolingEntry("claude", "work", reset, Stated: true, Window: null, Seen: T0, Session: null);
@@ -334,7 +333,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         // The wait is the word, never the state the record ended in; the hold's line beside it says the reset.
-        Assert.Contains("Resumes later (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
+        Assert.Contains("Pending (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
         Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
         Assert.Contains("`daoris session hand-over c00l1ng0`.", said);
@@ -343,7 +342,7 @@ public sealed class SessionsCommandTests : IDisposable
 
     /// <summary>
     /// A closed quest's session holding Daoris's own rebase word, every account of its agent
-    /// cooling, is listed under Resumes later saying the limit's wait for the earliest reset of any, naming that account, with the
+    /// cooling, is listed under Pending saying the limit's wait for the earliest reset of any, naming that account, with the
     /// door out of it: never only that it completed, and never the own account's weekly reset two days on.
     /// With another account ready it is listed going on, since the loop's look hands it to the runner.
     /// </summary>
@@ -371,7 +370,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (_, said) = await RunAsync(ledger, [], world: Cooling((adapter, profile, _) =>
             adapter != "claude-code" ? null : profile == "work" ? own : profile == "home" ? other : null));
 
-        Assert.Contains("Resumes later (1)\n  r3base00  waiting for a limit to reset  engine — Trim the readme", said);
+        Assert.Contains("Pending (1)\n  r3base00  waiting for a limit to reset  engine — Trim the readme", said);
         Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: Every account it may run on is at its limit", said);
         Assert.Contains("Every account it may run on is at its limit: it goes on by itself once the `claude` account `home` is ready again", said);
@@ -379,29 +378,29 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("`daoris session start-from r3base00`.", said);
 
         var (_, ready) = await RunAsync(ledger, [], world: Cooling((adapter, profile, _) => adapter == "claude-code" && profile == "work" ? own : null));
-        Assert.DoesNotContain("Resumes later", ready);
+        Assert.DoesNotContain("Pending", ready);
     }
 
     [Fact]
     public async Task The_listing_takes_a_group_and_a_repository()
     {
-        var (_, ended) = await RunAsync(Family(), ["--group", "ended"]);
-        Assert.Equal(["Ended (3)"], ended.Split('\n').Where(line => line.Length > 0 && !line.StartsWith(' ')));
+        var (_, done) = await RunAsync(Family(), ["--group", "done"]);
+        Assert.Equal(["Done (3)"], done.Split('\n').Where(line => line.Length > 0 && !line.StartsWith(' ')));
 
         var (_, game) = await RunAsync(Family(), ["--repository", "game"]);
         Assert.Contains("d0ne0000", game);
         Assert.DoesNotContain("p4rk3d00", game);
 
-        var (exit, none) = await RunAsync(Family(), ["--group", "review"]);
+        var (exit, none) = await RunAsync(Family(), ["--group", "failed"]);
         Assert.Equal(0, exit);
-        Assert.Contains("nothing to review", none);
+        Assert.Contains("nothing has failed", none);
     }
 
     /// <summary>With <c>--json</c>, the screen's answer: the same rows, the same fields, so the two doors cannot disagree.</summary>
     [Fact]
     public async Task With_json_it_prints_the_screens_answer()
     {
-        var (exit, said) = await RunAsync(Family(), ["--json", "--group", "you"]);
+        var (exit, said) = await RunAsync(Family(), ["--json", "--group", "needs-you"]);
 
         Assert.Equal(0, exit);
         using var answer = JsonDocument.Parse(said);
@@ -427,7 +426,7 @@ public sealed class SessionsCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         var lines = said.Split('\n').Where(line => line.Length > 0).ToList();
-        Assert.Equal("Ended (2)", lines[0]);
+        Assert.Equal("Done (2)", lines[0]);
         // The newest entry first, as the rows were; its one part is a line of its own, no parts under it.
         Assert.StartsWith("  s0l0000  completed  game — ", lines[1]);
         Assert.DoesNotContain("part", lines[1]);
@@ -453,7 +452,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(2, entries.Count);
         var engine = entries.Single(entry => entry.GetProperty("entry").GetString() == "ask:a1/engine");
         Assert.Equal(
-            ("ask:a1", "engine", "ended", "p4rt0002"),
+            ("ask:a1", "engine", "done", "p4rt0002"),
             (engine.GetProperty("origin").GetString(), engine.GetProperty("repository").GetString(), engine.GetProperty("group").GetString(),
                 engine.GetProperty("leading").GetString()));
         var parts = engine.GetProperty("parts").EnumerateArray().ToList();
@@ -471,12 +470,9 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public void A_session_with_commits_to_land_names_its_branch_its_tree_and_the_door()
     {
-        var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
-        var finished = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
-        {
-            Work = new TreeWork(2, 0), Lands = new LandOffer("daoris/s-56cb4d29", "s-56cb4d29", 2, null),
-        };
-        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+        var failed = new SessionGrouping("f41led00", SessionGroup.Done, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
+        var finished = new SessionGrouping("f1n1sh00", SessionGroup.Done, "completed") { Lands = new LandOffer("daoris/s-56cb4d29", "s-56cb4d29", 2, null) };
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Done, "failed");
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([failed, bare]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
@@ -490,7 +486,6 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains(
             "1 commit on daoris/s-4e6837ed in its tree s-4e6837ed, not landed: daoris tree land f41led00",
             SessionsCommand.Facts(failed, record));
-        Assert.Contains("2 commits to review", SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
         Assert.Contains(
             "2 commits on daoris/s-56cb4d29 in its tree s-56cb4d29, not landed: daoris tree land f1n1sh00",
             SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
@@ -501,8 +496,8 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public void A_moved_trees_branch_is_in_the_json_work()
     {
-        var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
-        var own = new SessionGrouping("0wn00000", SessionGroup.Review, "completed") { Work = new TreeWork(1, 0) };
+        var moved = new SessionGrouping("m0ved000", SessionGroup.Done, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
+        var own = new SessionGrouping("0wn00000", SessionGroup.NeedsYou, "completed") { Work = new TreeWork(1, 0) };
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([moved, own]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
@@ -545,7 +540,7 @@ public sealed class SessionsCommandTests : IDisposable
     public void A_session_whose_work_the_line_holds_by_content_names_its_discard_and_never_its_landing()
     {
         const string kept = "refs/daoris/discarded/daoris/s-56cb4d29";
-        var squashed = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
+        var squashed = new SessionGrouping("f1n1sh00", SessionGroup.NeedsYou, "completed")
         {
             Work = new TreeWork(2, 0),
             Discards = new DiscardOffer("daoris/s-56cb4d29", "s-56cb4d29", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
@@ -556,7 +551,7 @@ public sealed class SessionsCommandTests : IDisposable
                 "daoris/s-56cb4d29", "s-56cb4d29",
                 new HeldWork(new ContentHold("main", Squash: true), null, "it has 1 uncommitted path(s), which a discard would destroy")),
         };
-        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Done, "failed");
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([squashed, dirty, bare]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
@@ -834,7 +829,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (kept, keptSaid) = await RunAsync(Family(), ["archive", "w0rk1ng0", "p4rk3d00"], log);
         Assert.Equal(1, kept);
         Assert.Contains("kept w0rk1ng0: it is still running", keptSaid);
-        Assert.Contains("kept p4rk3d00: it is waiting on you", keptSaid);
+        Assert.Contains("kept p4rk3d00: it needs you", keptSaid);
 
         log.Dispose();
         var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines)
@@ -851,7 +846,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (listed, list) = await RunAsync(Family(), ["archive", "--ended"]);
         Assert.Equal(0, listed);
         Assert.Contains("would archive 3 sessions that ended", list);
-        Assert.Contains("kept in the list: 2 waiting on you", list);
+        Assert.Contains("kept in the list: 2 needing you", list);
         Assert.Empty(new SessionArchive(_home).Marks());
 
         var (yes, done) = await RunAsync(Family(), ["archive", "--ended", "--yes"]);

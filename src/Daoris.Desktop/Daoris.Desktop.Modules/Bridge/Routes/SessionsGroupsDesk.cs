@@ -183,10 +183,7 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         _ => Refusals.SessionUnknown,
     };
 
-    /// <summary>
-    /// The refusal for one session archive kept. A group travels as the catalogue's <c>context</c> too, so the page's
-    /// sentence names which: waiting on you, or to review.
-    /// </summary>
+    /// <summary>The refusal for one session archive kept; its group travels as the catalogue's <c>context</c> too.</summary>
     private static Exception Kept(ArchiveOutcome outcome) => outcome.Verdict switch
     {
         ArchiveVerdict.Live => Refusals.Because(
@@ -194,9 +191,8 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
             ("session", outcome.Session)),
         ArchiveVerdict.NeedsYou => Refusals.Because(
             Refusals.SessionNeedsYou,
-            $"{outcome.Session} {(outcome.Group == SessionGroup.Review ? "has work to review" : "is waiting on you")}, so it was not "
-            + "archived: archive never hides what needs you.",
-            ("session", outcome.Session), ("group", outcome.Group ?? SessionGroup.You), ("context", outcome.Group ?? SessionGroup.You)),
+            $"{outcome.Session} needs you, so it was not archived: archive never hides what needs you.",
+            ("session", outcome.Session), ("group", outcome.Group ?? SessionGroup.NeedsYou), ("context", outcome.Group ?? SessionGroup.NeedsYou)),
         _ => Refusals.Because(
             Refusals.SessionUnknown, $"No session here is {outcome.Session}.", ("session", outcome.Session)),
     };

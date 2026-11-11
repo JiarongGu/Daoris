@@ -28,7 +28,7 @@ public sealed class HelpTreeWalkTests
             return new TreeWork(1, 0);
         }
 
-        var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(TimeSpan.FromSeconds(30));
+        var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(Poll.Patience);
 
         Assert.Equal(trees.Select(SessionGroups.Normal).Order(StringComparer.OrdinalIgnoreCase), read.Trees.Keys.Order(StringComparer.OrdinalIgnoreCase));
         Assert.All(read.Trees.Values, work => Assert.Equal(1, work.Commits));
@@ -44,7 +44,7 @@ public sealed class HelpTreeWalkTests
         using var facts = new MachineFacts();
 
         var read = await HelpFacts.WithTreesAsync(
-            facts, look, _ => true, (tree, _) => Task.FromResult(tree == gone ? null : new TreeWork(2, 0))).WaitAsync(TimeSpan.FromSeconds(30));
+            facts, look, _ => true, (tree, _) => Task.FromResult(tree == gone ? null : new TreeWork(2, 0))).WaitAsync(Poll.Patience);
 
         Assert.Equal([SessionGroups.Normal(kept)], read.Trees.Keys);
     }

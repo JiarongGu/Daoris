@@ -55,6 +55,12 @@ public static class LandingCode
     public const string Refused = "refused";
 
     /// <summary>
+    /// The work's head moved past the tip its <c>land</c> was judged at, so nothing lands what nobody accepted: tried again once the tree
+    /// moves, and judged again at its new tip, as the return and the apply refuse a record that moved.
+    /// </summary>
+    public const string Moved = "moved";
+
+    /// <summary>
     /// Its work waits for the person's review: the level says
     /// review, and no <i>reviewed</i> on a set-up that holds its tip, and no skip, lets it go yet. Kept once, read again at every
     /// look as a hold is, and landed at the first look after the review.
@@ -99,10 +105,10 @@ public static class LandingCode
 
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) =>
-        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or CarriedOn or RootDirty or Queued);
+        code is not (Held or Uncommitted or Exists or Completed or Refused or Moved or Unreviewed or Opinion or CarriedOn or RootDirty or Queued);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves.</summary>
-    public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused or CarriedOn;
+    public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused or Moved or CarriedOn;
 
     /// <summary>Whether a try with this code is tried again only once the checkout's status differs from the kept one.</summary>
     public static bool WaitsOnRoot(string code) => code is RootDirty;

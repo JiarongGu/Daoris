@@ -304,8 +304,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var read = await loop.DescribeHelp!(CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Contains(read!.Sessions!.Listed, each => each.Id == ended.Id);
-        // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
-        Assert.Equal(0, read.Sessions.Review);
+        // The kept look's trees are none of the room's: its part judged the tree gone, and the session is done, needing no one.
+        Assert.Equal((0, 1), (read.Sessions.NeedsYou, read.Sessions.Done));
         Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
         // A part that walked a tree says its own time and how many; a gone tree is asked, holding nothing,
         // and never walked, so this part says no walk at all.

@@ -54,11 +54,11 @@ public sealed class PluginWords(string message, int exit = 2) : Exception(messag
 /// Exit codes are the CLI's, case by case: 0 said or done, a remove of what is not there among them · 1 an update's plan without
 /// <c>--yes</c>, the person's refusal in the window, or a session's terminal · 2 a refusal of the words, the operation or the route.
 /// </remarks>
-[CommandGroup("plugin", "list", "add", "update", "remove", "enable", "disable", "try-again", "new", "try", "install", "show", "activity", "approve", "withdraw")]
+[CommandGroup("plugin", "list", "add", "update", "remove", "enable", "disable", "try-again", "switch", "new", "try", "install", "show", "activity", "approve", "withdraw")]
 public static class PluginCommand
 {
-    /// <summary>The verbs this program has: every one the CLI's <c>daoris plugin</c> had, which it hands on whole, and <c>try-again</c>.</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "add", "update", "remove", "enable", "disable", "try-again"];
+    /// <summary>The verbs this program has: every one the CLI's <c>daoris plugin</c> had, which it hands on whole, <c>try-again</c> and <c>switch</c>.</summary>
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "add", "update", "remove", "enable", "disable", "try-again", "switch"];
 
     public const string Usage =
         """
@@ -66,6 +66,7 @@ public static class PluginCommand
                daoris plugin add <folder> · add --offer <id>
                daoris plugin update <id> [--yes] · remove <id> · enable|disable <id>
                daoris plugin try-again <id>: an unsound plugin started again by the running Daoris
+               daoris plugin switch <id> <what> on|off [--place <place>]: one interface or point at one place
         `daoris plugin …` runs these; the kit is `daoris plugin new|try`, a package `daoris plugin install`.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
@@ -82,7 +83,7 @@ public static class PluginCommand
         var verb = args.Count > 0 ? args[0] : "list";
         return verb switch
         {
-            "add" or "remove" or "enable" or "disable" => true,
+            "add" or "remove" or "enable" or "disable" or "switch" => true,
             "update" => args.Contains("--yes"),
             _ => false,
         };
@@ -164,7 +165,7 @@ public static class PluginCommand
                     + "before anything is extracted. `daoris plugin add <folder>` installs a plugin's folder.");
 
             default:
-                throw new PluginWords($"unknown plugin verb '{verb}' — one of: list, add, update, remove, enable, disable, try-again (and new, try: the kit)");
+                throw new PluginWords($"unknown plugin verb '{verb}' — one of: list, add, update, remove, enable, disable, try-again, switch (and new, try: the kit)");
         }
     }
 
@@ -250,6 +251,9 @@ public static class PluginCommand
                     else PluginState.Disable(home, entry.Manifest.Id);
                 }, Said);
             }
+
+            case PluginSwitchVerb.Verb:
+                return PluginSwitchVerb.Press(RequireHome(world), args, Reserved(world), line => Say(world, line));
 
             case "try-again":
                 return PluginTryAgain.Press(RequireHome(world), RequireId(args, verb), Reserved(world), line => Say(world, line));

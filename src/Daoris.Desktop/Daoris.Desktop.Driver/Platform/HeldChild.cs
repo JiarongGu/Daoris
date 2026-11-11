@@ -176,12 +176,9 @@ internal sealed class HeldChild : IDisposable
     public async Task<(int? Exit, string Stdout, string Stderr)> ExitAsync(TimeSpan bound)
     {
         if (await Task.WhenAny(_exited.Task, Task.Delay(bound)).ConfigureAwait(false) != _exited.Task) return (null, "", "");
-        // A hook's child that outlives git holds the pipes open: its words are not waited for past a moment.
-        await Task.WhenAny(Task.WhenAll(_stdout, _stderr), Task.Delay(StreamGrace)).ConfigureAwait(false);
+        await Task.WhenAny(Task.WhenAll(_stdout, _stderr), Task.Delay(PipeGrace.Wait)).ConfigureAwait(false);
         return (_exited.Task.Result, _stdout.IsCompletedSuccessfully ? _stdout.Result : "", _stderr.IsCompletedSuccessfully ? _stderr.Result : "");
     }
-
-    private static readonly TimeSpan StreamGrace = TimeSpan.FromSeconds(2);
 
     /// <summary>A pipe read to its end, which comes once every process holding its other end has closed it, then let go of.</summary>
     private static string ReadWhole(Stream pipe)

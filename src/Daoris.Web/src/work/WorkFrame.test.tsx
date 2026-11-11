@@ -62,7 +62,7 @@ describe('the Work frame', () => {
     SESSIONS = [DRIVEN, PARKED];
     show();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    expect(await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' })).toBeInTheDocument();
+    expect(await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' })).toBeInTheDocument();
 
     const user = userEvent.setup();
     focus(within(list).getByRole('button', { name: 'More actions' }));
@@ -97,7 +97,7 @@ describe('the Work frame', () => {
     show();
     const user = userEvent.setup();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitemradio', { name: 'Ask' }));
@@ -145,13 +145,13 @@ describe('the Work frame', () => {
     render(
       <QueryClientProvider client={client}>
         <Tooltip.Provider>
-          <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} group="you" onGroupBrought={brought} />
+          <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} group="needs-you" onGroupBrought={brought} />
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
 
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    const heading = await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalled());
     expect(heading).toHaveFocus();
   });
@@ -163,10 +163,10 @@ describe('the Work frame', () => {
   it('shows the list by state for a go where the person keeps it by repository, and remembers nothing', async () => {
     SESSIONS = [DRIVEN, PARKED];
     window.localStorage.setItem('daoris.list.sessions.filters', JSON.stringify({ group: 'repository' }));
-    const brought = going('you');
+    const brought = going('needs-you');
 
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    const heading = await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     // Still by state once the go is let go, so the heading it focused stays.
     expect(heading).toHaveFocus();
@@ -189,7 +189,7 @@ describe('the Work frame', () => {
     SESSIONS = [DRIVEN, PARKED];
     show();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' });
 
     const user = userEvent.setup();
     focus(within(list).getByRole('button', { name: 'More actions' }));
@@ -213,16 +213,16 @@ describe('the Work frame', () => {
     SESSIONS = [DRIVEN, PARKED];
     show();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await within(list).findByRole('heading', { level: 3, name: 'Needs you (1)' });
 
     const user = userEvent.setup();
     focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Archive what ended…' }));
 
-    // The reader here answers no session, so nothing it placed in Ended is listed; what waits on you is kept.
+    // The reader here answers no session, so nothing it placed in Done is listed; what waits on you is kept.
     const ask = await within(list).findByRole('group', { name: 'Archive what ended…' });
-    expect(ask).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 waiting on you.');
+    expect(ask).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 needing you.');
     await user.click(within(ask).getByRole('button', { name: 'Close' }));
     expect(within(list).queryByRole('group', { name: 'Archive what ended…' })).toBeNull();
   });
@@ -234,7 +234,7 @@ describe('the Work frame', () => {
 
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
     expect(await within(list).findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
-    expect(within(list).queryByRole('heading', { level: 3, name: /^Waiting on you/ })).toBeNull();
+    expect(within(list).queryByRole('heading', { level: 3, name: /^Needs you/ })).toBeNull();
   });
 
   /**

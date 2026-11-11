@@ -337,8 +337,9 @@ export const tool = await import(
   TIP_POLL_MS: number;
   stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
   endTree: (pid: number, options?: {
-    platform?: string; run?: (command: string, args: string[], options: object) => { stdout?: string | null }; kill?: (pid: number, signal: string) => void;
-  }) => void;
+    platform?: string; run?: (command: string, args: string[], options: object) => { status?: number | null; stdout?: string | null };
+    kill?: (pid: number, signal: string) => void; pause?: (ms: number) => void;
+  }) => boolean;
   descendants: (listing: string, pid: number) => number[];
   stoppedLines: (ran: string[], left: string[], ended?: string[]) => string[];
   /** Whether a result is the failure that ends a stage's CI run. */

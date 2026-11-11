@@ -17,10 +17,10 @@ const APP = EVIDENCE_ENTRIES[0]!;
 const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));
 
 const part = (session: string, began: string, over: Partial<EntryPart> = {}): EntryPart => ({
-  session, quest: 'q0000a', shown: 'completed', group: 'ended', began, after: null, askedBy: null, ...over,
+  session, quest: 'q0000a', shown: 'completed', group: 'done', began, after: null, askedBy: null, ...over,
 });
 const entry = (parts: EntryPart[], over: Partial<SessionEntry> = {}): SessionEntry => ({
-  entry: 'quest:q0000a/app', origin: 'quest:q0000a', repository: 'app', group: 'ended', leading: parts.at(-1)!.session, parts, ...over,
+  entry: 'quest:q0000a/app', origin: 'quest:q0000a', repository: 'app', group: 'done', leading: parts.at(-1)!.session, parts, ...over,
 });
 const flowOf = (e: SessionEntry, attended = e.leading, held: typeof rows = {}, plan: EntryAcceptPlan | null = null) =>
   partsFlow(t, e, { attended, rows: held, plan });

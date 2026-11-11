@@ -91,7 +91,7 @@ public sealed class AskDaorisReadingQueueTests : IDisposable
     {
         var reading = new AskDaorisReadingQueue(driver.Context, driver).Offer(CancellationToken.None);
         Assert.NotNull(reading);
-        await reading.WaitAsync(TimeSpan.FromSeconds(20));
+        await reading.WaitAsync(Poll.Patience);
     }
 
     private AskDaorisReport Report(string range = "r-1") => Reports.Find("s1", range)!;

@@ -15,7 +15,7 @@ describe('the places a go may name', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
     expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'driver', 'ai', 'git', 'browser', 'space', 'updates', 'wiring', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
-      'sessions/waiting', 'sessions/review', 'sessions/new', 'quests/asks', 'quests/held',
+      'sessions/needs-you', 'sessions/failed', 'sessions/new', 'quests/asks', 'quests/held',
       'projects/add', 'projects/import', 'projects/setup', 'projects/branches', 'projects/history',
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
       'projects/workspace-defaults', 'projects/workspace-remote',
@@ -89,19 +89,19 @@ describe('the places a go may name', () => {
 
   /**
    * A go reaches what waits on the person below Sessions and Quests, a group of the view's
-   * list it brings into view: Sessions' *Waiting on you* and *To review*, by the driver's reader's names, and Quests' asks
+   * list it brings into view: Sessions' *Needs you* and *Failed*, by the driver's reader's names, and Quests' asks
    * and the quests held for the person. It names no session or quest, and Overview, which what waits leads, has no part.
    */
   it('open Sessions or Quests with a group that waits on the person brought into view', () => {
-    expect(placeDoor({ view: 'sessions', part: 'waiting' })).toEqual({ view: 'sessions', group: 'you' });
-    expect(placeDoor({ view: 'sessions', part: 'review' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(placeDoor({ view: 'sessions', part: 'needs-you' })).toEqual({ view: 'sessions', group: 'needs-you' });
+    expect(placeDoor({ view: 'sessions', part: 'failed' })).toEqual({ view: 'sessions', group: 'failed' });
     expect(placeDoor({ view: 'quests', part: 'asks' })).toEqual({ view: 'quests', group: 'asks' });
     expect(placeDoor({ view: 'quests', part: 'held' })).toEqual({ view: 'quests', group: 'held' });
     expect(placeDoor({ view: 'sessions' })).toEqual({ view: 'sessions' });
-    expect(placeDoor({ view: 'sessions', part: 'you' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', part: 'waiting' })).toBeNull();
     expect(placeDoor({ view: 'sessions', part: 'working' })).toBeNull();
     expect(placeDoor({ view: 'quests', part: 'open' })).toBeNull();
-    expect(placeDoor({ view: 'overview', part: 'waiting' })).toBeNull();
+    expect(placeDoor({ view: 'overview', part: 'needs-you' })).toBeNull();
   });
 
   /**
@@ -140,7 +140,7 @@ describe('the places a go may name', () => {
   it('open the one session a go names on Sessions, as its list names it', () => {
     expect(placeDoor({ view: 'sessions', item: 's1a2b3c4' })).toEqual({ view: 'sessions', item: 's1a2b3c4' });
     expect(placeDoor({ view: 'sessions', domain: null, part: null, item: ' s1a2b3c4 ' })).toEqual({ view: 'sessions', item: 's1a2b3c4' });
-    expect(placeDoor({ view: 'sessions', part: 'waiting', item: 's1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', part: 'needs-you', item: 's1a2b3c4' })).toBeNull();
     expect(placeDoor({ view: 'sessions', item: 'ask:a1b2c3d4' })).toBeNull();
     expect(placeDoor({ view: 'sessions', item: 'session:s1a2b3c4' })).toBeNull();
   });
@@ -172,7 +172,7 @@ describe('the places a go may name', () => {
       .toEqual({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } });
     expect(placeDoor({ view: 'sessions', part: 'new', repository: null, sentence: '  ' })).toEqual({ view: 'sessions', compose: {} });
     expect(placeDoor({ view: 'sessions', part: 'new' })).toEqual({ view: 'sessions', compose: {} });
-    expect(placeDoor({ view: 'sessions', part: 'review', repository: 'engine', sentence: 'x' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(placeDoor({ view: 'sessions', part: 'failed', repository: 'engine', sentence: 'x' })).toEqual({ view: 'sessions', group: 'failed' });
   });
 
   /**

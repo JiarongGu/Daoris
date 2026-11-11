@@ -61,7 +61,7 @@ public static class LandTryNotes
 {
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
     public static bool Says(string code) => code is LandingCode.Landed or LandingCode.Advanced or LandingCode.Nothing
-        or LandingCode.Held or LandingCode.Uncommitted or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused
+        or LandingCode.Held or LandingCode.Uncommitted or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused or LandingCode.Moved
         or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound or LandingCode.RootDirty
         or LandingCode.LineHolds or LandingCode.Queued;
 

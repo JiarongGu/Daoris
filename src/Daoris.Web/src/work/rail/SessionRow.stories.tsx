@@ -202,7 +202,7 @@ const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' |
 export const Parked: Story = {
   args: {
     session: { ...SESSION, state: 'failed', created: at(80), updated: at(25) },
-    grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }),
+    grouping: placed({ group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
     place: 'engine',
   },
 };
@@ -294,7 +294,7 @@ export const WaitingForYourAnswerChinese: Story = { ...WaitingForYourAnswer, dec
 export const AwaitingReply: Story = {
   args: {
     session: { ...SESSION, state: 'completed', created: at(80), updated: at(30) },
-    grouping: placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' }),
+    grouping: placed({ group: 'working', state: 'working', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' }),
     place: 'engine',
   },
 };
@@ -304,7 +304,7 @@ export const ToReview: Story = {
   args: {
     session: { ...SESSION, state: 'stopped', created: at(80), updated: at(30), tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9' },
     root: 'C:/somewhere/engine',
-    grouping: placed({ group: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } }),
+    grouping: placed({ group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } }),
     place: 'engine',
   },
 };
@@ -313,7 +313,7 @@ export const ToReview: Story = {
 export const UncommittedToReview: Story = {
   args: {
     session: { ...SESSION, state: 'completed', created: at(80), updated: at(30) },
-    grouping: placed({ group: 'review', shown: 'completed', work: { commits: 0, uncommitted: 4 } }),
+    grouping: placed({ group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', work: { commits: 0, uncommitted: 4 } }),
     place: 'engine',
   },
 };
@@ -330,7 +330,7 @@ export const Queued: Story = {
 export const Archivable: Story = {
   args: {
     session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) },
-    grouping: placed({ group: 'ended', shown: 'completed' }),
+    grouping: placed({ group: 'done', state: 'done', shown: 'completed' }),
     place: 'engine',
     acts: ['review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'],
     onAct: () => {},
@@ -366,7 +366,7 @@ export const RunningWithItsActs: Story = {
 export const WaitingWithItsActs: Story = {
   args: {
     session: { ...SESSION, state: 'awaiting-person', created: at(40), updated: at(5) },
-    grouping: placed({ group: 'you', shown: 'awaiting-person' }),
+    grouping: placed({ group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person' }),
     place: 'engine',
     acts: ['answer', 'stop', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
     onAct: () => {},
@@ -377,7 +377,7 @@ export const WaitingWithItsActs: Story = {
 export const ParkedWithTryAgain: Story = {
   args: {
     session: { ...SESSION, state: 'failed', created: at(80), updated: at(25) },
-    grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }),
+    grouping: placed({ group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
     place: 'engine',
     acts: ['retry', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
     onAct: () => {},
@@ -392,7 +392,7 @@ export const DeletableConversation: Story = {
   args: {
     session: { ...SESSION, quest: null, kind: 'chat', state: 'completed', created: at(95), updated: at(50) },
     quest: null,
-    grouping: placed({ group: 'ended', shown: 'completed', deletable: true }),
+    grouping: placed({ group: 'done', state: 'done', shown: 'completed', deletable: true }),
     place: 'engine',
     acts: ['openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
     onAct: () => {},
@@ -403,7 +403,7 @@ export const DeletableConversation: Story = {
 export const PausedWithItsAsk: Story = {
   args: {
     session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },
-    grouping: placed({ group: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }),
+    grouping: placed({ group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }),
     place: 'engine',
     acts: ['resumeAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
     onAct: () => {},
@@ -454,7 +454,7 @@ export const HeldForALimit: Story = {
   args: {
     session: { ...SESSION, state: 'completed', created: at(300), updated: at(120) },
     grouping: placed({
-      group: 'later', shown: 'limit-waits',
+      group: 'pending', state: 'pending', shown: 'limit-waits',
       holds: { why: 'cooling', reason: 'its account is cooling.', until: '2026-10-28T12:30:00Z', account: 'account-2', accountName: 'Work' },
     }),
     place: 'engine',
@@ -467,7 +467,7 @@ export const HeldForALimitDark: Story = { ...HeldForALimit, decorators: [dark] }
 export const StoppedHoldingItsQuest: Story = {
   args: {
     session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },
-    grouping: placed({ group: 'ended', shown: 'stopped', holdsQuest: true }),
+    grouping: placed({ group: 'done', state: 'done', shown: 'stopped', holdsQuest: true }),
     place: 'engine',
     acts: ['retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'],
     onAct: () => {},

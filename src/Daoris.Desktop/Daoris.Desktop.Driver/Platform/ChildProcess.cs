@@ -61,8 +61,15 @@ public static class ChildProcess
         if (GitPlace.Current is null && GitPlace.IsGit(info.FileName))
         {
             var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? "." : info.WorkingDirectory);
-            return await GitScheduler.Shared.RunAsync(
-                new GitRunAsk(folder, folder, GitWait.Read), token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
+            try
+            {
+                return await GitScheduler.Shared.RunAsync(
+                    new GitRunAsk(folder, folder, GitWait.Read), token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
+            }
+            catch (GitUnplacedException unplaced)
+            {
+                return new ChildRun(false, null, "", "", false) { Error = unplaced };
+            }
         }
 
         Process? process;
@@ -112,7 +119,7 @@ public static class ChildProcess
                 return new ChildRun(true, null, "", "", true) { Error = unended };
             }
 
-            return new ChildRun(true, process.ExitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false), false);
+            return new ChildRun(true, process.ExitCode, await PipeGrace.ReadAsync(stdout).ConfigureAwait(false), await PipeGrace.ReadAsync(stderr).ConfigureAwait(false), false);
         }
     }
 

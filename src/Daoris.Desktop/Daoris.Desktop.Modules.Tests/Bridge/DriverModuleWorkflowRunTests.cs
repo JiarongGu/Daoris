@@ -261,6 +261,25 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(("working", "active"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
     }
 
+    /// <summary>
+    /// A conversation's Accept at the node door is its press: the submission and then the keep, so it reserves the conversation first, and a
+    /// live one no runner here holds is refused <c>elsewhere</c> with nothing submitted or kept. Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_accept_at_the_node_door_is_its_press_reserved_first()
+    {
+        var own = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "aurora", "engine", "s-c2c2c2c2");
+        Directory.CreateDirectory(own);
+        var (module, _) = await UpAsync(chatTree: own);
+
+        var answer = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "chat-c2", node = "review", act = "accept" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(ChatPresses.Codes.Elsewhere, answer.GetProperty("press").GetString());
+        Assert.Equal(ChatPresses.Elsewhere, answer.GetProperty("message").GetString());
+        Assert.False(File.Exists(Path.Combine(NodeRecordFiles.FolderOf(Home), RunUnits.IdOf("chat-c2") + ".json")));
+    }
+
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
     private NodeRecordFiles BoundWithAGoAhead()
     {
