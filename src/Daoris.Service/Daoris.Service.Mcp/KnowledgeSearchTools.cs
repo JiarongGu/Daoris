@@ -50,7 +50,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         + "where things are, from each repository's own index of where things are. "
         + "Use it before solving a problem that another repository may already have solved, to "
         + "find out why something was done the way it was, or to find where something is before searching "
-        + "the files. Each hit names its file and lines, so read those lines rather than the file.")]
+        + "the files. Each hit names its file and lines, so read those lines rather than the file. A question about how "
+        + "something works now answers the present first; a row id, a decision number, why or when asks history too.")]
     public async Task<string> SearchAsync(
         [Description("What to look for, in plain words.")] string query,
         [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task, index, record (a finished session's tree: its "
@@ -108,7 +109,8 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             // says the line it starts on.
             var place = hit.Entry.Lines is { } lines ? $"{hit.Entry.RelativePath}:{lines}" : hit.Entry.RelativePath;
             text.AppendLine($"### {hit.Entry.Title}");
-            text.AppendLine($"`{hit.Entry.Repository}` · {hit.Entry.Kind} · `{place}`");
+            var tense = PresentFirst.TenseOf(hit.Entry).ToString().ToLowerInvariant();
+            text.AppendLine($"`{hit.Entry.Repository}` · {hit.Entry.Kind} · {tense} · `{place}`");
             text.AppendLine($"id: `{hit.Entry.Id}`");
             text.AppendLine(standings[hit.Entry.Id].Says);
             if (hit.Excerpt is { Length: > 0 })
@@ -119,6 +121,11 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         }
 
         text.AppendLine("Call `knowledge_get` with an id for the full text, and with `lines` for only the lines a hit names.");
+        if (answer.PresentAhead)
+        {
+            text.AppendLine("The present came first, dated documents and history after it. A row id, a decision number, "
+                          + "*why* or *when*, or named kinds asks every entry as the words rank it.");
+        }
         if (answer.MoreIndex)
         {
             text.AppendLine($"More index entries matched than the {KnowledgeService.IndexEntriesUnasked} named here: "

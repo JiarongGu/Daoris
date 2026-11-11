@@ -13,7 +13,7 @@ namespace Daoris.Desktop;
 /// <para><b>A profile of Daoris's, never the person's default.</b> Chromium refuses a debug port on
 /// the default profile, so the person's everyday Edge cannot be driven at all. Edge signs a profile
 /// in to the Windows account's Microsoft account on its own, which is what this option is for, and
-/// its sync is the person's to turn on (`docs/2026-09-28-managed-edge-evidence.md`).</para>
+/// its sync is the person's to turn on (`docs/archive/2026-09-28-managed-edge-evidence.md`).</para>
 ///
 /// <para><b>Found again, not started twice.</b> A second Edge started on the same profile hands over
 /// to the one already running and exits, and that one listens on the port it is started with. So the

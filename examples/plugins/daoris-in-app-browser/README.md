@@ -4,7 +4,7 @@ Daoris's own plugin, in the `daoris-` family (a plugin's id is `<family>-<name>`
 `in-app-browser`; its manifest says so, and Daoris moves that id's switch, data and approval to it once.
 
 The desktop shell carries a browser of its own (D78,
-`docs/2026-09-27-in-app-browser-design.md`): a window with an address bar, its profile under the
+`docs/archive/2026-09-27-in-app-browser-design.md`): a window with an address bar, its profile under the
 Daoris home, and no way into the application's own page. This plugin hands every session the
 [Playwright MCP server](https://github.com/microsoft/playwright-mcp), attached to that window over
 the Chrome DevTools Protocol. So what a session opens, clicks and reads is the page the person

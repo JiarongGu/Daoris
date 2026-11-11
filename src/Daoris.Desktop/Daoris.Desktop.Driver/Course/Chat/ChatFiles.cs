@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// Never written into the tree: the tree is the repository's, and an attachment is the person's.</para>
 ///
 /// <para><b>Read by the agent where it lies</b>, under a read granted at spawn for exactly this folder
-/// — measured on both doors (docs/2026-09-25-message-content-evidence.md).</para>
+/// — measured on both doors (docs/archive/2026-09-25-message-content-evidence.md).</para>
 ///
 /// <para><b>The layout and the name rules are the service's for a quest's files</b> (<c>QuestFiles</c>),
 /// twinned here because the artefacts share no code: the hash keeps two screenshots both called

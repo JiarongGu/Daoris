@@ -2123,7 +2123,7 @@ repository.
   when its words were held for its own account's weekly reset, and this fix reaches only a record whose quest is open or taken: a closed
   quest's session kept its wait, as the fix says. That case is LIMITSWITCH2's, built the same day (D137's LIMITSWITCH2 note), within
   D137's LIMITSWITCH1 note by the steward's reading of *an ended record* (D137's note amending point 4), and FOUNDATION1's row 1a-iii
-  (`docs/2026-10-25-foundation-design.md` §10).
+  (`docs/archive/2026-10-25-foundation-design.md` §10).
 
 ## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
 
@@ -2280,7 +2280,7 @@ repository.
   where the conversation's was), then green with the `WorkflowRunTests`, `WorkflowPortsTests`, `WorkflowRunCommandTests`,
   `WorkflowRunSaidTwinTests` and `TraceTests` classes (288), the driver's fast half (14,411) and `DriverModuleWorkflowRunTests` (17).
 The nine entries headed *(AGENTERRORS1, Codex's C4-n)* are the code defects Codex's owed read of D210's accepted text found in rows
-1a and 1a2 on main, before any installed build carried them (`docs/2026-10-24-agent-errors-reads.md`, *Codex, the accepted text*;
+1a and 1a2 on main, before any installed build carried them (`docs/archive/2026-10-24-agent-errors-reads.md`, *Codex, the accepted text*;
 the design's §17). Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; each test was seen red against the rows as
 committed, then green.
 
@@ -2995,7 +2995,7 @@ committed, then green.
 ## 2026-10-23 - Three model readers built on guessed shapes, found by measuring the doors (MODELROLE1a)
 
 - **Symptom:** none reported. Measuring what each door accepts for model and effort
-  (`docs/2026-10-23-model-effort-doors-evidence.md`) produced the first real frames for three shapes the code had guessed.
+  (`docs/archive/2026-10-23-model-effort-doors-evidence.md`) produced the first real frames for three shapes the code had guessed.
   (1) `claude-agent-acp` refuses a `set_config_option` as `Internal error` and puts its sentence in `data.details`. A refused model
   in the composer said only *Internal error*. (2) Both protocol agents nest each model's counts in `quota.model_usage[]` under
   `token_count`, the cache read named `cachedInputTokens`. The split was read at the entry's top level, found nothing, and every
@@ -7231,7 +7231,7 @@ committed, then green.
 - **Root cause:** `WorkflowKeepCommand` ignored the nullable binding writer's result.
 - **Fix:** require a saved binding; a refused save retains the original hold explanation.
 - **Verify:** both real-Git race regressions and the normal Keep/automatic-landing acceptance case;
-  final reached-gate receipt in `docs/2026-10-10-code-and-docs-review.md`.
+  final reached-gate receipt in `docs/archive/2026-10-10-code-and-docs-review.md`.
 - **Commit:** `423cc132`.
 
 ### Workflows: a named run was drawn from Current (WORKFLOW1c6)
@@ -7266,7 +7266,7 @@ committed, then green.
   a real backlog row still contributes to its word count.
 - **Verify:** four failing-first defect cases; backtick, tilde and unclosed longer fences, repeated
   live entries and nested example cost. Focused tests pass; final baseline receipt:
-  `docs/2026-10-10-code-and-docs-review.md`.
+  `docs/archive/2026-10-10-code-and-docs-review.md`.
 - **Commit:** `c0527f64`.
 
 ### Documentation: a freshness declaration passed after its source disappeared (DOCSYS2)
@@ -7279,7 +7279,7 @@ committed, then green.
   normalization; require source paths for every tracked guide; resolve Markdown section links to files.
 - **Verify:** five failing-first regressions, all 13 audit tests passing, and a real declaration mutation
   producing exit 1 with the guide and missing source named, restored to exit 0. Final baseline receipt:
-  `docs/2026-10-10-documentation-review.md`.
+  `docs/archive/2026-10-10-documentation-review.md`.
 - **Commit:** `c17a7bfb`.
 
 ### Workflows: damaged bindings silently fell back to Current
@@ -8045,7 +8045,7 @@ repository), and all six held. D102's SQUASHTIDY1c note has the shape; the entri
   the thread, so the sighting could say only a CPU total. The suspects, unmeasured: a running session's traffic (large tool
   results serialized on the thread by the flush), a route's synchronous part, a full collection.
 - **Fix:** `tokens.css` gives `--animate-pulse` a count of three, so the live dot pulses as it turns live and settles
-  (D41's motion line, `docs/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
+  (D41's motion line, `docs/archive/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
   and writes `ui.stalled` (warn) when one waits 250 ms or more: the longest wait, how long, the route found on the thread and
   the slowest route's synchronous part, how many routes ran, the bus events and full collections meanwhile; once a minute
   while it lasts (the machine log design §4). The shell composes it beside `RefusalLog`; the form starts it on Load.
@@ -8255,7 +8255,7 @@ repository), and all six held. D102's SQUASHTIDY1c note has the shape; the entri
 ## 2026-10-07 — an evidence verdict judged twice, differently
 
 ### Service: the wire took a `spelled` the evidence door refused (REFAC3)
-- **Symptom:** read from the code by a second opinion (`docs/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
+- **Symptom:** read from the code by a second opinion (`docs/archive/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
 - **Root cause:** EVID1a wrote the verdict's field rules twice, in `QuestEvidenceVerdict.Judged` for the wire and `QuestExchange.JudgeVerdict` for the door, and only the door kept `spelled` to a `case` read. Neither checked that the spelling is the same path in another case.
 - **Fix:** `QuestEvidenceVerdict.JudgeShape`, one judge of the shape both call, returning the field at fault (`QuestVerdictFault`); coverage stays the exchange's and the replay's. D144's REFAC3 note names what is refused now.
 - **Verify:** `QuestEvidenceTests.A_verdict_is_taken_or_refused_alike_at_both_doors`: thirty-one shapes through both doors; the two disagreeing rows failed first (taken on the wire, refused at the door), and the two new `spelled` rows failed at both. Not covered: no reader writes a verdict yet (EVID1b).

@@ -113,7 +113,7 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
                 StartNoteCodes.StepPerforms, $"Performs the step `{ask.Step}` of `{ask.Plugin}` for {ask.Unit}, attempt {ask.Attempt}.",
                 ("step", ask.Step), ("plugin", ask.Plugin), ("unit", ask.Unit), ("attempt", ask.Attempt));
             await driver.Holds.HoldAsync(
-                "step", adapter, info, target, sessionId, transcript, cwd, harnessNotice, rules, handed,
+                ParticipantWork.Build, adapter, info, target, sessionId, transcript, cwd, harnessNotice, rules, handed,
                 refusesInput: "A step's session works its plugin's tools alone and answers the step: nobody talks to it while it runs.",
                 ct: ct, handedPlan: plan, workingNote: performs, said: driver.Said(adapter, selection, sessionId), limits: driver.NativeLimit(adapter),
                 minutes: Minutes, offers: new OpenOffers(selection.Version, selection.Profile, null),

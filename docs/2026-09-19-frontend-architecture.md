@@ -5,7 +5,7 @@
 **Status: approved direction from the owner, 2026-09-19 — "this is a long-term project, so a good use
 of UI tooling and library is a must; use a design tool; support i18n; use the example project for
 testing, with test-in-loop development." Written before the build; D42 records the decision.** This
-sits on top of the design language (`2026-09-19-platform-ux.md`, D41): the *look* is settled and keeps;
+sits on top of the design language (`archive/2026-09-19-platform-ux.md`, D41): the *look* is settled and keeps;
 this settles what it is **built on** so it stays maintainable for years.
 
 ## 1. What changes and what deliberately does not
@@ -158,7 +158,7 @@ refusal). It is not a second app: stories import the shipped components and the 
 divergence between design and product is a build error, not a discovery.
 
 **Since 2026-09-21 it is also the first loop a component passes** (D52 as amended,
-`docs/2026-09-21-working-surface-components.md`): the working surface is built component by component,
+`docs/archive/2026-09-21-working-surface-components.md`): the working surface is built component by component,
 and a story for a component that does not exist yet is the cheapest available failing test. Two rules
 come with it and apply to anything built that way — **a presentational component imports no hook**, so
 every state is reachable by passing props rather than by arranging the world that produces it (a test

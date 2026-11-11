@@ -1,6 +1,6 @@
 # Evidence: reading an account's plan usage without a prompt (USAGEREAD1)
 
-Measured 2026-10-12 on the owner's machine for D165 point 1 (`docs/2026-10-12-account-switch-design.md` §1.1). The
+Measured 2026-10-12 on the owner's machine for D165 point 1 (`docs/archive/2026-10-12-account-switch-design.md` §1.1). The
 accounts are labelled A, B and C here, not by their directory names, and no amount of money is quoted.
 
 ## The answer
@@ -58,7 +58,7 @@ body, as measured (the SDK 0.3.284 declaration, `sdk.d.ts:4195-4260`, names fewe
 - **The protocol door's CLI** (the SDK 0.3.284's bundled 2.1.284) was not run: its declaration has `get_usage`, so it is
   expected to answer, unmeasured. The read needs only the account's home, so USAGEREAD2 may ask the native CLI for
   either door's account.
-- **Codex** was not measured here; CODEXUSE1 and CODEXUSE3 read its app server (`docs/2026-10-07-codex-usage-evidence.md`).
+- **Codex** was not measured here; CODEXUSE1 and CODEXUSE3 read its app server (`docs/archive/2026-10-07-codex-usage-evidence.md`).
 - **An expired sign-in**: every account read was signed in. Whether the CLI refreshes a stale token at `initialize` or
   answers `false`, and whether a read under a home a running session also uses ever disturbs that session, are not read.
 - **The read writes to the home** as any start does: the stray folder gained `.claude.json` and `sessions/`.

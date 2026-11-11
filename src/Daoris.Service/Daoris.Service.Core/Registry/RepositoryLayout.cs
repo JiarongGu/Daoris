@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where the scanner reads a repository's doctrine, and which of its folders are rooms (`docs/2026-10-01-agent-layout-design.md` §5.5).
+/// Where the scanner reads a repository's doctrine, and which of its folders are rooms (`docs/archive/2026-10-01-agent-layout-design.md` §5.5).
 /// </summary>
 /// <remarks>
 /// <para><b>The roots.</b> 🔴 The lock, not the manifest, says where the files are (§5.1): between a

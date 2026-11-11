@@ -18,7 +18,7 @@ public sealed record EngineRecord(IReadOnlyList<string> Refused, bool BarShown);
 /// refused or offered. Pure, so every rule is tested without an engine.
 /// </summary>
 /// <remarks>
-/// <para><b>Measured before written</b> (`docs/2026-09-28-chromium-embedding-evidence.md`):
+/// <para><b>Measured before written</b> (`docs/archive/2026-09-28-chromium-embedding-evidence.md`):
 /// the engine takes a bookmarks file written without its checksum and shows its folder, and it keeps
 /// an extension id seeded into <c>extensions.external_uninstalls</c> and stops offering it.</para>
 ///

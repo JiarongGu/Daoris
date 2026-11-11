@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The development documents a repository declares in <c>daoris.json</c>'s <c>documents</c>, as the
-/// scanner reads them (`docs/2026-10-01-development-documents-design.md` §2.7 and §5).
+/// scanner reads them (`docs/archive/2026-10-01-development-documents-design.md` §2.7 and §5).
 /// </summary>
 /// <remarks>
 /// <para><b>A declaration adds a path; it is never required</b> (§5). The scanner still needs no

@@ -1,6 +1,6 @@
 /**
  * No C# type is declared `partial` in more than one hand-written file ("no partial type without
- * generated code"; docs/2026-10-14-partial-types-survey.md, "The gate").
+ * generated code"; docs/archive/2026-10-14-partial-types-survey.md, "The gate").
  *
  *   node tools/partials.mjs           check src/**\/*.cs against tools/partials.json (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/partials.mjs --write   rewrite tools/partials.json from the tree (the first list, or after a row cut entries)

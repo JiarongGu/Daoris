@@ -1,8 +1,8 @@
 # dsh probes — the instruments behind `docs/2026-09-21-dsh-evaluation.md`
 
 Four small Node scripts, zero dependencies, kept so the evaluation is reproducible. The ACP client here
-is also what the later protocol evidence ran (`docs/2026-09-22-acp3-probe-evidence.md`,
-`docs/2026-10-01-entry-point-evidence.md`). None of them is a gate, none runs a model, and none is shipped.
+is also what the later protocol evidence ran (`docs/archive/2026-09-22-acp3-probe-evidence.md`,
+`docs/archive/2026-10-01-entry-point-evidence.md`). None of them is a gate, none runs a model, and none is shipped.
 
 | Script | What it is |
 |---|---|

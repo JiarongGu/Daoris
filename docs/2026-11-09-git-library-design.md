@@ -5,7 +5,7 @@ of 2026-11-09: Daoris's git is free-flowing, not managed by .NET. Every read is 
 them per repository, identical reads in flight each start their own git, and a read nobody waits on runs on. It is to be one git
 service in .NET that every Daoris git read and act passes, so git is never started any other way. §14 to §17 are round 4: the
 steward's choice drops the held object reader, and the round answers what both makers' reads of round 3
-(`docs/2026-11-09-git-library-reads.md`) leave once it is gone, each finding placed in §15. Rounds 1 (§1 to §4), 2 (§5, §6, §8, §9)
+(`docs/archive/2026-11-09-git-library-reads.md`) leave once it is gone, each finding placed in §15. Rounds 1 (§1 to §4), 2 (§5, §6, §8, §9)
 and 3 (§10 to §13) are kept as history: their measures stand, and their design and rows are superseded where a later round differs.
 §7, the owner's open question, is current. The code was read at `3d0f5916f5`; nothing in the product changed.
 

@@ -105,7 +105,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Contains("integer", entry.Problem);
     }
 
-    /// <summary>Logged and skipped, never fatal (Yaorin's loader rule) — and named, so a person can see why it is missing.</summary>
+    /// <summary>Logged and skipped, never fatal (the sibling app's loader rule) — and named, so a person can see why it is missing.</summary>
     [Fact]
     public void A_malformed_manifest_is_a_named_problem_under_its_folder_name_not_a_crash()
     {

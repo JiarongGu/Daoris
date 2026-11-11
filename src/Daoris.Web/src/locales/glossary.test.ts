@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { en, zh } from '.';
 
 /**
- * The glossary: the authority names are checked against, `docs/2026-10-01-naming-design.md`
+ * The glossary: the authority names are checked against, `docs/archive/2026-10-01-naming-design.md`
  * §5. These hold its shape, so the check that reads it (`scripts/names-check.mjs`) never reports against
  * a glossary that has stopped saying anything.
  */

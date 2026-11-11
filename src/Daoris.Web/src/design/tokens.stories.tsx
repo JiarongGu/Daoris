@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 // The token gallery — the design language's raw material, on the shipped variables. The status set
-// is the COMPUTED palette (docs/2026-09-19-platform-ux.md): both themes pass all six checks of the
+// is the COMPUTED palette (docs/archive/2026-09-19-platform-ux.md): both themes pass all six checks of the
 // visualization validator, and a status never ships without its text label.
 
 function Swatch({ name, variable, note }: { name: string; variable: string; note?: string }) {

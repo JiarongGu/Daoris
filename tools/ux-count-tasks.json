@@ -1,5 +1,5 @@
 {
-  "_why": "UX6's tasks (docs/2026-10-04-ux6-redesign.md §9.4), the fifth measure of §9.1: the presses from the screen a person starts on to the act done, and the rows they scan to find it. Declared here and not measured (UX6a): a task crosses screens, so its presses are counted on the window by following its route, which no story renders whole. `node tools/ux-count.mjs --tasks` prints them. `before` and `after` are the design's words. `measured` is null until a person counts one on the install, then `{ \"presses\": n, \"scanned\": n, \"on\": \"<date> <what was counted on>\" }`.",
+  "_why": "UX6's tasks (docs/archive/2026-10-04-ux6-redesign.md §9.4), the fifth measure of §9.1: the presses from the screen a person starts on to the act done, and the rows they scan to find it. Declared here and not measured (UX6a): a task crosses screens, so its presses are counted on the window by following its route, which no story renders whole. `node tools/ux-count.mjs --tasks` prints them. `before` and `after` are the design's words. `measured` is null until a person counts one on the install, then `{ \"presses\": n, \"scanned\": n, \"on\": \"<date> <what was counted on>\" }`.",
   "tasks": [
     {
       "task": "Publish an ask its declarations proposed",

@@ -2,7 +2,7 @@
 
 Design, proposed for the owner's yes. Round 1 was written by Claude Opus 5.5 on 2026-11-08 from main at `50055ee6d6`, on the owner's
 direction in D233's note of 2026-11-08 and the principle in D214's note of the same day, and read by both makers
-(`docs/2026-11-08-supervisor-kinds-reads.md`). **Round 2**, by Claude Opus 5.5 on 2026-11-08 from main at `bdab99e6f4`, answers both
+(`docs/archive/2026-11-08-supervisor-kinds-reads.md`). **Round 2**, by Claude Opus 5.5 on 2026-11-08 from main at `bdab99e6f4`, answers both
 reads and writes in D233's second note of 2026-11-08, which settles round 1's four questions. A passage round 2 changes is marked
 *(R2-Cn)* for Codex's finding n or *(R2-On)* for the Opus reader's, and its section near the end answers each finding. **Round 3**,
 by Claude Opus 5.5 on 2026-11-08 from main at `6b47d1f6ac`, answers both narrow reads of round 2 and writes in D233's third note of
@@ -294,11 +294,11 @@ grant rests on, and restricts nothing a person's development does.
   handed file alone (`--setting-sources user`), and Daoris's connector alone (`--strict-mcp-config` beside `--mcp-config`, whose
   plan a helper's start already draws from that connector alone, `Agents/ConnectorPlans.cs:12-13`). On the protocol door the same
   is `settingSources: ["user"]` and `strictMcpConfig: true` beside `settings` in `_meta.claudeCode.options`, which the adapter
-  spreads over its own list (`docs/2026-10-01-entry-point-evidence.md` step 1; carried and measured with `["project"]`,
+  spreads over its own list (`docs/archive/2026-10-01-entry-point-evidence.md` step 1; carried and measured with `["project"]`,
   `docs/2026-10-03-steer-evidence.md` §6). The copy's settings, allows, hooks, servers and instruction files, and the
   person's other servers, are then not the turn's: the tree guard and the lineage hook still come in the handed file, the account's
   user tier stays as every session has it, and the turn reads the copy's own `CLAUDE.md` as a file, if at all, never loaded as its
-  instructions (the project tier gates it, `docs/2026-10-01-entry-point-evidence.md` step 5).
+  instructions (the project tier gates it, `docs/archive/2026-10-01-entry-point-evidence.md` step 5).
 - **The reading posture and its place**, on a harness that takes no rules but has a reading posture (Codex's `read-only`,
   `Agents/Providers/Codex/CodexProvider.cs:38`). Its posture is said `copy-alone` until row h measures whether that posture stops a write
   outside its place; then it is said by what was measured. Codex holds no denies, and is said to (D233's choice 3).

@@ -1,6 +1,6 @@
 // Where a repository's doctrine sits, and the paths it may declare.
 //
-// `docs/2026-10-01-agent-layout-design.md` §5.1 is the contract. Three questions live here because
+// `docs/archive/2026-10-01-agent-layout-design.md` §5.1 is the contract. Three questions live here because
 // every command asks them: which layout the files were WRITTEN under (the lock's answer, never the
 // manifest's), whether a declared path stays inside the repository (over the declared roots), and
 // which of the repository's own documents sit in a tier its index no longer lists.
@@ -15,7 +15,7 @@ import { DaorisError } from '../platform/errors.ts';
 /**
  * The smallest limit an agent puts on a repository's instruction files: codex reads 32,768 bytes of
  * the project chain, root first, and cuts the file where the budget runs out
- * (`docs/2026-10-01-entry-point-evidence.md` §2). dsh caps the chain at 65,536 and Claude Code skips a
+ * (`docs/archive/2026-10-01-entry-point-evidence.md` §2). dsh caps the chain at 65,536 and Claude Code skips a
  * file over 4 MiB, so this is the one a root `AGENTS.md` meets first. `check` reports against it and
  * never fails on it: a size is a judgement, and the tail it would lose is the region's last rule.
  */

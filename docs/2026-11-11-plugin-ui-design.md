@@ -7,7 +7,7 @@ UI: "a page of its own (a side tab to be added or managed) or within the plugin 
 particular plugin. Written by Claude Opus 5.5 on 2026-11-11 from main at `b3bc538d62`, from a read of a sibling desktop app's plugin
 system and of nine well-known extension UIs (§2), and revised the same day from main at `b0c1022fe6`. Read with `docs/areas/plugins.md`
 (cited *plugins rule n*), `docs/areas/desktop-app.md` (*desktop rule n*), the plugins screen design (D119,
-`docs/2026-10-01-plugins-screen-design.md`), the catalogue design (D140), D52, D64, D222 and D228. Paths start at `src/Daoris.Web/src/`
+`docs/archive/2026-10-01-plugins-screen-design.md`), the catalogue design (D140), D52, D64, D222 and D228. Paths start at `src/Daoris.Web/src/`
 when they begin with `Web/`, at `src/Daoris.Desktop/Daoris.Desktop.Driver/` with `Driver/`, and at
 `src/Daoris.Desktop/Daoris.Desktop.Modules/` with `Modules/`. Settling it amends D52 and D64 §7 ("no plugin adds a view"), D140
 point 5 (no plugin markup in the page) and plugins rule 27, each as its row lands.

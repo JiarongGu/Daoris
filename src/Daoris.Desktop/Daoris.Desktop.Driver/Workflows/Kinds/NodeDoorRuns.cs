@@ -45,7 +45,7 @@ internal sealed class NodeDoorRuns(Func<bool>? runs = null)
         return true;
     }
 
-    public bool Runs(string key) => _running.ContainsKey(key);
+    public bool Running(string key) => _running.ContainsKey(key);
 
     /// <summary>Completes once every work started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => Task.WhenAll(_running.Values);

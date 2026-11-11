@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugins under the home's `plugins/`, judged the way Yaorin's host judges its catalogue: the host
+/// The plugins under the home's `plugins/`, judged the way the sibling app's plugin host judges its catalogue: the host
 /// drives whatever is there and names no plugin.
 /// </summary>
 /// <remarks>
