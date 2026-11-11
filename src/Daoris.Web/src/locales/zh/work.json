@@ -428,7 +428,7 @@
   "work.sitting.PolicyHeld_policy-ask": "你的主管规则在把这项委托改用其他选择之前先问你：「重试」表示同意改用一次。",
   "work.sitting.PolicyHeld_moves-bound": "这项委托今天已按你的主管规则改用其他选择达到上限：「重试」表示再同意一次。",
   "work.sitting.Unclosed": "{{why}}",
-  "work.sitting.Unclosed_unclosed": "会话 `{{session}}` 已结束，`#{{quest}}` 仍是已接下，本机不会再继续它：「标为完成…」关闭它，或给该会话留言让它继续。",
+  "work.sitting.Unclosed_unclosed": "会话 `{{session}}` 已停下，`#{{quest}}` 仍是已接下，本机不会再继续它：「标为完成…」关闭它，或给该会话留言让它继续。",
   "work.sitting.Stopped_steward": "管家停止了会话 `{{session}}`；管家或所有者「重试」会让它继续。",
   "work.sitting.Blocked_checkout": "它之前的工作在你的检出里，所以由你来让它继续。",
   "work.scope.ask": "需求 #{{id}}",
