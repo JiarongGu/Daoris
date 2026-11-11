@@ -380,6 +380,23 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestPublishRefusal.None, named.Refusal);
         Assert.Equal("tools", named.Quest!.Workspace);
         Assert.Equal(QuestPublishRefusal.CrossWorkspace, unnamed.Refusal);
+        Assert.DoesNotContain(": .", unnamed.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Ask Daoris belongs to no workspace's registry, and every workspace is within its reach: its quest is filed in the workspace of the
+    /// repository it names, whichever its conversation started in.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_s_quest_reaches_the_named_repository_s_workspace()
+    {
+        var quiet = (await _service.RegistryAsync()).First(r => r.Repository == "Quiet");
+        await _service.RegisterAsync(quiet with { Workspace = "games" }, Now);
+
+        var published = await _exchange.PublishAsync(new QuestAsk(SessionLedger.HelpRepository, "Quiet", "Fix the stall", "Asked in a conversation."), Now);
+
+        Assert.Equal(QuestPublishRefusal.None, published.Refusal);
+        Assert.Equal("games", published.Quest!.Workspace);
     }
 
     // ——— A chain: judged when composed, published at the moment the quest closes done.

@@ -422,7 +422,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
+    quests, or proposes a change. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
+    it names, every workspace being within its reach (D253 point 3). A quest's or session's own acts stay in its own conversation: accepting a departure and
     handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
     verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
