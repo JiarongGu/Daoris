@@ -55,6 +55,44 @@ public sealed class PipeDelegateTests : Bridge
             $$"""{"session":"h1","route":"{{DriverModule.Name}}.WORK_PAUSE","door":"terminal"}""", Logged(PipeDelegate.PressedEvent));
     }
 
+    /// <summary>
+    /// <c>daoris ask --to &lt;repo&gt; "…"</c> from a full access conversation is its delegate's press of <c>ASK_NEW</c>: made at once with no
+    /// card. In restricted mode the same press asks on a card naming Ask Daoris, and runs nothing before the person's yes.
+    /// </summary>
+    [Theory]
+    [InlineData(HelpModes.Full)]
+    [InlineData(HelpModes.Restricted)]
+    public async Task Ask_Daoris_s_new_ask_runs_in_full_access_and_asks_on_a_card_in_restricted(string mode)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var grounds = new StubGrounds { Facts = new HelpMachineFacts(["engine"], ["default", "games"], []) };
+        grounds.Placed["engine"] = "games";
+        grounds.Registered.Add("engine");
+        pipe.Grounds = grounds;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = mode;
+
+        var id = await SendProvedAsync(client, "ASK_NEW", new { workspace = "games", sentence = "fix the stall", to = "engine", said = true }, "h1", key, nonce);
+
+        if (mode == HelpModes.Full)
+        {
+            Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+            Assert.Equal(1, driver.Ran("ASK_NEW"));
+            Assert.Empty(pipe.Confirmations.Now().Waiting);
+            return;
+        }
+
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(("h1", true, "ask-new-to"), (card.Asker.Session, card.Asker.Help, card.View?.Kind));
+        Assert.Equal(0, driver.Ran("ASK_NEW"));
+    }
+
     [Fact]
     public async Task A_restricted_Ask_Daoris_press_asks_on_one_card_naming_Ask_Daoris_and_runs_on_the_person_s_yes()
     {

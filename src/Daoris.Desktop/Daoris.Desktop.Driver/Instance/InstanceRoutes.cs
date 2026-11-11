@@ -115,7 +115,6 @@ public static class OpenRoutes
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
         ("quest check", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
-        ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
         ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
 }
@@ -307,6 +306,9 @@ public static class PersonPresses
 
     /// <summary><c>ask --delete &lt;id&gt;</c>: an ask made by mistake deleted with every quest it became.</summary>
     public static InstanceRoute AskDelete { get; } = Person("ASK_DELETE");
+
+    /// <summary><c>ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] … "…"</c>: an ask made at a workspace, or published at once to a receiver.</summary>
+    public static InstanceRoute AskNew { get; } = Person("ASK_NEW");
 
     /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>
     public static InstanceRoute QuestAccept { get; } = Person("QUEST_ACCEPT");

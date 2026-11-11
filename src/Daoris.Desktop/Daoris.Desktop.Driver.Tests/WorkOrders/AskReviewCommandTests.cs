@@ -192,14 +192,13 @@ public sealed class AskReviewCommandTests
     [Fact]
     public void The_console_reads_both_forms()
     {
+        var read = AskArguments.Read(["--review", "staging", "--review-words", "the demo", "fix it"], out _)!;
+        Assert.Equal(("staging", "the demo"), (read.Review, read.ReviewWords));
+        Assert.Equal("a1", AskArguments.Read(["--set-review", "a1", "on", "now"], out _)!.SetReview);
+        Assert.Contains("daoris ask review <id> on|<environment>|off [\"…\"]", AskArguments.Usage);
         var console = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
-        Assert.Contains("case \"--review\": review = Value(); break;", console);
-        Assert.Contains("case \"--review-words\": reviewWords = Value(); break;", console);
-        Assert.Contains("case \"--set-review\": setReview = Value(); break;", console);
-        Assert.Contains("AskReviewCommand.Compose(review, reviewWords, out var reviewProblem)", console);
-        Assert.Contains("AskReviewCommand.Read(setReview, words, out var setProblem)", console);
-        Assert.Contains("daoris ask review <id> on|<environment>|off [\\\"…\\\"]", console);
+        Assert.Contains("AskReviewCommand.Read(setReview, read.Words, out var setProblem)", console);
     }
 
     private static AskReviewWorld World(ServiceClient service) => new(service, () => ReviewChoiceStandIn.Config());

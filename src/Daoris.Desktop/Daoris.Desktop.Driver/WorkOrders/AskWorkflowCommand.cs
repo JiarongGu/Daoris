@@ -72,12 +72,16 @@ public static class AskWorkflowCommand
     /// Why a kind or a workflow cannot be chosen for an ask in <paramref name="workspace"/>, or null where both can (design §4.2,
     /// §3.9): a kind its workspace declares, and a workflow saved here whose newest version reads, or <c>current</c>.
     /// </summary>
-    public static string? Unchoosable(string? kind, string? workflow, string workspace, AskWorkflowWorld world)
+    public static string? Unchoosable(string? kind, string? workflow, string workspace, AskWorkflowWorld world) =>
+        Unchoosable(kind, workflow, workspace, world.Config(), world.Home);
+
+    /// <summary>The same, judged against <paramref name="config"/> and the workflows saved under <paramref name="home"/>.</summary>
+    public static string? Unchoosable(string? kind, string? workflow, string workspace, DriverConfig config, string home)
     {
         if (kind is not null)
         {
             var named = RemoteTarget.Workspace(workspace);
-            world.Config().WorkspaceWorkflows.TryGetValue(named, out var shared);
+            config.WorkspaceWorkflows.TryGetValue(named, out var shared);
             if (shared?.KindOf(kind) is null)
             {
                 var spelled = ShellWord.Of(named, "<workspace>");
@@ -87,7 +91,7 @@ public static class AskWorkflowCommand
         }
 
         if (workflow is null or WorkflowKey.Current) return null;
-        return WorkOrdersWorkflows.Current.Unusable(world.Home, workflow);
+        return WorkOrdersWorkflows.Current.Unusable(home, workflow);
     }
 
     public static Task<int> PressAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
