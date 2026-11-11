@@ -73,7 +73,7 @@
         "convergence.methods.Identical.label", "convergence.methods.Restatement.label", "harness.accounts",
         "harness.doors", "harness.use.title",
         "help.proposal.title",
-        "help.proposal.titleGo", "help.proposal.titlePlugin",
+        "help.proposal.titleGo",
         "help.proposal.titleSync", "help.proposal.titleSetup",
         "help.proposal.titleDraft", "help.proposal.workflow.draftChanges", "help.proposal.workflow.draftProblems", "workflow.edit.proposal.title",
         "workflow.edit.proposal.changes",
