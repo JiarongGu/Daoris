@@ -10,10 +10,7 @@ public sealed class InPlaceProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "in-place-process", Guid.NewGuid().ToString("N")[..8]);
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     [Fact]
     public void A_run_bound_to_work_in_place_is_held_by_nothing_and_lands_nothing()

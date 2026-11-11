@@ -44,6 +44,8 @@ internal static class DriveUsagePlace
           plugin list  ·  plugin add <folder>  ·  plugin add --offer <id>  ·  plugin update <id> [--yes]  ·  plugin remove <id>  ·  plugin enable|disable <id>
               this machine's plugins: a change a route takes goes to the running Daoris's window to confirm where one
               runs, and is made here where none does; an add over an installed plugin replaces it here alone.
+          plugin try-again <id>
+              an unsound plugin started again by the running Daoris, its count of exits afresh.
           plugin install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugin new <id> --point <point>… [--in <folder>]  ·  plugin try <folder|id> [--point <point>]

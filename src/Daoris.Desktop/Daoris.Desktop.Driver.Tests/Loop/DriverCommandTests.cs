@@ -195,7 +195,7 @@ public sealed class DriverCommandTests
         Assert.Contains("tree remove <path|session|branch> [--repository <name>] [--force]", DriverCommand.Usage);
         var program = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
-        Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
+        Assert.Contains("PressAsync(TreesRoutes.DiscardBranch, new { named, repository, force },", program);
         Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
     }
 

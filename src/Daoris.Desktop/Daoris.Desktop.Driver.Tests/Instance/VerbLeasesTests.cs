@@ -53,7 +53,6 @@ public sealed class VerbLeasesTests
     [InlineData("driver undrive engine")]
     [InlineData("driver hold engine")]
     [InlineData("driver resume engine")]
-    [InlineData("driver trees engine on")]
     [InlineData("driver notify off")]
     [InlineData("driver cap 3")]
     [InlineData("driver retry 12")]
