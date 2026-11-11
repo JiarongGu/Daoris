@@ -420,13 +420,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         {
             generation = await StepAuthority.RunAsync(StepAuthorities.Of(unit, attempt), async () =>
             {
-                var agents = AgentsFor(attempt, attempt.Deliveries == 0 ? node : null);
-                if (!OnPort(attempt) && agents is null)
+                var first = attempt.Deliveries == 0 ? node : null;
+                var agents = AgentsFor(attempt, first);
+                if (!OnPort(attempt) && agents is null && first?.Goal is null)
                     return await port.PerformAsync(attempt.Plugin, attempt.Call with { Options = node.Options }, ct).ConfigureAwait(false);
 
                 // A hand-over; the executor or the step's session runs it on its own task, never the pass's.
-                await (PortOf(attempt.Plugin) ?? agents ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct)
-                    .ConfigureAwait(false);
+                await (PortOf(attempt.Plugin) ?? agents ?? throw new DriverException(OnPort(attempt) ? "no executor takes a check here" : "no step agents perform a step declaring a goal here"))
+                    .SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
                 return PortGeneration;
             }).ConfigureAwait(false);
         }
