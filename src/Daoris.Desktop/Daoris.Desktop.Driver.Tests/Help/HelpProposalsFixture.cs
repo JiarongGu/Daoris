@@ -131,16 +131,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
-    public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
-
-    public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
-    {
-        var chosen = review is null ? "" : $" [review {review}{(reviewWords is null ? "" : $": {reviewWords}")}]";
-        Calls.Add($"ask {workspace} {sentence}{chosen}{(shortTitle is null ? "" : $" [short {shortTitle}]")}");
-        return Task.FromResult(Asked);
-    }
-
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)

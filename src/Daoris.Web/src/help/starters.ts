@@ -1,7 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { AgentsMode } from '../agents/modes';
 import type { RoleDoor } from '../app/opener';
-import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
@@ -46,8 +45,6 @@ export type StarterDoor = {
   knowledge?: KnowledgeMode;
   /** A group of Sessions' or Quests' list that waits on the person, brought into view; no item in it. */
   group?: OpenGroup;
-  /** Ask Daoris's place card: the quick set-up the place's *Set up…* opens on. */
-  setUp?: PlaceAsk;
   /** A conversation's draft card: the place's Workflow, its editor opened on the draft the card is against. */
   placeEdit?: PlaceEdit;
 };

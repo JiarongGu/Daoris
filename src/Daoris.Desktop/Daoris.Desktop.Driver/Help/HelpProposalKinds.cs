@@ -58,13 +58,8 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
     public string Id => proposal.Id;
 
     /// <summary>Settle the proposal — `applied`, or `refused` with the door's words as its note — and answer what the press did.</summary>
-    /// <param name="published">
-    /// What an applied press published: the ask and the quest the service's answer named, kept with the conversation
-    /// (<see cref="HelpPublished"/>) before the proposal settles, so a card settled applied never stands without its entry.
-    /// </param>
-    public HelpApplied Settled(bool applied, string told, string? note, HelpPublishing? published = null)
+    public HelpApplied Settled(bool applied, string told, string? note)
     {
-        if (applied && published is { Names: true }) HelpProposals.KeepPublished(home, proposal, published);
         HelpProposals.Settle(home, proposal.Id, applied ? "applied" : "refused", note);
         HelpAppliedAgain.Keep(home, proposal.Id, told);
         return new HelpApplied(applied, told);
@@ -76,10 +71,8 @@ internal static class HelpProposalKinds
 {
     public static readonly IReadOnlyList<IHelpProposalKind> All =
     [
-        new HelpAskProposals(),
         new HelpGoProposals(),
         new HelpWorkflowProposals(),
-        new HelpSetupProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 // repairs its cause and returns, the plan read again.
 // The choices end at *Review the plan*; the review applies, says what holding did per repository,
 // clears a tick whose declaration changed, waits while a plan is read, says `moved` in the driver's words, ends flow 1 as *Not driven · adoption
-// running*, opens the adoption quest by a door, and is where a seed from Ask Daoris opens.
+// running*, and opens the adoption quest by a door.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -54,24 +54,6 @@ function Place() {
     setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={() => {}} doorFor={doorFor} onOpenQuest={(quest) => quests.push(quest)} />,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
-}
-
-/** The application's side of a seeded door: choose the place and hand over the ask, as `App`'s opener does. */
-function SeededPlace({ ask, place }: { ask: PlaceAsk; place: string }) {
-  const lists = useListPanes();
-  const modes = useAgentsMode(lists);
-  const [chosen, setChosen] = useState<string | null>(null);
-  const [over, setOver] = useState(false);
-  const layout = useAgentsView({
-    active: true, modes, chosen, onChoose: setChosen, notify: () => {},
-    setUp: (found, page, doorFor) => <PlaceSetUpPanel place={found} page={page} notify={() => {}} doorFor={doorFor} />,
-  });
-  return (
-    <>
-      <button type="button" onClick={() => { modes.onPlace(place); modes.onSeed(place, ask); }}>Seed</button>
-      <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />
-    </>
-  );
 }
 
 const rows = [
@@ -361,23 +343,6 @@ describe('Set up…, on a place\'s page', () => {
     const asked = await within(changes).findAllByText(/a set-up asked of its own session/);
     expect(asked).toHaveLength(1);
     expect(asked[0]!.closest('li')).toHaveTextContent('(engine, site)');
-  });
-
-  // Ask Daoris's place card hands the application a seeded set-up; the page opens on its review, and the plan it reads is that ask's.
-  it('opens seeded from an ask Ask Daoris proposed on its review, and plans that ask rather than the suggestion', async () => {
-    const ask: PlaceAsk = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
-    show(<SeededPlace ask={ask} place="repo:aurora/engine" />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Seed' }));
-
-    expect(await screen.findByRole('heading', { name: 'Review: set up engine' })).toBeTruthy();
-    expect(screen.queryByRole('radiogroup', { name: 'How it lands' })).toBeNull();
-    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual(ask));
-    // Nothing is pressed: the seed plans only, and Apply stays the person's.
-    expect(sent('PLACE_APPLY')).toEqual([]);
-    // Back to the choices finds the ask as seeded.
-    await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
-    expect(await screen.findByRole('radio', { name: /A pull request/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'Ask its session to adopt Daoris' })).toBeChecked();
   });
 
   it('is found as left after a door out and back', async () => {

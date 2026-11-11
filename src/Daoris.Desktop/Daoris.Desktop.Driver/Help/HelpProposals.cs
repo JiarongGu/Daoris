@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it.</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `ask`, `go`, `workflow` or `setup`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `go` or `workflow`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris place`, `daoris settings`, `daoris quest` or `daoris git` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
@@ -18,18 +18,6 @@ public sealed record HelpProposal(
 {
     /// <summary>The repository a go starts a conversation in; null for every other.</summary>
     public string? Repository { get; init; }
-
-    /// <summary>
-    /// The review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
-    /// or <c>off</c>; null where none is said, and each repository's rule decides.
-    /// </summary>
-    public string? Review { get; init; }
-
-    /// <summary>The person's words with an ask's review choice, sent only with one.</summary>
-    public string? ReviewWords { get; init; }
-
-    /// <summary>An ask's short title, at most 40 characters, as the service's box writes it; null where none is given.</summary>
-    public string? ShortTitle { get; init; }
 
     // The browser kind's.
 
@@ -46,11 +34,6 @@ public sealed record HelpProposal(
 
     /// <summary>A go's one quest or ask or session, as the service's box wrote it, or null.</summary>
     public string? Item { get; init; }
-
-    // The setup kind's.
-
-    /// <summary>The place's quick set-up a <c>place</c> proposal asks, from the file's <c>place</c>; null for every other door and kind.</summary>
-    public PlaceAsk? Place { get; init; }
 
     // The workflow kind's.
 
@@ -167,14 +150,6 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
 
-    // The setup kind's.
-
-    /// <summary>
-    /// A place's plan for each <c>place</c> proposal, by the proposal's id: <see cref="PlacePlans.PlanAsync"/> over its ask,
-    /// as <c>daoris place … --plan</c> prints it. Read only for one; nothing is written.
-    /// </summary>
-    public IReadOnlyDictionary<string, PlacePlanned> Places { get; init; } = new Dictionary<string, PlacePlanned>();
-
     // The workflow kind's.
 
     /// <summary>
@@ -217,11 +192,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The setup kind's.
-
-    /// <summary>For a <c>place</c> the plan allows: the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
-    public HelpPlaceSetUp? Place { get; init; }
-
     // The workflow kind's.
 
     /// <summary>A workflow proposal's card data, what its Apply saves and chooses; null for every other kind.</summary>
@@ -251,7 +221,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAskDoors, IHelpConfigDoors
+    IHelpConfigDoors
 {
 }
 
@@ -398,7 +368,7 @@ public static class HelpProposals
     /// </summary>
     public static HelpOwned Owned(HelpProposal proposal) => HelpProposalKinds.Owned(proposal);
 
-    /// <summary>The doors <paramref name="kind"/> takes, as its file spells them; none for a kind none judges. What the owner's census sweep reads.</summary>
+    /// <summary>The doors <paramref name="kind"/> takes, as its file spells them; none for a kind none judges. What the room's doors table is held to.</summary>
     public static IReadOnlyList<string> DoorsOf(string kind) => HelpProposalKinds.Find(kind)?.Doors ?? [];
 
     /// <summary>Judge a proposal with the route's own code, against the machine as it stands, by its kind; the workspace it names is its kind's to judge.</summary>
@@ -451,28 +421,6 @@ public static class HelpProposals
 
         foreach (var text in early) say(text);
         return applied;
-    }
-
-    /// <summary>
-    /// Keep what an Apply published with the conversation that proposed it (<see cref="HelpPublished"/>), by the ids the
-    /// service's answer named, as soon as it answered and before the card settles (<see cref="HelpApplying.Settled"/>). A keep that
-    /// fails loses the list's entry, never the Apply, which happened: the quest and the ask stand, and Quests lists them.
-    /// </summary>
-    internal static void KeepPublished(string home, HelpProposal proposal, HelpPublishing made)
-    {
-        if (proposal.Session is not { } session || !SessionEventText.IsId(session)) return;
-        try
-        {
-            new HelpPublished(home).Keep(session, new HelpPublishedEntry(DateTimeOffset.UtcNow, proposal.Id, proposal.Kind, made.Workspace)
-            {
-                Ask = made.Ask,
-                Quest = made.Quest,
-            });
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Only this conversation's list is short by one, as a file that does not read is.
-        }
     }
 
     private static async Task<HelpApplied> ApplyOnceAsync(

@@ -4,11 +4,11 @@
 
 A role is who does a kind of work for the person. A working role takes one or more works (build, chat, review…) at a
 place, and its staffing says which agents, models and efforts run it, in order. The person sets roles through one door:
-the window, the terminal, or an Ask Daoris proposal they apply. A role may carry a policy: weights, shares, budgets and
+the window, the terminal, or an Ask Daoris press they confirm. A role may carry a policy: weights, shares, budgets and
 the moves a line makes to another choice. The supervisor watches a line's counts. Its rules are the person's, read with no
 model: *when this count reaches n here, do this*. The supervisor and the steward are catalogue roles of the appointed shape,
 staffed through the same door; one held by the terminal acts once the window starts its terminal. Ask Daoris is the front desk: it reads the machine, takes the person to a place,
-starts an ask, or proposes a change the person applies. In full access it acts itself.
+starts an ask, or presses a change the person confirms. In full access it acts itself.
 
 ## Its parts
 
@@ -48,7 +48,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
-| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
+| `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's two proposal kinds, `go` and `workflow`, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
 | `SupervisorResolution`, `SupervisorGrants`, `SupervisorKinds`, `SupervisorDeciders`, `SupervisorConversion` | `Roles/Supervisor{Resolution,Grants,Kinds,Deciders,Conversion}.cs` | Who decides a kind at a place; the one grant check; the kinds and their acts; `ROLES`' `deciders`; the door's `not-converted` until the migration record (`Store/MigrationRecord.cs`) lists `supervisor-kinds` |
 | The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, *Who decides here* (`WhoDecidesHere`, `whoDecides.ts`) |
@@ -422,7 +422,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
+    quests (`daoris ask`, pressed), presses a change, or proposes a workflow. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
     it names, every workspace being within its reach (D253 point 3). A quest's or session's own acts stay in its own conversation: accepting a departure and
     handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
     verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
@@ -462,10 +462,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
-    judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
-    by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, agent, browser, role, plugin, clear and sync kinds
-    are gone; the ask, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
+    judged default put it on a card naming the session. Two proposal kinds are left under `Help/Proposals/`: `workflow`
+    (`workflow_propose`), judged by its route's own code against the machine now and applied only by the person's *Apply* through
+    that route, and `go` (`go_propose`), which changes nothing; every other change Ask Daoris asks for is a press of the verb. `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
@@ -509,8 +508,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
   writing no one's words is a `StewardRouteAct`, one that stops sessions has its own note code (`StewardPauseAct`), and one with no
   person's route on the pipe is refused outside the grant (`StewardUpdateAct`). Its name in `StewardActNames`, the verb's grammar, the web's `ACTS` and
   `STEWARD_ACTS`, and its words in both catalogues.
-- **An Ask Daoris door:** a file of its own in `Help/Proposals/`, registered by one line in `HelpProposalKinds.All`, with
-  the service's writer `Help<Kind>ProposalWriter.cs` (`Daoris.Service.Core/Help/`), the page's card, and its row in the room's doors table. Only where one is wanted.
+- **An Ask Daoris door:** a route's view, a file of its own in `Modules/Platform/Views/` registered by one line in `PressViews.All`,
+  its sentence under `person.view.<kind>` in both catalogues, the room's line naming the verb, and its row in the room's doors table.
+  Only where one is wanted.
 - **The page:** `Web/agents/roles/` and `Web/agents/setup/`.
 - **A changed stored shape:** a step in `Transitional/Migration/`, one entry of `HomeMigration.Steps`; the old read is deleted in the same change.
 

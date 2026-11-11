@@ -51,8 +51,8 @@ public sealed class HelpScopeDoorTests : DriverModuleBridge
         var node = new JsonObject
         {
             ["id"] = id, ["proposed"] = "2026-10-19T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = session },
-            ["kind"] = "ask", ["door"] = "ask", ["target"] = null, ["workspace"] = workspace, ["value"] = null,
-            ["sentence"] = "fix the stall", ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+            ["kind"] = "go", ["door"] = "go", ["target"] = "projects", ["part"] = "add", ["workspace"] = workspace, ["value"] = null,
+            ["sentence"] = null, ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
         };
         File.WriteAllText(Path.Combine(folder, $"{id}.json"), node.ToJsonString());
     }

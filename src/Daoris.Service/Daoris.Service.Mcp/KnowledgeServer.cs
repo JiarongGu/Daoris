@@ -40,9 +40,7 @@ public static class KnowledgeServer
         typeof(ChannelTools),
         typeof(OpinionTools),
         typeof(BrainstormTools),
-        typeof(HelpAskTool),
         typeof(HelpGoTool),
-        typeof(HelpSetupTool),
         typeof(HelpWorkflowTool),
         // Ask Daoris's housekeeping and chosen settings: requests the driver judges at every call, refused unless the person granted it.
         typeof(HousekeepingTools),

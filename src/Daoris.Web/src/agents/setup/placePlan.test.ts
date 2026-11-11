@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { KEPT_ROW, planOf } from './placeFixtures';
 import {
-  acceptOf, askOf, deliveriesOf, doorOf, draftOfAsk, drivingOf, freshDraft, offered, type PlacePlanned, reconcileTicks, refusalsOf, suggestionsOf, useSetUpPage,
+  acceptOf, askOf, deliveriesOf, doorOf, drivingOf, freshDraft, offered, type PlacePlanned, reconcileTicks, refusalsOf, suggestionsOf, useSetUpPage,
 } from './placePlan';
 import { SETUP_PRESETS } from './placeFixtures';
 
@@ -119,9 +119,8 @@ describe('the acceptances a plan offers, bound to what was read', () => {
 });
 
 describe('where a set-up stands', () => {
-  it('opens a fresh draft on the choices and a seeded one on the review', () => {
+  it('opens a fresh draft on the choices', () => {
     expect(freshDraft(['engine']).review).toBe(false);
-    expect(draftOfAsk({ repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false }).review).toBe(true);
   });
 
   it('drops the last result and the state it ended in at any change but its own', () => {

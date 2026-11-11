@@ -111,17 +111,6 @@ public sealed class OwnerSetCensusTests
         Assert.DoesNotContain(Sweep(PipeTargets.Daoris.Marks, Exemptions, handlers), each => each.StartsWith("SESSION_OPEN_FOLDER:", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Every_apply_door_declares_its_target()
-    {
-        foreach (var door in HelpProposals.DoorsOf("setup"))
-        {
-            var owned = HelpProposals.Owned(new HelpProposal("p1", "setup", door, "engine", null, null, null, "", null, "proposed"));
-            Assert.True(owned.Repositories.Count + owned.Quests.Count > 0, $"setup.{door} declares no target");
-            Assert.Equal(["engine"], owned.Repositories);
-        }
-    }
-
     /// <summary>
     /// Every person's door of the service's <c>PersonDoors.cs</c> declares the record kind its effect is attributed on, and each
     /// evidence it names is one <see cref="OwnerRecords"/> reads, or an instance's route whose mark names what it acts on.

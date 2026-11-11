@@ -313,18 +313,6 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     });
   });
 
-  // Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
-  it('opens the place the card names with its ask, and leaves the Details where they are while the mode is dark', () => {
-    const setUp = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
-    const door = doorOpening({ view: 'projects', item: 'engine', tab: 'details', setUp });
-    expect(door).toMatchObject({ view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'details', setUp });
-    expect(placeOpening(door, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', setUp });
-
-    const several = { ...setUp, repositories: ['engine', 'site'] };
-    const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'details', setUp: several });
-    expect(placeOpening(workspace, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
-  });
-
   // The Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.
   it("opens This machine's page for each door that opened the Roles mode, at the part of it the door named", () => {
     const machine = { view: 'agents', agentsMode: 'setup', place: 'machine' };

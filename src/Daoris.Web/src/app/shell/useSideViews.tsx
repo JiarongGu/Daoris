@@ -13,7 +13,6 @@ import { type AgentPart } from '../../agents/agents';
 import { type ListPanes } from '../../work/frame/listPanes';
 import { type Notify } from '../../design/atoms/Toasts';
 import { type PlaceAt } from '../../agents/setup/placeShell';
-import { type PlaceAsk } from '../../agents/setup/placePlan';
 
 export function useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open }: {
   view: View;
@@ -21,7 +20,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
   notify: Notify;
   attached: boolean;
   askSetup: (message: string) => void;
-  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; seeded: { place: string; ask: PlaceAsk; } | null; onSeed: (target: string, ask: PlaceAsk) => void; onSeeded: () => void; };
+  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; };
   agentPart: AgentPart | null;
   setAgentPart: React.Dispatch<React.SetStateAction<AgentPart | null>>;
   open: (target: View, item?: string | null | undefined, part?: OpenPart | undefined) => void;

@@ -10,10 +10,8 @@ public sealed class HelpProposalBoxKindsTests
 {
     private static readonly (string Kind, string Tool)[] Table =
     [
-        ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("workflow", "workflow_propose"),
-        ("setup", "setup_propose"),
     ];
 
     private static string RepositoryRoot()

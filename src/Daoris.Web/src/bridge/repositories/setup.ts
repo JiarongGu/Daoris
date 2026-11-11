@@ -9,7 +9,7 @@ export type { ReconcileApplied, ReconcilePlanned } from '../../agents/setup/reco
 
 // A place's quick set-up, the one door that adopts a repository: the plan, the twin of
 // `daoris place … --plan`, and the apply, the twin of `--apply`. The driver library's `PlacePlans` and `PlaceApplies` answer both,
-// which the terminal and Ask Daoris's `setup_propose` card call too.
+// which the terminal's press of `daoris place … --apply`, Ask Daoris's among them, calls too.
 
 /**
  * The plan reads each line with git as an object and the service's registry and quests: past the bridge's default 30 seconds on a loaded

@@ -12,10 +12,8 @@ public sealed class HelpProposalBox(string? home)
     /// <summary>The kinds this box writes, each with the connector's tool, in the order the room allows them.</summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
-        ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("workflow", "workflow_propose"),
-        ("setup", "setup_propose"),
     ];
 
     private readonly HelpProposalFile file = new(home);
@@ -26,11 +24,6 @@ public sealed class HelpProposalBox(string? home)
 
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
-
-    public (string? Id, string Message) ProposeAsk(
-        string sentence, string workspace, string why, string? session, DateTimeOffset at,
-        string? review = null, string? reviewWords = null, string? shortTitle = null) =>
-        new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(
@@ -44,8 +37,4 @@ public sealed class HelpProposalBox(string? home)
         string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null,
         string? graph = null, string? route = null, string? draft = null) =>
         new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name, graph, route, draft);
-
-    /// <inheritdoc cref="HelpSetupProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSetup(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null) =>
-        new HelpSetupProposalWriter(file).Propose(repository, why, session, at, place);
 }

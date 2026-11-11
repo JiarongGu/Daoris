@@ -122,11 +122,6 @@ export const freshDraft = (repositories: string[]): SetUpDraft => ({
   repositories, preset: null, opinion: false, look: false, adoption: null, builds: '', drive: false, accept: [], cleared: [], result: null, ended: null, review: false,
 });
 
-/** The draft an ask makes: what Ask Daoris's place card seeds a place's *Set up…* with, which opens on the review. */
-export const draftOfAsk = (ask: PlaceAsk): Partial<SetUpDraft> => ({
-  repositories: ask.repositories, preset: ask.preset, opinion: ask.opinion, look: ask.look, adoption: ask.adoption, builds: ask.builds ?? '', drive: ask.drive, review: true,
-});
-
 /**
  * The ask a draft makes. Until the suggestion arrives the plan is read as *Not driven* with nothing else asked, which changes nothing and
  * says what to preselect; *Not driven* takes no second opinion, look or driving, so none is sent with it.
@@ -274,8 +269,8 @@ export type SetUpPage = {
   draftOf: (place: string) => SetUpDraft | null;
   /** Whether the set-up is in front: a draft left through a door is kept but not shown. */
   shown: (place: string) => boolean;
-  /** Opens a place's set-up; a seed (an ask Ask Daoris proposed) replaces the draft the place held, since the person came for it. */
-  open: (place: string, repositories: string[], seed?: Partial<SetUpDraft>) => void;
+  /** Opens a place's set-up, on the draft the place held where it holds one. */
+  open: (place: string, repositories: string[]) => void;
   /** Leaves the set-up through a door, the draft kept as it is. */
   leave: (place: string) => void;
   /** Returns to a set-up left through a door. */
@@ -291,9 +286,9 @@ export function useSetUpPage(): SetUpPage {
   const draftOf = useCallback((place: string) => drafts[place] ?? null, [drafts]);
   const shown = useCallback((place: string) => drafts[place] !== undefined && !away.has(place), [drafts, away]);
   const back = useCallback((place: string) => setAway((was) => (was.has(place) ? new Set([...was].filter((each) => each !== place)) : was)), []);
-  const open = useCallback((place: string, repositories: string[], seed?: Partial<SetUpDraft>) => {
+  const open = useCallback((place: string, repositories: string[]) => {
     back(place);
-    setDrafts((was) => (was[place] && !seed ? was : { ...was, [place]: { ...freshDraft(repositories), ...seed } }));
+    setDrafts((was) => (was[place] ? was : { ...was, [place]: freshDraft(repositories) }));
   }, [back]);
   const leave = useCallback((place: string) => setAway((was) => new Set([...was, place])), []);
   const close = useCallback((place: string) => {

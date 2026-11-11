@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
 
 /** A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same; a go has none. */
@@ -7,40 +6,13 @@ export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  kind: 'ask' | 'go' | 'workflow' | 'setup';
+  kind: 'go' | 'workflow';
   describe: string;
   terminal: string;
   why: string;
   /** A workflow version (`workflow`): drawn as the design's card. */
   workflow?: HelpWorkflowShown | null;
-  /** A place's quick set-up (`setup`'s `place` door): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
-  place?: HelpPlaceShown | null;
 };
-
-/** A place's set-up card: the ask, its workspace and each change the plan makes; the digest moves the card's revision. */
-export type HelpPlaceShown = {
-  workspace: string;
-  digest: string;
-  asked: PlaceAsk;
-  changes: { key: string; part: string; said: string; before: string; after: string; repositories: string[] }[];
-};
-
-function PlaceChanges({ place }: { place: HelpPlaceShown }) {
-  const { t } = useTranslation();
-  return place.changes.length === 0
-    ? <p className="m-0 mt-2 text-meta text-ink-soft">{t('help.proposal.place.nothing')}</p>
-    : (
-      <ul aria-label={t('help.proposal.place.changes')} className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
-        {place.changes.map((change) => (
-          <li key={`${change.key}:${change.said}:${change.after}`} className="m-0 text-meta text-ink-soft">
-            {/* The plan's words, as the driver says them: content, not chrome. */}
-            <span className="text-ink">{change.said}</span>{': '}{change.before} → {change.after}
-            {' '}<span className="text-ink-faint">({change.repositories.join(', ')})</span>
-          </li>
-        ))}
-      </ul>
-    );
-}
 
 /**
  * What a workflow card will show, as the driver's judge reads the version: the workflow, the version it is
@@ -201,8 +173,6 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
  * **A workflow version reads in the design's order**: *Your part* first, then the steps' diff, the acts that
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
  * the editor lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
- *
- * **A set-up is a place's**: its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -213,7 +183,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const { t } = useTranslation();
   const going = proposal.kind === 'go';
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
-  const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   const draft = workflow !== null && workflow.needs.length > 0;
   const composing = workflow !== null && typeof workflow.draft === 'string';
 
@@ -221,15 +190,12 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
     <li className="rounded-control border border-accent/50 bg-raised px-3 py-2.5">
       <p className="m-0 text-small font-semibold text-accent">
         {t(going ? 'help.proposal.titleGo'
-          : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-            : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
+          : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow' : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
-      {place && <PlaceChanges place={place} />}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
-      {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}
       {proposal.terminal && (
         <p className="m-0 mt-1 text-meta text-ink-faint"><Inline text={t('help.proposal.command', { command: proposal.terminal })} /></p>
       )}
@@ -239,8 +205,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
         {!draft && (
           <Button variant="primary" disabled={pending} onClick={() => onApply(proposal.id)}>
             {t(going ? 'help.proposal.go'
-              : place ? 'help.proposal.place.open'
-                : composing ? 'help.proposal.workflow.openEditor' : 'help.proposal.apply')}
+              : composing ? 'help.proposal.workflow.openEditor' : 'help.proposal.apply')}
           </Button>
         )}
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>

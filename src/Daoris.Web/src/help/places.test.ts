@@ -73,15 +73,9 @@ describe('the places a go may name', () => {
     expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
 
-  // A go carrying a set-up opens what today's set-up opens (a repository's Details, a workspace's page), with the ask along.
-  it('open a place\'s Set up… as a repository\'s Details or a workspace\'s page, the ask carried', () => {
-    const ask = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
-    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine', setup: ask }))
-      .toEqual({ view: 'projects', item: 'engine', tab: 'details', setUp: ask });
-    const several = { ...ask, repositories: ['engine', 'site'] };
-    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: null, setup: several }))
-      .toEqual({ view: 'projects', item: 'workspace:aurora', workspaceTab: 'details', setUp: several });
-    // Without an ask it is the Roles mode, as before.
+  // A go to the Agents place's Roles part opens the Setup mode, whatever place it names: a set-up is pressed, never seeded.
+  it('open the Setup mode for the Roles part, a named place carrying nothing along', () => {
+    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora' })).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 

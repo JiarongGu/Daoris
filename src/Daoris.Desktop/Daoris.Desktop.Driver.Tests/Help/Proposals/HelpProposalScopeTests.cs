@@ -47,22 +47,9 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Assert.Equal(Refusal(proposal, circle: null), Refusal(proposal));
     }
 
-    private static HelpProposal Ask(string workspace) =>
-        new("p1", "ask", "ask", null, workspace, null, "fix the stall", "why", "h1", "proposed");
-
     [Fact]
-    public void An_ask_at_another_workspace_is_judged_as_one_at_its_own_is()
+    public void A_move_and_a_workflow_naming_another_workspace_are_judged_by_their_kinds()
     {
-        Reaches(Ask("beta"));
-        Reaches(Ask("default"));
-        Reaches(Ask("alpha"));
-        Assert.Null(Refusal(Ask("beta")));
-    }
-
-    [Fact]
-    public void A_setup_a_move_and_a_workflow_naming_another_workspace_are_judged_by_their_kinds()
-    {
-        Reaches(Of("setup", "setup", "game"));
         Reaches(Of("repository", "wire", "engine", "beta"));
         Reaches(Of("repository", "wire", "game", "alpha"));
         Reaches(Of("workflow", "new") with { Scope = "game", Workflow = "docs-flow" });

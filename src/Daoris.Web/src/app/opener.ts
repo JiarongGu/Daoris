@@ -1,6 +1,5 @@
 import type { AgentPart } from '../agents/agents';
 import { type AgentsMode, MACHINE, repositoryId, workspaceId } from '../agents/modes';
-import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceAt, PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
@@ -64,8 +63,6 @@ export type OpenPart = {
   compose?: Compose;
   /** A landed branch of the repository the door names, whose page opens with how it landed. */
   branch?: string;
-  /** The quick set-up Ask Daoris proposed for the place the door names: the place's *Set up…* opens on it. */
-  setUp?: PlaceAsk;
   /** The repository whose place a door opens in the Agents place's Setup mode, at the section and row it names. */
   placeSection?: PlaceSection;
   placeRow?: string;
@@ -150,11 +147,6 @@ export type Opening = {
    * run's landing step name it. Page state of Repositories', so it is an event its view consumes, as a drawer is.
    */
   branch?: { repository: string; branch: string };
-  /**
-   * The set-up the Agents place's Setup opens on, for the place it chooses. Dark, the Details it names are all a door
-   * opens, and the ask is not carried.
-   */
-  setUp?: PlaceAsk;
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -204,7 +196,6 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   }
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
-  if (view === 'projects' && part.setUp) plan.setUp = part.setUp;
   if (view === 'agents' && part.placeOf) {
     plan.placeOf = part.placeOf;
     // The place's Workflow with its editor asked on a draft: the section opens, and the page opens the editor once it has the draft's graph.
@@ -238,13 +229,6 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
     return { ...rest, place: MACHINE, placeAt: at };
   }
   if (plan.view !== 'projects') return plan;
-  // Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
-  if (plan.setUp && plan.chosen?.view === 'projects') {
-    const named = projectsItem(plan.chosen.item);
-    const place = 'repository' in named ? repositoryId(workspaceOfRepository(named.repository), named.repository) : workspaceId(named.workspace);
-    return { view: 'agents', agentsMode: 'setup', place, setUp: plan.setUp };
-  }
-
   if (plan.chosen?.view !== 'projects') return plan;
   const named = projectsItem(plan.chosen.item);
   // A conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
