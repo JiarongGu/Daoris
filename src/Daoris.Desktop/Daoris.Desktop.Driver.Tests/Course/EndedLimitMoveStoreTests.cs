@@ -6,8 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ended limit move keeps its move record and writes no
-/// <c>&lt;s&gt;.limit-move.json</c> box beside it. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
+/// The ended limit move keeps its move record and writes no <c>&lt;s&gt;.limit-move.json</c> box beside it. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
 /// <c>opening</c> under the key its keyed open is sent with; <c>opened</c> with every word the open moved; <c>delivering</c> and the prompt's
 /// mark before the hand; each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. Against a host
 /// that moves nothing the move is one of no word whose prompt's outcome closes it, and a word kept after the decision still reaches
@@ -129,8 +128,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
     private sealed class NoHelp : IChatHelping
     {
         public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp => null;
-
-        public Task<string?> SetAsideHelpAsync(string? goingOn, string? workspace, CancellationToken ct) => throw new NotSupportedException();
 
         public Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, string? workspace, CancellationToken ct) =>
             throw new NotSupportedException();

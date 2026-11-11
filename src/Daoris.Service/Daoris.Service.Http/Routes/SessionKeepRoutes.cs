@@ -59,7 +59,7 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
             return Refusal.BadRequest(refused.Message);
         }
 
-        return await OpenedAsync(outcome, http, SessionOpenRefusal.WorkspaceUnknown, SessionOpenRefusal.RepositoryBusy);
+        return await OpenedAsync(outcome, http, SessionOpenRefusal.WorkspaceUnknown);
     }
 
     // An open's outcome: the record, or the refusal by the status its kind wears. Busy and answered are state conflicts.

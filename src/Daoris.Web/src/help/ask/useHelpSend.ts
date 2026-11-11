@@ -153,19 +153,6 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   const aheadIn = useRef<string | null>(null);
   // First words waiting on that answer: the box holds its fire, as it does while a send opens one.
   const [joining, setJoining] = useState(false);
-  // The conversations *New conversation* finished here, which wind up before they end; and a start the driver
-  // answered with one of them still running, asked again once the list says it ended. Its first words are never that one's.
-  const finished = useRef(new Set<string>());
-  const afterEnd = useRef<{ id: string; begin: () => void } | null>(null);
-  useEffect(() => {
-    const waiting = afterEnd.current;
-    if (!waiting) return;
-    const row = helpSessions.find((session) => session.id === waiting.id);
-    if (row && SESSION_ACTIVE.has(row.state)) return;
-    afterEnd.current = null;
-    waiting.begin();
-    // Only the list's next read says it ended; the rest is read from this render.
-  }, [sessions.dataUpdatedAt]);
 
   // First words handed to the conversation that takes them: seen from now on, in both hosts, however late an opening's
   // answer arrives, and shown as the conversation now, whichever the person had chosen.
@@ -264,11 +251,6 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
         if (!answer.sessionId) {
           setFirstWords(null);
           giveBack(text, files, answer.message);
-        } else if (answer.running && (answer.finishing || finished.current.has(answer.sessionId))) {
-          // The one finished here, still winding up, is no new conversation. The words wait as this one opening
-          // until it has ended, then open their own.
-          afterEnd.current = { id: answer.sessionId, begin };
-          void sessions.refetch();
         } else {
           handTo(answer.sessionId);
         }
@@ -308,7 +290,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
 
   // Open the conversation as the panel shows: the room written, the agent spawned and its session
   // opened while the person reads and types, rather than after they press send. Once per showing, and
-  // again after *New conversation*; never while one runs, which is carried on, nor while words are on
+  // again after *New conversation*; never while one of its own runs, which the panel shows, nor while words are on
   // their way to one; never twice under React's development double-mount, which keeps this ref. One that
   // is refused says nothing and is not asked again: the send asks for itself, and says why.
   //
@@ -326,8 +308,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     openedAhead.current.add(key);
     const circle = here;
     const answer = readying.mutateAsync({ workspace: startIn(circle), focus: startFocus() }).then(
-      // One the driver hands back as running is carried on, not opened ahead: the list shows it as it is.
-      (started) => (started?.sessionId && !started.running ? started.sessionId : null),
+      (started) => started?.sessionId ?? null,
       () => null,
     );
     ahead.current = answer;
@@ -388,7 +369,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   };
 
   // A blank new conversation: the one running is finished and the panel cleared, from the conversation's head, the history's,
-  // or the line under one that cannot go on.
+  // or the line under one that cannot go on. The next start is a conversation of its own whether or not that one has wound up.
   const onNew = () => {
     if (end.isPending) return;
     setChoosing(null);
@@ -396,10 +377,8 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       // The host owns the ending. Keep its conversation and draft until it accepts the request.
       end.mutate(shown.id, {
         onSuccess: (answer) => {
-          if (answer.ended) {
-            finished.current.add(shown.id);
-            clear();
-          } else setRefusal(t('help.notFinished'));
+          if (answer.ended) clear();
+          else setRefusal(t('help.notFinished'));
         },
         onError: (error) => setRefusal(sentence(error)),
       });

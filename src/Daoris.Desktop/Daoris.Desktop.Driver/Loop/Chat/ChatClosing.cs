@@ -120,20 +120,4 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         _ = run.CloseAsync(CancellationToken.None);
         return true;
     }
-
-    /// <summary>
-    /// Whether the person finished the conversation and it is still winding up: a start carries it on as running no longer, since the person's
-    /// next words are a new conversation's.
-    /// </summary>
-    public bool Finishing(string sessionId) => Context.Finishing.ContainsKey(sessionId);
-
-    /// <summary>
-    /// The conversation's run ended, or <paramref name="bound"/> passed: what a start waits on before it opens the next in the workspace a
-    /// finishing one still holds. True where it ended.
-    /// </summary>
-    public async Task<bool> WoundUpAsync(string sessionId, TimeSpan bound, CancellationToken ct = default)
-    {
-        if (!Context.Watching.TryGetValue(sessionId, out var watch)) return !Context.Processes.Running.Contains(sessionId, StringComparer.OrdinalIgnoreCase);
-        return await Task.WhenAny(watch, Task.Delay(bound, ct)).ConfigureAwait(false) == watch;
-    }
 }
