@@ -17,13 +17,11 @@ internal static class HelpDoorRowsSetup
         ("drive a repository, or stop", Setup + "Driving", "`daoris place drive|undrive <repository>`"),
         // A repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
         ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris place hold|resume <repository>`"),
-        // One door adopts a repository: one quest to its own session, which takes up the doctrine, writes down what the repository
-        // owns and its brief on its own branch. Ask Daoris's `setup` kind proposes it through its `place` door.
-        new("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
+        // One door adopts a repository: one quest to its own session.
+        ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
             "Agents → Setup → *Set up…* (adoption ticked)",
-            "`daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`",
-            new HelpDoorAsk.Proposes("setup", "place")),
+            "`daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`"),
         // The workspace plan's terminal door; its screen and Ask Daoris's doors are owed.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",

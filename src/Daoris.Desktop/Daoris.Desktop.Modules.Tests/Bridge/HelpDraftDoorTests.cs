@@ -24,7 +24,7 @@ public sealed class HelpDraftDoorTests : DriverModuleBridge
         var draft = new HelpProposal("p1", "workflow", "draft", null, null, null, null, "why", "h1", "proposed") { Draft = Fingerprint };
 
         Assert.True(HelpProposalFacts.JudgedAgainstDrafts([draft]));
-        Assert.False(HelpProposalFacts.JudgedAgainstDrafts([draft with { Door = "edit" }, draft with { Kind = "setup" }]));
+        Assert.False(HelpProposalFacts.JudgedAgainstDrafts([draft with { Door = "edit" }, draft with { Kind = "go" }]));
     }
 
     [Fact]

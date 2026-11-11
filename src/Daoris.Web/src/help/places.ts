@@ -1,7 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceEdit } from '../agents/setup/placeShell';
 import { askItem, questsItem, type OpenGroup, workspaceItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
@@ -9,17 +8,13 @@ import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
 
 /**
- * A place on the window a go names, as the driver judged it: a view, a Settings domain, a part — or
- * the one record of the view's list it opens, a quest's id or an ask's `ask:<id>`, or a session's
- * id, as the machine's record spells it. A go to Add repository or Import a folder may carry the workspace
- * the drawer opens filled with, as the driver normalized it; it names no folder.
+ * A place on the window a go names, as the driver judged it: a view, a Settings domain, a part, or the one record of the view's
+ * list it opens (a quest's id, an ask's `ask:<id>`, a session's id); a go to Add or Import may carry the workspace, never a folder.
  */
 export type HelpPlace = {
   view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
   /** On a go to Sessions → New conversation, the repository the composer chooses and the words it opens with. */
   repository?: string | null; sentence?: string | null;
-  /** On a go to an Agents place's Setup, the quick set-up its *Set up…* opens on; `workspace` and `repository` name the place. */
-  setup?: PlaceAsk | null;
 };
 
 /**
@@ -41,8 +36,7 @@ export const PLACE_VIEWS: readonly View[] = [
   'overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings',
 ];
 
-// The guide is Get started, and Plugins is a place of its own. Workspace and Permissions belong to a workspace's page, and
-// are kept below.
+// The guide is Get started, Plugins a place of its own; Workspace and Permissions are a workspace's page's, kept below.
 export const PLACE_DOMAINS: readonly SettingsSection[] = [
   'start', 'appearance', 'driver', 'ai', 'git', 'browser', 'space', 'updates', 'wiring', 'logs',
 ];
@@ -207,14 +201,6 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // Add or Import opens with the go's workspace filled; the folder stays the person's pick.
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
-  }
-  if (view === 'agents' && part === 'roles' && asked.setup) {
-    // The place's Set up…, as today's set-up is reached: a repository's Details, or the workspace's page for several. The
-    // application sends it to the place's page once that is lit (`placeOpening`), the ask along.
-    const { workspace, repository, setup } = asked;
-    if (repository) return { view: 'projects', item: repository, tab: 'details', setUp: setup };
-    if (workspace) return { view: 'projects', item: workspaceItem(workspace), workspaceTab: 'details', setUp: setup };
-    return null;
   }
   if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'setup' } : { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };

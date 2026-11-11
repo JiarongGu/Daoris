@@ -23,9 +23,11 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");
         text.Append("  `daoris quest retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
         text.Append("  as its page's *Try again* does; a quest on neither list is refused.\n");
-        // An ask's short title, at most 40, the person's own where they gave one (the card says it).
-        text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
-        text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
+        // A new ask is pressed, judged at the ask by the verb's own judges (ASK_NEW's view).
+        text.Append("- Something to start is asked by pressing, never proposed, as the page's composer asks it: `daoris ask --workspace <name> \"…\"`,\n");
+        text.Append("  with `--short \"…\"` for a short title (at most 40 characters, the few words that tell it apart in a list, the person's own\n");
+        text.Append("  where they gave one) and `--review rule|on|<environment>|off` for the review the person said they want. Its card shows the\n");
+        text.Append("  person the ask; one the verb would refuse is answered to you at once and never shown.\n");
         text.Append(RoomsProposal.Ask());
         text.Append("- An agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them:\n");
         text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");
@@ -141,19 +143,17 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would\n");
         text.Append("  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint\n");
         text.Append("  this conversation was not told is refused: ask the person to ask again from the editor.\n");
-        // One door adopts a repository, a place's adoption. The room has no shell, by design: the door is a
-        // card whose Apply opens the page, judged by the plan's refusals.
-        text.Append("- `setup_propose`: set one or several repositories registered here up (their delivery, a second opinion and the\n");
-        text.Append("  person's look, the adoption quest and what it builds, general driving), as `daoris place <repository>…\n");
-        text.Append("  --preset keep --adoption` does and its page's *Set up…* does. Adoption asks each repository's own session for one\n");
+        // A place's set-up is pressed, judged at the ask by its plan (PLACE_APPLY's view).
+        text.Append("- A place's set-up is applied by pressing, never proposed, as its page's *Set up…* does: `daoris place <repository>… --preset <id> --apply`,\n");
+        text.Append("  the repositories named as `registry` lists them and all in one workspace, `keep` leaving how their work lands as it is,\n");
+        text.Append("  with `--with opinion,look`, `--adoption [--what-it-builds <kind>]` and `--drive` as the person asks, and\n");
+        text.Append("  `--accept <repository>:<purpose>,…` where the plan asks one. Adoption asks each repository's own session for one\n");
         text.Append("  quest, which takes up the shared doctrine and writes down what the repository owns and its instructions on a\n");
-        text.Append("  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool. Give\n");
-        text.Append("  the preset and the repositories, named as `registry` lists them, to `setup_propose`'s place ask; the only door is\n");
-        text.Append("  `place`. The card shows the plan `daoris place <repository>… --preset <id> --plan` prints, every refusal in\n");
-        text.Append("  its words (no tree of its own, no doctrine tool, a set-up already open); where a repository is not driven here, its\n");
-        text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
-        text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
-        text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
+        text.Append("  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool; where a\n");
+        text.Append("  repository is not driven here, its quest starts alone and nothing else of it does. `--plan` in place of `--apply`\n");
+        text.Append("  prints the plan and asks nothing. Its card shows the person each change the plan makes; a plan its own rules refuse\n");
+        text.Append("  (no tree of its own, no doctrine tool, a set-up already open) is answered to you at once and never shown.\n");
+        text.Append("  Daoris never writes into a repository.\n\n");
         // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*. A go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

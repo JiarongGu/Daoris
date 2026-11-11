@@ -28,7 +28,7 @@ import { MachineNotes } from './setup/MachineNotes';
 import { ReconcileNote } from './setup/ReconcileNote';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
-import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
+import { doorOf, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { useKeptPlace } from './setup/useKeptPlace';
 import { findPlace, placeAsk, rowOfFound, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
@@ -60,10 +60,6 @@ export function useAgentsMode(lists: ListPanes) {
   }, [reopen]);
   const place = lists.pane('roles').chosen || null;
   const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
-  // An ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
-  const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
-  const onSeed = useCallback((target: string, ask: PlaceAsk) => setSeeded({ place: target, ask }), []);
-  const onSeeded = useCallback(() => setSeeded(null), []);
   // A door to a place at a section and a row (and the way back), held until the place's page has opened on it.
   const [arrival, setArrival] = useState<{ place: string; at: PlaceAt } | null>(null);
   const onPlaceAt = useCallback((next: string, at: PlaceAt) => {
@@ -71,7 +67,7 @@ export function useAgentsMode(lists: ListPanes) {
     setArrival(at.section || at.row || at.back || at.edit ? { place: next, at } : null);
   }, [choose]);
   const onArrived = useCallback(() => setArrival(null), []);
-  return { mode, onMode, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
+  return { mode, onMode, place, onPlace, onPlaceAt, arrival, onArrived };
 }
 
 /**
@@ -137,8 +133,6 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     /** A door's section and row at a place, and the way back, which the page opens on once. */
     onPlaceAt?: (place: string, at: PlaceAt) => void;
     arrival?: { place: string; at: PlaceAt } | null; onArrived?: () => void;
-    /** The set-up Ask Daoris proposed for a place, which opens on it once, and the word that it has. */
-    seeded?: { place: string; ask: PlaceAsk } | null; onSeeded?: () => void;
   };
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
@@ -165,15 +159,6 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
   const rolesPage = useRolesPage();
   const setUpPage = useSetUpPage();
-  // A place's *Set up…* opens on the ask Ask Daoris proposed. The page plans it on opening, and Apply stays the person's.
-  const seeded = modes?.seeded ?? null;
-  const onSeeded = modes?.onSeeded;
-  const seededHere = active && inSetup && seeded !== null && seeded.place === modes?.place;
-  useEffect(() => {
-    if (!seededHere || !seeded) return;
-    setUpPage.open(seeded.place, seeded.ask.repositories, draftOfAsk(seeded.ask));
-    onSeeded?.();
-  }, [seededHere, seeded, setUpPage, onSeeded]);
   // The page's state (the sections open, the row a door asked for, the way back) is held here, above the sections' mounts.
   const shell = usePlaceShell();
   const arrival = modes?.arrival ?? null;

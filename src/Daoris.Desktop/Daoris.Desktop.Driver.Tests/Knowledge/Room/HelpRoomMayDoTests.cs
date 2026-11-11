@@ -23,7 +23,7 @@ public sealed class HelpRoomMayDoTests
             Assert.Contains("no web fetch or search", agents);
             Assert.Contains("never try one", agents);
             Assert.Contains("a repository's own work", agents);
-            Assert.Contains("`ask_propose`", agents);
+            Assert.Contains("`daoris ask --workspace <name> \"…\"`", agents);
             // A conversation is begun with New conversation, not Start a session.
             Assert.Contains("New conversation (Ctrl+N)", agents);
             Assert.DoesNotContain("Start a session", agents);
@@ -337,7 +337,7 @@ public sealed class HelpRoomMayDoTests
         Assert.Contains("each press runs at once as the person's own, said on this conversation", room);
         Assert.Contains("only what the person asks to see first", room);
         Assert.Contains("say what you will do before you do it", room);
-        Assert.Contains("`ask_propose`", room);
+        Assert.Contains("ask for it with `daoris ask --workspace <name> \"…\"`", room);
         Assert.Contains("Daoris's own housekeeping is yours to do", room);
         Assert.Contains("the person's own denies still hold", room);
         Assert.DoesNotContain("Never push, sign in, or handle a key", room);

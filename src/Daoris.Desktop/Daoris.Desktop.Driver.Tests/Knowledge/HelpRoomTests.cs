@@ -156,7 +156,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
         // It proposes, and the person applies — never a rule proposal, whose narrowing applies itself.
         Assert.DoesNotContain("mcp__daoris-knowledge__setting_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__ask_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__setup_propose", allowed);
         // The four further kinds, each a card the person applies.
         Assert.DoesNotContain("mcp__daoris-knowledge__agent_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);

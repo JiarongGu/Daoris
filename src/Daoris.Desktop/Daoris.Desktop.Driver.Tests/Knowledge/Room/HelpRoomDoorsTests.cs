@@ -81,7 +81,8 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("You change nothing yourself", agents);
         // It proposes: a card the person applies, through the connector's two tools.
         Assert.Contains("Every setting is pressed, never proposed", agents);
-        Assert.Contains("`ask_propose`", agents);
+        Assert.Contains("`daoris ask --workspace <name> \"…\"`", agents);
+        Assert.DoesNotContain("ask_propose", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
 

@@ -101,7 +101,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [InlineData(false)]
     public void An_applied_proposal_answers_its_message_and_that_it_no_longer_stands(bool applied)
     {
-        var proposal = new HelpProposal("p1", "ask", "ask", null, null, "work", null, "why", "h1", "proposed");
+        var proposal = new HelpProposal("p1", "workflow", "new", null, null, "work", null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
             HelpRoutes.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
@@ -203,7 +203,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [InlineData("go", "overview", "s1a2b3c4", false, false)]
     [InlineData("go", "quests", " ", false, false)]
     [InlineData("go", "sessions", null, false, false)]
-    [InlineData("ask", "sessions", "s1a2b3c4", false, false)]
+    [InlineData("workflow", "sessions", "s1a2b3c4", false, false)]
     // A go's workspace is judged against the registry the snapshot already holds, so it asks for neither.
     [InlineData("go", "projects", null, false, false, "work")]
     public void The_records_are_read_only_for_a_proposal_judged_against_them(

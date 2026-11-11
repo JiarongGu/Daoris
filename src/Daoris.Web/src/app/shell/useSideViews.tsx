@@ -13,7 +13,6 @@ import { type AgentPart } from '../../agents/agents';
 import { type ListPanes } from '../../work/frame/listPanes';
 import { type Notify } from '../../design/atoms/Toasts';
 import { type PlaceAt } from '../../agents/setup/placeShell';
-import { type PlaceAsk } from '../../agents/setup/placePlan';
 
 export function useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open }: {
   view: View;
@@ -21,7 +20,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
   notify: Notify;
   attached: boolean;
   askSetup: (message: string) => void;
-  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; seeded: { place: string; ask: PlaceAsk; } | null; onSeed: (target: string, ask: PlaceAsk) => void; onSeeded: () => void; };
+  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; };
   agentPart: AgentPart | null;
   setAgentPart: React.Dispatch<React.SetStateAction<AgentPart | null>>;
   open: (target: View, item?: string | null | undefined, part?: OpenPart | undefined) => void;
@@ -40,8 +39,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
   // The Agents place: held on every view, as Plugins is; it reads the roster the frame holds and the
   // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it.
   const agentsPane = lists.pane('agents');
-  // The words to the session that proposed a rule an *Accept* on the page kept: the Agents place is handed the
-  // door, its own view pressing no say hook.
+  // The Agents place is handed the words to the session that proposed a rule an *Accept* kept, its view pressing no say hook.
   const sayToSession = useSay();
   const agents = useAgentsView({
     say: (session, text) => sayToSession.mutateAsync({ id: session, text }),

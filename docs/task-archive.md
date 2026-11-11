@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vi whole — the setup and ask proposal kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, the kinds removed** (service, driver, modules, web): Outcome: `setup_propose` and `ask_propose` with their writers, judges, box entries, call-table rows, the ask door, the go's set-up seed and the web's set-up card are gone; the room names `daoris ask --workspace <name> "…"` and `daoris place … --apply` as presses, which Ask Daoris in full access makes with no card; the card is down to `go | workflow` (rule 56). Proof: the kinds tables, tool registration, call-table twin, room and card tests (edited first, seen failing), `HelpProposalClaimTests`, `PipeDelegateTests`' new-ask case, the census and `HelpDoorsTests`.
+
+---
+
 ## Small defects: the keeper for a node-started npx server, the pull-request examples, the version, the settings verb (2026-11-11)
 
 > **Defects found by the install and by reviews** (driver, cli, examples, web): Outcome: a server started as `node … -- npx …` gets the toolchain install and the 512 MB keeper as an `npx` command does (`ServerNpx`; plugins rule 24, agents rule 13); both pull-request examples at 2.0.1 answer each frame as it settles, answer `running` for a down or rate-limited platform and kill the plugin their tests start; the system-department files sit in the subdomains their types allow (`IRegistryRow`, `CourseSystems`; FIX-LOG); the publish stamps the build into the CLI and `daoris --version` says `0.0.1 (build …, commit …)`; plain `daoris settings` says each machine setting with its value and verb, `daoris settings <name>` alone says that one, and the usage names every verb; the presentational boundary and the choices table hold again. Proof: `ServerNpxTests`, the examples' held-check and down-platform tests, the structure tests, the CLI version test and the settings text fixtures, each seen failing first.

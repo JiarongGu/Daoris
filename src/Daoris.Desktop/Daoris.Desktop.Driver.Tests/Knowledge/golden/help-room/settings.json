@@ -8,10 +8,8 @@
       "mcp__daoris-knowledge__knowledge_get",
       "mcp__daoris-knowledge__knowledge_repositories",
       "mcp__daoris-knowledge__quest_list",
-      "mcp__daoris-knowledge__ask_propose",
       "mcp__daoris-knowledge__go_propose",
-      "mcp__daoris-knowledge__workflow_propose",
-      "mcp__daoris-knowledge__setup_propose"
+      "mcp__daoris-knowledge__workflow_propose"
     ]
   }
 }

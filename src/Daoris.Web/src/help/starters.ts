@@ -1,7 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { AgentsMode } from '../agents/modes';
 import type { RoleDoor } from '../app/opener';
-import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
@@ -23,9 +22,8 @@ export type StarterDoor = {
   drawerWorkspace?: string;
   /** The composer opened by a go to New conversation, with the repository it chooses and the words it opens with. */
   compose?: Compose;
-  /** A repository page's tab. */
   tab?: ProjectTab;
-  /** The host Settings → Git opens its Add a git identity form on: a sync card's door for a fetch that has not been made. */
+  /** The host Settings → Git opens its Add a git identity form on. */
   gitHost?: string;
   /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page. */
   placeOf?: string;
@@ -46,8 +44,6 @@ export type StarterDoor = {
   knowledge?: KnowledgeMode;
   /** A group of Sessions' or Quests' list that waits on the person, brought into view; no item in it. */
   group?: OpenGroup;
-  /** Ask Daoris's place card: the quick set-up the place's *Set up…* opens on. */
-  setUp?: PlaceAsk;
   /** A conversation's draft card: the place's Workflow, its editor opened on the draft the card is against. */
   placeEdit?: PlaceEdit;
 };

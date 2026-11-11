@@ -3,19 +3,15 @@ namespace Daoris.Knowledge;
 /// <summary>Where Ask Daoris's proposals are written: one file each, under the driver's home, for the person to apply or not.</summary>
 /// <remarks>
 /// <para><b>One writer per kind</b>, listed in <see cref="Kinds"/>, hands its checked fields to <see cref="HelpProposalFile.Write"/>.</para>
-/// <para><b>This checks the shape and nothing more.</b> Whether the route would take it is the driver's, which judges each with
-/// the route's own code before the person sees it and hands a refusal back to the conversation in the route's words.</para>
-/// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it; each side's tests hold its shape.</para>
+/// <para><b>This checks the shape alone</b>; the driver's <c>HelpProposals</c> judges, reads and settles the file, the contract.</para>
 /// </remarks>
 public sealed class HelpProposalBox(string? home)
 {
     /// <summary>The kinds this box writes, each with the connector's tool, in the order the room allows them.</summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
-        ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("workflow", "workflow_propose"),
-        ("setup", "setup_propose"),
     ];
 
     private readonly HelpProposalFile file = new(home);
@@ -26,11 +22,6 @@ public sealed class HelpProposalBox(string? home)
 
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
-
-    public (string? Id, string Message) ProposeAsk(
-        string sentence, string workspace, string why, string? session, DateTimeOffset at,
-        string? review = null, string? reviewWords = null, string? shortTitle = null) =>
-        new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
 
     /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeGo(
@@ -44,8 +35,4 @@ public sealed class HelpProposalBox(string? home)
         string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null,
         string? graph = null, string? route = null, string? draft = null) =>
         new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name, graph, route, draft);
-
-    /// <inheritdoc cref="HelpSetupProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSetup(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null) =>
-        new HelpSetupProposalWriter(file).Propose(repository, why, session, at, place);
 }

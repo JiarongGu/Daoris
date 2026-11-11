@@ -10,14 +10,13 @@ import { VIEW, isListed } from '../shellHelpers';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { type RegistrationResponse } from '../../data/generated/service';
 import { type PlaceAt } from '../../agents/setup/placeShell';
-import { type PlaceAsk } from '../../agents/setup/placePlan';
 import { type ListPanes } from '../../work/frame/listPanes';
 import { type FrameClosings } from '../../work/frame/closings';
 
 export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, lists, view, knowledgeMode, setSettingsAnchor, setSettingsGitHost, setAgentPart, setListGroup, setDrawerWorkspace, composes, setCompose, setAddRequested, setImportRequested, chooseProjectTab, setBranchAsked, chooseWorkspaceTab, setWorkspaceSection, setMapCode, closings, setTab, circle }: {
   machineRegistry: UseQueryResult<RegistrationResponse[], Error>;
   chooseKnowledgeMode: (mode: "search" | "convergence") => void;
-  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; seeded: { place: string; ask: PlaceAsk; } | null; onSeed: (target: string, ask: PlaceAsk) => void; onSeeded: () => void; };
+  agentsModes: { mode: "agents" | "setup"; onMode: (next: "agents" | "setup") => void; place: string | null; onPlace: (next: string) => void; onPlaceAt: (next: string, at: PlaceAt) => void; arrival: { place: string; at: PlaceAt; } | null; onArrived: () => void; };
   lists: ListPanes;
   view: View;
   knowledgeMode: "search" | "convergence";
@@ -57,8 +56,6 @@ export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, l
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
     // A door to a place names the section and the row it opens at.
     if (plan.place) agentsModes.onPlaceAt(plan.place, plan.placeAt ?? {});
-    // Ask Daoris's place card: the place's *Set up…* opens on the ask, once the Agents place has the place chosen.
-    if (plan.place && plan.setUp) agentsModes.onSeed(plan.place, plan.setUp);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits:
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
