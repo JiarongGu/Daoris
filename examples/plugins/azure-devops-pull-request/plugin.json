@@ -2,9 +2,9 @@
   "id": "azure-devops-pull-request",
   "apiVersion": 1,
   "name": "Azure DevOps pull request",
-  "version": "2.0.1",
-  "changes": "Answers each request as it settles, so a slow Azure DevOps read holds back no other; an attempt asked after a restart while Azure DevOps is down or limiting the token is running, and says why, where it stopped the step.",
-  "description": "A performed step, pull-request: opens an Azure DevOps pull request from the branch Daoris pushed, through Azure DevOps' REST API with the API token of the identity serving origin, and reads its state and merge commit.",
+  "version": "2.1.0",
+  "changes": "The pull-request step sets auto-complete where its options ask (autoComplete, mergeStrategy, deleteSourceBranch, transitionWorkItems, mergeCommitMessage), so Azure DevOps merges it once its policies pass; a new release step, after the merge, watches the merged commit's build and its classic release or pipeline stages to their end, and can start a stage no trigger starts.",
+  "description": "Two performed steps through Azure DevOps' REST API, with the API token of the identity serving origin: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release watches the merged commit's release to its end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
     "points": ["work/watch", "work/step", "work/perform", "work/state"]
@@ -13,13 +13,23 @@
     {
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
-      "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one already open for it. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
+      "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
       "reach": "performed",
       "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
       "timeoutSeconds": 300
+    },
+    {
+      "id": "release",
+      "title": { "en": "Watch the release", "zh": "跟踪发布" },
+      "about": { "en": "After the merge, watches the build of the merged commit, then the classic release made from it or the pipeline run's own stages, to their end. It can start a stage nothing started; approvals and checks still decide.", "zh": "合并之后，跟踪合并提交的构建，再跟踪由它创建的经典发布或流水线运行自身的阶段，直到结束。它可以启动尚未启动的阶段；审批和检查仍由 Azure DevOps 决定。" },
+      "reach": "performed",
+      "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] },
+      "timeoutSeconds": 3600
     }
   ],
   "tools": [
