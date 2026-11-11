@@ -298,7 +298,6 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         "helper" => ParticipantWork.Help,
         "partner" => ParticipantWork.Partner,
         "supervise" => ParticipantWork.Supervise,
-        // A step's session is staffed as the place's builds are.
         ParticipantWork.Step => ParticipantWork.Build,
         _ => ParticipantWork.Review,
     };

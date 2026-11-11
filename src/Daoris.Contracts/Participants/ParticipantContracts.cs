@@ -31,10 +31,7 @@ public sealed record OpenSupervise(
     public static string Path => "/api/supervise";
 }
 
-/// <summary>
-/// The driver opens the record of the session that performs a plugin's step: a chat on no quest at the run's place, with no tree of its
-/// own, marked with the step's attempt.
-/// </summary>
+/// <summary>The driver opens a step's session's record: a chat on no quest at the run's place, marked with the attempt it performs.</summary>
 public sealed record OpenStepSession(
     string? Performs, string? Repository, string? Workspace, string? Door, string? Account = null, string? DoorVersion = null)
     : IRoute<HelperActionResponse>

@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IStepSessions
 {
-    /// <param name="tools">The step's server for the session's record once it is opened, named by its id.</param>
     Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, CancellationToken ct);
 
     /// <summary>The person's stop of the step: its session stopped, as a running session's stop door stops it.</summary>

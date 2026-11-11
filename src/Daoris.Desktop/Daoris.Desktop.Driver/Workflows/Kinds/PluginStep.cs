@@ -66,7 +66,6 @@ public record PluginStep : INodeKind, IStarts
         var (governed, node) = (starting.Governed, starting.Node);
         var unread = starting.Tipped && starting.Tip is null;
         if (node.Reach == NodeReach.Observed && governed.Observable.Contains(node.Id)) return unread ? null : starting.Begin();
-        // A step declaring a goal waits for the loop's step agents, its plugin's process for any other: neither is sent blind.
         var performer = node.Goal is not null
             ? starting.Performer.Doors.Door<IStepAgents>(StepAgents.Door) is not null
             : starting.Port.GenerationOf(NodeGoverning.PluginOf(node.Kind)) is not null;

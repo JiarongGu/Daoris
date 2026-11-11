@@ -9,8 +9,7 @@ public static class PluginToolsHand
 {
     private const string Folder = "daoris-driver";
 
-    /// <summary>The entry, or null where no tool is listed at the place or no program runs it.</summary>
-    /// <param name="program">The desktop's program; <see cref="Program"/>'s answer where a caller has none of its own.</param>
+    /// <summary>The entry, or null where no tool is listed at the place or no program (<see cref="Program"/>'s answer, or the caller's) runs it.</summary>
     public static ServerEntry? Entry(string home, PluginToolsAt at, string? program)
     {
         if (program is null || PluginToolList.At(home, at.Place).Count == 0) return null;
@@ -25,10 +24,7 @@ public static class PluginToolsHand
             new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
     }
 
-    /// <summary>
-    /// A step's session's entry: <paramref name="plugin"/>'s tools alone and <c>step_answer</c> for the attempt <paramref name="step"/> it
-    /// performs, listed or not, its calls made as the session <paramref name="at"/> names.
-    /// </summary>
+    /// <summary>A step's session's entry: <paramref name="plugin"/>'s tools alone and <c>step_answer</c> for its attempt <paramref name="step"/>.</summary>
     public static ServerEntry StepEntry(string home, PluginToolsAt at, string program, string plugin, string step)
     {
         List<string> words = ["plugin", "tools", "--session", at.Session, "--repository", at.Place.Repository ?? "", "--language", at.Language, "--plugin", plugin, "--step", step];
