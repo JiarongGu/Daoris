@@ -265,7 +265,7 @@ export function NameRows({ names }: { names: string[] }) {
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
   toolStanding, checkingTools = false, fixingTool = null, toolRefused = null, onCheckTools, onFixTool,
-  onSwitch, onHelp, onTry, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
+  onSwitch, onHelp, onTry, onTryAgain, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
 }: {
   plugin: PluginShown;
   /** The kit's points with their kinds, which name what each point asks; none arrives with no kinds. */
@@ -302,6 +302,8 @@ export function PluginPage({
    */
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
   onTry: (id: string) => void;
+  /** The person's *Try again* on a plugin the loop holds unsound; none offers none. */
+  onTryAgain?: (id: string) => void;
   onAskUpdate: (id: string) => void;
   onApplyUpdate: (id: string) => void;
   onCancelUpdate: () => void;
@@ -317,8 +319,11 @@ export function PluginPage({
   // which an update from the install's offer would replace whole.
   const canUpdate = (updatable(plugin.source) && !(shippedChanged(plugin) && plugin.source?.kind === 'offer')) || takesShipped(plugin);
 
+  const againable = plugin.unsound === true && onTryAgain !== undefined;
+
   const acts = (
     <>
+      {againable && <Button disabled={acting} onClick={() => onTryAgain?.(plugin.id)}>{t('plugin.tryAgain')}</Button>}
       <Button disabled={acting} onClick={() => onSwitch(plugin.id, plugin.enabled ? 'disable' : 'enable')}>
         {t(plugin.enabled ? 'plugin.disable' : 'plugin.enable')}
       </Button>
@@ -340,6 +345,7 @@ export function PluginPage({
   const menu = {
     label: plugin.name || plugin.id,
     acts: [
+      ...(againable ? [{ id: 'try-again', label: t('plugin.tryAgain'), icon: 'refresh' as const, disabled: acting, onSelect: () => onTryAgain?.(plugin.id) }] : []),
       {
         id: 'switch', label: t(plugin.enabled ? 'plugin.disable' : 'plugin.enable'), icon: 'plug' as const, disabled: acting,
         onSelect: () => onSwitch(plugin.id, plugin.enabled ? 'disable' : 'enable'),
@@ -376,6 +382,7 @@ export function PluginPage({
     <ViewMain header={head} menu={menu}>
       {/* Status leads (platform language §4): a refused plugin's sentence comes first. */}
       {plugin.problem && <Lead text={plugin.problem} />}
+      {plugin.unsound && <Lead text={t('plugin.unsound')} />}
       <HelpWaitsLead servers={plugin.helpServers} />
 
       {asking && (

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <c>daoris plugin enable|disable|remove &lt;id&gt;</c> and <c>daoris plugins approve|withdraw &lt;id&gt; &lt;server&gt;</c> as the card shows them
+/// <c>daoris plugin enable|disable|remove|try-again &lt;id&gt;</c> and <c>daoris plugins approve|withdraw &lt;id&gt; &lt;server&gt;</c> as the card shows them
 /// (<c>PLUGIN_ACTION</c>): an installed plugin switched, removed, or what one of its servers offers Ask Daoris approved or withdrawn. A
 /// switch is judged as the Plugins row judges it, and an approval as <see cref="HelpGrants"/> takes it (<see cref="PluginGrantJudge"/>).
 /// </summary>
@@ -35,12 +35,12 @@ public sealed class PluginActionView : IPressView
                     Also = on && found.Problem is { } problem ? [new PressSaid("plugin-unsound", ("problem", problem))] : null,
                 });
             }
-            case "remove":
-                return PressViewed.Shown(new PressView("plugin-remove", PluginNamed.Facts(("id", named)), $"daoris plugin remove {named}"));
+            case "remove" or "try-again":
+                return PressViewed.Shown(new PressView($"plugin-{action}", PluginNamed.Facts(("id", named)), $"daoris plugin {action} {named}"));
             case "help-approve" or "help-reads" or "help-withdraw":
                 return PluginGrantJudge.View(home, catalog, found, action, PressPayload.Text(payload, "server"), Writes(payload, action));
             default:
-                return PressViewed.Refused($"unknown plugin action '{action}' — one of: enable, disable, remove, help-approve, help-reads, help-withdraw");
+                return PressViewed.Refused($"unknown plugin action '{action}' — one of: enable, disable, remove, try-again, help-approve, help-reads, help-withdraw");
         }
     }
 

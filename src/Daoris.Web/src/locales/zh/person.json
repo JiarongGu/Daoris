@@ -209,6 +209,7 @@
   "person.view.plugin-enable": "打开插件 {{id}}：驱动会在下一次查看时启动它运行的东西。",
   "person.view.plugin-disable": "关闭插件 {{id}}：它连同保存的内容仍然安装着，驱动会在下一次查看时不再询问它。",
   "person.view.plugin-remove": "移除插件 {{id}}：停止它的进程，删去它的文件夹。它保存的内容留下，由你决定是否丢弃。",
+  "person.view.plugin-try-again": "在驱动下一次查看时重新启动插件 {{id}}；它曾因一小时内三次意外退出而被暂停。",
   "person.view.plugin-unsound": "按目前的样子它不起作用：{{problem}}",
   "person.view.plugin-approve": "为问道衍批准插件 {{id}} 的服务器 {{server}}，从它的下一次对话起，使用下面的工具。插件是以你的身份运行的代码；更新若增加或放宽某个工具，会再次询问你。",
   "person.view.plugin-approved-before": "它以前被批准过，此后一次更新改变了它的工具。",

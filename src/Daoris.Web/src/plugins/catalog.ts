@@ -135,6 +135,8 @@ export type PluginShown = {
   points: string[];
   /** Whether its hook process is up right now. */
   running: boolean;
+  /** Held back after three unasked exits within an hour, until the person's *Try again*; absent where the loop holds nothing. */
+  unsound?: boolean;
   /** Its install folder. */
   folder: string;
   /** Where what it keeps lives, which an update never touches and a removal leaves. */
