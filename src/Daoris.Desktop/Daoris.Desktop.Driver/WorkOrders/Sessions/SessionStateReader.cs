@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one place a session's state is read (D273): needs you, failed, working, pending or done, from its record, the planner's
+/// The one place a session's state is read: needs you, failed, working, pending or done, from its record, the planner's
 /// verdict on its quest and its run's waits, with the finer reason inside; gathered once per look and read by
 /// <see cref="SessionGroups.Read"/>, so the list, the head, Notifications and the terminal say one state.
 /// </summary>
@@ -49,15 +49,16 @@ internal sealed class SessionStateReader
     }
 
     /// <summary>
-    /// A session's state and where it is listed, and what its own tree offers to land wherever it rests bar Working: a session that
-    /// goes on, or runs, is about to write into that tree again. Where the line holds its commits by content, its discard instead.
-    /// An open conversation between turns offers its landing too, by the same judgement, and never a discard while it is open.
+    /// A session's state and where it is listed, and what its own tree offers to land in whichever state it rests, bar one that
+    /// runs or goes on with the person's words: either is about to write into that tree again. Where the line holds its commits by
+    /// content, its discard instead. An open conversation between turns offers its landing too, by the same judgement, and never a
+    /// discard while it is open.
     /// </summary>
     public SessionGrouping Place(SessionRecord record)
     {
         var row = StateOf(record);
         var between = _look.Between.Contains(record.Id);
-        if ((row.State == SessionGroup.Working && !between)
+        if (row.Shown == ShownState.GoingOn
             || LandableTree(record) is not { } tree
             || !_look.Trees.TryGetValue(SessionGroups.Normal(tree), out var work))
         {

@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run step that waits on the person places the session its run stands for: the run's newest session here, in To review for an
-/// Accept and in Waiting on you for every other wait, whatever the session's own ending or archive mark, with the waits on its row; the
-/// terminal's listing says each and names the run it opens.
+/// A run's step waiting on the person puts the run's newest session here in Needs you, whatever its ending or archive mark, with
+/// the waits on its row; the terminal's listing says each and names the run it opens.
 /// </summary>
 public sealed class RunWaitGroupsTests
 {
@@ -40,24 +39,24 @@ public sealed class RunWaitGroupsTests
     private static SessionGrouping Row(SessionLook look, string session) => SessionGroups.Read(look).Single(row => row.Session == session);
 
     [Fact]
-    public void A_session_whose_run_waits_on_an_Accept_is_to_review_though_it_ended_and_is_archived()
+    public void A_session_whose_run_waits_on_an_Accept_needs_your_review_though_it_ended_and_is_archived()
     {
         var look = Look([Record("s1", "completed", "q1", 0)], [Quest("q1")], [Waits("q1", "review", PersonWaits.Accept)], archived: ["s1"]);
 
         var row = Row(look, "s1");
 
-        Assert.Equal(SessionGroup.NeedsYou, row.Group);
+        Assert.Equal((SessionGroup.NeedsYou, SessionReason.Review), (row.Group, row.Reason));
         Assert.Equal([("q1", "review", PersonWaits.Accept)], row.Waits!.Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
 
     [Fact]
-    public void A_run_waiting_on_an_approval_puts_its_newest_session_in_waiting_on_you_and_leaves_the_earlier_one_ended()
+    public void A_run_waiting_on_an_approval_puts_its_newest_session_in_needs_you_and_leaves_the_earlier_one_as_it_ended()
     {
         var look = Look(
             [Record("s1", "failed", "q1", 0), Record("s2", "completed", "q1", 5)], [Quest("q1")], [Waits("q1", "approve", PersonWaits.Approval)]);
 
-        Assert.Equal(SessionGroup.NeedsYou, Row(look, "s2").Group);
-        Assert.Equal(SessionGroup.Done, Row(look, "s1").Group);
+        Assert.Equal((SessionGroup.NeedsYou, PersonWaits.Approval), (Row(look, "s2").Group, Row(look, "s2").Reason));
+        Assert.Equal(SessionGroup.Failed, Row(look, "s1").Group);
         Assert.Null(Row(look, "s1").Waits);
     }
 
@@ -84,21 +83,19 @@ public sealed class RunWaitGroupsTests
     }
 
     [Fact]
-    public void The_terminals_review_and_you_groups_list_each_waiting_run_with_what_it_waits_for_and_the_run_it_opens()
+    public void The_terminals_needs_you_group_lists_each_waiting_run_with_what_it_waits_for_and_the_run_it_opens()
     {
         var look = Look(
-            [Record("s1", "completed", "q1", 0), Record("s2", "completed", "q2", 3)],
-            [Quest("q1"), Quest("q2")],
+            [Record("s1", "completed", "q1", 0), Record("s2", "completed", "q2", 3), Record("s3", "completed", "q3", 6)],
+            [Quest("q1"), Quest("q2"), Quest("q3")],
             [Waits("q1", "review", PersonWaits.Accept), Waits("q2", "go", PersonWaits.GoAhead)],
             archived: ["s1"]);
 
-        var review = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.NeedsYou }, TestHomes.Root, T0));
         var you = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.NeedsYou }, TestHomes.Root, T0));
 
-        Assert.Contains("s1", review, StringComparison.Ordinal);
-        Assert.Contains("run q1 waits for your Accept at `review` · daoris workflow run --session s1", review, StringComparison.Ordinal);
-        Assert.DoesNotContain("s2", review, StringComparison.Ordinal);
+        Assert.Contains("run q1 waits for your Accept at `review` · daoris workflow run --session s1", you, StringComparison.Ordinal);
         Assert.Contains("run q2 waits for your go-ahead at `go` · daoris workflow run --session s2", you, StringComparison.Ordinal);
+        Assert.DoesNotContain("s3", you, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -27,10 +27,11 @@ public sealed class SessionArchiveTests : IDisposable
     private static readonly IReadOnlyList<SessionGrouping> Groups =
     [
         In("waiting", SessionGroup.NeedsYou, "awaiting-person"),
-        In("parked", SessionGroup.NeedsYou, ShownState.Parked),
         In("review", SessionGroup.NeedsYou),
         In("running", SessionGroup.Working, "working"),
-        In("asked", SessionGroup.Pending, ShownState.AwaitingReply),
+        In("asked", SessionGroup.Working, ShownState.AwaitingReply),
+        In("held", SessionGroup.Pending),
+        In("parked", SessionGroup.Failed, ShownState.Parked),
         In("done", SessionGroup.Done),
         In("old", SessionGroup.Done),
     ];
@@ -68,10 +69,10 @@ public sealed class SessionArchiveTests : IDisposable
     {
         var archive = new SessionArchive(_home);
 
-        var answer = archive.Archive(["done", "asked"], Groups, Known, At);
+        var answer = archive.Archive(["done", "parked"], Groups, Known, At);
 
         Assert.All(answer.Outcomes, outcome => Assert.Equal(ArchiveVerdict.Archived, outcome.Verdict));
-        Assert.Equal(["asked", "done"], answer.Marks.Select(mark => mark.Session).Order(StringComparer.Ordinal));
+        Assert.Equal(["done", "parked"], answer.Marks.Select(mark => mark.Session).Order(StringComparer.Ordinal));
         Assert.Equal(At, archive.Marks()["done"]);
         // Atomic, BOM-less UTF-8, LF, a final newline, and nothing left beside it.
         var bytes = File.ReadAllBytes(archive.FilePath);
@@ -85,7 +86,7 @@ public sealed class SessionArchiveTests : IDisposable
     }
 
     /// <summary>
-    /// Archive never hides what needs the person, nor anything still running, nor what no record names; and a refused
+    /// Archive never hides what needs the person, nor anything working or pending, nor what no record names; and a refused
     /// session writes nothing.
     /// </summary>
     [Fact]
@@ -93,13 +94,12 @@ public sealed class SessionArchiveTests : IDisposable
     {
         var archive = new SessionArchive(_home);
 
-        var answer = archive.Archive(["running", "waiting", "parked", "review", "nobody"], Groups, Known, At);
+        var answer = archive.Archive(["running", "asked", "held", "waiting", "review", "nobody"], Groups, Known, At);
 
         var outcomes = answer.Outcomes.ToDictionary(outcome => outcome.Session);
-        Assert.Equal(ArchiveVerdict.Live, outcomes["running"].Verdict);
+        Assert.Equal([ArchiveVerdict.Live, ArchiveVerdict.Live, ArchiveVerdict.Live], [outcomes["running"].Verdict, outcomes["asked"].Verdict, outcomes["held"].Verdict]);
         Assert.Equal(ArchiveVerdict.NeedsYou, outcomes["waiting"].Verdict);
         Assert.Equal(SessionGroup.NeedsYou, outcomes["waiting"].Group);
-        Assert.Equal(SessionGroup.NeedsYou, outcomes["parked"].Group);
         Assert.Equal(ArchiveVerdict.NeedsYou, outcomes["review"].Verdict);
         Assert.Equal(SessionGroup.NeedsYou, outcomes["review"].Group);
         Assert.Equal(ArchiveVerdict.Unknown, outcomes["nobody"].Verdict);
@@ -137,9 +137,9 @@ public sealed class SessionArchiveTests : IDisposable
         var archive = new SessionArchive(_home);
         archive.Archive(["done", "old"], Groups, Known, At);
 
-        archive.Archive(["asked"], Groups, ["done", "asked"], At.AddMinutes(5));
+        archive.Archive(["parked"], Groups, ["done", "parked"], At.AddMinutes(5));
 
-        Assert.Equal(["asked", "done"], archive.Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["done", "parked"], archive.Marks().Keys.Order(StringComparer.Ordinal));
     }
 
     /// <summary>Unarchive brings a session back to its group; one that is not archived is said, as information, never refused.</summary>

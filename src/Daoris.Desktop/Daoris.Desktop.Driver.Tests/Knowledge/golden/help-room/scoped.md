@@ -366,8 +366,8 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Ask Daoris: you, on `claude-code-acp`.
 - In workspace `alpha`: 1 session waits on the person; 1 ask waits for an answer.
 - Sessions waiting on the person: `sa1` (in `engine`).
-- Workspace `alpha`'s sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: 1 waiting on you, 0 to review, 0 working, 0 resuming later, 2 ended.
-- Ended sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).
+- Workspace `alpha`'s sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: 1 needing you, 0 working, 0 pending, 0 failed, 2 done.
+- Failed and done sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).
 - Quests parked by their failed sessions, at the driver's last look: `#qa1` (to `engine`).
 - Quests held by the person's stop, at the driver's last look: none.
 - Paused in workspace `alpha` until resumed: quest `#qa1`.

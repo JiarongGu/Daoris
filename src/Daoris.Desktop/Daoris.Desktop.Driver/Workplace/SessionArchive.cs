@@ -34,9 +34,8 @@ public sealed class SessionArchive(string home)
         All().ToDictionary(mark => mark.Session, mark => mark.At, StringComparer.Ordinal);
 
     /// <summary>
-    /// Archive these sessions, each judged by its place in <paramref name="groups"/>: what is ended and needs nobody is
-    /// marked, keeping its first archived time; what is live, needs the person or is no record here is refused and
-    /// left as it stands. Nothing is written when nothing is archived.
+    /// Archive these sessions, each judged by its place in <paramref name="groups"/>: a done or failed one is marked, keeping its
+    /// first archived time; one working, pending or needing you, or no record here, is refused; nothing archived writes nothing.
     /// </summary>
     /// <param name="groups">Where the reader placed the sessions asked about, as the archive is asked.</param>
     /// <param name="known">Every record's id: a mark for a record that is gone is dropped as this writes.</param>

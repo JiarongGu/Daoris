@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The five states a session is in (D273: needs you, failed, working, pending, done) with the finer reason inside, one case per
+/// The five states a session is in (needs you, failed, working, pending, done) with the finer reason inside, one case per
 /// row of the design's mapping from today's record states, verdicts and waits; <c>archived</c> a mark on a done or failed one.
 /// </summary>
 public sealed class SessionStatesTests

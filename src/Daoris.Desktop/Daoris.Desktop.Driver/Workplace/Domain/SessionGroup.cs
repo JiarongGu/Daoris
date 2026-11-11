@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The five states a session is in (D273), in the order the person acts on them, and Archived, the fold a done or failed one
+/// The five states a session is in, in the order the person acts on them, and Archived, the fold a done or failed one
 /// is moved to by its mark: the public spelling the page and <c>daoris session list --group</c> share.
 /// </summary>
 public static class SessionGroup

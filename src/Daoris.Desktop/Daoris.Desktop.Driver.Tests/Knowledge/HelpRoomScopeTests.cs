@@ -119,8 +119,8 @@ public sealed class HelpRoomScopeTests : IDisposable
 
         var room = HelpRoom.Render(whole.Within("alpha"));
         Assert.Contains("- Workspace `alpha`'s sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
-            + "1 waiting on you, 0 to review, 0 working, 0 resuming later, 2 ended.", room);
-        Assert.Contains("- Ended sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).", room);
+            + "1 needing you, 0 working, 0 pending, 0 failed, 2 done.", room);
+        Assert.Contains("- Failed and done sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).", room);
         Assert.Contains("- In workspace `alpha`: 1 session waits on the person; 1 ask waits for an answer.", room);
         Assert.DoesNotContain("`eb", room);
         Assert.DoesNotContain("`sb1`", room);

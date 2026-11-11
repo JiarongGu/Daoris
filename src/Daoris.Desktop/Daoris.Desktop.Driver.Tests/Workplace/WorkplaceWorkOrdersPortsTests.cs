@@ -68,18 +68,18 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
         var archive = new SessionArchive(_home);
         IWorkplaceSessionRow[] rows =
         [
-            new Row("ended", SessionGroup.Done), new Row("review", SessionGroup.NeedsYou), new Row("working", SessionGroup.Working),
-            new Row("you", SessionGroup.NeedsYou), new Row("later", SessionGroup.Pending),
+            new Row("done", SessionGroup.Done), new Row("you", SessionGroup.NeedsYou), new Row("working", SessionGroup.Working),
+            new Row("pending", SessionGroup.Pending), new Row("failed", SessionGroup.Failed),
         ];
 
-        var answer = archive.Archive(["ended", "review", "working", "you", "later", "gone"], rows, ["ended", "later"], At);
+        var answer = archive.Archive(["done", "you", "working", "pending", "failed", "gone"], rows, ["done", "failed"], At);
 
         Assert.Equal(
-            [("ended", ArchiveVerdict.Archived), ("review", ArchiveVerdict.NeedsYou), ("working", ArchiveVerdict.Live),
-             ("you", ArchiveVerdict.NeedsYou), ("later", ArchiveVerdict.Archived), ("gone", ArchiveVerdict.Unknown)],
+            [("done", ArchiveVerdict.Archived), ("you", ArchiveVerdict.NeedsYou), ("working", ArchiveVerdict.Live),
+             ("pending", ArchiveVerdict.Live), ("failed", ArchiveVerdict.Archived), ("gone", ArchiveVerdict.Unknown)],
             answer.Outcomes.Select(outcome => (outcome.Session, outcome.Verdict)));
-        Assert.Equal([SessionGroup.NeedsYou, SessionGroup.NeedsYou], answer.Outcomes.Select(outcome => outcome.Group).OfType<string>());
-        Assert.Equal(["ended", "later"], archive.Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([SessionGroup.NeedsYou], answer.Outcomes.Select(outcome => outcome.Group).OfType<string>());
+        Assert.Equal(["done", "failed"], archive.Marks().Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
         var offer = new LandOffer("daoris/a", "a", 1, 0);
         IWorkplaceSessionRow row = new SessionGrouping("s1", SessionGroup.NeedsYou, "completed") { Lands = offer };
 
-        Assert.Equal(("s1", "review", offer), (row.Session, row.Group, row.Lands));
+        Assert.Equal(("s1", "needs-you", offer), (row.Session, row.Group, row.Lands));
         Assert.Null(((IWorkplaceSessionRow)new SessionGrouping("s2", SessionGroup.Done, "failed")).Lands);
     }
 

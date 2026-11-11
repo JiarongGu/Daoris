@@ -5,10 +5,8 @@ namespace Daoris.Driver;
 /// <summary>Archive, unarchive and delete: the screen's owners, at the terminal's door.</summary>
 internal static class SessionsArchiving
 {
-    /// <summary>
-    /// <c>archive &lt;id&gt;…</c>: the running Daoris's <c>SESSION_ARCHIVE</c> where one runs, a person's press its window confirms, said
-    /// in the words its answer carries; this process's own archive where none runs. Both say <see cref="SessionArchive.ArchiveSaid"/>.
-    /// </summary>
+    /// <summary><c>archive &lt;id&gt;…</c>: the running Daoris's <c>SESSION_ARCHIVE</c> where one runs, a press its window confirms;
+    /// this process's own archive where none runs. Both say <see cref="SessionArchive.ArchiveSaid"/>.</summary>
     internal static async Task<int> ArchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
         world.Instance is { } instance
             ? await InstanceDoor.PressAsync(

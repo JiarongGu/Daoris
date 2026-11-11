@@ -67,9 +67,9 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
     [Fact]
     public void The_session_groups_keep_their_public_spelling_and_order()
     {
-        Assert.Equal(["you", "review", "working", "later", "ended", "archived"], SessionGroup.Order);
-        Assert.Equal(("you", "review", "working", "later", "ended", "archived"),
-            (SessionGroup.NeedsYou, SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Pending, SessionGroup.Done, SessionGroup.Archived));
+        Assert.Equal(["needs-you", "working", "pending", "failed", "done", "archived"], SessionGroup.Order);
+        Assert.Equal(("needs-you", "working", "pending", "failed", "done", "archived"),
+            (SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Pending, SessionGroup.Failed, SessionGroup.Done, SessionGroup.Archived));
     }
 
     [Theory]

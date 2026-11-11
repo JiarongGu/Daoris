@@ -369,8 +369,7 @@ public static class WorkAbandoning
     }
 
     /// <summary>
-    /// Step 6: each listed session archived through <see cref="SessionArchive"/>, judged by Sessions' own reader as
-    /// it now places it, so the abandon never hides what needs the person.
+    /// Step 6: each listed session archived through <see cref="SessionArchive"/> as Sessions' reader now places it, never one needing you.
     /// </summary>
     private static async Task<IReadOnlyList<string>> ArchiveAsync(
         WorkWorld world, AbandonPlan plan, IReadOnlySet<string> goes, IReadOnlySet<string> unreached,
@@ -532,7 +531,7 @@ public static class WorkAbandoning
             return new AbandonSession(session, AbandonAct.Keep) { Why = AbandonWhy.Teammate, Machine = record.Id[..record.Id.IndexOf('/')] };
         }
 
-        // To review where its tree stays and holds work nobody accepted, as Sessions' reader reads it.
+        // Left unarchived where its tree stays and holds work nobody accepted.
         var review = session.Branch is { } branch
             && trees.TryGetValue(AbandonKeys.TreeKey(record.Repository, branch), out var tree)
             && tree.Act == AbandonAct.Keep
