@@ -137,7 +137,40 @@ public sealed class McpHelpCircleTests : IAsyncLifetime
 
         var registry = CallFound.Listen();
         await Search("alpha").RegistryAsync();
-        Assert.Null(registry.Count);
+        Assert.Equal(1, registry.Count);
+    }
+
+    [Theory]
+    [InlineData("registry", "all", 2)]
+    [InlineData("registry", "beta", 1)]
+    [InlineData("registry", "empty", 0)]
+    [InlineData("repositories", "all", 2)]
+    [InlineData("repositories", "beta", 1)]
+    [InlineData("repositories", "empty", 0)]
+    [InlineData("convergence", "all", 1)]
+    [InlineData("convergence", "beta", 0)]
+    public async Task Each_listing_says_how_many_results_its_scope_found(string tool, string workspace, int expected)
+    {
+        var found = CallFound.Listen();
+        var tools = Search("alpha");
+        await (tool switch
+        {
+            "registry" => tools.RegistryAsync(workspace),
+            "repositories" => tools.RepositoriesAsync(workspace),
+            _ => tools.ConvergenceAsync(workspace: workspace),
+        });
+        Assert.Equal(expected, found.Count);
+    }
+
+    [Theory]
+    [InlineData("engine:docs/DECISIONS.md#D1", 1)]
+    [InlineData("ledger:docs/DECISIONS.md#D1", 1)]
+    [InlineData("absent:docs/DECISIONS.md#D1", 0)]
+    public async Task A_get_says_whether_it_found_the_entry(string id, int expected)
+    {
+        var found = CallFound.Listen();
+        await Search("alpha").GetAsync(id);
+        Assert.Equal(expected, found.Count);
     }
 
     /// <summary><c>default</c>'s room is the whole machine: its connector is bound to none, and answers as before.</summary>

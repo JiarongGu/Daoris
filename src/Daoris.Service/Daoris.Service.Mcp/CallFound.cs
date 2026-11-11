@@ -2,8 +2,8 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// How many a search's answer found, said by its tool as it answers and kept by the call's noting beside its place
-/// (<see cref="CallPlaceFilter"/>), so Ask Daoris's receipt says <i>3 found</i>. A tool that lists says it; one that answers a single
-/// thing says nothing, and a call no noting listens to keeps nothing.
+/// (<see cref="CallPlaceFilter"/>), so Ask Daoris's receipt says <i>3 found</i>. A listing counts its results and a knowledge get
+/// counts the entry it found; a call no noting listens to keeps nothing.
 /// </summary>
 /// <remarks>
 /// Held for the flow of work the noting starts, so the tool's own answer stays the words the agent reads and its signature stays the

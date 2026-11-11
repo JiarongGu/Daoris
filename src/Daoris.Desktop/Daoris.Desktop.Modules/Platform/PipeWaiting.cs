@@ -6,8 +6,8 @@ namespace Daoris.Desktop;
 /// <summary>
 /// One terminal's press waiting for the person, as its record keeps it across a restart: the confirmation's own id, which names the file; the terminal's id and the binding it is sent under; the module, route and
 /// payload as sent; the grounds read at the ask; the asker as the system named it; when it is asked and first shown; whether it carries
-/// a key; and how it stands (<see cref="Waiting"/>, <see cref="Begun"/>, or <see cref="Ended"/> with its answer). No card's fields and
-/// no named values: those are made again from the payload, so a record cannot show one thing and run another.
+/// a key; its Ask Daoris place and focus as judged at the ask; and how it stands (<see cref="Waiting"/>, <see cref="Begun"/>, or <see cref="Ended"/> with its answer).
+/// A card's fields and named values are made again from the payload, so a record cannot show one thing and run another.
 /// </summary>
 /// <param name="Payload">The payload's text as it came, its binding's fingerprint's own; null for a keyed press, which keeps none.</param>
 /// <param name="Grounds">The grounds as read at the ask; none for a keyed press.</param>
@@ -15,7 +15,7 @@ namespace Daoris.Desktop;
 internal sealed record PipeWaitingRecord(
     string Confirmation, string Request, PipeBinding Binding, string Module, string Route, string? Payload,
     IReadOnlyList<PipeReading> Grounds, PipeAsker Asker, DateTimeOffset Asked, DateTimeOffset? ShownAt, bool Keyed, string State,
-    string? Answer = null)
+    string? Answer = null, HelpCardPlace? HelpPlace = null)
 {
     /// <summary>The record's version: one a newer Daoris wrote is left for it, never asked here.</summary>
     public const int Version = 1;
@@ -137,9 +137,11 @@ internal sealed class PipeWaiting(string folder)
                 ? new PipeAsker(Json.Text(named, "process"), named.TryGetProperty("pid", out var pid) && pid.TryGetInt32(out var id) ? id : null)
                 : new PipeAsker(null, null);
             var answer = root.TryGetProperty("answer", out var answered) && answered.ValueKind == JsonValueKind.Object ? answered.GetRawText() : null;
+            var helpPlace = root.TryGetProperty("helpPlace", out var placed) && placed.ValueKind == JsonValueKind.Object
+                ? placed.Deserialize<HelpCardPlace>(JsonSerializerOptions.Web) : null;
             return (new PipeWaitingRecord(
                 confirmation, request, new PipeBinding(bound, fingerprint, key), module, route, Json.Text(root, "payload"), grounds, asker, asked,
-                Moments.Read(root, "shownAt"), root.TryGetProperty("keyed", out var keyed) && keyed.ValueKind == JsonValueKind.True, state, answer), false);
+                Moments.Read(root, "shownAt"), root.TryGetProperty("keyed", out var keyed) && keyed.ValueKind == JsonValueKind.True, state, answer, helpPlace), false);
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -182,6 +184,11 @@ internal sealed class PipeWaiting(string folder)
         if (record.ShownAt is { } shown) writer.WriteString("shownAt", Moments.Write(shown));
         writer.WriteBoolean("keyed", record.Keyed);
         writer.WriteString("state", record.State);
+        if (record.HelpPlace is { } helpPlace)
+        {
+            writer.WritePropertyName("helpPlace");
+            JsonSerializer.Serialize(writer, helpPlace, JsonSerializerOptions.Web);
+        }
         if (record.Answer is { } answer)
         {
             writer.WritePropertyName("answer");

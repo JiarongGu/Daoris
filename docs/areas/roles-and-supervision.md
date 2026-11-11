@@ -430,7 +430,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,
     the default, it reads and presses, and a proved press waits on a card naming Ask Daoris and runs on the person's yes; the card
     names the place the press named where that lies outside the conversation's focus (`HelpCardPlace`, judged as rule 58's
-    `HelpPressPlace`), and the press is kept in rule 58's record as asked, with its card's state (`HelpAskedPress`). The press
+    `HelpPressPlace`), kept as `helpPlace` on its waiting press record and restored unchanged after a restart (a record with no
+    place draws no place line), and the press is kept in rule 58's record as asked, with its card's state (`HelpAskedPress`). The press
     is the one way to ask the person: a route with a view (`PressViews`, one unit per route) judges the press at the ask with the
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's

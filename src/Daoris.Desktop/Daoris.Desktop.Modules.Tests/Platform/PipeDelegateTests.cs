@@ -107,6 +107,55 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Empty(_said);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_restarted_card_keeps_its_place_and_focus_without_a_live_delegate(bool olderRecord)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Restricted;
+        _places["h1"] = new HelpPressPlace(HelpFocus.OfWorkspace("Work"), true, HelpFocus.OfRepository("Games", "engine"));
+
+        var id = await SendProvedAsync(client, "SESSION_ARCHIVE", new { ids = new[] { Archived }, archived = true }, "h1", key, nonce);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var before = Assert.Single(pipe.Confirmations.Now().Waiting);
+        pipe.BeginStopping();
+        await client.AnswerAsync(id);
+        _places.Clear();
+        _delegates.Forget("h1");
+        var path = Path.Combine(DaorisHome.Entry(Home, HomeEntry.PipeWaiting), before.Id + ".json");
+        var record = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        if (olderRecord)
+        {
+            record.Remove("helpPlace");
+            File.WriteAllText(path, record.ToJsonString());
+        }
+
+        using var next = new InstancePipe(services.GetRequiredService<IMessageDispatcher>(), Bus, Home, log,
+            version: "9.9.9-test", clock: new HeldClock()) { Grounds = new StubGrounds().Session(Archived, "completed") };
+        next.Restore();
+        var restored = Assert.Single(next.Confirmations.Now().Waiting);
+
+        Assert.True(restored.Restored);
+        Assert.Equal(before.Id, restored.Id);
+        if (olderRecord) Assert.Null(restored.HelpPlace);
+        else
+        {
+            var expected = JsonSerializer.SerializeToElement(before.HelpPlace, Wire).GetRawText();
+            Assert.NotNull(record["helpPlace"]);
+            Assert.Equal(expected, record["helpPlace"]!.ToJsonString(Wire));
+            Assert.Equal(expected, JsonSerializer.SerializeToElement(restored.HelpPlace, Wire).GetRawText());
+        }
+        Assert.Equal(PipeAnswered.Answered, (await next.Confirmations.AnswerAsync(restored.Id, confirm: true)).Outcome);
+        await UntilAsync(() => driver.Ran("SESSION_ARCHIVE") == 1);
+    }
+
     [Fact]
     public async Task Another_kind_s_proved_press_asks_naming_its_session_and_an_unproved_press_asks_as_before()
     {
