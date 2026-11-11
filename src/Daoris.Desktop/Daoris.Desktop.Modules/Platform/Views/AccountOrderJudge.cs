@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The <c>order</c> of <see cref="AccountUseView"/>: the accounts <c>daoris agent account order</c> puts first, each an account here and once,
-/// the rest after in the set's order; or <c>--clear</c>, the ids' order again, which clears no setting.
+/// the rest after in the set's order; or <c>--clear</c>, which the verb sends as an empty list: the ids' order again, which clears no setting.
 /// </summary>
 internal static class AccountOrderJudge
 {
@@ -15,12 +15,10 @@ internal static class AccountOrderJudge
             ? [.. list.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!.Trim()).Where(each => each.Length > 0)]
             : [];
         var clear = PressPayload.Flag(payload is { } sent ? sent : default, "clear");
-        if (named.Count > 0 == clear)
-        {
-            return PressViewed.Refused(clear
-                ? "`order` puts accounts first or returns to the ids' order, never both."
-                : "`order` names the accounts to put first, in order, or clears it back to the ids' order.");
-        }
+        if (named.Count > 0 && clear) return PressViewed.Refused("`order` puts accounts first or returns to the ids' order, never both.");
+
+        // The route clears the order for an empty list, as `--clear` sends it; the flag alone says the same.
+        clear |= named.Count == 0;
 
         var facts = new Dictionary<string, string>(StringComparer.Ordinal) { ["agent"] = owner };
         if (clear)

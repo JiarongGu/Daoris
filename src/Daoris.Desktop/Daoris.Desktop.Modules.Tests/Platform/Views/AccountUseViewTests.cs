@@ -90,7 +90,10 @@ public sealed class AccountUseViewTests
         Assert.Equal("account-order", first.View!.Kind);
         Assert.Equal("`spare`, then `work`, then `play`", first.View.Facts["order"]);
         Assert.Equal("daoris agent account order claude-code spare", first.View.Command);
-        Assert.Contains("names the accounts to put first", back.Refusal);
+        // `--clear` sends an empty list with no flag, and the route clears the order for it.
+        Assert.Equal("account-order-clear", back.View!.Kind);
+        Assert.Equal("daoris agent account order claude-code --clear", back.View.Command);
+        Assert.Equal("account-order-clear", (await View(new { action = "order", door = "claude-code" })).View!.Kind);
         Assert.Equal("daoris agent account order claude-code --clear", (await View(new { action = "order", door = "claude-code", clear = true })).View!.Command);
     }
 
