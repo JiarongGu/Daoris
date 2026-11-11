@@ -4,7 +4,8 @@
 on the owner's words of that day: rework the foundation of chat and session so it works like a regular LLM chat app, or can run a
 workflow like one, carrying on across account and agent switches; sessions and Ask Daoris share it; Ask Daoris is a regular
 assistant for all of Daoris, where today what it can and cannot do is a mess. Written by Claude Opus 5.5 on 2026-11-12 from main at
-`25c4105bba`, read with `docs/areas/conversations-and-context.md`, `docs/areas/agents-and-harnesses.md`,
+`25c4105bba`; ASKCHAT1's first part merged after it, at `7877692166`, and §1, §5.3 and row a say what it built. Read with
+`docs/areas/conversations-and-context.md`, `docs/areas/agents-and-harnesses.md`,
 `docs/areas/roles-and-supervision.md` (rules 55-62), D188 and its note of 2026-11-12, D189, D206, D253, D277 and its note, the
 switch-context design (`docs/2026-10-24-switch-context-design.md`) and the rows ASKCHAT1, ASKPUSH1, CHATUX1, SWITCHCTX1 and SESSCTX1.
 A root-cause read of two days of the owner's own Ask Daoris use in the work workspace (kept off the tree, since it names private work)
@@ -17,9 +18,9 @@ gives §1's failures. Nothing here is built. An independent read is owed (§10).
 - **Most of a conversation exists; it is not yet one thing.** Daoris keeps every word, answer, tool call and note on its records, one
   record per harness conversation, linked into a line by `from`. It resumes by kept id, carries a conversation to another account of
   the same agent, hands Daoris's brief to another agent, and queues, steers and stops words. What it lacks is the conversation as the
-  one thing the person talks in. A record's end reads as the conversation's end, and the person's *Stop* ends it for good. Ask Daoris's
-  conversations share one answering slot per workspace, a new conversation can be handed to a running one, and the agent changes only
-  by a hand-over that refuses Ask Daoris.
+  one thing the person talks in. A record's end reads as the conversation's end, and the person's *Stop* ends it for good. Until
+  ASKCHAT1's first part, Ask Daoris's conversations shared one answering slot per workspace and a new conversation could be handed to
+  a running one. The agent changes only by a hand-over that refuses Ask Daoris.
 - **The model** (§2). A conversation is a line, its id the line's key. Its parts are harness conversations, its runs are processes,
   and its messages are its parts' events read as one. It outlives every run and every part. Its state is read, never stored:
   *replying*, *ready*, *waiting*, *archived*. *Stop* ends the reply; the next word continues whatever ended.
@@ -42,8 +43,8 @@ gives §1's failures. Nothing here is built. An independent read is owed (§10).
 |---|---|---|
 | A word could not reach Ask Daoris while one tool call ran 20 minutes | The installed build had no *Send now*; a word waited for the turn's end (D188 point 3) | *Send now* steers or stops the turn and goes first (ASKPUSH1, built); a call past its bound is said with *Stop* beside it (ASKCHAT1) |
 | A stop ended the conversation for good, and the word waiting was lost | Ask Daoris's *Stop* is `STOP_SESSION`: the process ends, the record is `stopped-person`, and "a person's stop keeps no word and never goes on" (conversations rule 13) | *Stop* ends the reply only, keeping what waits; the next word continues every end |
-| A new conversation's first word went into the running one | `START_HELP` answers with the workspace's running conversation, "is carried on" (`Bridge/Routes/HelpRoutes.cs:58-65`), and the page hands it the words (`help/ask/useHelpSend.ts:267-273`) | A new conversation is always new |
-| One conversation's turn held another's words | One Ask Daoris conversation runs per workspace: `ChatHelp.SetAsideHelpAsync` (`Help/ChatHelp.cs:102-116`) stops the others or holds the word as `held.answering`, and the ledger refuses a second open (`Sessions/SessionOpening.cs:158-167`) | Each conversation answers on its own |
+| A new conversation's first word went into the running one | `START_HELP` answers with the workspace's running conversation, "is carried on" (`Bridge/Routes/HelpRoutes.cs:58-65`), and the page hands it the words (`help/ask/useHelpSend.ts:267-273`), at `25c4105bba` | A new conversation is always new: built by ASKCHAT1's first part |
+| One conversation's turn held another's words | One Ask Daoris conversation ran per workspace: `ChatHelp.SetAsideHelpAsync` (`Help/ChatHelp.cs:102-116`) stopped the others or held the word as `held.answering`, and the ledger refused a second open (`Sessions/SessionOpening.cs:158-167`), at `25c4105bba` | Each conversation answers on its own: built by ASKCHAT1's first part (D158's note of 2026-11-12) |
 | A new conversation knew nothing of the one before it | A new conversation is handed nothing of another, and the room names no recent conversation | The room lists the recent conversations and Ask Daoris reads one with `line_read` when the person points to it; a branch is handed the brief (§2.5) |
 | What Ask Daoris may do read two ways | The room says full access presses as the person (`Knowledge/Room/HelpRoomMayDo.cs:38`) and that seven workflow presses are *yours alone* (`Knowledge/Room/HelpDoorRowsActs.cs:144-181`); full access hands no checkout and every server whole (`Help/HelpPlacement.cs:66-68`) | One rule, its five fences named (§5) |
 
@@ -252,9 +253,9 @@ lists it. Nothing is refused by construction (D253 point 5).
 | # | Today's rule | Where | Under CONVO1 |
 |---|---|---|---|
 | 1 | Its own room per workspace, written from the machine's facts at each start and go-on | `HelpRoom`, `HelpStart`, `ChatHelp.HelpRoomNowAsync` | **Kept**: the room is its place, as a tree is a chat's |
-| 2 | One conversation runs per workspace | `ChatHelp.SetAsideHelpAsync`; the ledger's refusal | **Removed** (row a) |
-| 3 | A new conversation's words carried into the running one | `START_HELP` (`Running = true`); the page's `handTo` | **Removed** (row a) |
-| 4 | A word held because another conversation answers | `held.answering` | **Removed** (row a) |
+| 2 | One conversation runs per workspace | `ChatHelp.SetAsideHelpAsync`; the ledger's refusal | **Removed** (row a, built) |
+| 3 | A new conversation's words carried into the running one | `START_HELP` (`Running = true`); the page's `handTo` | **Removed** (row a, built) |
+| 4 | A word held because another conversation answers | `held.answering` | **Removed** (row a, built) |
 | 5 | *Stop* ends the conversation; a person's stop never goes on | `STOP_SESSION`; rule 13 | **Folded** into *Stop* that ends the reply (rows a, e) |
 | 6 | *Finish* | `END_CHAT` | **Removed** (row e): a ready conversation's run is released by the warm bound |
 | 7 | The focus: machine, workspace or repository, chosen in the composer | `HelpFocus`, `HELP_FOCUS` | **Kept** as an attribute (§3.1) |
@@ -298,8 +299,8 @@ check, and that its presses are the person's.
   reads no names or pins; the records themselves are untouched.
 - **Attachments** stay where they lie; the reading rule (§2.5) widens to the line.
 - **Moves, entries, the brief and the block** are unchanged.
-- **ASKCHAT1 is the first step** (row a). It is being built on its own branch, and CONVO1 takes its rules as the model's: each
-  conversation answers on its own, *Stop* ends the reply, and the next word continues.
+- **ASKCHAT1 is the first step** (row a). Its first part is merged: each conversation answers on its own, and a new one is always
+  new. CONVO1 takes its rules as the model's, and its part left (*Stop* ends the reply, the next word continues) is row a's.
 
 ## 7. Rows, in order
 
@@ -311,7 +312,7 @@ numbers stand, and rows j and k are the surface and the installed proof.
 
 | Row (lanes; after) | What the person sees working | Proof | What it removes |
 |---|---|---|---|
-| **CONVO1a = ASKCHAT1** (driver, modules, service, web; first) | Each Ask Daoris conversation answers on its own; a new one is always new; *Stop* ends the reply, ending the run's tree past its bound; the next word continues every end, those an older build's stop ended included; a call past its bound said with *Stop* | driver: two conversations of one workspace answering at once, a word to one never held by the other; a new conversation's first word never reaching a running one; *Stop* then a word on the native and the protocol stand-ins resuming the same record; a hung call's tree ended at the bound and the conversation going on. Service: two opens in one workspace. Web: `useHelpSend` never hands a new conversation's words to another | `SetAsideHelpAsync`, `held.answering` and its words; `START_HELP`'s carry-on and *finishing* answers, with the page's `handTo` of them and its `finished` set; the ledger's one-per-workspace refusal; `STOP_SESSION` and `END_CHAT` in Ask Daoris's composer |
+| **CONVO1a = ASKCHAT1** (driver, modules, service, web; first) | Built: each Ask Daoris conversation answers on its own, and a new one is always new. Left: *Stop* ends the reply, ending the run's tree past its bound; the next word continues every end, those an older build's stop ended included; a call past its bound said with *Stop* | built with its tests: two conversations of one workspace answering at once, a new conversation's first word never reaching a running one, two opens in one workspace. Left: *Stop* then a word on the native and the protocol stand-ins resuming the same record; a hung call's tree ended at the bound and the conversation going on | built: `SetAsideHelpAsync`, `held.answering`, `START_HELP`'s carry-on with the page's `handTo` of it, the ledger's one-per-workspace refusal. Left: `STOP_SESSION` and `END_CHAT` in Ask Daoris's composer |
 | **b** Ask Daoris's reach by its mode alone (driver, web; a; ASKFIX1c, ASKFIX1f, THROUGH1) | The room says one rule and five fences; in restricted mode every press Ask Daoris makes reaches a card, the card offering *Always* for a family; in full access it reads every checkout and a plugin's declared tools | room census: one rule sentence in `HelpRoomMayDo` and the doors table, no `Never` row, no *Done at a terminal* section, each fence said once; `PressViews` census: each verb the person can press reaches the card, a verb with no view on the card naming its command; delegate tests: `workflow accept` and `skip` at once in full access and on the card in restricted; *Always* writes the grant `SET_HELP_GRANT` writes; `HelpPlacement` tests for checkouts and tools in both modes | `HelpDoorAsk.Never` and every *yours alone* row; `HelpRoomTerminalActs`; `EveryServer = true` and `Reads = []` (built as ASKFIX1c and ASKFIX1f, not twice); restricted mode's refusal of a run's step |
 | **c** the conversation read as one (driver, modules, web; a) | Ask Daoris's and a session's conversation drawn by one view: every part in order, each boundary a note naming its why, every message kind with its sender, each turn's outcome, the state | `ConversationReadTests` over a fixture line of three parts (a chat, a carried part, a briefed part on another agent) holding every message kind and turn outcome, each state; one route for every kind (route census); `ConversationView` drawing Ask Daoris's and a session's from one fixture, go links in both | Ask Daoris's own drawing of earlier parts (`help/AskConversation.tsx`); a transcript assembled part by part as a second way (SWITCHCTX1c-i's line view becomes this row's) |
 | **d** the conversation's facts (driver, modules, web; c) | Rename, pin and archive on every conversation; Ask Daoris's names and pins as they were | `ConversationFacts` store tests; the migration step importing a fixture history file once and removing it; route census | `HelpConversations`' file and its reader; `HELP_RENAME` and `HELP_PIN` (one pair, shared with CHATUX1h) |
@@ -358,7 +359,6 @@ D280 records the choices of §2 to §5 that rejected an alternative, with §8's 
 - rule 20 (D206): Ask Daoris's room carried like any conversation, by row f;
 - rule 25 (D165): the curve no longer excepts Ask Daoris, by row f;
 - rule 29 (D163): no hand-over refusal for Ask Daoris or for the same agent and account, by row f;
-- rule 42 (D158): one conversation per workspace, by row a;
 - roles rules 55 and 57 (D277 point 5's restricted half; D183 and D261's grants as the card's standing yes), by row b;
 - agents rule 11 (D213, D49): the native one-turn driven start, by row i.
 
