@@ -189,7 +189,10 @@ internal sealed class AcpWaits(ITurnEndWiring wiring)
         Note(BackgroundNotes.Waits(running));
         // No turn runs while it waits on its own work, which the watcher reads as state C.
         Volatile.Write(ref _waitsOnOwnWork, true);
-        using var waitingOn = new Disposer(() => Volatile.Write(ref _waitsOnOwnWork, false));
+        // A wait the quest's end cut leaves it set: the session is winding down, and its quiet there is still judged as waiting on work,
+        // so the watcher's word is not sent into a session that is ending.
+        var windingDown = false;
+        using var waitingOn = new Disposer(() => { if (!windingDown) Volatile.Write(ref _waitsOnOwnWork, false); });
 
         // 🔴 The quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
         // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went
@@ -222,6 +225,7 @@ internal sealed class AcpWaits(ITurnEndWiring wiring)
                     }
 
                     ct.ThrowIfCancellationRequested();
+                    windingDown = true;
                     if (await EndAsync(closed.Result, waited, ct).ConfigureAwait(false)) Note(BackgroundNotes.TurnLeft());
                     if (background.Running is { Count: > 0 } left) Note(BackgroundNotes.WaitOver(left));
                     return null;
