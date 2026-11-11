@@ -5,15 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Workplace-names-Course cut: the behaviour the cut keeps, written against the surface that exists on both sides of
-/// it (the literal historical bytes, the rebase key's text, the press's values and refusals, the land press's told note), so the same
-/// cases pass on the base and after it.
+/// The Workplace-names-Course cut: the behaviour it keeps, written against the surface on both sides of it (the literal historical
+/// bytes, the rebase key's text, the press's values and refusals, the land press's told note).
 /// </summary>
 public sealed class WorkplaceCourseBoundaryTests : IDisposable
 {
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-course", Guid.NewGuid().ToString("N"));
     private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
-    private string Requests => DaorisHome.Entry(_home, HomeEntry.Requests);
     private string ChatTree => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
 
     public WorkplaceCourseBoundaryTests() => Directory.CreateDirectory(_home);
@@ -169,44 +167,6 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         Assert.Equal(["hold:s1", "release:s1"], holder.Calls);
     }
 
-    [Fact]
-    public async Task The_land_press_tells_its_note_once_with_the_route_session_and_folder_even_where_it_was_refused()
-    {
-        const string route = "LAND_SESSION_TREE";
-        using var client = Client();
-        var before = DateTimeOffset.UtcNow;
-
-        var code = await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null);
-        var after = DateTimeOffset.UtcNow;
-
-        Assert.Equal(1, code);
-        var note = Assert.Single(Directory.EnumerateFiles(Requests, "*" + PressesTold.Suffix));
-        Assert.Equal(Requests, Path.GetDirectoryName(note));
-        var press = Assert.Single(new PressesTold(_home).Take(after));
-        Assert.Equal((route, "s1"), (press.Route, press.Session));
-        Assert.InRange(press.At, before.AddSeconds(-1), after);
-        Assert.Empty(Directory.EnumerateFiles(Requests, "*" + PressesTold.Suffix));
-    }
-
-    [Fact]
-    public async Task A_note_that_cannot_be_written_is_ignored_and_the_press_still_answers_its_words()
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(Requests)!);
-        File.WriteAllText(Requests, "a file where the folder would be");
-        using var client = Client();
-        var world = World(client);
-
-        Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null));
-
-        Assert.True(File.Exists(Requests));
-        Assert.NotEqual("", ((StringWriter)world.Error).ToString() + ((StringWriter)world.Output).ToString());
-    }
-
-    private ServiceClient Client() => new("http://ledger.test", null, new HttpClient(new Handler(_ => Task.FromResult(Json("[]"))), disposeHandler: false));
-
-    private ChatLandWorld World(ServiceClient service) => new(service, _home, new SessionTrees(_home), null, new StringWriter(), new StringWriter());
-
-    private string Ended(string id) => JsonSerializer.Serialize(new[] { new { id, state = "completed", kind = "chat", repository = "engine", tree = ChatTree } });
 
     private static HttpResponseMessage Json(string body) =>
         new(HttpStatusCode.OK) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") };

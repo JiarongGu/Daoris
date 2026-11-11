@@ -67,7 +67,7 @@ function driver(reach: object = { reaches: 'resume' }, more: Record<string, unkn
         }],
       };
     }
-    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: { run: 'q1', node: 'review' } };
     return DRIVER_STATE;
   });
 }

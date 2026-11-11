@@ -35,8 +35,8 @@ public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? 
 }
 
 /// <summary>
-/// The person's press on a chat run's work: one
-/// driver operation the bridge's <c>LAND_SESSION_TREE</c>, the connected terminal and the standalone terminal each call. It reserves the
+/// The person's press on a chat run's work: one driver operation, the conversation's Accept the node door's <c>accept</c> makes
+/// (<c>ChatAccepts</c>). It reserves the
 /// conversation against another turn, captures the tree's <c>HEAD</c> once, reads every part of the gate at that tip, asks the second opinion
 /// where its part holds as <c>not-asked</c>, and lands that tip by the pinned path (<see cref="LandingGate.Tip"/>), refusing a moved candidate.
 /// </summary>

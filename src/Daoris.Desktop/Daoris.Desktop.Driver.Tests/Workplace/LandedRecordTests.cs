@@ -394,27 +394,6 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// The terminal's press on a session whose review reads as landed (`trees land`): where it landed, and why nothing
-    /// lands again; and the hand-off's door where the branch stands and nothing pushed it.
-    /// </summary>
-    [Fact]
-    public void Landing_again_says_where_it_landed_and_why_nothing_lands_again()
-    {
-        var entry = Entry("feature/q1-fix", "s1a2b3c4");
-
-        var tidied = LandedReviewWords.NotAgain("s1a2b3c4", new LandedReview(entry, LandedState.Standing), treeGone: true);
-        Assert.StartsWith("`s1a2b3c4` landed on `feature/q1-fix` in `engine`", tidied);
-        Assert.Contains("that branch still stands. Nothing was landed again: its tree is gone.", tidied);
-        Assert.EndsWith("`daoris tree hand s1a2b3c4` hands that branch to a landing plugin.", tidied);
-
-        var kept = LandedReviewWords.NotAgain("s1a2b3c4", new LandedReview(entry with { Pushed = true, PullRequest = "https://example.test/pr/7" }, LandedState.Standing), treeGone: false);
-        Assert.EndsWith("Its pull request: https://example.test/pr/7 Nothing was landed again: a second landing is refused while that branch stands.", kept);
-
-        var gone = LandedReviewWords.NotAgain("s1a2b3c4", new LandedReview(entry with { GoneAt = At }, LandedState.Gone), treeGone: true);
-        Assert.EndsWith("that branch is gone now. Nothing was landed again: its tree is gone.", gone);
-    }
-
-    /// <summary>
     /// The review's sentence, which `trees land --plan` says, reads what the landing's plugin
     /// last answered about its pull request, with when, and a failed ask beside it. A branch removed on that answer says it once.
     /// </summary>

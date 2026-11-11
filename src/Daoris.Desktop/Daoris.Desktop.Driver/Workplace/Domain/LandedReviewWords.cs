@@ -53,21 +53,6 @@ public static class LandedReviewWords
     private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
 
     /// <summary>
-    /// Why a press to land a session whose review reads as landed lands nothing again: the terminal's
-    /// answer to <c>trees land</c>, where the review offers no Accept at all.
-    /// </summary>
-    public static string NotAgain(string session, LandedReview review, bool treeGone)
-    {
-        var why = treeGone
-            ? "Nothing was landed again: its tree is gone."
-            : "Nothing was landed again: a second landing is refused while that branch stands.";
-        var hand = review is { State: LandedState.Standing, Entry.Pushed: false }
-            ? $" `daoris tree hand {session}` hands that branch to a landing plugin."
-            : "";
-        return $"{Describe(session, review)} {why}{hand}";
-    }
-
-    /// <summary>
     /// A branch withdrawn on the person's word: when, the reason they gave and the recovery ref its commits stay on. The
     /// clean-up's removal (<see cref="LandedBranch.RemovedAs"/>) is its own sentence, and a branch that went outside Daoris says none.
     /// </summary>

@@ -8,15 +8,11 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's standing over the real pipe: a press its
-/// proved holder makes within the acts the person granted runs with no card and is logged; one outside them asks the person as its
-/// route's own press; an act the person takes back asks again at the next press; and a process that does not prove the holder's key
-/// is refused, nothing asked.
+/// The steward's standing over the real pipe: a press its proved holder makes within the acts the person granted runs with no card and
+/// is logged; one outside them asks the person as its route's own press; an act the person takes back asks again at the next press;
+/// and a process that does not prove the holder's key is refused, nothing asked.
 /// </summary>
-/// <remarks>
-/// Each test serves its own pipe in this process, named by its own scratch home's id; where the terminal's process stands and the
-/// holder's configuration walk are stand-ins, as <c>PipeStandingTests</c>' are. Windows only.
-/// </remarks>
+/// <remarks>Each test serves its own pipe in this process; the terminal's process and the holder's configuration walk are stand-ins. Windows only.</remarks>
 public sealed class StewardStandingTests : Bridge
 {
     /// <summary>A driver module whose <c>ROLE_ACT</c> is the door's own handler and whose every other route says it ran, and under which door.</summary>
@@ -306,7 +302,6 @@ public sealed class StewardStandingTests : Bridge
         { StewardActNames.Unpause, Quest, "WORK_RESUME", "unpause q1" },
         { StewardActNames.Done, Quest, "QUEST_DONE", null },
         { StewardActNames.Delete, Quest, "QUEST_DELETE", null },
-        { StewardActNames.Land, Tree, "LAND_SESSION_TREE", null },
         { StewardActNames.Clean, Tree, "DISCARD_SESSION_TREE", null },
         { StewardActNames.HandOver, HandOver, "SESSION_HAND_OVER", null },
     };
@@ -547,39 +542,20 @@ public sealed class StewardStandingTests : Bridge
         Assert.Equal(route, pipe.Confirmations.Now().Waiting[0].Route);
     }
 
-    [Fact]
-    public async Task A_landing_is_judged_by_its_tree_alone_and_its_plan_is_never_read_for_a_plugin()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new StewardModule();
-        Seed(driver);
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Land);
-        using var served = pipe;
-        driver.Pipe = pipe;
-
-        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.Land, Tree);
-        await using var connected = client;
-        var answer = await client.AnswerAsync(id);
-
-        Assert.True(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
-        Assert.DoesNotContain("LANDING", driver.Ran.Select(each => each.Route));
-        Assert.Contains("LAND_SESSION_TREE", driver.Ran.Select(each => each.Route));
-        Assert.Equal(StewardActNames.Land, Assert.Single(judge.StewardActsNow()).Act);
-    }
-
     [Theory]
     [InlineData("""{"id":"s1","force":true}""")]
-    [InlineData("""{"id":"s1","follow":true}""")]
-    [InlineData("""{"id":"s1","branch":"main"}""")]
     [InlineData("""{"id":"s1","path":"x"}""")]
     public void A_tree_act_takes_the_session_alone_so_no_option_of_the_press_is_the_steward_s(string form)
     {
         var element = JsonDocument.Parse(form).RootElement;
-        Assert.False(StewardActs.Table[StewardActNames.Land].IsForm(element));
         Assert.False(StewardActs.Table[StewardActNames.Clean].IsForm(element));
+    }
+
+    [Fact]
+    public void The_steward_lands_no_tree_its_review_s_accept_is_the_person_s()
+    {
+        Assert.DoesNotContain("land", StewardActs.Table.Keys);
+        Assert.DoesNotContain("land", AppointedRoles.StewardActs);
     }
 
     public static TheoryData<string> Updates => [StewardActNames.UpdateNow, StewardActNames.UpdateCancel];
@@ -618,7 +594,7 @@ public sealed class StewardStandingTests : Bridge
 
     public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["hold", "engine"],
         ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"],
-        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"],
+        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["clean", "s1"],
         ["hand-over", "s1", "--agent", "codex"], ["hand-over", "s1", "--agent", "codex", "--account", "work"]];
 
     /// <summary>Each act the steward's verb makes asks outside its acts as a person's route that takes the verb's form as its own press.</summary>

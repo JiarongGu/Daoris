@@ -23,7 +23,7 @@ public static class AppointedRoles
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Hold, StewardActNames.Resume,
         StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
         StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
-        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.HandOver,
+        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Clean, StewardActNames.HandOver,
         StewardActNames.Setup,
     ];
 
@@ -65,8 +65,6 @@ public static class StewardActNames
     public const string UpdateNow = "updatenow";
     public const string UpdateCancel = "updatecancel";
 
-    /// <summary>A session's tree landed on its line, or cleaned unforced; neither pushes.</summary>
-    public const string Land = "land";
     public const string Clean = "clean";
     public const string HandOver = "handover";
     public const string Setup = "setup";

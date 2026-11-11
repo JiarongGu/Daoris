@@ -20,6 +20,8 @@ import { DiffPane } from './review/DiffPane';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
+const ACC = { run: 'q1', node: 'review' };
+const ACC_PRESS = { ...ACC, act: 'accept' };
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
@@ -898,7 +900,7 @@ describe('acting on what a session landed', () => {
   it('says before the press that accepting puts the work on the branch the rule names', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace' };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', accept: ACC };
       return DRIVER_STATE;
     });
 
@@ -911,7 +913,7 @@ describe('acting on what a session landed', () => {
   /** Who pushes it is said before the press — and what would refuse the press, where something would. */
   it('says before the press which plugin pushes the branch, and what stands in its way', async () => {
     let plan: Record<string, unknown> = {
-      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request',
+      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request', accept: ACC,
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
@@ -1003,8 +1005,8 @@ describe('acting on what a session landed', () => {
         return { sessions: [{ session: 's1a2b3c4', group: 'done', state: 'done', shown: 'failed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
-      if (type === 'LAND_SESSION_TREE') return landed;
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
+      if (type === 'WORKFLOW_NODE') return landed;
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
     });
@@ -1015,13 +1017,13 @@ describe('acting on what a session landed', () => {
     const head = within(screen.getByRole('main'));
     await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     await within(ask).findByText(/on a new branch/);
     expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/delta, for you to push and open a pull request from.');
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 7 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: ACC_PRESS, timeoutMs: 7 * 60_000 });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/delta` — 1 commit(s).'));
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
 
@@ -1057,7 +1059,7 @@ describe('acting on what a session landed', () => {
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC };
       if (type === 'ENTRY_LANDING') {
         return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
           parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
@@ -1106,7 +1108,7 @@ describe('acting on what a session landed', () => {
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC };
       if (type === 'ENTRY_LANDING') {
         return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
           parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
@@ -1186,7 +1188,7 @@ describe('acting on what a session landed', () => {
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         });
       }
-      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' });
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC });
       if (type === 'ENTRY_LANDING') {
         return Promise.resolve({ entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
           parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] });
@@ -1219,7 +1221,7 @@ describe('acting on what a session landed', () => {
    * offer *Accept* while it runs. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
    * waits, as it would for its own press, until the landing answers.
    */
-  it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
+  it('holds the review’s Accept as Awaiting its pass… while the head’s Accept is under way', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     let landed: (answer: unknown) => void = () => {};
     invoke.mockImplementation((_module: string, type: string) => {
@@ -1227,8 +1229,8 @@ describe('acting on what a session landed', () => {
         return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
       }
-      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' });
-      if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { landed = resolve; });
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC });
+      if (type === 'WORKFLOW_NODE') return new Promise((resolve) => { landed = resolve; });
       if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
       return Promise.resolve(DRIVER_STATE);
     });
@@ -1242,52 +1244,11 @@ describe('acting on what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
-    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(await review.findByRole('button', { name: 'Awaiting its pass…' })).toBeDisabled();
     expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
 
     await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
-    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
-  });
-
-  /**
-   * A branch name entered in the head's ask asks the plan again with it, so the driver's
-   * refusal shows before the press, and the press sends it; a press with no name stays `{ id }` (the test above).
-   */
-  it('asks the plan again with an entered branch name, and the press sends it', async () => {
-    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-    invoke.mockImplementation(async (_module: string, type: string, args?: { payload?: { branch?: string } }) => {
-      if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
-          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
-      }
-      if (type === 'LANDING') {
-        return args?.payload?.branch === 'main'
-          ? { session: 's1a2b3c4', form: 'branch', target: 'main', problem: 'a branch named `main` stands, which Daoris did not make.' }
-          : { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
-      }
-      if (type === 'LAND_SESSION_TREE') return { session: 's1a2b3c4', done: true, message: 'put its work on `mine/x` — 1 commit(s).' };
-      if (type === 'SESSION_DIFF') return DIFF;
-      return DRIVER_STATE;
-    });
-
-    show('s1a2b3c4', vi.fn());
-    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
-    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-    const field = await within(ask).findByRole('textbox', { name: 'Branch name' });
-    expect(field).toHaveAttribute('placeholder', 'feature/delta');
-    await userEvent.type(field, 'main');
-    // Asked once after the pause, not per letter (the driver's plan reads git).
-    expect(await within(ask).findByText(/which Daoris did not make/)).toBeTruthy();
-    expect(invoke.mock.calls.filter(([, type, args]) => type === 'LANDING' && args?.payload?.branch)).toEqual([
-      ['DAORIS.DRIVER', 'LANDING', { payload: { id: 's1a2b3c4', branch: 'main' } }],
-    ]);
-
-    await userEvent.clear(field);
-    await userEvent.type(field, 'mine/x');
-    // Held until the plan of that exact name has answered.
-    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 7 * 60_000 });
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Awaiting its pass…' })).toBeNull());
   });
 
   /**
@@ -1301,7 +1262,7 @@ describe('acting on what a session landed', () => {
         return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
     });
@@ -1342,7 +1303,7 @@ describe('acting on what a session landed', () => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
       if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking };
       if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false }] };
-      if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
       if (type === 'SESSION_DIFF') return typeof review === 'function' ? review() : review;
       return DRIVER_STATE;
     };
@@ -1406,7 +1367,7 @@ describe('acting on what a session landed', () => {
     ])('says a chat run’s press refused for the opinion it asked at the foot, in %s', async (language, words, open, press) => {
       SESSIONS = [TALK];
       const base = answering(BEYOND);
-      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => type === 'LAND_SESSION_TREE'
+      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => type === 'WORKFLOW_NODE'
         ? { session: 'c0ffee11', done: false, message: 'A second opinion is asked: `codex` reads it from the driver\'s next look; press Accept again once it settles.', press: 'asked' }
         : base(module, type, ...(rest as [])));
       await i18n.changeLanguage(language);
@@ -1435,12 +1396,11 @@ describe('acting on what a session landed', () => {
       const base = answering(BEYOND);
       invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
         if (type === 'LANDING') {
-          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace',
+          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC,
             review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', lookNode: 'look',
               says: 'Waits for your look, and it cannot start.' } };
         }
         if (type === 'WORKFLOW_NODE') return { run: 'chat-c0ffee11', node: 'look', act: 'skip', done: true };
-        if (type === 'LAND_SESSION_TREE') return { session: 'c0ffee11', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
         return base(module, type, ...(rest as []));
       });
       await i18n.changeLanguage(language);
@@ -1453,7 +1413,7 @@ describe('acting on what a session landed', () => {
         await userEvent.type(within(ask).getByRole('textbox', { name: field }), 'no environment for this');
         await userEvent.click(within(ask).getByRole('button', { name: press }));
         await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith(
-          'DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.objectContaining({ payload: { id: 'c0ffee11' } })));
+          'DAORIS.DRIVER', 'WORKFLOW_NODE', expect.objectContaining({ payload: ACC_PRESS })));
         expect(invoke).toHaveBeenCalledWith(
           'DAORIS.DRIVER', 'WORKFLOW_NODE', expect.objectContaining({ payload: { run: 'chat-c0ffee11', node: 'look', act: 'skip', words: 'no environment for this' } }));
         expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_WITHOUT_LOOK', expect.anything());
@@ -1511,7 +1471,7 @@ describe('acting on what a session landed', () => {
           return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
             lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
         }
-        if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+        if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
         if (type === 'SESSION_DIFF') return DIFF;
         return DRIVER_STATE;
       });
@@ -1552,7 +1512,7 @@ describe('acting on what a session landed', () => {
         return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed, accept: ACC };
       if (type === 'OPINION_GATE') {
         return { session: 's1a2b3c4', done: true, message: '', opinion: disputed, detail: { tier: 'agent', first: {
           id: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI', label: 'another-maker', read: 'src/',
@@ -1560,7 +1520,7 @@ describe('acting on what a session landed', () => {
             beside: { answer: { said: 'rejected', evidence: 'The bound is exclusive.' }, disputed: true } }] } } };
       }
       if (type === 'ASK_OPINION') return { session: 's1a2b3c4', done: true, message: 'A second opinion on session s1a2b3c4\'s work is asked.' };
-      if (type === 'LAND_SESSION_TREE') return { session: 's1a2b3c4', done: true, message: 'merged into `main`.' };
+      if (type === 'WORKFLOW_NODE') return { session: 's1a2b3c4', done: true, message: 'merged into `main`.' };
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
     });
@@ -1583,7 +1543,7 @@ describe('acting on what a session landed', () => {
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', answers: token }, timeoutMs: 7 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { ...ACC_PRESS, answers: token }, timeoutMs: 7 * 60_000 });
   });
 
   /**
@@ -1666,27 +1626,25 @@ describe('acting on what a session landed', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', expect.anything());
     await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', { payload: { id: 's1a2b3c4' } });
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('its work is on `main` by content (a squash merge)')));
   });
 
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LAND_SESSION_TREE') {
+      if (type === 'LANDING') return { accept: ACC };
+      if (type === 'WORKFLOW_NODE') {
         return { session: 's1a2b3c4', done: true, message: 'merged `daoris/x` into `main` — 2 commit(s).' };
       }
       return DRIVER_STATE;
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
 
     // A landing waits as long as one replay may take (`pressBound`).
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', {
-      payload: { id: 's1a2b3c4' },
-      timeoutMs: 7 * 60_000,
-    });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: ACC_PRESS, timeoutMs: 7 * 60_000 });
     expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
   });
 
@@ -1697,7 +1655,8 @@ describe('acting on what a session landed', () => {
   it('renders a refused merge verbatim and changes nothing', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LAND_SESSION_TREE') {
+      if (type === 'LANDING') return { accept: ACC };
+      if (type === 'WORKFLOW_NODE') {
         return {
           session: 's1a2b3c4', done: false,
           message: "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.",
@@ -1707,7 +1666,7 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
 
     expect(await screen.findByText(/not clean \(2 paths\)/)).toBeTruthy();
   });

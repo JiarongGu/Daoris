@@ -4,10 +4,8 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the driver bridge's domains share beyond the loop: the event bus, the file manager and the file picker
-/// the host hands <see cref="DriverModule"/>, a standing choice written to <c>driver.json</c>, and the wire the configured
-/// adapter's sessions run on. A domain's handler class is handed this where it uses more than the loop, and the loop alone
-/// where it does not.
+/// What the driver bridge's domains share beyond the loop: the event bus, the file manager and the file picker the host hands
+/// <see cref="DriverModule"/>, a standing choice written to <c>driver.json</c>, and the wire the configured adapter's sessions run on.
 /// </summary>
 /// <param name="events">
 /// The bus the module answers on, held as well because a domain raises news of its own: a conversation ending is
@@ -49,9 +47,6 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// here, and the trees domain's <c>READ_LEAVE</c> cancels one.
     /// </summary>
     public ReadLeaves Reads { get; } = new();
-
-    /// <summary>The window's landing presses, each run once per session under the loop's lifetime and always answered.</summary>
-    public LandPresses Presses { get; } = new(loop, events);
 
     /// <summary>The acts the git domains run, journaled in the home's store; one object, so a run's reconciler knows its own acts.</summary>
     public ActRuns GitActs { get; } = new(new ActJournal(loop.Home));

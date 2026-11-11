@@ -6,8 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The census that holds the rule that nothing the window asks for waits on work. Every read of the driver's
 /// module either reads only what is held in memory, named in <see cref="Held"/> with what it reads, or is marked
 /// <c>[ByEvent]</c>, answered from what is held while its work is told as <c>DAORIS.ANSWERED</c>. A read that is neither is
-/// refused, unless it is one of the <see cref="Owed"/> reads still computed on the window's request,
-/// which this census lets only shrink.
+/// refused, unless it is one of the <see cref="Owed"/> reads still computed on the window's request, which this census lets only shrink.
 /// </summary>
 /// <remarks>
 /// A press is not counted: it answers what it did, and it leaves the window's thread at its first wait.
@@ -22,7 +21,6 @@ public sealed class WindowCensusTests
         ["STATE_SLICE"] = "a pushed slice's snapshot, held by its owner",
         ["UNDER_WAY"] = "the presses under way, held by the publisher",
         ["STEWARD_ACTS"] = "the steward's live generation and this run's acts, held by the standing confirmation's judge (STEWARDROLE1b)",
-        ["STEWARD_LANDS"] = "the steward's lands a supervisor allowed that wait their window, held by the pipe's steward allows (SUPERVISOR2e)",
         ["STEWARD_DESK"] = "the steward's desk this run, held by the standing confirmation's judge (STEWARDROLE1c)",
         ["SESSION_HOLDS"] = "the terminal holds the pipe keeps, read whole from memory (RPC1g1)",
         ["SESSION_LET_GO"] = "the pipe's hold of one conversation, ended in memory (RPC1g1)",

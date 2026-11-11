@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class PipeConfirmationsTests : Bridge
 {
-    private const string Land = "LAND_SESSION_TREE";
+    private const string Land = "DISCARD_SESSION_TREE";
 
     private static readonly PipeConfirmationField[] Values = [new("/id", "string", "s1a2b3c4")];
 

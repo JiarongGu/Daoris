@@ -3,11 +3,10 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The grounds census beside the pipe's: every route the census makes the person's,
-/// in every form its rule gives, names its grounds or is timeless with its reason; a timeless route is none that deletes, closes or moves
-/// anything; each field a ground names is one the route's handler reads; and each plan read's fingerprint takes what its row names and
-/// none of the words, times and versions beside them, so two reads of an unchanged world across a moved clock and a new day give one
-/// fingerprint and one moved item gives another.
+/// The grounds census beside the pipe's: every route the census makes the person's, in every form its rule gives, names its grounds or
+/// is timeless with its reason; a timeless route is none that deletes, closes or moves anything; each field a ground names is one the
+/// route's handler reads; and each plan read's fingerprint takes what its row names and none of the words, times and versions beside
+/// them, so two reads of an unchanged world give one fingerprint and one moved item gives another.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class PipeGroundsCensusTests
@@ -241,12 +240,6 @@ public sealed class PipeGroundsCensusTests
 
     public static TheoryData<string, string, string, string, string> Plans() => new()
     {
-        {
-            "LAND_SESSION_TREE", "LANDING",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0,"lands":[{"commit":"0a1b2c3d","subject":"@@WORDS@@"}],"opinion":{"state":"settled","until":"@@DAY@@","says":"@@WORDS@@"}}""",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0,"lands":[{"commit":"9f8e7d6c","subject":"x"}],"opinion":{"state":"settled"}}""",
-            """{"id":"s1"}"""
-        },
         {
             "SWEEP", "SWEEP_PLAN",
             """{"branches":[{"repository":"Lyntai","branch":"quest/x","kind":"landed","commits":2,"detail":"@@WORDS@@","removable":true,"discardable":false}],"landed":[]}""",

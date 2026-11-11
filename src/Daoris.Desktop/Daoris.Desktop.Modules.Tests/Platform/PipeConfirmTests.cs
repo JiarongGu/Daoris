@@ -21,7 +21,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class PipeConfirmTests : Bridge
 {
-    private const string Land = "LAND_SESSION_TREE";
+    private const string Tree = "DISCARD_SESSION_TREE";
 
     /// <summary>The dispatcher as the shell composes it, the refusal log first, over the test's modules.</summary>
     private (IMessageDispatcher Dispatcher, ServiceProvider Services) Compose(MachineLog log, params IIpcModule[] modules)
@@ -72,7 +72,7 @@ public sealed class PipeConfirmTests : Bridge
         using var ___ = pipe;
         await using var ____ = client;
 
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4", follow = true });
 
         // The terminal is told it waits, by the instance, naming its request and no time.
         var told = await client.NotificationAsync(Poll.Patience);
@@ -88,7 +88,7 @@ public sealed class PipeConfirmTests : Bridge
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
         Assert.Equal(DriverModule.Name, shown.Module);
-        Assert.Equal(Land, shown.Route);
+        Assert.Equal(Tree, shown.Route);
         Assert.Equal(
             [new PipeConfirmationField("/id", "string", "s1a2b3c4"), new PipeConfirmationField("/follow", "boolean", "true")],
             shown.Fields);
@@ -99,7 +99,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.NotEqual(id, shown.Id);
         Assert.Equal(0, driver.Ran);
         await UntilAsync(() => Raised.Any(each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.Event
-            && each.Payload is PipeConfirmationsNow { Waiting: [{ Route: Land }] }));
+            && each.Payload is PipeConfirmationsNow { Waiting: [{ Route: Tree }] }));
 
         // RESULT says it waits, with its ask's time and that this terminal waits on it.
         var waiting = await client.ResultAsync(id);
@@ -116,7 +116,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(PipeAnswered.Gone, (await pipe.Confirmations.AnswerAsync(shown.Id, confirm: true)).Outcome);
 
         // Sent again, the id is answered from its line: never asked again, never run again.
-        await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true }, id: id);
+        await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4", follow = true }, id: id);
         Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(1, driver.Ran);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
@@ -124,9 +124,9 @@ public sealed class PipeConfirmTests : Bridge
         // Said in the machine log by codes alone: the state, the route and the terminal's door; never a value or an id.
         Assert.Equal(
             [
-                """{"state":"asked","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
-                """{"state":"checking","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
-                """{"state":"confirmed","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
+                """{"state":"asked","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
+                """{"state":"checking","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
+                """{"state":"confirmed","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
             ],
             Confirmations());
     }
@@ -242,7 +242,7 @@ public sealed class PipeConfirmTests : Bridge
             "quest" => ("RETRY_QUEST", new { quest = "q1" }, () => grounds.Quests["q1"] = "Taken", "it was Open, it is Taken"),
             "ask" => ("LAND_ASK", new { ask = "a1" }, () => grounds.Asks["a1"] = "closed", null),
             "plan" => ("SWEEP", new { workspace = "games" }, () => sweep = "landed", null),
-            "branch" => (Land, new { id = "s1a2b3c4" }, () => grounds.Heads["s1a2b3c4"] = "bbbb", "the branch s1a2b3c4 gained or lost commits"),
+            "branch" => (Tree, new { id = "s1a2b3c4" }, () => grounds.Heads["s1a2b3c4"] = "bbbb", "the branch s1a2b3c4 gained or lost commits"),
             _ => ("SESSION_GO_AHEAD", new { id = "s1a2b3c4", ask = "a1", number = 1, approved = true }, () => grounds.Held["go-ahead"] = "answered", null),
         };
         var (pipe, client, driver, services, log) = await ServeAsync(grounds);
@@ -495,7 +495,7 @@ public sealed class PipeConfirmTests : Bridge
         await using var ____ = client;
         var noticed = new List<PipeConfirmationEnd>();
         pipe.Confirmations.Noticed = (_, end) => noticed.Add(end);
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = pipe.Confirmations.Now().Waiting[0];
         var record = Assert.Single(Records());
@@ -538,7 +538,7 @@ public sealed class PipeConfirmTests : Bridge
         var first = Pipe(dispatcher, log, clock, grounds);
         var client = await PipeClient.ConnectAsync(first.Serve()!);
         await client.HelloAsync(HomeId);
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4", follow = true });
         var key = client.KeyOf(id)!;
         await UntilAsync(() => first.Confirmations.Now().Waiting.Count == 1);
         var shown = first.Confirmations.Now().Waiting[0];
@@ -586,7 +586,7 @@ public sealed class PipeConfirmTests : Bridge
         using var _ = services;
         using var __ = log;
         await using var ___ = client;
-        await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await UntilAsync(() => crashed.Confirmations.Now().Waiting.Count == 1);
         var shown = crashed.Confirmations.Now().Waiting[0];
 
@@ -595,7 +595,7 @@ public sealed class PipeConfirmTests : Bridge
 
         Assert.Null(next.Serve());
         var card = Assert.Single(next.Confirmations.Now().Waiting);
-        Assert.Equal((shown.Id, Land, true), (card.Id, card.Route, card.Restored));
+        Assert.Equal((shown.Id, Tree, true), (card.Id, card.Route, card.Restored));
         Assert.Equal(PipeAnswered.Answered, (await next.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
         await UntilAsync(() => driver.Ran == 1);
         crashed.Dispose();
@@ -617,7 +617,7 @@ public sealed class PipeConfirmTests : Bridge
         var before = Files();
         const string Path = @"..\..\data\standing-confirmation";
 
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" }, id: Path);
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" }, id: Path);
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
 
         var record = Assert.Single(Records());
@@ -719,7 +719,7 @@ public sealed class PipeConfirmTests : Bridge
         {
             WriteRecord("open", DriverModule.Name, "STATE", new { }, Key),
             WriteRecord("window", DriverModule.Name, "PERSON_CONFIRM", new { id = "x", confirm = true }, Key),
-            WriteRecord("forged", DriverModule.Name, Land, land, Key, fingerprint: Sha("{\"id\":\"s5e6f7a8\"}")),
+            WriteRecord("forged", DriverModule.Name, Tree,land, Key, fingerprint: Sha("{\"id\":\"s5e6f7a8\"}")),
             WriteRecord("wide", DriverModule.Name, "SESSION_ARCHIVE", new { ids = Enumerable.Range(0, 257).Select(each => $"s{each:D7}").ToArray(), archived = true }, Key),
             WriteRecord("ungrounded", DriverModule.Name, "NEW_PRESS", new { id = "s1a2b3c4" }, Key),
         };
@@ -728,14 +728,14 @@ public sealed class PipeConfirmTests : Bridge
         var passing = new List<string>();
         for (var each = 0; each < 11; each++)
         {
-            passing.Add(WriteRecord($"waiting-{each}", DriverModule.Name, Land, land, Key, minutes: each,
+            passing.Add(WriteRecord($"waiting-{each}", DriverModule.Name, Tree,land, Key, minutes: each,
                 extra: each == 0 ? new { fields = new[] { new { name = "/id", type = "string", value = "s9999999" } } } : null));
         }
 
-        var begun = WriteRecord("begun", DriverModule.Name, Land, land, Key, state: "begun");
-        var ended = WriteRecord("ended", DriverModule.Name, Land, land, Key, state: "ended",
+        var begun = WriteRecord("begun", DriverModule.Name, Tree,land, Key, state: "begun");
+        var ended = WriteRecord("ended", DriverModule.Name, Tree,land, Key, state: "ended",
             answer: """{"id":"ended","success":false,"error":{"code":"refused","message":"The person refused this in Daoris's window. Nothing was done."}}""");
-        var newer = WriteRecord("newer", DriverModule.Name, Land, land, Key, version: 99);
+        var newer = WriteRecord("newer", DriverModule.Name, Tree,land, Key, version: 99);
         var misnamed = System.IO.Path.Combine(RecordsFolder, "..-standing.json");
         File.WriteAllText(misnamed, "{}");
 
@@ -785,14 +785,14 @@ public sealed class PipeConfirmTests : Bridge
         using var _ = services;
         const string Key = "the-first-terminal-s-key-0123456789";
         var land = new { id = "s1a2b3c4" };
-        var twin = WriteRecord("twin", DriverModule.Name, Land, land, Key, minutes: 1);
-        var again = WriteRecord("twin", DriverModule.Name, Land, land, Key, minutes: 2);
-        WriteRecord("split", DriverModule.Name, Land, land, Key, minutes: 3);
-        WriteRecord("split", DriverModule.Name, Land, new { id = "s5e6f7a8" }, Key, minutes: 4,
-            grounds: [new { kind = "session", subject = "s5e6f7a8", value = "" }, new { kind = "branch", subject = "s5e6f7a8", value = "" }, new { kind = "plan", subject = "LANDING", value = "p" }]);
-        WriteRecord("short", DriverModule.Name, Land, land, Key, minutes: 5, grounds: [LandGrounds[0]]);
-        WriteRecord("long", DriverModule.Name, Land, land, Key, minutes: 6,
-            grounds: [.. LandGrounds, new { kind = "repository", subject = "Lyntai", value = "registered" }]);
+        var twin = WriteRecord("twin", DriverModule.Name, Tree,land, Key, minutes: 1);
+        var again = WriteRecord("twin", DriverModule.Name, Tree,land, Key, minutes: 2);
+        WriteRecord("split", DriverModule.Name, Tree,land, Key, minutes: 3);
+        WriteRecord("split", DriverModule.Name, Tree,new { id = "s5e6f7a8" }, Key, minutes: 4,
+            grounds: [new { kind = "session", subject = "s5e6f7a8", value = "" }, new { kind = "branch", subject = "s5e6f7a8", value = "" }, new { kind = "plan", subject = "tree", value = "p" }]);
+        WriteRecord("short", DriverModule.Name, Tree,land, Key, minutes: 5, grounds: [TreeGrounds[0]]);
+        WriteRecord("long", DriverModule.Name, Tree,land, Key, minutes: 6,
+            grounds: [.. TreeGrounds, new { kind = "repository", subject = "Lyntai", value = "registered" }]);
 
         using var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", clock: new HeldClock()) { Grounds = grounds };
         var told = new List<(int Lost, int Newer)>();
@@ -834,7 +834,7 @@ public sealed class PipeConfirmTests : Bridge
         using var _ = services;
         using var __ = log;
         await using var ___ = client;
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var card = pipe.Confirmations.Now().Waiting[0];
         var record = System.IO.Path.Combine(RecordsFolder, card.Id + ".json");
@@ -890,7 +890,7 @@ public sealed class PipeConfirmTests : Bridge
         using var ___ = pipe;
         await using var ____ = client;
         grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
 
         var told = await client.NotificationAsync(Poll.Patience);
         var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray()).GetProperty("payload");
@@ -910,7 +910,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Empty(Records());
         Assert.NotNull(pipe.Confirmations.Hold());
         Assert.Equal(InstancePipe.Withdrawn, Code((await client.ResultAsync(id)).GetProperty("answer")));
-        await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" }, id: id);
+        await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" }, id: id);
         Assert.Equal(InstancePipe.Withdrawn, Code(await client.AnswerAsync(id)));
         Assert.Equal(0, driver.Ran);
     }
@@ -929,7 +929,7 @@ public sealed class PipeConfirmTests : Bridge
         using var __ = log;
         await using var ___ = client;
         grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await client.NotificationAsync(Poll.Patience);
 
         pipe.BeginStopping();
@@ -960,7 +960,7 @@ public sealed class PipeConfirmTests : Bridge
         grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var gone = await PipeClient.ConnectAsync(pipe.Name!);
         await gone.HelloAsync(HomeId);
-        await gone.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await gone.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await gone.NotificationAsync(Poll.Patience);
         await gone.DisposeAsync();
         await Task.Delay(200);
@@ -985,11 +985,11 @@ public sealed class PipeConfirmTests : Bridge
         var journal = DaorisHome.Entry(Home, HomeEntry.Pipe);
         Directory.CreateDirectory(journal);
         var now = DateTimeOffset.UtcNow;
-        var bound = $"\"request\":\"DAORIS.DRIVER.{Land}\",\"payload\":\"{Sha("""{"id":"s1a2b3c4"}""")}\",\"key\":\"{Sha(Key)}\"";
+        var bound = $"\"request\":\"DAORIS.DRIVER.{Tree}\",\"payload\":\"{Sha("""{"id":"s1a2b3c4"}""")}\",\"key\":\"{Sha(Key)}\"";
         File.WriteAllText(System.IO.Path.Combine(journal, $"{now:yyyy-MM-dd}.jsonl"),
             $"{{\"id\":\"done\",\"at\":\"{now.AddMinutes(-5):O}\",\"state\":\"answered\",{bound},\"answer\":{{\"id\":\"done\",\"success\":true,\"data\":{{\"done\":true}}}}}}\n");
-        WriteRecord("done", DriverModule.Name, Land, new { id = "s1a2b3c4" }, Key, minutes: 1);
-        WriteRecord("done", DriverModule.Name, Land, new { id = "s5e6f7a8" }, Key, minutes: 2);
+        WriteRecord("done", DriverModule.Name, Tree,new { id = "s1a2b3c4" }, Key, minutes: 1);
+        WriteRecord("done", DriverModule.Name, Tree,new { id = "s5e6f7a8" }, Key, minutes: 2);
 
         using var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", clock: new HeldClock()) { Grounds = new StubGrounds() };
         pipe.Restore();
@@ -1018,7 +1018,7 @@ public sealed class PipeConfirmTests : Bridge
         using var _ = services;
         using var __ = log;
         await using var ___ = client;
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         Assert.Single(Records());
 
@@ -1045,7 +1045,7 @@ public sealed class PipeConfirmTests : Bridge
         using var ___ = pipe;
         await using var ____ = client;
 
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
 
         Assert.Equal(InstancePipe.Unrecorded, Code(await client.AnswerAsync(id)));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
@@ -1066,7 +1066,7 @@ public sealed class PipeConfirmTests : Bridge
         using var _ = services;
         using var __ = log;
         await using var ___ = client;
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var card = pipe.Confirmations.Now().Waiting[0];
         pipe.Draining = () => true;
@@ -1390,7 +1390,7 @@ public sealed class PipeConfirmTests : Bridge
         using var __ = log;
         using var ___ = pipe;
         await using var ____ = client;
-        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        var id = await client.SendAsync(DriverModule.Name, Tree,new { id = "s1a2b3c4" });
         var key = client.KeyOf(id)!;
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
 
@@ -1488,14 +1488,14 @@ public sealed class PipeConfirmTests : Bridge
     ];
 
     /// <summary>
-    /// The grounds a landing of <c>s1a2b3c4</c> reads, as its record keeps them (whole, by kind and subject): its session, its
-    /// tree's head and its plan.
+    /// The grounds a discard of <c>s1a2b3c4</c>'s tree reads, as its record keeps them (whole, by kind and subject): its session, its
+    /// tree's head and its tree's files.
     /// </summary>
-    private static readonly object[] LandGrounds =
+    private static readonly object[] TreeGrounds =
     [
         new { kind = "session", subject = "s1a2b3c4", value = "completed|" + new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero).UtcTicks, words = "completed" },
         new { kind = "branch", subject = "s1a2b3c4", value = "" },
-        new { kind = "plan", subject = "LANDING", value = "p" },
+        new { kind = "plan", subject = "tree", value = "p" },
     ];
 
     private static string Sha(string text) =>
@@ -1521,7 +1521,7 @@ public sealed class PipeConfirmTests : Bridge
             module,
             route,
             payload = text,
-            grounds = grounds ?? LandGrounds,
+            grounds = grounds ?? TreeGrounds,
             asker = new { process = "pwsh", pid = 7 },
             asked = new DateTimeOffset(2026, 10, 20, 9, minutes, 0, TimeSpan.Zero),
             keyed = false,

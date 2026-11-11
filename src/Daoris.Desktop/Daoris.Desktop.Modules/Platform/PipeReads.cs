@@ -4,14 +4,12 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The read grounds a person's press names by <see cref="GroundReadAttribute"/>: the read each calls, the payload's fields it names,
-/// and what its projection takes. A plan's projection takes the fields it names and none of the words, times and versions beside
-/// them, so a press confirmed the next morning or after an update is refused only where what it acts on moved.
+/// and what its projection takes: those fields, none of the words, times and versions beside them.
 /// </summary>
 /// <remarks>
-/// Where the read answers no field the press names (the landings' commits are cut to eight characters, the sweep's and the sync's
-/// rows carry no tip), the projection takes what the answer does carry: each commit's short id, a row's count of commits and its
-/// kind; the session's tree head and a branch's tip are the <c>branch</c> grounds that see a commit itself. Where no read of the
-/// bridge lists a wait by the press's id, the loop reads its own record (<see cref="LoopGround"/>).
+/// Where the read answers no field the press names (commits are cut to eight characters, the sweep's and the sync's rows carry no
+/// tip), the projection takes what the answer does carry; a branch's tip is the <c>branch</c> ground. Where no read lists a wait by
+/// the press's id, the loop reads its own record (<see cref="LoopGround"/>).
 /// </remarks>
 internal static class PipeReads
 {
@@ -53,9 +51,6 @@ internal static class PipeReads
     public static PipeGround AnswerAloneWait() => Wait("ANSWER_WAITS", ["session"], _ => null,
         (a, p) => Text(At(Each(At(a, "waits")).FirstOrDefault(each => Text(At(each, "session")) == Text(p, "session")), "since")) ?? "");
 
-    public static PipeGround StewardLand() => Wait("STEWARD_LANDS", ["ask"], _ => null,
-        (a, p) => Each(At(a, "lands")).Any(each => Text(At(each, "ask")) == Text(p, "ask")) ? "open" : "");
-
     public static PipeGround SupervisorDecision() => Wait("SESSION_SUPERVISOR", ["id", "decision"], p => new { id = Text(p, "id") },
         (a, p) => Text(At(Each(At(a, "decisions")).FirstOrDefault(each => Text(At(each, "id")) == Text(p, "decision")), "state")) ?? "");
 
@@ -89,12 +84,6 @@ internal static class PipeReads
 
     public static PipeGround EntryLanding() =>
         Plan("ENTRY_LANDING", ["entry"], p => new { entry = Text(p, "entry") }, (a, _) => Entry(a), tips: (a, _) => EntryTips(a));
-
-    public static PipeGround TreeLanding() => Plan("LANDING", ["id", "branch"],
-        p => new { id = Text(p, "id"), branch = Text(p, "branch") }, (a, _) => Landing(a),
-        tips: (a, p) => Text(p, "id") is { Length: > 0 } session
-            ? [PipeRef.Of(session, "HEAD"), .. Text(At(a, "target")) is { Length: > 0 } target ? [PipeRef.Of(session, target)] : Array.Empty<PipeRef>()]
-            : []);
 
     public static PipeGround OpinionGate() =>
         Wait("OPINION_GATE", ["id"], p => new { id = Text(p, "id") },
@@ -359,14 +348,6 @@ internal static class PipeReads
             .Where(each => harness is null || Same(Text(At(each, "door")), harness))
             .OrderBy(each => Text(At(each, "door")), StringComparer.Ordinal)
             .Select(each => Fp(Pick(each, "door", "present", "version", "problem", "managed", "pinned"), Rows(At(each, "profiles"), ["name"], "login")))]);
-
-    /// <summary>A landing's plan as <c>LANDING</c> answers it: what lands and how, never a subject's words or a gate's time.</summary>
-    private static string Landing(JsonElement plan) => Fp(
-        Pick(plan, "form", "target", "source", "plugin", "problem", "own", "stands", "uncommitted"),
-        string.Join(",", Each(At(plan, "lands")).Select(each => Text(At(each, "commit")))),
-        string.Join(",", Each(At(plan, "leftOut")).Select(each => Text(At(each, "commit"))).Order(StringComparer.Ordinal)),
-        Text(At(plan, "conflict", "says")),
-        Text(At(plan, "workflow", "state")), Text(At(plan, "review", "state")), Text(At(plan, "opinion", "state")));
 
     /// <summary>An entry's landing as <c>ENTRY_LANDING</c> answers it: each part as a landing is taken, with what superseded it.</summary>
     private static string Entry(JsonElement entry) => Fp([

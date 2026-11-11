@@ -7,8 +7,7 @@ import { sentence } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { store, stored } from '../../lib/stored';
 import {
-  type LandingConflict, useDiscardSessionTree, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay, useUnderWayStep, useUnderWaySubject,
+  useAcceptUnderWay, useDiscardSessionTree, useLanding, useReadingSince, useRunNodeWord, useSay, useSessionDiff, useUnderWay, useUnderWaySubject,
 } from '../../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -29,12 +28,6 @@ import { UnattributedNote } from './UnattributedNote';
 
 /** How a reader likes the changes laid out — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
-
-/** The words the review's Accept says for the steps its landing reports; any other step says the plain one. */
-const LANDING_WORDS: Record<string, string> = {
-  gate: 'work.review.acceptingGate',
-  pass: 'work.review.acceptingPass',
-};
 
 /**
  * Review: what the session actually did, and what the person does about it.
@@ -163,9 +156,11 @@ export function DiffPane({
     : null;
   const plannable = treeHere && !asLanded && !held && !nothingBeyond;
   const sendBack = asLanded || nothingBeyond ? undefined : onSendBack;
-  const land = useLandSessionTree();
+  // The Accept is the review record's word (`WORKFLOW_NODE`'s `accept`) on the record the plan drew.
+  const word = useRunNodeWord();
   // What a press would do, asked only where there is a tree to land and the review does not read as landed.
   const landing = useLanding(plannable ? session : null);
+  const accept = landing.data?.accept ?? null;
   // While the review's gate holds the work, the review says it waits where *Accept* would be, and
   // offers no *Accept*, which the landing door would refuse; the session's head carries the verdict's presses.
   const waits = reviewHolds(landing.data);
@@ -173,34 +168,25 @@ export function DiffPane({
   // So too while the second opinion's gate holds it: *Accept* here is one press that shows
   // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
   const opinionWaits = opinionHolds(landing.data);
-  const canAccept = plannable && !workflow && !waits && !opinionWaits;
+  const canAccept = plannable && !workflow && !waits && !opinionWaits && accept !== null;
   // What the plan says a press would be refused with now: a plugin that cannot land, a name, or a standing branch the press
   // may not move on.
   const refusedNow = landing.data?.problem || null;
-  // A replay onto the line that conflicts, as the plan tries it or the press is refused
-  // for it, until the plan is read again after the press. In Accept's place, the words its session is asked to rebase with.
-  const [pressed, setPressed] = useState<{ session: string; conflict: LandingConflict; at: number } | null>(null);
-  const conflict = canAccept
-    ? (pressed && pressed.session === session && pressed.at === landing.dataUpdatedAt ? pressed.conflict : landing.data?.conflict ?? null)
-    : null;
+  // A replay onto the line that conflicts, as the plan tries it. In Accept's place, the words its session is asked to rebase with.
+  const conflict = canAccept ? landing.data?.conflict ?? null : null;
   // A part the person left out of its entry's Accept, as its conversation keeps it.
   // The review says so and leads with *Discard tree*; *Accept* stays after it, landing it later being a press of its own.
   const leftOutOf = plannable ? landing.data?.leftOutOf ?? null : null;
   const say = useSay();
   const discard = useDiscardSessionTree();
-  // What is under way for this session, whichever view or window pressed it: the head's landing reads
-  // *Landing…* here too, and so does a review remounted by a tab switch mid-press. Never this component's own press alone.
+  // What is under way for this session, whichever view or window pressed it: its Accept, and its line of work's or its ask's, which lands this part too.
   const underWay = {
-    land: useUnderWay('LAND_SESSION_TREE', session),
+    accept: useAcceptUnderWay(accept?.run ?? null),
     discard: useUnderWay('DISCARD_SESSION_TREE', session),
-    // Where the landing has reached, where its driver says: the gate is read before anything lands. An Accept says it
-    // waits for the pass that lands it.
-    landStep: useUnderWayStep('LAND_SESSION_TREE', session),
-    // Its line of work's one Accept, or its ask's, lands this part too: a press carries its entry or ask, not its parts.
     entry: useUnderWaySubject('LAND_ENTRY', entry),
     ask: useUnderWaySubject('LAND_ASK', ask),
   };
-  const landsNow = underWay.land || underWay.entry || underWay.ask;
+  const landsNow = underWay.accept || underWay.entry || underWay.ask;
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
   // they have ticked off. Keyed by path, reset by attending a different session.
@@ -416,7 +402,7 @@ export function DiffPane({
       )}
 
       {/* The Accept waits for the pass that lands it, never behind a tree's hold, and says for how long. */}
-      {landsNow && underWay.landStep === 'pass' && <PassNote />}
+      {underWay.accept && <PassNote />}
 
       <div className="flex flex-wrap items-center gap-2">
         {leftOutOf && discardTree}
@@ -426,15 +412,11 @@ export function DiffPane({
             variant={leftOutOf ? 'default' : 'primary'}
             // A press that could only be refused is not offered: the sentence above says why.
             disabled={landsNow || Boolean(refusedNow)}
-            onClick={() => {
-              const at = landing.dataUpdatedAt;
-              act(land.mutateAsync(session).then((result) => {
-                if (!result.done && result.conflict) setPressed({ session, conflict: result.conflict, at });
-                return result;
-              }));
-            }}
+            onClick={() => act(word.mutateAsync({
+              run: accept!.run, node: accept!.node, act: 'accept', words: null, attempt: accept!.attempt, revision: accept!.revision,
+            }).then((answer) => ({ done: answer.done, message: answer.message ?? '' })))}
           >
-            {!landsNow ? t('work.review.accept') : t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting')}
+            {!landsNow ? t('work.review.accept') : t(underWay.accept ? 'work.review.acceptingPass' : 'work.review.accepting')}
           </Button>
         )}
 

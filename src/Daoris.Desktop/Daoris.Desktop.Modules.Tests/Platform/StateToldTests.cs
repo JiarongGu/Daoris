@@ -35,8 +35,8 @@ public sealed class StateToldTests : DriverModuleBridge
     [Fact]
     public async Task A_landing_recorded_by_another_process_publishes_landing()
     {
-        // As `daoris tree land s1a2b3c4` does in its own process, once it has landed.
-        Assert.True(new PressesTold(Home).Tell(new PressTold(PressesTold.Land, "s1a2b3c4", DateTimeOffset.UtcNow)));
+        // As `daoris tree remove s1a2b3c4` does in its own process, once it has removed it.
+        Assert.True(new PressesTold(Home).Tell(new PressTold(PressesTold.DiscardTree, "s1a2b3c4", DateTimeOffset.UtcNow)));
         await using var watch = Watch();
 
         Assert.Single(watch.Hear());

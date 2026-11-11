@@ -4,8 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The allow kind's third subtype, a steward's act outside its grants <c>{ ask }</c>: listed with <c>allow.steward</c> for the supervisor
-/// that answers its target's place, unless that supervisor's holder is the steward's own; allowed once through the pipe's one pending
-/// entry (<see cref="StewardAllows"/>), or left to the person's card.
+/// that answers its target's place, unless its holder is the steward's own; allowed once (<see cref="StewardAllows"/>), or left to the person's card.
 /// </summary>
 internal static class StewardAllowSubjects
 {
@@ -25,7 +24,7 @@ internal static class StewardAllowSubjects
         }
     }
 
-    public static async Task<SupervisorDecided> DecideAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder)
+    public static SupervisorDecided Decide(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder)
     {
         if (form.Do != StewardAllowedAct.Act) return SupervisorDecided.Refused(SupervisorWhy.NotOffered);
         if (loop.Pipe is not { } pipe) return SupervisorDecided.Refused(SupervisorWhy.NotStaffed);
@@ -34,11 +33,10 @@ internal static class StewardAllowSubjects
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != form.Generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
         var decision = Guid.NewGuid().ToString("N")[..12];
-        pipe.StewardAllows.Moved ??= (moved, to, why) => loop.Supervisor.AllowMoved(moved, to, DateTimeOffset.UtcNow, why);
         void Keep(PendingAllow held) => loop.Supervisor.AllowKept(new SupervisorAllowed(
             decision, SupervisorAllowShapes.Steward, held.Id, pipe.StewardAllows.TargetOf(held) is { Kind: OwnerKinds.Session } target ? target.Name : null,
-            held.Place.Repository ?? "", StewardAllowedAct.Act, admitted.Role, held.Asked.Act, holder, form.Reasons, held.LandsAt), DateTimeOffset.UtcNow);
-        return await pipe.StewardAllows.AllowAsync(ask.Id, decision, admitted.Window ?? TimeSpan.Zero, Keep).ConfigureAwait(false) is { } refused
+            held.Place.Repository ?? "", StewardAllowedAct.Act, admitted.Role, held.Asked.Act, holder, form.Reasons), DateTimeOffset.UtcNow);
+        return pipe.StewardAllows.Allow(ask.Id, decision, Keep) is { } refused
             ? SupervisorDecided.Refused(refused)
             : new SupervisorDecided(true, decision, null, null);
     }

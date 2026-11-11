@@ -15,8 +15,7 @@ namespace Daoris.Desktop;
 /// <para><b>Which parts.</b> An entry's parts whose tree offers work to land (<see cref="SessionGrouping.Lands"/>),
 /// oldest first, as the Parts strip shows them; an ask's entries are its own, one per repository, never its intake.</para>
 ///
-/// <para><b>Nothing machine-local comes back</b>: ids, names of branches and files, and the landing's sentences, as
-/// <c>LAND_SESSION_TREE</c>'s.</para>
+/// <para><b>Nothing machine-local comes back</b>: ids, names of branches and files, and the landing's sentences.</para>
 /// </remarks>
 public sealed class EntriesRoutes(DriverContext context)
 {
