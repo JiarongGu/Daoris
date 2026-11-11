@@ -15,6 +15,12 @@ internal static class PressPayload
     public static string? Raw(JsonElement? payload, string name) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
+    /// <summary>The field's strings as sent, none repeated, none empty: ids a route compares exactly, a leading <c>#</c> kept.</summary>
+    public static List<string> Strings(JsonElement? payload, string name) =>
+        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+            ? [.. value.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).Where(word => word.Length > 0).Distinct(StringComparer.Ordinal)]
+            : [];
+
     /// <summary>The field's strings, each trimmed with a leading <c>#</c> dropped, none repeated, none empty.</summary>
     public static List<string> Words(JsonElement? payload, string name) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
