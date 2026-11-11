@@ -46,6 +46,8 @@ internal static class DriveUsagePlace
               runs, and is made here where none does; an add over an installed plugin replaces it here alone.
           plugin try-again <id>
               an unsound plugin started again by the running Daoris, its count of exits afresh.
+          plugin switch <id> <what> on|off [--place <place>]
+              your word on one of a plugin's interfaces or points at one place, the running Daoris looking at once.
           plugin install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugin new <id> --point <point>… [--in <folder>]  ·  plugin try <folder|id> [--point <point>]

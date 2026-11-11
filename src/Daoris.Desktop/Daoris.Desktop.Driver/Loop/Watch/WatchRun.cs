@@ -139,6 +139,7 @@ internal sealed class WatchRun(
         {
             ConfigPath = ConfigPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = watch.Processes, Events = watch.Events,
             Caches = watch.Browser as IBrowserCaches, Volume = SpaceVolumes.Read, Copies = new OrphanCopies(Home),
+            PluginOutput = new PluginOutputKeeping(() => DateTimeOffset.UtcNow),
         };
 
         _counted = wakes.Count;

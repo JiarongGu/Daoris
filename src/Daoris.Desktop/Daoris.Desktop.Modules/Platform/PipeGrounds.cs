@@ -408,7 +408,7 @@ public sealed class ReadGround(
 public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<string> fields, TimeSpan? bound = null) : PipeGround(kind, bound)
 {
     /// <summary>The waits <see cref="IPipeGroundWorld.HeldAsync"/> reads.</summary>
-    public static readonly IReadOnlyList<string> Waits = ["opinion", "workflow-node", "go-ahead", "git-ask", "trust", "help", "hand-over"];
+    public static readonly IReadOnlyList<string> Waits = ["opinion", "workflow-node", "go-ahead", "git-ask", "trust", "hand-over"];
 
     /// <summary>The files <see cref="IPipeGroundWorld.FingerprintAsync"/> reads.</summary>
     public static readonly IReadOnlyList<string> Files =

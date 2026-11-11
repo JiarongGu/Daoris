@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -18,34 +16,30 @@ public sealed class StepAgents(
     /// <summary>The key the door is kept under among the doors, beside the kinds' own.</summary>
     public const string Door = "plugin.step";
 
-    private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
+    private readonly NodeDoorRuns _runs = new();
 
     public async Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
     {
         var invocation = attempt.Call.Invocation;
-        if (_running.ContainsKey(invocation)) return;
+        if (_runs.Runs(invocation)) return;
         if (program is null) throw new DriverException("the desktop's program that serves a step's tools is not found");
         var ask = await askOf(unit, attempt, node, ct).ConfigureAwait(false) ?? throw new DriverException($"{unit} names no work for `{node.Id}` to be performed on");
         var place = new PluginPlace(ask.Repository, ask.Workspace);
         ServerEntry Tools(string session) => PluginToolsHand.StepEntry(home, new PluginToolsAt(session, place, "en"), program, ask.Plugin, invocation);
         Directory.CreateDirectory(StepAnswer.Folder(home));
         AtomicFile.WriteText(StepAnswer.AskPath(home, invocation), ask.Write());
-        using (ExecutionContext.SuppressFlow())
+        _runs.Start(new StepAgentStart(invocation) { Authority = StepAuthorities.Of(unit, attempt) }, async _ =>
         {
-            _running[invocation] = Task.Run(async () =>
+            try
             {
-                try
-                {
-                    await sessions.RunAsync(ask, Tools, CancellationToken.None).ConfigureAwait(false);
-                }
-                finally
-                {
-                    StepAnswer.Unanswered(home, invocation);
-                    _running.TryRemove(invocation, out _);
-                    wake?.Invoke();
-                }
-            });
-        }
+                await sessions.RunAsync(ask, Tools, CancellationToken.None).ConfigureAwait(false);
+            }
+            finally
+            {
+                StepAnswer.Unanswered(home, invocation);
+                wake?.Invoke();
+            }
+        }, _ => false);
     }
 
     public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct)
@@ -53,8 +47,7 @@ public sealed class StepAgents(
         var invocation = attempt.Call.Invocation;
         if (StepAnswer.Read(home, invocation) is { } answer) return Task.FromResult(answer);
         if (!Holds(invocation)) return Task.FromResult(new WorkReconcileAnswer(ReconcileStates.NotStarted));
-        if (_running.ContainsKey(invocation)) return Task.FromResult(new WorkReconcileAnswer(ReconcileStates.Running));
-        // An ask whose session no longer runs here (the loop that started it ended) has ended unanswered.
+        if (_runs.Runs(invocation)) return Task.FromResult(new WorkReconcileAnswer(ReconcileStates.Running));
         StepAnswer.Unanswered(home, invocation);
         return Task.FromResult(StepAnswer.Read(home, invocation) ?? new WorkReconcileAnswer(ReconcileStates.Unknown));
     }
@@ -65,6 +58,5 @@ public sealed class StepAgents(
 
     public void Stop(string invocation) => sessions.Stop(invocation);
 
-    /// <summary>Completes once every session started here has ended; a test's wait, and a closing loop's.</summary>
-    public Task IdleAsync() => Task.WhenAll(_running.Values);
+    public Task IdleAsync() => _runs.IdleAsync();
 }
