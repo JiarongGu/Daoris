@@ -245,7 +245,8 @@ of everything it handed, section by section.
     workspace's repositories, each judged by its own judge and none refused for the workspace it names. What a turn looked at
     or did beyond its focus is one folded receipt under that turn (`help/focus/BeyondReceipt.tsx`, `HELP_BEYOND`), only as
     Daoris's doors saw it: each call its connector answered naming a workspace or a repository, noted in the session's
-    `places.jsonl` (`CallPlaceFilter`) with how many a search's or the quests' answer found, as its tool says it answering
+    `places.jsonl` (`CallPlaceFilter`) with how many entries, repositories, convergence groups or quests its answer found,
+    including zero and a knowledge get's single entry, as its tool says it answering
     (`CallFound`), and each press it made whose place was beyond, one run in full access as *Did* and one asked on a card as
     *Asked you* with the card's state, judged against the focus
     held then (`HelpBeyond`: nothing is beyond this machine, a repository's own workspace is near), each row offering *Make …
@@ -286,8 +287,8 @@ of everything it handed, section by section.
   `ResumeAsk` only hand it on. A new section needs its `HandedSections`/`HandedCuts` code and both catalogues' twin rows.
 - **Counts:** `Course/Domain/LineCounts.cs` reads them, `Roles/Domain/CountTexts.cs` words them, and the supervisor's
   rules are the roles area's.
-- **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
-  row in the room's doors table.
+- **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, a route's view in
+  `Modules/Platform/Views/` with its row in the room's doors table.
 - **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (37 KB), `Loop/Chat/ChatRunner.cs` (37 KB) and `Loop/Chat/ChatRun.cs`
   (31 KB) stand near the 40 KB source budget and do not grow: `ChatGoOn` takes new go-on behaviour in a unit beside it,
   `ChatRunner` only wires and `ChatRun` is the one run. A conversation's turns grow in their parts under `Loop/Chat/Turns/`,

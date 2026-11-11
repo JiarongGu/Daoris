@@ -12,6 +12,11 @@ public static class FolderAdd
     /// <exception cref="RegistryRefusal">The folder is a git checkout, which <c>connect</c> registers, or its declaration does not read.</exception>
     public static ConnectPlan Plan(string root, string? workspace, IReadOnlyList<string> excludes, string service)
     {
+        if (!Directory.Exists(root))
+        {
+            throw new RegistryRefusal(RegistryRefusal.ManifestUnreadable, $"{root} is not a folder on this machine, so there is nothing to register.", 1);
+        }
+
         if (PlaceKind.At(root) == PlaceKind.Git)
         {
             throw new RegistryRefusal(

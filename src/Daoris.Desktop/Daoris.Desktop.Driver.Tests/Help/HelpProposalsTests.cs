@@ -18,7 +18,7 @@ public sealed class HelpProposalsTests : HelpProposalsFixture
     public void Pending_proposals_are_read_for_one_conversation_and_a_settled_one_is_not_pending()
     {
         File("a1", "setting", "drive", target: "engine");
-        File("a2", "ask", "ask", workspace: "work", sentence: "start it", session: "other");
+        File("a2", "go", "go", target: "quests", session: "other");
         File("a3", "setting", "hold", target: "game", state: "applied");
         System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "broken.json"), "{ not json");
 

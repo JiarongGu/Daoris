@@ -20,9 +20,9 @@ internal static class RoomsProposal
     /// <summary>What the set-up's close says of them.</summary>
     internal const string Close = "the rooms proposed, the rooms whose builds meet, or why none were";
 
-    /// <summary>Ask Daoris's line: how it proposes them for a repository set up already.</summary>
+    /// <summary>Ask Daoris's line: how it asks for them for a repository set up already.</summary>
     internal static string Ask() =>
-        "  A repository set up already that declares no rooms (no lane with `builds`) is offered them by `ask_propose` at its workspace:\n"
+        "  A repository set up already that declares no rooms (no lane with `builds`) is offered them by `daoris ask` at its workspace:\n"
         + "  words naming the repository and asking its session to propose its rooms by the doctrine's `" + Knowledge + "` knowledge, on its own branch,\n"
         + "  for the person to accept where it lands. You draft nothing into the repository yourself; a set-up's adoption asks the same.\n";
 }

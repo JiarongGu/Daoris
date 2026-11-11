@@ -20,6 +20,20 @@ public sealed class DriverModuleTerminalTests : DriverModuleBridge
         Assert.Equal(TerminalTiers.Ask, (await AnswerAsync(Module(), "SET_TERMINAL", new { tier = "ask" })).GetProperty("terminal").GetString());
     }
 
+    [Fact]
+    public async Task Each_change_is_recorded_as_the_window_s_newest_first_and_answered_with_the_state_and_a_change_to_the_same_tier_is_none()
+    {
+        await AnswerAsync(Module(), "SET_TERMINAL", new { tier = "act" });
+        await AnswerAsync(Module(), "SET_TERMINAL", new { tier = "act" });
+        var state = await AnswerAsync(Module(), "SET_TERMINAL", new { tier = "ask" });
+
+        var changes = state.GetProperty("terminalActs").GetProperty("changes");
+        Assert.Equal(
+            [(TerminalTiers.Ask, TerminalTierBy.Window), (TerminalTiers.Act, TerminalTierBy.Window)],
+            changes.EnumerateArray().Select(each => (each.GetProperty("tier").GetString(), each.GetProperty("by").GetString())).ToArray());
+        Assert.Equal(2, new TerminalActs(DaorisHome.Entry(Home, HomeEntry.TerminalActs)).Now().Changes.Count);
+    }
+
     [Theory]
     [InlineData("always")]
     [InlineData(null)]

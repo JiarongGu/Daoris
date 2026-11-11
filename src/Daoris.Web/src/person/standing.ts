@@ -18,7 +18,7 @@ export type StandingConfirmationNow = {
   stewardDesk: DeskRequestNow[];
   /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
   stewardLands: StewardLandNow[];
-  /** What Ask Daoris, and a terminal under its tier's act, pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
+  /** What Ask Daoris pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
   helpPresses: HelpPressNow[];
 };
 
@@ -26,10 +26,7 @@ export type StandingConfirmationNow = {
 export const HELP_PRESS_OUTCOMES = ['running', 'done', 'failed', 'waiting', 'allowed', 'refused', 'changed', 'unanswered'] as const;
 export type HelpPressOutcome = (typeof HELP_PRESS_OUTCOMES)[number];
 
-/**
- * One press Ask Daoris made this run, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules' `HelpPressNow`): the route
- * as the window words it, the conversation that pressed it (none, `terminal`, for a terminal's under its tier's act), what it named, when and how it stands, and whether it asked the person.
- */
+/** One press Ask Daoris made this run, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules' `HelpPressNow`). */
 export type HelpPressNow = {
   id: string;
   module: string;
@@ -45,7 +42,6 @@ export type HelpPressNow = {
   beyond?: boolean;
   /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
   asked?: boolean;
-  terminal?: boolean;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */

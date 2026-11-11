@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 /// A group of the <c>daoris</c> command tree, declared on the library unit that runs it, or whose words the host's console reads for it.
 /// <see cref="CommandWords.Groups"/> collects every mark of this assembly at start, and a name marked twice fails that first use.
 /// </summary>
-/// <param name="name">The group, the first word a person types.</param>
-/// <param name="verbs">Its sub-verbs.</param>
+/// <param name="name">The group, the first word a person types; <c>verbs</c>, its sub-verbs.</param>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public sealed class CommandGroupAttribute(string name, params string[] verbs) : Attribute
 {
@@ -18,6 +17,9 @@ public sealed class CommandGroupAttribute(string name, params string[] verbs) : 
 
     /// <summary>Whether the group's own command judges every word after it, its sub-verbs listed for the usage only.</summary>
     public bool Whole { get; set; }
+
+    /// <summary>Whether the group named alone runs its command, which says what it holds, rather than its usage.</summary>
+    public bool Bare { get; set; }
 
     /// <summary>A sub-verb's own sub-verbs, each written <c>"verb: sub sub …"</c> (<c>"account: list add …"</c>).</summary>
     public string[] Nested { get; set; } = [];

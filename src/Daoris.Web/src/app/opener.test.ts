@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { askItem, doorOpening, opening, placeOpening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
-// One opener: every door into a view says what it opens, and the view's chosen item takes it.
-// Pure, so what each door does is an assertion, and `App` only applies it.
+// One opener, pure: every door into a view says what it opens, and `App` only applies it.
 
 describe('the opener', () => {
   /** A door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */
@@ -311,18 +310,6 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     expect(placeOpening(door, where)).toEqual({
       view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'roles', row: 'review' },
     });
-  });
-
-  // Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
-  it('opens the place the card names with its ask, and leaves the Details where they are while the mode is dark', () => {
-    const setUp = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
-    const door = doorOpening({ view: 'projects', item: 'engine', tab: 'details', setUp });
-    expect(door).toMatchObject({ view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'details', setUp });
-    expect(placeOpening(door, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', setUp });
-
-    const several = { ...setUp, repositories: ['engine', 'site'] };
-    const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'details', setUp: several });
-    expect(placeOpening(workspace, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
   });
 
   // The Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.

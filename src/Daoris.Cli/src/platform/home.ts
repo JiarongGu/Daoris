@@ -158,6 +158,7 @@ export const HOME_ENTRIES = [
   // The desktop's migration record and its copies; named here, never read by the CLI.
   row('migration', 'data', 'data/migration.json', 'data/migration.json'),
   row('salvage', 'data', 'data/salvage', 'data/salvage'),
+  row('terminal-acts', 'data', 'data/terminal-acts.json', 'data/terminal-acts.json'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),

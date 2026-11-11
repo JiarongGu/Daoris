@@ -72,4 +72,19 @@ public sealed class PlaceChangesTests : IDisposable
         Assert.Equal((0, 2), (TextPatch.Unified("n.txt", "a\nb\n", null).Added, TextPatch.Unified("n.txt", "a\nb\n", null).Removed));
         Assert.Contains("--- /dev/null\n+++ b/n.txt\n@@ -0,0 +1,1 @@\n+x\n", TextPatch.Unified("n.txt", null, "x\n").Patch);
     }
+
+    [Fact]
+    public async Task A_file_that_is_not_utf8_text_is_a_row_with_no_hunks_not_a_patch_of_replacement_characters()
+    {
+        Directory.CreateDirectory(Place);
+        File.WriteAllBytes(Path.Combine(Place, "old.txt"), [0xC4, 0xE3, 0xBA, 0xC3, 0x0A]);
+        await PlaceTurns.StartAsync(Home, "default", "designs", Place, "s-aaaaaaaa", null, CancellationToken.None);
+        File.WriteAllBytes(Path.Combine(Place, "old.txt"), [0xCA, 0xC0, 0xBD, 0xE7, 0x0A]);
+
+        var review = PlaceChanges.Of(Home, "s-aaaaaaaa")!;
+
+        var file = Assert.Single(review.Files);
+        Assert.Equal("modified", file.Status);
+        Assert.Null(file.Patch);
+    }
 }

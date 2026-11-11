@@ -126,11 +126,18 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     which asks as the person's own. And the terminal's tier, a machine setting (`driver.json`'s `terminal`, `daoris settings terminal
     ask|act`, Settings → Agents and sessions), read at each press: `ask`, the default, puts every press on the card; under `act` a
     person's press that proves no session's key, from a process the pipe places outside every agent Daoris runs, runs at once as the
-    person's own on the delegate's path (`PipeTerminalTier`, `PipeDelegate.Pressed`), logged `terminal.pressed` and listed with Ask
-    Daoris's presses in *Notifications*, marked a terminal's. A process in an agent's job or one the pipe cannot place asks; a
-    session's terminal keeps its own tier. `SET_TERMINAL` is itself a press, so `act` is set from a terminal only on the person's
-    Confirm; the verb acting alone, with no Daoris running, writes `ask` and refuses `act`. A stored `data/standing-confirmation.json`
-    an older build left is removed at the start. (from D201, D209, D271)
+    person's own on the delegate's path (`PipeTerminalTier`, `PipeDelegate.Pressed`), logged `terminal.pressed`. A process in an
+    agent's job or one the pipe cannot place asks; a session's terminal keeps its own tier. `SET_TERMINAL` is a person's route: a
+    terminal sets `act` on the person's Confirm, and Ask Daoris in full access or an unrestricted session sets it with no card, as
+    any press of theirs; the verb acting alone, with no Daoris running, writes `ask` and refuses `act`. What the tier does is kept
+    in `data/terminal-acts.json` (`TerminalActs`): each change, its tier, time and who made it (`window`, `card`, `ask-daoris`,
+    `session`, `terminal` or `alone`, read from the door it came by, `PipeDoor.By`), logged `terminal.tier`; and each press run
+    under `act`, its route, what it named, the command its view words, its admission and its end: `done`, `failed` with its code,
+    `unknown` where Daoris stopped under it, or `interrupted` where it was still running when Daoris stopped, read so at the next
+    start; the newest 20 changes and 100 presses. *Notifications* heads the presses' group with it while the tier is `act` or a
+    press is kept: who turned it on and when (a tier no recorded change set is said as set outside Daoris), *Back to ask* in one
+    press, and the presses, each opening what it named; the Settings row says the same who and when. A stored
+    `data/standing-confirmation.json` an older build left is removed at the start. (from D201, D209, D271)
 
 **The windows**
 

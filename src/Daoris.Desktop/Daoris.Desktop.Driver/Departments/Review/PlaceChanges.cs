@@ -44,6 +44,19 @@ public static class PlaceChanges
         return new DiffFile(path, status, added, removed, patch);
     }
 
-    private static string? Text(ManifestEntry entry, ContentStore content) =>
-        entry.Sha256 is { } sha && System.IO.File.Exists(content.PathOf(sha)) ? Encoding.UTF8.GetString(AtomicFile.ReadBytes(content.PathOf(sha))) : null;
+    private static readonly UTF8Encoding Strict = new(false, true);
+
+    /// <summary>The kept text of <paramref name="entry"/>; null where it is not stored or is not UTF-8, which a diff of replacement characters would only misread.</summary>
+    private static string? Text(ManifestEntry entry, ContentStore content)
+    {
+        if (entry.Sha256 is not { } sha || !System.IO.File.Exists(content.PathOf(sha))) return null;
+        try
+        {
+            return Strict.GetString(AtomicFile.ReadBytes(content.PathOf(sha)));
+        }
+        catch (DecoderFallbackException)
+        {
+            return null;
+        }
+    }
 }

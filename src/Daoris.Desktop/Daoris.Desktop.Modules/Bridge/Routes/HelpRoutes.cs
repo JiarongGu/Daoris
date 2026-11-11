@@ -17,7 +17,6 @@ public sealed class HelpRoutes(DriverContext context)
     /// <summary>
     /// What an Apply may change, every door it holds: the page's hook asked each of these again by hand before.
     /// </summary>
-    /// <remarks>A set-up's Apply adds a rule to the repository's scope, so the rules are among them.</remarks>
     private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
         | StateScopes.Rules | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses
         | StateScopes.Help | StateScopes.Browser;
@@ -229,24 +228,12 @@ public sealed class HelpRoutes(DriverContext context)
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
-            // A place's quick set-up: the ask, its workspace, each change once, and the plan's digest, so a plan that moved
-            // draws the card again. Never the plan whole: the page it opens plans again.
-            Place = plan.Place is { } place
-                ? new
-                {
-                    place.Asked, place.Workspace, place.Digest,
-                    Changes = place.Changes.Select(each => new
-                    {
-                        each.Change.Key, each.Change.Part, each.Change.Said, each.Change.Before, each.Change.After, each.Repositories,
-                    }).ToArray(),
-                }
-                : null,
         };
 
     // The person's Apply: made through the door the screen's own route uses, judged again
     // first, since the machine may have moved after the card's drawing. The result goes back into
-    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's;
-    // what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
+    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's.
+    // It acts through the doors directly, not through
     // their routes, so it declares every family a door it holds may move: the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
@@ -300,10 +287,7 @@ public sealed class HelpRoutes(DriverContext context)
             _loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), plan.Refusal is null ? Owned(HelpProposals.Owned(proposal)) : [],
             cancellationToken).ConfigureAwait(false);
         var applied = await HelpProposals.ApplyAsync(
-            _loop.Home, proposal, plan, new HelpScreenDoors(_context, service), Say, cancellationToken).ConfigureAwait(false);
-        // A delete or an ask moves the work; a set-up publishes an ask its session takes at the next look.
-        if (proposal.Kind is "ask" or "delete" or "session" or "pause" or "clear") _loop.Nudge();
-
+            _loop.Home, proposal, plan, new HelpScreenDoors(_context), Say, cancellationToken).ConfigureAwait(false);
         return ApplyAnswer(proposal, applied);
     }
 
@@ -333,9 +317,8 @@ public sealed class HelpRoutes(DriverContext context)
         applied.Applied,
         // Where a go takes the person: the page navigates, as its starters' doors do, to the one quest or ask a go
         // names in it, the driver's judged spelling, and opens Add repository or Import a folder with the workspace
-        // the driver judged filled, or New conversation with the repository and words it judged, or an Agents
-        // place's Setup with its set-up open on the ask; each null on any other go.
-        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
+        // the driver judged filled, or New conversation with the repository and words it judged; each null on any other go.
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence } : null,
         // The card stands for another press: a draft's change opened in the editor settles nothing, so the page logs no settlement.
         applied.Stands,
     };
@@ -403,10 +386,10 @@ public sealed class HelpRoutes(DriverContext context)
     /// </summary>
     private static string DaorisWordKey(string kind, string about) => $"{kind}/{about}";
 
-    // what one conversation's Applies published, the newest first, each by the ids the
+    // what one conversation's presses published, the newest first, each by the ids the
     // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,
     // asks and sessions. A read of this machine's home, off the window's thread: it declares nothing, and its key is under
-    // `help`, which an Apply publishes. Desktop-only, as the conversation is.
+    // `help`. Desktop-only, as the conversation is.
     [DriverRoute("HELP_PUBLISHED", PipeClass.Open)]
     private Task<object?> HelpPublishedAsync(HelpPublishedRead press, CancellationToken cancellationToken)
     {

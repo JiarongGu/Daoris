@@ -18,7 +18,7 @@ public sealed class HelpRoomMakingAPluginTests
 
         Assert.Contains("## Making a plugin", agents);
         Assert.Contains("never write one yourself", agents);
-        Assert.Contains("as an ask (`ask_propose`) at the workspace of the repository that holds plugins", agents);
+        Assert.Contains("as an ask (`daoris ask --workspace <name> --to <repository> \"…\"`) at the workspace of the repository that holds plugins", agents);
         foreach (var point in HookPoints.All) Assert.Contains($"`{point}`", agents);
         Assert.Contains("makes it with its tests", agents);
         Assert.Contains("the person decides where plugins live (a repository of their own, connected like any other)", agents);

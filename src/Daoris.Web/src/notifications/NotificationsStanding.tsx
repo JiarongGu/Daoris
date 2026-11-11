@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  retryNotice, standingOf, useDriver, useResumeWork, useRetryQuest, useSetDrivable, useSetHold,
+  retryNotice, standingOf, useDriver, useResumeWork, useRetryQuest, useSetDrivable, useSetHold, useSetTerminal,
 } from '../bridge/shell';
 import type { WorkScopeName } from '../work/pausing/pausing';
 import { HelpPressLine } from './HelpPressLine';
+import { TerminalTierLine } from './TerminalTierLine';
+import { type TerminalPress, terminalActsOf } from '../person/terminalActs';
+import { terminalTierOf } from '../settings/machine/TerminalTierSetting';
 import { useOverruleStewardLand } from '../bridge/stewardLand';
 import { failure, type Notify } from '../design/ui';
 import { type HelpPressNow, type StewardActNow, type StewardLandNow, helpReverse, stewardReverse } from '../person/standing';
@@ -14,11 +17,19 @@ import { StewardLine } from './StewardLine';
  * The steward's line as *Notifications* holds it: each act's reverse press sent as the window sends
  * the owner's ordinary press today: `SET_DRIVABLE`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
  * it. Who holds the supervisor and the steward is their roles'. The view draws it in its slot (`NotificationsView`'s
- * `standing`), so the view presses no hook itself.
+ * `standing`), so the view presses no hook itself. Above them, the terminal's tier with its *Back to ask*, sent as Settings' row sends it
+ * (`SET_TERMINAL`), and what a terminal pressed under act, each opening what it named.
  */
-export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; onOpenHelp: () => void }) {
+export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
+  notify: Notify;
+  onOpenHelp: () => void;
+  /** Opens what a terminal's press named: a quest, an ask, a session or a repository. */
+  onOpenTarget?: (scope: string, id: string) => void;
+}) {
   const { t } = useTranslation();
-  const standing = standingOf(useDriver().data?.standingConfirmation);
+  const driver = useDriver().data;
+  const standing = standingOf(driver?.standingConfirmation);
+  const setTerminal = useSetTerminal();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const retry = useRetryQuest();
@@ -52,8 +63,21 @@ export function NotificationsStanding({ notify, onOpenHelp }: { notify: Notify; 
       resumeWork.mutate({ scope: press.scope as WorkScopeName, id: press.target }, { onError: failure(notify) });
     }
   };
+  const openPressed = (press: TerminalPress) => {
+    if (press.scope && press.target) onOpenTarget?.(press.scope, press.target);
+  };
   return (
     <>
+      <TerminalTierLine
+        tier={terminalTierOf(driver?.terminal)}
+        acts={terminalActsOf(driver?.terminalActs)}
+        busy={setTerminal.isPending}
+        onBackToAsk={() => setTerminal.mutate({ tier: 'ask' }, {
+          onSuccess: () => notify(t('settings.terminal.set.ask')),
+          onError: failure(notify),
+        })}
+        onOpen={openPressed}
+      />
       <HelpPressLine standing={standing} busy={resumeWork.isPending} onOpen={() => onOpenHelp()} onReverse={reverseHelp} />
       <StewardLine
         standing={standing}

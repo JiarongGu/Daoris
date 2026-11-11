@@ -5,8 +5,7 @@ import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';
 import { draftDoor, PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
-// The places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
-// `HelpPlaces`, which judges a go before the person sees it: the tables below are the driver test's
+// The places Ask Daoris's go may name, a twin of the driver's `HelpPlaces`: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
 
 const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');
@@ -73,15 +72,9 @@ describe('the places a go may name', () => {
     expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
 
-  // A go carrying a set-up opens what today's set-up opens (a repository's Details, a workspace's page), with the ask along.
-  it('open a place\'s Set up… as a repository\'s Details or a workspace\'s page, the ask carried', () => {
-    const ask = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
-    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine', setup: ask }))
-      .toEqual({ view: 'projects', item: 'engine', tab: 'details', setUp: ask });
-    const several = { ...ask, repositories: ['engine', 'site'] };
-    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: null, setup: several }))
-      .toEqual({ view: 'projects', item: 'workspace:aurora', workspaceTab: 'details', setUp: several });
-    // Without an ask it is the Roles mode, as before.
+  // A go to the Agents place's Roles part opens the Setup mode, whatever place it names: a set-up is pressed, never seeded.
+  it('open the Setup mode for the Roles part, a named place carrying nothing along', () => {
+    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora' })).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 

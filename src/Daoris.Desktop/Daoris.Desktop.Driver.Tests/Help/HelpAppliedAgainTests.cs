@@ -19,21 +19,21 @@ public sealed class HelpAppliedAgainTests : IDisposable
 
     private HelpProposal Settled(string state)
     {
-        File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p1.json"), $$"""{"id":"p1","kind":"ask","state":"{{state}}"}""");
-        return new HelpProposal("p1", "ask", "ask", null, "work", null, null, "the person asked", "s1", state);
+        File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p1.json"), $$"""{"id":"p1","kind":"workflow","state":"{{state}}"}""");
+        return new HelpProposal("p1", "workflow", "new", "work", null, null, null, "the person asked", "s1", state);
     }
 
     [Fact]
     public void A_second_apply_on_an_applied_card_is_answered_with_the_first_presses_outcome()
     {
         var proposal = Settled("applied");
-        HelpAppliedAgain.Keep(_home, "p1", "Published ask `a1` to `engine`.");
+        HelpAppliedAgain.Keep(_home, "p1", "Saved workflow `ship` version 2 for `work`.");
 
         var again = HelpAppliedAgain.Answer(_home, proposal);
 
         Assert.True(again.Applied);
         Assert.StartsWith("Already applied:", again.Told);
-        Assert.Contains("Published ask `a1` to `engine`.", again.Told);
+        Assert.Contains("Saved workflow `ship` version 2 for `work`.", again.Told);
     }
 
     [Fact]

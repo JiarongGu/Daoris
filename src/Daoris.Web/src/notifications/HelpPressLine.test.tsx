@@ -3,8 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// What Ask Daoris pressed for the person in full access, with no card: a group in Notifications beside the steward's line, each press
-// in the window's own words for its route, its target, time and outcome, a press to open its conversation and, for a pause, *Resume*.
+// What Ask Daoris pressed for the person with no card, in Notifications: each press's act, target, time, outcome, conversation and Resume.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -45,9 +44,8 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
 
   it('reads the presses field by field and leaves out one it cannot read', () => {
     expect(standingOf({ helpPresses: [{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest' }, { id: 'b' }, 'x'] })?.helpPresses)
-      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false, asked: false, terminal: false }]);
-    expect(standingOf({ helpPresses: [{ id: 't', route: 'SET_HOLD', session: '', at: '2026-11-10T10:00:00Z', outcome: 'done', terminal: true }, { id: 'u', route: 'SET_HOLD', session: '', at: '2026-11-10T10:00:00Z', outcome: 'done' }] })?.helpPresses)
-      .toMatchObject([{ id: 't', session: '', terminal: true }]);
+      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false, asked: false }]);
+    expect(standingOf({ helpPresses: [{ id: 'u', route: 'SET_HOLD', session: '', at: '2026-11-10T10:00:00Z', outcome: 'done', terminal: true }] })?.helpPresses).toEqual([]);
     expect(standingOf({ helpPresses: [{ id: 'a', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'refused', asked: true }] })?.helpPresses[0])
       .toMatchObject({ outcome: 'refused', asked: true });
     expect(standingOf({ helpPresses: [{ id: 'a', route: 'SET_HOLD', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', place: { kind: 'workspace', workspace: 'Work' }, beyond: true }] })?.helpPresses[0])
@@ -91,23 +89,6 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
     expect(within(row).getAllByRole('button')).toHaveLength(1);
     await userEvent.click(within(row).getByRole('button'));
     expect(onOpen).toHaveBeenCalledWith(asked);
-  });
-
-  it.each([
-    ['en', 'A terminal on this machine pressed 1 act for you, with no card, since Daoris started', 'Presses from a terminal on this machine', 'Done', 'What was pressed for you'],
-    ['zh', '自 Daoris 启动以来，本机终端已为你直接执行 1 项操作，未经确认卡', '本机终端执行的操作', '已完成', '为你代按的操作'],
-  ])("lists a terminal's presses apart, with no conversation to open (%s)", async (language, said, heading, state, label) => {
-    await i18n.changeLanguage(language);
-    const terminal = press('t1', 'SET_HOLD', { session: '', target: 'engine', terminal: true });
-    render(<HelpPressLine standing={{ ...STANDING, helpPresses: [terminal, ...PRESSES] }} onOpen={vi.fn()} onReverse={vi.fn()} defaultOpen />);
-
-    expect(screen.getByRole('region', { name: label })).toBeInTheDocument();
-    expect(screen.getByText(said)).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('notifications.helpPressed.line', { count: 2 }))).toBeInTheDocument();
-    const row = within(screen.getByRole('list', { name: heading })).getByRole('listitem');
-    expect(row.querySelector('[data-help-outcome]')?.textContent).toBe(state);
-    expect(within(row).queryAllByRole('button')).toHaveLength(0);
-    expect(within(screen.getByRole('list', { name: i18n.t('notifications.helpPressed.list') })).getAllByRole('listitem')).toHaveLength(2);
   });
 
   it('draws the line for presses that only asked the person', () => {

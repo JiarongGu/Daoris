@@ -52,7 +52,7 @@ public static class CommandTree
 
         var rest = args.Skip(1).ToList();
         var verb = rest.Count > 0 ? rest[0] : null;
-        if (!group.Whole && group.Takes is null && (verb is null || !group.Verbs.Contains(verb, StringComparer.Ordinal)))
+        if (!group.Whole && group.Takes is null && (verb is null ? !group.Bare : !group.Verbs.Contains(verb, StringComparer.Ordinal)))
         {
             return new(TreeRouteKind.Usage, args, verb is null ? null : $"no `{verb}` in `daoris {group.Name}`.", group.Name);
         }
@@ -92,6 +92,7 @@ public static class CommandTree
             "session" when verb == "list" => ["sessions", .. after],
             "session" when verb == "opinion" => [verb, .. after],
             "session" => ["sessions", .. rest],
+            "settings" when verb is null => ["driver", MachineSettingsSaid.Every],
             "settings" => ["driver", .. rest],
             "tree" => ["trees", .. rest],
             "workflow" when verb is "run" or "keep" or "fix" || (verb is not null && NodeWordActs.All.Contains(verb, StringComparer.Ordinal)) => ["workflow", .. rest],

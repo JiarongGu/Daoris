@@ -100,6 +100,19 @@ public sealed class McpSystemPlanToolTests : McpToolsFixture
         Assert.False(Directory.Exists(Requests) && Directory.GetFiles(Requests).Length > 0);
     }
 
+    /// <summary>Two changes to one resource, however spaced, would be read against the one version the plan reads, so the second would be stale before it is applied.</summary>
+    [Fact]
+    public async Task A_call_changing_one_resource_twice_is_refused_here_naming_it()
+    {
+        var (tools, _) = await ConnectorAsync();
+
+        var answer = await tools.PlanAsync([new SystemPlanChange("release", "2"), new SystemPlanChange(" release", "3")]);
+
+        Assert.Contains("`release` is named twice", answer, StringComparison.Ordinal);
+        Assert.EndsWith("Nothing was planned.", answer, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Requests) && Directory.GetFiles(Requests).Length > 0);
+    }
+
     [Fact]
     public async Task A_connector_speaking_for_no_session_plans_nothing()
     {

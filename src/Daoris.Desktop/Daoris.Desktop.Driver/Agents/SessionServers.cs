@@ -17,8 +17,7 @@ public static class SessionServers
         string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
     {
         var (filled, notice, _, drivers) = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
-        var direct = await DirectAsync(home, filled, log, ct).ConfigureAwait(false);
-        var handed = direct.Select(server => drivers.Contains(server.Name) && !filled.Contains(server) ? ServerKeeper.Wrap(home, server) : server).ToList();
+        var handed = await DirectAsync(home, filled, log, ct, kept: drivers).ConfigureAwait(false);
         IReadOnlyList<string> driving = [.. drivers.Where(name => handed.Any(server => server.Name == name))];
         return (handed, notice, driving.Count > 0, driving);
     }
@@ -32,18 +31,19 @@ public static class SessionServers
     }
 
     /// <summary>
-    /// Every server declared through <c>npx</c> made node and its package's script, its arguments after; every other server as
-    /// declared; one that cannot be started left out, and logged.
+    /// Every server running a package through <c>npx</c>, declared or after a node start's <c>--</c> (<see cref="ServerNpx"/>), given node and
+    /// the package's script there, that start kept (<see cref="ServerKeeper"/>) where <paramref name="kept"/> names the server; any other as declared; one that cannot start left out, and logged.
     /// </summary>
     /// <param name="npm">The package manager an install runs; Tools' npm where null.</param>
     public static async Task<IReadOnlyList<ServerEntry>> DirectAsync(
-        string home, IReadOnlyList<ServerEntry> servers, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null)
+        string home, IReadOnlyList<ServerEntry> servers, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null,
+        IReadOnlyCollection<string>? kept = null)
     {
         var handed = new List<ServerEntry>();
         string? node = null;
         foreach (var server in servers)
         {
-            var (npx, refusal) = NpxCommand.Read(server.Command, server.Arguments);
+            var (npx, refusal) = ServerNpx.Read(server.Command, server.Arguments);
             if (npx is null && refusal is null)
             {
                 handed.Add(server);
@@ -56,8 +56,10 @@ public static class SessionServers
                 // The node the harness would find first on the PATH Daoris hands it, named whole, so the harness looks nothing up.
                 node ??= PackageStarts.Node(null, Tools.ChildPath(Tools.Read(home), home, Environment.GetEnvironmentVariable(Tools.PathVariable)))
                     ?? throw new DriverException("node is not on this machine's PATH, nor managed by Daoris");
-                var script = await ServerPackages.ScriptAsync(home, npx, log, ct, npm).ConfigureAwait(false);
-                handed.Add(server with { Command = node, Arguments = [script, .. npx.Arguments] });
+                var script = await ServerPackages.ScriptAsync(home, npx.Npx, log, ct, npm).ConfigureAwait(false);
+                var start = new ServerEntry(server.Name, node, [script, .. npx.Npx.Arguments], server.Environment);
+                if (kept?.Contains(server.Name) == true) start = ServerKeeper.Wrap(home, start);
+                handed.Add(npx.Handed(server, node, start.Arguments));
             }
             catch (DriverException error)
             {

@@ -41,13 +41,6 @@ describe('a proposal of Ask Daoris\'s', () => {
 });
 
 
-const ASKED: HelpProposal = {
-  id: 'p2', kind: 'ask',
-  describe: 'Start an ask at `work`: tidy the docs.',
-  terminal: 'daoris ask work "tidy the docs"',
-  why: 'the person asked for it',
-};
-
 const GO: HelpProposal = {
   id: 'p5', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
   why: 'the person asked where to name its agent',
@@ -64,13 +57,6 @@ const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now')
 };
 
 describe('the kinds that reach every door', () => {
-  it('an ask says what starts and the command, with Apply and Not now', async () => {
-    await press(ASKED, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code(ASKED.terminal))).toBeInTheDocument();
-  });
-
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
     await press(GO, 'Go there', 'Dismiss');
 
@@ -287,66 +273,14 @@ describe('the kinds that reach every door', () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={ASKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      render(<ul><ProposalCard proposal={LANDING} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
-      // The go card's dismiss takes it out of the list, as a notice's does; the ask card keeps its 暂不.
+      // The go card's dismiss takes it out of the list, as a notice's does; the change's card keeps its 暂不.
       expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(1);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
-    } finally {
-      cleanup();
-      await i18n.changeLanguage('en');
-    }
-  });
-});
-
-/**
- * A place's set-up card shows the plan's changes, each said once with the repositories it reaches; its Apply opens
- * *Set up…* seeded and presses nothing, and says so beside the button.
- */
-describe('a place\'s set-up card', () => {
-  const PLACE: HelpProposal = {
-    id: 'pl1a2b3c', kind: 'setup',
-    describe: 'Open the Agents place\'s Setup for `engine`, `site` in workspace `aurora`, with *Set up…* open on this ask.',
-    terminal: 'daoris place engine site --preset merge-after-accept --plan',
-    why: 'the person asked to set both up',
-    place: {
-      workspace: 'aurora', digest: 'd1',
-      asked: { repositories: ['engine', 'site'], preset: 'merge-after-accept', opinion: false, look: false, adoption: true, builds: 'service', drive: false },
-      changes: [
-        { key: 'SET_TREES', part: 'delivery', said: 'its own tree', before: 'off', after: 'on', repositories: ['engine', 'site'] },
-        { key: 'SETUP_PRESS', part: 'adoption', said: 'the set-up quest', before: 'none', after: 'asked', repositories: ['site'] },
-      ],
-    },
-  };
-
-  it('lists each change with where it is made, and Apply opens the page', async () => {
-    const onApply = vi.fn();
-    render(<ul><ProposalCard proposal={PLACE} onApply={onApply} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.getByText('Ask Daoris proposes a setup')).toBeInTheDocument();
-    const changes = within(screen.getByRole('list', { name: 'What the plan changes' })).getAllByRole('listitem');
-    expect(changes).toHaveLength(2);
-    expect(changes[0]).toHaveTextContent('its own tree');
-    expect(changes[0]).toHaveTextContent('off → on');
-    expect(changes[0]).toHaveTextContent('engine, site');
-    expect(screen.getByText(/you read the plan there and press Apply yourself/)).toBeInTheDocument();
-    expect(screen.getByText(code(PLACE.terminal))).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Review the plan' }));
-    expect(onApply).toHaveBeenCalledWith('pl1a2b3c');
-  });
-
-  it('speaks 中文 in its chrome and leaves the changes as the plan said them', async () => {
-    const { default: i18n } = await import('../locales/i18n');
-    await i18n.changeLanguage('zh');
-    try {
-      render(<ul><ProposalCard proposal={PLACE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议配置')).toBeInTheDocument();
-      expect(within(screen.getByRole('list', { name: '计划会改动什么' })).getAllByRole('listitem')[0]).toHaveTextContent('its own tree');
-      expect(screen.getByRole('button', { name: '审阅计划' })).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

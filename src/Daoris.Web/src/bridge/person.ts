@@ -12,8 +12,7 @@ import {
 import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
 
-// The person's door in the window: the person
-// key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
+// The person's door in the window: the person key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
 // and, once the page holds the key, what waits at the service's own confirmations, as the shell tells it. Every route here is the window's alone: the
 // pipe's census refuses each to a terminal, which asks and never answers.
 
@@ -218,7 +217,7 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
   };
 }
 
-/** The presses Ask Daoris and a terminal made, field by field; one with no id, route, time or known outcome, or no conversation but a terminal's, is left out. */
+/** The presses Ask Daoris made, field by field; one with no id, route, conversation, time or known outcome is left out. */
 function helpPressesOf(raw: unknown): HelpPressNow[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((each): HelpPressNow[] => {
@@ -226,14 +225,13 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     const shaped = each as Record<string, unknown>;
     const id = text(shaped.id);
     const route = text(shaped.route);
-    const terminal = shaped.terminal === true;
-    const session = text(shaped.session) ?? (terminal ? '' : null);
+    const session = text(shaped.session);
     const at = text(shaped.at);
     const outcome = HELP_PRESS_OUTCOMES.find((known) => known === shaped.outcome);
     if (id === null || route === null || session === null || at === null || !outcome) return [];
     return [{
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
-      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true, terminal,
+      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
     }];
   });
 }

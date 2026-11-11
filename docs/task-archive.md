@@ -5,6 +5,38 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSCOPE2's last counts and a restored card's place line, built by Codex (2026-11-11)
+
+> **ASKSCOPE2, the rest of its code** (service, modules): Outcome: the registry, a knowledge get, the summary and the memory search say how many they found through `CallFound`, one way; a waiting press's record keeps the card's place and focus, so a card brought back after a restart draws the same *outside this conversation's focus* line (`PipeWaiting`, `PipeRestore`). Built by Codex (gpt-6.1-sol) in its sandbox, which could not write git's metadata; reviewed and committed by the steward. Proof: 50 service tests (`McpHelpCircleTests`, `McpMemoryToolsTests`) and 86 modules tests (`PipeDelegateTests`' restored card), the new ones seen failing first; `npm run quick`.
+
+---
+
+## ASKFULL1g-vi whole — the setup and ask proposal kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, the kinds removed** (service, driver, modules, web): Outcome: `setup_propose` and `ask_propose` with their writers, judges, box entries, call-table rows, the ask door, the go's set-up seed and the web's set-up card are gone; the room names `daoris ask --workspace <name> "…"` and `daoris place … --apply` as presses, which Ask Daoris in full access makes with no card; the card is down to `go | workflow` (rule 56). Proof: the kinds tables, tool registration, call-table twin, room and card tests (edited first, seen failing), `HelpProposalClaimTests`, `PipeDelegateTests`' new-ask case, the census and `HelpDoorsTests`.
+
+---
+
+## Small defects: the keeper for a node-started npx server, the pull-request examples, the version, the settings verb (2026-11-11)
+
+> **Defects found by the install and by reviews** (driver, cli, examples, web): Outcome: a server started as `node … -- npx …` gets the toolchain install and the 512 MB keeper as an `npx` command does (`ServerNpx`; plugins rule 24, agents rule 13); both pull-request examples at 2.0.1 answer each frame as it settles, answer `running` for a down or rate-limited platform and kill the plugin their tests start; the system-department files sit in the subdomains their types allow (`IRegistryRow`, `CourseSystems`; FIX-LOG); the publish stamps the build into the CLI and `daoris --version` says `0.0.1 (build …, commit …)`; plain `daoris settings` says each machine setting with its value and verb, `daoris settings <name>` alone says that one, and the usage names every verb; the presentational boundary and the choices table hold again. Proof: `ServerNpxTests`, the examples' held-check and down-platform tests, the structure tests, the CLI version test and the settings text fixtures, each seen failing first.
+
+---
+
+## The terminal tier shown: who set it, and each press with its outcome (2026-11-11, D271's note)
+
+> **TERMTIER1, visibility** (driver, modules, web): Outcome: the terminal tier's changes and a terminal's presses are kept in `data/terminal-acts.json` (`Settings/TerminalActs.cs`, the newest 20 changes and 100 presses): a change keeps its tier, time and door (window, card, Ask Daoris, a session, a terminal, alone), logged `terminal.tier`; a press keeps its route, target, command, admission time and outcome (done, failed with its code, unknown, or interrupted when Daoris stopped under it); Notifications' `TerminalTierLine` says who turned `act` on and when, offers a one-press *Back to ask*, and lists each press opening what it changed, and the Settings row says the same. Codex's narrowing (an attached controller, a carded grant) is deferred to restricted mode's opt-in hardening (TERMTIER2), the owner's rule being that visibility is the key and a security improvement never blocks development. Proof: `TerminalActsTests`, the Settings row and `TerminalTierLine` vitests (seen failing first), `PipeTerminalTierTests`, `DriverModuleTerminalTests`.
+
+---
+
+## PLACEWORK1f — a folder's sessions in copies of their own, brought back file by file (2026-11-11, D265)
+
+> **PLACEWORK1f** (driver, modules, web): Outcome: the isolate step's `copy` kind gives a folder session a copy of its own under the place's copies folder (`Departments/Isolation/FolderCopies.cs`, `CopyStart`); over the bound (size, 20,000 files, or less than twice its size free) the start is held with words saying how to go on, never worked in place; the `return` kind writes back each file changed only in the copy, against the copy's bytes hashed fresh, keeps each changed only in the folder, and leaves each changed on both sides, an unread one or a binary, to the person per path (*Keep yours* / *Take the session's* / *Keep both*, `ReturnChoice`); supervisors get no act over it; the bound is `daoris settings manifest`'s `copy`. Proof: `FolderCopyTests`, `ReturnDoorTests` (seen failing first), `FolderCopyProcessTests`, `ReturnChoice.test`.
+>
+> **PLACEWORK1i, measured by the installed Daoris** (docs): a quest the install's own session took measured jj 0.46 workspaces as an isolation kind (`docs/2026-11-11-jj-workspaces-measurements.md`), reviewed by the steward and landed by Daoris's workflow.
+
+---
+
 ## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
 
 > **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.

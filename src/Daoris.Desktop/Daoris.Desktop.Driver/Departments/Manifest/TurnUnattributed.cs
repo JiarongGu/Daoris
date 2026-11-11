@@ -23,12 +23,14 @@ public static class TurnUnattributed
         var changed = start.Kind == PlaceKind.Folder ? FolderChanges.Between(start, end).All : PlaceChangesSince.Between(start, end, []).All;
         if (changed.Count == 0) return [];
         var named = events
-            .Where(each => each.Kind == SessionEventKind.Tool && each.At >= start.At && each.At <= end.At)
+            .Where(each => each.Kind == SessionEventKind.Tool && each.At >= start.At && each.At <= end.At && !Reads.Contains(each.ToolKind ?? ""))
             .SelectMany(each => each.Locations ?? [])
             .Select(location => Relative(root, location))
-            .ToHashSet(StringComparer.Ordinal);
+            .ToHashSet(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         return [.. changed.Where(path => !named.Contains(path))];
     }
+
+    private static readonly HashSet<string> Reads = ["read", "search", "fetch", "think"];
 
     private static string Relative(string root, string location) =>
         (Path.IsPathRooted(location) ? Path.GetRelativePath(root, location) : location).Replace('\\', '/');

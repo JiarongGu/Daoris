@@ -32,6 +32,23 @@ describe("the terminal's tier row", () => {
     expect(document.body.textContent).not.toMatch(/\{\{|undefined/);
   });
 
+  it.each([
+    ['en', 'Turned on by Ask Daoris, with no card', 'Turned on outside Daoris: no change to it is recorded'],
+    ['zh', '由 Ask Daoris 未经确认卡开启', '在 Daoris 之外开启：没有记录这次更改'],
+  ])('says who turned act on, or that no change of it is recorded (%s)', async (language, by, unrecorded) => {
+    await i18n.changeLanguage(language);
+    const { unmount } = render(
+      <Tooltip.Provider>
+        <TerminalTierSetting held="act" changes={[{ tier: 'act', at: '2026-11-11T09:00:00Z', by: 'ask-daoris', session: 'h1' }]} onSet={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByText(new RegExp(by))).toBeInTheDocument();
+    unmount();
+
+    draw('act');
+    expect(screen.getByText(unrecorded)).toBeInTheDocument();
+  });
+
   it('turns act on and back to ask', async () => {
     const onSet = vi.fn();
     const { unmount } = draw('ask', onSet);

@@ -17,7 +17,7 @@ public sealed class SystemPlanTools(IntakeScope? intake = null, SessionLedger? l
     [McpServerTool(Name = "system_plan")]
     [Description(
         "Plan changes to the system this session's department is: a system reached only through its console, which you never change "
-        + "directly. Name each resource and the whole value it should hold, or that it is removed, in the order they should be applied. "
+        + "directly. Name each resource once, with the whole value it should hold or that it is removed, in the order they should be applied. "
         + "Daoris hands them to the system's adapter, which reads each resource as it stands and keeps the plan: each change typed as "
         + "a create, an update or a delete under the version it read. The answer names the plan's number and its resources; a resource "
         + "already holding what you asked is left out. Nothing in the system changes now: the person reviews the plan, each resource "

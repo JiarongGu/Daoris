@@ -11,7 +11,7 @@ public sealed class HelpDoorsTests : Bridge
     [Fact]
     public void A_setting_is_the_edit_the_screens_route_makes_to_the_drivers_file()
     {
-        Module().HelpDoors(null).Change(config => config.WithDrivable("engine", true));
+        Module().HelpDoors().Change(config => config.WithDrivable("engine", true));
 
         Assert.Contains("engine", DriverConfig.Load(DriverConfigPath).Drivable);
     }

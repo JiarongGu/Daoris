@@ -132,4 +132,12 @@ public sealed class FolderPlaceRestTests : IDisposable
 
         Assert.Equal(["new.md", "notes.md"], told!.Outside);
     }
+
+    [Fact]
+    public void A_folder_that_does_not_exist_is_refused_before_anything_is_registered()
+    {
+        var refused = Assert.Throws<RegistryRefusal>(() => FolderAdd.Plan(Path.Combine(Place, "missing"), null, [], "http://127.0.0.1:7777"));
+
+        Assert.Contains("not a folder", refused.Message);
+    }
 }

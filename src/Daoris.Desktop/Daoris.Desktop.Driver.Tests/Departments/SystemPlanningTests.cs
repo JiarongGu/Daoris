@@ -85,6 +85,7 @@ public sealed class SystemPlanningTests : IDisposable
     [InlineData("""[{"resource":"a","value":"1","remove":true}]""", -1)]
     [InlineData("""{"resource":"a","value":"1"}""", -1)]
     [InlineData("not json", -1)]
+    [InlineData("""[{"resource":"a","value":"1"},{"resource":"a","value":"2"}]""", -1)]
     public void The_changes_read_only_as_a_list_of_values_or_removals(string text, int count) =>
         Assert.Equal(count, SystemPlanning.Intents(text)?.Count ?? -1);
 

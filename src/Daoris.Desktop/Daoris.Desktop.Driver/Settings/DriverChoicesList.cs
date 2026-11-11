@@ -12,7 +12,7 @@ internal static class DriverChoicesList
         void Section(string word) => world.Verbs.FirstOrDefault(each => each.Word == word)?.Listed(choices, world);
         Say($"daoris: {world.ConfigPath}");
         Say("  roles      `daoris role` says each role's agents, and `daoris role set` changes them");
-        Say($"  cap        {choices.Cap} concurrent session(s)");
+        MachineSettingsSaid.Say("cap", choices, world);
         Say("  rules      `daoris role supervisor` says the supervisor's rules, the failed sessions that park a quest among them");
         foreach (var (quest, mark) in choices.Forgiven) Say($"  retried    #{quest}  (counting from {mark} failure(s))");
         foreach (var (quest, session) in choices.Released) Say($"  released   #{quest}  (your stop of session {session})");
@@ -28,20 +28,7 @@ internal static class DriverChoicesList
             }
         }
 
-        Say(choices.QuietMinutes is { } quiet
-            ? $"  quiet      {quiet} minutes before Daoris looks in on a session"
-            : $"  quiet      {QuietSetting.Default} minutes before Daoris looks in on a session  (the default — "
-              + "`daoris settings quiet <minutes>` changes it)");
-        var manifest = choices.Manifest.Bounds;
-        Say($"  manifest   {manifest.Files} files and {(int)manifest.Time.TotalMinutes} minutes before a folder is too large to follow, "
-            + $"{HistoryCommand.Size(manifest.Copy)} before it is too large to copy"
-            + (choices.Manifest == ManifestSetting.Unset ? "  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)" : ""));
-        Say(choices.CoolOffMinutes is { } cooloff
-            ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
-            : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
-              + "`daoris settings cooloff <minutes>` changes it)");
-        Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
-        Section(TerminalTiers.File);
+        foreach (var key in (string[])["quiet", "manifest", "cooloff", "notify", TerminalTiers.File]) MachineSettingsSaid.Say(key, choices, world);
 
         if (choices.Drivable.Count == 0)
         {
@@ -88,7 +75,6 @@ internal static class DriverChoicesList
 
         Section("commits");
 
-        // A hold on something not opted in is inert, and saying so is the point: it reads as protection and is not.
         foreach (var held in choices.Holds.Where(each => FindName(choices.Drivable, each) is null))
         {
             Say($"  held       {held}  (not drivable anyway — the hold changes nothing)");

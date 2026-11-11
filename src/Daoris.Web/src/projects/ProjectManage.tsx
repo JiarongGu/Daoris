@@ -5,9 +5,9 @@ import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
 import { FolderExcludesField, parseExcludes } from './FolderExcludesField';
-import { SystemChoiceField, systemsOffered } from './SystemChoiceField';
+import { SystemChoiceField, type SystemOffered } from './SystemChoiceField';
 import { chooseInPlace, choosesInPlace, type DepartmentKind } from './inPlace';
-import { usePlugins } from '../bridge/plugins';
+import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
@@ -30,6 +30,11 @@ import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTi
 
 /** What an import answered: the repositories it registered, the workspace they landed in and the service's own sentence. */
 export type ImportAnswer = Awaited<ReturnType<typeof api.importFolder>>;
+
+export const systemsOffered = (plugins: readonly PluginEntry[]): SystemOffered[] =>
+  plugins
+    .filter((plugin) => plugin.enabled && !plugin.problem)
+    .flatMap((plugin) => (plugin.systems ?? []).map((each) => ({ system: `${plugin.id}/${each.id}`, name: each.name, plugin: plugin.name })));
 
 const EMPTY_LINES =(value: string): string[] =>
   value.split('\n').map((line) => line.trim()).filter(Boolean);

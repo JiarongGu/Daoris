@@ -11,12 +11,12 @@
       "out": [
         "daoris: <config>",
         "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
-        "  cap        2 concurrent session(s)",
+        "  cap        2 concurrent session(s)  (the default — `daoris settings cap <n>` changes it)",
         "  rules      `daoris role supervisor` says the supervisor's rules, the failed sessions that park a quest among them",
         "  quiet      10 minutes before Daoris looks in on a session  (the default — `daoris settings quiet <minutes>` changes it)",
         "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
-        "  notify     on  (a session parking, or ending without you asking)",
+        "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
@@ -30,7 +30,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses. Each machine setting's line is the one `daoris settings` says, naming the verb that changes it."
     },
     {
       "name": "list, the bare family word",
@@ -40,12 +40,12 @@
       "out": [
         "daoris: <config>",
         "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
-        "  cap        2 concurrent session(s)",
+        "  cap        2 concurrent session(s)  (the default — `daoris settings cap <n>` changes it)",
         "  rules      `daoris role supervisor` says the supervisor's rules, the failed sessions that park a quest among them",
         "  quiet      10 minutes before Daoris looks in on a session  (the default — `daoris settings quiet <minutes>` changes it)",
         "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
-        "  notify     on  (a session parking, or ending without you asking)",
+        "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
@@ -59,7 +59,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses. Each machine setting's line is the one `daoris settings` says, naming the verb that changes it."
     },
     {
       "name": "list, a home holding every choice",
@@ -71,7 +71,7 @@
       "out": [
         "daoris: <config>",
         "  roles      `daoris role` says each role's agents, and `daoris role set` changes them",
-        "  cap        3 concurrent session(s)",
+        "  cap        3 concurrent session(s)  (set — `daoris settings cap <n>` changes it)",
         "  rules      `daoris role supervisor` says the supervisor's rules, the failed sessions that park a quest among them",
         "  retried    #q1  (counting from 3 failure(s))",
         "  released   #q2  (your stop of session s1a2b3c4)",
@@ -79,8 +79,8 @@
         "  paused     quest #q4  (when is not recorded) — resume: daoris quest resume q4",
         "  quiet      10 minutes before Daoris looks in on a session  (the default — `daoris settings quiet <minutes>` changes it)",
         "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)",
-        "  cooloff    45 minutes an account cools when its agent names no time for its limit",
-        "  notify     off  (a session parking, or ending without you asking — not said)",
+        "  cooloff    45 minutes an account cools when its agent names no time for its limit  (set — `daoris settings cooloff <minutes>` changes it)",
+        "  notify     off — a session parking, or ending without you asking, is not said  (set — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   engine",
         "  drivable   game  (held by you — `daoris place resume` releases it)",
@@ -110,7 +110,7 @@
       ],
       "err": [],
       "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is no setting and is said nowhere; the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is no setting and is said nowhere; the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses. Each machine setting's line is the one `daoris settings` says, naming the verb that changes it."
     },
     {
       "name": "drive",
@@ -297,17 +297,118 @@
       "after": "{\n  \"notify\": false\n}\n"
     },
     {
-      "name": "notify, no direction",
+      "name": "notify alone, said",
       "argv": [
         "notify"
       ],
       "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver notify` needs on|off — e.g. `daoris settings notify off`."
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)"
       ],
-      "after": null
+      "err": [],
+      "after": null,
+      "changed": "A setting's verb with no value says the setting, where it said its usage."
+    },
+    {
+      "name": "cap alone, said",
+      "argv": [
+        "cap"
+      ],
+      "before": "{\n  \"cap\": 3\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  cap        3 concurrent session(s)  (set — `daoris settings cap <n>` changes it)"
+      ],
+      "err": [],
+      "after": "{\n  \"cap\": 3\n}\n",
+      "changed": "A setting's verb with no value says the setting, where it said its usage."
+    },
+    {
+      "name": "cooloff alone, said",
+      "argv": [
+        "cooloff"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)"
+      ],
+      "err": [],
+      "after": null,
+      "changed": "A setting's verb with no value says the setting, where it said its usage."
+    },
+    {
+      "name": "quiet alone, said",
+      "argv": [
+        "quiet"
+      ],
+      "before": "{\n  \"quietMinutes\": 15\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  quiet      15 minutes before Daoris looks in on a session  (set — `daoris settings quiet <minutes>` changes it)"
+      ],
+      "err": [],
+      "after": "{\n  \"quietMinutes\": 15\n}\n",
+      "changed": "A setting's verb with no value says the setting, where it said its usage."
+    },
+    {
+      "name": "settings, an empty home",
+      "argv": [
+        "settings"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)",
+        "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
+        "  quiet      10 minutes before Daoris looks in on a session  (the default — `daoris settings quiet <minutes>` changes it)",
+        "  cap        2 concurrent session(s)  (the default — `daoris settings cap <n>` changes it)",
+        "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)",
+        "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris settings keep set-aside …` changes it)",
+        "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris settings keep downloads …` changes it)",
+        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris settings keep browser-cache …` changes it)",
+        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris settings keep logs …` changes it)",
+        "  history    finished work's records stay until you clear them  (the default — `daoris settings keep history …` changes it)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
+        "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
+        "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)"
+      ],
+      "err": [],
+      "after": null,
+      "changed": "`daoris settings` with no verb says each machine setting and the verb that changes it, where it said its usage."
+    },
+    {
+      "name": "settings, a home with each setting set",
+      "argv": [
+        "settings"
+      ],
+      "before": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  notify     off — a session parking, or ending without you asking, is not said  (set — `daoris settings notify on|off` changes it)",
+        "  cooloff    45 minutes an account cools when its agent names no time for its limit  (set — `daoris settings cooloff <minutes>` changes it)",
+        "  quiet      15 minutes before Daoris looks in on a session  (set — `daoris settings quiet <minutes>` changes it)",
+        "  cap        3 concurrent session(s)  (set — `daoris settings cap <n>` changes it)",
+        "  manifest   5000 files and 2 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (set — `daoris settings manifest files|minutes|copy <n>` changes each)",
+        "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris settings keep set-aside …` changes it)",
+        "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris settings keep downloads …` changes it)",
+        "  browser-cache the browser's caches are cleared when over 2 GB, while the browser does not run and at its start  (the default — `daoris settings keep browser-cache …` changes it)",
+        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris settings keep logs …` changes it)",
+        "  history    finished work's records stay until you clear them  (the default — `daoris settings keep history …` changes it)",
+        "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
+        "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
+        "  terminal   act  (a terminal's press runs at once as yours, listed in Notifications — `daoris settings terminal ask` asks again)"
+      ],
+      "err": [],
+      "after": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
+      "changed": "`daoris settings` with no verb says each machine setting and the verb that changes it, where it said its usage."
     },
     {
       "name": "cap",
@@ -536,6 +637,87 @@
       "after": null
     },
     {
+      "name": "manifest files",
+      "argv": [
+        "manifest",
+        "files",
+        "100000"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a folder's manifest read stops at 100000 files; a folder past it is too large to follow, and still works in place.",
+        "  Written to <config> — read at the next manifest, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"manifest\": {\n    \"files\": 100000\n  }\n}\n",
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest minutes, beside a cap",
+      "argv": [
+        "manifest",
+        "minutes",
+        "3"
+      ],
+      "before": "{\n  \"cap\": 3\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a folder's manifest read stops after 3 minutes; a folder past it is too large to follow, and still works in place.",
+        "  Written to <config> — read at the next manifest, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"cap\": 3,\n  \"manifest\": {\n    \"minutes\": 3\n  }\n}\n",
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest files, too few",
+      "argv": [
+        "manifest",
+        "files",
+        "10"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a folder's manifest is bounded by a whole number of files from 1000 to 10000000 — e.g. `daoris settings manifest files 100000`."
+      ],
+      "after": null,
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest alone, said",
+      "argv": [
+        "manifest"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)"
+      ],
+      "err": [],
+      "after": null,
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb; with no value it says them."
+    },
+    {
+      "name": "manifest, a word that is no bound",
+      "argv": [
+        "manifest",
+        "lines",
+        "3"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a folder's manifest takes one bound at a time: `daoris settings manifest files <n>`, `daoris settings manifest minutes <n>` or `daoris settings manifest copy <megabytes>`."
+      ],
+      "after": null,
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
       "name": "terminal act, alone",
       "argv": [
         "terminal",
@@ -567,9 +749,25 @@
       "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb."
     },
     {
-      "name": "terminal, no tier",
+      "name": "terminal alone, said",
       "argv": [
         "terminal"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)"
+      ],
+      "err": [],
+      "after": null,
+      "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb; with no tier it says the tier."
+    },
+    {
+      "name": "terminal, a word that is no tier",
+      "argv": [
+        "terminal",
+        "sometimes"
       ],
       "before": null,
       "exit": 2,

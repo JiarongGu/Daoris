@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
+import { versionLine } from './platform/build-stamp.ts';
 import { DaorisError, type ExitCode } from './platform/errors.ts';
 import type { CliCommand } from './platform/types.ts';
 import { command as analyze } from './cli/analyze.ts';
@@ -98,7 +98,7 @@ export function runCli(
       return 0;
     }
     if (!handler || argv.includes('--version')) {
-      write(JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).version);
+      write(versionLine(packageRoot));
       return 0;
     }
 

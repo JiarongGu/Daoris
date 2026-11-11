@@ -4,77 +4,20 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// What an Ask Daoris conversation's Applies published, kept with it by id. The ids are
-/// the service's answer, never read from a sentence; the list survives a restart, since it is a file beside the conversation's other
-/// files, and goes with them at a delete. Files only, so this is the suite's fast half.
+/// What an Ask Daoris conversation's presses published, kept with it by the ids the service answered: a file beside the
+/// conversation's others, which survives a restart and goes with them at a delete.
 /// </summary>
 public sealed class HelpPublishedTests : HelpProposalsFixture
 {
+    /// <summary>One answer settles a press, so a second entry for it is never kept.</summary>
     [Fact]
-    public async Task An_asks_apply_keeps_the_ask_and_the_quest_the_service_answered_with_its_conversation()
-    {
-        var doors = new HelpStandInDoors { Asked = new AskAnswer(true, "Asked as `#a1b2c3d4` in `work`.", "a1b2c3d4", "q1a2b3c4") };
-
-        var (applied, _, _) = await ApplyAsync(
-            new HelpProposal("p7", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"), doors);
-
-        Assert.True(applied.Applied);
-        var kept = Assert.Single(new HelpPublished(_home).Read("h1"));
-        Assert.Equal(("p7", "ask", "work", "a1b2c3d4", "q1a2b3c4"), (kept.Proposal, kept.Kind, kept.Workspace, kept.Ask, kept.Quest));
-    }
-
-    /// <summary>
-    /// What the conversation is told names the ask and the quest by id, whatever the service's sentence says: an id it names already is
-    /// not said twice, and the ids reach the agent even where the sentence names none of them.
-    /// </summary>
-    [Theory]
-    [InlineData("Asked as `#a1b2c3d4` in `work`.", "Asked as `#a1b2c3d4` in `work`. (quest `#q1a2b3c4`)")]
-    [InlineData("Asked as `#a1b2c3d4` in `work`. Published quest `#q1a2b3c4` to `engine`.", "Asked as `#a1b2c3d4` in `work`. Published quest `#q1a2b3c4` to `engine`.")]
-    [InlineData("Asked.", "Asked. (ask `#a1b2c3d4`, quest `#q1a2b3c4`)")]
-    public async Task An_asks_apply_tells_the_ids_its_sentence_does_not_name(string message, string told)
-    {
-        var doors = new HelpStandInDoors { Asked = new AskAnswer(true, message, "a1b2c3d4", "q1a2b3c4") };
-
-        var (applied, _, _) = await ApplyAsync(
-            new HelpProposal("p7", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"), doors);
-
-        Assert.EndsWith($" — {told}", applied.Told);
-    }
-
-    /// <summary>One Apply settles a proposal, so a second entry for it is never kept.</summary>
-    [Fact]
-    public void A_proposal_kept_already_keeps_its_first_entry()
+    public void A_press_kept_already_keeps_its_first_entry()
     {
         var kept = new HelpPublished(_home);
-        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T09:00:00Z"), "p1", "ask", "work") { Ask = "a1" });
-        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T10:00:00Z"), "p1", "ask", "work") { Ask = "a9" });
+        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T09:00:00Z"), "p1", "press", "work") { Ask = "a1" });
+        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T10:00:00Z"), "p1", "press", "work") { Ask = "a9" });
 
         Assert.Equal(["a1"], kept.Read("h1").Select(entry => entry.Ask));
-    }
-
-    /// <summary>The entry is kept before the card settles applied, so an applied card never stands without it.</summary>
-    [Fact]
-    public async Task The_entry_is_kept_by_the_time_the_card_is_settled()
-    {
-        var (_, _, _) = await ApplyAsync(new HelpProposal("p7", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"),
-            new HelpStandInDoors { Asked = new AskAnswer(true, "Asked.", "a1b2c3d4", null) });
-
-        Assert.Equal("applied", HelpProposals.Find(_home, "p7")!.State);
-        Assert.Equal("a1b2c3d4", Assert.Single(new HelpPublished(_home).Read("h1")).Ask);
-    }
-
-    /// <summary>A refused ask, an answer naming no id, and a change that publishes nothing keep nothing: there is nothing to open.</summary>
-    [Fact]
-    public async Task An_apply_that_published_nothing_keeps_nothing()
-    {
-        await ApplyAsync(new HelpProposal("p1", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"),
-            new HelpStandInDoors { Asked = new AskAnswer(false, "the service is down", null, null) });
-        await ApplyAsync(new HelpProposal("p2", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"),
-            new HelpStandInDoors { Asked = new AskAnswer(true, "Asked.", null, null) });
-        await ApplyAsync(Setting("drive", "engine") with { Id = "p3" });
-
-        Assert.Empty(new HelpPublished(_home).Read("h1"));
-        Assert.False(System.IO.File.Exists(new HelpPublished(_home).PathOf("h1")));
     }
 
     /// <summary>Kept on disk: a new reader over the same home, as after a restart, reads every entry, the newest first.</summary>

@@ -50,6 +50,35 @@ public sealed class TurnUnattributedTests : IDisposable
     }
 
     [Fact]
+    public async Task A_path_a_tool_only_read_is_still_unattributed()
+    {
+        await RepositoryAsync();
+        await PlaceTurns.StartAsync(Home, "default", "reports", Place, "s-aaaaaaaa", null, CancellationToken.None);
+        var began = DateTimeOffset.UtcNow;
+        File.WriteAllText(Path.Combine(Place, "plan.md"), "the person's line");
+        await PlaceTurns.EndAsync(Home, "s-aaaaaaaa", CancellationToken.None);
+        var read = new SessionEvent
+        {
+            Kind = SessionEventKind.Tool, At = began, ToolKind = "read", Locations = [Path.Combine(Place, "plan.md")],
+        };
+
+        Assert.Equal(["plan.md"], TurnUnattributed.Of(Home, "s-aaaaaaaa", [read]));
+    }
+
+    [Fact]
+    public async Task A_path_a_tool_named_in_another_case_is_its_own_where_the_disk_ignores_case()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await RepositoryAsync();
+        await PlaceTurns.StartAsync(Home, "default", "reports", Place, "s-aaaaaaaa", null, CancellationToken.None);
+        var began = DateTimeOffset.UtcNow;
+        File.WriteAllText(Path.Combine(Place, "notes.md"), "the session's line");
+        await PlaceTurns.EndAsync(Home, "s-aaaaaaaa", CancellationToken.None);
+
+        Assert.Empty(TurnUnattributed.Of(Home, "s-aaaaaaaa", [Edited("NOTES.md", began)]));
+    }
+
+    [Fact]
     public void A_turn_with_no_end_read_yet_says_nothing()
     {
         Assert.Empty(TurnUnattributed.Of(Home, "s-nothing", []));

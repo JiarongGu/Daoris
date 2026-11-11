@@ -5,13 +5,11 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The owner's census sweep: every person's and window's route of the census has a mark
-/// (<see cref="PipeTargets.Mark"/>); every proposal door Ask Daoris's Apply takes of the setting and set-up kinds declares its target;
-/// every person's door of the service declares the record kind its effect is attributed on, by evidence the desktop's reader knows; and
-/// the sweep fails on any of them that names a repository, a quest or a session and marks nothing. A declaration can be wrong, so each
-/// is cross-checked against its handler: a route that publishes a session or the state a role's acts read names its target, a route
-/// that only names one is <c>none</c> only from the reviewed exemptions below, and a mutating route declaring <c>none</c>, or listing
-/// itself an exemption, fails.
+/// The owner's census sweep: every person's and window's route has a mark (<see cref="PipeTargets.Mark"/>); every person's door of
+/// the service declares the record kind its effect is attributed on, by evidence the desktop's reader knows; and the sweep fails on
+/// any that names a repository, a quest or a session and marks nothing. Each is cross-checked against its handler: a route that
+/// publishes a session or the state a role's acts read names its target, one that only names one is <c>none</c> only from the
+/// reviewed exemptions below, and a mutating route declaring <c>none</c>, or listing itself an exemption, fails.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class OwnerSetCensusTests
@@ -109,17 +107,6 @@ public sealed class OwnerSetCensusTests
         Assert.Contains("id", handlers["SESSION_OPEN_FOLDER"].Fields);
         Assert.Equal(OwnerNone.ActsOnNothing, PipeTargets.Daoris.Mark(DriverModule.Name, "SESSION_OPEN_FOLDER")!.None);
         Assert.DoesNotContain(Sweep(PipeTargets.Daoris.Marks, Exemptions, handlers), each => each.StartsWith("SESSION_OPEN_FOLDER:", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void Every_apply_door_declares_its_target()
-    {
-        foreach (var door in HelpProposals.DoorsOf("setup"))
-        {
-            var owned = HelpProposals.Owned(new HelpProposal("p1", "setup", door, "engine", null, null, null, "", null, "proposed"));
-            Assert.True(owned.Repositories.Count + owned.Quests.Count > 0, $"setup.{door} declares no target");
-            Assert.Equal(["engine"], owned.Repositories);
-        }
     }
 
     /// <summary>
