@@ -55,10 +55,6 @@ public sealed class PipeDelegateTests : Bridge
             $$"""{"session":"h1","route":"{{DriverModule.Name}}.WORK_PAUSE","door":"terminal"}""", Logged(PipeDelegate.PressedEvent));
     }
 
-    /// <summary>
-    /// <c>daoris ask --to &lt;repo&gt; "…"</c> from a full access conversation is its delegate's press of <c>ASK_NEW</c>: made at once with no
-    /// card. In restricted mode the same press asks on a card naming Ask Daoris, and runs nothing before the person's yes.
-    /// </summary>
     [Theory]
     [InlineData(HelpModes.Full)]
     [InlineData(HelpModes.Restricted)]

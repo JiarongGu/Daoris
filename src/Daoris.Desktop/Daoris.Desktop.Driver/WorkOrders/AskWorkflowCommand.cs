@@ -75,7 +75,6 @@ public static class AskWorkflowCommand
     public static string? Unchoosable(string? kind, string? workflow, string workspace, AskWorkflowWorld world) =>
         Unchoosable(kind, workflow, workspace, world.Config(), world.Home);
 
-    /// <summary>The same, judged against <paramref name="config"/> and the workflows saved under <paramref name="home"/>.</summary>
     public static string? Unchoosable(string? kind, string? workflow, string workspace, DriverConfig config, string home)
     {
         if (kind is not null)

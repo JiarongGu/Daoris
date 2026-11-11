@@ -44,7 +44,7 @@ internal sealed class QuestPublishing(
         }
         // A registered sender's row decides its circle. A sender with none — an ask — names
         // its own, and silence places it where an unregistered sender always is. Ask Daoris has none and reaches every
-        // workspace (D253 point 3), so its quest is filed in the workspace of the repository it names.
+        // workspace, so its quest is filed in the workspace of the repository it names.
         var home = sender?.InWorkspace
             ?? (string.Equals(from, SessionLedger.HelpRepository, StringComparison.OrdinalIgnoreCase) && registered.Named(to) is { } reached
                 ? reached.InWorkspace

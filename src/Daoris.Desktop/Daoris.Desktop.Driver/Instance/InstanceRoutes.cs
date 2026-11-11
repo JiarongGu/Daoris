@@ -306,8 +306,6 @@ public static class PersonPresses
 
     /// <summary><c>ask --delete &lt;id&gt;</c>: an ask made by mistake deleted with every quest it became.</summary>
     public static InstanceRoute AskDelete { get; } = Person("ASK_DELETE");
-
-    /// <summary><c>ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] … "…"</c>: an ask made at a workspace, or published at once to a receiver.</summary>
     public static InstanceRoute AskNew { get; } = Person("ASK_NEW");
 
     /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>

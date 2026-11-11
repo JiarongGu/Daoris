@@ -195,7 +195,8 @@ public sealed class AskReviewCommandTests
         var read = AskArguments.Read(["--review", "staging", "--review-words", "the demo", "fix it"], out _)!;
         Assert.Equal(("staging", "the demo"), (read.Review, read.ReviewWords));
         Assert.Equal("a1", AskArguments.Read(["--set-review", "a1", "on", "now"], out _)!.SetReview);
-        Assert.Contains("daoris ask review <id> on|<environment>|off [\"…\"]", AskArguments.Usage);
+        var usage = AskArguments.Usage;
+        Assert.Contains("daoris ask review <id> on|<environment>|off [\"…\"]", usage);
         var console = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("AskReviewCommand.Read(setReview, read.Words, out var setProblem)", console);

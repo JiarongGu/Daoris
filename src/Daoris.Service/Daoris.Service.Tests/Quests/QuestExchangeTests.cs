@@ -383,10 +383,6 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.DoesNotContain(": .", unnamed.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Ask Daoris belongs to no workspace's registry, and every workspace is within its reach: its quest is filed in the workspace of the
-    /// repository it names, whichever its conversation started in.
-    /// </summary>
     [Fact]
     public async Task Ask_Daoris_s_quest_reaches_the_named_repository_s_workspace()
     {
