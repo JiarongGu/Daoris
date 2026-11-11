@@ -23,6 +23,16 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
 ];
 
+/**
+ * The section once its plan is in. It is drawn while the plan is asked, saying so, and the answer settles a render later:
+ * a file's first case, which loads the modules, finds the section before it.
+ */
+async function keptRead(page: HTMLElement) {
+  const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+  await waitFor(() => expect(kept).not.toHaveTextContent('Reading what this machine keeps…'));
+  return kept;
+}
+
 describe("a workspace's history on its Details", () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -55,7 +65,7 @@ describe("a workspace's history on its Details", () => {
     show(<ProjectsView notify={notify} />);
     const page = await chooseWorkspace('aurora');
 
-    const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+    const kept = await keptRead(page);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HISTORY_PLAN', expect.objectContaining({ payload: { workspace: 'aurora' } }));
     expect(kept).toHaveTextContent('11 closed quests, 2 asks, 14 sessions, 1 copy of a teammate’s record: 23.6 MB.');
 
@@ -87,7 +97,7 @@ describe("a workspace's history on its Details", () => {
     show(<ProjectsView notify={notify} />);
     const page = await chooseWorkspace('aurora');
 
-    const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+    const kept = await keptRead(page);
     await userEvent.click(within(kept).getByRole('button', { name: 'Clear history…' }));
     const ask = within(kept).getByRole('group', { name: 'clear from this machine' });
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
@@ -107,7 +117,7 @@ describe("a workspace's history on its Details", () => {
     show(<ProjectsView notify={() => {}} onOpenQuest={onOpenQuest} />);
     const page = await chooseWorkspace('aurora');
 
-    const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+    const kept = await keptRead(page);
     await userEvent.click(within(kept).getByRole('button', { name: 'Clear history…' }));
     await userEvent.click(within(within(kept).getByRole('listitem', { name: 'Quest #9f0a1b' })).getByRole('button', { name: 'Open #9f0a1b' }));
     expect(onOpenQuest).toHaveBeenCalledWith('9f0a1b');
@@ -122,7 +132,7 @@ describe("a workspace's history on its Details", () => {
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseWorkspace('aurora');
 
-    const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+    const kept = await keptRead(page);
     expect(kept).toHaveTextContent('Nothing finished is kept here.');
     expect(within(kept).queryByRole('button', { name: 'Clear history…' })).toBeNull();
   });
