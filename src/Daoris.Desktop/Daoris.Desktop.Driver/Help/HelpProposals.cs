@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it.</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `ask`, `go`, `workflow` or `setup`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris place`, `daoris settings`, `daoris quest` or `daoris git` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
@@ -36,14 +36,6 @@ public sealed record HelpProposal(
     /// <summary>A favorite's title, for a browser proposal that keeps one, or null for the page's host.</summary>
     public string? Title { get; init; }
 
-    // The clear kind's.
-
-    /// <summary>
-    /// The units a clear proposal's card listed, held in its file from its first draw: what its Apply sends.
-    /// Null before the card listed anything.
-    /// </summary>
-    public IReadOnlyList<HistoryUnitName>? Units { get; init; }
-
     // The go kind's.
 
     /// <summary>A go's Settings domain, or null.</summary>
@@ -59,14 +51,6 @@ public sealed record HelpProposal(
 
     /// <summary>The place's quick set-up a <c>place</c> proposal asks, from the file's <c>place</c>; null for every other door and kind.</summary>
     public PlaceAsk? Place { get; init; }
-
-    // The sync kind's.
-
-    /// <summary>The rows a sync proposal's look listed, kept in its file; null before the person looked.</summary>
-    public IReadOnlyList<HelpSyncRow>? Listed { get; init; }
-
-    /// <summary>What a sync proposal's look kept beside its rows; nothing before the person looked.</summary>
-    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
 
     // The workflow kind's.
 
@@ -134,14 +118,6 @@ public sealed record HelpMachineFacts(
 
     /// <summary>This machine's plugins, for a landing rule that names one and a plugin's press.</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
-
-    // The clear kind's.
-
-    /// <summary>
-    /// What this machine keeps of each quest, ask and workspace a clear proposal names, as <c>HISTORY_PLAN</c> answers it
-    /// (<see cref="HistoryClearing.PlanAsync"/>): what a clear proposal is judged by. Read only for one.
-    /// </summary>
-    public IReadOnlyList<HistoryPlan> History { get; init; } = [];
 
     // The go kind's.
 
@@ -236,11 +212,6 @@ public sealed record HelpMachineFacts(
 /// <remarks>What only one kind's card or Apply needs is read by that kind in its file; the members stay in this one declaration, under a comment per kind.</remarks>
 public sealed record HelpPlan(string? Refusal, string Describe, string Terminal, Func<DriverConfig, DriverConfig>? Apply)
 {
-    // The clear kind's.
-
-    /// <summary>What a clear proposal's Apply sends; null where the card changes nothing, and for every other kind.</summary>
-    public HelpClearPlan? Clear { get; init; }
-
     // The go kind's.
 
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
@@ -250,11 +221,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>For a <c>place</c> the plan allows: the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
     public HelpPlaceSetUp? Place { get; init; }
-
-    // The sync kind's.
-
-    /// <summary>What a sync card shows; null for every other kind.</summary>
-    public HelpSyncPlan? Sync { get; init; }
 
     // The workflow kind's.
 
@@ -270,11 +236,11 @@ public sealed record HelpApplied(bool Applied, string Told)
     /// <summary>Where a go takes the person: the page navigates there, as its starters' doors do.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The sync kind's.
+    // The workflow kind's.
 
     /// <summary>
-    /// The proposal still waits for the person: a sync card's look that listed rows, which settles nothing, so
-    /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
+    /// The proposal still waits for the person: a draft's change opened in the editor, which settles nothing, so the card stays
+    /// and the page logs no settlement. False for every Apply that settles.
     /// </summary>
     public bool Stands { get; init; }
 }
@@ -285,8 +251,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAskDoors, IHelpClearDoors,
-    IHelpConfigDoors, IHelpSyncDoors
+    IHelpAskDoors, IHelpConfigDoors
 {
 }
 
@@ -441,16 +406,6 @@ public static class HelpProposals
         HelpProposalKinds.Find(proposal.Kind) is not { } kind
             ? new HelpPlan(Unknown(proposal.Kind), "", "", null)
             : kind.Plan(proposal, config, facts);
-
-    /// <summary>
-    /// A card drawn for the person: <c>HELP_PROPOSALS</c> calls this for each proposal it shows, with the plan it
-    /// showed, so a kind whose Apply sends exactly what its card listed holds that in the proposal's file. A refused plan is
-    /// never shown, and holds nothing.
-    /// </summary>
-    public static void Drawn(string home, HelpProposal proposal, HelpPlan plan)
-    {
-        if (plan.Refusal is null) HelpProposalKinds.Find(proposal.Kind)?.Drawn(home, proposal, plan);
-    }
 
     /// <summary>
     /// The person's Apply: the plan made through the door the screen's own route uses, the

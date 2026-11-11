@@ -270,6 +270,8 @@ const SAID: Record<string, readonly string[]> = {
   TransientHeld: ['transient'],
   // Its role's policy asks before it moves the quest to another choice, or the line has made its bound of moves.
   PolicyHeld: ['policy-ask', 'moves-bound'],
+  // Its finished session left it taken, and nothing carries it on (`unclosed`).
+  Unclosed: ['unclosed'],
   // The steward's stop, held for a Try again by the steward or the owner; never said as the person's.
   Stopped: ['steward'],
   // A start held because its earlier work is in the owner's checkout (`held.checkout`).

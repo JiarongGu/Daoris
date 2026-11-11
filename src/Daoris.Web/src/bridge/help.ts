@@ -10,8 +10,7 @@ import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { type Place, placeSaid } from '../help/focus';
 import type { HelpPublishedEntry } from '../help/published/published';
-import { call, pressBound } from './call';
-import { syncLookBound } from './repositories/lines';
+import { call } from './call';
 import { logEvent } from './log';
 import { usePollUnlessTold } from './state/published';
 import { askHeld } from './state/held';
@@ -185,25 +184,10 @@ export type HelpSettled = {
    * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
    */
   go?: HelpPlace | null;
-  /** The card still stands for another press: a sync card's look, which settles nothing. A host without it answers none. */
+  /** The card still stands for another press: a draft's change opened in the editor, which settles nothing. A host without it answers none. */
   stands?: boolean;
   /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */
   changed?: boolean;
-};
-
-/**
- * How long an Apply may take: a sync card's first Apply is the look, which fetches, and its second the press,
- * which replays, and each waits as long as the screen's own would; every other Apply is quick, and waits the bridge's
- * default. The proposal is the one the conversation's list holds, found by its id.
- */
-export const settleBound = (client: QueryClient, id: string): number | undefined => {
-  const proposal = client.getQueriesData<HelpProposal[]>({ queryKey: HELP_PROPOSALS })
-    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
-    .find((each) => each.id === id);
-  if (proposal?.kind !== 'sync') return undefined;
-  return proposal.sync?.looked
-    ? pressBound(proposal.sync.rows.filter((row) => row.moves).length)
-    : syncLookBound(client);
 };
 
 /**
@@ -423,14 +407,12 @@ export const useSettleHelp = () => {
           {
             id: settle.id, revision: shownRevision(client, settle.id),
             ...(settle.taken ? { taken: [...settle.taken], left: [...(settle.left ?? [])] } : {}),
-          },
-          { timeoutMs: settleBound(client, settle.id) })
+          })
         : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
     onSuccess: (answer, settle) => {
-      // Whether Ask Daoris's proposals help: the person's Apply or Not now, once it lands and settles the
-      // proposal. A sync card's look settles nothing, and its card stands for the press that does.
+      // Whether Ask Daoris's proposals help: the person's Apply or Not now, once it settles the proposal; a standing card has not.
       if (!answer?.stands) logEvent('proposal.settled', { applied: settle.apply });
     },
   });

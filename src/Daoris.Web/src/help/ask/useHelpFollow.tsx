@@ -23,8 +23,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   const proposals = useHelpProposals(shown?.id ?? null, live);
   const settle = useSettleHelp();
   const cards = proposals.data ?? [];
-  // What an Apply did beyond the driver's sentence: a go opens its place through the starters'
-  // door.
+  // What an Apply did beyond the driver's sentence: a go opens its place through the starters' door.
   const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
     // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
@@ -83,7 +82,6 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
           key={proposal.id}
           proposal={proposal}
           pending={settle.isPending}
-          onGo={onGo}
           onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: (answer) => applied(answer, proposal), onError: (error) => setRefusal(sentence(error)) })}
           onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
         />

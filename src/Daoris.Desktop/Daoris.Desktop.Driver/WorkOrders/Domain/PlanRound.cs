@@ -170,6 +170,10 @@ internal sealed class PlanRound
                 // machine's, whatever is opted in or held here.
                 considerations.Add(saying.TakenElsewhere(quest, cutOff) ?? saying.CarryOn(quest, cutOff));
             }
+            else if (UnclosedQuests.LeftBy(quest, Snapshot) is { } left)
+            {
+                considerations.Add(UnclosedQuests.Held(quest, left));
+            }
         }
 
         return considerations;

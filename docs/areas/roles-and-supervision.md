@@ -422,7 +422,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
+    quests, or proposes a change. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
+    it names, every workspace being within its reach (D253 point 3). A quest's or session's own acts stay in its own conversation: accepting a departure and
     handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
     verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
@@ -440,23 +441,31 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
-    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules
-    (`settings notify|cap|cooloff|quiet|keep`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
+    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
+    (`settings notify|cap|cooloff|quiet|keep|terminal`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
     the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
     one view of `SET_ROLE`, judged by the role door's judges against the catalogue, staffing and rules held now; a supervisor's record
     and a place's rules ride it before and after), and a plugin's add from a folder, install of an offer, update, switch, remove and
     approval or withdrawal of what its server offers Ask Daoris (`plugin add|update|enable|disable|remove`, `plugins approve|withdraw`,
     the views of `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` and `PLUGIN_ACTION`, judged as the Plugins place judges them; what the
-    plugin runs as its manifest writes it, or every tool an approval names, rides the card). A press of Ask Daoris's that
+    plugin runs as its manifest writes it, or every tool an approval names, rides the card), and a clear of finished history
+    (`quest clear <id> [--failed] --yes`, `ask clear <id> --yes`, `history clear --workspace <name> --yes`, the view of `HISTORY_CLEAR`,
+    counted from its first press's list, `HISTORY_PLAN`, and what that list keeps refused in the verb's own words), and bringing
+    repositories up to date (`tree sync [--repository|--workspace <name>|--all] --yes`, the running Daoris's `TREES_SYNC` pressed by the
+    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves), a place's set-up applied (`place
+    <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
+    the plan refuses), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
+    its view judged by the verb's own judges, `AskNewCommand.Unfit`, so Ask Daoris makes an ask in full access with no card and in
+    restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Each proposal still proposed is a kind under `Help/Proposals/`, judged
     by its route's own code against the machine now and applied only by the person's *Apply* through that route; a kind goes
-    whole, tool to card, with the change that gives its route a view (the setting, agent, browser, role and plugin kinds are gone; the
-    ask, sync, clear, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
+    whole, tool to card, with the change that gives its route a view (the setting, agent, browser, role, plugin, clear and sync kinds
+    are gone; the ask, workflow and setup kinds remain, with `go`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
 57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
     and quiet), checkouts and families of acts, each request
@@ -471,9 +480,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     with whether that was beyond its conversation's focus at the press, `HelpPressPlace`; a restricted press asked on a card is
     kept there too, marked asked, its outcome its card's state: waiting, allowed, refused, changed or unanswered; the newest 100, a
     restart empties it) and told to the windows, which list it in *Notifications* beside the steward's line, the asked apart
-    under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A proof that does not hold, a nonce used already or a session
+    under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A terminal's press under the
+    terminal's tier `act` (desktop-app 15) is kept and listed the same way, marked a terminal's, under its own line and with no
+    conversation to open. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
-    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)
+    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253, D271)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
     of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a

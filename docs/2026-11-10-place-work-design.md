@@ -309,7 +309,9 @@ returning the copy's folder and its base manifest, `EndedAsync(copy)` and `Remov
   which Windows' copy engine uses there from 24H2, Dev Drive among it), `clonefile` on APFS, `FICLONE` on btrfs and XFS. Only on the
   place's own volume: its copies sit in the home's `work/copies/` where the home lies on that volume, else in a copies folder the person
   names once per volume (the machine setting `copiesFolders`). `Refusal` clones a probe file once per volume and remembers the answer.
-  Its cost is near nothing on disk and grows with the count of files (survey), which row g measures.
+  Its cost is near nothing on disk and grows with the count of files (survey), which row g measured
+  (`docs/2026-11-11-placework1g-clone-measurements.md`): about 5 KB a file on disk, 1.6 to 2.6 ms a file in time on a Dev Drive,
+  refused at once on NTFS.
 - **`copy`** (`CopyIsolation`, folder): a full copy into the home's `work/copies/`, bounded by the place's last manifest (the machine
   setting `copyBound`, proposed at 2 GB and 20,000 files). Over the bound it **waits instead**: the start takes the place's lease and
   works in place, said (`started.copy-bound`, *reports is 14 GB, past the copy bound of 2 GB: this session works in place when the

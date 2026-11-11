@@ -45,6 +45,14 @@ public sealed class MachineSettingView : IPressView
         return Shown("quiet", new() { ["minutes"] = text }, $"daoris settings quiet {text}");
     });
 
+    public static MachineSettingView Terminal() => new("SET_TERMINAL", payload =>
+    {
+        var tier = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("tier", out var value) && value.ValueKind == JsonValueKind.String
+            ? TerminalTiers.Named(value.GetString())
+            : null;
+        return tier is null ? PressViewed.Refused(TerminalTiers.Refusal) : Shown($"terminal-{tier}", [], $"daoris settings terminal {tier}");
+    });
+
     public static MachineSettingView Manifest() => new("SET_MANIFEST", payload =>
     {
         var (files, minutes, copy) = (Number(payload, "files"), Number(payload, "minutes"), Number(payload, "copy"));

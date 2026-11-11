@@ -69,7 +69,7 @@ public static class OpenRoutes
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
-        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
+        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press, `TREES_SYNC`, confirmed in the window"),
         ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
@@ -115,7 +115,6 @@ public static class OpenRoutes
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
         ("quest check", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
-        ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
         ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
 }
@@ -307,6 +306,7 @@ public static class PersonPresses
 
     /// <summary><c>ask --delete &lt;id&gt;</c>: an ask made by mistake deleted with every quest it became.</summary>
     public static InstanceRoute AskDelete { get; } = Person("ASK_DELETE");
+    public static InstanceRoute AskNew { get; } = Person("ASK_NEW");
 
     /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>
     public static InstanceRoute QuestAccept { get; } = Person("QUEST_ACCEPT");

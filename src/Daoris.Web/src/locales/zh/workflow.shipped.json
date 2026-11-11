@@ -15,6 +15,8 @@
   "workflow.shipped.integrated-no-press.for": "适用于仓库已声明并采纳其检查项的主线：每项工作在其智能体完成后即集成到主线。",
   "workflow.shipped.release.name": "发版工作流",
   "workflow.shipped.release.for": "适用于需要发布的仓库：工作经检查、由你审阅后合并到主线，再由本地发布插件查找待发布的版本、记录并把已构建的包复制到它自己的文件夹；没有待发布版本时，流程止于主线。",
+  "workflow.shipped.in-place.name": "原处工作流",
+  "workflow.shipped.in-place.for": "适用于任何部门，文件夹和系统也在内：一次一个会话在它自己的地方工作，工作的请求答复后由你在原处审阅；什么都不落地。",
 
   "workflow.shipped.delivery.merge-after-accept.name": "你采纳后合并",
   "workflow.shipped.delivery.merge-after-accept.for": "适用于由你采纳工作的仓库：工作的请求答复后由你审阅，然后合并到主线。",
@@ -27,5 +29,7 @@
   "workflow.shipped.delivery.integrated.name": "集成到主线",
   "workflow.shipped.delivery.integrated.for": "适用于集成其工作的主线：由你审阅工作并采纳到分支上，再由你请求把它集成到主线。",
   "workflow.shipped.delivery.integrated-no-press.name": "集成到主线，无需按键",
-  "workflow.shipped.delivery.integrated-no-press.for": "适用于仓库已声明并采纳其检查项的主线：每项工作在其智能体完成后即集成到主线。"
+  "workflow.shipped.delivery.integrated-no-press.for": "适用于仓库已声明并采纳其检查项的主线：每项工作在其智能体完成后即集成到主线。",
+  "workflow.shipped.delivery.in-place.name": "在原处工作",
+  "workflow.shipped.delivery.in-place.for": "适用于任何部门，文件夹和系统也在内：一次一个会话在它自己的地方工作，工作的请求答复后由你在原处审阅；什么都不落地。"
 }

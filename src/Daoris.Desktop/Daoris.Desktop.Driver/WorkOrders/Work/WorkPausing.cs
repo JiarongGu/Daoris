@@ -77,6 +77,7 @@ public static class WorkPausing
         StartVerdict.TransientHeld,
         // A line held for the person's yes by its role's policy.
         StartVerdict.PolicyHeld,
+        StartVerdict.Unclosed,
     ];
 
     /// <summary>

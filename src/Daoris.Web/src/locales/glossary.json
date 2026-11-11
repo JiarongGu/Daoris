@@ -74,7 +74,7 @@
         "harness.doors", "harness.use.title",
         "help.proposal.title",
         "help.proposal.titleGo",
-        "help.proposal.titleSync", "help.proposal.titleSetup",
+        "help.proposal.titleSetup",
         "help.proposal.titleDraft", "help.proposal.workflow.draftChanges", "help.proposal.workflow.draftProblems", "workflow.edit.proposal.title",
         "workflow.edit.proposal.changes",
         "help.history.title", "help.history.group.*", "help.mode.title", "help.wired.title", "help.grants.title", "quests.requirements.title",
@@ -237,7 +237,7 @@
         "help.history.save", "help.history.deleteMeanIt", "help.history.back", "help.history.retry", "help.history.start",
         "help.history.clearSearch", "help.history.more", "help.history.useOriginal", "projects.git.history.more",
         "help.proposal.apply", "help.proposal.dismiss", "help.proposal.dismissGo", "help.proposal.go",
-        "help.proposal.place.open", "help.proposal.look", "quests.requirements.accept",
+        "help.proposal.place.open", "quests.requirements.accept",
         "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",
         "help.mode.restricted", "help.mode.full", "help.mode.confirm.enable", "help.wired.open", "help.wired.close", "help.wired.door.mode", "help.grants.door.*",
         "map.detail.openConvergence", "overview.outstanding.answer", "overview.outstanding.ask",
@@ -492,7 +492,6 @@
     { "door": "search.toConvergence", "opens": "nav.convergence" },
     { "door": "overview.repositories.button", "opens": "nav.projects" },
     { "door": "work.head.review", "opens": "work.review.tab" },
-    { "door": "help.proposal.look", "opens": "settings.sync.look" },
     { "door": "workflow.door.setup", "opens": "projects.tab.setup" },
     { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" },
     { "door": "workflow.run.door.view", "opens": "work.views.workflow" }
@@ -508,7 +507,8 @@
       { "en": "Hosted merge workflow", "zh": "托管合并工作流" },
       { "en": "Integration workflow", "zh": "集成工作流" },
       { "en": "No-press integration workflow", "zh": "免按键集成工作流" },
-      { "en": "Release workflow", "zh": "发版工作流" }
+      { "en": "Release workflow", "zh": "发版工作流" },
+      { "en": "In-place workflow", "zh": "原处工作流" }
     ],
     "delivery": [
       { "en": "Merge after you accept", "zh": "你采纳后合并" },
@@ -517,6 +517,7 @@
       { "en": "Integrated into the line", "zh": "集成到主线" },
       { "en": "Merge with no review", "zh": "无需审阅即合并" },
       { "en": "Integrated with no press", "zh": "集成到主线，无需按键" },
+      { "en": "Work in place", "zh": "在原处工作" },
       { "en": "Not driven", "zh": "未驱动" }
     ],
     "step": [

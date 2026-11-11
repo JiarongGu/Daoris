@@ -10,13 +10,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
 {
     private static readonly DateTimeOffset At = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
 
-    private static HistoryPlan History(HistoryScope scope, string kind, string id, string workspace) =>
-        new(scope, id, [new HistoryUnitPlan(kind, id, workspace) { Quests = [id], Bytes = new HistoryBytes(1024, 0, 0, 0, 0) }]);
-
-    /// <summary>
-    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. Each has a quest, an ask and a session, as each
-    /// kind's facts read them.
-    /// </summary>
+    /// <summary><c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s, each with a quest, an ask and a session.</summary>
     private static readonly HelpMachineFacts Two = Facts with
     {
         Workspaces = ["default", "alpha", "beta"],
@@ -30,13 +24,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         [
             new HelpAskFacts("aa1alpha", "stream the tiles", "alpha", "Open", [], Deletable: true),
             new HelpAskFacts("ab1beta0", "fix the stall", "beta", "Open", [], Deletable: true),
-        ],
-        History =
-        [
-            History(HistoryScope.Quest, HistoryKinds.Quest, "qa1alpha", "alpha"),
-            History(HistoryScope.Quest, HistoryKinds.Quest, "qb1beta0", "beta"),
-            History(HistoryScope.Ask, HistoryKinds.Ask, "ab1beta0", "beta"),
-            History(HistoryScope.Failed, HistoryKinds.Failed, "qb1beta0", "beta"),
         ],
         Sessions =
         [
@@ -83,11 +70,10 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_go_and_a_clear_of_another_workspace_are_judged_by_their_kinds()
+    public void A_go_to_another_workspace_is_judged_by_its_kind()
     {
         Reaches(Of("go", "go", "repositories") with { Repository = "game" });
         Reaches(Of("go", "go", "repositories") with { Workspace = "beta" });
-        Reaches(Of("clear", "workspace", "beta"));
     }
 
     [Fact]
@@ -98,16 +84,10 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("sync", "sync", "game"));
     }
 
-    /// <summary>
-    /// A proposal naming a record of another workspace by its id is judged by its kind, which finds the record and plans it:
-    /// a delete, an accept, a pause, a clear, an archive and a go to <c>beta</c>'s quest, ask or session.
-    /// </summary>
+    /// <summary>A go to another workspace's quest, ask or session by its id is judged by its kind, which finds the record.</summary>
     [Fact]
     public void A_proposal_naming_another_workspace_s_record_by_id_is_judged_by_its_kind()
     {
-        Reaches(Of("clear", "quest", "qb1beta0"));
-        Reaches(Of("clear", "ask", "ab1beta0"));
-        Reaches(Of("clear", "failed", "qb1beta0"));
         Reaches(Of("go", "go", "quests") with { Item = "qb1beta0" });
         Reaches(Of("go", "go", "quests") with { Item = "ask:ab1beta0" });
         Reaches(Of("go", "go", "sessions") with { Item = "#sb1beta0" });
@@ -119,7 +99,6 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     public void A_record_not_found_is_its_kind_s_own_refusal()
     {
         Assert.Equal("there is no ask `#zz000000` on this machine.", Refusal(Of("go", "go", "quests") with { Item = "ask:zz000000" }));
-        Assert.Equal("there is no quest `#zz000000` on this machine.", Refusal(Of("clear", "quest", "zz000000")));
     }
 
     /// <summary>

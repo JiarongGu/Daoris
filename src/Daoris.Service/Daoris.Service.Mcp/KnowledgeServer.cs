@@ -41,10 +41,8 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         typeof(BrainstormTools),
         typeof(HelpAskTool),
-        typeof(HelpClearTool),
         typeof(HelpGoTool),
         typeof(HelpSetupTool),
-        typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
         // Ask Daoris's housekeeping and chosen settings: requests the driver judges at every call, refused unless the person granted it.
         typeof(HousekeepingTools),
@@ -53,10 +51,7 @@ public static class KnowledgeServer
         typeof(SystemPlanTools),
     ];
 
-    /// <summary>
-    /// The connector's host, before its services are added: its configuration read from the folder its build is in, and no
-    /// file of it watched.
-    /// </summary>
+    /// <summary>The connector's host, before its services are added: its configuration read from its build's folder, no file of it watched.</summary>
     /// <remarks>
     /// The generic host's defaults take the working folder for the content root and watch it, with everything below it, for
     /// <c>appsettings.json</c> to change, and the framework's watcher walks the whole of each folder renamed anywhere beneath.

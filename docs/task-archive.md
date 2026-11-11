@@ -5,6 +5,36 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
+
+> **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.
+
+---
+
+## ASKFULL1g-vi's ask route and the setup view, and the ask defects Ask Daoris met in the install (2026-11-11)
+
+> **ASKFULL1g-vi, routes** (driver, modules, service, web): Outcome: `daoris ask "…"` is a person's press `ASK_NEW` (`AskArguments` reads the words before anything is sent, `AskNewCommand` makes the ask, `AskNewRoutes`, `AskNewView` on the card), so Ask Daoris in full access starts an ask with no card and in restricted on a card naming it; `PLACE_APPLY`'s card lists each change the plan makes (`PlaceApplyView`); a quest Ask Daoris publishes is filed in the named repository's workspace and a refusal with nothing addressable says so in words (`QuestPublishing`); `--help` prints the usage and an unknown flag is refused. Found by Ask Daoris in the installed copy, refused at each. Proof: `PipeDelegateTests`' new-ask case and `QuestExchangeTests`' cross-workspace case (seen failing first), `AskArgumentsTests`, the two view tests in both languages.
+
+---
+
+## A terminal's presses at a tier the person sets (2026-11-11, D271)
+
+> **TERMTIER1** (driver, modules, web): Outcome: a machine setting decides whether a person's press from a terminal no Daoris session owns waits on the Confirm card (`ask`, the default) or runs at once as the person's (`act`): `daoris settings terminal ask|act`, itself pressed so turning on `act` is confirmed once (`Settings/TerminalTiers.cs`, `TerminalVerb.cs`, `TerminalTierRoutes`, the Settings row); under `act` such a press goes through the delegate's no-card path (`PipeTerminalTier`), logged `terminal.pressed` and listed in Notifications as a terminal's; a process inside an agent's job, or one the pipe cannot place, still gets a card, and a session's own press keeps its tier. Left: a `hold: true` start and `HOLD` still ask under `act`. Proof: `PipeTerminalTierTests` (seen failing first), `TerminalTiersTests`, the route, view and census tests, the text fixtures, the web tests in both languages.
+
+---
+
+## A quest its finished session left taken waits on the person; the plugin kit answers each frame as it settles (2026-11-11)
+
+> **Unclosed quests and the kit's findings** (driver, web, examples): Outcome: a quest whose last session was finished by the person or the steward, or went on and ended, with the quest still taken, gets the planner's `Unclosed` verdict (`UnclosedQuests`) and an `unclosed` row in *What needs you* whose door opens its *Mark done…*; a word to the session still goes on with it, and work in its tree stays to review (FIX-LOG; driving rule 37). Found in the install: a code review's session parked, was finished from a terminal, and its quest stayed taken three days with no reader. The plugin kit's template and examples answer each frame as it settles, so a slow read no longer holds the others past the platform's patience; a check that cannot reach its platform answers `running` with the reason on stderr, a refused credential stops the step. Proof: the planner, groups, pausing, kit contract and attention tests, the page tests in both languages, each new test seen failing first.
+
+---
+
+## ASKFULL1g-vi's clear and sync — pressed, their kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, clear and sync** (driver, modules, service, web): Outcome: a clear presses `HISTORY_CLEAR`, its card the route's view (`HistoryClearView`, refusing at the ask what the verb would keep, in its words, then counting the plain list); `daoris tree sync --yes` presses the running Daoris's `TREES_SYNC` with fetch and follow (`Driver.Host/TreesSyncVerb.cs`), its card listing each row the route's list moves and refusing a place this machine lacks (`TreesSyncView`); both proposal kinds are gone whole (tools, writers, judges, doors, room lines, goldens, call tables, card parts, words, README rows). Proof: `HistoryClearViewTests`, `TreesSyncViewTests`, `HistoryClear.test` and `TreesSync.test` in both languages, seen failing first; the room, proposal, tool and `CoreSetTests`.
+
+---
+
 ## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
 
 > **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.

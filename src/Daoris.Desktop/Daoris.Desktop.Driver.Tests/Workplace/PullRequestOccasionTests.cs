@@ -93,8 +93,8 @@ public sealed class PullRequestOccasionTests
 
     /// <summary>
     /// Bringing up to date's look asks, after its fetch, where a merge commit first reaches
-    /// this machine, and it is started by a person's door alone: the page's *Look for updates*, Ask Daoris's card's first press
-    /// and `trees sync`. Its press, which removes, asks nothing.
+    /// this machine, and it is started by a person's door alone: the page's *Look for updates* and `trees sync`, which Ask
+    /// Daoris presses too. Its press, which removes, asks nothing.
     /// </summary>
     [Fact]
     public void Bringing_up_to_dates_look_asks_after_its_fetch_and_only_a_persons_door_opens_it()
@@ -106,7 +106,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["HelpSyncProposals.cs", "TreesConsole.cs", "TreesTidyDesk.cs"], doors);
+        Assert.Equal(["TreesSyncVerb.cs", "TreesTidyDesk.cs"], doors);
         // The look and the press are `TreeSync`'s; the front keeps one-line calls, which hold no body to read.
         var sync = File.ReadAllText(SourceFiles.Driver("TreeSync.cs"));
         var look = Body(sync, "SyncPlanAsync");

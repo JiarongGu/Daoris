@@ -15,7 +15,6 @@
     "mcp__daoris-knowledge__channel_post",
     "mcp__daoris-knowledge__channel_read",
     "mcp__daoris-knowledge__checkout_read",
-    "mcp__daoris-knowledge__clear_propose",
     "mcp__daoris-knowledge__go_ahead_ask",
     "mcp__daoris-knowledge__go_propose",
     "mcp__daoris-knowledge__handback_read",
@@ -53,7 +52,6 @@
     "mcp__daoris-knowledge__settings_notify",
     "mcp__daoris-knowledge__settings_quiet",
     "mcp__daoris-knowledge__setup_propose",
-    "mcp__daoris-knowledge__sync_propose",
     "mcp__daoris-knowledge__system_plan",
     "mcp__daoris-knowledge__workflow_propose"
   ],

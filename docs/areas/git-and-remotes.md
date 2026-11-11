@@ -551,9 +551,9 @@ catalogues (`i18n:check`).
   `http.sslCAInfo`, `GitTlsHost.TrustedBy`), measured with all seven HTTPS facts passing. MinGit ships no `git-http-backend`, so the
   HTTP host behind the TLS front serves with the runner's git.
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
-- **GITAUTH1e:** built: Ask Daoris's sync card, for each host a fetch over SSH or HTTPS did not reach, offers *Add a git identity for
-  host…*, which opens Settings → Git on its Add form with the host filled (`HelpSyncUnfetched.Host`, `StarterDoor.gitHost`). The
-  browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241). The card's and the screen's advice on
+- **GITAUTH1e:** built: the Branches tab's look, for each host a fetch over SSH or HTTPS did not reach, offers *Add a git identity
+  for host…*, which opens Settings → Git on its Add form with the host filled (`StarterDoor.gitHost`). The
+  browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241). The screen's advice on
   reaching an origin (`settings.sync.notFetched.ssh` and `.https`) names a git identity for the host in Settings → Git, with an SSH
   key or a token.
 - **GITAUTH1h:** the install, seen (the owner).

@@ -231,6 +231,8 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The sessions Daoris started, as a proved press reads them, the loop's; none refuses every proof.</summary>
     public Func<string, PipeDelegateSession?>? Delegates { get; set; }
 
+    public Func<string?>? TerminalTier { get; set; }
+
     internal PipeDelegate Delegate { get; }
 
     internal void TellDriverState() => StatePublisher.Publish(_bus, StateScopes.Driver);

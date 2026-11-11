@@ -77,6 +77,7 @@ public static class PressViews
         MachineSettingView.CoolOff(),
         MachineSettingView.Quiet(),
         MachineSettingView.Manifest(),
+        MachineSettingView.Terminal(),
         new KeepRuleView(),
         new PlaceLineView(),
         new PlaceLanguageView(),
@@ -96,6 +97,10 @@ public static class PressViews
         new PluginInstallView(),
         new PluginUpdateView(),
         new PluginActionView(),
+        new HistoryClearView(),
+        new TreesSyncView(),
+        new AskNewView(),
+        new PlaceApplyView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>
