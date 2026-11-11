@@ -32,6 +32,13 @@ public sealed class SystemPlans(string home)
         return newest.File is null ? null : JsonSerializer.Deserialize<SystemChangeSet>(AtomicFile.ReadText(newest.File), Json);
     }
 
+    /// <summary><paramref name="record"/>'s plan numbered <paramref name="plan"/>, or null where it keeps none so numbered.</summary>
+    public SystemChangeSet? Of(string record, int plan)
+    {
+        var file = Path.Combine(FolderOf(record), $"plan-{plan}.json");
+        return File.Exists(file) ? JsonSerializer.Deserialize<SystemChangeSet>(AtomicFile.ReadText(file), Json) : null;
+    }
+
     /// <summary>Keep what <paramref name="record"/>'s plan <paramref name="plan"/> came to when applied.</summary>
     public void Applied(string record, int plan, SystemApplied applied) =>
         AtomicFile.WriteText(Path.Combine(FolderOf(record), $"applied-{plan}.json"), JsonSerializer.Serialize(applied, Json) + "\n");

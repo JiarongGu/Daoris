@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Performs a run's <c>apply</c>: the newest plan its work made, applied by the system's adapter under each precondition (or read
+/// Performs a run's <c>apply</c>: the plan its review record names, applied by the system's adapter under each precondition (or read
 /// before and after each write where it declares none) and what it came to written on the node. Applied and unchanged reach it; stale
 /// and changed while applying fail it naming each such resource's present version, which its way back tells the work; any other
 /// refusal fails it in the adapter's words. One apply runs at a time in this door, so one applier writes to a system.
@@ -36,28 +36,50 @@ public sealed class ApplyDoor(
     /// <summary>Completes once every apply started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 
-    /// <summary>The run's newest plan applied by its adapter, once per plan, and what it came to written on the node.</summary>
+    /// <summary>
+    /// The plan its record names applied by its adapter, once per plan, and what it came to written on the node: never a plan written since,
+    /// which waits for a review of its own. Work that kept no plan, or one that does not read, settles with nothing applied and why; an empty
+    /// plan settles unchanged.
+    /// </summary>
     internal async Task PerformAsync(ApplyStart start, CancellationToken ct)
     {
         var plans = new SystemPlans(home);
-        var (record, plan) = start.Unit.Executors.Reverse().Select(each => (Record: each, Plan: plans.Latest(each))).FirstOrDefault(each => each.Plan is not null);
-        if (plan is null || SystemPlace.Of(plan.Place) is not { } place)
+        var (plan, none) = PlanReview.Named(home, start.Record);
+        if (plan is null || start.Record?.Reference.PlanRecord is not { } record)
         {
-            log?.Invoke($"apply  {start.Unit.Id}: `{start.Node.Id}` has no change set to apply: its work planned none.");
+            log?.Invoke($"apply  {start.Unit.Id}: `{start.Node.Id}` applies nothing: {none}.");
+            Settle(start, plan, null, $"nothing applied: {none}");
+            return;
+        }
+
+        if (plan.Operations.Count == 0)
+        {
+            Settle(start, plan, new SystemApplied(SystemApplyStates.Unchanged, [], null, [], null), $"plan {plan.Plan} changed nothing");
+            return;
+        }
+
+        if (SystemPlace.Of(plan.Place) is not { } place)
+        {
+            Settle(start, plan, null, $"nothing applied: plan {plan.Plan} names `{plan.Place}`, which is no system's place");
             return;
         }
 
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            var applied = plans.AppliedOf(record!, plan.Plan);
+            var applied = plans.AppliedOf(record, plan.Plan);
             if (applied is null)
             {
                 await using var channel = await adapters(place, ct).ConfigureAwait(false);
-                applied = await new SystemAdapter(channel, place, plans, _clock, _guards(place)).ApplyAsync(record!, plan, ct).ConfigureAwait(false);
+                applied = await new SystemAdapter(channel, place, plans, _clock, _guards(place)).ApplyAsync(record, plan, ct).ConfigureAwait(false);
             }
 
-            Settle(start, plan, applied);
+            Settle(start, plan, applied, applied.State switch
+            {
+                SystemApplyStates.Applied => $"plan {plan.Plan} applied: {applied.Applied.Count} operation(s)",
+                SystemApplyStates.Unchanged => $"plan {plan.Plan} had nothing to change",
+                _ => null,
+            });
         }
         finally
         {
@@ -65,25 +87,29 @@ public sealed class ApplyDoor(
         }
     }
 
-    /// <summary>What the apply came to, written on the node where it is still the active attempt.</summary>
-    internal void Settle(ApplyStart start, SystemChangeSet plan, SystemApplied applied)
+    /// <summary>
+    /// What the apply came to, written on the node where it is still the active attempt: reached with <paramref name="words"/> where it applied,
+    /// changed nothing or had nothing to apply (<paramref name="applied"/> null), failed with its code otherwise.
+    /// </summary>
+    private void Settle(ApplyStart start, SystemChangeSet? plan, SystemApplied? applied, string? words)
     {
-        log?.Invoke(applied.State switch
+        log?.Invoke(applied?.State switch
         {
-            SystemApplyStates.Applied => $"apply  {start.Unit.Id}: plan {plan.Plan} applied to `{plan.Place}`: {applied.Applied.Count} operation(s).",
-            SystemApplyStates.Unchanged => $"apply  {start.Unit.Id}: plan {plan.Plan} had nothing to change in `{plan.Place}`: every resource already held what it asks, so nothing was written.",
-            SystemApplyStates.Stale => $"apply  {start.Unit.Id}: plan {plan.Plan} was stale at `{applied.Refused}`, so the work plans again.",
-            SystemApplyStates.Changed => $"apply  {start.Unit.Id}: plan {plan.Plan}'s `{applied.Refused}` changed while applying, so the work plans again.",
-            _ => $"apply  {start.Unit.Id}: plan {plan.Plan} was refused: {applied.Message}",
+            null => $"apply  {start.Unit.Id}: {words}.",
+            SystemApplyStates.Applied => $"apply  {start.Unit.Id}: plan {plan!.Plan} applied to `{plan.Place}`: {applied.Applied.Count} operation(s).",
+            SystemApplyStates.Unchanged => $"apply  {start.Unit.Id}: plan {plan!.Plan} had nothing to change in `{plan.Place}`: every resource already held what it asks, so nothing was written.",
+            SystemApplyStates.Stale => $"apply  {start.Unit.Id}: plan {plan!.Plan} was stale at `{applied.Refused}`, so the work plans again.",
+            SystemApplyStates.Changed => $"apply  {start.Unit.Id}: plan {plan!.Plan}'s `{applied.Refused}` changed while applying, so the work plans again.",
+            _ => $"apply  {start.Unit.Id}: plan {plan!.Plan} was refused: {applied.Message}",
         });
         var records = new NodeRecordFiles(home, holdsLease);
         records.Edit<bool>(start.Unit.Id, record =>
         {
             var status = WorkPerformer.StatusOf(record, start.Node.Id);
             if (status.State != NodeStates.Active || status.Attempt != start.Attempt || status.Binding is not { } binding) return (null, false);
-            var move = applied.State is SystemApplyStates.Applied or SystemApplyStates.Unchanged
+            var move = applied is null || applied.State is SystemApplyStates.Applied or SystemApplyStates.Unchanged
                 ? NodeObserving.Reached(new NodeReading(start.Unit, start.Node, binding), NodeSource.Plugin, binding.SubjectRevision,
-                    $"plan-{plan.Plan}.json", plan.Place, applied.State == SystemApplyStates.Unchanged ? $"plan {plan.Plan} had nothing to change" : $"plan {plan.Plan} applied").Move!
+                    plan is null ? "apply" : $"plan-{plan.Plan}.json", plan?.Place ?? start.Node.Id, words!).Move! with { Words = words }
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
                     Source = NodeSource.Plugin, Attempt = status.Attempt, Code = applied.State switch
@@ -99,11 +125,11 @@ public sealed class ApplyDoor(
             // The failure's own words go on its status, so the way back tells the work what is in the system now.
             if (move.To == NodeStates.Failed)
             {
-                var words = applied.State is SystemApplyStates.Stale or SystemApplyStates.Changed ? SystemStaleWords.Of(start.Node.Id, plan.Plan, applied) : applied.Message;
-                moved = moved with { Status = moved.Status with { Words = words } };
+                var said = applied!.State is SystemApplyStates.Stale or SystemApplyStates.Changed ? SystemStaleWords.Of(start.Node.Id, plan!.Plan, applied) : applied.Message;
+                moved = moved with { Status = moved.Status with { Words = said } };
             }
 
-            return (WorkPerformer.Kept(record, moved, $"apply-{applied.State}", _clock()), true);
+            return (WorkPerformer.Kept(record, moved, $"apply-{applied?.State ?? "none"}", _clock()), true);
         });
     }
 }

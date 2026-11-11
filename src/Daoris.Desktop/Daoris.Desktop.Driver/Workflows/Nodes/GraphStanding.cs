@@ -2,7 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A graph read as the save's order rules read it: its nodes, entries, own and ordering wires, landings, and what a hold judges the work before
-/// (<see cref="Judged"/>: its landings, or the review a graph landing nothing ends at), on which each kind's <see cref="INodeKind.Problems"/> judges too.
+/// (<see cref="Judged"/>: its landings; in a graph landing nothing, its reviews and the steps writing the work), on which each kind's
+/// <see cref="INodeKind.Problems"/> judges too.
 /// </summary>
 internal sealed record GraphStanding(
     Dictionary<string, NodeDeclaration> ById, IReadOnlyList<string> Starts, IReadOnlyList<Wire> Local, IReadOnlyList<Wire> Ordered, IReadOnlyList<NodeDeclaration> Landings)
@@ -18,8 +19,8 @@ internal sealed record GraphStanding(
             .ToList();
         var starts = graph.Entries.Where(byId.ContainsKey).Distinct(StringComparer.Ordinal).ToList();
         IReadOnlyList<NodeDeclaration> landings = [.. byId.Values.Where(node => node.Kind == NodeKinds.Land)];
-        IReadOnlyList<NodeDeclaration> judged = landings.Count > 0 ? landings
-            : graph.End is { } end && byId.TryGetValue(end, out var ending) && ending.Kind == NodeKinds.Review ? [ending] : [];
+        IReadOnlyList<NodeDeclaration> carried = [.. byId.Values.Where(node => node.Kind == NodeKinds.Review || NodeKit.Of(node.Kind) is IWritesWork)];
+        IReadOnlyList<NodeDeclaration> judged = landings.Count > 0 ? landings : carried;
         return new(byId, starts, local, [.. local.Where(wire => WireKinds.Ordered.Contains(wire.Kind))], landings) { Judged = judged };
     }
 

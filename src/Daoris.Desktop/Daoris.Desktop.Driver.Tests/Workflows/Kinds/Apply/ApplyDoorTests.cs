@@ -112,7 +112,11 @@ public sealed class ApplyDoorTests : IDisposable
     private Task<SystemChangeSet> PlanAsync() =>
         new SystemAdapter(_system, Place, new SystemPlans(_scratch), () => DateTimeOffset.UtcNow).PlanAsync("rec-1", [new SystemIntent("release", "2")], CancellationToken.None);
 
-    private static ApplyStart Start(int attempt) => new(Run(), Apply, attempt) { Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt) };
+    /// <summary>The start of <paramref name="attempt"/>, fed the record a review read of the work's newest plan as it stands now.</summary>
+    private ApplyStart Start(int attempt) => new(Run(), Apply, attempt)
+    {
+        Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt), Record = EffectRecords.Planned(_scratch, ["rec-1"]),
+    };
 
     [Fact]
     public async Task The_reviewed_plan_is_applied_under_its_etags_and_the_node_reached()
@@ -155,13 +159,38 @@ public sealed class ApplyDoorTests : IDisposable
     }
 
     [Fact]
-    public async Task A_run_whose_work_planned_nothing_is_said_and_left_active()
+    public async Task Work_that_kept_no_plan_settles_with_nothing_applied_said_why()
     {
         Active(1);
 
         await Door().PerformAsync(Start(1), CancellationToken.None);
 
-        Assert.Equal(NodeStates.Active, Status().State);
-        Assert.Contains(_said, line => line.Contains("has no change set to apply", StringComparison.Ordinal));
+        Assert.Equal((NodeStates.Reached, "nothing applied: its work kept no plan: it answered in its handback alone"), (Status().State, Status().Words));
+    }
+
+    [Fact]
+    public async Task An_empty_plan_settles_unchanged_and_writes_nothing()
+    {
+        new SystemPlans(_scratch).Keep("rec-1", "acme.console/store", [], DateTimeOffset.UtcNow);
+        Active(1);
+
+        await Door().PerformAsync(Start(1), CancellationToken.None);
+
+        Assert.Equal((NodeStates.Reached, "plan 1 changed nothing"), (Status().State, Status().Words));
+        Assert.Empty(_system.Items);
+    }
+
+    [Fact]
+    public async Task A_plan_that_does_not_read_settles_with_nothing_applied_said_why()
+    {
+        _system.Set("release", "1");
+        await PlanAsync();
+        File.WriteAllText(Path.Combine(DaorisHome.Entry(_scratch, HomeEntry.Plans, "rec-1"), "plan-1.json"), "{ not a plan");
+        Active(1);
+
+        await Door().PerformAsync(Start(1), CancellationToken.None);
+
+        Assert.Equal((NodeStates.Reached, "nothing applied: the plan its session `rec-1` kept does not read"), (Status().State, Status().Words));
+        Assert.Equal("1", _system.Items["release"].Value);
     }
 }

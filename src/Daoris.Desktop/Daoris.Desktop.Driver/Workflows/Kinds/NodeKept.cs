@@ -11,4 +11,10 @@ internal sealed record NodeKept(GovernedUnit Governed, RunScope Scope, NodeDecla
 
     /// <summary>The run's own step its door's start carries: the node at its active attempt.</summary>
     public StepAuthority Authority => StepAuthority.OfDoor(Governed.Run, Node.Id, Status.Attempt);
+
+    /// <summary>The home the run's records are kept in, which a step writing the work reads its review record from (<see cref="EffectRecord"/>).</summary>
+    public string Home { get; init; } = "";
+
+    /// <summary>When the run's rounds were kept.</summary>
+    public DateTimeOffset At { get; init; }
 }
