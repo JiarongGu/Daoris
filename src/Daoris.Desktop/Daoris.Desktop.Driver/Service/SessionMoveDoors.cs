@@ -54,7 +54,7 @@ public sealed class SessionMoveDoors
     {
         var turns = Ending.Contains(state) ? await TurnLinesForAsync(id, ct).ConfigureAwait(false) : null;
         // A move out of a running state reads its turn's end in its place; the ledger writes the mark only out of a running state.
-        var holdsPlace = Running.Contains(state) || _service.PlaceEnds is not { } ends ? null : await ends(id, ct).ConfigureAwait(false);
+        var holdsPlace = Running.Contains(state) || _service.PlaceEnds is not { } ends ? null : await PlaceEndAsync(ends, id, ct).ConfigureAwait(false);
         var request = new AdvanceSession(
             id, state, note, evidence, transcript, interrupted ? true : null, limit ? true : null,
             note is not null && parts is { Count: > 0 } ? PartsElement(parts) : null,
@@ -80,6 +80,23 @@ public sealed class SessionMoveDoors
 
         _service.RecordMoved(new SessionMoved(id, sent.Answer?.Session?.State ?? state));
         return sent.Answer?.Message ?? "";
+    }
+
+    /// <summary>
+    /// The turn's own uncommitted paths at its end; none where the place cannot be read (a file another program holds, git failing to
+    /// start), which marks nothing and never keeps the record from leaving its running state.
+    /// </summary>
+    private static async Task<IReadOnlyList<string>?> PlaceEndAsync(
+        Func<string, CancellationToken, Task<IReadOnlyList<string>?>> ends, string id, CancellationToken ct)
+    {
+        try
+        {
+            return await ends(id, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>Move a session's record with a composed note: its English and its parts together.</summary>
