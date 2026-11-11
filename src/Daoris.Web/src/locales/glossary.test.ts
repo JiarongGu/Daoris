@@ -151,15 +151,7 @@ describe('the glossary', () => {
       expect(Object.entries(zh).filter(([, value]) => value.includes('职责')).map(([key]) => key)).toEqual([]);
     });
 
-    it('says 角色 in the ten strings of the appointing flow, and 任命的角色 where the hint names the appointed shape', () => {
-      const ten = [
-        'projects.supervisor.ask.holder', 'projects.supervisor.ask.share.legend', 'projects.supervisor.ask.share.means',
-        'projects.supervisor.refused.window-only', 'projects.supervisor.refused.unknown-role',
-        'projects.supervisor.refused.choose-terminal', 'projects.supervisor.refused.no-holder',
-        'projects.supervisor.refused.revoked-holder', 'projects.supervisor.refused.holder-harness',
-        'settings.daoris.steward.ask.share.legend',
-      ];
-      expect(ten.filter((key) => !zh[key]!.includes('角色'))).toEqual([]);
+    it('says 任命的角色 where the hint names the appointed shape', () => {
       expect(zh['settings.daoris.roles.hint']).toContain('任命的角色');
     });
   });

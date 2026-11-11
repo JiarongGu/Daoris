@@ -10,7 +10,7 @@ const OFFER: OfferShown = {
   id: 'land-github', name: 'Land on GitHub', version: '0.2.0',
   description: 'Pushes a landed branch to its repository\'s origin and opens its pull request.',
   problem: null, harnesses: [], points: ['work/land'], servers: [],
-  needs: ['A git identity for the host, with the token that opens the pull request (Settings → Git)', 'A repository whose origin is on GitHub'],
+  needs: ['A sign-in to GitHub, kept by the plugin (`daoris land-github login`)', 'A repository whose origin is on GitHub'],
   installed: false,
 };
 
