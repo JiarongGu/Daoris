@@ -11,9 +11,8 @@ internal sealed class SessionOpening(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry, AskStore? asks, OpinionStore? opinions)
 {
     /// <summary>
-    /// The driver's code for a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c2; its
-    /// <c>EndNoteCodes.EndedSourceReopened</c>, a twin read here by its spelling): the one ending the ledger reads by a code, since
-    /// the record's state alone, <c>completed</c>, says the work finished (FABRIC-CLOSE1c26).
+    /// The driver's code for a session the person's reopen of its step's work stopped (<c>EndNoteCodes.EndedSourceReopened</c>, a twin
+    /// read by its spelling): the one ending the ledger reads by a code, since its state alone, <c>completed</c>, says the work finished.
     /// </summary>
     internal const string EndedSourceReopened = "ended.source-reopened";
 
@@ -112,11 +111,7 @@ internal sealed class SessionOpening(
     /// <remarks>
     /// <para><b>The intake's open, for a conversation.</b> It serves no quest and no ask, so nothing
     /// plans from it. It belongs to the workspace its window is on when it starts, recorded here and never moved;
-    /// none named is <c>default</c>, as a record from before reads.</para>
-    ///
-    /// <para><b>One running per workspace</b> (point 3): a second in the same workspace is refused naming the first, and the
-    /// driver hands the page the running one rather than asking for another; one in another workspace runs beside it, in the
-    /// same room folder.</para>
+    /// none named is <c>default</c>, as a record from before reads. Each opens beside any other running.</para>
     ///
     /// <para><b>A workspace this machine does not hold is refused</b>, naming those it does: <c>default</c> and each registered
     /// repository's. With no registry to ask, the name is taken as told.</para>
@@ -157,16 +152,6 @@ internal sealed class SessionOpening(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var holder = await sessions.RunningInWorkspaceAsync(SessionLedger.HelpRepository, circle, parked: false, inside).ConfigureAwait(false);
-            if (holder is not null)
-            {
-                return new SessionOpenOutcome(
-                    SessionOpenRefusal.RepositoryBusy,
-                    $"Ask Daoris already has a conversation running in `{holder.Workspace}` — `{holder.Id}` "
-                    + $"({Spell(holder.State)}). One runs at a time in a workspace; carry that one on, or finish it first.",
-                    Session: null);
-            }
-
             // No base commit, for the intake's reason: the room is no repository.
             var session = await sessions
                 .CreateAsync(

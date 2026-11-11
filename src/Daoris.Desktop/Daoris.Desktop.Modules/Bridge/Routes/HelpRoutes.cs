@@ -17,8 +17,7 @@ public sealed class HelpRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
     private readonly IEventBus _events = context.Events;
 
-    // Ask Daoris's conversation, one per workspace, carried on or new in its room; answered once placed, with `starting`, its agent spawned
-    // off the request, since the room's look alone can near the page's 30 s wait. A workspace this machine lacks is refused.
+    // A new Ask Daoris conversation, answered once placed and spawned off the request; a workspace this machine lacks is refused.
     [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_HELP", "workspace")]
@@ -38,76 +37,26 @@ public sealed class HelpRoutes(DriverContext context)
         var circle = RemoteTarget.Workspace(named);
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
-        var starting = _loop.HelpStarting;
-        var placing = starting.PlacingIn(circle);
-        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (starting.SessionIn(circle) is { } placed)
-            {
-                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true, Workspace = circle };
-            }
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var spelled = HeldWorkspace(snapshot, circle);
+        var focus = HelpFocusRoutes.Asked(press.Focus, snapshot.Repositories);
 
-            var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
-            var spelled = HeldWorkspace(snapshot, circle);
-            var focus = HelpFocusRoutes.Asked(press.Focus, snapshot.Repositories);
-            var held = _loop.Processes.Running;
-            var runningHere = snapshot.Active.Where(session =>
-                session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
-                && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (runningHere.FirstOrDefault(session => !chat.Finishing(session.Id)) is { } running)
-            {
-                return new
-                {
-                    SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle,
-                    Focus = HelpFocusRoutes.Started(_loop.Home, running.Id, circle, null),
-                };
-            }
+        // A conversation of its own every press, beside any running or starting; its order walked under the mode standing now.
+        var place = await chat.PlaceHelpAsync(
+            helper, config, named is null ? null : spelled, cancellationToken, order: ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
+        if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Workspace = circle };
 
-            // one the person finished is winding up, and the person's words are a new conversation's. It is waited for
-            // a moment, since the ledger holds one running in a workspace; past that it is answered as still finishing, which the page
-            // waits out before it asks again, never handing it the new conversation's words.
-            foreach (var ending in runningHere)
-            {
-                if (!await chat.WoundUpAsync(ending.Id, FinishingBound, cancellationToken).ConfigureAwait(false))
-                {
-                    return new
-                    {
-                        SessionId = ending.Id, Message = $"Ask Daoris `{ending.Id}` is finishing.", Running = true, Finishing = true, Workspace = circle,
-                    };
-                }
-            }
-
-            // Ask Daoris's order walked, each entry judged by its access under the mode standing now.
-            var place = await chat.PlaceHelpAsync(
-                helper, config, named is null ? null : spelled, cancellationToken, order: ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
-            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
-
-            starting.Placed(circle, id);
-            var started = HelpFocusRoutes.Started(_loop.Home, id, circle, focus);
-            _ = Task.Run(() => RunPlacedAsync(chat, place, config));
-            _loop.Nudge();
-            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle, Focus = started };
-        }
-        finally
-        {
-            placing.Release();
-        }
+        _loop.HelpStarting.Placed(id);
+        var started = HelpFocusRoutes.Started(_loop.Home, id, circle, focus);
+        _ = Task.Run(() => RunPlacedAsync(chat, place, config));
+        _loop.Nudge();
+        return new { SessionId = id, place.Message, Starting = true, Workspace = circle, Focus = started };
     }
-
-    /// <summary>
-    /// How long a start waits for a conversation the person finished to end before it opens the next: its agent's
-    /// last turn and its close, well inside the 30 s the page waits on a press.
-    /// </summary>
-    internal static readonly TimeSpan FinishingBound = TimeSpan.FromSeconds(5);
 
     /// <summary>The workspace a start's press names, trimmed; null where it names none, which is <c>default</c>'s.</summary>
     private static string? WorkspaceAsked(string? workspace) => string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
 
-    /// <summary>
-    /// The workspace as this machine spells it, or refused where it does not hold it, naming those it does:
-    /// <c>default</c> and each registered repository's, as Ask Daoris's proposals judge one.
-    /// </summary>
+    /// <summary>The workspace as this machine spells it, or refused naming those it holds: <c>default</c> and each repository's.</summary>
     private static string HeldWorkspace(Snapshot snapshot, string circle)
     {
         var held = snapshot.Repositories.Select(known => known.Workspace).Append(RemoteTarget.DefaultWorkspace)
@@ -118,10 +67,8 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The conversation <c>START_HELP</c> placed, started off the request: the room read through the loop's
-    /// <c>DescribeHelp</c> as a conversation going on reads it, then the agent spawned. The words said to it meanwhile go to its
-    /// door in order once it opens; where it could not start, its record says why and keeps them as the person's, so the page's
-    /// conversation shows both rather than losing either.
+    /// The conversation placed, started off the request: the room read through the loop's <c>DescribeHelp</c>, then the agent
+    /// spawned. Words said to it meanwhile go to its door in order; where it could not start, its record keeps them as the person's.
     /// </summary>
     private async Task RunPlacedAsync(ChatRunner chat, HelpPlaced place, DriverConfig config)
     {
@@ -320,32 +267,22 @@ public sealed class HelpRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
 
-        // in the workspace its press names, as START_HELP's, whatever the earlier one's is; its running one set aside.
+        // in the workspace its press names, as START_HELP's, whatever the earlier one's is, beside any running.
         var named = WorkspaceAsked(press.Workspace);
         var circle = RemoteTarget.Workspace(named);
         var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
 
         // Placed as START_HELP places one: answered once the record is open and the earlier words kept; the room is
         // read through the loop's DescribeHelp and the agent spawned after, off the request, so a slow room cannot pass the page's bound.
-        var starting = _loop.HelpStarting;
-        var placing = starting.PlacingIn(circle);
-        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            var place = await chat.PlaceHelpFromAsync(
-                id, helper, config, named is null ? null : spelled, cancellationToken, ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
-            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
+        var place = await chat.PlaceHelpFromAsync(
+            id, helper, config, named is null ? null : spelled, cancellationToken, ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
+        if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
-            starting.Placed(circle, placedId);
-            var focus = await HelpFocusRoutes.CarriedAsync(_loop, id, placedId, circle, cancellationToken).ConfigureAwait(false);
-            _ = Task.Run(() => RunPlacedAsync(chat, place, config));
-            _loop.Nudge();
-            return new { SessionId = placedId, place.Message, From = id, Workspace = circle, Focus = focus };
-        }
-        finally
-        {
-            placing.Release();
-        }
+        _loop.HelpStarting.Placed(placedId);
+        var focus = await HelpFocusRoutes.CarriedAsync(_loop, id, placedId, circle, cancellationToken).ConfigureAwait(false);
+        _ = Task.Run(() => RunPlacedAsync(chat, place, config));
+        _loop.Nudge();
+        return new { SessionId = placedId, place.Message, From = id, Workspace = circle, Focus = focus };
     }
 
     /// <summary>

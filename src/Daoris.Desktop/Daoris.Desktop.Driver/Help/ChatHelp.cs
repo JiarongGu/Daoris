@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 /// going-on of an ended one is <see cref="ChatGoOn"/>'s, which reads this class's set-aside and room.
 /// </summary>
 /// <remarks>
-/// <para><b>One conversation runs in each workspace at a time</b>, so going back to an earlier conversation,
-/// or starting one from it, first sets aside its workspace's running one, which keeps its own id and can go on later. One
-/// answering a turn is never set aside: the words wait, said why, and the next word tries again.</para>
+/// <para><b>Each conversation is its own</b>: going back to an earlier conversation, or starting one from it, sets nothing
+/// aside and waits on no other's turn. What they share is the room's files, which one writer at a time writes whole
+/// (<see cref="HelpRoomWrites"/>).</para>
 ///
 /// <para><b>The room is written again</b> as every open writes it, from the machine as the shell hands it
 /// (<see cref="DescribeHelp"/>): the facts the judges keep, as last judged, so no open waits on a reading of the
@@ -25,19 +25,12 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
 
     private IChatRunning runner => wiring;
 
-    /// <summary>How long a conversation set aside is waited for to end, so the ledger sees the room free.</summary>
-    private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
-
-    /// <summary>
-    /// The machine as the room says it: the shell's reading, which <c>START_HELP</c> writes the room from, so a
-    /// conversation going on finds the room as an open would. Null where nothing reads it, or it read nothing.
-    /// </summary>
+    /// <summary>The machine as the shell reads it, which every open and go-on writes the room from; null where nothing reads it.</summary>
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
-    /// Start a new Ask Daoris conversation from an earlier one: its workspace's running conversation set aside, a new
-    /// one opened as <c>START_HELP</c> opens one, and Daoris's brief of the earlier one's line (<see cref="ContextBriefs"/>) handed with
-    /// the person's first message, as every new part of a line is handed one. Never a summary: Daoris makes no model call.
+    /// Start a new Ask Daoris conversation from an earlier one, opened as <c>START_HELP</c> opens one, Daoris's brief of the earlier
+    /// one's line (<see cref="ContextBriefs"/>) handed with the person's first message. Never a summary: Daoris makes no model call.
     /// </summary>
     /// <param name="earlier">The earlier conversation, an Ask Daoris record of this machine's; the caller has judged that.</param>
     public async Task<ChatStart> StartHelpFromAsync(
@@ -51,12 +44,12 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
     }
 
     /// <summary>
-    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for: its workspace's running conversation
-    /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier line's brief kept for it.
+    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for: the new one placed as
+    /// <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier line's brief kept for it.
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
-    /// <param name="workspace">The workspace the person's window showed at the press: the new one's, whose running one is set aside.</param>
+    /// <param name="workspace">The workspace the person's window showed at the press: the new one's.</param>
     /// <param name="order">Ask Daoris's effective order, a new conversation's, as <see cref="ChatRunner.PlaceHelpAsync"/> takes it.</param>
     public async Task<HelpPlaced> PlaceHelpFromAsync(
         string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
@@ -69,8 +62,6 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
         {
             return new(null, $"nothing was said in conversation `{earlier}`, so there is nothing to start from.");
         }
-
-        if (await SetAsideHelpAsync(null, workspace, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
         // Composed before the new one opens, so the line it hands ends at the earlier conversation.
         var brief = await ContextBriefs.ComposeAsync(context.Service, context.Events, context.Home, earlier, HandOverWhy.Press, conversation: true, ct: ct)
@@ -89,43 +80,6 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
         }
 
         return placed with { Message = $"Ask Daoris `{id}` opened from conversation `{earlier}`: Daoris's brief of it goes with your first message." };
-    }
-
-    /// <summary>
-    /// Set aside its workspace's running conversation (one runs at a time in each workspace): each other
-    /// Ask Daoris conversation of that workspace running here is stopped, keeping its own id to go on later, and waited for until
-    /// its record ends; another workspace's runs on. One answering a turn is never stopped: its id comes back instead
-    /// (<see cref="HeldWords.Answering"/> says why).
-    /// </summary>
-    /// <param name="goingOn">The conversation going on, which is never its own obstacle; null for a new one.</param>
-    /// <param name="workspace">The workspace of the one going on or starting, as its record keeps it; null is <c>default</c>.</param>
-    public async Task<string?> SetAsideHelpAsync(string? goingOn, string? workspace, CancellationToken ct)
-    {
-        foreach (var other in Aside(context.Rooms, goingOn, workspace))
-        {
-            if (runner.Taking(other))
-            {
-                return other;
-            }
-
-            context.Processes.Stop(other);
-            if (context.Watching.TryGetValue(other, out var watch)) await Task.WhenAny(watch, Task.Delay(SetAsideBound, ct)).ConfigureAwait(false);
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Which of the conversations running here (<paramref name="rooms"/>, each by its workspace) <see cref="SetAsideHelpAsync"/>
-    /// sets aside: those of <paramref name="workspace"/>, never <paramref name="goingOn"/> itself.
-    /// </summary>
-    internal static IReadOnlyList<string> Aside(IReadOnlyDictionary<string, string> rooms, string? goingOn, string? workspace)
-    {
-        var circle = RemoteTarget.Workspace(workspace);
-        return [.. rooms
-            .Where(room => !string.Equals(room.Key, goingOn, StringComparison.OrdinalIgnoreCase)
-                           && string.Equals(RemoteTarget.Workspace(room.Value), circle, StringComparison.OrdinalIgnoreCase))
-            .Select(room => room.Key)];
     }
 
     /// <summary>

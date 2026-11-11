@@ -213,20 +213,6 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// What a new conversation, or one going on, sets aside: the running ones of its own workspace
-    /// alone, never its own; another workspace's runs on beside it. A workspace unnamed is <c>default</c>'s.
-    /// </summary>
-    [Fact]
-    public void Setting_aside_takes_its_own_workspace_s_running_conversations_alone()
-    {
-        var rooms = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["h1"] = "alpha", ["h2"] = "beta", ["h3"] = "default" };
-
-        Assert.Equal(["h1"], ChatHelp.Aside(rooms, goingOn: null, "ALPHA"));
-        Assert.Empty(ChatHelp.Aside(rooms, goingOn: "h1", "alpha"));
-        Assert.Equal(["h3"], ChatHelp.Aside(rooms, goingOn: null, null));
-    }
-
-    /// <summary>
     /// Ask Daoris's order is walked choice by choice, each entry judged first by
     /// <c>HelpAccess.For</c> under the mode standing now, so full access passes an agent with no mode that asks nothing
     /// (<c>no-posture</c>) and opens on the next, carrying its model; its record names that agent.
