@@ -144,14 +144,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Asked);
     }
 
-    public HistoryOutcome? HistoryCleared { get; set; }
-
-    public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
-    {
-        Calls.Add($"HISTORY_CLEAR {HistoryClearing.Word(scope)} {id} {string.Join(",", units.Select(unit => $"{unit.Kind}:{unit.Id}"))}");
-        return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
-    }
-
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)

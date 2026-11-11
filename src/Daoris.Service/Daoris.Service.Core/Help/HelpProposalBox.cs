@@ -17,7 +17,6 @@ public sealed class HelpProposalBox(string? home)
         ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("sync", "sync_propose"),
-        ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
     ];
@@ -46,11 +45,6 @@ public sealed class HelpProposalBox(string? home)
     public (string? Id, string Message) ProposeSync(
         string? repository, string why, string? session, DateTimeOffset at, string? workspace = null) =>
         new HelpSyncProposalWriter(file).Propose(repository, why, session, at, workspace);
-
-    /// <inheritdoc cref="HelpClearProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeClear(
-        string door, string? quest, string? ask, string? workspace, string why, string? session, DateTimeOffset at) =>
-        new HelpClearProposalWriter(file).Propose(door, quest, ask, workspace, why, session, at);
 
     /// <inheritdoc cref="HelpWorkflowProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeWorkflow(

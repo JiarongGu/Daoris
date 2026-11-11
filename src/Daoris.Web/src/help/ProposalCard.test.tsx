@@ -9,9 +9,9 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 // A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
-  id: 'p1a2b3c4', kind: 'clear' as const,
-  describe: 'Clear quest `q-7`\'s finished history, kept on branch `feature/{quest}-{slug}`.',
-  terminal: 'daoris history clear --quest q-7',
+  id: 'p1a2b3c4', kind: 'workflow' as const,
+  describe: 'Choose workflow `docs-to-pr` for `web-app`, its work kept on branch `feature/{quest}-{slug}`.',
+  terminal: 'daoris workflow use docs-to-pr --scope web-app',
   why: 'the person asked for feature branches',
 };
 
@@ -94,19 +94,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/, taken\.$/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Not now' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
-  });
-
-  // Clearing finished history is the generic card too, its sentence the driver's describe.
-  it('a clear card is the generic one, with Apply and Not now', async () => {
-    const clear: HelpProposal = {
-      id: 'p17', kind: 'clear', terminal: 'daoris quests clear q1', why: 'the person asked to clear it',
-      describe: 'Clear quest `q1`: 2 units cleared, 1 kept.',
-    };
-
-    await press(clear, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
   // The design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.

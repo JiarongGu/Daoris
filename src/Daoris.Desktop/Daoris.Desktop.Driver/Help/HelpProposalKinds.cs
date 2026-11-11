@@ -36,14 +36,6 @@ internal interface IHelpProposalKind
     /// </summary>
     HelpOwned Owned(HelpProposal proposal) => HelpOwned.Nothing;
 
-    /// <summary>
-    /// Its card drawn for the person, judged as <paramref name="plan"/>: a kind whose Apply sends exactly what its
-    /// card listed keeps that now, in the proposal's file, for <see cref="Read"/> to hand its next judge. Nothing for every other.
-    /// </summary>
-    void Drawn(string home, HelpProposal proposal, HelpPlan plan)
-    {
-    }
-
     /// <summary>The person's Apply of a plan the route takes, through the screen's own door, settled either way.</summary>
     /// <remarks>A refusal a door raises before anything happened is let through, unsettled (<see cref="HelpProposals.ApplyAsync"/>).</remarks>
     Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct);
@@ -87,7 +79,6 @@ internal static class HelpProposalKinds
         new HelpAskProposals(),
         new HelpGoProposals(),
         new HelpSyncProposals(),
-        new HelpClearProposals(),
         new HelpWorkflowProposals(),
         new HelpSetupProposals(),
     ];

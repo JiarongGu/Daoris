@@ -125,13 +125,12 @@ under *Done at a terminal* (below), name its command for the person to run.
   another pause over a quest of the work stays.
   Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
   ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.
-- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),
-  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest
-  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).
-  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged
-  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still
-  open or taken, a session still running and anything waiting on the person are never cleared, and the route
-  refuses them.
+- Finished history is cleared from this machine by pressing, never proposed, as the pages' *Clear from this machine…* do:
+  `daoris quest clear <id> --yes` (a closed quest's work), `daoris ask clear <id> --yes` (an ask's work with every quest it
+  became), `daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone, the quest and its other sessions
+  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it
+  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and
+  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.
 - `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new
   workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as
   `daoris workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`

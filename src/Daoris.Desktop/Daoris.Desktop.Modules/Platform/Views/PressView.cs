@@ -94,6 +94,7 @@ public static class PressViews
         new PluginInstallView(),
         new PluginUpdateView(),
         new PluginActionView(),
+        new HistoryClearView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

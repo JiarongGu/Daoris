@@ -104,15 +104,13 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  another pause over a quest of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
         text.Append("  ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.\n");
-        // The pages' clears, judged by their first press, a closed quest's failed
-        // sessions alone being the `failed` door.
-        text.Append("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n");
-        text.Append("  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest\n");
-        text.Append("  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).\n");
-        text.Append("  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged\n");
-        text.Append("  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still\n");
-        text.Append("  open or taken, a session still running and anything waiting on the person are never cleared, and the route\n");
-        text.Append("  refuses them.\n");
+        // The pages' clears, judged at the ask by their first press's list (HISTORY_CLEAR's view).
+        text.Append("- Finished history is cleared from this machine by pressing, never proposed, as the pages' *Clear from this machine…* do:\n");
+        text.Append("  `daoris quest clear <id> --yes` (a closed quest's work), `daoris ask clear <id> --yes` (an ask's work with every quest it\n");
+        text.Append("  became), `daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone, the quest and its other sessions\n");
+        text.Append("  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it\n");
+        text.Append("  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and\n");
+        text.Append("  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.\n");
         // A whole version judged as the editor judges it; changes, kinds and imports are
         // another door's, and a merge with nobody is a decision of its own.
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");

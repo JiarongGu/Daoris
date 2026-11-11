@@ -201,8 +201,6 @@ public sealed class HelpRoutes(DriverContext context)
                 continue;
             }
 
-            // A clear's card holds the units it listed, once, so its Apply sends exactly those.
-            HelpProposals.Drawn(_loop.Home, proposal, plan);
             shown.Add(Card(proposal, plan).Card);
         }
 

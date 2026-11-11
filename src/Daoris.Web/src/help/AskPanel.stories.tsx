@@ -81,10 +81,10 @@ export const Proposing: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           <ProposalCard
             proposal={{
-              id: 'p1a2b3c4', kind: 'clear',
-              describe: 'Clear quest `q-7`\'s finished history: its sessions\' words and files go, its record stays.',
-              terminal: 'daoris history clear --quest q-7',
-              why: 'you asked to tidy finished work',
+              id: 'p1a2b3c4', kind: 'workflow',
+              describe: 'Choose workflow `docs-to-pr` for `web-app`: new work only.',
+              terminal: 'daoris workflow use docs-to-pr --scope web-app',
+              why: 'you asked for a pull request per change',
             }}
             onApply={() => {}}
             onDismiss={() => {}}

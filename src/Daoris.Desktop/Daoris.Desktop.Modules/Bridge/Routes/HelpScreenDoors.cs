@@ -25,10 +25,6 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords, shortTitle: shortTitle).ConfigureAwait(false);
     }
 
-    // HISTORY_CLEAR's own clear of exactly the units the card listed, each judged again as it goes.
-    public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
-        HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
-
     // TREES_SYNC_PLAN's own list, each line fetched as the person whose press this is.
     public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {

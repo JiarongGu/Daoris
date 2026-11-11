@@ -17,7 +17,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     private static readonly string[] Advertised =
     [
         "ask_propose", "brainstorm_give", "brainstorm_synthesize", "channel_post",
-        "channel_read", "checkout_read", "clear_propose", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
+        "channel_read", "checkout_read", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
@@ -80,7 +80,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpAskTool", "HelpClearTool",
+                "HelpAskTool",
                 "HelpGoTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",

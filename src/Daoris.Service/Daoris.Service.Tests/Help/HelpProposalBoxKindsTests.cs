@@ -13,7 +13,6 @@ public sealed class HelpProposalBoxKindsTests
         ("ask", "ask_propose"),
         ("go", "go_propose"),
         ("sync", "sync_propose"),
-        ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
     ];

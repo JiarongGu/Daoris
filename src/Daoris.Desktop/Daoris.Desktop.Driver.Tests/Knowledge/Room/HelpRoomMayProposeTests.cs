@@ -235,20 +235,19 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// A clear names one quest, one ask or one workspace; its card lists and Apply clears exactly
-    /// that, what runs or waits on the person is never cleared; the `failed` door clears a closed quest's failed sessions alone.
+    /// A clear is pressed by the verbs that name one quest, one ask or one workspace; what runs or waits on the person is never
+    /// cleared, and `--failed` clears a closed quest's failed sessions alone. No tool proposes one.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_clear_is_proposed_and_what_it_never_takes()
+    public void The_room_says_how_a_clear_is_pressed_and_what_it_never_takes()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n", proposes);
-        Assert.Contains("one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest\n", proposes);
-        Assert.Contains("and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name)", proposes);
-        Assert.Contains("Its card lists what would go and what stays and why; apply clears exactly what the card listed", proposes);
+        Assert.Contains("- Finished history is cleared from this machine by pressing, never proposed", proposes);
+        Assert.Contains("`daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone", proposes);
+        Assert.Contains("`daoris history clear --workspace <name> --yes`", proposes);
         Assert.Contains("A quest an ask asked is cleared with its ask, never alone", proposes);
-        Assert.DoesNotContain("Clearing a quest's failed sessions alone is never proposed", proposes);
+        Assert.DoesNotContain("clear_propose", proposes);
     }
 
     /// <summary>

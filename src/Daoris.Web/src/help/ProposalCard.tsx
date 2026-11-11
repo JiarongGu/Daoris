@@ -9,7 +9,7 @@ export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  kind: 'ask' | 'go' | 'sync' | 'clear' | 'workflow' | 'setup';
+  kind: 'ask' | 'go' | 'sync' | 'workflow' | 'setup';
   describe: string;
   terminal: string;
   why: string;
