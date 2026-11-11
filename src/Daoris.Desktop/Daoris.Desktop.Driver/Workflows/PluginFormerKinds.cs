@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -28,6 +30,27 @@ public static class PluginFormerKinds
         if (!NodeKit.IsPlugin(kind)) return kind;
         var slash = kind.IndexOf('/');
         return formerly.TryGetValue(kind[..slash], out var now) ? PluginSteps.KindOf(now, kind[(slash + 1)..]) : kind;
+    }
+
+    /// <summary>
+    /// A saved graph's own text, as the editor and <c>workflow show</c> are handed it, a copy with each node's kind as
+    /// <paramref name="read"/> holds it, which <see cref="Read"/> made the kind now: the file untouched, the new id's step seen with no save.
+    /// </summary>
+    public static JsonNode Drawn(JsonNode raw, NodeGraph read)
+    {
+        var drawn = raw.DeepClone();
+        if (drawn["nodes"] is not JsonArray nodes) return drawn;
+        var kinds = read.Nodes.GroupBy(node => node.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First().Kind, StringComparer.Ordinal);
+        foreach (var node in nodes.OfType<JsonObject>())
+        {
+            if (node["id"] is JsonValue id && id.TryGetValue<string>(out var named) && kinds.TryGetValue(named, out var now)
+                && node["kind"] is JsonValue value && value.TryGetValue<string>(out var kind) && NodeKit.IsPlugin(kind) && now != kind)
+            {
+                node["kind"] = now;
+            }
+        }
+
+        return drawn;
     }
 
     private static NodeGraph? Renamed(NodeGraph graph, IReadOnlyDictionary<string, string> formerly) =>

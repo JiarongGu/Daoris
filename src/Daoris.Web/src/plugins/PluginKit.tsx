@@ -108,10 +108,11 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
               aria-label={t('plugin.kit.id')}
               value={id}
               onChange={(event) => setId(event.target.value)}
-              placeholder="acme.quiet-hours"
+              placeholder="acme-quiet-hours"
               spellCheck={false}
               className={FIELD}
             />
+            <span className="basis-full pl-30 text-meta text-ink-faint"><Inline text={t('plugin.kit.idFamily')} /></span>
           </label>
           <div className="flex flex-wrap items-start gap-2 text-small text-ink-soft">
             <span className="w-28 shrink-0 pt-0.5">{t('plugin.kit.points')}</span>

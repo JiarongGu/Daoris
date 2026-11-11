@@ -123,6 +123,7 @@ public sealed class PluginViewsTests : DriverModuleBridge, IDisposable
     [InlineData("enable", false, "plugin-enable")]
     [InlineData("disable", true, "plugin-disable")]
     [InlineData("remove", true, "plugin-remove")]
+    [InlineData("try-again", true, "plugin-try-again")]
     public async Task A_switch_and_a_remove_are_shown_by_what_they_do(string action, bool enabled, string kind)
     {
         Installed(Quiet, enabled);
