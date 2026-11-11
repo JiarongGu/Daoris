@@ -35,6 +35,7 @@ public static class ReadLimit
     public const string ByCount = "by-count";
     public const string Interrupted = "interrupted";
     public const string OverBound = "over-bound";
+    public const string PacketCut = "packet-cut";
 }
 
 /// <summary>One limit of a reading, naming the call it is of where it is one call's.</summary>
