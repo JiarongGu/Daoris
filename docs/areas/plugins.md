@@ -40,6 +40,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Work events' frame and teller | `Plugins/Domain/WorkEventGrammar.cs`, `HookFrames.Event` (`Plugins/Domain/HookPoints.cs`), `Plugins/WorkEventPoint.cs`, `Plugins/RelayBuild.cs` | `work/event`'s parts: the grammar (version 3: `session.parked`, `quest.parked`, `session.ended`, `work.landed`, `events.missed`, the version 2 kinds `quest.published`, `quest.closed`, `quest.close-lost`, `confirmation.ended`, `work.ended`, and version 3's `channel.posted`, each kind's closed list of ids, codes, counts and a UTC time); the frame built by it, an optional field that fails left out and an event whose required field fails told as `events.missed` in its place; the teller, which mints every `seq` under one lock whether or not it tells, tells only while `Held`, keeps a queue of 256 and a teller per plugin that joined (the oldest dropped and counted in the next frame's `missed`), and stops a plugin after three late answers in a row; a build's hash over its whole bundle, 64 zeros where there is none |
 | Systems | `Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/` (`SystemAdapter`, `SystemAdapters`, `SystemReadBack`, `SystemPlanning`, `SystemAdd`), `Service/Domain/SystemPlace.cs`, `HookPoints.System`, `HookPeer.SystemAsync` | A manifest's `systems` read; a system's adapter started from the catalogue and asked to plan and apply; a system department's registration composed from the plugins that adapt it (`SystemAdd`, which the registry door sends whole), a system guarded by `none` read before and after each write (the driving area keeps the plans, the workflows area the apply) |
 | Switch | `Plugins/PluginState.cs`, `Plugins/PluginInterfaceSwitch.cs` | `<home>/plugins.json`: the disabled rows, and `off`, each plugin's interfaces switched off |
+| Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage and approvals moved to the new id once; a saved graph's former kinds read as the new id's |
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
@@ -83,10 +84,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     untouched, and nothing starts at the press. A rename that fails puts the installed folder back; where that fails
     too, the refusal names the `.removing-*` folder the plugin now lies in. (from D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (from D120)
-17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
-    Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
-    application first, then beside the home. (from D103)
-17a. The two pull-request plugins perform a `pull-request` step on `work/perform` and answer `work/state`. The Azure DevOps one's step
+17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: Daoris's own
+    `daoris-github`, `daoris-azure-devops` and `daoris-in-app-browser`. None installs without a press. The driver looks beside the
+    application first, then beside the home. An offer is listed as installed where its id or one it was formerly is
+    (`PluginOffers.For`). (from D103, D274)
+17a. Daoris's GitHub and Azure DevOps plugins perform a `pull-request` step on `work/perform` and answer `work/state`. The Azure DevOps one's step
     sets the pull request to auto-complete by the token's own identity where its options say `autoComplete: true` (with `mergeStrategy`,
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
@@ -164,6 +166,19 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
+30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
+    `daoris-azure-devops`, `daoris-in-app-browser`), and anyone else's uses its own family, never `daoris-`. A manifest's `formerly`
+    names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The terminal names a plugin
+    by its id alone (`daoris daoris-azure-devops login`). An installed plugin declaring `formerly` takes over the old id once, at the
+    loop's start and after any install door that put it in (`PluginRenames`): the copy installed under the old id is taken out, and
+    its switches (`disabled`, `off`), `.data/<old>`, `profiles/plugins/<old>/` and its approvals move to the new id, what the new id
+    already keeps never overwritten and said as left; `plugin.renamed` names the ids and the parts moved and left, and a later start
+    finds nothing to move. A copy recorded from an offer updates from the offer that was formerly it, its plan's `id` row naming the
+    rename, into the new id's folder (`PluginUpdatePlan.Next`). A saved workflow's `<old>/<step>` is read as `<new>/<step>` by the
+    store (`PluginFormerKinds`): the file stays as written and each version keeps the digest it was saved with, so a run pinned to it
+    reads at the identity it was bound to and goes on, its pull-request and later steps performed by the new id; a landing's recorded
+    plugin is asked at `work/state` by its new id. A schema keeps its name across a rename. The old kind ends when no installed plugin
+    declares the id it names, after which it binds as any step no plugin performs does. (from D274)
 31. Settings sets nothing about a plugin. Settings → Driver lists the installed plugins read-only, each opening its
     page. (from D119, D183)
 
@@ -184,7 +199,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 **Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`,
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
-`WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`); `Departments/` (`SystemPlanTests`,
+`WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
+`PluginRenamesTests`); `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
 `SystemReadBackTests`, the stand-in's process proofs `SystemPlanProcessTests` and `SystemReadBackProcessTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;

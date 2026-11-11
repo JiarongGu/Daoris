@@ -635,5 +635,5 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **STEWARDROLE1e (answers) to 1h:** the steward's yes or no to an agent's hand-over ask (a pending operation consumed from memory, the
   move written `HandOverBy.Steward`), the go-on, the set-up, and free words. The go-on releases a hold D210 point 3 leaves to the person
   alone, so it waits on D210 carrying or answering the steward design's §4.3a.
-- **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
+- **PERSONDOOR1c-i:** the role's boundary at every door (permission answers through appointed actors are rule 7's `allow` kind).
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.

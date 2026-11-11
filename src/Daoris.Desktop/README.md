@@ -985,7 +985,8 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   single-instance guard runs inside the runner), and the loop takes that start (`UpAsync`); the supervisor marks
   `host`. The first look's line-following and tidy (`DriverWatch.FirstScreen`) and the machine facts' start wait for
   the page's word (`StartStages.FirstScreenAsync`), at most `DriverLoop.FirstScreenBound` (30 s). The page lifts the
-  splash on its first screen's queries (`isFirstScreen` in `splash.ts`), the global quiet its fallback.
+  splash on its first screen's queries (`isFirstScreen` in `splash.ts`), the global quiet its fallback; none of them waits
+  on the facts the word starts (*What needs you*'s, judged over them) or on the service's index (the repositories').
 - **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
   NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
   SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (the kit's `TaskbarOverlay`, a

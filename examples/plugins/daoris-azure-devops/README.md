@@ -1,7 +1,13 @@
-# `azure-devops-pull-request` — a pull request on Azure DevOps, merged and released, through its API
+# `daoris-azure-devops` — Daoris's work on Azure DevOps, through its API
+
+Daoris's own Azure DevOps plugin, in Daoris's `daoris-` family of plugins (a plugin's id is `<family>-<name>`; yours takes your own
+family). It covers the pull request (opened, set to auto-complete, its merge followed) and the release after it, and is where Azure
+DevOps' pipelines and work items will go. It was `azure-devops-pull-request`: its manifest says so (`formerly`), and Daoris moves that
+id's sign-in, switches and kept data to this one once, and runs a workflow still naming `azure-devops-pull-request/pull-request` on it.
+Its schemas keep their names (`azure-devops-pull-request/receipt@1` and the others), since evidence already kept names them.
 
 A plugin is a folder with a `plugin.json` (`docs/2026-09-23-plugin-design.md`, D64). This one performs two steps on the work wire's
-`work/perform` (D241 point 5), `azure-devops-pull-request/pull-request` and `azure-devops-pull-request/release`, and answers
+`work/perform` (D241 point 5), `daoris-azure-devops/pull-request` and `daoris-azure-devops/release`, and answers
 `work/state`. It runs **no git and no CLI**: Daoris's own `push` node pushes the branch through its doors first, and this process opens,
 completes and follows the pull request and its release through Azure DevOps' REST API.
 
@@ -9,18 +15,18 @@ completes and follows the pull request and its release through Azure DevOps' RES
 
 Tracked here as an example, it does nothing on its own. It runs only when **both** are true:
 
-1. you installed it: `daoris plugin add examples/plugins/azure-devops-pull-request` (or copied the folder under the Daoris home's
+1. you installed it: `daoris plugin add examples/plugins/daoris-azure-devops` (or copied the folder under the Daoris home's
    `plugins/`), and it is not switched off;
-2. a place's workflow holds its steps: *land* (branch), *push*, *azure-devops-pull-request/pull-request*, *monitor*, and on the monitor's
-   `when merged` way *tidy* and *azure-devops-pull-request/release*. No shipped preset names them (the *Hosted merge workflow* preset holds
+2. a place's workflow holds its steps: *land* (branch), *push*, *daoris-azure-devops/pull-request*, *monitor*, and on the monitor's
+   `when merged` way *tidy* and *daoris-azure-devops/release*. No shipped preset names them (the *Hosted merge workflow* preset holds
    GitHub's step): add them to a workflow of your own.
 
 A workflow that carries a change end to end sets the steps' options as its graph's nodes do:
 
 ```json
-{ "id": "pull-request", "kind": "azure-devops-pull-request/pull-request", "version": 1, "reach": "performed",
+{ "id": "pull-request", "kind": "daoris-azure-devops/pull-request", "version": 1, "reach": "performed",
   "options": { "autoComplete": true, "mergeStrategy": "squash", "deleteSourceBranch": true, "transitionWorkItems": true } },
-{ "id": "release", "kind": "azure-devops-pull-request/release", "version": 1, "reach": "performed", "timeoutSeconds": 14400,
+{ "id": "release", "kind": "daoris-azure-devops/release", "version": 1, "reach": "performed", "timeoutSeconds": 14400,
   "options": { "releaseDefinition": "app-release", "stages": ["Staging", "Production"], "deploy": "Production" } }
 ```
 
@@ -124,11 +130,11 @@ this one began is taken up from its start: it reads each stage before it starts 
 
 The plugin signs in itself, through the commands its manifest declares under `interfaces`:
 
-- `daoris azure-devops-pull-request login` asks for a personal access token, hidden as you type it (or reads it from standard input
+- `daoris daoris-azure-devops login` asks for a personal access token, hidden as you type it (or reads it from standard input
   with `--stdin`), and keeps it in the plugin's own private storage (`DAORIS_PLUGIN_PRIVATE`, `credential.json`), a folder Daoris
   hands this plugin's processes alone. A git identity serving Azure DevOps that already held an API token hands it to `login` once.
-- `daoris azure-devops-pull-request status` says whether a token is kept, since when, and whether Azure DevOps last refused it.
-- `daoris azure-devops-pull-request logout` forgets it.
+- `daoris daoris-azure-devops status` says whether a token is kept, since when, and whether Azure DevOps last refused it.
+- `daoris daoris-azure-devops logout` forgets it.
 
 Each API call carries the kept token as Basic's password; it is never logged, said back or put in evidence, and is sent only to the
 API. A refused one is noted for `status`. The plugin is not started where `origin` is served by a read-only identity or git access

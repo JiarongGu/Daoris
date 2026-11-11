@@ -99,6 +99,11 @@ describe('the splash lifts once the first screen has its data', () => {
     expect(isFirstScreen(['harnesses'])).toBe(false);
   });
 
+  it('waits on nothing that waits on the word itself or on the index being read', () => {
+    expect(isFirstScreen(['attention'])).toBe(false);
+    expect(isFirstScreen(['repositories'])).toBe(false);
+  });
+
   it('loses nothing where no window is here: the call rejects and the page goes on', async () => {
     closeSplash.mockImplementationOnce(() => Promise.reject(new Error('NO_ROUTE')));
     mount(Promise.resolve('shell'), Promise.resolve('view'));

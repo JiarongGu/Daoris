@@ -171,6 +171,7 @@ public sealed record PluginChange(string What, string Was, string Now)
     {
         static Dictionary<string, string> Said(PluginManifest manifest) => new(StringComparer.Ordinal)
         {
+            ["id"] = manifest.Id,
             ["version"] = manifest.Version,
             ["command"] = Line(manifest.Hooks?.Command ?? []),
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
@@ -184,7 +185,7 @@ public sealed record PluginChange(string What, string Was, string Now)
         };
         var before = Said(was);
         var after = Said(now);
-        return [.. new[] { "version", "command", "points", "harnesses", "servers", "skills", "steps", "resources" }
+        return [.. new[] { "id", "version", "command", "points", "harnesses", "servers", "skills", "steps", "resources" }
             .Where(what => before[what] != after[what])
             .Select(what => new PluginChange(what, before[what], after[what]))];
     }
@@ -206,4 +207,8 @@ public sealed record PluginChange(string What, string Was, string Now)
 
 /// <summary>What updating an installed plugin would do: the source it re-reads, the folder that is, and what changes.</summary>
 /// <param name="From">The folder the update copies from, resolved on this machine.</param>
-public sealed record PluginUpdatePlan(string Id, PluginSource Source, string From, IReadOnlyList<PluginChange> Changes);
+public sealed record PluginUpdatePlan(string Id, PluginSource Source, string From, IReadOnlyList<PluginChange> Changes)
+{
+    /// <summary>The id it has after the update: its own, or the new id of a source that declares its id as an old one.</summary>
+    public string Next { get; init; } = Id;
+}
