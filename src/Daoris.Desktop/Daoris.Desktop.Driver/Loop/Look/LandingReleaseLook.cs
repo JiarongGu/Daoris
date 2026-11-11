@@ -20,13 +20,14 @@ internal sealed class LandingReleaseLook(ILookWiring wiring) : ILookPass
         {
             var status = WorkPerformer.StatusOf(records.Read(RunUnits.IdOf(due.Run)) ?? new NodeRecord(RunUnits.IdOf(due.Run)), due.Node);
             if (status.State != NodeStates.Active || status.Attempt != due.Attempt) return Task.FromResult<string?>(SupervisorWhy.Answered);
+            if (SupervisorReviewBinding.Refused(home, due.Run, due.Node, due.Attempt, due.Revision) is { } moved) return Task.FromResult<string?>(moved);
             var line = snapshot.LastRun.Values.FirstOrDefault(record => record.Session == due.Session);
             return Task.FromResult(OwnerHolds.Holds(line, plan) ? SupervisorWhy.OwnerHeld : null);
         }
 
         string? Word(SupervisorLandingDue due) => RunNodeWords.Word(
             records, due.Run, due.Node, due.Do,
-            due.Do == SupervisorLandingActs.Reject ? due.Words : null, by: new NodeWordBy(due.Generation, due.Id), attempt: due.Attempt).Refused;
+            due.Do == SupervisorLandingActs.Reject ? due.Words : null, by: new NodeWordBy(due.Generation, due.Id), attempt: due.Attempt, revision: due.Revision).Refused;
 
         if (await wiring.Supervisor.ReleaseLandingsAsync(new LandingRelease(Why, Word), DateTimeOffset.UtcNow, ct).ConfigureAwait(false) is { Count: > 0 })
         {

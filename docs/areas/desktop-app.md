@@ -178,7 +178,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 30. The right-click menu is the page's own, offering the surface's acts from their one owner plus text, link and code
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell. Its groups are presses waiting, *What needs you*,
-    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. Beside the
+    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. *Done and
+    failed* holds, beside a session's end, each watched step after a run's review once reached or failed, one line by run, node and
+    attempt (`outcome:<run>/<node>/<attempt>`, `RunOutcomeNotices`, claimed by the look's last pass `RunOutcomesLook` through the news,
+    so it is kept once and written again where a write was lost), said by its step's kind and its run. Beside the
     presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
     in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
     window's own words, with the place it named (*outside its focus* where that was beyond its conversation's focus at the press),
