@@ -453,7 +453,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     filed in the workspace of the repository it names, every workspace being within its reach (D253 point 3). A quest's or
     session's own acts stay in its own conversation: accepting a departure and handing a landed branch to a landing plugin
     are the person's own presses, which a link reaches; a run's Accept has a terminal verb
-    (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253, D261)
+    (`daoris workflow accept <run> <node> [--at <revision>]`), still the person's press, confirmed in the window as `WORKFLOW_NODE`, and
+    refused `moved` where the review stands on another record than the one named. (from D161, D193, D233, D253, D261, D273)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash in memory by session, stripped from every other start and forgotten at its process's end,
     its conversation's end and an access swap; the verb proves a person's press with it over the hello's nonce. In restricted mode,

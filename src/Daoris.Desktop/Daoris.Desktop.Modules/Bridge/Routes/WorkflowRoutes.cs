@@ -562,7 +562,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// or an approval's `approve` or `reject`, with a note where given) on `node` of `run`, a run bound to a graph version, for the next look.
     /// Answers `{ run, node, act, done, refused, message }`, a refusal as an answer with its code (`not-run`, `unread-version`, `not-node`,
     /// `not-act`, `not-review`, `not-task`, `not-waiting`, `ended`, `worded`, the one table's `no-words`,
-    /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the terminal's sentence. Asked for its words (`said: true`) by the
+    /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`, an Accept's `moved` with the `revision` standing and `none-unchecked`) and
+    /// the terminal's sentence; a kept Accept answers the `revision` it is bound to, and `early` where its review has not begun. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
     [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -580,16 +581,23 @@ public sealed class WorkflowRoutes(DriverContext context)
         if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output =>
-                WorkflowNodeCommand.RunAsync(new WorkflowNodeAsk(act, run, node, words), records, output, instance: null, _ => null, ct: cancellationToken))
+                WorkflowNodeCommand.RunAsync(new WorkflowNodeAsk(act, run, node, words, press.Revision), records, output, instance: null, _ => null, ct: cancellationToken))
                 .ConfigureAwait(false);
             _loop.Nudge();
             return said;
         }
 
-        // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
-        var done = await Task.Run(() => RunNodeWords.WordAsync(records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken), cancellationToken)
-            .ConfigureAwait(false);
+        // An Accept that named the run's unchecked dones passes them in its own edit; a stop reads the integration record first, so one whose
+        // member promoted is refused here, as at the terminal.
+        var done = press is { Act: NodeWordActs.Accept, Unchecked: true, Revision: { } drawn }
+            ? UncheckedAccepts.Keep(records, run, node, drawn)
+            : await Task.Run(() => RunNodeWords.WordAsync(
+                records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken, attempt: press.Attempt is { } named ? (int)Math.Clamp(named, 0, int.MaxValue) : null, revision: press.Revision,
+                    part: press.Part),
+                cancellationToken)
+                .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
-        return new { done.Run, done.Node, done.Act, done.Done, done.Refused, Message = RunNodeWords.Said(done) };
+        var revision = done.Done || done.Refused == ReviewAccepts.Moved ? done.Detail : null;
+        return new { done.Run, done.Node, done.Act, done.Done, done.Refused, done.Early, Revision = revision, Message = RunNodeWords.Said(done) };
     }
 }

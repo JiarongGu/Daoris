@@ -267,6 +267,18 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 
     public string? Tip { get; init; }
 
+    /// <summary>
+    /// The revision of the review record the word names (<see cref="ReviewAccepts"/>): the pass drops it <c>moved</c> where the work read afresh
+    /// holds another, so a page drawn before the work moved never accepts newer work.
+    /// </summary>
+    public string? Revision { get; init; }
+
+    /// <summary>The review whose record <see cref="Revision"/> is, where the word is on another node: a hold passed by that review's Accept.</summary>
+    public string? Review { get; init; }
+
+    /// <summary>The part of the chain a review's changes go to, by its quest (<see cref="ChangesParts"/>); null for the newest part.</summary>
+    public string? Part { get; init; }
+
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
 }

@@ -14,6 +14,9 @@ public sealed record NodeWorded(string Run, string Node, string Act, string? Ref
 
     /// <summary>Where the node stands, for a move the one table does not make from there.</summary>
     public string? State { get; init; }
+
+    /// <summary>An Accept kept for a review that has not begun, applied at the first pass that finds it waiting on the record named.</summary>
+    public bool Early { get; init; }
 }
 
 /// <summary>
@@ -104,7 +107,7 @@ public static class RunNodeWords
     /// </param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
-        NodeWordBy? by = null, int? attempt = null)
+        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -125,7 +128,29 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
-            var word = new NodeWord(node, act, words, now) { By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by) };
+            var word = new NodeWord(node, act, words, now)
+            {
+                By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),
+                Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
+            };
+            if (act == NodeWordActs.Accept && by is null && declared.Kind == NodeKinds.Review)
+            {
+                // On the way to its review the press is kept for it, on the record named (D256); on an active one it is bound to the record
+                // the review stands on, the one named or, unnamed, the one standing as it is kept.
+                if (status.State is NodeStates.Blocked or NodeStates.Ready)
+                {
+                    var early = word with { Kept = true, Revision = revision?.Trim() };
+                    return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), early] }, new NodeWorded(run, node, act, null) { Early = true });
+                }
+
+                if (status.State == NodeStates.Active)
+                {
+                    var (moved, at) = ReviewAccepts.AtKeep(records.Home, run, node, status, attempt, revision);
+                    if (moved is not null) return (null, Refuse(moved) with { Detail = at, State = status.State });
+                    word = word with { Attempt = status.Attempt, Revision = at };
+                }
+            }
+
             if (Marked(act))
             {
                 if (!Offers(declared, status, act)) return (null, Refuse(act == NodeWordActs.Send ? NotSendable : NotWaiting) with { State = status.State });
@@ -139,7 +164,7 @@ public static class RunNodeWords
             }
 
             var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
-            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null));
+            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
         });
         return refused is null ? result! : Refuse(refused);
     }
@@ -151,7 +176,7 @@ public static class RunNodeWords
     /// </summary>
     public static async Task<NodeWorded> WordAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null)
     {
         IReadOnlySet<string>? promoted = null;
         if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
@@ -159,7 +184,7 @@ public static class RunNodeWords
             promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
         }
 
-        return Word(records, run, node, act, words, clock, promoted);
+        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part);
     }
 
     /// <summary>
@@ -170,7 +195,7 @@ public static class RunNodeWords
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
         NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null,
-        ILandingWords? landings = null)
+        ILandingWords? landings = null, IReadOnlyDictionary<string, string>? present = null)
     {
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
@@ -192,6 +217,12 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (ReviewAccepts.MovedFrom(word, standing, present))
+            {
+                applied.Add((word, ReviewAccepts.Moved));
+                continue;
+            }
+
             if (EarlyAccepts.Held(word, standing) is { } early)
             {
                 if (early == EarlyAccepts.Waiting) waiting.Add(word);
@@ -233,6 +264,7 @@ public static class RunNodeWords
             }
 
             next = WorkPerformer.Kept(next, moved, word.Source + "-" + word.Act, now);
+            if (word is { Act: NodeWordActs.Changes, Part: { } part }) next = next with { Fired = [.. next.Fired, ChangesParts.Key(node.Id, standing.Attempt, part)] };
             applied.Add((word, null));
         }
 
@@ -273,7 +305,9 @@ public static class RunNodeWords
         "usage: daoris workflow skip <run> <node> \"…\"  ·  daoris workflow stop <run> <node> [\"…\"]\n"
         + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
         + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
-        + "       daoris workflow accept <run> <node> [\"…\"]  ·  daoris workflow changes <run> <node> \"…\"  (a review: your Accept of the work, or what it should change before it lands)\n"
+        + "       daoris workflow accept <run> <node> [--at <revision>]  ·  daoris workflow changes <run> <node> \"…\"  (a review: your Accept of the work, or what it should change)\n"
+        + "       --at names the review record you read, and a review standing on another is refused; without it, the record standing when the\n"
+        + "       word is kept is accepted, which proves nothing was read\n"
         + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
@@ -281,7 +315,15 @@ public static class RunNodeWords
     /// <summary>The sentence a door says for what the person's word came to: kept, or refused and why.</summary>
     public static string Said(NodeWorded done) => (done.Refused, done.Act) switch
     {
+        (null, _) when done.Early =>
+            $"workflow: your accept of `{done.Node}` on run {done.Run} is kept until its review begins, and applied there only where the work is as you read it.",
+        (null, NodeWordActs.Accept) when done.Detail is { } at =>
+            $"workflow: your accept of `{done.Node}` on run {done.Run} is kept on its record at revision {ReviewAccepts.Short(at)}; Daoris's next look "
+            + "applies it only where the work still reads so.",
         (null, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} is kept; Daoris's next look applies it.",
+        (ReviewAccepts.Moved, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} no longer stands on the record you named: it now reads revision {ReviewAccepts.Short(done.Detail)}, "
+            + "so read that and accept it, or say what it should change.",
         (NodeRecordFiles.NotHeld, _) =>
             "workflow: this process does not hold the home, so it keeps nothing: the desktop holds it while it runs, so say it there, or close the "
             + "desktop and run this again.",
