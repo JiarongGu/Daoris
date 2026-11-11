@@ -6,20 +6,19 @@ import { ConfiguredAccess } from './ConfiguredAccess';
 import { HelpModeChip } from './HelpModePicker';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
 
-// Restricted mode's configured access, the mock the owner reviews, all here so the review sees them together: a machine as
-// it arrives, each grant closed as the design's sketch draws it; each opened with some chosen, on Claude Code and on Codex, and
-// the two side by side, where Codex cannot be held to the browser; the browser changed since it is approved; in 中文; at the
-// 680 px window's main area; in dark; and the access chip's menu with *Configure restricted access…*. The browser is
+// Restricted mode's configured access, the mock the owner reviews: a machine as it arrives, each grant closed; each opened with
+// some chosen, on Claude Code and on Codex, and side by side, where Codex cannot be held to the browser; the browser changed since
+// it is approved; in 中文; at the 680 px window's main area; in dark; and the access chip's menu. The browser is
 // drawn read only from its plugin's approval, its *Manage* the plugin's tab, with no boxes; and with no plugin offering it. The
-// checkouts are a box each, by the repositories the driver serves, held on Codex too; and none where none is served.
+// checkouts are a box each, held on Codex too; the acts a box per family.
 
 const nothing = () => {};
 
 const CLAUDE: HelpGrantAgent = { name: 'Claude Code', rules: true };
 const CODEX: HelpGrantAgent = { name: 'Codex', rules: false };
 
-/** The readable checkouts the driver serves, by their repositories' names. */
-const SERVED = { checkouts: ['console-ui', 'engine', 'reports-db'] };
+/** What the driver serves: the readable checkouts by their repositories' names, and the families of acts. */
+const SERVED = { checkouts: ['console-ui', 'engine', 'reports-db'], acts: ['pause', 'clean-up', 'discard', 'settings'] };
 
 /** As a machine arrives: nothing chosen, the browser's plugin waiting for approval, every checkout on by inheritance. */
 const ARRIVED: HelpGrantChoice[] = [
@@ -27,17 +26,16 @@ const ARRIVED: HelpGrantChoice[] = [
 ];
 
 /**
- * Some chosen: housekeeping's inspection and clean-up, which this conversation did not start with; the browser's reads and two
- * writes, approved on its plugin's page; the checkouts, `reports-db` turned off; and two settings.
+ * Some chosen: the clean-up and settings families, which this conversation did not start with; the browser's reads and two
+ * writes, approved on its plugin's page; and the checkouts, `reports-db` turned off.
  */
 const CHOSEN: HelpGrantChoice[] = [
-  { id: 'housekeeping', chosen: ['inspect', 'clean-up'], pending: true },
   { id: 'browser', chosen: ['reads', 'browser_click', 'browser_type'], plugin: 'in-app-browser' },
   { id: 'checkouts', chosen: ['console-ui', 'engine'] },
-  { id: 'settings', chosen: ['notify', 'cap'] },
+  { id: 'acts', chosen: ['clean-up', 'settings'], pending: true },
 ];
 
-const EVERY: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'shell'];
+const EVERY: HelpGrantId[] = ['browser', 'checkouts', 'acts', 'shell'];
 
 /** A Settings card at the frame's main area: 52rem, less its padding. */
 const inCard: Decorator = (Story) => <Card className="w-[48rem] max-w-full"><Story /></Card>;
@@ -61,8 +59,8 @@ export const AsItArrives: Story = { decorators: [inCard] };
 export const OpenedOnClaude: Story = { args: { grants: CHOSEN, opened: EVERY }, decorators: [inCard] };
 
 /**
- * The same on Codex: the browser says *unavailable on this agent* and why, until Daoris serves a mediated tool; housekeeping, the
- * checkouts and the settings, typed tools Daoris holds, hold as on Claude Code.
+ * The same on Codex: the browser says *unavailable on this agent* and why, until Daoris serves a mediated tool; the families of acts
+ * and the checkouts, which Daoris holds itself, hold as on Claude Code.
  */
 export const OpenedOnCodex: Story = { args: { agent: CODEX, grants: CHOSEN, opened: EVERY }, decorators: [inCard] };
 

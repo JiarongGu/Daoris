@@ -361,6 +361,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// problems }</c>, the problems a refused graph's, each by its code at its step or wire.
     /// </summary>
     [DriverRoute("WORKFLOW_SAVE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [ClassedBy("WORKFLOW_SAVE", "plan", PipeClass.Open, "true")]
     [Owner("WORKFLOW_SAVE", None = OwnerNone.MachineSetting)]
     [GroundFiles("WORKFLOW_SAVE", "workflow-file", "id")]
     [Says("WORKFLOW_SAVE", "id:form", "from:form", "name:words")]

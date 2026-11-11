@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  draftToTell, draftWhere, noteTold, onTold, openDraftNow, registerOpenDraft, toldGraph, toldSessions, type OpenDraft,
-} from './openDraft';
+import { draftToTell, draftWhere, openDraftNow, registerOpenDraft, type OpenDraft } from './openDraft';
 import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const graph = {
@@ -38,26 +36,6 @@ describe('the open draft', () => {
     expect(draftToTell(draft, sent.fingerprint)).toBeUndefined();
     expect(draftToTell({ ...draft, graph: { ...graph, end: 'work' } }, sent.fingerprint)?.fingerprint).not.toBe(sent.fingerprint);
     expect(draftToTell(null, undefined)).toBeUndefined();
-  });
-
-  /** A proposal names the draft it is made against by its fingerprint, and the editor takes its changes against that graph. */
-  it('is kept as told, its graph by its fingerprint and the conversations told it, newest last', () => {
-    const heard: string[][] = [];
-    const stop = onTold(() => heard.push([...toldSessions()]));
-    const sent = draftToTell(draft, undefined)!;
-    expect(toldGraph(sent.fingerprint)).toBeNull();
-    noteTold('s1', sent);
-    expect(toldGraph(sent.fingerprint)).toEqual(graph);
-    const other = draftToTell({ ...draft, graph: { ...graph, end: 'work' } }, undefined)!;
-    noteTold('s2', other);
-    noteTold('s1', other);
-    expect(toldSessions()).toEqual(['s2', 's1']);
-    expect(toldGraph(other.fingerprint)).toMatchObject({ end: 'work' });
-    // The same list while nothing new is told: a reader holding it is not drawn again.
-    expect(toldSessions()).toBe(toldSessions());
-    stop();
-    noteTold('s3', sent);
-    expect(heard).toEqual([['s1'], ['s1', 's2'], ['s2', 's1']]);
   });
 
   it('is named where the person is by its workflow, its place, its steps and what is open on it', () => {

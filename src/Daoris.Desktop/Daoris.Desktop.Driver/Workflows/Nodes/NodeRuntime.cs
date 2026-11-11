@@ -412,19 +412,32 @@ public sealed class NodeRuntime(
                 said.AddRange(line);
             }
 
-            var named = done.Select(each => each.Unit).Concat(lagging.Select(each => each.Unit)).ToHashSet(StringComparer.Ordinal);
+            var held = lagging.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
+            var named = done.Select(each => each.Unit).Concat(held).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
+            var moved = new HashSet<string>(StringComparer.Ordinal);
             foreach (var each in governed.Values)
             {
-                if (fresh || named.Contains(each.Unit.Id) || Owing.OwesStart(each) || await Owing.RebindsAsync(each, tips, ct).ConfigureAwait(false)) owing.Add(each);
+                var id = each.Unit.Id;
+                if (look.Asked.Contains(id) || named.Contains(id) || Owing.OwesStart(each) || await Owing.RebindsAsync(each, tips, ct).ConfigureAwait(false))
+                {
+                    moved.Add(id);
+                    owing.Add(each);
+                }
+                else if (fresh)
+                {
+                    owing.Add(each);
+                }
             }
 
-            // A unit whose event is held is judged first, so a turn past UnitsPerPass never leaves its node unrebound.
-            var concerned = Owing.Turn(owing, lagging.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal));
+            // The run a door asked for, a unit whose event is held and one whose record this pass's answers moved are judged first, so a turn
+            // past UnitsPerPass never leaves them: a press reads its run's record as soon as it is kept, a held node is rebound in its pass.
+            var concerned = Owing.Turn(owing, [look.Asked, held, named], moved);
             foreach (var each in concerned)
             {
                 if (each.Closes) Closing.Settle(each, done, said);
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+                look.Judged(each.Unit.Id);
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);

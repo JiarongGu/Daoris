@@ -12,9 +12,6 @@ import { type EditorRole, type StepStaffing, type WorkflowListAnswer, type Workf
 import { EditCanvas } from './EditCanvas';
 import { type Clip, commit, draftOf, emptyDraft, type GraphDraft, graphOf, type History, historyOf, type InsertAt, workflowIdFor } from './graphDraft';
 import { type Confirming } from './Inspector';
-import { ChangeList } from './ChangeList';
-import { ProposalBar } from './ProposalBar';
-import { type Decided, type ProposalShown } from './proposalTake';
 import { ToPutRight } from './Refusals';
 import { type SaveTarget, SaveReview } from './SaveReview';
 import { StepPicker } from './StepPicker';
@@ -54,19 +51,13 @@ export type WorkflowEditorBridge = {
   onPlan?: (ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>;
   /** Told when the editor opens and closes, so its reads are asked only while it shows. */
   onOpen?: (open: boolean) => void;
-  /** Ask Daoris's newest proposal against a draft of this place, as the bridge read it; none where none waits. */
-  proposal?: ProposalShown | null;
-  /** The press naming each change of it taken or left, which settles it (`HELP_APPLY` with `taken` and `left`). */
-  onSettleProposal?: (id: string, taken: readonly string[], left: readonly string[]) => Promise<unknown>;
-  /** *Not now* on the proposal whole (`HELP_DISMISS`). */
-  onDismissProposal?: (id: string) => Promise<unknown>;
 };
 
 export type WorkflowEditorProps = WorkflowEditorBridge & {
   /** Where *Use here* chooses the saved version: the page the editor opened from. */
   place: { repository: string } | { workspace: string };
   /** The steps it opens on, a graph as a version holds it, and the saved workflow and version they are, where they are one. */
-  startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null; told?: boolean };
+  startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null };
   /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
   route?: string | null;
   pipeline?: 'development' | 'verification' | null;
@@ -78,25 +69,20 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   onClose?: () => void;
 };
 
-/**
- * One step of the editor's history: the draft, the words of the change that made it, and what of each of Ask Daoris's proposals is taken
- * and left by then, so one undo takes back a take and its record together.
- */
-export type Snapshot = { draft: GraphDraft; said: string; decided?: Readonly<Record<string, Decided>> };
+/** One step of the editor's history: the draft and the words of the change that made it. */
+export type Snapshot = { draft: GraphDraft; said: string };
 
 /** What the save is aimed at, and the id a new one is copied from (a preset's, or a saved workflow's). */
 export type Target = SaveTarget & { from: string | null };
 
 /**
  * What the editor keeps outside itself, so the draft outlives the editor's mount: its history, the target and baseline a save is
- * reviewed against, the consent given, and the version still being read as the baseline.
- */
+ * reviewed against and the consent given. */
 export type EditorHold = {
   history: History<Snapshot>;
   target: Target;
   baseline: unknown;
   consented: string | null;
-  reading: { id: string; version: number } | null;
 };
 
 /**
@@ -132,14 +118,13 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
   list, palette, roles, staffing, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, onPlan, place, startFrom,
-  route = null, pipeline = null, lines, held = null, onHold, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
+  route = null, pipeline = null, lines, held = null, onHold, onClose, wide,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
   const canAsk = useCanFillAsk();
   const inspectorId = useId();
   const region = useRef<HTMLElement>(null);
-  // Where the focus goes back to when the picker is given up: a dialog with no trigger of its own gives back none.
   const returnTo = useRef<HTMLElement | null>(null);
 
   const [history, setHistory] = useState(() => held?.history ?? historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
@@ -164,26 +149,11 @@ function Composing({
   // The places an append reaches that the person let follow it, as one key (`consentKey`): consent holds for exactly that set.
   const [consented, setConsented] = useState<string | null>(held?.consented ?? null);
   // The steps the draft began from, which a save is reviewed against and *Use here* needs the draft to still be.
-  // A draft the conversation is told is not the version it came from: that version is read, and until it is the baseline is unknown.
-  const [readingBase, setReadingBase] = useState<{ id: string; version: number } | null>(
-    () => (held ? held.reading : startFrom?.told && startFrom.id && startFrom.base != null ? { id: startFrom.id, version: startFrom.base } : null),
-  );
-  const [baseline, setBaseline] = useState<unknown>(() => (held ? held.baseline : readingBase ? null : startFrom?.graph ?? null));
-  const askedBase = useRef(false);
-  useEffect(() => {
-    if (!readingBase || askedBase.current) return;
-    askedBase.current = true;
-    onShow(readingBase.id, readingBase.version);
-  }, [readingBase, onShow]);
-  useEffect(() => {
-    if (!readingBase || shown?.id !== readingBase.id || shown.version !== readingBase.version) return;
-    setReadingBase(null);
-    if (shown.schema === 2) setBaseline(shown.body);
-  }, [readingBase, shown]);
+  const [baseline, setBaseline] = useState<unknown>(() => (held ? held.baseline : startFrom?.graph ?? null));
   // The page keeps the draft past this mount; the sender is read through a ref, since the page hands a new one each render.
   const report = useRef(onHold);
   report.current = onHold;
-  useEffect(() => { report.current?.({ history, target, baseline, consented, reading: readingBase }); }, [history, target, baseline, consented, readingBase]);
+  useEffect(() => { report.current?.({ history, target, baseline, consented }); }, [history, target, baseline, consented]);
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [planning, setPlanning] = useState(false);
   const [rebasing, setRebasing] = useState(false);
@@ -266,7 +236,7 @@ function Composing({
     element.addEventListener(EDIT_EVENT, hear);
     return () => element.removeEventListener(EDIT_EVENT, hear);
   }, []);
-  const { wireOf, titleOf, change, judgement, nodeOf, carried, words, choose, openPicker, duplicate, copy, remove, rolePlace, atStep, atWire, onKeyDown, undoChange, redoChange, problems, stepOf, select, unjudged, proposal, decided, undecided, settling, open, busy, takeChanges, leaveChanges, dismiss, askAgain, rows, flow, edit, pickedStep, closePicker, closeDrawer } = useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, setSaid, setConfirming, history, setChoosing, setChosen, setAlso, wide, setDrawer, returnTo, setPicker, focusOn, selected, picker, choosing, also, setClip, clip, menu, judged, judgedOf, fingerprint, judgeFailed, judging, settled, ask, place, target, graph, saveId, route, pipeline, setHoldsOpen, offered, onSettleProposal, onDismissProposal, holdsOpen });
+  const { wireOf, titleOf, change, judgement, nodeOf, carried, words, choose, openPicker, duplicate, copy, remove, rolePlace, atStep, atWire, onKeyDown, undoChange, redoChange, problems, stepOf, select, unjudged, flow, edit, pickedStep, closePicker, closeDrawer } = useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, setSaid, setConfirming, history, setChoosing, setChosen, setAlso, wide, setDrawer, returnTo, setPicker, focusOn, selected, picker, choosing, also, setClip, clip, menu, judged, judgedOf, fingerprint, judgeFailed, judging, settled, ask, place, target, graph, saveId, route, pipeline, setHoldsOpen, holdsOpen });
   const { begin, node, inspector, holds, reviewOpen, review, scopes, allowed, consent, save, reread, offer, use, placeSaid } = useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i18n, change, setTarget, setBaseline, focusOn, judgement, reviewing, fingerprint, setReviewing, baseline, said, target, consented, palette, graph, onSave, saveId, setSaid, setConsented, setRebasing, route, place, list, onPlan, planning, setPlanning, onUse, selected, nodeOf, latest, carried, words, choose, openPicker, duplicate, copy, remove, roles, rolePlace, staffing, lines, atStep, atWire, confirming, setConfirming });
 
   return (
@@ -305,32 +275,6 @@ function Composing({
               : unjudged ? <p className="m-0 text-small text-ink">{t('workflow.edit.judge.failed')}</p>
                 : <p className="m-0 text-small text-ink-soft">{t('workflow.edit.judge.judging')}</p>}
         </div>
-      )}
-
-      {proposal && (
-        <ProposalBar
-          maker={proposal.maker}
-          why={proposal.why}
-          problems={proposal.problems}
-          counts={{ taken: decided.taken.length, left: decided.left.length, open: undecided.length }}
-          unknownBase={proposal.base === null}
-          settling={settling[proposal.id] ?? null}
-          canTakeAll={open.length > 0}
-          busy={busy}
-          onTakeAll={() => takeChanges(open)}
-          onLeaveRest={() => leaveChanges(undecided)}
-          onDismiss={dismiss}
-          {...(canAsk ? { onAskAgain: askAgain } : {})}
-        >
-          <ChangeList
-            rows={rows}
-            busy={busy}
-            onTake={(id) => takeChanges([id])}
-            onLeave={(id) => leaveChanges([id])}
-            onShow={(step) => { select(step); focusOn(step); }}
-            {...(canAsk ? { onAskAgain: askAgain } : {})}
-          />
-        </ProposalBar>
       )}
 
       <div className={wide ? 'grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] items-start gap-6' : 'grid min-w-0 gap-4'}>

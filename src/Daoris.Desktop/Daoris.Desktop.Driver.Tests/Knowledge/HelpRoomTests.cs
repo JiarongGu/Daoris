@@ -59,57 +59,34 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// Where the person granted Daoris's housekeeping, the room written at the start says which of its
-    /// tools this conversation may use, read from the record then, and that each target is judged again and nothing forced; a
-    /// discard granted no longer sits among the presses that stay the person's. Nothing granted, and the room says nothing new.
+    /// Where the person granted families of acts, the room written at the start names each one's verbs, read from the record then,
+    /// and that the grant is read at each press; a discard granted no longer sits among the presses that stay the person's. Nothing
+    /// granted, and the room says nothing new; an older record's housekeeping and settings lists grant nothing until converted.
     /// </summary>
     [Fact]
-    public void The_room_says_the_housekeeping_the_person_granted_at_its_start()
+    public void The_room_names_the_verbs_of_the_families_the_person_granted_at_its_start()
     {
         var plain = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
-        Assert.DoesNotContain("housekeeping_", plain);
+        Assert.DoesNotContain("families of acts", plain);
         Assert.Contains("Never offer to push, merge, discard, sign in, or handle a key", plain);
 
-        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "discard-branch"] }""");
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "acts": ["discard", "settings"] }""");
         var granted = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
 
-        Assert.Contains("`housekeeping_inspect`", granted);
-        Assert.Contains("`housekeeping_discard_branch`", granted);
-        Assert.DoesNotContain("`housekeeping_clean_up`", granted);
-        Assert.Contains("judged again", granted);
+        Assert.Contains("discard: `daoris tree remove <session|branch> [--repository <name>]`", granted);
+        Assert.Contains("settings: `daoris settings notify|cap|cooloff|quiet …`", granted);
+        Assert.DoesNotContain("clean-up: `daoris tree clean", granted);
+        Assert.Contains("read at each press", granted);
         Assert.Contains("Never offer to push, merge, sign in, or handle a key", granted);
+        Assert.DoesNotContain("housekeeping_", granted);
+        Assert.DoesNotContain("`settings_", granted);
         // The room is written with the home's supervisor rules beside the access, so the render it is held to reads them too.
         var rules = HelpRuleFacts.Read(_home);
-        Assert.Equal(HelpRoom.Render(Machine with { Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.DiscardBranch], Rules = rules }), granted);
-    }
+        Assert.Equal(HelpRoom.Render(Machine with { Acts = [ActFamilies.Discard, ActFamilies.Settings], Rules = rules }), granted);
 
-    /// <summary>
-    /// Where the person granted chosen settings, the room written at the start names each one's tool, that
-    /// it changes the setting with no Apply, and that every other setting is still proposed; housekeeping granted beside them is no
-    /// longer the one change it makes itself. Nothing granted, and the room says nothing new.
-    /// </summary>
-    [Fact]
-    public void The_room_says_the_settings_the_person_granted_at_its_start()
-    {
-        var plain = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
-        Assert.DoesNotContain("`settings_", plain);
-
-        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "settings": ["notify", "language"] }""");
-        var granted = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
-
-        Assert.Contains("`settings_notify`", granted);
-        Assert.Contains("`settings_language`", granted);
-        Assert.DoesNotContain("`settings_cap`", granted);
-        Assert.Contains("no Apply", granted);
-        Assert.Contains("Every setting is pressed, never proposed", granted);
-        Assert.DoesNotContain("housekeeping_", granted);
-        Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language], Rules = HelpRuleFacts.Read(_home) }), granted);
-
-        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect"], "settings": ["cap"] }""");
-        var both = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
-        Assert.Contains("`housekeeping_inspect`", both);
-        Assert.Contains("`settings_cap`", both);
-        Assert.DoesNotContain("the one change you make yourself", both);
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"], "settings": ["cap"] }""");
+        var older = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+        Assert.Equal(plain, older);
     }
 
     /// <summary>
@@ -174,8 +151,11 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__workflow_propose", allowed);
+        Assert.Contains("Edit(./drafts/**)", allowed);
+        Assert.True(Directory.Exists(Path.Combine(room, "drafts")));
         Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
-            || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+            || (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -211,7 +191,7 @@ public sealed class HelpRoomTests : IDisposable
         var rules = HelpRoom.Rules(PermissionFile.Empty, kept, [new("console-ui", "work", "/work/console-ui")]);
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), $"mcp__{KnowledgeConnector.ServerName}__checkout_read"], rules.Allow);
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
         Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.Contains("console-ui", StringComparison.Ordinal));
     }
@@ -233,7 +213,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
         Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
-            || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+            || (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
     /// <summary>

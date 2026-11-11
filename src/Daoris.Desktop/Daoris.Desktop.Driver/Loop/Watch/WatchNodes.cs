@@ -182,7 +182,7 @@ internal sealed class WatchNodes
         // waiting on the pass is answered that none read; the whole look's ask and the awaited set's stay set for the pass after the drain.
         if (_watch.DrainsNow())
         {
-            PassAsks.Done(asks.Take(), passed: false);
+            asks.Take().Done(passed: false);
             return [];
         }
 
@@ -215,6 +215,8 @@ internal sealed class WatchNodes
             var gates = new NodeGates(home, service);
             pass = await _watch.Stages.TimeAsync("nodes", () => Runtime.PassAsync(new NodeRuntimeLook(_config(), whole)
             {
+                Asked = asked.Units,
+                Judged = asked.Judged,
                 Units = token => ReadNodeUnitsAsync(home, service, token),
                 Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
                 // A receipt's role is what its plugin's manifest declares of its schema.
@@ -234,17 +236,17 @@ internal sealed class WatchNodes
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                           or UnauthorizedAccessException)
         {
-            PassAsks.Done(asked, passed: false);
+            asked.Done(passed: false);
             return [.. lines, $"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
         }
         catch
         {
-            PassAsks.Done(asked, passed: false);
+            asked.Done(passed: false);
             throw;
         }
 
         // The doors that asked this pass read the runs' records it kept.
-        PassAsks.Done(asked, passed: true);
+        asked.Done(passed: true);
         Due(_due!, Runtime.NextDue);
         _watch.Passed?.Invoke(pass);
 

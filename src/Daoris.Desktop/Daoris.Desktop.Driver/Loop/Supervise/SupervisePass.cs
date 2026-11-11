@@ -12,9 +12,8 @@ public sealed record SuperviseRunAsk(SupervisorWaiting Waiting, ReviewerChoice C
 public sealed record SuperviseRunEnd(string State, string? LastWords, string? Session, string Posture, long? Tokens = null, string? Ran = null);
 
 /// <summary>
-/// One attempt of an agent supervisor at a subject: its order walked less the choices its attempts spent; with none ready, the subject
-/// left to the person and said once; else the attempt written, its turn run, the block read from its last message and kept through its
-/// kind's own keeping, and the outcome written beside the attempt. A limited or transient end is a pass, the next choice taken next.
+/// One attempt of an agent supervisor at a subject: its order less the choices its attempts spent walked with the subject's writers; none
+/// ready said once by its kind's life (<see cref="ISuperviseLife"/>), else the attempt written, its turn run, its end kept, its outcome written.
 /// </summary>
 internal sealed class SupervisePass(LoopContext context, Driver driver)
 {
@@ -26,51 +25,66 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
     /// <summary>The attempt's start, or why none: the subject closed, an attempt running or ended, no choice ready, its attempt not written.</summary>
     public async Task<string?> StartAsync(SupervisorWaiting waiting, ISupervisorDesk desk, CancellationToken ct)
     {
+        var life = new SuperviseDecisionLife(context, desk);
+        var (ask, said, token) = await BeginAsync(waiting, life, ct).ConfigureAwait(false);
+        if (ask is not null) _ = Task.Run(() => RunAsync(ask, life, token), CancellationToken.None);
+        return said;
+    }
+
+    /// <summary>One attempt run to its end on the caller's own task, never the look's: whether a turn ran, and its start or why none.</summary>
+    public async Task<(bool Ran, string? Said)> RunToEndAsync(SupervisorWaiting waiting, ISuperviseLife life, CancellationToken ct)
+    {
+        var (ask, said, token) = await BeginAsync(waiting, life, ct).ConfigureAwait(false);
+        if (ask is null) return (false, said);
+        await RunAsync(ask, life, token).ConfigureAwait(false);
+        return (true, said);
+    }
+
+    private async Task<(SuperviseRunAsk? Ask, string? Said, CancellationToken Token)> BeginAsync(SupervisorWaiting waiting, ISuperviseLife life, CancellationToken ct)
+    {
         var (attempts, runs) = (context.Supervisor.Attempts, context.Supervisor.Runs);
         var subject = waiting.Subject;
-        if (context.Supervisor.Closed(subject) || runs.Running(subject) || attempts.Running(subject) || attempts.Ended(subject)) return null;
-        if (runs.Lines.Contains(subject.Session)) return null;
+        if (context.Supervisor.Closed(subject) || runs.Running(subject) || attempts.Running(subject) || attempts.Ended(subject)) return (null, null, ct);
+        if (runs.Lines.Contains(subject.Session)) return (null, null, ct);
 
+        var repository = waiting.Repository is { Length: > 0 } named ? named : null;
         IReadOnlyList<ActorEffective> order;
         try
         {
-            // The one walk's order of the supervisor the start is bound to, never the stored order read apart from it.
             order = new StartPlan(
                 ParticipantWork.Supervise, context.Config, context.Harnesses, context.Adapters, new PassMemory(), catalogue: RoleCatalog.ReadHome(context.Home),
-                place: new RolePlace(Repository: waiting.Repository), role: waiting.Role) { Subject = ParticipantWork.Supervise }.Order;
+                place: new RolePlace(Repository: repository), role: waiting.Role) { Subject = ParticipantWork.Supervise }.Order;
         }
         catch (Exception error) when (error is ActorUnreadableException or DriverException)
         {
-            return SaidUnavailable(waiting, error.Message);
+            return (null, SaidUnavailable(waiting, life, error.Message), ct);
         }
 
         var spent = attempts.Spent(subject);
         IReadOnlyList<ActorEffective> left = order.Where((_, at) => !spent.Contains(at + 1)).ToList();
-        if (left.Count == 0) return SaidUnavailable(waiting, "every choice of its order was tried and none decided it.");
+        if (left.Count == 0) return (null, SaidUnavailable(waiting, life, "every choice of its order was tried and none decided it."), ct);
         if (waiting.PacketOnly)
         {
             var (held, passed) = PacketOnlyRules.Readers(context.Adapters, left);
-            if (held.Count == 0) return SaidUnavailable(waiting, $"no choice left of its order holds its reader packet-only ({string.Join(", ", passed)}: not enforced).");
+            if (held.Count == 0) return (null, SaidUnavailable(waiting, life, $"no choice left of its order holds its reader packet-only ({string.Join(", ", passed)}: not enforced)."), ct);
             left = held;
         }
 
-        var choice = await ChooseAsync(waiting, left, ct).ConfigureAwait(false);
-        if (!choice.Chosen || choice.Effective is not { } entry) return SaidUnavailable(waiting, choice.Sentence);
+        var choice = await ChooseAsync(waiting, left, repository, ct).ConfigureAwait(false);
+        if (!choice.Chosen || choice.Effective is not { } entry) return (null, SaidUnavailable(waiting, life, choice.Sentence), ct);
 
         Unavailable.TryRemove(subject, out _);
         var number = order.ToList().IndexOf(entry) + 1;
-        var world = new LookSupervisorWorld(context.Service, context.Home, context.Config);
-        if (await SupervisorInstruction.ComposeAsync(world, desk, waiting, ct).ConfigureAwait(false) is not { } prompt) return null;
-        if (attempts.Begin(subject, number < 1 ? spent.Count + 1 : number, DateTimeOffset.UtcNow) is not { } attempt) return null;
-        if (runs.Start(subject, ct) is not { } source) return null;
+        if (await life.PromptAsync(waiting, choice, ct).ConfigureAwait(false) is not { } prompt) return (null, null, ct);
+        if (attempts.Begin(subject, number < 1 ? spent.Count + 1 : number, DateTimeOffset.UtcNow) is not { } attempt) return (null, null, ct);
+        if (runs.Start(subject, ct) is not { } source) return (null, null, ct);
 
         var revision = RoleCatalog.ReadHome(context.Home).RevisionOf(waiting.Role);
-        var ask = new SuperviseRunAsk(waiting, choice, attempt, prompt, revision);
-        _ = Task.Run(() => RunAsync(ask, desk, source.Token), CancellationToken.None);
-        return $"supervisor `{waiting.Role}` took {waiting.Kind} `{subject.Id}` of session {subject.Session} on {entry.Agent} · {entry.Model ?? "account default"}";
+        var said = $"supervisor `{waiting.Role}` took {waiting.Kind} `{subject.Id}` of session {subject.Session} on {entry.Agent} · {entry.Model ?? "account default"}";
+        return (new SuperviseRunAsk(waiting, choice, attempt, prompt, revision), said, source.Token);
     }
 
-    private async Task RunAsync(SuperviseRunAsk ask, ISupervisorDesk desk, CancellationToken ct)
+    private async Task RunAsync(SuperviseRunAsk ask, ISuperviseLife life, CancellationToken ct)
     {
         var (attempts, subject) = (context.Supervisor.Attempts, ask.Waiting.Subject);
         var outcome = SupervisorAttemptOutcomes.Failed;
@@ -79,7 +93,7 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
             var end = context.SuperviseRuns is { } run
                 ? await run(ask, ct).ConfigureAwait(false)
                 : await new SuperviseTurn(context, driver).RunAsync(ask, ct).ConfigureAwait(false);
-            outcome = await SettleAsync(ask, end, desk, ct).ConfigureAwait(false);
+            outcome = end.State is "limited" or "transient" ? SupervisorAttemptOutcomes.Limited : await life.SettleAsync(ask, end, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is OperationCanceledException or DriverException or IOException or HttpRequestException)
         {
@@ -103,70 +117,26 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         }
     }
 
-    // The block of a completed turn kept through its kind's row; anything else an outcome of its own, said.
-    private async Task<string> SettleAsync(SuperviseRunAsk ask, SuperviseRunEnd end, ISupervisorDesk desk, CancellationToken ct)
-    {
-        var (waiting, log) = (ask.Waiting, context.Log);
-        if (end.State is "limited" or "transient") return SupervisorAttemptOutcomes.Limited;
-        if (end.State == "stopped" || ct.IsCancellationRequested)
-        {
-            log?.Info("supervisor.dropped", ("role", waiting.Role), ("why", "the person answered first"));
-            return SupervisorAttemptOutcomes.Failed;
-        }
-
-        var (block, why) = end.State == "completed" ? SupervisorBlock.Read(end.LastWords) : (null, $"its turn ended {end.State}");
-        if (block is not null && (block.Kind != waiting.Kind || block.Subject != waiting.Subject)) (block, why) = (null, "its block names another subject");
-        if (block is null)
-        {
-            log?.Info("supervisor.attempt-failed", ("role", waiting.Role), ("why", why ?? ""));
-            Said(waiting.Subject.Session, $"The supervisor's turn did not decide this ({why}), so it waits for you.");
-            return SupervisorAttemptOutcomes.Failed;
-        }
-
-        var effective = ask.Choice.Effective!;
-        var holder = SupervisorHolders.OfAgent(new SupervisorAgentHolder(
-            waiting.Role, ask.Revision, effective.Agent, effective.Model, effective.Effort, end.Ran, end.Posture, end.Session ?? "") { Tokens = end.Tokens });
-        var kept = await desk.KeepAsync(waiting, block, holder, ct).ConfigureAwait(false);
-        if (!kept.Kept)
-        {
-            log?.Info("supervisor.dropped", ("role", waiting.Role), ("why", kept.Why ?? ""));
-            if (kept.Why == SupervisorWhy.RoleChanged)
-            {
-                Said(waiting.Subject.Session, "The supervisor's role changed while it was deciding, so it decides this again.");
-                return SupervisorAttemptOutcomes.RoleChanged;
-            }
-
-            Said(waiting.Subject.Session, $"The supervisor's decision was not kept ({kept.Why}), so it waits for you.");
-            return SupervisorAttemptOutcomes.Failed;
-        }
-
-        return block.Leave is null ? SupervisorAttemptOutcomes.Decided : SupervisorAttemptOutcomes.Left;
-    }
-
-    private Task<ReviewerChoice> ChooseAsync(SupervisorWaiting waiting, IReadOnlyList<ActorEffective> left, CancellationToken ct) =>
+    private Task<ReviewerChoice> ChooseAsync(SupervisorWaiting waiting, IReadOnlyList<ActorEffective> left, string? repository, CancellationToken ct) =>
         context.SuperviseChoices is { } choose
             ? choose(waiting, left, ct)
             : ReviewerChoice.ChooseAsync(
-                context.Harnesses, OpinionRule.None, [], context.Config, workspace: null, ct, actor: ParticipantWork.Supervise, order: left,
-                catalogue: () => RoleCatalog.ReadHome(context.Home), role: waiting.Role, repository: waiting.Repository);
+                context.Harnesses, OpinionRule.None, waiting.Writers, context.Config, workspace: null, ct, actor: ParticipantWork.Supervise, order: left,
+                catalogue: () => RoleCatalog.ReadHome(context.Home), role: waiting.Role, repository: repository);
 
     internal static void Forget(IReadOnlyCollection<SupervisorSubject> waiting)
     {
-        foreach (var subject in Unavailable.Keys.Where(each => !waiting.Contains(each))) Unavailable.TryRemove(subject, out _);
+        foreach (var subject in Unavailable.Keys.Where(each => !waiting.Contains(each) && each.Kind != SupervisorKinds.AskDaoris)) Unavailable.TryRemove(subject, out _);
     }
 
-    // No choice ready: the person's rules stand as they acted, and the subject waits for the person, said once until a choice is ready again.
-    private string SaidUnavailable(SupervisorWaiting waiting, string sentence)
+    private string SaidUnavailable(SupervisorWaiting waiting, ISuperviseLife life, string sentence)
     {
         if (Unavailable.TryGetValue(waiting.Subject, out var said) && said == sentence) return $"supervisor `{waiting.Role}` unavailable: {sentence}";
         Unavailable[waiting.Subject] = sentence;
         context.Log?.Info("supervisor.unavailable", ("role", waiting.Role), ("kind", waiting.Kind), ("why", sentence));
-        Said(waiting.Subject.Session, $"The supervisor's agents cannot run here now: {sentence} This waits for you.");
+        life.Unavailable(waiting, sentence);
         return $"supervisor `{waiting.Role}` unavailable: {sentence}";
     }
-
-    private void Said(string session, string text) =>
-        context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = text }, say: null);
 }
 
 /// <summary>The facts' world a look reads a subject from: the service, the home and its choices; no instance, no key.</summary>

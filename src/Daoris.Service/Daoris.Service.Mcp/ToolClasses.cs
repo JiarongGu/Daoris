@@ -14,16 +14,13 @@ public enum ToolClass
 }
 
 /// <summary>
-/// Every tool the connector registers, and its class. A census
-/// (<c>ToolClassesTests</c>) holds it to the registration, so a tool added later has no class, and is refused to a child, until
-/// it is given one here.
+/// Every tool the connector registers, and its class; <c>ToolClassesTests</c> holds it to the registration.
 /// </summary>
 /// <remarks>
 /// The reads, including <c>line_read</c> and <c>handback_read</c>, which read records and move nothing, and
 /// <c>memory_search</c> and <c>memory_get</c>, which open every engine with no reinforcement.
 /// <c>channel_read</c> is restricted because it moves the parent's read mark, <c>knowledge_refresh</c> because it rebuilds the
-/// index every session shares, and <c>checkout_read</c> and <c>housekeeping_inspect</c> because they read under a person's grant
-/// to the session. Every <c>*_propose</c> is restricted by its suffix.
+/// index every session shares, and <c>checkout_read</c> because it reads under a person's grant to the session. Every <c>*_propose</c> is restricted by its suffix.
 /// </remarks>
 public static class ToolClasses
 {
@@ -59,14 +56,6 @@ public static class ToolClasses
         ["brainstorm_synthesize"] = ToolClass.Restricted,
         ["knowledge_refresh"] = ToolClass.Restricted,
         ["checkout_read"] = ToolClass.Restricted,
-        ["housekeeping_inspect"] = ToolClass.Restricted,
-        ["housekeeping_clean_up"] = ToolClass.Restricted,
-        ["housekeeping_discard_branch"] = ToolClass.Restricted,
-        ["settings_cap"] = ToolClass.Restricted,
-        ["settings_cooloff"] = ToolClass.Restricted,
-        ["settings_language"] = ToolClass.Restricted,
-        ["settings_notify"] = ToolClass.Restricted,
-        ["settings_quiet"] = ToolClass.Restricted,
         ["memory_write"] = ToolClass.Restricted,
         ["memory_end"] = ToolClass.Restricted,
         ["system_plan"] = ToolClass.Restricted,

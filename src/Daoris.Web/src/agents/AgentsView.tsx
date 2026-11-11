@@ -29,7 +29,7 @@ import { ReconcileNote } from './setup/ReconcileNote';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
-import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
+import { type PlaceAt, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { useKeptPlace } from './setup/useKeptPlace';
 import { findPlace, placeAsk, rowOfFound, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { SetupList } from './setup/SetupList';
@@ -64,7 +64,7 @@ export function useAgentsMode(lists: ListPanes) {
   const [arrival, setArrival] = useState<{ place: string; at: PlaceAt } | null>(null);
   const onPlaceAt = useCallback((next: string, at: PlaceAt) => {
     choose('roles', next);
-    setArrival(at.section || at.row || at.back || at.edit ? { place: next, at } : null);
+    setArrival(at.section || at.row || at.back ?{ place: next, at } : null);
   }, [choose]);
   const onArrived = useCallback(() => setArrival(null), []);
   return { mode, onMode, place, onPlace, onPlaceAt, arrival, onArrived };
@@ -79,9 +79,6 @@ export type PlaceHold = {
   row: PlaceRow;
   /** The row a door asked for here, until it is brought into view. */
   asked?: string | null;
-  /** The draft a door asked the Workflow's editor to open on, and the word that it has. */
-  edit?: PlaceEdit | null;
-  onEdited?: () => void;
   /** The step editor's draft, kept above the mounts so it outlives the section. */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
@@ -228,8 +225,6 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         kind: placed.kind === 'workspace' ? 'workspace' : 'repository',
         row,
         asked: shell.rowOf(modes.place),
-        edit: shell.editOf(modes.place),
-        onEdited: () => shell.editOpened(modes.place!),
         held: shell.holdOf(modes.place),
         onHold: (held) => shell.hold(modes.place!, held),
         view: shell.viewOf(modes.place),

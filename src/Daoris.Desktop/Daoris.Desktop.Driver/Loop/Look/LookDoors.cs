@@ -34,6 +34,8 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
     Task<string?> ILookWiring.Supervise(SupervisorWaiting waiting, ISupervisorDesk desk, CancellationToken ct) =>
         new SupervisePass(Context, driver).StartAsync(waiting, desk, ct);
 
+    void ILookWiring.OfferReadings() => _ = new AskDaorisReadingQueue(Context, driver).Offer(CancellationToken.None);
+
     GoOnMarks ILookWiring.Marks => Context.Marks;
 
     SessionEvents ILookWiring.Events => Context.Events;

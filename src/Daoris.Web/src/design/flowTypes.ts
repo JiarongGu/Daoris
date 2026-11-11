@@ -11,7 +11,7 @@ export type PillTone = NonNullable<ComponentProps<typeof Pill>['tone']>;
 
 /**
  * A mark on a node: a short word the caller says about it, such as a refusal's *To put right* or a
- * proposal's *New*. It is drawn as an outline on the node (the caller's, which takes no room) and a chip beside it where one clears
+ * change's *New*. It is drawn as an outline on the node (the caller's, which takes no room) and a chip beside it where one clears
  * every box; the caller keeps the words in the node's description. A mark never adds a line or a border's width to a node.
  */
 export type FlowMark = { word: string; kind: 'refused' | 'new' | 'remove' | 'changed' };

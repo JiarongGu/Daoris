@@ -14,7 +14,7 @@ internal static class PerformedWaits
     {
         PressSteps.Reach(PressSteps.Pass);
         LandPerformer.Retry(loop.Home, session, unit, tip);
-        await loop.PassWholeAsync(GraphPasses.Bound, ct).ConfigureAwait(false);
+        await loop.PassWholeAsync(unit, GraphPasses.Bound, ct).ConfigureAwait(false);
         var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
         TreeLanding? outcome;
         while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)

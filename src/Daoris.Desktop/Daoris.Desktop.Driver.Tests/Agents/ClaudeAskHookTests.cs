@@ -62,12 +62,12 @@ public sealed class ClaudeAskHookTests : IDisposable
         var registry = new HeldPermissions();
         var asked = new SessionRequest("s1a2b3c4", SessionMove.Permit, DateTimeOffset.UtcNow)
         {
-            Key = "a1b2c3d4e5f6", Operation = "Bash", Text = "Bash: npm test", By = "hook",
+            Key = "a1b2c3d4e5f6", Operation = "Bash", Text = "Bash: npm test", By = "hook", Call = "toolu_01",
         };
 
         var holding = NativePermits.HoldAsync(requests, registry, asked);
         var held = Assert.Single(registry.Held("s1a2b3c4"));
-        Assert.Equal(("a1b2c3d4e5f6", "Bash: npm test", "execute"), (held.Request, held.Title, held.Kind));
+        Assert.Equal(("a1b2c3d4e5f6", "Bash: npm test", "execute", "toolu_01"), (held.Request, held.Title, held.Kind, held.Call));
         Assert.Equal(["allow", "reject"], held.Choices.Select(choice => choice.Id));
         Assert.True(registry.Answer("s1a2b3c4", "a1b2c3d4e5f6", option).Answered);
         await holding;

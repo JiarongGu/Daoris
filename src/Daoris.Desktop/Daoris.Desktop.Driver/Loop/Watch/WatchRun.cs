@@ -267,7 +267,7 @@ internal sealed class WatchRun(
             // No wake of the runtime's fires link 8 once the loop closes; nor does a door's ask, and one asked is
             // answered as not passed, so no press waits on a loop that closed.
             doors.Waking(null);
-            if (doors.Unasked() is { } unasked) PassAsks.Done(unasked.Take(), passed: false);
+            if (doors.Unasked() is { } unasked) unasked.Take().Done(passed: false);
             if (watch.Hooks is { } hooks) hooks.StepArrived = null;
 
             if (_nodes is not null) await _nodes.CloseAsync().ConfigureAwait(false);

@@ -1,18 +1,15 @@
-// What each work may call: the service's call table, which is code with no machine
-// state, shown read-only. `callTable.test.ts` holds this file cell for cell to the service's `fixtures/call-table.json`, which the
-// service's `McpRoleFilterTests` holds to `CallTable` over the host's registration; a tool added there fails one until placed here.
+// What each work may call: the service's call table, shown read-only. `callTable.test.ts` holds this file cell for cell to the
+// service's `fixtures/call-table.json`, which `McpRoleFilterTests` holds to `CallTable`; a tool added there fails one until placed here.
 
 /** Every tool the connector registers. */
 export const REGISTERED_TOOLS: readonly string[] = [
   'brainstorm_give', 'brainstorm_synthesize',
   'channel_post', 'channel_read', 'checkout_read', 'go_ahead_ask', 'go_propose',
-  'handback_read', 'handover_propose', 'helper_answer', 'helper_ask', 'housekeeping_clean_up', 'housekeeping_discard_branch',
-  'housekeeping_inspect', 'knowledge_convergence', 'knowledge_get', 'knowledge_refresh', 'knowledge_repositories', 'knowledge_search',
+  'handback_read', 'handover_propose', 'helper_answer', 'helper_ask',
+  'knowledge_convergence', 'knowledge_get', 'knowledge_refresh', 'knowledge_repositories', 'knowledge_search',
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',
   'partner_answer', 'permission_propose', 'quest_list', 'quest_publish', 'quest_respond', 'question_ask',
-  'registry', 'review_ready', 'review_serve', 'settings_cap',
-  'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'system_plan',
-  'workflow_propose',
+  'registry', 'review_ready', 'review_serve', 'system_plan',
 ];
 
 type Column = { only: readonly string[] } | { allBut: readonly string[] };
@@ -23,7 +20,6 @@ const READS = [
   'memory_search', 'quest_list', 'registry',
 ];
 const MEMORY_CHANGES = ['memory_end', 'memory_write'];
-// What every session working in a repository is served, less what its work is refused.
 const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];

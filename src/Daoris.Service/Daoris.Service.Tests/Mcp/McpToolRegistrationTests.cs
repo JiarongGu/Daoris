@@ -7,10 +7,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>
-/// The tools the connector's host advertises, through the SDK's own listing: the names are the wire, which the driver's
-/// connector and the family rehearsal call by name, so none is lost or offered twice.
-/// </summary>
+/// <summary>The tools the connector's host advertises, through the SDK's own listing: the names are the wire, called by name, so none is lost or offered twice.</summary>
 public sealed class McpToolRegistrationTests : McpToolsFixture
 {
     private static readonly string[] Advertised =
@@ -18,13 +15,11 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "brainstorm_give", "brainstorm_synthesize", "channel_post",
         "channel_read", "checkout_read", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
-        "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "knowledge_convergence",
+        "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
-        "review_ready", "review_serve", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_quiet", "system_plan",
-        "workflow_propose",
+        "review_ready", "review_serve", "system_plan",
     ];
 
     /// <summary>A host registered as <c>Program.cs</c> registers its tools, over whatever services the test hands it.</summary>
@@ -48,9 +43,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     }
 
     /// <summary>
-    /// A brainstorm's pass is denied every tool of the connector but its result, by name, from the
-    /// driver's <c>BrainstormPermissions.ConnectorTools</c>. A tool the connector gains is denied there in the same change, or a pass
-    /// could be offered it. The merge tool's rule for the driver's file runs this suite when it changes.
+    /// A brainstorm's pass is denied every tool of the connector but its result, by name, from the driver's
+    /// <c>BrainstormPermissions.ConnectorTools</c>: a tool the connector gains is denied there in the same change.
     /// </summary>
     [Fact]
     public void The_driver_denies_a_brainstorm_pass_every_tool_this_host_advertises()
@@ -78,8 +72,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
         Assert.Equal(
             [
-                "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpGoTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
+                "BrainstormTools", "ChannelTools", "CheckoutTools", "GoAheadTools", "HandOverTools", "HandbackTools",
+                "HelpGoTool", "HelperTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",
             ],

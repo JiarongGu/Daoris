@@ -101,14 +101,14 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [InlineData(false)]
     public void An_applied_proposal_answers_its_message_and_that_it_no_longer_stands(bool applied)
     {
-        var proposal = new HelpProposal("p1", "workflow", "new", null, null, "work", null, "why", "h1", "proposed");
+        var proposal = new HelpProposal("p1", "go", "go", null, null, "work", null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
             HelpRoutes.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         Assert.Equal(("told", applied), (answer.GetProperty("message").GetString(), answer.GetProperty("applied").GetBoolean()));
-        Assert.False(answer.GetProperty("stands").GetBoolean());
+        Assert.False(answer.TryGetProperty("stands", out _));
         Assert.False(answer.TryGetProperty("harnessAction", out _));
     }
 

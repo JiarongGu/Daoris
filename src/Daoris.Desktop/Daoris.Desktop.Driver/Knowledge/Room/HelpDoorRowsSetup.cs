@@ -88,17 +88,15 @@ internal static class HelpDoorRowsSetup
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             "`daoris workflow show --repository <name>|--workspace <name>`",
             new HelpDoorAsk.Never("it reads and changes nothing")),
-        // A named workflow, its versions never edited. Ask Daoris's `workflow` kind takes `new` and `edit`, a whole version; `apply`
-        // and `import` are done at a terminal. Choosing one comes next, and every gate reads the version a run bound.
+        // A named workflow, its versions never edited; a version is pressed (WORKFLOW_SAVE, its card the design). Choosing one comes
+        // next, and every gate reads the version a run bound.
         new("name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next "
             + "version, never edited, said step by step with your part first; a list of steps is no longer saved",
             "(no screen yet)",
             "`daoris workflow new <id> --from <default>|<id>[@<version>]`, `daoris workflow "
-            + "apply|export|import …`, `daoris workflow list`, `daoris workflow show <id>[@<version>]`",
-            new HelpDoorAsk.Proposes("workflow", "new", "a whole version, new or after the newest, which you apply; not an import yet")),
+            + "apply|export|import …`, `daoris workflow list`, `daoris workflow show <id>[@<version>]`"),
         // Which workflow work follows, by repository, workspace and kind of task, the first level that names one deciding; a run
-        // binds it at its first start, and every gate reads that version. Ask Daoris's `workflow` kind takes `use`, with the version
-        // it proposes.
+        // binds it at its first start, and every gate reads that version.
         new("choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds "
             + "with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the "
             + "newest version at its first start, and how it lands, your look and its second opinion follow that version; "
@@ -107,8 +105,7 @@ internal static class HelpDoorRowsSetup
             "(no screen yet)",
             "`daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, "
             + "`daoris workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
-            + "`daoris workflow show --repository <name>|--workspace <name> [--kind <kind>]`",
-            new HelpDoorAsk.Proposes("workflow", "use", "the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet")),
+            + "`daoris workflow show --repository <name>|--workspace <name> [--kind <kind>]`"),
         // The home's one conversion door over every area's part, which is the person's press over the plan they read. Ask Daoris
         // opens the page and names the plan, and never proposes the apply.
         new("convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or "

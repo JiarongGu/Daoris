@@ -22,7 +22,7 @@ public static class NativePermits
     public static async Task HoldAsync(SessionRequests requests, HeldPermissions registry, SessionRequest request)
     {
         var tool = request.Operation ?? "";
-        var held = registry.For(request.Session).Hold(request.Key ?? "", call: null, request.Text ?? tool, Offered, Kind(tool));
+        var held = registry.For(request.Session).Hold(request.Key ?? "", request.Call, request.Text ?? tool, Offered, Kind(tool));
         if (held is null)
         {
             requests.Answer(request, new PermitAnswer(tool, false, "held", "The same ask is held already; this one was refused."));

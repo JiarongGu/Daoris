@@ -11,9 +11,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An Ask Daoris connector bound to a workspace notes each call that named a workspace or a repository, after its tool answered,
-/// in the session's place file the driver composes the turn's receipt from: what the call did, the place as named, what it
-/// named of it, and how many a search's answer found where its tool said so. A call that names no place, one its tool refused, and a connector bound to none note nothing.
+/// An Ask Daoris connector bound to a workspace notes each call that named a workspace or a repository in the session's place file the
+/// turn's receipt is composed from: what it did, the place as named, and how many a search found. A call naming no place, one refused, and a connector bound to none note nothing.
 /// </summary>
 public sealed class CallPlaceFilterTests : IDisposable
 {
@@ -34,10 +33,8 @@ public sealed class CallPlaceFilterTests : IDisposable
     [InlineData("quest_list", "search")]
     [InlineData("handback_read", "search")]
     [InlineData("checkout_read", "read")]
-    [InlineData("housekeeping_inspect", "read")]
     [InlineData("go_propose", "propose")]
-    [InlineData("settings_language", "press")]
-    [InlineData("housekeeping_clean_up", "press")]
+    [InlineData("quest_publish", "press")]
     public void Each_door_s_call_is_its_act(string tool, string act)
     {
         var place = CallPlace.Of(tool, Arguments(new { workspace = "Work" }));

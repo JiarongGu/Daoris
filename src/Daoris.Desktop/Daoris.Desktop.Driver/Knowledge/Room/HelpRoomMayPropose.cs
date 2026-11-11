@@ -113,36 +113,18 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it\n");
         text.Append("  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and\n");
         text.Append("  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.\n");
-        // A whole version judged as the editor judges it; changes, kinds and imports are
-        // another door's, and a merge with nobody is a decision of its own.
-        text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
-        text.Append("  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as\n");
-        text.Append("  `daoris workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`\n");
-        text.Append("  step landing the work by its method), and `choose` to make it the scope's workflow too. A list of `steps` is\n");
-        text.Append("  refused: it is no longer saved, and one saved before is the conversion's. Its card says the person's part first, then each step by id,\n");
-        text.Append("  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.\n");
-        text.Append("  A base that is not the newest is refused as stale. A declaration a step needs that is missing where it\n");
-        text.Append("  applies, a landing plugin that cannot land here, or a kind this build does not run\n");
-        text.Append("  makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not\n");
-        text.Append("  proposed yet.\n");
-        // A route with no version, and a verification pipeline's graph.
-        text.Append("  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no\n");
-        text.Append("  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`\n");
-        text.Append("  names, takes a whole `graph` of its own: at least one `check`, and nothing that lands. Its gates\n");
-        text.Append("  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.\n");
-        text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
-        text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n");
-        // The draft open in the editor, told beside the person's words.
-        text.Append("  Where the person has a workflow's steps open in its editor, where they are says so, and the draft goes beside\n");
-        text.Append("  their words as Daoris told it: its fingerprint, its place, where it came from and what it would save to, its route\n");
-        text.Append("  and pipeline, the step selected, the problems open and the whole graph, with what a step graph may hold here the\n");
-        text.Append("  first time and again when that changes. It is told again only once the draft has changed.\n");
-        // The draft door, which saves and chooses nothing.
-        text.Append("  To change that draft, send `draft` its fingerprint and `graph` the whole changed draft, of either pipeline, with\n");
-        text.Append("  the draft's place as `scope`: nothing is saved or chosen, so no `steps`, `base`, `choose`, `route` or `name` goes\n");
-        text.Append("  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would\n");
-        text.Append("  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint\n");
-        text.Append("  this conversation was not told is refused: ask the person to ask again from the editor.\n");
+        // A workflow's version is pressed from a draft the room keeps, its card the design (WORKFLOW_SAVE's view).
+        text.Append($"- A workflow's new version is saved by pressing, never proposed, as its editor's Save does: write its whole graph (the\n");
+        text.Append($"  JSON object, schemaVersion 2, its nodes and wires) as a draft in this room's `{HelpRoom.Drafts}/` folder, the one place you\n");
+        text.Append($"  may write, and press `daoris workflow apply <id> {HelpRoom.Drafts}/<id>.json --base <version>`, the base its newest version\n");
+        text.Append("  as `daoris workflow show <id>` says it. Its card draws the graph for the person as the editor draws it, with each change\n");
+        text.Append("  against the version it replaces; a save the route would refuse (a stale base, a graph that does not hold, a place it\n");
+        text.Append("  reaches that cannot start it) is answered to you at once and never shown. A new workflow starts from a default or a\n");
+        text.Append("  saved one, `daoris workflow new <id> --from <default>|<id> --name \"…\"`, and your draft is applied onto it. Where the\n");
+        text.Append("  person has a workflow open in its editor, its draft goes beside their words as Daoris told it: write yours from it.\n");
+        text.Append("  Where work follows it is chosen by `daoris workflow use <id> --repository|--workspace <name> [--kind <kind>|--landed]`.\n");
+        text.Append("  Merging with nobody is never pressed: *land without my review* is a pull request opened with no press, which the\n");
+        text.Append("  person still merges, and a merge at done is a decision of its own, which you say.\n");
         // A place's set-up is pressed, judged at the ask by its plan (PLACE_APPLY's view).
         text.Append("- A place's set-up is applied by pressing, never proposed, as its page's *Set up…* does: `daoris place <repository>… --preset <id> --apply`,\n");
         text.Append("  the repositories named as `registry` lists them and all in one workspace, `keep` leaving how their work lands as it is,\n");
@@ -154,13 +136,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  prints the plan and asks nothing. Its card shows the person each change the plan makes; a plan its own rules refuse\n");
         text.Append("  (no tree of its own, no doctrine tool, a set-up already open) is answered to you at once and never shown.\n");
         text.Append("  Daoris never writes into a repository.\n\n");
-        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*. A go card's second
-        // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
-        text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
-        text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
-        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
-        text.Append("A press of not now comes back to you as the person's next message;\n");
-        text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");
+        // A go card's second press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
+        text.Append("A go reaches the person as a card with two buttons, and you name them as the card does:\n");
+        text.Append("**go there** and **dismiss** (in 中文 **前往** and **移除**).\n");
+        text.Append("Dismissing it only takes it out of the conversation: nothing comes back to you, and it says nothing\n");
         text.Append("about the quest, ask or place the card named.\n\n");
         return text.ToString();
     }

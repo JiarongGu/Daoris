@@ -57,6 +57,10 @@ internal interface ILookWiring
     /// <summary>An agent supervisor's attempt at <paramref name="waiting"/> started, said, or null where none starts.</summary>
     Task<string?> Supervise(SupervisorWaiting waiting, ISupervisorDesk desk, CancellationToken ct) => Task.FromResult<string?>(null);
 
+    void OfferReadings()
+    {
+    }
+
     /// <summary>What a session's waiting words are left waiting by.</summary>
     GoOnMarks Marks { get; }
 

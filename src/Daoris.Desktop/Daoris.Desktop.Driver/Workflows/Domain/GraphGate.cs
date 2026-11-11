@@ -77,6 +77,14 @@ public sealed record GraphGateState(string State, string Run) : IGraphGatePart
 
     public string? Words { get; init; }
 
+    /// <summary>For <see cref="GraphGateStates.NotJudged"/>: what the run's view says of <c>handed</c> as its record stands, and the commit it is bound to.</summary>
+    public string? HandedSaid { get; init; }
+
+    public string? HandedAt { get; init; }
+
+    /// <summary>After a press's pass: true where it judged the run, false where it did not come within the bound; null with no press.</summary>
+    public bool? Judged { get; init; }
+
     /// <summary>Whether the graph lets the work land.</summary>
     public bool LetsGo => State == GraphGateStates.Lands;
 
@@ -126,6 +134,7 @@ public static class GraphGate
 
         var bound = status.State == NodeStates.Reached ? status.Acceptance ?? status.Binding : status.Binding;
         var ours = bound is not null && string.Equals(bound.GraphDigest, facts.Digest, StringComparison.Ordinal);
+        var unjudged = said with { HandedSaid = WorkflowGraphRuns.Said(handed, status), HandedAt = bound?.SubjectRevision };
 
         // Active on another branch: the run's newest session's, where the door's tree opened before it; a tree opened after it is newer work the
         // last pass has not read yet, a judgement not made.
@@ -134,7 +143,7 @@ public static class GraphGate
             var door = facts.Branches.LastOrDefault(entry => entry.Unit == unit)?.At;
             var carried = facts.Branches.LastOrDefault(entry => entry.Unit == bound.Observes)?.At;
             return door is { } opened && carried is { } newer && opened > newer
-                ? said
+                ? unjudged
                 : said with { State = GraphGateStates.Elsewhere, Branch = BranchName(bound.Observes, facts.Branches) };
         }
 
@@ -144,15 +153,15 @@ public static class GraphGate
             return said with { State = GraphGateStates.Lands };
         }
 
-        if (status.State != NodeStates.Blocked || record.Statuses.Count == 0) return said;
-        if (WaitedOn(facts.Graph, handed, record) is not { } waited) return said;
+        if (status.State != NodeStates.Blocked || record.Statuses.Count == 0) return unjudged;
+        if (WaitedOn(facts.Graph, handed, record) is not { } waited) return unjudged;
         var waitedStatus = record.Statuses.GetValueOrDefault(waited.Id) ?? NodeLifecycle.Start(record.Unit, waited.Id);
 
         // The door's own gates show the opinion or the look answered since the pass read them: a judgement its next pass makes.
         if (waitedStatus.State is NodeStates.Active or NodeStates.Unknown
             && ((waited.Kind == NodeKinds.Opinion && facts.OpinionLetsGo) || (waited.Kind == NodeKinds.Look && facts.ReviewLetsGo)))
         {
-            return said;
+            return unjudged;
         }
 
         return said with
@@ -190,9 +199,15 @@ public static class GraphGate
             + (gate.Words is { Length: > 0 } words ? $" with your words, \"{words}\"" : "") + $", so run {gate.Run} does not land.",
         GraphGateStates.Elsewhere =>
             $"This work is carried by run {gate.Run}'s newest session, on `{gate.Branch}`, whose branch its graph judges, and lands with it.",
-        _ => $"Daoris has not judged run {gate.Run}'s graph at {(gate.Commit is null ? "this work's commit" : $"`{Short(gate.Commit)}`")} yet: its "
-            + "next look does, and this asks for it now.",
+        _ when gate.Judged == true => $"Daoris judged run {gate.Run}'s graph just now, and `{gate.Handed}` does not land {At(gate.Commit)} yet: "
+            + (gate.HandedSaid ?? "Not reached yet.")
+            + (gate.HandedAt is { } at && !string.Equals(at, gate.Commit, StringComparison.OrdinalIgnoreCase) ? $" It is bound to `{Short(at)}`." : ""),
+        _ when gate.Judged == false => $"Daoris has not judged run {gate.Run}'s graph at {At(gate.Commit)} yet: the pass this asked did not end within "
+            + $"{GraphPasses.Bound.TotalSeconds:0} seconds, and judges this run first when it does.",
+        _ => $"Daoris has not judged run {gate.Run}'s graph at {At(gate.Commit)} yet: its next look does, and this asks for it now.",
     };
+
+    private static string At(string? commit) => commit is null ? "this work's commit" : $"`{Short(commit)}`";
 
     /// <summary>
     /// The node <c>handed</c> waits on: of the nodes a wire path leads from into it, the first in the graph's order that is not settled and stands
@@ -242,7 +257,7 @@ public static class GraphPasses
     /// and the next pass may move it, a pass is asked (<paramref name="pass"/>), and waited for within <see cref="Bound"/> only for a judgement not
     /// made yet, after which the gate is read again (<paramref name="read"/>). A press with no loop to ask (a terminal's alone) is refused as read.
     /// </summary>
-    /// <param name="pass">Asks the loop for a whole pass and waits for it within the bound given (none: asks and waits for nothing); true where it came.</param>
+    /// <param name="pass">Asks the loop for a whole pass judging the run first and waits for it within the bound given; true where it came.</param>
     /// <param name="accept">
     /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on, true where it is kept: the press is
     /// that Accept, so it never lands past the review itself, and the pass it then asks reaches the review and readies the landing.
@@ -250,24 +265,27 @@ public static class GraphPasses
     /// <param name="keep">The press kept as the review's Accept on the run's way to it (<see cref="EarlyAccepts"/>), before the pass is asked.</param>
     public static async Task<LandingGate> PressAsync(
         Func<CancellationToken, Task<LandingGate>> answer, Func<CancellationToken, Task<LandingGate>> read,
-        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null,
+        Func<string, TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null,
         Func<GraphGateState, CancellationToken, Task<bool>>? keep = null)
     {
         var gate = await answer(ct).ConfigureAwait(false);
         if (pass is not null && accept is not null && gate.GraphHolds
             && gate.GraphPart() is { State: GraphGateStates.Waits, Kind: NodeKinds.Review } review && await accept(review, ct).ConfigureAwait(false))
         {
-            return await pass(Bound, ct).ConfigureAwait(false) ? await read(ct).ConfigureAwait(false) : gate;
+            return await pass(RunUnits.IdOf(review.Run), Bound, ct).ConfigureAwait(false) ? Read(await read(ct).ConfigureAwait(false), true) : gate;
         }
 
         if (pass is null || !gate.GraphHolds || gate.GraphPart() is not { AsksPass: true } graph) return gate;
         if (keep is not null) await keep(graph, ct).ConfigureAwait(false);
         if (!graph.PressWaits)
         {
-            await pass(TimeSpan.Zero, ct).ConfigureAwait(false);
+            await pass(RunUnits.IdOf(graph.Run), TimeSpan.Zero, ct).ConfigureAwait(false);
             return gate;
         }
 
-        return await pass(Bound, ct).ConfigureAwait(false) ? await read(ct).ConfigureAwait(false) : gate;
+        return await pass(RunUnits.IdOf(graph.Run), Bound, ct).ConfigureAwait(false) ? Read(await read(ct).ConfigureAwait(false), true) : Read(gate, false);
     }
+
+    private static LandingGate Read(LandingGate gate, bool judged) =>
+        gate.GraphHolds && gate.GraphPart() is { State: GraphGateStates.NotJudged } graph ? gate with { Graph = graph with { Judged = judged } } : gate;
 }

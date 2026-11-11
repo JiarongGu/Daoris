@@ -10,6 +10,7 @@ internal sealed class SuperviseLook(ILookWiring wiring) : ILookPass
 {
     public async Task RunAsync(LookRound round, CancellationToken ct)
     {
+        wiring.OfferReadings();
         if (wiring.Supervising is not { } desk) return;
         var waiting = await desk.WaitingAsync(ct).ConfigureAwait(false);
         var supervisor = wiring.Supervisor;

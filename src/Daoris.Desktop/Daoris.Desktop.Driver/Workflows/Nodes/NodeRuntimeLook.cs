@@ -54,4 +54,10 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// that version, never by Current's graph (<see cref="NodeRuntime.BoundIn"/> reads the home's).
     /// </summary>
     public Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> Bound { get; init; } = (_, _) => null;
+
+    /// <summary>The units a press waits on, by id: judged first in the turn, however many units the pass governs.</summary>
+    public IReadOnlySet<string> Asked { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Told each unit's id once its judgement is kept, so a press waiting on it reads it before the pass ends.</summary>
+    public Action<string> Judged { get; init; } = _ => { };
 }

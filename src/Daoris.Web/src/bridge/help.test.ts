@@ -15,7 +15,6 @@ vi.mock('@shenora/react', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('@shenora/react')>()),
     getBridge: () => ({ invoke: published, isAvailable: true }),
-    // A shell is here, so a read asks it (`HELP_WIRED`).
     useShenora: () => ({ isAvailable: true, bridge: {} }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       if (module === 'DAORIS') heard.set(type, handler);
@@ -23,21 +22,15 @@ vi.mock('@shenora/react', async (importOriginal) => {
   };
 });
 
-import type { HelpProposal } from '../help/ProposalCard';
-import { draftToTell, noteTold } from '../help/openDraft';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import {
-  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, makerOf, publishedAnswer, useDraftProposals, useHelpPublished, useHelpWired, useSettleHelp,
+  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, useHelpPublished, useHelpWired, useSettleHelp,
   wiredAnswer, type HelpSettled,
 } from './help';
 import { useStateHub } from './state/stateHub';
 
-/**
- * `proposal.settled` is the person's Apply or Not now once the proposal settles. A sync card's look
- * settles nothing: the card stands for its press, and the host says so, so the look writes no line. A look
- * that finds nothing to do settles the card, and is written as any Apply is.
- */
+/** `proposal.settled` is the person's Apply or Not now once the proposal settles. */
 describe('what settling a proposal writes to the machine log', () => {
   const settle = async (answer: HelpSettled, apply = true) => {
     invoke.mockReset();
@@ -54,12 +47,6 @@ describe('what settling a proposal writes to the machine log', () => {
   it('writes proposal.settled for an Apply and a Not now that settled the proposal', async () => {
     expect(await settle({ message: 'Applied.', applied: true })).toEqual([{ event: 'proposal.settled', data: { applied: true } }]);
     expect(await settle({ message: 'Not now.' }, false)).toEqual([{ event: 'proposal.settled', data: { applied: false } }]);
-    expect(await settle({ message: 'Looked: nothing to bring up to date.', applied: false, stands: false }))
-      .toEqual([{ event: 'proposal.settled', data: { applied: true } }]);
-  });
-
-  it('writes nothing for a sync card\'s look, which leaves the card standing for its press', async () => {
-    expect(await settle({ message: 'Looked for updates: 3 thing(s) would change.', applied: false, stands: true })).toEqual([]);
   });
 });
 
@@ -79,66 +66,6 @@ describe('what an Apply carries', () => {
     expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p13', revision: 'abc123' });
   });
 
-  /** A draft card's Apply from its editor names each change taken into the draft and each left, which settles it. */
-  it("sends the editor's changes taken and left beside the revision", async () => {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
-    const client = new QueryClient();
-    client.setQueryData(['help-proposals', 's1'], [{ id: 'p14', kind: 'workflow', revision: 'def456' }]);
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
-
-    await act(async () => { await result.current.mutateAsync({ id: 'p14', apply: true, taken: ['step:+find'], left: ['way:+g'] }); });
-
-    const sent = invoke.mock.calls.find(([, type]) => type === 'HELP_APPLY');
-    expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p14', revision: 'def456', taken: ['step:+find'], left: ['way:+g'] });
-  });
-});
-
-/** The proposals against a draft the editor of a place reads, from the conversations told one. */
-describe('the proposals against an open draft', () => {
-  const graph = { schemaVersion: 2, entries: ['work'], end: 'work', nodes: [{ id: 'work', kind: 'claimed' }], wires: [] };
-  const card = (id: string, scope: string, draft: string | null): HelpProposal => ({
-    id, kind: 'workflow', describe: '', terminal: '', why: '',
-    workflow: { id: '', name: '', version: 0, scope, diff: [], yourPart: [], outward: [], needs: [], appliesTo: '', choose: false, draft, changes: [], proposed: graph },
-  });
-
-  it("asks each conversation told a draft for its proposals, and keeps the place's draft cards with the graph each was told", async () => {
-    const sent = draftToTell({ place: 'engine', graph }, undefined)!;
-    noteTold('s9', sent);
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string, type: string, request: { payload: { session?: string } }) => {
-      if (module !== 'DAORIS.DRIVER' || type !== 'HELP_PROPOSALS') return undefined;
-      return request.payload.session === 's9'
-        ? { session: 's9', proposals: [card('p1', 'engine', sent.fingerprint), card('p2', 'docs', sent.fingerprint), card('p3', 'engine', null), { ...card('p4', 'engine', null), kind: 'clear' }] }
-        : null;
-    });
-    const client = new QueryClient();
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useDraftProposals('engine', true), { wrapper });
-
-    await waitFor(() => expect(result.current.map((each) => each.proposal.id)).toEqual(['p1']));
-    expect(result.current[0]).toMatchObject({ session: 's9', base: graph });
-    expect(invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS').map(([, , request]) => (request as { payload: { session: string } }).payload.session))
-      .toEqual(expect.arrayContaining(['s9']));
-  });
-
-  it('asks nothing while the editor is not shown', async () => {
-    invoke.mockReset();
-    const client = new QueryClient();
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    renderHook(() => useDraftProposals('engine', false), { wrapper });
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS')).toEqual([]);
-  });
-
-  it('names who made it by the agent a person calls it and the models its conversation reported', () => {
-    const doors = [{ door: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
-    expect(makerOf({ door: 'claude', ran: { models: ['claude-opus-5-5'], more: 0, entries: [], entriesMore: 0 } }, doors))
-      .toEqual({ agent: 'Claude Code', models: ['claude-opus-5-5'] });
-    expect(makerOf({ door: 'codex', ran: null }, [])).toEqual({ agent: 'codex', models: [] });
-    expect(makerOf(undefined, [])).toBeNull();
-  });
 });
 
 /**
@@ -169,14 +96,6 @@ describe('what an Apply reads again', () => {
 
     await waitFor(() => expect(invalid(keys.registry(null))).toBe(true));
     expect(invalid(keys.repositories(null))).toBe(true);
-  });
-
-  // A workflow card's Apply saves a version, so the workflow tabs under the driver's key are read again at once.
-  it('reads the workflow tabs again, which a saved workflow version changed', async () => {
-    const tabs = [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')];
-    const invalid = await settled({ id: 'p22', apply: true }, ...tabs);
-
-    await waitFor(() => { for (const tab of tabs) expect(invalid(tab)).toBe(true); });
   });
 
   // A clear card's Apply removes history, so the history plan is read again, as the Clear history press does.
@@ -245,7 +164,6 @@ describe('Ask Daoris’s mode and what it was handed', () => {
       mode: 'full', door: 'codex-acp', version: null, account: null, rules: null, tools: [], skills: [], servers: [],
       checkouts: [], lacks: [], guarded: false, loaded: null,
     });
-    // A conversation from before keeps none: not recorded.
     expect(wiredAnswer({ session: 'h1', recorded: false, receipts: [] }, 'h1')).toEqual({ session: 'h1', recorded: false, receipts: [] });
     expect(wiredAnswer(undefined, 'h1')).toEqual({ session: 'h1', recorded: false, receipts: [] });
   });

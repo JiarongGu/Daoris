@@ -132,7 +132,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     any press of theirs; the verb acting alone, with no Daoris running, writes `ask` and refuses `act`. What the tier does is kept
     in `data/terminal-acts.json` (`TerminalActs`): each change, its tier, time and who made it (`window`, `card`, `ask-daoris`,
     `session`, `terminal` or `alone`, read from the door it came by, `PipeDoor.By`), logged `terminal.tier`; and each press run
-    under `act`, its route, what it named, the command its view words, its admission and its end: `done`, `failed` with its code,
+    under `act`, its route, what it named, the command its view words, its admission and its end: `done`, `failed` with its code
+    (a refusal the pipe answered, or an answer that says it did not happen: `done: false`, or a verb's run with a non-zero `said.code`),
     `unknown` where Daoris stopped under it, or `interrupted` where it was still running when Daoris stopped, read so at the next
     start; the newest 20 changes and 100 presses. *Notifications* heads the presses' group with it while the tier is `act` or a
     press is kept: who turned it on and when (a tier no recorded change set is said as set outside Daoris), *Back to ask* in one

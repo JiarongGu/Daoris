@@ -1,20 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>brainstorm</c> posture: what a brainstorm's pass is handed where
-/// its agent takes Daoris's rules. Reading in its room and its one result tool, and nothing else: no edit tool, no shell, no web, no
-/// <c>commit</c>, and no connector tool beyond its result, so no knowledge search, no quest, no helper's ask and no channel.
+/// The <c>brainstorm</c> posture: what a brainstorm's pass is handed where its agent takes Daoris's rules. Reading in its room and its
+/// one result tool, and nothing else: no edit tool, no shell, no web, no <c>commit</c>, and no other connector tool.
 /// </summary>
 /// <remarks>
 /// <para><b>Laid over the person's composition, narrowing only.</b> The person's asks and denies are handed as written, and deny wins
 /// at the harness. Their allows are not: a pass reads its room alone, and a person's allow of a shell command, a
-/// folder or the web is made for sessions that work in a repository, which a pass is not. Every connector tool but the turn's is
-/// denied by name, since the person's composition and the defaults name them all, and an unlisted one is the classifier's to judge.</para>
+/// folder or the web is made for sessions that work in a repository, which a pass is not. Every other connector tool is denied by name.</para>
 ///
 /// <para><b>Two forms, by what the harness takes</b>. A harness that takes Daoris's rules (Claude Code, by either door) is
 /// handed these rules. One that takes none (Codex) is handed its own mode that changes nothing (<see cref="Posture"/>), required, so it
-/// never runs a pass in its writing mode; beside it the room's contents are the floor. Whether either keeps a pass's reads inside its
-/// room is the measurement's (<c>BrainstormRoomMeasure</c>), run on real makers by the owner's go.</para>
+/// never runs a pass in its writing mode. Whether either keeps a pass's reads inside its room is <c>BrainstormRoomMeasure</c>'s.</para>
 /// </remarks>
 public static class BrainstormPermissions
 {
@@ -53,14 +50,12 @@ public static class BrainstormPermissions
     [
         "brainstorm_give", "brainstorm_synthesize",
         "channel_post", "channel_read", "checkout_read", "go_ahead_ask", "go_propose",
-        "handback_read", "handover_propose", "helper_answer", "helper_ask", "housekeeping_clean_up", "housekeeping_discard_branch",
-        "housekeeping_inspect",
+        "handback_read", "handover_propose", "helper_answer", "helper_ask",
         "knowledge_convergence", "knowledge_get", "knowledge_refresh",
         "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose", "memory_search", "memory_write",
         "opinion_answer", "opinion_give", "partner_answer", "permission_propose",
         "quest_list", "quest_publish", "quest_respond", "question_ask", "registry", "review_ready",
-        "review_serve", "settings_cap", "settings_cooloff", "settings_language", "settings_notify",
-        "settings_quiet", "system_plan", "workflow_propose",
+        "review_serve", "system_plan",
     ];
 
     /// <summary>What a pass is denied in the harness's own rule language beside the connector's tools: writing, the shell and the web.</summary>

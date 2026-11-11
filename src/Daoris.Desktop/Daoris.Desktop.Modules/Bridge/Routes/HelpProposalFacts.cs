@@ -13,34 +13,6 @@ public sealed class HelpProposalFacts(DriverContext context)
     /// <summary>Whether a pending proposal is a go naming a session on Sessions, so the service is asked for its records only then.</summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "sessions"));
 
-    /// <summary>Whether a pending proposal is a workflow, judged by the workflows saved here and their runs, read only then.</summary>
-    public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
-
-    /// <summary>
-    /// Whether a pending proposal is a change to the open workflow draft, judged against the drafts its conversation's record
-    /// says it has been told, so the record is read for those only then.
-    /// </summary>
-    public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
-
-    /// <summary>
-    /// The runs bound on this machine, each as its file under the bindings folder reads: a card says how many keep the
-    /// version they started on. A file that is not a binding is skipped, as the run's own reading skips it.
-    /// </summary>
-    public static IReadOnlyList<WorkflowRunBinding> BoundRuns(string home)
-    {
-        var folder = WorkflowRunBindings.FolderOf(home);
-        if (!Directory.Exists(folder)) return [];
-        var runs = new List<WorkflowRunBinding>();
-        foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
-        {
-            var run = Path.GetFileNameWithoutExtension(file);
-            if (WorkflowRunBindings.Read(home, run) is { } binding) runs.Add(binding);
-        }
-
-        return runs;
-    }
-
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
     // is refused unread.
     private static bool ItemOn(HelpProposal proposal, string view) =>
@@ -80,26 +52,6 @@ public sealed class HelpProposalFacts(DriverContext context)
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
-        }
-
-        // A workflow proposal is judged by the named workflows here and the runs bound to them; the
-        // registered repositories and plugins it also reads are in the facts already.
-        if (JudgedAgainstWorkflows(proposals))
-        {
-            var workflows = WorkflowStore.List(_loop.Home);
-            facts = facts with
-            {
-                Workflows = workflows,
-                WorkflowRuns = BoundRuns(_loop.Home),
-                AcceptedGates = await IntegrateChoice.ReadForCardsAsync(config, workflows, facts.Registered, ct).ConfigureAwait(false),
-            };
-        }
-
-        // a change to the open draft is judged against the drafts its conversation's own record says it has been told,
-        // read from this machine's record only for one.
-        if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
-        {
-            facts = facts with { Drafts = WorkflowDraftTold.ToldAcross(conversation, id => _loop.Events.After(id, 0).Events) };
         }
 
         return (config, facts);

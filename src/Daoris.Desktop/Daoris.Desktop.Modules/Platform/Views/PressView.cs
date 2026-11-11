@@ -19,6 +19,8 @@ public sealed record PressView(string Kind, IReadOnlyDictionary<string, string> 
     public PressPlugin? Plugin { get; init; }
 
     public PressGrant? Grant { get; init; }
+
+    public PressWorkflow? Workflow { get; init; }
 }
 
 /// <summary>One more sentence of a press's meaning: <c>person.view.&lt;kind&gt;</c> with the values it names.</summary>
@@ -99,8 +101,11 @@ public static class PressViews
         new PluginActionView(),
         new HistoryClearView(),
         new TreesSyncView(),
+        new SweepView(),
+        new SessionBranchDiscardView(),
         new AskNewView(),
         new PlaceApplyView(),
+        new WorkflowSaveView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>

@@ -104,6 +104,9 @@ public sealed class HeldPermissions
     /// <summary>A session whose held requests moved: one held, answered or released. A hearer's failure is its own.</summary>
     public event Action<string>? Changed;
 
+    /// <summary>A hold ended, with how: told once, after <see cref="Changed"/>. A hearer's failure is its own.</summary>
+    public event Action<HeldPermission, PermissionEnd>? Ended;
+
     /// <summary>The registry of the sessions writing to <paramref name="events"/>: the driver's and the page's, one per process.</summary>
     public static HeldPermissions Of(ISessionEvents events) => Registries.GetValue(events, _ => new HeldPermissions());
 
@@ -224,6 +227,15 @@ public sealed class HeldPermissions
         hold.Bound.Dispose();
         hold.Ended.TrySetResult(end);
         Tell(session);
+        try
+        {
+            Ended?.Invoke(hold.Seen, end);
+        }
+        catch (Exception)
+        {
+            // A hearer's failure is its own: the hold has ended.
+        }
+
         return true;
     }
 

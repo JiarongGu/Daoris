@@ -49,12 +49,24 @@ public sealed class ReturnJournal(string folder)
         return [.. open.Values];
     }
 
-    /// <summary>Move the bytes set aside at <paramref name="aside"/> into <see cref="Kept"/> for <paramref name="path"/>.</summary>
+    /// <summary>
+    /// Move the bytes set aside at <paramref name="aside"/> into <see cref="Kept"/> for <paramref name="path"/>. What an earlier write of the
+    /// same path kept there moves to <c>earlier/&lt;n&gt;/</c> first, so a path written over twice by one return loses the bytes of neither.
+    /// </summary>
     public void Keep(string path, string aside)
     {
         var kept = Kept(path);
         Directory.CreateDirectory(Path.GetDirectoryName(kept)!);
-        File.Move(aside, kept, overwrite: true);
+        if (File.Exists(kept))
+        {
+            var number = 1;
+            string earlier;
+            while (File.Exists(earlier = Path.Combine(folder, "earlier", number.ToString(System.Globalization.CultureInfo.InvariantCulture), path))) number++;
+            Directory.CreateDirectory(Path.GetDirectoryName(earlier)!);
+            File.Move(kept, earlier);
+        }
+
+        File.Move(aside, kept);
     }
 
     private void Append(ReturnEntry entry)

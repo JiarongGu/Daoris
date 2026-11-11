@@ -4,10 +4,10 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The exchange each of Ask Daoris's granted tools makes with the driver: a keyed
+/// The exchange Ask Daoris's granted tool makes with the driver: a keyed
 /// request written under the home's session requests (<see cref="HomeEntry.Requests"/>) for the conversation's own session, the take
-/// waited for, a request nobody took withdrawn, then the answer beside it waited for and read once. <see cref="HousekeepingBox"/>,
-/// <see cref="SettingsBox"/> and <see cref="CheckoutBox"/> each write their own request and say their own words around it.
+/// waited for, a request nobody took withdrawn, then the answer beside it waited for and read once. <see cref="CheckoutBox"/> writes
+/// its own request and says its own words around it.
 /// </summary>
 /// <remarks>
 /// <b>A twin, the file the contract</b> (<c>.claude/knowledge/twins.md</c>): the driver's <c>SessionRequests</c> takes the request by

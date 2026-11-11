@@ -226,8 +226,6 @@ public sealed class HelpRoutes(DriverContext context)
         new
         {
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-            // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
-            Workflow = WorkflowShown(plan.Workflow),
         };
 
     // The person's Apply: made through the door the screen's own route uses, judged again
@@ -258,8 +256,6 @@ public sealed class HelpRoutes(DriverContext context)
         // The winner may have settled it between the read above and the claim.
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
         if (proposal.State != "proposed") return AppliedAgain(proposal);
-        // the editor's press on a draft card names each change it took into the draft and each it left.
-        proposal = proposal with { Taken = press.Taken, Left = press.Left };
 
         var (config, facts) = await _facts.FactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
         var plan = HelpProposals.Plan(proposal, config, facts);
@@ -319,8 +315,6 @@ public sealed class HelpRoutes(DriverContext context)
         // names in it, the driver's judged spelling, and opens Add repository or Import a folder with the workspace
         // the driver judged filled, or New conversation with the repository and words it judged; each null on any other go.
         Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence } : null,
-        // The card stands for another press: a draft's change opened in the editor settles nothing, so the page logs no settlement.
-        applied.Stands,
     };
 
     // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss takes its card
@@ -347,32 +341,6 @@ public sealed class HelpRoutes(DriverContext context)
         await Task.CompletedTask.ConfigureAwait(false);
         return new { Message = told ?? $"Dismissed `#{id}`: its card left the conversation, nothing was said to Ask Daoris, and nothing else changed." };
     }
-
-    /// <summary>
-    /// What a workflow card shows, the page's <c>HelpWorkflowShown</c>: the card's own fields only. The
-    /// steps Apply saves and the choice it makes stay with the driver, which sends exactly those when the person presses it.
-    /// Null for every other kind.
-    /// </summary>
-    /// <remarks>The route it chooses for, whether it saves a version, whether it is a verification pipeline, and what it
-    /// asks less of the person. A draft card's fingerprint, its changes with what each needs, what a save would refuse and its
-    /// candidate graph whole, which the editor takes changes from and nothing saves; null and empty on every other card.</remarks>
-    public static object? WorkflowShown(HelpWorkflowCard? card) => card is null ? null : new
-    {
-        card.Id, card.Name, card.Base, card.Version, card.Scope,
-        card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
-        card.Route, card.Saves, card.Verifies, card.Lowers, card.NoGates,
-        card.Draft,
-        Changes = card.Changes.Select(change => new
-        {
-            change.Id, change.What, change.Change, change.Step, change.Way, change.Was, change.Kind, change.Fields, change.Needs, change.Said,
-        }).ToArray(),
-        Problems = card.Problems.Select(problem =>
-        {
-            var (code, way, node, words) = problem;
-            return new { Code = code, Node = node, Wire = way, Words = words };
-        }).ToArray(),
-        card.Proposed,
-    };
 
     /// <summary>
     /// A sentence said into Ask Daoris's conversation: plain words, since a turn's words render verbatim and a sentence full

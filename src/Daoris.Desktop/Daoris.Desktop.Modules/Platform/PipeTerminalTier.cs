@@ -50,7 +50,11 @@ internal static class PipeTerminalTier
         {
             using var read = JsonDocument.Parse(done.Result);
             var root = read.RootElement;
-            if (root.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True) return (TerminalActs.Done, null);
+            if (root.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True)
+            {
+                return root.TryGetProperty("data", out var data) ? Declined(data) ?? (TerminalActs.Done, null) : (TerminalActs.Done, null);
+            }
+
             var code = root.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object
                 && error.TryGetProperty("code", out var named) && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
             return code is InstancePipe.Interrupted or InstancePipe.Stopping ? (TerminalActs.Unknown, code) : (TerminalActs.Failed, code);
@@ -59,6 +63,24 @@ internal static class PipeTerminalTier
         {
             return (TerminalActs.Unknown, null);
         }
+    }
+
+    /// <summary>
+    /// A press the pipe answered as succeeded whose route says it did not happen: a refusal answered as data (<c>done: false</c>, its
+    /// <c>refused</c> code where it names one) or a verb's run that exited non-zero (<c>said.code</c>); null where it did.
+    /// </summary>
+    private static (string Outcome, string? Code)? Declined(JsonElement data)
+    {
+        if (data.ValueKind != JsonValueKind.Object) return null;
+        if (data.TryGetProperty("done", out var done) && done.ValueKind == JsonValueKind.False)
+        {
+            return (TerminalActs.Failed, data.TryGetProperty("refused", out var refused) && refused.ValueKind == JsonValueKind.String ? refused.GetString() : null);
+        }
+
+        return data.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.Object
+            && said.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.Number && code.TryGetInt32(out var exit) && exit != 0
+                ? (TerminalActs.Failed, null)
+                : null;
     }
 
     /// <summary>The verb's command the press is, as its route's view words it for a card; none where the route has no view or it reads none.</summary>

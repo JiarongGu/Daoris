@@ -5,6 +5,24 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vii and g-viii — a workflow draft pressed, housekeeping and settings as act families (2026-11-11)
+
+> **ASKFULL1g-vii** (driver, modules, service, web): Outcome: Ask Daoris's room keeps a `drafts/` folder and presses `daoris workflow apply <id> drafts/<id>.json --base <v>`; `WorkflowSaveView` judges `WORKFLOW_SAVE` at the ask with the route's own plan and draws the graph and its changes on the Confirm card; the workflow proposal kind, its tool, writer, box row, call-table entries, room lines, the editor's proposal bar and `HelpApply`'s `Taken`/`Left` are gone; `ProposalCard` is the go alone. **g-viii**: Ask Daoris's housekeeping and chosen settings are families of acts pressed by their verbs — pause, clean-up (`SWEEP`), discard (`DISCARD_SESSION_BRANCH`) and settings (`SET_NOTIFY`, `SET_LANGUAGE`, `SET_CAP`, `SET_COOLOFF`, `SET_QUIET`) — viewed by `SweepView` and `SessionBranchDiscardView`; configured access keeps only the families and the checkouts turned off (`ConfiguredAccessStep` converting an older record), the grants page drawing a box per family; the `housekeeping_*` and `settings_*` tools are gone. The two branches' removals were merged so both hold. Proof: `HelpProposalKindsTests`, `ActFamiliesTests`, `HousekeepingViewsTests`, `ConfiguredAccessStepTests`, `PipeDelegateTests`' family case, the tool registration, description and call-table tests, the grants page's vitests in both languages.
+
+---
+
+## An accepted run's landing judged at once, however many runs there are (2026-11-11)
+
+> **The landing judgement's starvation** (driver): Outcome: a pass judges at most 32 runs; past that it took them in id order, so with about 600 open runs in the work workspace each came round once in some 19 passes, and a person's land press — which asks for a pass assuming it judges every run — was refused "has not judged … yet" again and again (introduced by 34fa9cde69; FIX-LOG). Now a press's ask names its run and the pass judges it first, then held events' runs and runs the pass's own answers changed (an Accept it applied), then a rotation that keeps at least a quarter for unchanged runs; the press is answered as soon as its run is judged, and a refusal says the landing step's state and commit, or that no pass came within 20 s. Found on the owner's own work in the installed copy. Proof: `AskedRunTurnTests` (70 runs; the asked run skipped before, seen failing first), `GraphPressTests`.
+
+---
+
+## The Azure DevOps plugin carries a change through merge and release (2026-11-11)
+
+> **The Azure DevOps example plugin, 2.1.0** (examples, docs): Outcome: the `pull-request` step sets auto-complete when its options say `autoComplete: true` (the token's identity from `connectionData`, `completionOptions` with the merge strategy, source-branch deletion, work items and a message), off by default, its evidence saying set, not set with Azure DevOps's words, or off; a refusal by policy or permission never fails the step; a new `release` step finds the build of the merged commit on the target branch, then the classic release made from it or the YAML run's stages, and watches each to its end (`stage-failed`, `no-release`, `timeout`), with `deploy: <stage>` starting a classic stage where no trigger does, approvals deciding; the REST client in `azure.mjs` and the stand-in shared (`stand-in.mjs`); the README names the token's scopes (plugins rule 17a). Found because the installed copy's workflow asked for auto-complete this plugin ignored. Proof: 28 plugin tests against the loopback stand-in (auto-complete set, off, refused by policy and permission; release watched, failed, pending approval, deploy, no build, no release, YAML stages, timeout), the C# offer and manifest tests.
+
+---
+
 ## ASKSUPERVISE1's rows a and b as units, and a landing that reaches the line as the same changes (2026-11-11)
 
 > **ASKSUPERVISE1 a and b** (driver, modules, service, web; D272): Outcome: the `ask-daoris` supervisor kind with its one act `report`, refused below the machine (`AskDaorisKind`); the seeded `second-check` role (复核), held by rules and so off, with a run-once step writing its choices (Codex, then Claude Code · opus · high, 40 starts a day each) only where no staffing, record or person's own supervisor of the kind exists (`SecondCheckStep`); its card's provider and spend lines; `AskDaorisSelection` over the design's §2 table with each lineage line's act, and `AskDaorisRanges` with the 40,000-character bound, *disabled*, the 24-hour unread close and catch-up. Not yet called from a live conversation. Proof: `AskDaorisKindTests`, `SecondCheckStepTests`, `AskDaorisSelectionTests`, `AskDaorisRangesTests`, `AskDaorisSecondCheckTests`, `CallActTests`, `RoleChangeViewTests`, `SecondCheckOn.test`, each seen failing first.
