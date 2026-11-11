@@ -95,6 +95,26 @@ public sealed class PipeTerminalTierTests : Bridge
         Assert.NotNull(kept.Ended);
     }
 
+    /// <summary>A route answers a refusal as data (<c>done: false</c>), or a verb it ran said it with a code beside its lines: the press did not happen, and the record says so.</summary>
+    [Theory]
+    [InlineData(StandIn.Declines)]
+    [InlineData(StandIn.Exits)]
+    public async Task Under_act_a_press_answered_as_not_done_is_kept_failed_though_the_pipe_succeeded(string quest)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log) = await ServeAsync(TerminalTiers.Act, StandingPlace.Outside);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "WORK_PAUSE", new { quest }));
+
+        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+        await UntilAsync(() => pipe.TerminalActs!.Now().Presses is [{ Outcome: not TerminalActs.Running }]);
+        Assert.Equal(TerminalActs.Failed, Assert.Single(pipe.TerminalActs!.Now().Presses).Outcome);
+    }
+
     [Fact]
     public async Task Under_act_Ask_Daoris_s_press_in_full_access_is_its_own_and_never_a_terminal_s()
     {
@@ -186,6 +206,12 @@ public sealed class PipeTerminalTierTests : Bridge
         /// <summary>The quest whose pause the stand-in refuses, as a route's judge refuses.</summary>
         public const string Refuses = "q-refused";
 
+        /// <summary>The quest whose pause the stand-in answers <c>done: false</c>, a refusal as data.</summary>
+        public const string Declines = "q-declined";
+
+        /// <summary>The quest whose pause the stand-in answers as a verb's lines and a non-zero exit code.</summary>
+        public const string Exits = "q-exits";
+
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
 
         /// <summary>Who pressed each press, as the route reads it.</summary>
@@ -201,6 +227,12 @@ public sealed class PipeTerminalTierTests : Bridge
             if (request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("quest", out var quest) && quest.GetString() == Refuses)
             {
                 throw new DriverException("this quest is not paused here.");
+            }
+
+            if (request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("quest", out var named))
+            {
+                if (named.GetString() == Declines) return Task.FromResult<object?>(new { Done = false, Message = "not paused." });
+                if (named.GetString() == Exits) return Task.FromResult<object?>(new { Said = new { Out = Array.Empty<string>(), Error = new[] { "refused." }, Code = 1 } });
             }
 
             return Task.FromResult<object?>(new { Done = true });
