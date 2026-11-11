@@ -32,4 +32,10 @@ public enum AskWordKind
     /// record of it. A build from before passes a kind it does not know over, so no older reader fails on it.
     /// </summary>
     Channel,
+
+    /// <summary>
+    /// Their words a requirement or the through words quote, given when the ask is made: verified verbatim against their own messages in
+    /// the conversation that made it, or typed at their own press. Kept so the exchange's quote judge reads them as it reads every word.
+    /// </summary>
+    Quoted,
 }

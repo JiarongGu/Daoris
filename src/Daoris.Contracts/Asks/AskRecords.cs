@@ -29,6 +29,7 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 /// <param name="WorkflowProposals">Its intake's kind proposals, kept beside the choices and applied only by the person's press; absent where there is none.</param>
 /// <param name="Short">The asker's short title; null for none.</param>
 /// <param name="Paths">The paths its asker declared, empty for none.</param>
+/// <param name="ThroughWords">The person's through words, oldest first, the latest standing and one with none a take-back; absent where there is none.</param>
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, [property: PageType(AskPageTypes.State)] string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
@@ -39,7 +40,11 @@ public sealed record AskResponse(
     IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
     IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,
     string? Short = null,
-    IReadOnlyList<string>? Paths = null);
+    IReadOnlyList<string>? Paths = null,
+    IReadOnlyList<AskThroughResponse>? ThroughWords = null);
+
+/// <summary>The person's through words on an ask, with when; no words is their take-back.</summary>
+public sealed record AskThroughResponse(string? Words, DateTimeOffset At);
 
 /// <summary>An intake's kind proposal, with its reason: the person's own words it quotes.</summary>
 public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);

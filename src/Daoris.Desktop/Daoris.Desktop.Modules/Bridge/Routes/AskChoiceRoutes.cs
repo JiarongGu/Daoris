@@ -37,6 +37,20 @@ public sealed class AskChoiceRoutes(DriverContext context)
             new AskReviewAsk(Id(press.Ask), press.Choice.Trim(), Note(press.Words)),
             new AskReviewWorld(Service(), () => DriverConfig.Load(_loop.ConfigPath)), output, cancellationToken));
 
+    /// <summary>
+    /// An ask's through words, or the person's take-back: Ask Daoris's press puts on it only words the person said in its conversation
+    /// (<see cref="AskQuotes"/>), and a working session's own press none.
+    /// </summary>
+    [DriverRoute("ASK_THROUGH", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("ASK_THROUGH", Ask = "ask")]
+    [GroundAsk("ASK_THROUGH", "ask")]
+    [Says("ASK_THROUGH", "ask:ask", "words:words")]
+    [Publishes("ASK_THROUGH", Moves)]
+    private Task<object?> AskThroughAsync(AskThroughPress press, CancellationToken cancellationToken) =>
+        SaidAsync(press.Said, (output, _) => AskQuotedPress.Refused(_loop, new AskCarried([], Note(press.Words))) is { } refused
+            ? AskQuotedPress.Say(output, refused)
+            : AskThroughCommand.RunAsync(new AskThroughAsk(Id(press.Ask), Note(press.Words)), Service(), output, cancellationToken));
+
     private Task<object?> SaidAsync(bool said, Func<TextWriter, TextWriter, Task<int>> run) => TerminalSaid.PressAsync(_loop, said, run);
 
     private ServiceClient Service() => _loop.Service ?? throw NotReady();

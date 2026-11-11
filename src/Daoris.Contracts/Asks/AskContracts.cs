@@ -22,14 +22,23 @@ public sealed record ListAsks(string? Workspace = null, bool? IncludeClosed = nu
 /// <param name="Kind">The person's kind for its work, with <paramref name="Workflow"/> and <paramref name="WorkflowWords"/>.</param>
 /// <param name="Short">The asker's short title, at most 40 characters, judged as a quest's is.</param>
 /// <param name="Paths">The paths the asker declares the work touches, judged as a quest's are; each quest it publishes carries them.</param>
+/// <param name="Requirements">The person's words and their checks, for the quest published at once to <paramref name="To"/>.</param>
+/// <param name="Through">The person's through words: their asking for the work to be delivered with no press of theirs.</param>
 public sealed record PostAsk(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
     string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
-    IReadOnlyList<string>? Paths = null) : IRoute<AskActionResponse>
+    IReadOnlyList<string>? Paths = null, IReadOnlyList<QuestRequirementWire>? Requirements = null, string? Through = null) : IRoute<AskActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/asks";
+}
+
+/// <summary>The person's through words on an ask, or their take-back with none: the latest stands.</summary>
+public sealed record ChooseAskThrough(string Id, string? Words = null) : IRoute<AskActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/asks/{id}/through";
 }
 
 /// <summary>The person's review choice on an ask's page, or its intake's proposal applied: the latest stands.</summary>
@@ -169,6 +178,7 @@ public sealed record DeleteAsk(string Id) : IRoute<DeletedResponse>
 [JsonSerializable(typeof(PostAsk))]
 [JsonSerializable(typeof(ChooseAskReview))]
 [JsonSerializable(typeof(ChooseAskWorkflow))]
+[JsonSerializable(typeof(ChooseAskThrough))]
 [JsonSerializable(typeof(ReadAsk))]
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(ReadAskChannel))]

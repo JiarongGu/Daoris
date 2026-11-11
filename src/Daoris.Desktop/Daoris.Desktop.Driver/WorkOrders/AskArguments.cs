@@ -44,6 +44,12 @@ public sealed record AskArguments
 
     public bool ClearWorkflow { get; init; }
 
+    /// <summary>A new ask's through words: the person's own, asking for its work to be delivered with no press of theirs (D277).</summary>
+    public string? Through { get; init; }
+
+    /// <summary><c>ask through &lt;id&gt;</c>: the ask whose through words are set from the words after it, or taken back with <c>--clear</c>.</summary>
+    public string? SetThrough { get; init; }
+
     public IReadOnlyList<string> Files { get; init; } = [];
 
     public IReadOnlyList<string> Links { get; init; } = [];
@@ -62,7 +68,9 @@ public sealed record AskArguments
         "daoris ask … --short \"…\"",
         "daoris ask … --review rule|on|<environment>|off [--review-words \"…\"]",
         "daoris ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]",
+        "daoris ask --to <repo> … [--require \"<the person's words>\" \"<the check>\"]… [--through \"<the person's words>\"]",
         "daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…",
+        "daoris ask through <id> \"<the person's words>\"|--clear",
         "daoris ask close <id> --reason \"…\"",
         "daoris ask delete <id>",
         "daoris ask go-ahead <id> <n> approve|refuse [\"…\"]",
@@ -73,7 +81,7 @@ public sealed record AskArguments
     private static readonly IReadOnlySet<string> Valued = new HashSet<string>(StringComparer.Ordinal)
     {
         "--workspace", "--to", "--file", "--url", "--publish", "--close", "--delete", "--go-ahead", "--reason", "--short", "--review",
-        "--review-words", "--set-review", "--kind", "--workflow", "--workflow-words", "--set-workflow",
+        "--review-words", "--set-review", "--kind", "--workflow", "--workflow-words", "--set-workflow", "--through", "--set-through",
     };
 
     /// <summary>The words read, or null with the problem; a problem sends nothing.</summary>
@@ -144,6 +152,8 @@ public sealed record AskArguments
                 "--workflow" => read with { Workflow = value },
                 "--workflow-words" => read with { WorkflowWords = value },
                 "--set-workflow" => read with { SetWorkflow = value },
+                "--through" => read with { Through = value },
+                "--set-through" => read with { SetThrough = value },
                 "--file" => Add(read, files, value),
                 _ => Add(read, links, value),
             };
@@ -167,7 +177,7 @@ public sealed record AskArguments
     /// <summary>What goes only with a new ask's words, or only with one act, said beside another.</summary>
     private static string? Combined(AskArguments read)
     {
-        var act = read.Publish ?? read.Close ?? read.Delete ?? read.GoAhead ?? read.SetReview;
+        var act = read.Publish ?? read.Close ?? read.Delete ?? read.GoAhead ?? read.SetReview ?? read.SetThrough;
         if ((read.Review ?? read.ReviewWords) is not null && act is not null)
         {
             return "--review goes with a new ask's words; `ask review <id>` changes an ask's review choice.";
@@ -179,9 +189,18 @@ public sealed record AskArguments
             return "--kind and --workflow go with a new ask's words; `ask workflow <id>` changes an ask's.";
         }
 
-        if (read.ClearWorkflow && read.SetWorkflow is null) return "--clear goes with `ask workflow <id>` here; `ask clear <id>` clears an ask's work from this machine.";
+        if (read.Through is not null && (act ?? read.SetWorkflow) is not null) return "--through goes with a new ask's words; `ask through <id>` changes an ask's.";
+        if (read.ClearWorkflow && (read.SetWorkflow ?? read.SetThrough) is null)
+        {
+            return "--clear goes with `ask workflow <id>` or `ask through <id>` here; `ask clear <id>` clears an ask's work from this machine.";
+        }
+
         if (read.Publish is not null && read.To is null) return "`ask publish <id>` needs `--to <repo>`: the repository the ask becomes a quest for.";
-        if (read.Requirements.Count > 0 && read.Publish is null) return "--require goes with `ask publish <id>`: a requirement travels on the quest an ask becomes.";
+        if (read.Requirements.Count > 0 && read.Publish is null && ((act ?? read.SetWorkflow) is not null || read.To is null))
+        {
+            return "--require goes with `--to <repo>` on a new ask, or with `ask publish <id>`: a requirement travels on the quest an ask becomes.";
+        }
+
         return null;
     }
 }

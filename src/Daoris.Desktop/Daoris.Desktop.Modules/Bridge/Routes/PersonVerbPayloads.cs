@@ -21,6 +21,9 @@ public sealed record AskWorkflowPress(string Ask, string? Kind = null, string? W
 /// <summary>An ask's review choice: <c>on</c>, <c>off</c> or an environment's name.</summary>
 public sealed record AskReviewPress(string Ask, string Choice, string? Words = null, bool Said = false);
 
+/// <summary>An ask's through words (D277), or none to take the person's back.</summary>
+public sealed record AskThroughPress(string Ask, string? Words = null, bool Said = false);
+
 /// <summary>A page of Daoris's browser kept (<c>add</c>, with its own <c>Title</c> where given) or dropped (<c>remove</c>) on its bookmarks bar.</summary>
 public sealed record BrowserFavoritePress(string Action, string Address, string? Title = null, bool Said = false);
 

@@ -55,6 +55,7 @@ public sealed class AskAnswers(HostWiring host)
                 ? null
                 : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList(),
             Short: a.Short,
-            Paths: a.Paths);
+            Paths: a.Paths,
+            ThroughWords: a.ThroughWords.Count == 0 ? null : a.ThroughWords.Select(t => new AskThroughResponse(t.Words, t.At)).ToList());
     }
 }

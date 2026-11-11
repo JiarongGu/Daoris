@@ -329,6 +329,9 @@ public static class PersonPresses
     /// <summary><c>ask review &lt;id&gt; …</c> and <c>ask --set-review</c>: an ask's review choice.</summary>
     public static InstanceRoute AskReview { get; } = Person("ASK_REVIEW");
 
+    /// <summary><c>ask through &lt;id&gt; …</c> and <c>ask --set-through</c>: an ask's through words, or their take-back.</summary>
+    public static InstanceRoute AskThrough { get; } = Person("ASK_THROUGH");
+
     /// <summary><c>repository retire [&lt;name&gt;]</c>: a repository taken off the registry.</summary>
     public static InstanceRoute RegistryRetire { get; } = Person("REGISTRY_RETIRE");
 
@@ -399,6 +402,7 @@ public static class PersonPresses
         ("quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", QuestWorkflow),
         ("ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", AskWorkflow),
         ("ask review <id> on|<environment>|off [\"…\"]", AskReview),
+        ("ask through <id> \"<the person's words>\"|--clear", AskThrough),
         ("repository retire [<name>]", RegistryRetire),
         ("repository wire <repository> --workspace <name>", RegistryRewire),
         ("repository excludes <folder> [--add <glob>]… [--remove <glob>]…", RegistryExcludes),

@@ -84,6 +84,9 @@ public sealed class AskStore
         // The paths its asker declared; an ask from before declared none.
         await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
 
+        // The person's through words; an ask from before holds none, so each run of it waits for their Accept.
+        await SchemaColumns.EnsureAsync(_db, "asks", "through_words", "through_words TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
+
         // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
         // before them writes the row and still moves it, and no writer here has to remember to. A count, not a moment, so a
@@ -146,6 +149,10 @@ public sealed class AskStore
     /// </summary>
     public Task<bool> RecordWorkflowChoiceAsync(string id, AskWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
         AppendAsync(id, "workflow_choices", JsonFields.Written(writer => WriteWorkflowChoice(writer, choice)), now, ct);
+
+    /// <summary>Keep the person's through words, or their take-back, appended as a choice is. False when no ask has that id.</summary>
+    public Task<bool> RecordThroughAsync(string id, AskThrough through, DateTimeOffset now, CancellationToken ct = default) =>
+        AppendAsync(id, "through_words", JsonFields.Written(writer => AskThroughs.Write(writer, through)), now, ct);
 
     /// <summary>One kind and workflow choice as the store keeps it: each field only where it names one, then when and the words.</summary>
     private static void WriteWorkflowChoice(Utf8JsonWriter writer, AskWorkflowChoice choice)
@@ -213,10 +220,11 @@ public sealed class AskStore
         await using var command = _db.Command();
         // The review, kind and workflow choices are written with a new ask and only appended after.
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths, through_words)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths, $through)
             ON CONFLICT (id) DO NOTHING
             """;
+        command.Parameters.AddWithValue("$through", AskThroughs.Written(ask.ThroughWords));
         command.Parameters.AddWithValue("$reviewChoices", Json(ask.ReviewChoices, (w, choice) =>
         {
             w.WriteStartObject();
@@ -453,6 +461,7 @@ public sealed class AskStore
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
             WorkflowChoices = WorkflowChoicesOf(Text("workflow_choices")),
             WorkflowProposals = WorkflowProposalsOf(Text("workflow_proposals")),
+            ThroughWords = AskThroughs.Read(Text("through_words")),
         };
     }
 

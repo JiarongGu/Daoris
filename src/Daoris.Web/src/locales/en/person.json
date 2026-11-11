@@ -463,6 +463,7 @@
   "person.route.TOOLS_GIT": "run git from a file you name",
   "person.route.ASK_OPINION": "get a second opinion, read on one of your accounts",
   "person.route.ASK_REVIEW": "choose whether an ask's work is reviewed before it lands",
+  "person.route.ASK_THROUGH": "put your words asking for an ask's work to be delivered on it, or take them back",
   "person.route.ASK_WORKFLOW": "choose an ask's kind and workflow",
   "person.route.BROWSER_FAVORITE": "keep a page on, or drop one from, Daoris's browser's bookmarks bar",
   "person.route.BROWSER_SETTING": "change which browser Daoris uses, where links open, or its extensions",

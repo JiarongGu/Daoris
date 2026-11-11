@@ -37,6 +37,7 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         { "QUEST_WORKFLOW", new { quest = "q1", words = "no longer", said = true }, 0 },
         { "ASK_WORKFLOW", new { ask = "a1", words = "no longer", said = true }, 0 },
         { "ASK_REVIEW", new { ask = "a1", choice = "on", said = true }, 0 },
+        { "ASK_THROUGH", new { ask = "a1", words = "please do without my accept", said = true }, 0 },
         { "REGISTRY_RETIRE", new { repository = "engine", said = true }, 0 },
         { "REGISTRY_REWIRE", new { repository = "engine", workspace = "work", said = true }, 0 },
         { "REGISTRY_IMPORT", new { said = true }, 0 },

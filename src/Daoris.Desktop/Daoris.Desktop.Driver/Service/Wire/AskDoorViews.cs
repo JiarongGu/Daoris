@@ -151,10 +151,12 @@ public static class AskDoorViews
     /// The person's kind and workflow for its work, as the composer sends them; null sends none, and each repository's choice decides.
     /// </param>
     /// <param name="shortTitle">The ask's short title, at most 40 characters; null sends none.</param>
+    /// <param name="carried">The person's requirements and through words, verified where the press was proved; null sends none.</param>
     public static async Task<AskAnswer> AskAsync(
         this ServiceClient service, string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
-        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null)
+        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null,
+        AskCarried? carried = null)
     {
         var chosen = workflow is { } composed && (composed.Kind ?? composed.Workflow) is not null ? workflow : null;
         return await service.AnsweredAsync(
@@ -164,9 +166,18 @@ public static class AskDoorViews
                 ReviewWords: review is not null && !string.IsNullOrWhiteSpace(reviewWords) ? reviewWords.Trim() : null,
                 Kind: chosen?.Kind, Workflow: chosen?.Workflow,
                 WorkflowWords: chosen is not null && !string.IsNullOrWhiteSpace(chosen.Words) ? chosen.Words.Trim() : null,
-                Short: string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim()),
+                Short: string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim(),
+                Requirements: carried is { Requirements.Count: > 0 } ? carried.Requirements : null,
+                Through: carried?.Through),
             ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The person's through words on an ask, or their take-back with none, the door <c>ask through</c> and the ask's page press. The
+    /// service's sentence comes back verbatim, a refusal included.
+    /// </summary>
+    public static Task<AskAnswer> ChooseAskThroughAsync(this ServiceClient service, string ask, string? words, CancellationToken ct = default) =>
+        service.AnsweredAsync(new ChooseAskThrough(ask.TrimStart('#'), string.IsNullOrWhiteSpace(words) ? null : words.Trim()), ct);
 
     /// <summary>
     /// The person's review choice on an ask, or its intake's proposal applied, the door the ask's page presses. The latest stands. The
@@ -287,6 +298,8 @@ public static class AskDoorViews
             WorkflowProposals = [.. (ask.WorkflowProposals ?? [])
                 .Where(proposed => proposed.Kind is { Length: > 0 } && proposed.Reason is { Length: > 0 } && proposed.At != default)
                 .Select(proposed => new AskWorkflowProposalView(proposed.Kind, proposed.Reason, proposed.At, proposed.Session, proposed.Quest))],
+            ThroughWords = [.. (ask.ThroughWords ?? []).Where(through => through.At != default)
+                .Select(through => new AskThroughView(string.IsNullOrWhiteSpace(through.Words) ? null : through.Words, through.At))],
         };
     }
 
