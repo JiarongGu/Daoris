@@ -39,23 +39,14 @@ public sealed class HomeMigrationRun(string home, string migration)
     /// <summary>Where this migration's copies go: one folder per migration, the Daoris folder's layout under it.</summary>
     public string Copies => DaorisHome.Entry(home, HomeEntry.Salvage, migration);
 
-    /// <summary>
-    /// Copy <paramref name="path"/> into the salvage folder once, with a database's journal files beside it. A copy already there is kept,
-    /// since a start that stopped mid-way already changed the file it would copy again.
-    /// </summary>
+    /// <summary>Copy <paramref name="path"/> into the salvage folder once (<see cref="SalvageCopy"/>); a copy already there stays, holding the file as the older build left it.</summary>
     public void Keep(string path)
     {
         if (!File.Exists(path)) return;
         var target = Path.Combine(Copies, Relative(path));
         if (File.Exists(target)) return;
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        foreach (var suffix in new[] { "-wal", "-shm" })
-        {
-            if (File.Exists(path + suffix)) File.Copy(path + suffix, target + suffix, overwrite: true);
-        }
-
-        File.Copy(path, target + ".copying", overwrite: true);
-        File.Move(target + ".copying", target, overwrite: true);
+        SalvageCopy.Into(path, target);
     }
 
     /// <summary>Write <paramref name="text"/> over <paramref name="path"/>, the file kept first.</summary>

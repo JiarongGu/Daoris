@@ -549,6 +549,7 @@ catalogues (`i18n:check`).
 
 ## Open
 
+- **THROUGH1e (D277):** a permission proposal naming a push is accepted though only git access's Write opens a push (rule 27), so an approved `git push` rule leaves the push denied; decided: it is refused at the proposal, naming the place's Write and its verb. Not built.
 - **GITREV3a to m:** the third code review's open defects of the scheduler, the library, the object reads and the stamp, each a row in
   `TASKS.md` with its evidence.
 - **GITDESIGN1:** git's place (D241, `docs/2026-11-05-git-design.md`): every remote act through the doors, one push, a pull

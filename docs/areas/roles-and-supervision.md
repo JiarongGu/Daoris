@@ -634,6 +634,7 @@ Web: `agents/roles/*.test.ts(x)`, `agents/setup/*.test.tsx` and `help/goLink.tes
 
 ## Open
 
+- **THROUGH1 (D277):** Ask Daoris presses an ask's `--require`, `--through` and `ask through`, never a run's step (`skip`, `accept`, `changes`, `done`, `approve`, `reject`, `fix` stay the person's); its brief says to carry the person's words on the ask. Not built.
 - **GROWDEPT1:** only the person creates a repository or a room; a request needing a part of its own is done inside one Ask Daoris turn.
   Designed in `docs/2026-11-11-grow-department-design.md` (D276): any agent's press creates one (unasked in full access, a card in
   restricted mode, held to asked or off per project by a person-only switch), its hand ending before content, adoption and the work going

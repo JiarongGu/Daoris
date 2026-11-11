@@ -227,14 +227,14 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     running commands (rule 30); its words are the arguments as `--<name> <value>` (a boolean's flag alone true) or in declared order,
     a required one not given asked by its title; it asks each value at the terminal, hidden where `masked`, and refuses a session's
     terminal. The window's door is `PLUGIN_COMMAND` (`Window`, `PluginCommandRoutes`): one round per call, `from: window`, at the
-    place it names, an argument missing refused before any process starts, the answer handing back the run's id. `storage` is `profiles/plugins/<id>/`,
+    place it names, an argument missing refused before any process starts, the answer handing back the run's id, and the plugins slice pushed after each round, since a command may move a plugin's health or state. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
     nothing in it. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`: `SessionServers` hands a quest's
-    session, at its start and its going on, the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
+    session, at its start and its going on, the entry its caller built (`PluginToolsHand.OfQuest`, which `Agents` cannot name): the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
     [--workspace <name>] --language en|zh`, the home in the entry's own variables, only where its place lists a tool and the program is
     found (the install's `app/daoris-driver/`, else the running program where it is that one; `PluginToolsHand`). It lists
     (`PluginToolList`) each command marked `tool` and not `interactive` of each installed plugin that is on, not refused and speaks,

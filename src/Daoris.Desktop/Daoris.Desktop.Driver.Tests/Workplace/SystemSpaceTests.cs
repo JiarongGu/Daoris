@@ -59,6 +59,7 @@ public sealed class SystemSpaceTests : IDisposable
         Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s-1.events.jsonl"), 40);
         Write(Path.Combine(_home, "webview2", "EBWebView", "x"), 9);
         Write(Path.Combine(DependencyStore.EntryOf(_home, "k1"), "files", "a.js"), 20);
+        Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Salvage), "nocompat1", "data", "state.json"), 6);
         // Three bytes that read as choices: a file that does not read is the policy that keeps the most.
         File.WriteAllText(Write(DaorisHome.Entry(_home, HomeEntry.DriverConfig), 3), "{}\n");
     }
@@ -74,7 +75,7 @@ public sealed class SystemSpaceTests : IDisposable
 
         Assert.Equal(1, (int)space["schema"]!);
         Assert.Equal(
-            ["set-aside", "downloads", "deps", "browser-cache", "logs", "history", "trees", "sign-ins", "left-over", "rest"],
+            ["set-aside", "downloads", "deps", "salvage", "browser-cache", "logs", "history", "trees", "sign-ins", "left-over", "rest"],
             space["kinds"]!.AsArray().Select(kind => (string?)kind!["id"]));
         Assert.All(space["kinds"]!.AsArray(), kind =>
         {
@@ -108,7 +109,7 @@ public sealed class SystemSpaceTests : IDisposable
         var bytes = SpaceKinds.Table.ToDictionary(kind => kind.Id, kind => (long?)KindOf(space, kind.Id)["bytes"]);
         Assert.Equal(new Dictionary<string, long?>
         {
-            ["set-aside"] = 2000, ["downloads"] = 300, ["deps"] = 20, ["browser-cache"] = 70, ["logs"] = 50, ["history"] = 40, ["trees"] = 1000,
+            ["set-aside"] = 2000, ["downloads"] = 300, ["deps"] = 20, ["salvage"] = 6, ["browser-cache"] = 70, ["logs"] = 50, ["history"] = 40, ["trees"] = 1000,
             ["sign-ins"] = 5, ["left-over"] = 9, ["rest"] = 3,
         }, bytes);
         Assert.All(space["kinds"]!.AsArray(), kind =>

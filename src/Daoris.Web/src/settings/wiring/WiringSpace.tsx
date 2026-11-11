@@ -9,18 +9,18 @@ import { SpaceRunLine } from './WiringSpaceFree';
 
 /** Each kind's word in `settings.daoris.space.kind.*`, by its id. */
 const KIND_WORD: Record<string, string> = {
-  'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', 'browser-cache': 'browserCache', logs: 'logs', history: 'history',
+  'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', salvage: 'salvage', 'browser-cache': 'browserCache', logs: 'logs', history: 'history',
   trees: 'trees', 'sign-ins': 'signIns', 'left-over': 'leftOver', rest: 'rest',
 };
 
 /** What a kind's *next* counts, in `settings.daoris.space.what.*`. */
-const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', logs: 'logs' };
+const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', salvage: 'salvage', logs: 'logs' };
 
 /**
  * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (and the logs' daily prune and the
  * dependency store's daily eviction); history's only once the person set an age.
  */
-const RUNS = new Set(['set-aside', 'downloads', 'deps', 'logs']);
+const RUNS = new Set(['set-aside', 'downloads', 'deps', 'salvage', 'logs']);
 
 /** Whether a kind's rule is one of Daoris's runs: history's while an age is set. */
 const runs = (kind: SpaceKind) => RUNS.has(kind.id) || (kind.id === 'history' && kind.rule.kind === 'days');
@@ -40,6 +40,7 @@ function ruleOwnWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
+  if (rule.kind === 'days' && kind.id === 'salvage') return t('settings.daoris.space.rule.salvage', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'deps') return t('settings.daoris.space.rule.deps', { count: rule.days, gb: rule.gb });
   // A finished session's tree goes an hour after its record is kept; `whole` keeps it its days, its record kept all the same.
   if (rule.kind === 'days' && kind.id === 'set-aside') {

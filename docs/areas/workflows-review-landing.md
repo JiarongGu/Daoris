@@ -502,6 +502,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Open
 
+- **THROUGH1 (D277):** a direct ask's done waits unchecked and its review waits for the person's Accept, though the person's words in the Ask Daoris conversation already asked for the merge; decided, not built: requirements and *through words* verified against the conversation and kept on the ask, the driver applying the Accept and the unchecked pass on them (never over a departure, a hold, a go-ahead or a stop), *Take back* on the run. D255's unchecked wait stands for an ask with neither. See TASKS.
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
 - **The place page's opener** (built): Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.

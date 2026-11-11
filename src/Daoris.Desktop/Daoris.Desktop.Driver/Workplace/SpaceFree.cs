@@ -14,13 +14,13 @@ namespace Daoris.Driver;
 /// <para><b>Each kind's one removal</b>: the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),
 /// one before its date whole with its manifest; the downloads through their clearing (<see cref="DownloadClearing.ClearAsync"/>); the
 /// log's days through its prune (<see cref="MachineLog.Remove"/>); the browser's caches through the shell's host
-/// (<see cref="BrowserCacheClearing"/>); an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
+/// (<see cref="BrowserCacheClearing"/>); a migration's salvage folder, an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
 /// <para><b>One run at a time</b>: every run holds the home's run lock (<see cref="KeepingRun"/>), taken by <see cref="SpaceRuns"/>.</para>
 /// </remarks>
 public static class SpaceFree
 {
     /// <summary>The kinds a run removes, in the order it removes them.</summary>
-    public static IReadOnlyList<string> Kinds { get; } = ["set-aside", "downloads", "logs", "browser-cache", "left-over", "update-failed"];
+    public static IReadOnlyList<string> Kinds { get; } = ["set-aside", "downloads", "logs", "salvage", "browser-cache", "left-over", "update-failed"];
 
     /// <summary>The card's kind a run's kind is counted under, for the sizes counted again at its end.</summary>
     public static string CardKind(string kind) => kind == "update-failed" ? "rest" : kind;
@@ -457,6 +457,8 @@ public static class SpaceFree
         {
             foreach (var path in SpaceKinds.BrowserCaches) yield return ("browser-cache", path, Path.Combine([engine, .. path.Split('/')]));
         }
+
+        foreach (var migration in SalvageKeeping.Folders(home)) yield return ("salvage", migration.Name, migration.Path);
 
         // The card's places for what an earlier build left, in the table's order: the one place each exact path is named.
         var left = SpaceKinds.Places(home, "left-over").Places;

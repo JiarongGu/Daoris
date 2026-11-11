@@ -13,7 +13,7 @@ public static class ReviewLegacy
     /// <summary>A supervisor's legacy decision: it read no record, so it decides nothing now.</summary>
     public const string Stale = "legacy-decision-stale";
 
-    /// <summary>What the review's Accept says where a legacy Accept ends it: when it was given, and that no revision was drawn then.</summary>
+    /// <summary>What the review's Accept says where a legacy Accept ends it: the moment it came, and that no revision stood then.</summary>
     public static string Receipt(DateTimeOffset at) => $"Accepted as it stood at {Moments.Write(at)}, before Daoris drew a revision.";
 
     /// <summary>

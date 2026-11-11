@@ -122,7 +122,7 @@ public static class SpaceCommand
         ("press", _) => "kept until you clear it",
         ("proof", _) => "cleaned up once its work is on the line",
         ("own", "browser") => "the browser's own limit",
-        ("own", "agents") => "yours, and each agent's own rule",
+        ("own", "agents") => "yours, and each agent's own rule (older accounts' homes stay under data/harnesses)",
         ("own", "person") => "removed only by your press (`space free --early left-over`)",
         ("own", _) => "each by its own rule",
         var (other, _) => other ?? "none",

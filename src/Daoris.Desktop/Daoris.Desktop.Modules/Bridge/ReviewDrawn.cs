@@ -4,7 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The review a run's Accept is pressed on, as a page draws it: the run, its review step, and the attempt and revision of the record that
-/// review stands on, so the window's Accept (<c>WORKFLOW_NODE</c>'s <c>accept</c>) names what was drawn and a moved record refuses it
+/// review stands on, so the window's Accept (<c>WORKFLOW_NODE</c>'s <c>accept</c>) names what is drawn and a moved record refuses it
 /// <c>moved</c>. A review not begun yet is named with neither, and its Accept is kept early on the record standing.
 /// </summary>
 public sealed record ReviewDrawn(string Run, string Node, int? Attempt, string? Revision)

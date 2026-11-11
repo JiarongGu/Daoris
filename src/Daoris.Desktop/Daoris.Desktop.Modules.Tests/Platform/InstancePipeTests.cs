@@ -12,15 +12,13 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The running Daoris answers on a pipe: a terminal's request is
-/// the kit's envelope on a line, run by the dispatcher every window's page uses, so a declared press over the pipe is under way
-/// and publishes its change as a window's press does; a person's route and a window's are refused before anything runs; a lost
+/// The running Daoris answers on a pipe: a terminal's request is the kit's envelope on a line, run by the dispatcher every
+/// window's page uses, so a declared press over the pipe is under way and publishes its change as a window's press does; a person's route and a window's are refused before anything runs; a lost
 /// connection cancels nothing and <c>RESULT</c> says how the press ended; an id sent twice runs once; and a closing instance
 /// answers every new hello <c>stopping</c>.
 /// </summary>
 /// <remarks>
-/// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris.
-/// The pipe is Windows': elsewhere a test returns at once, as the terminal module's do.
+/// Each test serves its own pipe in this process, named by its scratch home's id, so nothing here meets a running Daoris. The pipe is Windows': elsewhere a test returns at once.
 /// </remarks>
 public sealed class InstancePipeTests : Bridge
 {
@@ -74,8 +72,8 @@ public sealed class InstancePipeTests : Bridge
         return (provider.GetRequiredService<IMessageDispatcher>(), underWay, provider);
     }
 
-    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null) =>
-        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = new StubGrounds() };
+    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null, StubGrounds? at = null) =>
+        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = at ?? new StubGrounds() };
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
@@ -714,8 +712,7 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A route that is a look in one form and a press in another runs over the pipe as asked only in its open form: its press waits
-    /// for the window, and runs nothing until the person confirms it there.
+    /// A route a look in one form and a press in another runs over the pipe only in its open form; its press waits for the Confirm.
     /// </summary>
     [Fact]
     public async Task A_route_classed_by_its_payload_runs_only_in_its_open_form()
@@ -726,7 +723,8 @@ public sealed class InstancePipeTests : Bridge
         driver.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, driver);
         using var __ = services;
-        using var pipe = Pipe(dispatcher, log);
+        using var plugin = new PipeInstalledPlugin(Home);
+        using var pipe = Pipe(dispatcher, log, at: plugin.Grounds);
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
