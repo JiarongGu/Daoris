@@ -121,6 +121,7 @@ export function toTurns(
     ...(event.channel ? { channel: event.channel } : {}),
     // An answer of its park's question pressed, by its mark, never read out of the words.
     ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
+    ...(event.level === 'now' && (event.origin ?? 'person') === 'person' ? { cutIn: true } : {}),
     ...(event.origin === 'target' && event.continues ? { continues: event.continues } : {}),
     ...(event.origin === 'target' && event.helper ? { helper: event.helper } : {}),
     // What a target is composed of, or null where its record keeps none: said missing, never left out. Another
