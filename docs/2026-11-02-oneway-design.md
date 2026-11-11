@@ -1,6 +1,6 @@
 # ONEWAY1: the design. Each job done one way, every old record converted or cleared on one press, every kept read with its end
 
-Status: proposed 2026-11-02 under D228, from the census (`docs/2026-11-02-oneway-census.md`), read on main at `403e267e1` and on
+Status: proposed 2026-11-02 under D228, from the census (`docs/archive/2026-11-02-oneway-census.md`), read on main at `403e267e1` and on
 `wave/workflowclean1` at `b022cc80c`. Revised 2026-11-03 on main at `f3ebcb986` after an independent Opus read found eight blocking
 points and the steward checked three against the code (§14 lists each and where it is settled), and after the owner chose one name for
 every command (§11). The reading was read-only and no tests were run. It widens a foundation (the conversion becomes every area's, and a
@@ -8,7 +8,7 @@ register holds every kept read), so under D191 it takes both makers' reads befor
 steward after two Opus reads (the second read the revision; §14 holds what each found and where it is settled), the other maker's read
 owed while its workspace's spend cap holds and folded in as a revision if it finds anything; the rows marked *now* in §10 start, each
 within the files §10.1 names. WORKFLOWCLEAN1's areas (the workflows, adoption A1 to A3, page P1) are
-its design's (`docs/2026-11-02-workflow-cleanup-design.md`) and are cited here, never re-designed.
+its design's (`docs/archive/2026-11-02-workflow-cleanup-design.md`) and are cited here, never re-designed.
 
 Paths as the census spells them: `Drv/` `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Mod/` `src/Daoris.Desktop/Daoris.Desktop.Modules/`,
 `Svc/` `src/Daoris.Service/Daoris.Service.Core/`, `Http/` `…Service.Http/`, `Web/` `src/Daoris.Web/src/`, `Cli/` `src/Daoris.Cli/src/`.

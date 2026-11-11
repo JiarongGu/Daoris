@@ -1,6 +1,6 @@
 /**
  * Measurement: what the NATIVE door's `stream-json` carries for a subagent and a
- * background task, which no probe had read (docs/2026-09-28-console2-streams-evidence.md, "Left").
+ * background task, which no probe had read (docs/archive/2026-09-28-console2-streams-evidence.md, "Left").
  *
  * The protocol door carries each as its own stream once asked. The pipe door runs the same
  * harness as `claude -p … --output-format stream-json --verbose --include-partial-messages`, and the

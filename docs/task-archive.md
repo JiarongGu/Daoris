@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## DOCDIET1's first steps: a present search, the read-path bench, the design filer, 242 designs filed (2026-11-12)
+
+> **DOCDIET1 search, bench and filing** (service, tools, records; D278): Outcome: `knowledge_search` answers a present question present first (`PresentFirst`; each hit says present, dated or history), the area first for 9 of 12 questions against 1 by the words' own rank, history questions unchanged at 6 first and 10 within three (`PresentFirstBenchTests`); `tools/read-path-bench.mjs` measures the floor and the bytes at a change's start from `tools/read-path-bench-questions.json`; `tools/file-designs.mjs` filed 242 designs nothing open cites under `docs/archive/` with 1,469 citations respelled in 407 files, ten left; the bytes at a change's start 79.5 KB to 74.6 KB at the median area. The rest stays on the row.
+
 ## ASKSUPERVISE1's hook-up and rows c, d and e: Ask Daoris's acts read, shown and told (2026-11-12)
 
 > **ASKSUPERVISE1 hook-up** (driver, modules, web; D272): Outcome: Ask Daoris's turn ends are heard off its conversations' event appends (`AskDaorisWatch`, `AskDaorisTurnEnds`) on a task no turn, press or start waits for, the start's catch-up first; its presses and answered holds kept beside the reports (`AskDaorisKept`, `SecondCheckHookUp`); a protocol door's subagent read by its stream (`ChildCalls`); the *Turn on…* press in the role editor and *Who decides here*.
@@ -197,6 +201,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SENSLAND1 — a session's work is checked for private names before it lands (2026-11-12)
+
+> **SENSLAND1** (driver): Outcome: a landing, in every form, is held before any branch, merge or replay is made when the lines the work adds (`git diff --unified=0 <line>...HEAD`) match the repository's declared private patterns, read from the repository's own checkout (`sensitive.patternsFile`, kept under its `local/`; `TreeLocalInputs.PatternsFile`), case-insensitive as the devkit gate is; the refusal names the path and the pattern's number, never its text; a repository declaring none is unaffected (`SensitiveLandings`). Found when an install session's backlog row named a private workspace and landed unchecked. Proof: `SensitiveLandingTests` (process half, a neutral fixture pattern): a held landing lands nothing and its words carry no private text; a clean one lands.
+
+---
+
 ## PLUGINEXT1a and c, the window halves — the Set up tab and the round card (2026-11-12, D274)
 
 > **PLUGINEXT1a, PLUGINEXT1c (web)** (web, modules): Outcome: a plugin that declares interfaces opens at *Set up* (设置), *About* (关于) beside it with the old sections: each command with *Run* (运行), a refused entry drawn *not read* (未读入) with its reason and nothing to press, storage with what it keeps and its sign-out, *Where it is on* (在哪里启用) as a box per part and place pressing `PLUGIN_SWITCH`; *Run* or a palette row (*Plugin X: Sign in*) opens the round card over `PLUGIN_COMMAND`: the plugin's lines, *Open the page* in the person's own browser with the host shown, a code with *Copy*, a hidden field for a masked prompt, *Go on* (继续) and *Cancel* (取消), then *Done.* or the exit code; *Remove…* offers *Ask it to sign out first*; the offer lists its interfaces and the update plan marks *asks more of you* (需要你更多授权); `PLUGINS` sends each offer's interfaces. Proof: `pluginCommand.test` and `RoundCard.test` (red first), 315 tests across the plugin, bridge and menu folders; the Azure DevOps sign-in proved against a stand-in plugin, not yet on the window.
@@ -241,7 +251,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ## The cleanup census — the superseded ways' remnants removed (2026-11-11)
 
-> **Cleanup census** (driver, web, docs; D228): Outcome: a census of what the day's changes superseded (`docs/2026-11-11-cleanup-census.md`), and the remnants nothing reads removed by family: the trees switch's verb, `TreesMoved` and its help words (`place trees` is now an unknown word); the landing door's room row, the refusals pointing at `daoris place landing` and its route words (the refusals now name the workflow's `land` step); the workflow-draft prompt's call to the removed `workflow_propose`; 53 dead supervisor keys in both catalogues; a stray merge file; install rule 54 listing all 28 migration steps. Kept with their end condition and row: the migration steps, the `--kind api` token setter (PLUGINEXT1), the current landing read, the older build's move boxes, and the review groups and nine session states for REVIEWUX1. Proof: `npm run quick`, `test-map --check`, `i18n:check`, the filtered driver and web suites.
+> **Cleanup census** (driver, web, docs; D228): Outcome: a census of what the day's changes superseded (`docs/archive/2026-11-11-cleanup-census.md`), and the remnants nothing reads removed by family: the trees switch's verb, `TreesMoved` and its help words (`place trees` is now an unknown word); the landing door's room row, the refusals pointing at `daoris place landing` and its route words (the refusals now name the workflow's `land` step); the workflow-draft prompt's call to the removed `workflow_propose`; 53 dead supervisor keys in both catalogues; a stray merge file; install rule 54 listing all 28 migration steps. Kept with their end condition and row: the migration steps, the `--kind api` token setter (PLUGINEXT1), the current landing read, the older build's move boxes, and the review groups and nine session states for REVIEWUX1. Proof: `npm run quick`, `test-map --check`, `i18n:check`, the filtered driver and web suites.
 
 ---
 
@@ -1125,42 +1135,42 @@ Completed 2026-11-01: `BrainstormWordings.Of` asks the question's long terms (ha
 
 ## GITAPP2f — fetch origin's branches (2026-11-01)
 
-> **GITAPP2 f** (driver, modules, web; D204, accepted 2026-10-31, D198; `docs/2026-10-23-git-writes-design.md` round 3 §5, §9 *Fetch*, §12 row f). Fetch as an act of the journal whose one command moves `refs/remotes/origin/*` alone whatever the repository's configuration says of origin, offered only where D198's git doors are installed.
+> **GITAPP2 f** (driver, modules, web; D204, accepted 2026-10-31, D198; `docs/archive/2026-10-23-git-writes-design.md` round 3 §5, §9 *Fetch*, §12 row f). Fetch as an act of the journal whose one command moves `refs/remotes/origin/*` alone whatever the repository's configuration says of origin, offered only where D198's git doors are installed.
 
 Completed 2026-11-01: `GitFetchActs.FetchAsync` (kind `ref.fetch`, one `fetch` step, `ActFetchSteps`) runs the design's fixed command (the refspec given, `--refmap=` turning the configured ones off, no tags, no submodules, no maintenance or commit graph, `--no-write-fetch-head` so `FETCH_HEAD` is neither written nor emptied by a failed or a successful fetch, `--prune`), so a hostile `remote.origin.fetch`, `tagOpt`, `pruneTags` or `fetch.prune` moves nothing outside `refs/remotes/origin/*`; it is refused, before any record is written, where `remote.origin.uploadpack`, `receivepack`, `mirror` or `vcs` is set, where the two doors are not laid beside the home, and where origin is held (the line fetch's own holds, lifted when a fetch passes), each read fresh under the lock. The answer names the refs made, moved and removed by prune. A fetch's end state is origin's, so the step is *done* on exit 0 and, with no end recorded, *not done* where the tracking refs stand as the plan kept them and *unknown* where they moved; the refs as they stood are the recovery, since a fetch can be run again. `GIT_FETCH_PLAN` (a read: offered, a word for why not, origin's address redacted) and `GIT_FETCH` are the routes (census `Person`, drain `Waits`); `daoris-driver git fetch <repository> [--plan|--yes]` is the terminal verb. The Branches tab gains *Fetch origin…* (获取 origin…) beside *New branch or tag…*, drawn only where the plan says offered, with a line saying why where origin's settings refuse it. Left to later rows: Ask Daoris's card, and g's push.
 
 ## GITAPP2j — resolve a conflicted file (2026-11-01)
 
-> **GITAPP2 j** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §3, §5, §8 *Resolve*, §12 row j). Resolve a conflicted file from the Changes tab: per hunk ours, theirs or both, from the index's stages by `merge-file` with no merge driver, the bytes at the press equal to those shown; *Mark resolved* runs `add`; the replaced bytes and the stage entries are journaled, the stages kept at `refs/daoris/acts/<act>`, surviving a restart; Undo restores them where still the act's, the index under `index.lock`. Proof: saved bytes and stages surviving a restart; a stale or a non-conflicted file refused; ours, theirs and both per hunk; Undo restoring the stages where still the act's; the act journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
+> **GITAPP2 j** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §3, §5, §8 *Resolve*, §12 row j). Resolve a conflicted file from the Changes tab: per hunk ours, theirs or both, from the index's stages by `merge-file` with no merge driver, the bytes at the press equal to those shown; *Mark resolved* runs `add`; the replaced bytes and the stage entries are journaled, the stages kept at `refs/daoris/acts/<act>`, surviving a restart; Undo restores them where still the act's, the index under `index.lock`. Proof: saved bytes and stages surviving a restart; a stale or a non-conflicted file refused; ours, theirs and both per hunk; Undo restoring the stages where still the act's; the act journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
 
 **Outcome** 2026-11-01: a fifth step kind, `file` (`Workplace/ActFiles.cs`): a worktree file's bytes replaced atomically where they still hold the digest the plan was judged on, the bytes it replaces and writes kept as files beside the record (`<home>/act-files/<act>/`, let go with the record's expiry), its postcondition the file's digest. `Workplace/GitConflicts.cs` reads a file's three stages through `merge-file --object-id` into conflicts (`GIT_CONFLICT`); `Workplace/ResolveActs.cs` runs *Resolve* (`GIT_RESOLVE`, a take for every conflict) and *Mark resolved* (`GIT_MARK_RESOLVED`, one index step whose `after` is found by `add` on a copy of the index) and Undo of each through `GIT_UNDO`. The Changes tab's Conflicted rows gain *Show conflicts* and *Mark resolved*. Detail in D204's GITAPP2j note.
 ## GITAPP2l — stash Apply (2026-11-01)
 
-> **GITAPP2 l** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §3, §5, §8 *Stash Apply*, §12 row l). Apply a saved stash by its commit id, never `pop`, to a clean checkout; a conflict stays for Resolve with the stash kept; Drop stays deferred. Proof: Apply by id after the ordinals moved; a dirty checkout and an untracked collision refused; a conflict retained and resolvable through Resolve, the stash kept; the switch off, a session in the checkout and an unread ledger each refusing; the act journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
+> **GITAPP2 l** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §3, §5, §8 *Stash Apply*, §12 row l). Apply a saved stash by its commit id, never `pop`, to a clean checkout; a conflict stays for Resolve with the stash kept; Drop stays deferred. Proof: Apply by id after the ordinals moved; a dirty checkout and an untracked collision refused; a conflict retained and resolvable through Resolve, the stash kept; the switch off, a session in the checkout and an unread ledger each refusing; the act journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
 
 **Outcome** 2026-11-01: the `stash` step takes a second mode, `apply` (`ActWorkSteps.cs`, `git stash apply <id>`), read back from the checkout (tracked changes, a file in conflict or the stash's untracked files standing: done; as clean as it was: not done), and `StashActs.ApplyAsync` runs it as the act `stash-apply` through `GIT_STASH_APPLY` {id, head}. `GIT_STASH_PLAN` now lists the stash by commit id (`entries`, each with the untracked paths of its that stand in the way) and says why none could apply (`applyWhy`). Refused: the id not on the list, HEAD moved, tracked changes, a file in conflict, an untracked path in the way; an Apply does not take `refs/stash.lock`, since it only reads the ref. A conflict closes the act done with its notes naming it, the files left in the index for GITAPP2j's Resolve. The Changes tab's stash box lists the saved stashes with *Apply*. See D204's note 2l.
 
 ## GITAPP2k — switch and stash Save (2026-11-01)
 
-> **GITAPP2 k** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §2, §3, §5, §8 *Switch* and *Stash Save*, §12 row k). Switch the person's checkout to a local branch and save its changes to the stash, each an act of the journal under the checkout lock. Proof: a dirty checkout, one mid-operation and a branch checked out elsewhere each refused for switch; switch undone by switching back; stash Save saying the shared `refs/stash`, tracked only by default and untracked when asked; the switch off, a session in the checkout and an unread ledger each refusing; the acts journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
+> **GITAPP2 k** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §2, §3, §5, §8 *Switch* and *Stash Save*, §12 row k). Switch the person's checkout to a local branch and save its changes to the stash, each an act of the journal under the checkout lock. Proof: a dirty checkout, one mid-operation and a branch checked out elsewhere each refused for switch; switch undone by switching back; stash Save saying the shared `refs/stash`, tracked only by default and untracked when asked; the switch off, a session in the checkout and an unread ledger each refusing; the acts journaled and reconciled; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
 
 **Outcome** 2026-11-01: `Workplace/SwitchActs.cs`, `StashActs.cs` and `ActWorkSteps.cs` add two step kinds, `switch` (`git switch --no-guess <branch>`, never forced) and `stash` (`git stash push`, `--include-untracked` only when asked), each run once in the act's job and read back from HEAD or from `refs/stash`, never from the exit code; a stash step also reads `refs/stash.lock` before it runs. A switch is refused in the driver's sentence where tracked files are changed, an operation is in progress, the branch is out in another tree (named by its folder), the checkout is on it, it is no local branch or it is under `daoris/`; it is undone by switching back, which the answer's notes name. A Save is refused where the shared stash's tip is not the one the plan read, where a file is in conflict, or where nothing would be saved; its notes name the stash commit and `git stash apply <id>` (Apply is row l, Drop deferred). Routes `GIT_SWITCH_PLAN`, `GIT_STASH_PLAN` (reads), `GIT_SWITCH`, `GIT_STASH` (scopes `driver`, `checkouts`, class Window, owner marks in 2h's loop); the Changes tab gains the switch box and the stash box. Detail: D204's note of this date.
 
 ## GITAPP2i — commit and amend (2026-11-01)
 
-> **GITAPP2 i** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §2, §3, §5, §8 *Commit, amend*, §12 row i). Commit and amend from the Changes tab, after staging, each an act of the journal under the checkout lock, its hooks named in the plan and never skipped. Proof: a formatting `pre-commit` hook's rewrite said; amend's recovery ref at the old tip; an interrupted commit reconciled, its hook's children ended within the bound after the owner dies; the switch off, a session in the checkout and an unread ledger each refusing; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
+> **GITAPP2 i** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §2, §3, §5, §8 *Commit, amend*, §12 row i). Commit and amend from the Changes tab, after staging, each an act of the journal under the checkout lock, its hooks named in the plan and never skipped. Proof: a formatting `pre-commit` hook's rewrite said; amend's recovery ref at the old tip; an interrupted commit reconciled, its hook's children ended within the bound after the owner dies; the switch off, a session in the checkout and an unread ledger each refusing; page tests and stories at 80, 39 and 25rem in en and zh, both themes.
 
 **Outcome** 2026-11-01: `Workplace/CommitActs.cs` and `ActCommits.cs` add a fourth step kind, `commit`: one `git commit --cleanup=whitespace -F -` run in the act's job (so a hook and its children end with it), the author per D198 point 5 (`GitAuthor`), judged under the lock against the tip and the index's tree the page read (a tree made on a copy of the index); an amend first keeps the old tip under `refs/daoris/discarded/amended/<branch>-<tip>` in a ref step of its own, and lets it go if nothing was amended. Reconciled by HEAD against the old tip, the plan's parents and its message, never re-run; what a hook changed in the commit (files off the staged tree, the message) is said as the answer's `notes`. Routes `GIT_COMMIT_PLAN` (read), `GIT_MAKE_COMMIT`, `GIT_AMEND` (scopes `driver`, `checkouts`, class Window); the Changes tab gains the commit box (*Message*, *Amend the last commit*, the hooks it runs, who commits). Proof: `CommitActsGitTests` (a rewrite said, a message rewrite said, a refusing hook, the recovery ref, a commit cut off in its post-commit hook reconciled done with the hook's child ended, one cut before git ran reconciled not done, the refusals), `CommitBox.test.tsx`, `ProjectsView.git.test.tsx`, `ChangesTab.stories.tsx`. What the code settled is D204's note of 2026-11-01. Left out: the terminal verbs `git checkout <repository> commit|amend` and an Undo of a commit.
 
 ## GITAPP2h — stage and unstage (2026-11-01)
 
-> **GITAPP2 h** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §2, §3, §4, §8 *Stage, unstage*, §12 row h). Stage and unstage by file, hunk and line from the Changes tab, each an act of the journal under the checkout lock, and Undo. Proof: the A/B/A case (HEAD = A, index = B, worktree = A) undone exactly by hunk and by file; stale bytes or a stale index refused; the switch off, a conversation starting, a driven session in the checkout (trees off) or waiting there, an unreadable ledger, and a pull or promotion holding the lock each refusing; page tests of Stage, Unstage and Undo in the Changes tab, stories at 80, 39 and 25rem in en and zh, both themes.
+> **GITAPP2 h** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §2, §3, §4, §8 *Stage, unstage*, §12 row h). Stage and unstage by file, hunk and line from the Changes tab, each an act of the journal under the checkout lock, and Undo. Proof: the A/B/A case (HEAD = A, index = B, worktree = A) undone exactly by hunk and by file; stale bytes or a stale index refused; the switch off, a conversation starting, a driven session in the checkout (trees off) or waiting there, an unreadable ledger, and a pull or promotion holding the lock each refusing; page tests of Stage, Unstage and Undo in the Changes tab, stories at 80, 39 and 25rem in en and zh, both themes.
 
 **Outcome** 2026-11-01: `Workplace/StageActs.cs` runs one index step of `ActRuns` over the file's entries, what the act leaves found first on a copy of the index (`add`, `reset`, or `apply --cached --whitespace=nowarn` of a patch `GitHunks` builds from `diff --no-ext-diff --no-textconv --full-index`) and re-judged under the lock (switch, a top that is no session's tree, the ledger, an operation in progress, git's lock files, HEAD, the entry and the source's bytes); the entries before are kept by the act's own ref, and `UndoAsync` restores them only where each still equals the act's result, naming any that changed. Routes `GIT_HUNKS` (read), `GIT_STAGE`, `GIT_UNSTAGE`, `GIT_UNDO` (scope `checkouts`, class Window); the Changes tab gains *Stage*, *Unstage*, *Show changes* (hunks, a box on each changed line) and *Undo*. What the code settled is D204's note of 2026-11-01. Proof: `StageActsGitTests`, `DriverModuleGitTests`, `ChangesActs.test.tsx`, `ProjectsView.git.test.tsx`, the census rows, stories `ChangesTab`.
 
 ## GITAPP2a — the act journal (2026-10-31)
 
-> **GITAPP2 a** (driver; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §5, §6's recovery namespaces, §12 row a). The journal (after GITLOCK1, GITTXN2), §5 and act refs on a fixture act with ref, configuration and index steps: crash, bound, unended child and restart at every boundary (before launch, before the pid write, in a descendant hook), nothing re-run; an orphan past its deadline ended or said; a live step refusing writers; two reconcilers; reconciling in a sync look and a promotion step; a stale `index.lock` named; a changed section or entry refused under git's lock; the terminal closed mid-step; an older build refused; the store busy at restart; a stray held only by an act ref kept; an act ref expiring at its id.
+> **GITAPP2 a** (driver; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §5, §6's recovery namespaces, §12 row a). The journal (after GITLOCK1, GITTXN2), §5 and act refs on a fixture act with ref, configuration and index steps: crash, bound, unended child and restart at every boundary (before launch, before the pid write, in a descendant hook), nothing re-run; an orphan past its deadline ended or said; a live step refusing writers; two reconcilers; reconciling in a sync look and a promotion step; a stale `index.lock` named; a changed section or entry refused under git's lock; the terminal closed mid-step; an older build refused; the store busy at restart; a stray held only by an act ref kept; an act ref expiring at its id.
 
 **Outcome** 2026-10-31: the journal is desktop-store migration 13 (`git_acts`, `git_act_steps`; `Workplace/ActJournal.cs`), run by `ActRuns` over `ActSteps`' ref, configuration and index steps, each git started suspended in a job named for its act (`Platform/HeldChild.cs`), and reconciled by `ActReconciler` at the driver's start and under the line pull's and the promotion's checkout lock; `refs/daoris/acts/` (`ActRefs`) holds nothing for the clean-ups. No act a person can press; what the code settled is D204's note of 2026-10-31. Proof: `ActJournalTests`, `ActRunGitTests`, `DesktopStoreTests`' step 13, the censuses' rows.
 ## INTEGRATEISO1 — two integration test classes share the process's verdicts (2026-10-31)
@@ -1171,37 +1181,37 @@ Completed 2026-11-01: `GitFetchActs.FetchAsync` (kind `ref.fetch`, one `fetch` s
 
 ## GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved (2026-10-31)
 
-> **GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved** (driver; GITAPP2's foundation read F5, 2026-10-31, `docs/2026-10-31-git-writes-read-codex.md`). `RefTransaction.RunAsync` treated exit -1 (the bound reached, the process unended, never started) as git's refusal and said *nothing moved*, as `RollBackAsync` did; only postconditions prove an effect. `RefRun` tells *git refused* from *git did not answer*, the second read before anything is said; and an alias is refused against the refs that stand, not only within one transaction. Proof: an unanswered transaction and rollback each read and said as their refs stand; `Feature` refused beside a packed `feature` on a case-blind disk.
+> **GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved** (driver; GITAPP2's foundation read F5, 2026-10-31, `docs/archive/2026-10-31-git-writes-read-codex.md`). `RefTransaction.RunAsync` treated exit -1 (the bound reached, the process unended, never started) as git's refusal and said *nothing moved*, as `RollBackAsync` did; only postconditions prove an effect. `RefRun` tells *git refused* from *git did not answer*, the second read before anything is said; and an alias is refused against the refs that stand, not only within one transaction. Proof: an unanswered transaction and rollback each read and said as their refs stand; `Feature` refused beside a packed `feature` on a case-blind disk.
 
 **Outcome** 2026-10-31: `RefRun` gains `Unanswered`; on exit -1 each moved ref is read back and said moved, not moved or unknown, and a rollback says the same rather than *nothing was moved*. On a disk where `core.ignorecase` is true a create beside an existing case-alias (loose or packed) is refused before git runs. Callers unchanged. Tests in `RefTransactionGitTests`; fix entry in `docs/FIX-LOG.md`.
 
 ## GITAPP2m — history edits without a working tree: pick, revert, rebase onto (2026-11-01)
 
-> **GITAPP2 m** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §1, §3, §5, §6, §7, §12 row m). History edits (after a): conflict, merge, root, signed, empty refused with nothing moved; published refused for rebase, taken for revert; a merge driver in each scope refused before start; mid-way checkout rolled back; a together-bound branch refused.
+> **GITAPP2 m** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §1, §3, §5, §6, §7, §12 row m). History edits (after a): conflict, merge, root, signed, empty refused with nothing moved; published refused for rebase, taken for revert; a merge driver in each scope refused before start; mid-way checkout rolled back; a together-bound branch refused.
 
 Completed 2026-11-01: `Workplace/GitHistoryEdits.cs` picks or reverts a commit or `A..B` range onto a branch, or rebases the branch's own commits onto a commit, each made by `merge-tree --write-tree --merge-base` and `commit-tree` under the checkout lock (`ActPlan.Make`), then one transaction through the act journal: the branch's `update`, its old tip under `refs/daoris/discarded/`, a rebase's remote-tracking refs verified. `GIT_HISTORY_EDIT` is the person's route (its `plan: true` form open), and `daoris-driver git pick|revert|rebase … [--plan|--yes]` its terminal verbs; a branch of the person's own has *Edit history…* (编辑历史…) on its page, the plan shown before Confirm. What the code settled is D204's note of 2026-11-01. Proof: `GitHistoryEditTests`, `GitHistoryEditScopesTests`, `GitHistoryCommandTests`, `DriverModuleGitTests`, the census rows, `ProjectsView.git.test.tsx`, and `HistoryEdit` stories at 80, 39 and 25rem.
 
 ## GITAPP2e — rename a branch or a lightweight tag (2026-11-01)
 
-> **GITAPP2 e** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §5, §6 *Rename*, §12 row e). Rename as an act of the journal: the old name deleted and the new one made in one transaction with the old tip kept on a recovery ref, then the branch's section renamed under git's own `config.lock`; a rename stopped between the two offers *Finish* and *Undo*, each conditional.
+> **GITAPP2 e** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §5, §6 *Rename*, §12 row e). Rename as an act of the journal: the old name deleted and the new one made in one transaction with the old tip kept on a recovery ref, then the branch's section renamed under git's own `config.lock`; a rename stopped between the two offers *Finish* and *Undo*, each conditional.
 
 Completed 2026-11-01: `GitRefActs.RenameAsync` (kind `ref.rename`, a `ref` step then a `config` step) takes the delete's refusals (`daoris/*`, a landing's branch, the line, a `TogetherGuard`-bound one, an occupied one, an annotated tag, a ref not at the commit shown) and refuses a target that exists, lies above or below a ref, is under `daoris/` or has a `branch.<new>` section standing; occupancy is read again once the branch moved and a tree on the old name moves it back by `ReverseRename`, which checks both names. `FinishAsync` (kind `ref.finish`) moves the section alone, and `GIT_REF_UNDO` moves the ref back alone for a rename that stopped partway, both only where the new name stands at the journaled commit, the old is gone and the section reads as journaled; an undo of a done rename also moves the section back. `GIT_REF_RENAME` and `GIT_REF_FINISH` are the person's routes (census `Person`, drain `Waits`); `daoris-driver git branch|tag <repository> <name> --rename <new-name> [--plan|--yes]` is the terminal verb. A Yours row gains *Rename…* (重命名…): the new name, a confirmation saying the old tip is kept and the new name starts a new reflog, then the press; the notice that follows holds *Undo*, and *Finish* beside it where the rename stopped partway. Left to later rows: *Finish* from the terminal, a tag list on the page, Ask Daoris's card, and rows f to n.
 
 ## GITAPP2d — delete a branch or a lightweight tag (2026-11-01)
 
-> **GITAPP2 d** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §3, §5, §6 *Delete* and *Held branches*, §12 row d). Delete as an act of the journal: the delete, the recovery ref's `create` and each holder's `verify` in one transaction, then the branch's section removed under git's own `config.lock`; undone by the ref made again and the section put back.
+> **GITAPP2 d** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §3, §5, §6 *Delete* and *Held branches*, §12 row d). Delete as an act of the journal: the delete, the recovery ref's `create` and each holder's `verify` in one transaction, then the branch's section removed under git's own `config.lock`; undone by the ref made again and the section put back.
 
 Completed 2026-11-01: `GitRefActs.DeleteAsync` (kind `ref.delete`, a `ref` step then a `config` step) is refused before anything is written for `daoris/*`, a landing's branch, the line, a branch a `TogetherGuard` binds, an occupied branch, a symbolic ref, an annotated or signed tag, a ref naming no commit and a ref not at the commit shown; the holders of its commit (up to twenty branches and tags of the person's) are each a `verify`, the recovery ref goes under `refs/daoris/discarded/` (a free name, with a reflog, listed on the Recoveries page), and the occupancy is read again once the branch went: a tree on it puts it back and takes the recovery ref again. `ActPlan.After` is the hook that reads between steps; `ActSteps.Restore` puts a removed section back under `config.lock` only where none stands, and a removal that finds its section changed now reads *not done*. `GIT_REF_UNDO` also undoes a delete. `GIT_REF_DELETE` is the person's route (census `Person`, drain `Waits`); `daoris-driver git branch|tag <repository> <name> [<commit>] --delete [--plan|--yes]` is the terminal verb. A Yours row on the Branches tab gains *Delete…* (删除…): a confirmation naming the commit and where its commits stay, then the press; the notice that follows holds *Undo* beyond the vanished row. Left to later rows: a tag list on the page (the driver and the terminal delete a lightweight tag; the page lists none), a plan route, Ask Daoris's card, and rows e to n.
 
 ## GITAPP2c — create a branch or a lightweight tag (2026-11-01)
 
-> **GITAPP2 c** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §3, §5, §6, §9, §10, §12 row c). New branch and New tag as the first act a person can press, run through the act journal; `create` refusing a name that stands, an undo that deletes only at the id it made.
+> **GITAPP2 c** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §3, §5, §6, §9, §10, §12 row c). New branch and New tag as the first act a person can press, run through the act journal; `create` refusing a name that stands, an undo that deletes only at the id it made.
 
 Completed 2026-11-01: `Workplace/GitRefActs.cs` makes the ref as one `create` through `RefTransaction` run as an act of `ActRuns` (kind `ref.create`), judged fresh under the checkout lock (name valid and not Daoris's own `daoris/`, absent, no ref above or below it, the commit named is a commit), and its undo as an act of its own (`ref.undo`, a `delete` at the id the create journaled, refused where the ref moved or went or the act is no closed create). `GIT_REF_CREATE` and `GIT_REF_UNDO` are the person's routes (census `Person`, drain `Waits`, grounds on the repository); `daoris-driver git branch|tag <repository> <name> [<commit>] [--plan|--yes]` is their terminal verb (`GitRefCommand`, a `PersonPresses` row, run on the window's Confirm, else here, `DAORIS_SESSION_ID` refused). The Branches tab gains *New branch or tag…* (新建分支或标签…): name, a confirmation naming the commit, then the press, with *Undo* after. A ref act writes no working tree, so it asks no switch and no session check. Left to later rows: the standalone worker apart from the terminal, *Stop* and *Finish* as presses, the update's drain and exit counting a running step, a plan route, a branch page's own *New branch*, Ask Daoris's card for it, and rows d to n.
 
 ## GITAPP2b — the Changes read and the switch (2026-10-31)
 
-> **GITAPP2 b** (driver, modules, web; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §1, §2, §4, §10, §11, §12 row b). The Changes read through the counting seam and the switch *Daoris may change this checkout's files*, off by default in Setup's Reach; writes nothing to any repository.
+> **GITAPP2 b** (driver, modules, web; D204, accepted 2026-10-31; `docs/archive/2026-10-23-git-writes-design.md` round 3 §1, §2, §4, §10, §11, §12 row b). The Changes read through the counting seam and the switch *Daoris may change this checkout's files*, off by default in Setup's Reach; writes nothing to any repository.
 
 Completed 2026-10-31: `Workplace/GitChanges.cs` reads a checkout's changes as three fresh questions (HEAD to index, index to worktree with the index unrefreshed, status's untracked and unmerged entries in `--porcelain=v2`), each with its mode and blob id, outside the landing and judgement memos, so a staged addition whose file was removed is in both lists; `GIT_CHANGES` (told by event, `readAt` saying when) answers it, and `SET_CHECKOUT_WRITES` keeps the switch in `driver.json`'s `checkoutWrites` map, answered in `STATE`. The repository page gains a Changes tab beside Branches and History where the switch is on, read on open, on focus and on *Refresh* (刷新); Reach gains the switch, naming the sessions with no tree of their own that already run in the checkout. Left to later rows: every act (stage and on), the lock, the journal, a terminal verb for the switch, and Ask Daoris's door to it. Proof: `GitChangesTests`, `DriverModuleGitTests`, `DriverModuleDriverTests`, the census rows, `RepositoryGit.test.tsx`, `ProjectsView.git.test.tsx`, `RepositorySetup.test.tsx`, and stories at 80, 39 and 25rem.
 
@@ -1212,7 +1222,7 @@ Completed 2026-10-31: `Workplace/GitChanges.cs` reads a checkout's changes as th
 Completed 2026-10-31: `Workplace/RefTransaction.cs` builds the transaction (create, update, delete, verify; duplicates, contradictions, case aliases, non-full names and symbolic refs refused before git runs) with its conditional rollbacks (`RestoreDeleted`, `RestoreRewritten`, `Rename`/`ReverseRename`, `RollBackAsync` saying nothing moved). The content holds' judged delete, recovery-ref drops and put-back run on it, behaviour unchanged. Tests: `RefTransactionTests`, `RefTransactionGitTests`. D204 carries a dated note; nothing is exposed to a person.
 ## MODELROLE1f — each working role's use shown (2026-10-31)
 
-> **MODELROLE1f — each working role's use shown** (driver, web; the actors design `docs/2026-10-23-actors-design.md` row f, in FOUNDATION1's words: an actor is a working role, D212; found unfiled 2026-10-31). Working roles' row says each role's last seven days from the usage history and `actor.chose`: how many starts, on which choice, how many fell to a later choice and why; absent stays absent. Proof: the sum's table over a fixture of the usage history; stories at 80, 39 and 25rem in en and zh, both themes; the install's line against `tools/usage-report.mjs` for a day.
+> **MODELROLE1f — each working role's use shown** (driver, web; the actors design `docs/archive/2026-10-23-actors-design.md` row f, in FOUNDATION1's words: an actor is a working role, D212; found unfiled 2026-10-31). Working roles' row says each role's last seven days from the usage history and `actor.chose`: how many starts, on which choice, how many fell to a later choice and why; absent stays absent. Proof: the sum's table over a fixture of the usage history; stories at 80, 39 and 25rem in en and zh, both themes; the install's line against `tools/usage-report.mjs` for a day.
 
 Completed 2026-10-31: `RoleUse.Of` (driver, `Roles/RoleUse.cs`) sums the machine log's `actor.chose` lines of the last seven days per role (starts, starts per choice, starts with a pass and the pass codes that moved them) and the days the log holds; `ROLES` carries it as `use` (told by nothing: read at each ask, named in the route's `Untold`). Working roles' row (`useLine` in `Roles.tsx`) says it under the role, `Last 7 days: 12 starts · choice 1 ×9, choice 2 ×3 · 3 fell to a later choice (cooling ×2, signed out ×1)`, or `Over the N days the log holds` for a younger log; a role with no start, or no log, has no line. The usage history's turns are not read: starts and their choices live only in `actor.chose`, and the row names no tokens. Proof: `RoleUseTests`, `DriverModuleRoleTests`, `Roles.test.tsx` (en, zh), stories `WeekShown*` at 80, 39 and 25rem. Owed: the install's day against `tools/usage-report.mjs`.
 ## MODELROLE1g — Daoris suggests a role's choices (2026-10-31)
@@ -1225,7 +1235,7 @@ Completed 2026-10-31 (the owner's press on the install is owed): `ActorSuggestio
 
 ## COMPANYVIEW1f — the diagram (2026-10-31)
 
-> **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)
+> **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/archive/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)
 
 Completed 2026-10-31: `buildStructure` (now `agents/roles/roleStructure.ts`, renamed so the page's tree test's mirror rule holds) also makes the diagram's nodes and edges under the same filters, a node with its row's id; `litOf`, `nodeOfRow` and `sectionOf` beside it. `agents/roles/diagram.ts` ranks by `layoutFlow` (an edgeless offered role set in the roles column, the places in declared order) and places by its own rule, across at 42rem through `PlacementBounds`' new `column` bound, else its list; `design/groupFolds.ts` folds each workspace past 24 nodes. `RoleDiagram.tsx` draws it (§3.7's list, roving stop and keys; edges from measured boxes); `RolesMode` holds the view (remembered), the chosen node, the filters and the rows open across both views, a node of another kind moves the section, its detail is its row's molecule (`DiagramDetail`; a role's `RolesCard only`, the same editor), and each row's ⋯ offers *On the diagram*. Proof: `roleStructure.test.ts`, `diagram.test.ts`, `groupFolds.test.ts`, `flowLayout.test.ts`, `RolesDiagram.test.tsx`, `RoleDiagram.stories.tsx` at 80, 39 and 25rem in en and zh and both themes, `measured/roles.spec.ts`. Left to the window: the Narrator pass.
 
@@ -1233,7 +1243,7 @@ Completed 2026-10-31: `buildStructure` (now `agents/roles/roleStructure.ts`, ren
 
 ## COMPANYVIEW1i — what a work may call (2026-10-31)
 
-> **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d. (`docs/2026-10-31-company-view-design.md` §2 and §7 row 9; the COMPANYVIEW1 row stays open.)
+> **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d. (`docs/archive/2026-10-31-company-view-design.md` §2 and §7 row 9; the COMPANYVIEW1 row stays open.)
 
 Completed 2026-10-31: no route. The call table is static code with no machine state, so the window carries it as `agents/roles/callTable.ts` (every registered tool and each work's column) and Work's opened row names it (*May call*: the tools a restricted work is served, or *every tool but* those a broad work is refused; names only). Held in two links: `callTable.test.ts` reads each work's cells from the service's `fixtures/call-table.json`, which `McpRoleFilterTests` holds to `CallTable`; the fixture gained a `registered` list, held to the host's registration by `The_tables_file_lists_every_registered_tool`, so a tool added later fails one test until placed in both. Page test in `RolesStructure.test.tsx` (en and zh); story `WorkOpenedCalls`.
 
@@ -1241,7 +1251,7 @@ Completed 2026-10-31: no route. The call table is static code with no machine st
 
 ## COMPANYVIEW1g — setup (2026-10-31)
 
-> **1g: setup** (web). *Add a role here* on rows and workspace groups, the suggestion, and Get started's door; *Needs a look* stays 1d's. After 1d. (`docs/2026-10-31-company-view-design.md` §5 and §7 row 7; the COMPANYVIEW1 row stays open.)
+> **1g: setup** (web). *Add a role here* on rows and workspace groups, the suggestion, and Get started's door; *Needs a look* stays 1d's. After 1d. (`docs/archive/2026-10-31-company-view-design.md` §5 and §7 row 7; the COMPANYVIEW1 row stays open.)
 
 Completed 2026-10-31: By repository's repository rows and opened workspace groups carry *Add a role here*, which (through `useRolesMode`'s `addRole` door and `newRoleEditing` in `Roles.tsx`) opens Working roles' editor for a new role with the place filled; *Save* goes over the existing `SET_ROLE` with that scope. A new place needs no press: the seed's roles are machine-wide, so it already reads *taking this machine's roles*. Get started's Ask Daoris's agent step gains *Open Roles* (`help/setup.ts`). The Designer suggestion, with the words that say it can spend more and one press, was already Working roles' (1a); nothing applies itself. Proof: `RolesStructure.test.tsx`, `GetStarted.test.tsx`, `setup.test.ts`; stories of By repository now show the door at 80, 39 and 25rem.
 
@@ -1249,13 +1259,13 @@ Completed 2026-10-31: By repository's repository rows and opened workspace group
 
 ## COMPANYVIEW1d — Work, Accounts and By repository (2026-10-31)
 
-> **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look* (its one owner), and the states of §3.3 to §3.5 over a shared fixture, the integration declaration's and the plugins' lines included. An agent's page gains *Used by*. After 1b and 1c. (`docs/2026-10-31-company-view-design.md` §7 row 4; the COMPANYVIEW1 row stays open.)
+> **1d: Work, Accounts and By repository** (web). `buildStructure`, the filters, *Needs a look* (its one owner), and the states of §3.3 to §3.5 over a shared fixture, the integration declaration's and the plugins' lines included. An agent's page gains *Used by*. After 1b and 1c. (`docs/archive/2026-10-31-company-view-design.md` §7 row 4; the COMPANYVIEW1 row stays open.)
 
 Completed 2026-10-31: three sections of the Roles mode, over one read asked once whatever the filters say (`agents/roles/structureRead.ts`, `ROLE_STRUCTURE` for this machine, each workspace and each repository). `agents/roles/structure.ts`'s pure `buildStructure` makes the rows with one id each (`work:`, `agent:`, `place:`), shaped for the diagram of 1f, and resolves nothing: the role, the rule and each choice's state are the driver's. `StructureSections.tsx` draws them, `useRolesMode` owns the filters (workspace, work, agent, a name, *Needs a look*), the rows open and each opened repository's workflow (asked for those only, for the integration declaration's none, proposed or accepted); the doors lead to Setup, Workflow, the Integration tab, Plugins and the Agents mode at an agent's accounts through `useAgentsView`'s `roleDoors`. A held start marks its section's row in the list; an agent's page gains *Used by*. A read not landed, a shell without it and a failed read are each said. Proof: `structure.test.ts` over `structureFixtures.ts`, `RolesStructure.test.tsx`, stories at 80, 39 and 25rem. Left to 1g: *Add a role here*; to 1i: what a work may call.
 
 ## COMPANYVIEW1c — the read, `ROLE_STRUCTURE` (2026-10-31)
 
-> **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing. (`docs/2026-10-31-company-view-design.md` §7 row 3; the COMPANYVIEW1 row stays open.)
+> **1c: the read** (driver, modules). `ROLE_STRUCTURE` as §4 states it, in every place `.claude/knowledge/bridge-presses.md` names; the test holding its role answers to `StartPlan`; tests for a signed-out account overdue for rereading, a later choice, a scoped role and an inherited rule with no local override; the test that opening runs no probe and takes no reservation. Waits on nothing. (`docs/archive/2026-10-31-company-view-design.md` §7 row 3; the COMPANYVIEW1 row stays open.)
 
 Completed 2026-10-31: `ROLE_STRUCTURE`, an `Open` read told by event, composed by the driver's `RoleStructure` from the roster's new `LastRead`, which asks nothing and counts nothing; the page asks it through `useRoleStructure`. A workspace place's helper rule now reads its workspace's. Proof: `RoleStructureTests` over `fixtures/role-structure.json`, held to `StartPlan`, and `DriverModuleRoleTests`. Its shape is the desktop README's `driver` row; the Build gate's posture and connector passes are not judged.
 
@@ -1451,7 +1461,7 @@ This closes mod-ix; the FOUNDATION1 backlog row remains open for Workplace and t
 
 ## FOUNDATION1d-i — the keyed open and its record (2026-10-27)
 
-> **FOUNDATION1d-i — the keyed open and its record** (service, driver; D212, Part B accepted 2026-10-25). Build `docs/2026-10-25-foundation-design.md` §10's row 1d-i, §3.3's destination and §19.5 and §19.12's protocol marks, with §13.6's row; no word moves until d-ii. Proof: the row's replay, head, deletion, resume exclusion and replaced-host cases, `SessionLedgerTests` whole, and the sessions write's p95 within a tenth of before; across a crash, f-i's case.
+> **FOUNDATION1d-i — the keyed open and its record** (service, driver; D212, Part B accepted 2026-10-25). Build `docs/archive/2026-10-25-foundation-design.md` §10's row 1d-i, §3.3's destination and §19.5 and §19.12's protocol marks, with §13.6's row; no word moves until d-ii. Proof: the row's replay, head, deletion, resume exclusion and replaced-host cases, `SessionLedgerTests` whole, and the sessions write's p95 within a tenth of before; across a crash, f-i's case.
 
 **Outcome.** The ledger keeps keyed opens in `session_opens` in the open's exclusive step, replays before validation, and excludes resuming a predecessor whose destination stands. The client negotiates host runs and holds uncertain retries. Transfers stay empty. Detail, proof and landing measurement: D212's dated note. FOUNDATION1's backlog row stays unchanged.
 
@@ -1493,7 +1503,7 @@ GITSEEDWAIT1 entry. No product cleanup behavior or reparse containment changed.
 ## FOUNDATION1p — attempts acknowledged, dispositions and settlement (2026-10-26)
 
 > **FOUNDATION1p — attempts acknowledged, dispositions and settlement** (service, driver, modules, web catalogue; D212's row of Part B, accepted by the steward 2026-10-25 after both
-> makers' reads of round 8; the design `docs/2026-10-25-foundation-design.md` §10's row *1p*, §3.4 rule 5, §7's row 8, §19.2 and §19.12, round 8's *C7-1.1*, *O7-F12* and *O8-F1*). The
+> makers' reads of round 8; the design `docs/archive/2026-10-25-foundation-design.md` §10's row *1p*, §3.4 rule 5, §7's row 8, §19.2 and §19.12, round 8's *C7-1.1*, *O7-F12* and *O8-F1*). The
 > service's `said_settled`, written by a trigger in the statement that takes a word, one row per record left, word id and producer key, with no disposition; `SaidKeys.Settled` read by
 > key over the record the say names and its predecessors back along `from`, inside the say door's, the helper desk's and the partner desk's own steps, each asking it before any refusal but
 > the record's absence; a key the line holds elsewhere answered `Settled`, its own terminal kind with no word, to a say or hand that sends `settled: true`; every reader of a keyed answer
@@ -1528,7 +1538,7 @@ Detail and the readings taken (the pick carried only where the part opens on the
 ## FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case (2026-10-26)
 
 > **FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *1a-iii*, §3.2 step 6 and §7's rows 1b and 4, on the account rule row 1a-i built and the account pick row 1a-ii kept). The briefed move
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *1a-iii*, §3.2 step 6 and §7's rows 1b and 4, on the account rule row 1a-i built and the account pick row 1a-ii kept). The briefed move
 > and its not-offered path through the walk, the own account first where ready, the person's fresh-part press the one exception to an automatic part's same-account refusal; the live
 > limit move opening on the selection it judged, counted once, as LIMITSWITCH2 made the ended move do; the ended move gaining `ElsewhereAsync`, so a conversation whose agent's accounts all
 > cool goes on with its role's later choice where the person allowed one; and the closed quest's cooling session going on as a conversation in its tree, as LIMITSWITCH2 built it, taken as
@@ -1544,7 +1554,7 @@ D212's note of 2026-10-26.
 
 ## FOUNDATION1a-ii — the account pick's provenance (2026-10-26)
 
-> **FOUNDATION1a-ii — the account pick's provenance** (driver, modules; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md`
+> **FOUNDATION1a-ii — the account pick's provenance** (driver, modules; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/archive/2026-10-25-foundation-design.md`
 > §10's row *1a-ii*, §7's row 2 and §3.2 step 4, on the account rule row 1a-i built and the store rows z-i and z-iii). A start the person names an account for (`START_CHAT`'s
 > `profile`, the terminal's account, their hand-over press with an account; never an agent's ask or the curve's account) keeps on its binding in the desktop store that they picked its
 > account, never a field on the service's record or on any wire; the account rule reads it as its constraint: a recorded pick waits, an agent's pick and a record from before walk their
@@ -1561,7 +1571,7 @@ moves reading it too, only a conversation's start a pick): D212's note of 2026-1
 
 ## FOUNDATION1z-iii — the bindings (2026-10-26)
 
-> **FOUNDATION1z-iii — the bindings** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md` §10's row *1z-iii*,
+> **FOUNDATION1z-iii — the bindings** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/archive/2026-10-25-foundation-design.md` §10's row *1z-iii*,
 > §13.2 to §13.5 and §13.6's row z-iii, on the store row z-i built). Each session's `data/sessions/<s>.harness.json` imported into the store's `bindings`, every resume reading its
 > conversation id from the binding once imported and from the file before, the file set aside at the import so an older build finds none and carries on rather than resuming a stale id,
 > a deleted record taking its binding, and a binding file an older build wrote during a downgrade imported at the return, its conversation id winning for its own session. Nothing else
@@ -1577,7 +1587,7 @@ one run for the process, the look as the import's place, a re-found file whose S
 ## FOUNDATION1mod-vii — Events moved (2026-10-26)
 
 > **FOUNDATION1mod-vii — Events moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The seventh of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The seventh of the driver's moves: every file the map
 > places in Events (the chain, the watches, the machine facts and log reader, the notices, the note codes' vocabulary, the session log and its watch, the
 > session's event and end vocabulary) sits in `Events/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the
 > census lists after Events, one edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour, nothing of what is
@@ -1595,7 +1605,7 @@ assembly loads (`HomeTopics`), and the look's deadline is the events' pure rule.
 ## FOUNDATION1mod-vi — Instance moved (2026-10-26)
 
 > **FOUNDATION1mod-vi — Instance moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The sixth of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The sixth of the driver's moves: every file the map
 > places in Instance (the instance pipe's client and door, its routes, the verbs' leases) sits in `Instance/`, its namespace unchanged, every linked consumer
 > with it, the map's paths updated; then the cuts the census lists after Instance, one edge family per commit, each a port declared or a type moved to its one
 > owner, each changing no behaviour, nothing of how an instance answers. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which
@@ -1612,7 +1622,7 @@ one and the readings taken: D212's note of this date.
 ## FOUNDATION1mod-iv — Service moved (2026-10-26)
 
 > **FOUNDATION1mod-iv — Service moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fourth of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fourth of the driver's moves: every file the map
 > places in Service sits in `Service/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the census lists after
 > Service, one edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour. The service's client and its wire
 > only, never the service itself. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
@@ -1628,7 +1638,7 @@ declares and the workplace answers. Detail, the cuts one by one and the readings
 ## FOUNDATION1mod-v — Install moved (2026-10-26)
 
 > **FOUNDATION1mod-v — Install moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fifth of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fifth of the driver's moves: every file the map
 > places in Install (the toolchain, the staged update and its drain, the swap journal) sits in `Install/`, its namespace unchanged, every linked consumer with
 > it, the map's paths updated; then the cuts the census lists after Install, one edge family per commit, each a port declared or a type moved to its one owner,
 > each changing no behaviour, never a change to how an update installs. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which stays
@@ -1645,7 +1655,7 @@ cuts one by one and the readings taken: D212's note of this date.
 ## FOUNDATION1z-i — the desktop store, read by nothing (2026-10-26)
 
 > **FOUNDATION1z-i — the desktop store, read by nothing** (driver, service, CLI; D212's row of Part B, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *1z-i*, §13.2 to §13.4, §13.6's row z-i, §19.7 and §19.10). After mod-ii, whose Store folder it writes in:
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *1z-i*, §13.2 to §13.4, §13.6's row z-i, §19.7 and §19.10). After mod-ii, whose Store folder it writes in:
 > `data/desktop.db` and `DesktopStore`, its version, revisions, runs, imports and wake file; `Microsoft.Data.Sqlite` for the driver, pinned as the service's; the home's
 > table and its two twins; the confirmation's *settled* read from the install's swap journal, a journal that does not read never settled; the GitDoor's start measured with
 > a read-only open, a busy store and a checkpoint among its cases. Nothing reads the store and no family moves into it. It was a row of the FOUNDATION1 backlog entry,
@@ -1680,7 +1690,7 @@ the box. Held by `SessionDeletionTests` and `HistoryClearingTests`, seen failing
 FIX-LOG's entry of the same date.
 ## FOUNDATION1 row 1c — the participant's work, read once (2026-10-25)
 
-> **FOUNDATION1c — the participant's work, read once** (service, driver, modules, web: the sessions slice is the modules', `Modules/Loop/SessionsStateSlice.cs`; O2-14). *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the driver's `ParticipantWork.Of` takes the marks as a value declared in Participants, `WorkMarks`, which each caller builds from its record view (O4-9). The service answers `work` for every record of this machine on loopback, never on the wire; the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot` reads the work's table; `identity.ts` reads the pushed `work` where a host sends it and today's predicates where it does not, so a partner is drawn as a partner, D203 point 1's reading and the one thing a person sees change, in a string of its own, `work.identity.partner` (*Partner*, 搭档, D203 point 9). **Drawn as a partner and nothing more** (X4-1.3, X4-2.1). *(Part A of the design `docs/2026-10-25-foundation-design.md` §10, accepted 2026-10-25, D212; FOUNDATION1's other rows stay open in `TASKS.md`.)*
+> **FOUNDATION1c — the participant's work, read once** (service, driver, modules, web: the sessions slice is the modules', `Modules/Loop/SessionsStateSlice.cs`; O2-14). *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the driver's `ParticipantWork.Of` takes the marks as a value declared in Participants, `WorkMarks`, which each caller builds from its record view (O4-9). The service answers `work` for every record of this machine on loopback, never on the wire; the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot` reads the work's table; `identity.ts` reads the pushed `work` where a host sends it and today's predicates where it does not, so a partner is drawn as a partner, D203 point 1's reading and the one thing a person sees change, in a string of its own, `work.identity.partner` (*Partner*, 搭档, D203 point 9). **Drawn as a partner and nothing more** (X4-1.3, X4-2.1). *(Part A of the design `docs/archive/2026-10-25-foundation-design.md` §10, accepted 2026-10-25, D212; FOUNDATION1's other rows stay open in `TASKS.md`.)*
 
 **Outcome.** Built as the row names it. Both runtimes carry the one rule (`ParticipantWork.Of`, the service's over a `Session`, the driver's over
 `WorkMarks`) and read `fixtures/participant-work.json`, which the page's identity tests read too: 14 rows of marks, each with its work, what each
@@ -1696,7 +1706,7 @@ D212's note of this date.
 ## FOUNDATION1mod-iii — Settings moved (2026-10-26)
 
 > **FOUNDATION1mod-iii — Settings moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The third of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The third of the driver's moves: every file the map
 > places in Settings sits in `Settings/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the census lists
 > after Settings, one edge family per commit: the settings' parser's and verbs' names of other subdomains' rule types, `driver.json` read exactly as today,
 > never the import §13.5 proposes, and nothing of row w-s's store. It changes no behaviour and adopts nothing of Part B. It was a row of the FOUNDATION1
@@ -1713,7 +1723,7 @@ wires. Detail, the cuts one by one and the readings taken: D212's note of this d
 ## FOUNDATION1mod-ii — Store moved (2026-10-25)
 
 > **FOUNDATION1mod-ii — Store moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The second of the driver's moves: every file the map
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The second of the driver's moves: every file the map
 > places in Store (today's file primitives; `DesktopStore` is row z-i's, Part B's) sits in `Store/`, its namespace unchanged, every linked consumer with it, the
 > map's paths updated; then the cuts the census lists after Store, one edge family per commit. It changes no behaviour and adopts nothing of Part B. It was a
 > row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
@@ -1727,7 +1737,7 @@ through. Detail and the readings taken: D212's note of this date.
 ## FOUNDATION1mod-i — Platform moved (2026-10-25)
 
 > **FOUNDATION1mod-i — Platform moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
-> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The first of the driver's moves: every file the
+> `docs/archive/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The first of the driver's moves: every file the
 > map places in Platform sits in `Platform/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts §14.6 names
 > after Platform, one edge family per commit, each a port declared or a type moved to its one owner. It changes no behaviour and adopts nothing of Part B.
 > It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
@@ -1743,7 +1753,7 @@ its cut now named after Store. Detail and the readings taken: D212's note of thi
 ## FOUNDATION1mod-0 — the structure gate (2026-10-25)
 
 > **FOUNDATION1mod-0 — the structure gate** (driver tests, and the modules' and the service's tests that read driver sources by path; D212's row of
-> Part A, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md` §10's row, §14.5, §17, §18). `StructureTests` and
+> Part A, accepted by the steward 2026-10-25; the design `docs/archive/2026-10-25-foundation-design.md` §10's row, §14.5, §17, §18). `StructureTests` and
 > `fixtures/structure.json` hold the twenty-one subdomains in their order, every file of the driver placed in one, the subdomain, direction, purity,
 > Loop, mirror and global-using rules and today's edges against the order as an exact census; the direction rule reads every type reference by Roslyn's
 > semantic model, in the driver's tests alone; the fourteen sites that read driver sources by folder path are made name-based first. It moves no file and
@@ -1811,7 +1821,7 @@ A backlog row filed for it while the quest was building stood open after it land
 
 ## MAINT2 — close review findings (2026-10-10)
 
-> - [ ] **MAINT2 — close review findings** (review follow-up). Reconcile fixed findings and resolve the remaining integration defects within the owner's requested scope. Contract: D157/D159; proof: defect regressions, reached gates and explicit cleanup outcomes. Closure ledger: `docs/2026-10-10-code-and-docs-review.md`.
+> - [ ] **MAINT2 — close review findings** (review follow-up). Reconcile fixed findings and resolve the remaining integration defects within the owner's requested scope. Contract: D157/D159; proof: defect regressions, reached gates and explicit cleanup outcomes. Closure ledger: `docs/archive/2026-10-10-code-and-docs-review.md`.
 
 **Outcome.** Closed WORKFLOW1c6, WORKFLOW1f2 and WORKFLOW1g2; earlier documentation/tooling findings
 remain repaired. Reached application gates and family rehearsal pass; final baseline receipts live in
@@ -1824,7 +1834,7 @@ remain open. No live installation or remote was changed.
 
 **Outcome.** Runs share the gate's bound process and preserve saved ids/order, version identity and
 task-added review floors. Unreadable bindings/versions show a problem. Terminal, bridge, owner controls
-and bilingual UI regressions pass; reached gates and visual evidence: `docs/2026-10-10-code-and-docs-review.md`.
+and bilingual UI regressions pass; reached gates and visual evidence: `docs/archive/2026-10-10-code-and-docs-review.md`.
 
 ## WORKFLOW1f2 — Keep must confirm its write (2026-10-10)
 
@@ -1844,21 +1854,21 @@ UI regressions pass; full web gate and visual receipt: the maintenance review. E
 
 ## MAINT1 — review code and docs for future generation (2026-10-10)
 
-> - [ ] **MAINT1 — review code and docs for future generation** (tools/documentation). Consolidate duplicated generator inputs and keep quoted Markdown examples out of structural checks. Contract: D159 and the maintenance review; proof: failing-first regressions, inventory compatibility and baseline verification; record: `docs/2026-10-10-code-and-docs-review.md`.
+> - [ ] **MAINT1 — review code and docs for future generation** (tools/documentation). Consolidate duplicated generator inputs and keep quoted Markdown examples out of structural checks. Contract: D159 and the maintenance review; proof: failing-first regressions, inventory compatibility and baseline verification; record: `docs/archive/2026-10-10-code-and-docs-review.md`.
 
 **Outcome.** Shared the tooling inventory reader, fixed fenced-example checks, preserved the generator
 API, refreshed contributor guidance and regenerated indexes. All 1,484 CLI tests, 60 tooling tests and
-five universal gates pass. Scope, findings and final review: `docs/2026-10-10-code-and-docs-review.md`.
+five universal gates pass. Scope, findings and final review: `docs/archive/2026-10-10-code-and-docs-review.md`.
 
 ## INTEGRATE2 — recover paused work and review UI/UX (2026-10-10)
 
-> - [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/2026-10-10-integration-review.md`.
+> - [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/archive/2026-10-10-integration-review.md`.
 
 **Outcome.** Recovered three outstanding tips; all saved heads and the detached tip are reachable
 from `main`. Removed twelve additional branches and thirteen extra Git worktrees after preservation.
 History/draft, rename-hint, index-source and menu defects were fixed; damaged workflow bindings hold.
 Documentation and the open backlog were condensed. Review scope and remaining findings:
-`docs/2026-10-10-integration-review.md`. One empty harness-held directory remains as CLEANUP1.
+`docs/archive/2026-10-10-integration-review.md`. One empty harness-held directory remains as CLEANUP1.
 
 **Verification.** All fourteen gates pass on the recovered code: nine ran on `16e1872b` and five
 valid verdicts were retained. Driver Process: 807 tests, gate 42 m 41 s; modules Process: 122 tests,
@@ -1886,7 +1896,7 @@ WORKFLOW1c6, WORKFLOW1g2 and WORKFLOW1f2.
 
 **Outcome.** Plain-item ticks now reserve alignment only; selected state stays on semantic checkbox
 and radio rows. Views-menu triggers use the 28 px floor. Existing menu tests cover both contracts;
-final web receipts are in `docs/2026-10-10-integration-review.md`.
+final web receipts are in `docs/archive/2026-10-10-integration-review.md`.
 
 ## ORIENT2i — the platform names an index entry (2026-10-10)
 
@@ -1900,12 +1910,12 @@ tests pass, including bilingual entry cases; index stories cover both languages 
 
 > - [x] **INTEGRATE1 — consolidate branches and review the product** (2026-10-05, in progress).
 >   Preserve unfinished work, integrate it into `main`, review UI/UX and code, simplify documentation,
->   and remove integrated branches. Working state and proof: `docs/2026-10-05-integration-review.md`.
+>   and remove integrated branches. Working state and proof: `docs/archive/2026-10-05-integration-review.md`.
 
 **Outcome.** Recovered unfinished changes and integrated six outstanding tips. All 31 saved heads
 are reachable from `main`; 30 additional worktrees/branches removed after preservation checks.
 Four defects fixed, docs condensed, open UI work retained. All 14 gates pass. Scope and receipts:
-`docs/2026-10-05-integration-review.md`; fixes: `975978dc`.
+`docs/archive/2026-10-05-integration-review.md`; fixes: `975978dc`.
 
 ## ACCT2b — account names in the driver's words (2026-10-06)
 
@@ -1916,7 +1926,7 @@ Four defects fixed, docs condensed, open UI work retained. All 14 gates pass. Sc
 
 **Outcome.** Integrated `c0d28403`; driver and module suites pass, including named-account words and
 bridge facts. Recovered UI naming and completion-notice regressions pass; installed account-page
-proof remains UX7b. Review: `docs/2026-10-05-integration-review.md`.
+proof remains UX7b. Review: `docs/archive/2026-10-05-integration-review.md`.
 
 ## RETRY1b — retry from real failures (2026-10-06)
 
@@ -2845,7 +2855,7 @@ for its two hosts). 121 CLI tests; the human output is byte-identical to before.
 
 ✅ done 2026-09-19 — WEB1 asked for a quests view; the owner's direction widened it into **the
 platform**: a task / knowledge / setup window over the service, designed before it was built
-(`docs/2026-09-19-platform-design.md`, D38). `Daoris.Web` gained **Quests** (outstanding first,
+(`docs/archive/2026-09-19-platform-design.md`, D38). `Daoris.Web` gained **Quests** (outstanding first,
 publish, take / done / decline — through the same key-gated endpoints and the same `QuestExchange`
 judgement as every other door, refusals shown verbatim; the form cannot offer the mistakes the service
 refuses) and **Projects** (the registry with the non-adopters marked rather than hidden, join steps
@@ -2966,7 +2976,7 @@ toast announcer double-render. UI chrome translates; data and the service's sent
 ## D41 — the platform's design language, built and reviewed (2026-09-19)
 
 ✅ done 2026-09-19 — the owner's direction sharpened: "design the UI/UX properly, because this is used
-by a human." Designed before built (`docs/2026-09-19-platform-ux.md`), then shipped: a **console
+by a human." Designed before built (`docs/archive/2026-09-19-platform-ux.md`), then shipped: a **console
 shell** — sidebar with wordmark (Daoris · 道衍), icon navigation with the outstanding badge, global
 state (tier, index size, refresh) stated once at its foot — a **page header** per view with its one
 primary action, a right **drawer** as the single detail-and-form surface (knowledge entry, quest
@@ -3000,7 +3010,7 @@ all passed 52/52, each leaving a transcript.
 > the service (a trigger/session surface) versus what stays in the desktop host. Read D45, D37, D32/D33
 > and the Desktop brief first.
 
-✅ done 2026-09-19 (see the DRV2 entry below for the build) — `docs/2026-09-19-driver-design.md`,
+✅ done 2026-09-19 (see the DRV2 entry below for the build) — `docs/archive/2026-09-19-driver-design.md`,
 recorded as **D46**. All five questions
 settled: **spawn fresh** (one non-interactive session per quest, one active session per repository,
 clean tree only, oldest open first; wake held as an adapter capability); the **session lifecycle** is
@@ -3022,7 +3032,7 @@ consumable (v0.16.0), so DRV2 has no coordination blocker.
 ## DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (2026-09-19)
 
 > Hosts the local server, carries the platform UI, controls repositories and agent sessions per the
-> settled design — `docs/2026-09-19-driver-design.md` (D46) is the contract.
+> settled design — `docs/archive/2026-09-19-driver-design.md` (D46) is the contract.
 
 ✅ done 2026-09-19, in one driven day, as five landings. **The service's session surface**: a
 `sessions` table beside the quests behind a `SessionLedger` mirroring `QuestExchange` (one judgement
@@ -3110,7 +3120,7 @@ starts as cleanly as a real deployment's would.
 > drivers watch one quest; person-auth (OIDC) vs machine keys (§5a); and what the driver/platform need
 > to say about a remote's sessions (records sync, processes never — D46 §4).
 
-✅ done 2026-09-20 (design; the build continues as DRV5) — `docs/2026-09-20-remote-design.md`, recorded
+✅ done 2026-09-20 (design; the build continues as DRV5) — `docs/archive/2026-09-20-remote-design.md`, recorded
 as **D47**. All five questions settled. **What syncs**: two manifest declarations (join; share
 knowledge), silence meaning local; the strip is structural — the feed's DTOs carry no field for roots,
 transcripts, private content, or unjoined repositories, and knowledge feeds as content, never vectors
@@ -3135,7 +3145,7 @@ leaked, no model in the gate.
 
 ## DRV5 — build the remote server: shared mode, the sync loop, the hardened lock (2026-09-20)
 
-> The remote server, for teams — D45's part 3. The contract is `docs/2026-09-20-remote-design.md`
+> The remote server, for teams — D45's part 3. The contract is `docs/archive/2026-09-20-remote-design.md`
 > (D47): shared mode with per-person keys, the desktop sync loop, and the quest lock hardened into
 > code, all gate-proven by a two-machine phase in the family rehearsal with no model.
 
@@ -3585,8 +3595,8 @@ the arc claimed in prose.
 ## SURF1 — design the working surface (2026-09-21)
 
 > A design session producing a contract and a numbered decision, the way D41 →
-> `2026-09-19-platform-ux.md` and D48/D49 → their two contracts did. **The research is already done and
-> written down: read `docs/2026-09-20-working-surface-research.md` first** — it records what the field
+> `archive/2026-09-19-platform-ux.md` and D48/D49 → their two contracts did. **The research is already done and
+> written down: read `docs/archive/2026-09-20-working-surface-research.md` first** — it records what the field
 > has settled on, what Daoris already has that the field does not, and the questions the design must
 > answer. Three things from it govern the session: the platform today is an operations console and this
 > asks for a working surface, which are different products; **settle the isolation model FIRST, and
@@ -3595,7 +3605,7 @@ the arc claimed in prose.
 > output: a design document, a decision entry, and a build order of session-sized items — not code.
 
 ✅ done 2026-09-21 (design; the build continues as SURF2–SURF6) —
-`docs/2026-09-21-working-surface-design.md`, recorded as **D51** (the isolation model) and **D52** (the
+`docs/archive/2026-09-21-working-surface-design.md`, recorded as **D51** (the isolation model) and **D52** (the
 surface). Every question of research §5 is answered, and the collision of §4 is settled first.
 
 **The isolation model (D51): the tree is the unit of exclusion, and a repository may have more than
@@ -3704,7 +3714,7 @@ environment variables a dev run sets.
 > probably need to develop this component by component — more of an atomic design pattern — so that
 > you can test each part one by one (you can setup a development plan for this)."
 
-✅ done 2026-09-21 — `docs/2026-09-21-working-surface-components.md`, recorded as **D52's amendment**;
+✅ done 2026-09-21 — `docs/archive/2026-09-21-working-surface-components.md`, recorded as **D52's amendment**;
 SURF4 is now SURF4a–d in the backlog, and SURF5/SURF6's UI halves name their molecules.
 
 **What it changes: the build, not the design.** Every existing view was built whole and is tested
@@ -4095,7 +4105,7 @@ tests after it inherit the family they were written against.
 ## SURF4a — the parts everything else is made of (2026-09-21)
 
 **What it was.** The first of the four cuts the component plan makes through SURF4
-(`docs/2026-09-21-working-surface-components.md` §4–§5): three atoms with a story per state, two pure
+(`docs/archive/2026-09-21-working-surface-components.md` §4–§5): three atoms with a story per state, two pure
 helpers, the presentational-import check, and stories wired as smoke tests. Taken on the owner's
 direction to *"polish the ui/ux into a more usable state"* before any walkthrough testing — the
 designed path, and the one that puts every state in front of a reviewer before a view exists to hide
@@ -4150,7 +4160,7 @@ shoot. The console's footer move is the one visible change in the running app.
 
 ## SURF4b — the rail (2026-09-21)
 
-**What it was.** The second cut of SURF4 (`docs/2026-09-21-working-surface-components.md` §4–§5):
+**What it was.** The second cut of SURF4 (`docs/archive/2026-09-21-working-surface-components.md` §4–§5):
 `SessionRow` and `RepositoryGroup` as props-only molecules, `SessionRail` as the organism over them,
 plus the two facts **D55** adds to a row. The first item of this arc that renders something a person
 would recognise as the working surface.
@@ -4431,7 +4441,7 @@ the window holds `Daoris.Desktop.Modules.dll` open. `kill`, then `build`, then `
 > with the owner before building**, the way D53 and ARCH1 were. Deliverable: a reference pass on the
 > *window*, a decision recorded before the build, and a real-window loop.
 
-✅ done 2026-09-21 — the contract is `docs/2026-09-21-desktop-frame-design.md`; the decision is
+✅ done 2026-09-21 — the contract is `docs/archive/2026-09-21-desktop-frame-design.md`; the decision is
 **D56**, recorded before any code, after the owner confirmed the reading against three stated forks
 (the left column → an activity bar in both frames; density → one denser scale app-wide; scope →
 design plus the page-side frame, with SURF7 after).
@@ -4496,7 +4506,7 @@ OS title bar **and** the app strip — two bars. That was the owner's call with 
 ## SURF7 — the window is part of the frame (2026-09-22)
 
 > 🔴 **SURF7 — the window is part of the frame. Next.** (D55 §a has the traps and the reasons; **D56
-> and `docs/2026-09-21-desktop-frame-design.md` §5 have the design**, and SURF10 built everything
+> and `docs/archive/2026-09-21-desktop-frame-design.md` §5 have the design**, and SURF10 built everything
 > page-side.) `MainForm` becomes an `OptimizedForm` with `FramelessChrome`. **The strip already
 > exists** … this item fills that room and makes the strip draggable. Map `WindowCommandModule`
 > **late, from where the window is created**, and wire `SET_THEME` and `SET_CAPTION_BUTTONS`.
@@ -4730,7 +4740,7 @@ where Ctrl+K opens it and the shell's list carries eleven commands including the
 > reasoned about.
 
 ✅ first pass done 2026-09-22. Five changes, every one found by opening the real window and reading
-it rather than by inspecting code. `docs/2026-09-19-platform-ux.md` §4 carries them as an amendment,
+it rather than by inspecting code. `docs/archive/2026-09-19-platform-ux.md` §4 carries them as an amendment,
 because each is a rule and not a one-off.
 
 **Prose had no measure.** D41 §2 caps the content *column* at 72rem, which is right for cards and
@@ -4951,7 +4961,7 @@ where a park driven through the service reached the page as a toast within one t
 > multiple account with usage management (for example multiple claude accounts) and currently we
 > still don't have managed cli (still reading from the machine)."** — owner, 2026-09-22.
 
-✅ designed 2026-09-22 → `docs/2026-09-22-toolchain-design.md`, accepted as **D57**. Build items
+✅ designed 2026-09-22 → `docs/archive/2026-09-22-toolchain-design.md`, accepted as **D57**. Build items
 TOOL2–TOOL5 are in the backlog.
 
 **It began by measuring, and the measurement corrected doctrine.** CLAUDE.md said *"the toolchain is
@@ -5230,7 +5240,7 @@ machine that has been driving unattended longest, and that is the machine that n
 ## CANON8a–c — the always-loaded tier moves into `AGENTS.md` (2026-09-22)
 
 The measurement is `docs/2026-09-21-dsh-evaluation.md` §6.5 and the contract is
-`docs/2026-09-22-instruction-file-design.md`; **D59** carries the four rejected alternatives.
+`docs/archive/2026-09-22-instruction-file-design.md`; **D59** carries the four rejected alternatives.
 `.claude/rules/` was read by exactly one of the three harnesses this family drives, so Daoris was
 shipping an always-loaded tier whose always-loaded-ness belonged to one agent harness.
 
@@ -5344,7 +5354,7 @@ fixture, which left the adoption uncommitted, was wrong.
 
 > **CANON8d — say the new thing.** Four sentences D59 made false, each verified stale on 2026-09-22
 > and each one edit: `analyze`'s `AGENTS.md` verdict (*"what it installs will be invisible to them"*,
-> now backwards — that file is exactly where it lands); `docs/2026-08-04-daoris-design.md:71`, **D7**,
+> now backwards — that file is exactly where it lands); `docs/archive/2026-08-04-daoris-design.md:71`, **D7**,
 > *"The tier is the directory, not metadata"*; `README.md:178`, *"The tier is the directory"* in the
 > three-layer story a consumer reads first; and `.claude/knowledge/canon-authoring.md:69`,
 > *"`rules/` is always-loaded"*.
@@ -5377,7 +5387,7 @@ whitespace-collapsed copy, because the claim is the sentence and not the column 
   checking D7 would not be. It now names D59 for the location half and **D54** for the *gate* half,
   which a separate decision had already reversed. The back-reference convention holds everywhere else
   in that file; this was its one miss, so it is a lapse rather than a gap needing a gate.
-- **`docs/2026-08-04-daoris-design.md` §11 still listed *"Owning regions of `CLAUDE.md`"* as out of
+- **`docs/archive/2026-08-04-daoris-design.md` §11 still listed *"Owning regions of `CLAUDE.md`"* as out of
   scope**, reasoning that *"partial ownership of a hand-written file is where sync tools start
   fighting their users"*. Daoris owns a region of `AGENTS.md` **and** an import region in `CLAUDE.md`
   today. Struck through and answered rather than deleted: the fear was right, and the answer was not
@@ -5431,7 +5441,7 @@ header, no row in `daoris.lock`, no counterpart under `canon/`, and the generate
 > **HARNESS2 closes into this.** dsh pinned exact and vendored nowhere.
 
 ✅ **done 2026-09-22**, with **HELP2 and HARNESS2** closing into it. Driver 270 (was 239), CLI 269,
-modules 71. `docs/2026-09-22-acp3-probe-evidence.md` is the evidence note, written before any code.
+modules 71. `docs/archive/2026-09-22-acp3-probe-evidence.md` is the evidence note, written before any code.
 
 🔴 **The finding the item was built around: the D37 posture lives in three different places.** Claude
 Code names it `acceptEdits`, Codex names it `agent` — both ACP modes, **different ids** — and dsh's
@@ -5610,7 +5620,7 @@ already had entries of their own, so those rows were simply removed.
 
 - [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
   structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
-  (*"you might check how yaorin did"*). `docs/2026-09-22-plugin-design-study.md` is the note.
+  (*"you might check how yaorin did"*). `docs/archive/2026-09-22-plugin-design-study.md` is the note.
   🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
   the declared gate list, and the ACP door — and none of them is called one. So the finding is not
   "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a
@@ -6139,7 +6149,7 @@ prints them above the version. A tool that declares neither, a plugin's, keeps i
 
 - [x] **AGT3 — an account that is an API key** (D67 §1). Measure each tool first.
 
-✅ **done 2026-09-23 for Claude Code; `docs/2026-09-23-api-key-accounts.md` is the design.**
+✅ **done 2026-09-23 for Claude Code; `docs/archive/2026-09-23-api-key-accounts.md` is the design.**
 
 **Measured first**, on 2.1.280 with an invalid key and nothing spent. `ANTHROPIC_API_KEY` alone
 makes `auth status` answer logged in by `api_key`, with no email, and a `-p` run takes it with no
@@ -6204,7 +6214,7 @@ deploy 39/39.
 
 ## MAP2 — the workspace topology (2026-09-23)
 
-- [x] **MAP2 — the workspace topology**, a view of its own (`docs/2026-09-23-map-design.md` §1).
+- [x] **MAP2 — the workspace topology**, a view of its own (`docs/archive/2026-09-23-map-design.md` §1).
 
 ✅ **done 2026-09-23.** *Map* on the activity bar and in the palette. It draws the circle's
 repositories on a ring, the quests between them as one directed arrow per direction (solid while
@@ -6224,7 +6234,7 @@ line and reads its quests), CLI 331.
 ## MAP1a — the chain strip (2026-09-23)
 
 - [x] **MAP1 — the workflow**, its first half: how one piece of work was carried, in the quest
-  drawer and in Sessions (`docs/2026-09-23-map-design.md` §2).
+  drawer and in Sessions (`docs/archive/2026-09-23-map-design.md` §2).
 
 ✅ **done 2026-09-23.** `map/chain.ts` builds the chain from records the page already has: the ask
 (by its handle), the parents, the published steps, what the last one will still publish, and every
@@ -6241,7 +6251,7 @@ driver. Web 591 + 17.
 
 ## MAP1b — what a start runs on (2026-09-23)
 
-- [x] **MAP1b — the wiring a start would take** (`docs/2026-09-23-map-design.md` §2): per workspace
+- [x] **MAP1b — the wiring a start would take** (`docs/archive/2026-09-23-map-design.md` §2): per workspace
   and job, the agent, account and version, and where each came from, through the driver's own
   `SelectAsync`; desktop-only, on Settings. The intake job joins with INT4b.
 
@@ -6822,7 +6832,7 @@ green.
 
 - [x] ~~**AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's package at an exact version, by its published hashes. The channels
-  were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.~~
+  were checked on 2026-09-24: `docs/archive/2026-09-24-agt2b-channel-evidence.md`.~~
 ✅ **done 2026-09-24** — `agent pin` fetches Claude Code from the release bucket (a manifest verified
 against its detached OpenPGP signature under the pinned key, its signed version read, then the
 binary's SHA-256) and Codex from its release package (the SUMS file against the metadata, two
@@ -7093,7 +7103,7 @@ run here (56 → 66/66). Service 454, family 265/265, verify green.
   folded into PERM1 on the owner's answer (2026-09-24): *"so we should be able to do just like how
   claude code scopes configured by rules in daoris (which daoris can also use llm to update those too
   or modified by user)"*.
-✅ **done 2026-09-24 (phase 1)** — **D72**, design in `docs/2026-09-24-permission-scopes-design.md`.
+✅ **done 2026-09-24 (phase 1)** — **D72**, design in `docs/archive/2026-09-24-permission-scopes-design.md`.
 The rules are Claude Code's own, in three Daoris scopes (machine, circle, repository), kept in one
 file under the home. They are unioned with Daoris's defaults: `connector` allows the connector's quest
 and knowledge tools, and `no-push` denies a push. The union is handed to the harness as its
@@ -7107,7 +7117,7 @@ PERM2, designed and not built.
 
 **Measured on real sessions at integration**, which changed the picture. The command-line tier is
 honoured in an **untrusted** folder on both doors: the probe's third room over ACP, and `claude -p
---settings` on the pipe (`docs/2026-09-24-deploy1-acp-trust-evidence.md`). So the `connector` default
+--settings` on the pipe (`docs/archive/2026-09-24-deploy1-acp-trust-evidence.md`). So the `connector` default
 alone lets a real agent take and close its quest untrusted, which is what INT3b asked for, and ACP2's
 real run showed it. **Looked at on the window** in both themes: the card was right, and the page had
 grown a second scrollbar. The rules card's `sr-only` labels sat far down a column that was not a
@@ -7293,7 +7303,7 @@ by surface, in 中文 as the owner runs it and in English, in both themes. It dr
 session started. Every registration had been retired on 2026-09-23, so the install showed what a new
 installation shows, and the example family cannot: it always holds a repository.
 
-Ten defects, each found by looking. `docs/2026-09-19-platform-ux.md` §4 (POLISH2) carries the rules
+Ten defects, each found by looking. `docs/archive/2026-09-19-platform-ux.md` §4 (POLISH2) carries the rules
 and `docs/FIX-LOG.md` the root causes.
 
 - **An empty machine.** Projects was a blank page. The ask and quest composers offered empty choices,
@@ -7452,7 +7462,7 @@ nothing else. What POLISH2 and the FRAME items could not look at was everything 
   prose now, and the frontmatter still matches. And 中文 said 任务 for a quest in nineteen strings,
   held by a catalogue test now as 工作区 and 账户 are.
 
-`docs/2026-09-19-platform-ux.md` §4 (POLISH4) has the rules and `docs/FIX-LOG.md` the mechanisms,
+`docs/archive/2026-09-19-platform-ux.md` §4 (POLISH4) has the rules and `docs/FIX-LOG.md` the mechanisms,
 with one trap: `max-w-prose` on a flex item caps its `basis-full`. CLI 445 → 446, driver 586 → 587,
 service 469 → 470, web unit 853 → 866, Playwright 21/21, family 271/271, verify green. The card's
 two new states have a story (`CardsWithTheirIntake`).
@@ -7554,7 +7564,7 @@ Playwright 21/21.
 ✅ **the native half done 2026-09-25.** It was split when a chat on the protocol door turned out to
 need a `session/new` of its own. That half is **CONV3b**, open in the backlog.
 
-- **Read off the binary first** (`docs/2026-09-25-stream-json-evidence.md`). Claude Code 2.1.281 was
+- **Read off the binary first** (`docs/archive/2026-09-25-stream-json-evidence.md`). Claude Code 2.1.281 was
   probed with `-p --input-format stream-json --output-format stream-json --verbose
   --include-partial-messages`. A turn is `system/init`, `system/status`, the `stream_event` deltas,
   the whole `assistant` message (so the words arrive twice), `user` lines carrying `tool_result`, and
@@ -7701,7 +7711,7 @@ chunk-per-line transcript (UX1). Driver 622 → 629, modules 120 → 121, web un
 ✅ **done 2026-09-25**, the first third of CONV4, which was split in three the same day (CONV4b the
 page, CONV4c attachments and `@`).
 
-- **Measured first** (`docs/2026-09-25-stream-json-evidence.md`, § *Stopping a turn*). Two real
+- **Measured first** (`docs/archive/2026-09-25-stream-json-evidence.md`, § *Stopping a turn*). Two real
   sessions established the following.
   - Claude Code 2.1.281 takes `{"type":"control_request","request":{"subtype":"interrupt"}}` on
     stdin with no `initialize`, and answers it with a `control_response`.
@@ -7795,7 +7805,7 @@ Web unit 917 → 940, Playwright 21/21, driver 640, modules 124.
 ✅ **attachments done 2026-09-25.** The item was split once measured: `@` needs nothing on either
 wire, and it is **CONV4d**, open in the backlog.
 
-- **Measured first** (`docs/2026-09-25-message-content-evidence.md`), with two real sessions:
+- **Measured first** (`docs/archive/2026-09-25-message-content-evidence.md`), with two real sessions:
   - Claude Code 2.1.281 on `stream-json`: an `@` mention expanded by the binary with no tool call,
     an inline image block, and a text file and an image outside the tree read by path under INT4j's
     grant, no denial.
@@ -7842,7 +7852,7 @@ Driver 640 → 646, modules 124 → 126, web unit 940 → 948, family 277 → 27
 ✅ done 2026-09-25. Ten read-only reviewers read one area each: the CLI, the service, the driver's
 conversation half, the rest of the driver, the modules and app, the web's `work/`, the rest of the
 web, tools with the devkit, canon and examples, and two for the docs. Every finding was then checked
-here against the code before it landed. `docs/2026-09-25-rev3-review.md` is the ledger, with each
+here against the code before it landed. `docs/archive/2026-09-25-rev3-review.md` is the ledger, with each
 finding's verdict and the commit that settled it. Every landing is its own commit
 (`git log --grep=REV3`), and `docs/FIX-LOG.md` carries the root cause of each non-trivial defect.
 
@@ -7968,7 +7978,7 @@ route's test went), devkit 80, web unit 972 → 975, Playwright 21/21, family 27
   tree's files, and the composer offering them after `@`.~~
 ✅ **done 2026-09-26**, the last part of CONV4. D76 carries the amendment.
 
-- **Measured first** (`docs/2026-09-25-message-content-evidence.md`, § CONV4d). Both doors were
+- **Measured first** (`docs/archive/2026-09-25-message-content-evidence.md`, § CONV4d). Both doors were
   probed with every read tool disallowed, eight one-line turns in all.
   - `@"my notes.md"` and `@"docs/deep file.md"` expand on both doors.
   - `@笔记.md` expands bare on both.
@@ -8015,7 +8025,7 @@ green, Playwright 21/21, family 279/279, deploy 39/39.
   wire reports; absent is never zero.~~
 ✅ **done 2026-09-26**. D76 carries the amendment.
 
-- **Measured first** (`docs/2026-09-25-stream-json-evidence.md`, § CONV5), on both doors, with two
+- **Measured first** (`docs/archive/2026-09-25-stream-json-evidence.md`, § CONV5), on both doors, with two
   turns each: one that used a tool and one of a single word.
   - The native door's `result.usage` is the turn's total over its API calls. The streamed messages
     under-count output, 20 against the result's 80.
@@ -8211,7 +8221,7 @@ deploy 39/39.
 - [x] ~~**UX5 — screen by screen.**~~ Every surface, every state (empty, loading, error, long, 中文,
   dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
   against the reference and D41. Written down as it is found, and fixed. **The ledger is
-  `docs/2026-09-26-ux5-screen-audit.md`** (opened 2026-09-26). Landed so far: U1 (one hue for
+  `docs/archive/2026-09-26-ux5-screen-audit.md`** (opened 2026-09-26). Landed so far: U1 (one hue for
   waiting), U2 and U13 (the monitor), U3 (the protocol door's console in lines, not chunks), U4
   (line breaks), U5 and U12 (the platform's own controls), U7 (the dock on demand), U8 (paths), U9
   (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
@@ -8238,7 +8248,7 @@ deploy 39/39.
   present tense, at the main rail's width), and U25 and U72 (the palette's unread count gone, a menu
   item opening at the part it names). **Every surface row is done.** **Open in the ledger:** U6
   alone, folding `platform-ux.md` §4's dated amendments into the body, which closes UX5.
-✅ **done 2026-09-26**. The ledger is `docs/2026-09-26-ux5-screen-audit.md`, closed with every surface
+✅ **done 2026-09-26**. The ledger is `docs/archive/2026-09-26-ux5-screen-audit.md`, closed with every surface
 row ticked by what was looked at on the window and every finding given its disposition; D76's UX5
 amendment carries the findings that chose between alternatives.
 
@@ -8269,7 +8279,7 @@ driver code.
 > mcp to control chrome with jira to read ticket and start task (and does not need to locate which
 > repo just start the task in daoris)"* (owner, 2026-09-27 → D77)
 
-✅ **done 2026-09-27**. `docs/2026-09-27-first-goal-study.md` read what INT6 would have met on the
+✅ **done 2026-09-27**. `docs/archive/2026-09-27-first-goal-study.md` read what INT6 would have met on the
 real workspace (29 repositories, none adopted) and found three walls in the code. INT6 itself is
 reshaped as FG5, the run, and stays open.
 
@@ -8498,7 +8508,7 @@ INT4j's, over the recorded settings).
 > *"so the issue here is it should request to [the backend]"*
 
 Found on FG5's development session, which needed the backend's note contract, tried to read the
-backend's code, was refused, and guessed. `docs/2026-09-27-ask-and-wait-design.md` is the contract.
+backend's code, was refused, and guessed. `docs/archive/2026-09-27-ask-and-wait-design.md` is the contract.
 All three landed together on 2026-09-27.
 
 - **ASK1 — `wait` in the exchange.** `quest_respond wait on:<quest>` appends a `Waited` operation,
@@ -8645,7 +8655,7 @@ left running were visible nowhere but their ports). Needs the adapters to say wh
 which sub-session, and the driver to capture a started process's output.
 
 Landed in three parts.
-- **2a, the evidence** (`docs/2026-09-28-console2-streams-evidence.md`, `tools/console2-probe.mjs`).
+- **2a, the evidence** (`docs/archive/2026-09-28-console2-streams-evidence.md`, `tools/console2-probe.mjs`).
   Two real turns over `claude-agent-acp` 0.79.0. A subagent is a session of its own under AIR's
   `nativeSubagentSessions`. The protocol's own `subagents` key is stripped by the ACP SDK's schema at
   1.4.0, so it alone switches nothing on. A background task's output is a file the harness writes,
@@ -8781,7 +8791,7 @@ The row as filed: Find in page (`Ctrl+F`), zoom, devtools (`F12`), downloads to
 
 **Not built: superseded.** D84 makes Daoris's browser a Chromium Daoris ships (or the person's Edge),
 and a real browser has find, zoom, devtools, downloads and its own theme already. Measured on Edge 154
-(`docs/2026-09-28-managed-edge-evidence.md`). Rebuilding them on the WebView2 window, which D84
+(`docs/archive/2026-09-28-managed-edge-evidence.md`). Rebuilding them on the WebView2 window, which D84
 retires once the engine lands, would be work thrown away.
 
 **Amended by D85 (2026-09-28).** The engine is embedded, under Daoris's own chrome, so a browser's
@@ -8798,7 +8808,7 @@ terminal twin is `daoris browser`.*
 
 **Not built: superseded.** D85 answered D84's open form: the engine is embedded, and it hosts
 Daoris's own page as well as the browser. The row assumed a separate browser program started and kept
-like a harness. CHR1–CHR4 replace it (`docs/2026-09-28-chromium-host-design.md`), and CHR3 carries
+like a harness. CHR1–CHR4 replace it (`docs/archive/2026-09-28-chromium-host-design.md`), and CHR3 carries
 what stands of it: the profile under the home, no account and no sync, `${browser}`, and a sign-in
 kept across a restart.
 
@@ -8810,7 +8820,7 @@ cookie across a restart, Playwright MCP driving, a page-to-host round trip, and 
 banner, codecs and licence.
 
 **Outcome.** `tools/chromium-probe.mjs` with its host `tools/chromium-probe/` (CefSharp 152, Chromium
-152), recorded in `docs/2026-09-28-chromium-embedding-evidence.md`:
+152), recorded in `docs/archive/2026-09-28-chromium-embedding-evidence.md`:
 - **The port reaches every page in the process**, and the app page's bridge was callable over it. So
   the browser runs in a process of its own, which the contract's §2.3 now says.
 - An agent's CDP tab escapes into an engine window the person sees and the app is not told of.
@@ -9151,7 +9161,7 @@ shown as such.*
 
 ## HELP1 — ask Daoris (2026-09-29 → D89)
 
-The row as filed: *(study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls
+The row as filed: *(study §4; the design note is `docs/archive/2026-09-29-ask-daoris-design.md`, its two calls
 made as D89). A chat about Daoris itself, from a button on the strip, the palette and `F1`, in the right
 dock. It knows the view and the selection. It helps by proposing Daoris's own terminal commands (D50),
 each confirmed by the person, and turns start something into an ask. Starter prompts come from what the
@@ -9212,7 +9222,7 @@ seven, so the question is where the toggles belong before how they look: the str
 view's, or the View menu, which VS Code also carries them in. The state lives in `WorkFrame` and needs
 hoisting either way.*
 
-**Outcome** (DOCK1c, `docs/2026-09-29-dock-design.md`): both. The closings are the application's
+**Outcome** (DOCK1c, `docs/archive/2026-09-29-dock-design.md`): both. The closings are the application's
 (`work/closings.ts`, the same stored keys, so nothing reopens on the upgrade); `LayoutToggles` puts VS
 Code's three pictures at the strip's right, pressed while shown, and only the right one away from
 Sessions, where it is Ask Daoris's region; the View menu carries them ticked, with `Ctrl+B`, `Ctrl+J`
@@ -9245,7 +9255,7 @@ which views each region holds and whether it is showing, so a move is told with 
 
 ## SESS1 — the session view: its log and its working relationships (2026-09-28 → 2026-09-29)
 
-The row as filed: *(study §5; in progress, its ledger `docs/2026-09-28-sess1-session-view.md` says
+The row as filed: *(study §5; in progress, its ledger `docs/archive/2026-09-28-sess1-session-view.md` says
 what the real sessions showed and what each finding became: all ten landed or were dropped. **Still
 open**, the ledger's *not reached*: what a session waits on at the top, a tool's exit and duration,
 and the relationships beyond the chain). One reading order with the console one press away. Long runs
@@ -9277,7 +9287,7 @@ naming its session, and that session's head showed it in both themes. Not seen o
 ## SESS3 — tell a running session something (2026-09-29 → D90)
 
 The row as filed: *(owner, 2026-09-29: "there is no way to send additional info in middle of the
-session"). A driven session takes no person's line (INT4i, `docs/2026-09-19-driver-design.md`): it is
+session"). A driven session takes no person's line (INT4i, `docs/archive/2026-09-19-driver-design.md`): it is
 handed its whole quest in one turn, the pipe door gives it no stdin, and on the protocol door its stdin
 carries the driver's own frames. Only a session parked on the person is answered (STANDDOWN2). A design
 note first, amending INT4i: a message box on a running driven session whose words are held and handed
@@ -9318,7 +9328,7 @@ designed together.* Widened by the owner the same day: *"the design language we 
 screen (dockable, right tool bar, top layout setup) should be apply to all screens (for example
 overview) so this is more like the design language of vscode"*.
 
-**Outcome** (`docs/2026-09-29-dock-design.md` §4, each step as built):
+**Outcome** (`docs/archive/2026-09-29-dock-design.md` §4, each step as built):
 - **DOCK1c** (`0c1b708`): the region toggles on the strip and in the View menu with VS Code's keys.
 - **DOCK1b** (`b3721e0`): the four views move between the side bar and the panel from a region's tab
   list or a tab's right-click, remembered, with *Reset view locations*; the tab list names every tab
@@ -9347,7 +9357,7 @@ in the head, the chain and the relations pushing the conversation down, where th
 and what is primary (what it is doing, what it needs from the person) against what is reference (ids,
 paths, tool, times).*
 
-**Outcome.** The ledger, `docs/2026-09-29-sess2-session-head.md`, holds seven findings from the
+**Outcome.** The ledger, `docs/archive/2026-09-29-sess2-session-head.md`, holds seven findings from the
 installed application's real heads, all fixed. An ended session opens at its head, not its tail. The
 head reads in order of use: title and state, the record's note saying how it stands (a failure's
 reason, how it ended; reversing the rule that left it to a timeline that had moved into a closed side
@@ -9479,7 +9489,7 @@ the host its page reaches (every shell's page has the same origin), and a develo
 **Found by looking**: the bundle a development host serves is its project's, not `bin/`'s; a Radix
 menu needs real pointer input over CDP; and the native caption buttons are read with `WM_NCHITTEST`,
 which answered minimize, maximize and close from the rectangles the page reported
-(`docs/2026-09-28-chromium-host-design.md` §5a).
+(`docs/archive/2026-09-28-chromium-host-design.md` §5a).
 
 **Proven by:** `DesktopPageTests`, `WindowsModuleTests`, `host.test.ts`, the family rehearsal's origin
 checks, `desktop-tool.test.ts` (`isShell`), and the scratch window on Chromium: the main window, the
@@ -9562,7 +9572,7 @@ own tab, headed as in the main window.
 > `stream-json`'s `parent_tool_use_id` or its task messages — the third of CONSOLE3's four.
 
 **Outcome.** Probed first (`tools/console3-probe.mjs`, one small real turn,
-`docs/2026-09-30-console3-native-streams-evidence.md`): a subagent's lines carry the `parent_tool_use_id`
+`docs/archive/2026-09-30-console3-native-streams-evidence.md`): a subagent's lines carry the `parent_tool_use_id`
 of the call that spawned it; background work is announced on `system` lines (`task_started`,
 `task_updated`, `task_notification`); a backgrounded command's file is named only in its result's words
 while it runs; and the binary kills its background work when its turn ends. Then built: the mapper
@@ -10240,7 +10250,7 @@ platform. The merge with WSR5 took eleven conflicts, all in the files the parall
 > `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no …
 
 > - [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
-> `docs/2026-09-28-console2-streams-evidence.md`, and for the native door …
+> `docs/archive/2026-09-28-console2-streams-evidence.md`, and for the native door …
 
 **Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D105**, the owner's
 three calls. **HOME1:** a moved or second install runs on its own `data/`. A `DAORIS_HOME` equal to the
@@ -10563,14 +10573,14 @@ TASK.md and complete one by one"*).
 > is the shenora currently dont support this … we can start the work here and also file the new task
 > to shenora for this"*
 
-`docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
+`docs/archive/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
 CHR1–CHR7 are in the archive: **the browser is `daoris-browser`, the engine's own window in a
 process of its own**, and **the window renders on the Chromium the install carries** (CHR2, D92), in
 an install that is a `Daoris.exe` launcher, the application under `app/` and the home in `data/`
 (CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
-(`docs/2026-09-28-chromium-embedding-evidence.md`).
+(`docs/archive/2026-09-28-chromium-embedding-evidence.md`).
 
 
 ## HELP10 — the doors HELP9 left owed, and the two built since (2026-10-01)
@@ -10705,7 +10715,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > repository's own `CLAUDE.md` carries the project's whole brief, which only Claude reads. **A trap measured
 > on this machine:** `core.symlinks` is false here, and dsh's checkout has `CLAUDE.md` as a 9-byte file that
 > reads `AGENTS.md`, so on Windows a symlink layout silently hands Claude the literal path. Design first,
-> as a contract extending `docs/2026-09-22-instruction-file-design.md` and D59, with its decision:
+> as a contract extending `docs/archive/2026-09-22-instruction-file-design.md` and D59, with its decision:
 > - (a) **The layout**: what is canonical under `.agents/` (skills, knowledge, and whether decision notes
 > move there), what each agent's entry point is (`CLAUDE.md`'s one-line `@AGENTS.md`, a `.claude/skills`
 > mirror, others as measured), and nested `AGENTS.md` per package or lane (which DEV1's lanes can be told).
@@ -10724,7 +10734,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > this is that flow, driven.
 > HARNESS1 (a second harness layout) is absorbed here: its trigger has arrived.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D117**): Designed (D117, `docs/2026-10-01-agent-layout-design.md`): knowledge and skills move under `.agents/`, and the always-loaded region stays in `AGENTS.md` (D59). Where the reference layout uses links, which a checkout with `core.symlinks=false` holds as text, Daoris writes files: a `CLAUDE.md` import at the root and in each declared room (a nested `AGENTS.md`), and a mirror of every skill in `.claude/skills/`, recorded in the lock and measured against it (D13); editing a mirror is refused, naming its source. The move's cells are enumerated as D19's, including refusals for the repository's own documents left behind and for links. Decision records stay in `docs/`. A repository Daoris manages is set up by its own session through one quest from three doors (the screen, `daoris-driver setup`, an Ask Daoris kind), and the screen shows each repository's layout and the agents it serves from measured cells only. The reading turned up three things: the union-merge attribute on `twins.md` is path-bound and must move with the file; the service's scanner hardcodes `.claude`; and nobody has measured whether the ACP adapters load `CLAUDE.md` at all (if not, every driven session over the protocol door runs without the doctrine), which LAYOUT2 measures first. Documents only; `verify` green (671).
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D117**): Designed (D117, `docs/archive/2026-10-01-agent-layout-design.md`): knowledge and skills move under `.agents/`, and the always-loaded region stays in `AGENTS.md` (D59). Where the reference layout uses links, which a checkout with `core.symlinks=false` holds as text, Daoris writes files: a `CLAUDE.md` import at the root and in each declared room (a nested `AGENTS.md`), and a mirror of every skill in `.claude/skills/`, recorded in the lock and measured against it (D13); editing a mirror is refused, naming its source. The move's cells are enumerated as D19's, including refusals for the repository's own documents left behind and for links. Decision records stay in `docs/`. A repository Daoris manages is set up by its own session through one quest from three doors (the screen, `daoris-driver setup`, an Ask Daoris kind), and the screen shows each repository's layout and the agents it serves from measured cells only. The reading turned up three things: the union-merge attribute on `twins.md` is path-bound and must move with the file; the service's scanner hardcodes `.claude`; and nobody has measured whether the ACP adapters load `CLAUDE.md` at all (if not, every driven session over the protocol door runs without the doctrine), which LAYOUT2 measures first. Documents only; `verify` green (671).
 
 
 ## FRAME1a — every view gets the frame Sessions has: the audit and the model (2026-10-01)
@@ -10737,10 +10747,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > affordances it has, how each behaves, and where they disagree. (b) **One layout model**: which regions
 > every view has, what each view puts in them, the same toggles, resizing, collapsing, keyboard and
 > persistence everywhere, and what a narrow window does. (c) **The build**, view by view. The contracts are
-> `docs/2026-09-21-desktop-frame-design.md` (D56), `docs/2026-09-29-dock-design.md` and
-> `docs/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
+> `docs/archive/2026-09-21-desktop-frame-design.md` (D56), `docs/archive/2026-09-29-dock-design.md` and
+> `docs/archive/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D118**): The frame is audited and a layout model designed (D118). `docs/2026-10-01-frame-audit.md` reads every view's layout from the code (the monitor, a detached session's window and a browser too): for each of 11 affordances the deciding file and line, a verdict (same, choice, drift, gap), and twelve looks only the window can settle. Its findings: only Sessions has a list pane; a record opens in a modal drawer over the side bar and panel on four views; only Sessions remembers its selection; viewport breakpoints lay out columns the side bar narrows; Settings stacks its list when narrow; some regions draw blank while loading; no list moves by arrow keys; the secondary windows' regions are fixed. `docs/2026-10-01-frame-model-design.md` is the contract: every view has a list pane and a main area of its own beside the frame's side bar and panel, which hold only what is the same on every view; a record opens in the main area and a form stays a drawer, every door naming its item through one opener; one `ListPane` collapses, resizes, answers the same keys, is remembered per view, and becomes a strip by room rather than at a fixed width (amending FRAME6); the main area lays out by its own width; Overview and Map have no list, and a browser keeps the list and main area but not the side bar or panel. The build is FRAME1b–i, and PLUGUI1 takes its list pane, main area, memory and opener. Nothing built; nothing looked at on the window.
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D118**): The frame is audited and a layout model designed (D118). `docs/archive/2026-10-01-frame-audit.md` reads every view's layout from the code (the monitor, a detached session's window and a browser too): for each of 11 affordances the deciding file and line, a verdict (same, choice, drift, gap), and twelve looks only the window can settle. Its findings: only Sessions has a list pane; a record opens in a modal drawer over the side bar and panel on four views; only Sessions remembers its selection; viewport breakpoints lay out columns the side bar narrows; Settings stacks its list when narrow; some regions draw blank while loading; no list moves by arrow keys; the secondary windows' regions are fixed. `docs/archive/2026-10-01-frame-model-design.md` is the contract: every view has a list pane and a main area of its own beside the frame's side bar and panel, which hold only what is the same on every view; a record opens in the main area and a form stays a drawer, every door naming its item through one opener; one `ListPane` collapses, resizes, answers the same keys, is remembered per view, and becomes a strip by room rather than at a fixed width (amending FRAME6); the main area lays out by its own width; Overview and Map have no list, and a browser keeps the list and main area but not the side bar or panel. The build is FRAME1b–i, and PLUGUI1 takes its list pane, main area, memory and opener. Nothing built; nothing looked at on the window.
 
 
 ## NAME1a — a name is a UI element: the design, glossary, audit and check (2026-10-01)
@@ -10758,9 +10768,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > bar), with its proposed name in each language and why. (d) **The renames, and a check**: the i18n check
 > gains glossary conformance and the label budgets, so drift fails a gate. It extends
 > `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
-> `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
+> `docs/archive/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
 
-**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D116**): Designed (D116): `docs/2026-10-01-naming-design.md` defines a name as part of its UI element, designed in each language: fourteen kinds (a palette row's `command` kind found while building the check), each with rules in English and Chinese and a budget per language derived from the frame's rooms at 888 px with the side bar at its 300 px floor, and two cross-language rules (a door names its destination; a heading and its button name one act). `src/Daoris.Web/src/locales/glossary.json` is the authority: about 110 terms, each with its names in both languages, a definition, the words it must not be called and a match pattern; it also maps every label key to its kind and pairs each door with its destination. `names:check` (`scripts/names-check.mjs`) reports glossary conformance, budgets, form and doors, exiting 0; `--strict` is ready for NAME1b, for the facts only (budgets report and never gate, D54). Today it finds 519. `docs/2026-10-01-naming-audit.md` proposes names for all 772 label keys, 406 of which change, Settings first; applied in memory, the proposals leave no glossary, form or door finding and keep every placeholder, with 107 budget judgements left. Web vitest 1856 → 1881; nothing looked at on the window.
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D116**): Designed (D116): `docs/archive/2026-10-01-naming-design.md` defines a name as part of its UI element, designed in each language: fourteen kinds (a palette row's `command` kind found while building the check), each with rules in English and Chinese and a budget per language derived from the frame's rooms at 888 px with the side bar at its 300 px floor, and two cross-language rules (a door names its destination; a heading and its button name one act). `src/Daoris.Web/src/locales/glossary.json` is the authority: about 110 terms, each with its names in both languages, a definition, the words it must not be called and a match pattern; it also maps every label key to its kind and pairs each door with its destination. `names:check` (`scripts/names-check.mjs`) reports glossary conformance, budgets, form and doors, exiting 0; `--strict` is ready for NAME1b, for the facts only (budgets report and never gate, D54). Today it finds 519. `docs/archive/2026-10-01-naming-audit.md` proposes names for all 772 label keys, 406 of which change, Settings first; applied in memory, the proposals leave no glossary, form or door finding and keep every placeholder, with 107 budget judgements left. Web vitest 1856 → 1881; nothing looked at on the window.
 
 
 ## LOOK1 — shot --theme says when it cannot take (2026-10-01)
@@ -10835,7 +10845,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **NAME1b — the renames, and the names check strict** (building; D116). The owner approved the audit's
 > names on 2026-10-01, with Projects → Repositories (项目 → 仓库) and an ask named 需求. Apply
-> `docs/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
+> `docs/archive/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
 > and `names:check --strict` in the gate for glossary, form and doors (budgets report only, D54); then every
 > screen looked at in both languages.
 
@@ -10857,7 +10867,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LAYOUT2 — the entry-point probe** (§1): per harness at its pinned version, measure every "not
 > measured" cell … Keyless first; one canary turn per harness is the owner's to allow.
 
-**Outcome** (measured by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): The keyless half landed as `docs/2026-10-01-entry-point-evidence.md`: every cell D117 §1 left unmeasured, for Claude Code on both doors (2.1.285 native; 2.1.284 under the ACP adapter 0.84.0), codex 0.154.0, codex-acp 1.12.0 and dsh 0.1.6-alpha.2, each cell labelled source, doc or not measured and citing the harness's shipped code; no turn, no login, no model. **The ACP adapter loads project instructions**: `claude-agent-acp` 0.84.0 passes `settingSources: ["user","project","local"]` on every session, so driven Claude Code sessions have been getting `CLAUDE.md` and, through `@AGENTS.md`, the doctrine; D117's held row (hand instructions over at `session/new`) stays held. A maker-side flag, off by default, would drop them; only the canary turn shows it is off for the account. codex cuts project docs at 32,768 bytes, root first, and loads none in an untrusted folder (codex-acp marks every root trusted); dsh caps the chain at 65,536 bytes and lists a skill found in two roots once; Claude Code never reads `.agents/skills`, and since 2.1.277 reads `AGENTS.md` only where no `CLAUDE.md` exists, so room pointers are still needed. A `CLAUDE.md` in any folder above the Daoris home reaches every driven Claude Code session, since trees live under the home. The canary turn (§6: fixtures, prompt, commands, predicted answers) is the owner's to authorise, and stays open on the row.
+**Outcome** (measured by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): The keyless half landed as `docs/archive/2026-10-01-entry-point-evidence.md`: every cell D117 §1 left unmeasured, for Claude Code on both doors (2.1.285 native; 2.1.284 under the ACP adapter 0.84.0), codex 0.154.0, codex-acp 1.12.0 and dsh 0.1.6-alpha.2, each cell labelled source, doc or not measured and citing the harness's shipped code; no turn, no login, no model. **The ACP adapter loads project instructions**: `claude-agent-acp` 0.84.0 passes `settingSources: ["user","project","local"]` on every session, so driven Claude Code sessions have been getting `CLAUDE.md` and, through `@AGENTS.md`, the doctrine; D117's held row (hand instructions over at `session/new`) stays held. A maker-side flag, off by default, would drop them; only the canary turn shows it is off for the account. codex cuts project docs at 32,768 bytes, root first, and loads none in an untrusted folder (codex-acp marks every root trusted); dsh caps the chain at 65,536 bytes and lists a skill found in two roots once; Claude Code never reads `.agents/skills`, and since 2.1.277 reads `AGENTS.md` only where no `CLAUDE.md` exists, so room pointers are still needed. A `CLAUDE.md` in any folder above the Daoris home reaches every driven Claude Code session, since trees live under the home. The canary turn (§6: fixtures, prompt, commands, predicted answers) is the owner's to authorise, and stays open on the row.
 
 
 ## PLUGUI1a — plugins get a screen of their own: the design (2026-10-01)
@@ -10873,7 +10883,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
 > contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D119**): Designed (D119, `docs/2026-10-01-plugins-screen-design.md`, extending the plugin design on D118's frame): Plugins becomes a shell-only view. Its list groups plugins by what they need from the person (waiting on you, on, off, then the install's offers); each plugin has a page with its switch, *Try*, *Update…* and *Remove…* (which now asks once), a health line from five states decided by the loop's own record (the machine log's last word for a terminal), and sections for points, agents, servers, activity, tests, data folder and source, each with its loading, empty and error states. The side bar and panel gain nothing (D118 §3c). What a plugin did is kept in seven `plugin.*` machine-log events that never hold its words; each installed plugin's last trial and test run are kept. Routes stay `DAORIS.DRIVER`'s; each act has its terminal twin (`daoris plugin` for the catalogue, new `daoris-driver plugins show|activity|test`); every control has its Ask Daoris answer. Settings keeps only the plugins folder, as a read-only row in Settings → Driver, and every old anchor points at the view. Every name is given in both languages within its D116 budget. Found reading the code: Remove removes on its first press, the running pill wears done's green, a plugin's words reach a ring no screen reads, and the machine log holds no plugin event.
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D119**): Designed (D119, `docs/archive/2026-10-01-plugins-screen-design.md`, extending the plugin design on D118's frame): Plugins becomes a shell-only view. Its list groups plugins by what they need from the person (waiting on you, on, off, then the install's offers); each plugin has a page with its switch, *Try*, *Update…* and *Remove…* (which now asks once), a health line from five states decided by the loop's own record (the machine log's last word for a terminal), and sections for points, agents, servers, activity, tests, data folder and source, each with its loading, empty and error states. The side bar and panel gain nothing (D118 §3c). What a plugin did is kept in seven `plugin.*` machine-log events that never hold its words; each installed plugin's last trial and test run are kept. Routes stay `DAORIS.DRIVER`'s; each act has its terminal twin (`daoris plugin` for the catalogue, new `daoris-driver plugins show|activity|test`); every control has its Ask Daoris answer. Settings keeps only the plugins folder, as a read-only row in Settings → Driver, and every old anchor points at the view. Every name is given in both languages within its D116 budget. Found reading the code: Remove removes on its first press, the running pill wears done's green, a plugin's words reach a ring no screen reads, and the machine log holds no plugin event.
 
 
 ## DOC1 and UNBLOCK1 — the development-document standard, and fewer asks: the design (2026-10-01)
@@ -10885,7 +10895,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > what sessions actually read (LAYOUT2's evidence), and propose one standard, project-agnostic, as canon: a
 > template every set-up quest carries (LAYOUT7) and `check` can hold. Doctrine is still Daoris's first role.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D122**): Designed (D122, `docs/2026-10-01-development-documents-design.md`). The study compared this canon and this repository's records with dsh's public repository, the `AGENTS.md` convention and the makers' guidance for Claude Code, codex, Copilot and Gemini, against LAYOUT2's measurements; they converge on one short `AGENTS.md` holding what cannot be derived, exact commands with a check that means done, detail on demand, and a ceiling on what is read whole. The standard becomes core canon (a knowledge document `development-documents` and a skill `set-up-documents` with templates); a repository binds document roles to paths in its manifest, `sync` renders where they are, and `check` fails on facts and reports judgements. Fewer asks: a repository declares its safe work beside its gates, Daoris reads it from the line and judges it against the carve-outs (push, publish, release, history, discard, recursive delete, outside paths, shell operators), and the person says yes once per repository and per widening (D74 unchanged); Claude Code on both doors gets exact rules, codex and dsh nothing until measured. Found, for the build: the default core budget crowds out a brief under codex's 32 KiB cut (BUDGET1); a push written as `git -C . push` passes `no-push` in auto mode (UNBLOCK4); a skill's `allowed-tools` is honoured in an untrusted folder; auto mode drops package-manager wildcards; nothing counts asks today (UNBLOCK5 first). Documents only.
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D122**): Designed (D122, `docs/archive/2026-10-01-development-documents-design.md`). The study compared this canon and this repository's records with dsh's public repository, the `AGENTS.md` convention and the makers' guidance for Claude Code, codex, Copilot and Gemini, against LAYOUT2's measurements; they converge on one short `AGENTS.md` holding what cannot be derived, exact commands with a check that means done, detail on demand, and a ceiling on what is read whole. The standard becomes core canon (a knowledge document `development-documents` and a skill `set-up-documents` with templates); a repository binds document roles to paths in its manifest, `sync` renders where they are, and `check` fails on facts and reports judgements. Fewer asks: a repository declares its safe work beside its gates, Daoris reads it from the line and judges it against the carve-outs (push, publish, release, history, discard, recursive delete, outside paths, shell operators), and the person says yes once per repository and per widening (D74 unchanged); Claude Code on both doors gets exact rules, codex and dsh nothing until measured. Found, for the build: the default core budget crowds out a brief under codex's 32 KiB cut (BUDGET1); a push written as `git -C . push` passes `no-push` in auto mode (UNBLOCK4); a skill's `allowed-tools` is honoured in an untrusted folder; auto mode drops package-manager wildcards; nothing counts asks today (UNBLOCK5 first). Documents only.
 
 
 ## UNBLOCK1 — fewer asks: designed with DOC1 (2026-10-01)
@@ -10898,7 +10908,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > cross-repository acts still ask (`autonomous-development`). Measure: asks per session, from the machine log,
 > before and after. Design first, with a decision.
 
-**Outcome** Designed together with DOC1 in D122 (`docs/2026-10-01-development-documents-design.md` §3): a repository declares its safe work beside its gates, Daoris judges it against the carve-outs and turns it into each harness's allowances, and the person says yes once per repository and per widening. Its build is UNBLOCK2–UNBLOCK8, filed; UNBLOCK4 (the push hole the study found) was built the same day.
+**Outcome** Designed together with DOC1 in D122 (`docs/archive/2026-10-01-development-documents-design.md` §3): a repository declares its safe work beside its gates, Daoris judges it against the carve-outs and turns it into each harness's allowances, and the person says yes once per repository and per widening. Its build is UNBLOCK2–UNBLOCK8, filed; UNBLOCK4 (the push hole the study found) was built the same day.
 
 
 ## TOOLS1 — self-managed tools: the design (2026-10-01)
@@ -10910,7 +10920,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > can be updated, and more resource locations added, without a new release. A managed git can carry the
 > settings Daoris's own fetch needs (the SSH finding, WSR7).
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D121**): Designed (D121, `docs/2026-10-01-tools-design.md`, extending D57 from agents to tools). An inventory from the code: git is a bare name nothing resolves, versions or configures, and five resolvers answer "which program"; WSR7's SSH failure is the measured example. Every tool Daoris runs beside its agents (Git, Node.js, PowerShell, GitHub CLI, Azure CLI) is run one of three ways: the system's (absent means today's behaviour), managed (downloaded into the home and hash-verified), or a file the person names, held in a twinned `tools.json`; a missing managed version or file refuses rather than falling back to `PATH`. Daoris and every child share one resolution and one environment; git's settings, starting with `core.sshCommand`, travel in a global file under the home that includes the person's own and never writes it. A `resources.json` built into the install says where each version downloads, with a hash; resource locations extend it without a release (a disagreement refuses that version naming both lists; agreeing lists are mirrors). Agents stay on their makers' channels. Doors: Settings → Tools, `daoris tool …`, and Ask Daoris's `tool` kind. A separately released resource package, as a sibling ships, was weighed and rejected: a new package still needs a release, it redistributes other makers' binaries unhashed, and it knows only marker files.
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D121**): Designed (D121, `docs/archive/2026-10-01-tools-design.md`, extending D57 from agents to tools). An inventory from the code: git is a bare name nothing resolves, versions or configures, and five resolvers answer "which program"; WSR7's SSH failure is the measured example. Every tool Daoris runs beside its agents (Git, Node.js, PowerShell, GitHub CLI, Azure CLI) is run one of three ways: the system's (absent means today's behaviour), managed (downloaded into the home and hash-verified), or a file the person names, held in a twinned `tools.json`; a missing managed version or file refuses rather than falling back to `PATH`. Daoris and every child share one resolution and one environment; git's settings, starting with `core.sshCommand`, travel in a global file under the home that includes the person's own and never writes it. A `resources.json` built into the install says where each version downloads, with a hash; resource locations extend it without a release (a disagreement refuses that version naming both lists; agreeing lists are mirrors). Agents stay on their makers' channels. Doors: Settings → Tools, `daoris tool …`, and Ask Daoris's `tool` kind. A separately released resource package, as a sibling ships, was weighed and rejected: a new package still needs a release, it redistributes other makers' binaries unhashed, and it knows only marker files.
 
 
 ## PLUGREPO2 — Daoris.Plugins: the design, its set-up, and its first task done by Daoris (2026-10-01)
@@ -10940,7 +10950,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > premise (D103: a plugin made as an ask at the repository that holds plugins); PLUGDIST1's design (D120)
 > carries the model, and the build follows it.
 
-**Outcome** Folded into D120's design (`docs/2026-10-01-plugin-distribution-design.md` §2) as the **plugin workshop**: a plugin Daoris makes is made by default in a workshop in its home (a small git repository Daoris owns, one workshop session at a time, its ending observed from the plugin's own tests), or in a folder or registered repository the person sets, at both doors; a plugin reaches a repository only through that repository's own door, a quest carrying it as one zip; D103's update gains a source the person names. The build is WORKSHOP1a–d, filed.
+**Outcome** Folded into D120's design (`docs/archive/2026-10-01-plugin-distribution-design.md` §2) as the **plugin workshop**: a plugin Daoris makes is made by default in a workshop in its home (a small git repository Daoris owns, one workshop session at a time, its ending observed from the plugin's own tests), or in a folder or registered repository the person sets, at both doors; a plugin reaches a repository only through that repository's own door, a quest carrying it as one zip; D103's update gains a source the person names. The build is WORKSHOP1a–d, filed.
 
 
 ## PLUGDIST1 — plugins from a public catalogue: the design (2026-10-01)
@@ -10991,7 +11001,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TOOLS3 — the resource list and its merge, twins** (§3.1–§3.5): `resources.json` built in; the first entries
 > read from the makers' own pages and sums into an evidence document.
 
-**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): `resources.json` schema 1, its platform table and its merge are twins: the CLI's `resources.ts` and the driver's `ToolResources.cs`, whose tables `resources.test.ts` holds cell for cell. The merge works for one platform: the person's locations in order, then the list built in; lists that disagree on one download refuse that version, naming both; lists that agree under other addresses are mirrors; the versions are the union, newest first by number. Fetched copies are read from `<home>/tools/locations/<sha256 of the address>.json`. The list built in is the driver's `resources.json`, carried by every build and laid out at `app/resources.json` by `tools/desktop-publish.mjs`. Its first entries (win-x64): MinGit 2.56.0, Node.js 24.21.0, PowerShell 7.6.6, GitHub CLI 2.102.0, Azure CLI 2.90.0, each read from its maker's published sum, recorded in `docs/2026-10-01-tools-resources-evidence.md`, and matched against the whole downloaded file; a test holds the list to that document. Found for later rows: MinGit carries its own `ssh.exe` and no bash (TOOLS10), and az's executable is a batch file. Nothing reads the lists at run time yet; the verbs are TOOLS4's. CLI 799 → 825, driver fast half 1240 → 1365.
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): `resources.json` schema 1, its platform table and its merge are twins: the CLI's `resources.ts` and the driver's `ToolResources.cs`, whose tables `resources.test.ts` holds cell for cell. The merge works for one platform: the person's locations in order, then the list built in; lists that disagree on one download refuse that version, naming both; lists that agree under other addresses are mirrors; the versions are the union, newest first by number. Fetched copies are read from `<home>/tools/locations/<sha256 of the address>.json`. The list built in is the driver's `resources.json`, carried by every build and laid out at `app/resources.json` by `tools/desktop-publish.mjs`. Its first entries (win-x64): MinGit 2.56.0, Node.js 24.21.0, PowerShell 7.6.6, GitHub CLI 2.102.0, Azure CLI 2.90.0, each read from its maker's published sum, recorded in `docs/archive/2026-10-01-tools-resources-evidence.md`, and matched against the whole downloaded file; a test holds the list to that document. Found for later rows: MinGit carries its own `ssh.exe` and no bash (TOOLS10), and az's executable is a batch file. Nothing reads the lists at run time yet; the verbs are TOOLS4's. CLI 799 → 825, driver fast half 1240 → 1365.
 
 
 ## FRAME1b — the list pane, Sessions' first (2026-10-01)
@@ -11186,7 +11196,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **WSSETUP1 — the design** (D124): built on its branch; merging next with TOOLS5.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; D124): Designed in `docs/2026-10-01-workspace-setup-design.md`, recorded as D124. The install carries its packed CLI, and every child Daoris starts finds `daoris` on its PATH through TOOLS5's environment; this reverses D117 §9's rejection, npm stays the channel outside Daoris, and a new guard stops an older tool from rewriting a newer lock. The set-up quest gains a step that initialises a repository's knowledge (its domain, and documents on what it owns, its contracts and data, and the computations others depend on, each fact with its place in the code) and is bounded to the repository's own tree. The driver registers a repository from its line after Daoris moves the line. The workspace press is a paced plan of single quests with a pilot of two. Until a repository adopts, the service indexes its README. A driven session looks before it asks, and `autonomous-development` gains the same line. §8 gives the rows WSSETUP2–WSSETUP13 and amends LAYOUT7 and LAYOUT10. Documents only; `verify` passed.
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; D124): Designed in `docs/archive/2026-10-01-workspace-setup-design.md`, recorded as D124. The install carries its packed CLI, and every child Daoris starts finds `daoris` on its PATH through TOOLS5's environment; this reverses D117 §9's rejection, npm stays the channel outside Daoris, and a new guard stops an older tool from rewriting a newer lock. The set-up quest gains a step that initialises a repository's knowledge (its domain, and documents on what it owns, its contracts and data, and the computations others depend on, each fact with its place in the code) and is bounded to the repository's own tree. The driver registers a repository from its line after Daoris moves the line. The workspace press is a paced plan of single quests with a pilot of two. Until a repository adopts, the service indexes its README. A driven session looks before it asks, and `autonomous-development` gains the same line. §8 gives the rows WSSETUP2–WSSETUP13 and amends LAYOUT7 and LAYOUT10. Documents only; `verify` passed.
 
 
 ## WSSETUP10 — the canon says look before you ask (2026-10-01)
@@ -11323,14 +11333,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **TOOL4 — rotation**: held by D57 §b until exhaustion had been observed; the owner asked again on 1 and 2 October.
 
-**Outcome** Account rotation designed on five observed limits: a limit cools its account and is not a strike, and rotation runs at a start by the person's order; D57 §b's hold is lifted. Detail: `docs/2026-10-01-account-rotation-design.md`, D125; built as TOOL4a–i.
+**Outcome** Account rotation designed on five observed limits: a limit cools its account and is not a strike, and rotation runs at a start by the person's order; D57 §b's hold is lifted. Detail: `docs/archive/2026-10-01-account-rotation-design.md`, D125; built as TOOL4a–i.
 
 
 ## SESSUX1 — the session-management design (2026-10-02 → D126)
 
 > - [ ] **SESSUX1 — the design** (D126): every act a person takes on a session, each where the session is; the states at a glance; the build rows.
 
-**Outcome** Session management audited from the code and designed: sessions listed by state, every act on the session's row, a person's stop held until Try again, what ended archived. Detail: `docs/2026-10-02-session-management-design.md`, D126; built as SESSUX1a–l.
+**Outcome** Session management audited from the code and designed: sessions listed by state, every act on the session's row, a person's stop held until Try again, what ended archived. Detail: `docs/archive/2026-10-02-session-management-design.md`, D126; built as SESSUX1a–l.
 
 
 ## WSSETUP3 — daoris on every child's PATH (2026-10-02)
@@ -11448,7 +11458,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **SESSOPT1 — the design** (D127): what a session reads and writes, as doctrine.
 
-**Outcome** Designed: a session pays for what it reads, so rows and entries point to their detail; measured, canon text drafted (+458 region bytes), a shape report, the build SESSOPT1a–e. Detail: `docs/2026-10-02-session-economy-design.md`, D127.
+**Outcome** Designed: a session pays for what it reads, so rows and entries point to their detail; measured, canon text drafted (+458 region bytes), a shape report, the build SESSOPT1a–e. Detail: `docs/archive/2026-10-02-session-economy-design.md`, D127.
 
 
 ## TOOL4e — the twins and the terminal (2026-10-02)
@@ -11472,7 +11482,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **WSSETUP14 — what the pilot taught** (design, D128).
 
-**Outcome** Designed: knowledge declared in place, only skills move (the mirror keeps their paths), checks run before and after and never close done red, and the knowledge and skill tables move to a generated `INDEX.md`. Detail: `docs/2026-10-02-setup-pilot-lessons-design.md`, D128.
+**Outcome** Designed: knowledge declared in place, only skills move (the mirror keeps their paths), checks run before and after and never close done red, and the knowledge and skill tables move to a generated `INDEX.md`. Detail: `docs/archive/2026-10-02-setup-pilot-lessons-design.md`, D128.
 
 
 ## SESSUX1b — a person's stop holds its quest (2026-10-02)
@@ -11557,7 +11567,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > over this repository's docs measure each design's hit rate, calls and tokens per hit. Contract: the bench results
 > document (in flight). Proof: `tools/knowledge-bench.mjs`, its tests, and the run.
 
-**Outcome** 72 real headless sessions over six designs all found every document; the region's table costs 9,447 tokens on every request, D128's index one more call (read whole each time), and a pushed top 5 was cheapest when ranked right. Detail: `docs/2026-10-02-knowledge-bench-results.md` §3, §6.
+**Outcome** 72 real headless sessions over six designs all found every document; the region's table costs 9,447 tokens on every request, D128's index one more call (read whole each time), and a pushed top 5 was cheapest when ranked right. Detail: `docs/archive/2026-10-02-knowledge-bench-results.md` §3, §6.
 
 
 ## TOOL4f — rotation (2026-10-02)
@@ -11594,7 +11604,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > read keylessly, labelled unmeasured, then the first real frame recorded. TOOL6c builds only on it. Contract: D130 §0.3,
 > §5.1–§5.2.
 
-**Outcome** Claude Code's `rate_limit_event` gives each window's use (0–1) and reset on every frame (117 measured); the ACP adapter forwards it in `usage_update._meta`, which Daoris drops; codex-acp forwards nothing and its limit error says only `Internal error`. Detail: `docs/2026-10-02-limit-signals-evidence.md`, D125's TOOL4b note.
+**Outcome** Claude Code's `rate_limit_event` gives each window's use (0–1) and reset on every frame (117 measured); the ACP adapter forwards it in `usage_update._meta`, which Daoris drops; codex-acp forwards nothing and its limit error says only `Internal error`. Detail: `docs/archive/2026-10-02-limit-signals-evidence.md`, D125's TOOL4b note.
 
 
 ## TOOL6 — how switching works, and accounts used well (2026-10-02 → D130)
@@ -11607,7 +11617,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
 > Proof: the design (landing).
 
-**Outcome** Account use designed for any number of accounts, then re-decided on the owner's goal: every listed account used toward the most work (spread, a lapsing week first, pace, least recently started), one by one in order as an override, switching early on. Detail: D130 and its note *The rules around the goal*, `docs/2026-10-02-account-use-design.md` §16; `92c7d46`.
+**Outcome** Account use designed for any number of accounts, then re-decided on the owner's goal: every listed account used toward the most work (spread, a lapsing week first, pace, least recently started), one by one in order as an override, switching early on. Detail: D130 and its note *The rules around the goal*, `docs/archive/2026-10-02-account-use-design.md` §16; `92c7d46`.
 
 
 ## TOOL6a — the settings and their terminal doors (2026-10-02)
@@ -11674,7 +11684,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > sessions and commits to where the requirement was lost, and what Daoris should hold so it is not. Contract: D133 (in
 > flight). Proof: the evidence, de-identified; raw notes untracked.
 
-**Outcome** Each of the owner's common-report words reached only one session: the intake kept *bridge* and lost its meaning, a parked question did not travel with its answer, and carry-ons keep one hop, lost across an account limit. D133: the ask holds the owner's words and hands them to every session. Detail: `docs/2026-10-02-ask-drift-evidence.md` §6, D133.
+**Outcome** Each of the owner's common-report words reached only one session: the intake kept *bridge* and lost its meaning, a parked question did not travel with its answer, and carry-ons keep one hop, lost across an account limit. D133: the ask holds the owner's words and hands them to every session. Detail: `docs/archive/2026-10-02-ask-drift-evidence.md` §6, D133.
 
 
 ## TOOL6c — what the agents say, read (2026-10-02)
@@ -11706,7 +11716,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132.
 > Proof: the design (landing; its acts are named *Pause* 暂缓 and *Abandon* 放弃, §8.2).
 
-**Outcome** Designed as D132: an ask's or a quest's work is paused and resumed whole on this machine, and abandoned on a listed second press that declines its quests with the person's reason and discards only what nothing else holds. Detail: `docs/2026-10-02-pause-and-clean-up-design.md` §1–§9.
+**Outcome** Designed as D132: an ask's or a quest's work is paused and resumed whole on this machine, and abandoned on a listed second press that declines its quests with the person's reason and discards only what nothing else holds. Detail: `docs/archive/2026-10-02-pause-and-clean-up-design.md` §1–§9.
 
 
 ## ANSWER1b — the service keeps an answered park (2026-10-02)
@@ -11820,7 +11830,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > owner), against what each session read and was told; then the fix, model-backed where text matching cannot judge.
 > Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
 
-**Outcome** 46 questions classed: sessions do read their knowledge; most asks come from prod go-aheads asked again and again, readings put as questions, and drift. D135: go-aheads held once, standing answers, cited sources, and a model review measured before it is shown. Detail: `docs/2026-10-03-knowledge-use-evidence.md`, D135.
+**Outcome** 46 questions classed: sessions do read their knowledge; most asks come from prod go-aheads asked again and again, readings put as questions, and drift. D135: go-aheads held once, standing answers, cited sources, and a model review measured before it is shown. Detail: `docs/archive/2026-10-03-knowledge-use-evidence.md`, D135.
 
 
 ## PAUSE1b — pause and resume (2026-10-03)
@@ -11848,7 +11858,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > record read by lookup has no ceiling) against a merge driver for the file. Contract: a short design, then D-number.
 > Proof: four branches noting four decisions merge with nothing twice and nothing moved.
 
-**Outcome** Designed as D134 (union tore 33 of 134 merges of the record: one file per decision), and its check built (DOC8b): `doc-duplicates` checks a folder of decisions for D134 §3.4's facts. Detail: D134 and its DOC8b note, `docs/2026-10-03-decisions-record-design.md`.
+**Outcome** Designed as D134 (union tore 33 of 134 merges of the record: one file per decision), and its check built (DOC8b): `doc-duplicates` checks a folder of decisions for D134 §3.4's facts. Detail: D134 and its DOC8b note, `docs/archive/2026-10-03-decisions-record-design.md`.
 
 
 ## STEER1 — a message reaches a running session at its next step (2026-10-03 → D136)
@@ -11908,7 +11918,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
 > Proof: the design, the doors measured, then its rows.
 
-**Outcome** Designed as D137: a person's words reach a session at its next step, at its turn's end, or by reopening its record and resuming its own conversation, on every door; Codex and the native door read, not measured. Detail: D137, `docs/2026-10-03-session-messages-design.md` §1, §2, §8.
+**Outcome** Designed as D137: a person's words reach a session at its next step, at its turn's end, or by reopening its record and resuming its own conversation, on every door; Codex and the native door read, not measured. Detail: D137, `docs/archive/2026-10-03-session-messages-design.md` §1, §2, §8.
 
 
 ## KNOWUSE1c — needs you apart from readings, each citing its source (2026-10-03)
@@ -11991,7 +12001,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > new build and starts again, saying so; a session cut by an update is carried on, never lost. Contract: a short design
 > (D62, D93 amended). Proof: the deployment rehearsal's update phase; the look.
 
-**Outcome** `publish:desktop --stage` stages a checked build beside the running install; the desktop drains (starts nothing new) and installs it once no driven run and no conversation turn is in flight; the launcher swaps `app/` with a journal and rolls back to the old build on any failure; *Update now*, *Not now* and `daoris-driver update` are the doors, and the next start says the outcome once. Detail: D139, `docs/2026-10-03-update-when-idle-design.md`, `3cf5c723`..`c7e8bcf9`.
+**Outcome** `publish:desktop --stage` stages a checked build beside the running install; the desktop drains (starts nothing new) and installs it once no driven run and no conversation turn is in flight; the launcher swaps `app/` with a journal and rolls back to the old build on any failure; *Update now*, *Not now* and `daoris-driver update` are the doors, and the next start says the outcome once. Detail: D139, `docs/archive/2026-10-03-update-when-idle-design.md`, `3cf5c723`..`c7e8bcf9`.
 
 
 ## CTX1 — the desktop's right-click menu (2026-10-03)
@@ -12001,7 +12011,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > a repository, a plugin, selected text, a link) its own acts there, the same acts its ⋯ offers, from one owner. Contract:
 > a short design (D41's interaction rules amended). Proof: route and vitest tests; the look in both themes and languages.
 
-**Outcome** A right-click opens Daoris's own menu, drawn by the page in the shared menu's style, with selected words (copy, search, ask), a link, a code span, then the nearest surface's acts from the owner its ⋯ already has; text fields and the in-app browser keep the engine's menu, the title bar opens the system menu, and elsewhere the engine's is suppressed. Detail: D138 and its build note, `docs/2026-10-03-context-menu-design.md`, `f1b232c9`..`95ec444d`.
+**Outcome** A right-click opens Daoris's own menu, drawn by the page in the shared menu's style, with selected words (copy, search, ask), a link, a code span, then the nearest surface's acts from the owner its ⋯ already has; text fields and the in-app browser keep the engine's menu, the title bar opens the system menu, and elsewhere the engine's is suppressed. Detail: D138 and its build note, `docs/archive/2026-10-03-context-menu-design.md`, `f1b232c9`..`95ec444d`.
 
 
 ## CHATTAKE1 — a chat's take is marked on its record (2026-10-03)
@@ -12029,7 +12039,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
 > the manifest's twin tables, the look.
 
-**Outcome** The plugins page is a catalogue (Installed, Daoris's own, and Available once packages exist) whose rows show each plugin's icon, description, source and update. A plugin declares its icon in its manifest, read by both twins under one table of eight rules; the page draws its bytes as a data URI or a computed monogram, never a path, and the detail takes the pane's width. The host's answer of the icon is PLUGUI2b. Detail: D140 and its built note, `docs/2026-10-03-plugin-catalogue-design.md`, `b1c1257e`..`380035f3`.
+**Outcome** The plugins page is a catalogue (Installed, Daoris's own, and Available once packages exist) whose rows show each plugin's icon, description, source and update. A plugin declares its icon in its manifest, read by both twins under one table of eight rules; the page draws its bytes as a data URI or a computed monogram, never a path, and the detail takes the pane's width. The host's answer of the icon is PLUGUI2b. Detail: D140 and its built note, `docs/archive/2026-10-03-plugin-catalogue-design.md`, `b1c1257e`..`380035f3`.
 
 
 ## PLUGUI2b — the host answers a plugin's icon (2026-10-03)
@@ -12112,7 +12122,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > worded; old records without a code; and what language Daoris writes to an agent in, and asks it to write back to
 > the person in. Contract: translation-parity, D116, D41. Proof: the design and its decision.
 
-**Outcome** Designed: a line Daoris writes about a session gets a code and values in a new `noteParts` beside the unchanged English `note`, which the page words in the reader's language; someone's words (the agent's, the person's, a program's) are shown as written; 72 lines at about 60 sites become 66 codes, each worded in both languages; a part or record the page cannot word shows its English marked *shown as recorded*. The session language is the work's (a repository's, or a workspace's), kept in `driver.json`, never the machine's or the window's, and adds one line to a quest's instructions only where it is set. Detail: D142, `docs/2026-10-03-language-design.md`, `3e36020e`.
+**Outcome** Designed: a line Daoris writes about a session gets a code and values in a new `noteParts` beside the unchanged English `note`, which the page words in the reader's language; someone's words (the agent's, the person's, a program's) are shown as written; 72 lines at about 60 sites become 66 codes, each worded in both languages; a part or record the page cannot word shows its English marked *shown as recorded*. The session language is the work's (a repository's, or a workspace's), kept in `driver.json`, never the machine's or the window's, and adds one line to a quest's instructions only where it is set. Detail: D142, `docs/archive/2026-10-03-language-design.md`, `3e36020e`.
 
 
 ## LANG1a — the driver writes its lines as codes (2026-10-03)
@@ -12231,7 +12241,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > holds or a declared gate; a met answer without it holds the quest as a departure does. Contract: review §3,
 > amending D133 §4. Proof: the design, then its rows.
 
-**Outcome** Designed as D144: a requirement may name a path the done's commit must hold (later a gate read from the merge queue), and a met answer without it closes the quest done and held, as a departure is; the driver reads the evidence when the session ends and records the verdict through one judged door, which lifts the hold or keeps it, a narrow amendment of D46 the owner may reverse. The build is EVID1a–d. Detail: `docs/2026-10-03-evidence-design.md`, D144, `22d9f6d5`.
+**Outcome** Designed as D144: a requirement may name a path the done's commit must hold (later a gate read from the merge queue), and a met answer without it closes the quest done and held, as a departure is; the driver reads the evidence when the session ends and records the verdict through one judged door, which lifts the hold or keeps it, a narrow amendment of D46 the owner may reverse. The build is EVID1a–d. Detail: `docs/archive/2026-10-03-evidence-design.md`, D144, `22d9f6d5`.
 
 
 ## CONTEXT1 — what a session was handed, section by section (2026-10-03)
@@ -12446,7 +12456,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > as the person's (fetch, branch, push) at both doors; how it stays fast (REVIEW3); where it stops short of an editor
 > (D55); and whether a setup offers managed Git. Contract: D55, D121, D113. Proof: the design and its decision.
 
-**Outcome** Designed as D147: a *Git* place on the desktop organised by branch and commit (a repository's lines, session and landed branches with their pull requests, history as a graph, a commit, a file's history and blame, a compare), read through the Tools' git one process per view and cached by commit id; acts on refs only (fetch, branch, delete, and a push only on the person's press, never forced); no editor, checkout or staging (D55); managed Git offered and never switched. Measured on this repository: one git start about 100 ms, a whole range's patch in one call 2.2 s against 215 ms a file. The build is GIT1a–k. Detail: `docs/2026-10-04-built-in-git-design.md`, D147, `ef678dc7`.
+**Outcome** Designed as D147: a *Git* place on the desktop organised by branch and commit (a repository's lines, session and landed branches with their pull requests, history as a graph, a commit, a file's history and blame, a compare), read through the Tools' git one process per view and cached by commit id; acts on refs only (fetch, branch, delete, and a push only on the person's press, never forced); no editor, checkout or staging (D55); managed Git offered and never switched. Measured on this repository: one git start about 100 ms, a whole range's patch in one call 2.2 s against 215 ms a file. The build is GIT1a–k. Detail: `docs/archive/2026-10-04-built-in-git-design.md`, D147, `ef678dc7`.
 
 
 ## LAND2 — done work reaches a branch you can review, and a pull request: designed (2026-10-04)
@@ -12459,7 +12469,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > pull request), today's Accept staying the default until set, and what *To review* then means. Contract: D87, D100,
 > D102. Proof: the design and its decision.
 
-**Outcome** Designed as D145: *Accept automatically* (自动采纳), a switch on a workspace's branch rule (a repository's own rule overriding it whole), off until set, lands a session's work once its quest is done and released, through the rule's plugin, which pushes the branch and opens the pull request, the person's last step; with no plugin it is allowed with a warning. A chain lands on one branch, and *To review* lists only what could not land. The build is LAND2a–c. Detail: `docs/2026-10-04-landing-and-proof-design.md`, D145, `4a82bd5d`.
+**Outcome** Designed as D145: *Accept automatically* (自动采纳), a switch on a workspace's branch rule (a repository's own rule overriding it whole), off until set, lands a session's work once its quest is done and released, through the rule's plugin, which pushes the branch and opens the pull request, the person's last step; with no plugin it is allowed with a warning. A chain lands on one branch, and *To review* lists only what could not land. The build is LAND2a–c. Detail: `docs/archive/2026-10-04-landing-and-proof-design.md`, D145, `4a82bd5d`.
 
 
 ## EVID2 — proof of completion that outlives the environment: designed (2026-10-04)
@@ -12472,7 +12482,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > quest's page; whether a requirement may require it (D144 deferred browser evidence to "later"). Contract: D144 §7,
 > D133. Proof: the design and its decision.
 
-**Outcome** Designed as D146: a session captures proof of its done (screenshots through the browser it is handed, the answers of API reads it relied on) into a folder Daoris keeps on the record, never in the repository, checked for presence, kind, readability and size, redacted, and shown on the session's page, its review and the quest's page; a requirement may require it, and a done without it is held as D144 holds one. Only codes, hashes and sizes cross machines. The build is EVID2a–c. Detail: `docs/2026-10-04-landing-and-proof-design.md`, D146, `4a82bd5d`.
+**Outcome** Designed as D146: a session captures proof of its done (screenshots through the browser it is handed, the answers of API reads it relied on) into a folder Daoris keeps on the record, never in the repository, checked for presence, kind, readability and size, redacted, and shown on the session's page, its review and the quest's page; a requirement may require it, and a done without it is held as D144 holds one. Only codes, hashes and sizes cross machines. The build is EVID2a–c. Detail: `docs/archive/2026-10-04-landing-and-proof-design.md`, D146, `4a82bd5d`.
 
 
 ## REVIEW3 — the review loads in one git call, not one per file (2026-10-04)
@@ -12618,7 +12628,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > platform's work items as asks) and their frames, results, permissions and bounds. Contract: D64 §4, D100, D102,
 > D145. Proof: the design and its decision.
 
-**Outcome** 2026-10-04: designed. A query point, `work/state`, asks a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches go where git confirms its merge commit on the line; asked only where Daoris's own proofs cannot tell and the answer could remove something, never at a removing press, a read or a timer, bounded at 30 s a frame. Other processes were weighed (review threads, a pipeline's verdict, work items, capabilities, a quest's close), and none gains a point now. D148 lifts D102's rejection of asking the platform for plugins only. Detail in D148 and `docs/2026-10-04-plugin-hooks-design.md`; rows PLUGHOOK1a–d, with PLUGHOOK2 held (`08681e59`).
+**Outcome** 2026-10-04: designed. A query point, `work/state`, asks a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches go where git confirms its merge commit on the line; asked only where Daoris's own proofs cannot tell and the answer could remove something, never at a removing press, a read or a timer, bounded at 30 s a frame. Other processes were weighed (review threads, a pipeline's verdict, work items, capabilities, a quest's close), and none gains a point now. D148 lifts D102's rejection of asking the platform for plugins only. Detail in D148 and `docs/archive/2026-10-04-plugin-hooks-design.md`; rows PLUGHOOK1a–d, with PLUGHOOK2 held (`08681e59`).
 
 
 ## LAND2c — one branch and one pull request for one piece of work (2026-10-04)
@@ -12671,7 +12681,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > signed-out accounts went unsaid (TOOL6g). Contract: D41 (platform-ux), D53, D55, D56, D57, D66, D67, the UX5 ledger.
 > Proof: the design and its decision; per-screen counts before and after; the look in both themes and languages.
 
-**Outcome** 2026-10-04: designed as D150 (`docs/2026-10-04-ux6-redesign.md`). A setting has one home, on its thing; Settings keeps the machine's and the person's (seven domains of eleven). Nine places as today: Repositories holds each repository's and workspace's setup and its git (GIT1e–f land there, no Git place on the bar), Agents is a place with one account list per product and its ways in a property, Search and Convergence become Knowledge, and What needs you leads Overview in three groups, acting where one press is safe and starting no process. Accounts are never probed on a timer, at a look, at start or when a view opens. A move map names every card's new home and terminal twin; counts and their method in §9; build rows UX6a–j.
+**Outcome** 2026-10-04: designed as D150 (`docs/archive/2026-10-04-ux6-redesign.md`). A setting has one home, on its thing; Settings keeps the machine's and the person's (seven domains of eleven). Nine places as today: Repositories holds each repository's and workspace's setup and its git (GIT1e–f land there, no Git place on the bar), Agents is a place with one account list per product and its ways in a property, Search and Convergence become Knowledge, and What needs you leads Overview in three groups, acting where one press is safe and starting no process. Accounts are never probed on a timer, at a look, at start or when a view opens. A move map names every card's new home and terminal twin; counts and their method in §9; build rows UX6a–j.
 
 
 ## PLUGTOOL1 — a plugin brings the tools it needs (2026-10-04)
@@ -12754,7 +12764,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
 > chip, both in that repository, and the branches its sessions left (WSR3).
 
-**Outcome** Done 2026-09-27, archived in the backlog clean-up: the first goal's loop was met in six legs (`docs/2026-09-27-first-goal-study.md` §8). The two defects it found are the work repository's, and WSR3 (2026-09-28) cleans the branches it left.
+**Outcome** Done 2026-09-27, archived in the backlog clean-up: the first goal's loop was met in six legs (`docs/archive/2026-09-27-first-goal-study.md` §8). The two defects it found are the work repository's, and WSR3 (2026-09-28) cleans the branches it left.
 
 
 ## BRW3 — the owner's machine (2026-10-04)
@@ -12772,7 +12782,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > 2026-09-27). Fixed, republished, and the session opened its tree and took the quest. Its outcome
 > is FG5's report.
 
-**Outcome** Done 2026-09-27, archived in the backlog clean-up: the owner signed in, and the intake read the signed-in ticket through `mcp__browser` and published one quest (`docs/2026-09-27-first-goal-study.md` §8, the first run).
+**Outcome** Done 2026-09-27, archived in the backlog clean-up: the owner signed in, and the intake read the signed-in ticket through `mcp__browser` and published one quest (`docs/archive/2026-09-27-first-goal-study.md` §8, the first run).
 
 
 ## ANSWER1 on the install — the plan (2026-10-04)
@@ -12792,7 +12802,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 ## TOOL4 — rotation (2026-10-04)
 
 > - [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to check
-> daoris continue"*): **designed as D125** (`docs/2026-10-01-account-rotation-design.md`), which lifts D57 §b's hold:
+> daoris continue"*): **designed as D125** (`docs/archive/2026-10-01-account-rotation-design.md`), which lifts D57 §b's hold:
 > five observed limits (design §0.2) answer its three questions. A limit is read from the door's failure by a table
 > that grows only with recorded sentences; its account cools until the reset the agent names (60 minutes when it names
 > none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
@@ -12999,7 +13009,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
 > after.
 
-**Outcome** 2026-10-04: designed (D151). Every driven repository keeps a generated folder of where things are (a README, up to four lookup tables, outlines of large files, a decisions digest), written and checked by its own tooling so a clone without Daoris works; the canon changes three on-demand files and no always-loaded byte; the set-up publishes an index quest; where Daoris runs the service indexes it and hits name their lines, with the semantic tier per deployment and words-only answering with none. Build rows ORIENT2a–g; ORIENT1e reads the before from driven sessions' typed events. Detail: `docs/2026-10-04-orientation-everywhere-design.md`, D151.
+**Outcome** 2026-10-04: designed (D151). Every driven repository keeps a generated folder of where things are (a README, up to four lookup tables, outlines of large files, a decisions digest), written and checked by its own tooling so a clone without Daoris works; the canon changes three on-demand files and no always-loaded byte; the set-up publishes an index quest; where Daoris runs the service indexes it and hits name their lines, with the semantic tier per deployment and words-only answering with none. Build rows ORIENT2a–g; ORIENT1e reads the before from driven sessions' typed events. Detail: `docs/archive/2026-10-04-orientation-everywhere-design.md`, D151.
 
 
 ## ORIENT1e — the orientation report reads a Daoris home (2026-10-04)
@@ -13091,7 +13101,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
 > what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
 
-**Outcome** 2026-10-05: designed (D152). The built redesign looked at on the install and in the stories, line by line (§1): a VS Code-like menu bar of seven menus (Workspace, Edit, View, Go, Run, Terminal, Help) from one command table the menus, palette, keys and a shortcuts drawer read; one row and one act per account, the add flow offering an existing signed-out row first and asking which workspaces it joins; heads of state, title and a facts line chosen by state, ids folded, nothing said twice. Build rows UX7a–d; SESSUX1j ahead of UX7c, UX7c before UX7b. Detail: `docs/2026-10-05-ux7-design.md`, D152.
+**Outcome** 2026-10-05: designed (D152). The built redesign looked at on the install and in the stories, line by line (§1): a VS Code-like menu bar of seven menus (Workspace, Edit, View, Go, Run, Terminal, Help) from one command table the menus, palette, keys and a shortcuts drawer read; one row and one act per account, the add flow offering an existing signed-out row first and asking which workspaces it joins; heads of state, title and a facts line chosen by state, ids folded, nothing said twice. Build rows UX7a–d; SESSUX1j ahead of UX7c, UX7c before UX7b. Detail: `docs/archive/2026-10-05-ux7-design.md`, D152.
 
 
 ## SESSUX1j — a quest's short title (2026-10-05, D126)
@@ -13905,7 +13915,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **CODEXUSE1 — Daoris reads a Codex account's usage windows** (driver, modules; owner asked 2026-10-07). Daoris reads only Codex's limit-reached words (`CodexLimits`); Claude Code's accounts show their windows (TOOL6c). Measured 2026-10-07 on codex-cli 0.160.0: `codex app-server` over stdio answers `account/rateLimits/read` (after `initialize` with `clientInfo`, then `initialized`) without spending usage, with `rateLimits.primary` and `.secondary` as `{usedPercent, windowDurationMins, resetsAt}` (300 min and 10,080 min), `ordinaryUsageAllowed`, `planType`, `spendControlReached`, `rateLimitReachedType`, `rateLimitsByLimitId`, `rateLimitResetCredits`, and pushes `account/rateLimits/updated`; `codex exec --json` carries token counts only. Read it per Codex account (its `CODEX_HOME`) where Claude Code's windows are read, into the same reading, so rotation's near-limit switch and the page's windows hold for Codex; absent is never zero. Contract: D125 (TOOL6c, TOOL4a, the absent-is-never-zero rule), toolchain design §1.3. Proof: a stand-in app-server test for the reading; the roster's line for a Codex account; an evidence note with the schema facts, no account id.
 
-**Outcome** 2026-10-07: a Codex account's five-hour and weekly use is read from `codex app-server`'s `account/rateLimits/read` (it spends no model usage) at a press and at a start's walk over a list, under the account's lock, never for a busy, cooling or refused account, unknown when unavailable; rotation, the start's line, `agent list` and the page read it unchanged. Follow-up: CODEXUSE1b. Detail: D125's CODEXUSE1 note, `docs/2026-10-07-codex-usage-evidence.md`; commits a6d43ce5, 6184dc65.
+**Outcome** 2026-10-07: a Codex account's five-hour and weekly use is read from `codex app-server`'s `account/rateLimits/read` (it spends no model usage) at a press and at a start's walk over a list, under the account's lock, never for a busy, cooling or refused account, unknown when unavailable; rotation, the start's line, `agent list` and the page read it unchanged. Follow-up: CODEXUSE1b. Detail: D125's CODEXUSE1 note, `docs/archive/2026-10-07-codex-usage-evidence.md`; commits a6d43ce5, 6184dc65.
 
 
 ## ORIENT2h5 — an index item's id does not move with its lines; the reading's cost measured (2026-10-07, D151)
@@ -13931,7 +13941,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## CODEXUSE1b — the terminal and the record say Codex speaks (2026-10-07, D130)
 
-> - [ ] **CODEXUSE1b — the terminal and the record say Codex speaks** (cli, docs; after CODEXUSE1). `daoris agent list` already prints a kept Codex reading, but its `codex` entry lacks `windows: true`, so its use and next-start lines still say Codex is silent; and D130's own record does not say CODEXUSE1 reversed §5.1's app-server row and §5.3's *no probe* for this read (only a pointer in the account-use design). Contract: D125's CODEXUSE1 note, `docs/2026-10-07-codex-usage-evidence.md`. Proof: an `agent list` test for a Codex account with a reading; D130's note.
+> - [ ] **CODEXUSE1b — the terminal and the record say Codex speaks** (cli, docs; after CODEXUSE1). `daoris agent list` already prints a kept Codex reading, but its `codex` entry lacks `windows: true`, so its use and next-start lines still say Codex is silent; and D130's own record does not say CODEXUSE1 reversed §5.1's app-server row and §5.3's *no probe* for this read (only a pointer in the account-use design). Contract: D125's CODEXUSE1 note, `docs/archive/2026-10-07-codex-usage-evidence.md`. Proof: an `agent list` test for a Codex account with a reading; D130's note.
 
 **Outcome** 2026-10-07: the CLI's `codex` entry declares `windows`, the twin of the driver's `Speaks`, so `agent list` and `profile use` treat a Codex account as one that reports its usage (the switch passes a near account, the next start weighs its week); D130's note records what CODEXUSE1 reversed. Detail: D130's last note; commits 1abac11a, a8bca33f.
 
@@ -14008,7 +14018,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## ACCTUX3 — the add-key and model forms keep their drafts until the act lands (2026-10-08, D125)
 
-> - [ ] **ACCTUX3 — the add-key and model forms keep their drafts until the act lands** (web-shell). Same review: adding a key clears the draft at once and saving model/effort closes its editor at once (`agents/AgentPage.tsx:240,747`), so a refusal arrives after the place to correct it is gone, the failure ACCTEDIT1 fixed for rename and placement; and a key added ends in a toast rather than UX7's name-and-workspace step (`docs/2026-10-05-ux7-design.md:428`). Extend the `Answered` contract to both, and send an added key through the step. Contract: ACCTEDIT1, UX7 §4.5. Proof: vitest for a refused key add and a refused model save keeping their drafts, and the key's step.
+> - [ ] **ACCTUX3 — the add-key and model forms keep their drafts until the act lands** (web-shell). Same review: adding a key clears the draft at once and saving model/effort closes its editor at once (`agents/AgentPage.tsx:240,747`), so a refusal arrives after the place to correct it is gone, the failure ACCTEDIT1 fixed for rename and placement; and a key added ends in a toast rather than UX7's name-and-workspace step (`docs/archive/2026-10-05-ux7-design.md:428`). Extend the `Answered` contract to both, and send an added key through the step. Contract: ACCTEDIT1, UX7 §4.5. Proof: vitest for a refused key add and a refused model save keeping their drafts, and the key's step.
 
 **Outcome** 2026-10-08: the key field and the model editor take ACCTEDIT1's `Answered`: each closes once its act lands, and a refusal keeps the key or choice with the driver's sentence under it; a key added goes to `PlaceAccount` for its name and lists instead of a toast. Follow-up: SETTINGSWAIT1. Detail: D125's ACCTUX3 note; commit 7dfc0fbd.
 
@@ -14122,7 +14132,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **REVIEWENV1 — work is reviewed where it runs before it is offered to land** (design, then driver, service, web-shell; owner, 2026-10-08: *"I never saw this set up in dev for me to review"*; *"a development without any verification and want to merge to prod is not a good sign; this should also be some process rule set up in Daoris's development cycle"*). The owner's ticket went from code to a branch to push with every check run by agents — its browser check injected the setting into its own page and wrote nothing to dev — and was offered to land with the person never having seen it run. Configurable at three levels, each overriding the one above (owner, the same day: *"this should be configurable: some repos need it and some don't, or some tasks need it and some don't"*): the workspace, the repository, and the task (an ask or a quest); nothing set anywhere is today's behaviour. A workspace or repository declares a review environment and how work reaches it (the repository's own documented procedure, never Daoris's guess); the intake's chain gains a step that sets the work up there and says where to look; and the landing rule may require the person's *reviewed* on that step before *Accept…* is offered (and before auto-accept, D145), recorded on the quest as the person's words. Design first, with a decision: where the declaration lives (D87's landing rule, D34's manifest, or the workspace), what the set-up step may do unasked (a dev deploy is outward; prod never), and how a review the person gives in the environment reaches the record. Contract: D87, D145, D146 (proof that outlives the environment), D65 §4 (chains), `autonomous-development`. Proof: the design and its decision; then a family-rehearsal phase where a stub chain cannot land until a reviewed is given.
 
-**Outcome** 2026-10-08: designed as D154: a review environment (local by default, shown in Daoris's own browser over where the app runs; or deployed by the repository's documented route) set per workspace, repository and task, a set-up step that is a quest, and a landing that waits for the person's *reviewed* on the commit it lands; a step never takes over the person's processes. Build: REVIEWENV1a–i. Detail: `docs/2026-10-08-review-environment-design.md`, D154.
+**Outcome** 2026-10-08: designed as D154: a review environment (local by default, shown in Daoris's own browser over where the app runs; or deployed by the repository's documented route) set per workspace, repository and task, a set-up step that is a quest, and a landing that waits for the person's *reviewed* on the commit it lands; a step never takes over the person's processes. Build: REVIEWENV1a–i. Detail: `docs/archive/2026-10-08-review-environment-design.md`, D154.
 
 
 ## CONNECTOR1b — an in-place publish never leaves an older build's hosts first (2026-10-08, D93)
@@ -14199,7 +14209,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **XAGENT1 — a session's work gets a second agent's review or help, from another harness** (design, then driver, service, web-shell; owner, 2026-10-08: *"you can always use Codex to assist the development"*; *"this is also the logic that applies to Daoris, since we have a multi-agent system in Daoris"*). Developing Daoris, a second agent from another maker (Codex beside Claude Code) reviews merges and designs read-only, and its findings are verified and routed; Daoris drives sessions on several harnesses and accounts but never sets one to check or help another. Design first, with a decision: when a second agent is asked (before a quest's work is offered to land, at a design, on a failed check), how it is chosen (another harness or account than the session's, by the roster's allowance), what it may do (read-only review by default; a build only on its own tree), how its findings reach the working session (its next turn) and the person (the review, beside D154's *reviewed*), and configurable as D154 is (workspace, repository, task). Contract: D45, D53 (the protocol door), D57 (the toolchain), D154, `model-decoupling`. Proof: the design and its decision; then a family-rehearsal phase where a stub reviewer's finding reaches the stub session's next turn.
 
-**Outcome** 2026-10-08: designed as D155: a second opinion is a setting of its own (workspace, repository, task), asked before landing once set, by a reviewer of another family (owner and maker) from the person's named list, read-only by isolation in a clone with no remote; its findings go once to the working session's next turn as another agent's claims and beside the person's look, answered fixed, rejected or unresolved; only a check Daoris reads is a fact. Codex's second opinion on it is weighed in the design's §11. Build: XAGENT1a–k. Detail: `docs/2026-10-08-second-agent-design.md`, D155.
+**Outcome** 2026-10-08: designed as D155: a second opinion is a setting of its own (workspace, repository, task), asked before landing once set, by a reviewer of another family (owner and maker) from the person's named list, read-only by isolation in a clone with no remote; its findings go once to the working session's next turn as another agent's claims and beside the person's look, answered fixed, rejected or unresolved; only a check Daoris reads is a fact. Codex's second opinion on it is weighed in the design's §11. Build: XAGENT1a–k. Detail: `docs/archive/2026-10-08-second-agent-design.md`, D155.
 
 
 ## REVIEWENV1b — the review on the record (2026-10-08, D154)
@@ -14255,7 +14265,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **PERSONDOOR1 — a door only the person may use** (design, then service, modules; from the same review). The local host trusts loopback (`Program.cs:308`), so a session's shell can call the person's doors — `/review` with `skipped`, `/set-up` with any commit, a go-ahead's answer, `done` — and the record cannot tell an agent from the person. Design a capability the window and the person's terminal hold and a session never receives (its environment scrubbed), required on every door whose act is the person's alone; name which doors those are — at least, per REVIEWENV1b3's hand-back, `/review`, `/set-up` in its `look` form, `/set-up-step`, `/accept`, `/done`, go-ahead answers, and every door that sets a review `off` (`POST /api/asks` with `review`, `/api/asks/{id}/review`, a publish with no `session`); absence of the capability means an agent (default deny), and the driver's own `/set-up` with a `session` stays its own door. Contract: D46, D52, D154 §3.5, D135. Proof: the design and its decision; then a host test where a call without the capability is refused on each named door.
 
-**Outcome** 2026-10-09: designed as D156: a person key minted per host start, held by the window in memory and never by a session; every local route classed (open reads, agent doors, the driver's own, the person's alone, shared-only), an unclassified write refused; a terminal cannot be told from a session, so a keyless person's act asks the window to confirm; what lies beyond the doors (the store's file, the remote key, the file verbs) is PERSONDOOR2, and a cross-site press is ORIGIN1. Build: PERSONDOOR1a–i. Detail: `docs/2026-10-09-person-door-design.md`, D156.
+**Outcome** 2026-10-09: designed as D156: a person key minted per host start, held by the window in memory and never by a session; every local route classed (open reads, agent doors, the driver's own, the person's alone, shared-only), an unclassified write refused; a terminal cannot be told from a session, so a keyless person's act asks the window to confirm; what lies beyond the doors (the store's file, the remote key, the file verbs) is PERSONDOOR2, and a cross-site press is ORIGIN1. Build: PERSONDOOR1a–i. Detail: `docs/archive/2026-10-09-person-door-design.md`, D156.
 
 
 ## REVIEWENV1c — the step and the gate (2026-10-09, D154)
@@ -14367,7 +14377,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **WORKFLOW1 — a workflow per repository or kind of task, drawn as a flowchart** (design first, then cli, driver, service, web; owner, 2026-10-09: *"when doing work with Daoris we should be able to set up a workflow for each repo or for a task type… presented as a flowchart, so we can define what work is highly co-worked with a human and what can be fully automated; this includes how to raise changes, merge, even CI/CD (which includes multiple different services and steps); this is more like LangGraph or n8n, more like workflow management… co-work with Codex for a good UI/UX design, and this should be set up with Ask Daoris"*). Today how work moves is a set of separate rules — the landing rule (D87, D145), the review environment (D154), the second opinion (D155), go-aheads (D135), plugin hooks (D148) — none drawn, none composed. Design a workflow as a graph of steps (agent work, the person's look, a second opinion, a go-ahead, a landing, a pull request, a CI/CD stage per service, a wait on an outside check) with edges and conditions, each step marked who acts (an agent alone, an agent with the person, the person), set per workspace, repository and kind of task, with today's rules as its first presets; drawn and edited as a flowchart, set from a terminal and from Ask Daoris (D50), and run by the driver as the record of where each piece of work stands. Codex is asked for the UI/UX first. Contract: D45, D87, D145, D148, D154, D155, D50. Proof: the design and its decision; build rows.
 
-**Outcome** 2026-10-09: designed as D157: a workflow is a versioned list of steps of fixed kinds (no scripts, no loops), today's rules drawn as *Current* with no migration; chosen by workspace, repository, kind of task and the task, an agent never lowering the person's part (`Involvement.Lowers`); CI/CD after the landing through two plugin points, `work/checks` and `work/stage`, production only by the person's press; Ask Daoris proposes a change as a diff of the person's part. Codex's UI/UX proposal weighed in §11. Build: WORKFLOW1a–n. Detail: `docs/2026-10-09-workflow-design.md`, D157.
+**Outcome** 2026-10-09: designed as D157: a workflow is a versioned list of steps of fixed kinds (no scripts, no loops), today's rules drawn as *Current* with no migration; chosen by workspace, repository, kind of task and the task, an agent never lowering the person's part (`Involvement.Lowers`); CI/CD after the landing through two plugin points, `work/checks` and `work/stage`, production only by the person's press; Ask Daoris proposes a change as a diff of the person's part. Codex's UI/UX proposal weighed in §11. Build: WORKFLOW1a–n. Detail: `docs/archive/2026-10-09-workflow-design.md`, D157.
 
 
 ## PERSONDOOR1a — the key and the gate (2026-10-09, D156)
@@ -14388,7 +14398,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **REVIEWENV1d — shown in Daoris's browser** (modules, driver; after c). Measured first: the shell's interception beside a session's browser server. Then the step's tab, `review_serve` at the rule's address only, kept served until the verdict, the chip, *Show it again*. Contract: §2.3 steps 1–5, §3.3. Proof: the measurement, `ReviewServingTests`, the person's own server never reached.
 
-**Outcome** 2026-10-09: a local set-up step's work is shown in Daoris's own browser: the driver opens a `Review #<quest>` tab before the step starts, and once the set-up is posted the shell serves its build there (CDP `Fetch`, that tab and the rule's address only, service workers bypassed, the person's server reached for nothing it serves) until the verdict; the strip's *In review* chip offers *Show it again*. Measured first: `docs/2026-10-09-review-serving-evidence.md`. Follow-up: REVIEWENV1d2. Detail: D154's REVIEWENV1d note; commits 9bd5b65a…f2b20ae6.
+**Outcome** 2026-10-09: a local set-up step's work is shown in Daoris's own browser: the driver opens a `Review #<quest>` tab before the step starts, and once the set-up is posted the shell serves its build there (CDP `Fetch`, that tab and the rule's address only, service workers bypassed, the person's server reached for nothing it serves) until the verdict; the strip's *In review* chip offers *Show it again*. Measured first: `docs/archive/2026-10-09-review-serving-evidence.md`. Follow-up: REVIEWENV1d2. Detail: D154's REVIEWENV1d note; commits 9bd5b65a…f2b20ae6.
 
 
 ## ASKHIST1 — Ask Daoris's conversations are kept, listed and resumed (2026-10-09, D158)
@@ -14610,14 +14620,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## DOCSYS1 — review and refresh the documentation system (2026-10-10, D159)
 
-> - [ ] **DOCSYS1 — review and refresh the documentation system** (documentation/tools). Inventory every documentation tier, compare current guidance with code and decisions, repair drift and keep historical evidence intact. Plan, findings and verification: `docs/2026-10-10-documentation-review.md`; proof: doctrine, document checks, generated indexes and reached gates.
+> - [ ] **DOCSYS1 — review and refresh the documentation system** (documentation/tools). Inventory every documentation tier, compare current guidance with code and decisions, repair drift and keep historical evidence intact. Plan, findings and verification: `docs/archive/2026-10-10-documentation-review.md`; proof: doctrine, document checks, generated indexes and reached gates.
 
-**Outcome** 2026-10-10: shared brief, contributor guide, roadmap and router refreshed; stale current claims corrected and previous guides preserved. Structural routing/freshness checks join verify. D159 records placement; `docs/2026-10-10-documentation-review.md` records source coverage, passed checks and the corrected verification incident. Historical paragraphs and owner-only product proofs retain their stated limits.
+**Outcome** 2026-10-10: shared brief, contributor guide, roadmap and router refreshed; stale current claims corrected and previous guides preserved. Structural routing/freshness checks join verify. D159 records placement; `docs/archive/2026-10-10-documentation-review.md` records source coverage, passed checks and the corrected verification incident. Historical paragraphs and owner-only product proofs retain their stated limits.
 
 
 ## DOCSYS2 — make documentation mappings fail on drift (2026-10-10, D159)
 
-> - [ ] **DOCSYS2 — make documentation mappings fail on drift** (documentation/tools). Reject missing or invalid described source paths and keep anchored router links discoverable. Contract: D159; proof: failing-first audit regressions, real inventory and baseline verification; findings in `docs/2026-10-10-documentation-review.md`.
+> - [ ] **DOCSYS2 — make documentation mappings fail on drift** (documentation/tools). Reject missing or invalid described source paths and keep anchored router links discoverable. Contract: D159; proof: failing-first audit regressions, real inventory and baseline verification; findings in `docs/archive/2026-10-10-documentation-review.md`.
 
 **Outcome** 2026-10-10: the local documentation audit rejects absent source paths and incomplete mappings, normalizes relative paths, and resolves section links to their file. Thirteen audit tests, command-level failing-first proof and the full baseline pass. D159 and the documentation review carry the contract, verification and limits; historical evidence remains intact.
 
@@ -14626,7 +14636,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **SUBLOAD1 — optimize subagent token usage** (parent/tools). Measure where dispatched subagents' tokens go, then cut the initial load rather than compact. Contract: D160; proof: measured before, a repeatable measurement, the definitions in place.
 
-**Outcome** 2026-10-10: 356 branches measured; startup and orientation were 65% of their cost. A row is now oriented by `branch-scout` and built by `branch-worker` (`.claude/agents/`), each with its own model; the skill keeps the parent's half. `tools/subagent-usage.mjs` measures each batch. Evidence: `docs/2026-10-10-subagent-load-evidence.md`; probe and trial: SUBLOAD1b/c.
+**Outcome** 2026-10-10: 356 branches measured; startup and orientation were 65% of their cost. A row is now oriented by `branch-scout` and built by `branch-worker` (`.claude/agents/`), each with its own model; the skill keeps the parent's half. `tools/subagent-usage.mjs` measures each batch. Evidence: `docs/archive/2026-10-10-subagent-load-evidence.md`; probe and trial: SUBLOAD1b/c.
 
 
 ## UXFIX2b1 — confirmations: tools, plugins, retire (2026-10-10)
@@ -15600,7 +15610,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MIXAGENT2 — a session calls other agents to help** (design first; driver/service/web). The driving agent starts a helper on another agent for a bounded piece (research, a review, a lane's work) through a Daoris tool, within its rules and its account's allowance; or the person starts one. The helper's result returns to the session that asked. XAGENT1's reviewer sessions are the precedent; D155.
 > - [ ] **MIXAGENT3 — the view of who worked** (web; with 1 and 2). A session's page shows its hand-overs (from which agent to which, and why: the person's press, a low allowance, the agent's choice) and its helpers (agent, account, state, cost, result) in its head and timeline; the list shows a helper under the session it serves (XAGENT1g4d). Both languages; stories and the window.
 
-**Outcome** 2026-10-12: designed. A hand-over is a carry-on with its agent named; a helper is a read-only session on another agent answering one question, its answer the asker's next turn; the person or the agent may start either, under the person's `handOver` and `helpers` rules (`ask` by default); records link `from` and `serves`. Built by MIXAGENT1a–c, 2a–b and 3a. Detail: D163 and `docs/2026-10-12-mixed-agents-design.md`.
+**Outcome** 2026-10-12: designed. A hand-over is a carry-on with its agent named; a helper is a read-only session on another agent answering one question, its answer the asker's next turn; the person or the agent may start either, under the person's `handOver` and `helpers` rules (`ask` by default); records link `from` and `serves`. Built by MIXAGENT1a–c, 2a–b and 3a. Detail: D163 and `docs/archive/2026-10-12-mixed-agents-design.md`.
 
 ## TREEKEEP1 — a tree's untracked work is not lost at clean-up (2026-10-12, D102)
 
@@ -15691,11 +15701,11 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
 
-**Outcome** 2026-10-12: superseded, not built. The owner asked for switching by a setting instead of a press (D165): a running session moves on its own at its turn's end (SWITCH1c), and the person's press is MIXAGENT1b-i's *Go on with another agent…*, whose account chip names another account of the same agent. Detail: D165; `docs/2026-10-12-account-switch-design.md` §4.
+**Outcome** 2026-10-12: superseded, not built. The owner asked for switching by a setting instead of a press (D165): a running session moves on its own at its turn's end (SWITCH1c), and the person's press is MIXAGENT1b-i's *Go on with another agent…*, whose account chip names another account of the same agent. Detail: D165; `docs/archive/2026-10-12-account-switch-design.md` §4.
 
 ## USAGEREAD1 — measure the real read (2026-10-12, D165)
 
-> - [ ] **USAGEREAD1 — measure the real read** (evidence; parent). Claude Code's `get_usage` control request (`skip_behaviors`) asked of a headless process under an account's home, on the native CLI and the protocol door's pinned SDK, and Codex's `account/rateLimits/read` on the own sign-in: the answer's shape, the time, and no model request (no assistant message, cost 0, five-hour use unchanged over repeated reads). An evidence document; no account spends. D165 point 1; `docs/2026-10-12-account-switch-design.md` §1.1.
+> - [ ] **USAGEREAD1 — measure the real read** (evidence; parent). Claude Code's `get_usage` control request (`skip_behaviors`) asked of a headless process under an account's home, on the native CLI and the protocol door's pinned SDK, and Codex's `account/rateLimits/read` on the own sign-in: the answer's shape, the time, and no model request (no assistant message, cost 0, five-hour use unchanged over repeated reads). An evidence document; no account spends. D165 point 1; `docs/archive/2026-10-12-account-switch-design.md` §1.1.
 
 **Outcome** 2026-10-12: measured on the native CLI 2.1.296: `get_usage` answers in 1.5 to 2.6 s with two `control_response` lines, cost 0 and level back-to-back reads; one account read 79% of its week where Daoris's 15-hour-old reading said 60%. The protocol door's bundled CLI and Codex were not run (declared; CODEXUSE3's read). Detail: `docs/2026-10-12-usage-read-evidence.md`.
 
@@ -16279,7 +16289,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **SESSONE1 — co-working: one session entry per line of work, and an ask's channel** (design first, then rows; the owner, 2026-10-14: *"I raised 2 tasks, with 1 task need 2 repo co-work so there should be just 3 sessions"*, then *"we can have multiple request work together within the same repo, but with one continues should belong to the same session entry (not 100% same session but the entry should be the same), since we are moving towards a co-working session logic, so we might also need a centralized communication channel too"*). Each request between an ask's repositories is a new quest, and each quest a new session and tree, even where that repository's session for the ask is still at work; a failed start's retry is a further record, and intake chats sit among the work. One ask over two repositories made seven records and four repository sessions on 2026-10-14 (ask #c98a7e). The owner's direction: the runs that continue one line of work share one entry, and the ask's repositories talk through one channel the person sees. Driver design §3, ask-and-wait design §2.
 
-**Outcome** 2026-10-14: designed. D167 and `docs/2026-10-14-co-working-design.md`: a session on the window is one line of work in one repository, an entry keyed on every record by its origin and repository, its records its parts; each ask has one channel, for messages, while work stays quests. Asked whether a second request of the same ask should wait for its entry's tree, the owner chose *run alongside*, so D167 is amended: the entry's tree when free, a tree of its own otherwise, nothing waiting, and the design's waiting press and one-branch row are dropped. The build is SESSONE1a–d and SESSONE2a–d. On Opus: 114 tool calls.
+**Outcome** 2026-10-14: designed. D167 and `docs/archive/2026-10-14-co-working-design.md`: a session on the window is one line of work in one repository, an entry keyed on every record by its origin and repository, its records its parts; each ask has one channel, for messages, while work stays quests. Asked whether a second request of the same ask should wait for its entry's tree, the owner chose *run alongside*, so D167 is amended: the entry's tree when free, a tree of its own otherwise, nothing waiting, and the design's waiting press and one-branch row are dropped. The build is SESSONE1a–d and SESSONE2a–d. On Opus: 114 tool calls.
 
 ## QUEUEEDIT1a — remove or edit one queued message: the driver (2026-10-14, D76)
 
@@ -17238,13 +17248,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **RPC1 — the running instance answers the terminal's verbs: the design** (design; D171 point 3). Which verbs act outside the loop today, the channel (a named pipe the bridge's routes answer over, or the local service), its security to this user, and the order of rows. Proof: the design document and its rows.
 
-**Outcome** 2026-10-16: designed (`docs/2026-10-16-terminal-rpc-design.md`): a named pipe the desktop's own dispatcher answers, secured to this user and classing every route open, person or window; a home identity discovery checks; one lease per home; durable request ids; a timeout never means acting locally; the build as HOMEID1, HOMELEASE1 and RPC1a-g. On Opus, with SERVICEHOME2. Detail: the design; D171's RPC1 note.
+**Outcome** 2026-10-16: designed (`docs/archive/2026-10-16-terminal-rpc-design.md`): a named pipe the desktop's own dispatcher answers, secured to this user and classing every route open, person or window; a home identity discovery checks; one lease per home; durable request ids; a timeout never means acting locally; the build as HOMEID1, HOMELEASE1 and RPC1a-g. On Opus, with SERVICEHOME2. Detail: the design; D171's RPC1 note.
 
 ## FABRIC-C0 — the contract audit, with the harnesses measured (2026-10-16, D173)
 
 > - [ ] **FABRIC-C0 — the contract audit, with the harnesses measured** (design/evidence; no dependency; the owner approved small probes on 2026-10-16). One two-page matrix of at most twelve rows (an ask's origin, entry and part; a quest and its take; chain and workflow; hand-over; a helper's ask, state and answer; a channel's records, replies and read marks; knowledge search, get and disclosure; the connector's configuration and tools; native identity and events; grants and cancellation; the person, plugin, state and terminal boundaries), each with its key, authoritative store and writer, permitted caller and scope, restart behaviour, deciding code or test, and the fabric primitive it maps to (D173's guards); evidence labelled implemented, tested with stand-ins, observed on the harness, or unknown. One page of probe receipts: Claude Code and Codex, each version, door and configuration source recorded, whether a native subagent inherits MCP servers and allow/deny rules, whether its calls carry an identifier distinct from its parent's, nesting, and what a parent's stop does, from real child-originated calls in a scratch repository with its own home. Ends with C1/C2 go or no-go. Proof: the matrix and receipts as a design document in the router; a D173 note.
 
-**Outcome** 2026-10-16: the contract audit (`docs/2026-10-16-fabric-contract-audit.md`) maps twelve collaboration concepts onto their stores, writers and fabric primitives, and measures Claude Code 2.1.299's and Codex 0.160.0's native children against a stand-in server in scratch: both call with the parent's identity and session id, both expose a lineage the harness writes (Claude's hook `agent_id`, Codex's turn metadata), rules are inherited; C1 and C2 go, reshaped. On Opus: 152 tool calls. Detail: the audit; D173's FABRIC-C0 note.
+**Outcome** 2026-10-16: the contract audit (`docs/archive/2026-10-16-fabric-contract-audit.md`) maps twelve collaboration concepts onto their stores, writers and fabric primitives, and measures Claude Code 2.1.299's and Codex 0.160.0's native children against a stand-in server in scratch: both call with the parent's identity and session id, both expose a lineage the harness writes (Claude's hook `agent_id`, Codex's turn metadata), rules are inherited; C1 and C2 go, reshaped. On Opus: 152 tool calls. Detail: the audit; D173's FABRIC-C0 note.
 
 ## HOMEID1 — the home has an identity, and finding the running Daoris checks it (2026-10-16, D171)
 
@@ -17262,19 +17272,19 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **DIRECTIONS1 — the owner's unified collaboration proposal routed, and the old future-directions file retired** (found and built in the same round; see the outcome).
 
-**Outcome** 2026-10-16: `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` is routed as a proposal (accepted as written in D173); `DAORIS_FUTURE_DIRECTIONS.md` is retired, its text being the proposal's Appendix A word for word; live links repointed; D143, D144 and D169 each carry a dated note. On Sonnet: 21 tool calls. Detail: its commit.
+**Outcome** 2026-10-16: `docs/archive/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` is routed as a proposal (accepted as written in D173); `DAORIS_FUTURE_DIRECTIONS.md` is retired, its text being the proposal's Appendix A word for word; live links repointed; D143, D144 and D169 each carry a dated note. On Sonnet: 21 tool calls. Detail: its commit.
 
 ## HOMELAYOUT1 — the install's folders: the decision and design (2026-10-16, D172)
 
 > - [ ] **HOMELAYOUT1 — the install's folders: the decision and design** (design; amends D63). Separate by what a thing is and who may lose it: the program (`app/`, replaced by updates), the person's own (settings, records, the knowledge store, sign-ins and profile homes), the work (session trees, kept files), what can be fetched again (`res/` or a cache: toolchain, Chromium, WebView2, installed plugins' packages, `bin`), what a run holds (locks, spawn files, starts, salvage) and the logs. Say what each category's backup, move and clean-up mean, which variables still win (`DAORIS_HOME` and the dev loop's `--app-root`), and how a published install and a dev home share one shape. Proof: the decision and design document, every current path placed in it, reviewed against `DaorisHome`'s callers.
 
-**Outcome** 2026-10-16: D172 lays the Daoris folder out as `app/`, `data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`; `DAORIS_HOME` names the folder (an install's `data/` read as it); `data/` holds no secret once moved; an entry is read where it is, and only what Daoris alone names moves; the downloads folder is `cache/`, not `res/` (the kit's `res/` means bundled resources). On Opus, with WIRING1a: 164 tool calls. Detail: D172; `docs/2026-10-16-install-layout-design.md`.
+**Outcome** 2026-10-16: D172 lays the Daoris folder out as `app/`, `data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`; `DAORIS_HOME` names the folder (an install's `data/` read as it); `data/` holds no secret once moved; an entry is read where it is, and only what Daoris alone names moves; the downloads folder is `cache/`, not `res/` (the kit's `res/` means bundled resources). On Opus, with WIRING1a: 164 tool calls. Detail: D172; `docs/archive/2026-10-16-install-layout-design.md`.
 
 ## WIRING1a — the page that shows how this Daoris is wired: the design (2026-10-16, D171)
 
 > - [ ] **WIRING1a — the page that shows how this Daoris is wired: the design** (design; D171's companion). One place, Settings → *This Daoris* (本机), with every wire and its source: the folders and their sizes (HOMELAYOUT1's categories), the service (its address, hosted or adopted, version, whether it answers), the driver loop (who holds the home, its last tick), each settings file and what it holds, the variables in effect and where each came from (environment, file, default), the program's and the kit's versions, the update's state, the terminal launchers and whether they are on PATH, the knowledge store, the logs. Secrets never shown (a key's audit prefix at most). Contracts: platform UX, the translation contract. Proof: the design document with its screen states.
 
-**Outcome** 2026-10-16: Settings → *This Daoris* (本机) designed: every wire with its source, folder sizes by D172, *Every setting* searchable in both languages, the setup presses, what is never shown, `SYSTEM_WIRING` and `daoris-driver wiring`. On Opus, with HOMELAYOUT1. Detail: `docs/2026-10-16-this-daoris-design.md`; D171's note.
+**Outcome** 2026-10-16: Settings → *This Daoris* (本机) designed: every wire with its source, folder sizes by D172, *Every setting* searchable in both languages, the setup presses, what is never shown, `SYSTEM_WIRING` and `daoris-driver wiring`. On Opus, with HOMELAYOUT1. Detail: `docs/archive/2026-10-16-this-daoris-design.md`; D171's note.
 
 ## HOMELAYOUT2 — the code asks for a category, never a hand-made path (2026-10-16, D172)
 
@@ -17376,7 +17386,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **WIRING1c — the page** (web; after 1b). Settings → *This Daoris* (本机) after AI features; Driver's home row moved, a door left; the glossary's *This Daoris*; Ask Daoris's go door. Design §2, §3.1-3.9, §5, §7, §8. Proof: tests, stories, i18n and names checks, the installed window at 1546 and 680 px, both themes and languages.
 
-**Outcome** 2026-10-16: the first part (1c-i). Settings → This Daoris (本机), a machine domain after AI features, shows the head (*development run*, the older-shell line on `NO_ROUTE`), the Folders, Service and Loop cards read from `SYSTEM_WIRING` (measured once on opening, *Measure again*), and Driver's home row becomes a door to it, kept as the fallback for a shell older than the page; Ask Daoris's go door is in both twins; the wire types moved to `data/wiring.ts` (the presentational rule forbids type imports from the bridge); *This Daoris* folds into the glossary's *this machine* term (one Chinese name, 本机). The rest of the cards are WIRING1c-ii; the window's proof stays with the row. On Sonnet: about 157 tool calls. Detail: `docs/2026-10-16-this-daoris-design.md` §2, §3.1-3.3, §7.
+**Outcome** 2026-10-16: the first part (1c-i). Settings → This Daoris (本机), a machine domain after AI features, shows the head (*development run*, the older-shell line on `NO_ROUTE`), the Folders, Service and Loop cards read from `SYSTEM_WIRING` (measured once on opening, *Measure again*), and Driver's home row becomes a door to it, kept as the fallback for a shell older than the page; Ask Daoris's go door is in both twins; the wire types moved to `data/wiring.ts` (the presentational rule forbids type imports from the bridge); *This Daoris* folds into the glossary's *this machine* term (one Chinese name, 本机). The rest of the cards are WIRING1c-ii; the window's proof stays with the row. On Sonnet: about 157 tool calls. Detail: `docs/archive/2026-10-16-this-daoris-design.md` §2, §3.1-3.3, §7.
 
 ## HELPPLUG1c — a plugin's skills for an intake's, a reviewer's and a helper's sessions (2026-10-16, D170)
 
@@ -17436,7 +17446,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **WIRING1c-ii — This Daoris's other cards** (web; after 1c-i). Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs, as design §3.4-3.9 says, with their `settings.daoris.*` keys en and zh; the window's proof of the whole page (1c-i's cards too) at 1546 and 680 px, both themes and languages. Design §3.4-3.9, §5, §7, §8. Proof: tests, stories, i18n and names checks, the installed window.
 
-**Outcome** 2026-10-16: the Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs cards, as molecules over props with en and zh `settings.daoris.*` keys, 25 stories and 15 page tests; the update line comes from the shell's `useUpdateState`, since `SYSTEM_WIRING` carries none; doors go to Driver, Tools, Browser, Agents, Plugins, a workspace's remote and Machine log. The window's proof of the whole page is WIRING1f. On Sonnet: about 82 tool calls. Detail: `docs/2026-10-16-this-daoris-design.md` §3.4-3.9, §7.
+**Outcome** 2026-10-16: the Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs cards, as molecules over props with en and zh `settings.daoris.*` keys, 25 stories and 15 page tests; the update line comes from the shell's `useUpdateState`, since `SYSTEM_WIRING` carries none; doors go to Driver, Tools, Browser, Agents, Plugins, a workspace's remote and Machine log. The window's proof of the whole page is WIRING1f. On Sonnet: about 82 tool calls. Detail: `docs/archive/2026-10-16-this-daoris-design.md` §3.4-3.9, §7.
 
 ## STARTGIT1 — a session's start asks git once per fact (2026-10-16, FLAKE1)
 
@@ -17460,13 +17470,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FABRIC-END1 — the end of a piece of work, observed in git, by each workspace's end cycle: the design** (design; D173's end-of-work note; the owner, 2026-10-16: *"if we have a git watcher as the end, we should clarify this as the new design of the fabric"*). Map every place that reads an end today (the look's tidy, AUTOTIDY2; the plugin's pull-request query, D148; *Accept*'s landing and LAND3's tidy, D164; a quest's close; a conversation's end removes nothing, the look's tidy does once its work is on the line) and each workspace's and repository's configured cycle (the commit and landing rules, the platform plugin); then design the one end event, the watcher that observes it (local refs at once, the remote by fetch or plugin), and what reads it, with its rejected shapes. A second maker's opinion before it is accepted. Proof: the design document and a decision, the owner's yes.
 
-**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
+**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/archive/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
 
 ## FABRIC-EVENT1 — events over polling: the inventory and the design (2026-10-16, D173)
 
 > - [ ] **FABRIC-EVENT1 — events over polling: the inventory and the design** (design; D173's events-over-polling note; the owner, 2026-10-16: *"I think we have a lot of polling logic that can be improved"*). Every poll in Daoris (driver, modules, service, web, CLI, the host) with its interval, what it waits for, its cost on this machine, and the event that could replace it: a file watcher on git's refs and Daoris's records, the service's push, a platform's webhook, behind a slow reconciliation. Ranked by what the person feels (latency, load). FABRIC-END1 is its first consumer. Proof: the inventory and the design, a second maker's opinion, the owner's yes.
 
-**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
+**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/archive/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
 
 ## ACCEPTFOOT1 and ACCEPTFOOT2 — a conversation's Accept in the chat, and its branch named for its work (2026-10-16, D164)
 
@@ -17478,7 +17488,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FABRIC-CHAIN1 — event chains, a defined end per workspace and repository, and plugin-contributed steps: the design's part C** (design; D173's acceptance note, the owner's three amendments). The accepted design derives a workspace's end from its landing rule and keeps fixed clocks as reconciliation; the owner asked instead for an end each workspace and repository defines (its cycle's steps, which one ends the work), for plugins to contribute a step or an end and learn it their own way, and for events with chains in place of fixed clocks. Design the event types and their chains (what each leads to, configured per workspace), the cycle's definition (its key, its inheritance, its CLI twin and Setup row), a plugin's point for events and ends (manifest, wire, evidence), and how a timer becomes one source among others; re-cut the remaining FABRIC rows on it. A second maker's opinion. Proof: the design's part C and its rows, the owner's yes.
 
-**Outcome** 2026-10-16: part C written and twice revised on a second maker's opinion (pending, unreadable and unreachable ends; effect links that stay pending until done; traces never judged again; the plugin wire's identity, bounds and replay), then accepted by the owner with their answers: the wait and the end's cleanup configured per cycle, everything but the result going at a true end, human steps in a cycle, a bounded chain menu, the plugin's new moments. Its rows are in TASKS.md. On Opus: about 175 tool calls over four rounds. Detail: docs/2026-10-16-fabric-events-design.md part C; D173's notes of 2026-10-16.
+**Outcome** 2026-10-16: part C written and twice revised on a second maker's opinion (pending, unreadable and unreachable ends; effect links that stay pending until done; traces never judged again; the plugin wire's identity, bounds and replay), then accepted by the owner with their answers: the wait and the end's cleanup configured per cycle, everything but the result going at a true end, human steps in a cycle, a bounded chain menu, the plugin's new moments. Its rows are in TASKS.md. On Opus: about 175 tool calls over four rounds. Detail: docs/archive/2026-10-16-fabric-events-design.md part C; D173's notes of 2026-10-16.
 
 ## FABRIC-EVENT2 — the change watch, first on the request folders (2026-10-17, D173)
 
@@ -18430,7 +18440,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## BRAINSTORM1 — a brainstorm fan-out: one question to agents of different makers, synthesized (2026-10-19, D176)
 
-> - [ ] **BRAINSTORM1 — a brainstorm fan-out: one question to agents of different makers, synthesized** (driver, cli; a decision first). The owner's proposed design (`docs/2026-10-19-cross-agent-brainstorming-design.md`, filed 2026-10-19): a scoped question with its context fanned to Claude and Codex (optionally a builder for feasibility), each returning structured proposals `{idea, rationale, effort, risk, reversible?}`; one synthesis dedupes and ranks and flags what is hard to reverse for an adversarial check; the output a ranked proposal document, not a change; `daoris brainstorm "<question>" --agents claude,codex`, and other repositories Daoris drives may ask for one. The owner, the same day: Daoris itself manages the context, the knowledge and the cache, which makes a freer, more capable agent system: so Daoris assembles each fan-out's context packet from its own knowledge and records (frozen, shown before it goes to another maker, cached once for every agent), never each agent crawling alone. A Codex opinion (2026-10-19) places it as its own bounded driver operation (`daoris-driver brainstorm`, a CLI twin through the seams), reusing the adapters, the account walk and isolated rooms, never the opinion (which is tied to a quest's work and landing), never an ask or quest, never a code change; slices: a stub round trip, bounded failures, real makers, a caller from another repository and the page, the skeptical pass, a workflow step. First D176 (reserved): the decision, the packet's shape, the person's policy (who may spend and disclose, which makers and accounts, budget and deadline, ranking, whether the verify pass is required, retention). Proof: D176, then the stub round trip producing a ranked document with no quest, edit or landing.
+> - [ ] **BRAINSTORM1 — a brainstorm fan-out: one question to agents of different makers, synthesized** (driver, cli; a decision first). The owner's proposed design (`docs/archive/2026-10-19-cross-agent-brainstorming-design.md`, filed 2026-10-19): a scoped question with its context fanned to Claude and Codex (optionally a builder for feasibility), each returning structured proposals `{idea, rationale, effort, risk, reversible?}`; one synthesis dedupes and ranks and flags what is hard to reverse for an adversarial check; the output a ranked proposal document, not a change; `daoris brainstorm "<question>" --agents claude,codex`, and other repositories Daoris drives may ask for one. The owner, the same day: Daoris itself manages the context, the knowledge and the cache, which makes a freer, more capable agent system: so Daoris assembles each fan-out's context packet from its own knowledge and records (frozen, shown before it goes to another maker, cached once for every agent), never each agent crawling alone. A Codex opinion (2026-10-19) places it as its own bounded driver operation (`daoris-driver brainstorm`, a CLI twin through the seams), reusing the adapters, the account walk and isolated rooms, never the opinion (which is tied to a quest's work and landing), never an ask or quest, never a code change; slices: a stub round trip, bounded failures, real makers, a caller from another repository and the page, the skeptical pass, a workflow step. First D176 (reserved): the decision, the packet's shape, the person's policy (who may spend and disclose, which makers and accounts, budget and deadline, ranking, whether the verify pass is required, retention). Proof: D176, then the stub round trip producing a ranked document with no quest, edit or landing.
 
 **Outcome** 2026-10-19: D176 places the cross-agent brainstorm as its own bounded driver operation with a CLI twin, and settles the frozen context packet Daoris assembles from its own knowledge (shown before it goes, cached by digest for every pass), the structured proposal and its validation, the synthesis with provenance, the skeptical pass, the bounds, accounts and diversity, where the document is kept, and the person's policy as open choices with proposed defaults; documents only. The build is BRAINSTORM1a-f. On Opus: about 55 tool calls. Detail: `docs/decisions/D176.md`.
 
@@ -18588,7 +18598,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FABRIC-VERIFY1 — a step's verification as an in-flight lane, not a gate the work waits on** (a design first, with a D173 note; D180 point 7; the owner, 2026-10-19: this "will help Daoris's own process when large quest sets come and some quests need multi-repo/agent work together, and it fits the fabric idea: a more flexible and adjustable in-flight system"). Design how a quest step's result is accepted, or lands under the person's rule, while its verification (its repository's declared gates, a second opinion, D155) runs as a lane of its own and reports back; which checks still block (the sensitive scan, a repository's declared blocking set); how a failure reopens or asks (D173 §E5's reopen); how a chain's later steps and a quest set across repositories go on meanwhile; and what the person sees. A Codex opinion first. Proof: the design and its D173 note, then a first slice's row.
 
-**Outcome** 2026-10-19: `docs/2026-10-19-verification-lanes-design.md` written by the parent from a read-only Codex opinion, proposed; D173's FABRIC-VERIFY1 note places it. First slice: FABRIC-VERIFY1a.
+**Outcome** 2026-10-19: `docs/archive/2026-10-19-verification-lanes-design.md` written by the parent from a read-only Codex opinion, proposed; D173's FABRIC-VERIFY1 note places it. First slice: FABRIC-VERIFY1a.
 
 ## USAGECAP1a1 — every usage reading kept (2026-10-19, D179)
 
@@ -19326,7 +19336,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## HELPMODE1c1 — restricted mode's configured access, the mock the owner sees (2026-10-20, D183)
 
-> - [ ] **HELPMODE1c1 — restricted mode's configured access, the mock the owner sees** (web; D183 point 1; `docs/2026-10-19-ask-daoris-modes-design.md` §4.1 and §5). Presentational molecules with stories, no wiring: Settings → *Daoris's own AI* → Ask Daoris's *Configured access*, each grant with its reach, its operations, its default and its state (off, on, needs approval, changed since approved, unavailable on this agent), and the picker's *Configure restricted access…*; Claude and Codex side by side where a grant differs; en and 中文. Proof: the stories, their vitest, and screenshots the owner reviews before HELPMODE1c2 starts.
+> - [ ] **HELPMODE1c1 — restricted mode's configured access, the mock the owner sees** (web; D183 point 1; `docs/archive/2026-10-19-ask-daoris-modes-design.md` §4.1 and §5). Presentational molecules with stories, no wiring: Settings → *Daoris's own AI* → Ask Daoris's *Configured access*, each grant with its reach, its operations, its default and its state (off, on, needs approval, changed since approved, unavailable on this agent), and the picker's *Configure restricted access…*; Claude and Codex side by side where a grant differs; en and 中文. Proof: the stories, their vitest, and screenshots the owner reviews before HELPMODE1c2 starts.
 
 **Outcome** 2026-10-20: merged 2026-10-20 as a mock wired to nothing (`help/access/ConfiguredAccess.tsx`, `grants.ts`, mounted only where a caller passes grants); the owner reviewed its screenshots and the screen stands as drawn; a plugin's grant is set on the plugin's own tab, with a Plugins section in Settings at a lower priority (HELPMODE1c3, PLUGSET1). Detail: the modes design's §4.1, its review paragraph.
 
@@ -19376,13 +19386,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FLOWCHART1 — the processes drawn as flowcharts** (design, reserving D186; with UIDESIGN1). Today the only charts are the workflow's vertical rail of steps (`WorkflowChart.tsx`, free positioning rejected by the workflow design's §6.2 and §12.1), the Map of repositories and the quests between them (`MapView.tsx`), the ask→quest→session strip and the commit graph; no process is drawn as a flow. Decide a node-and-edge flowchart, auto-laid, keyboard-reachable, in both themes and languages and usable at 680 px, for a quest's life (`QuestTransitions`, the operations log), a session's states, the fabric's units, nodes, attempts and milestones (`WORK_STATE`; the fabric's §E8), landing and clean-up, and a workflow's run, each drawn from its record; amending D157's §6.2/§12.1 and the fabric's §E8; the Map stays the workspace's view. Opus, with another maker's read; the owner's yes before building. Proof: the document, D186, the rows.
 
-**Outcome** 2026-10-20: designed, proposed: one auto-laid, layered flowchart primitive (`design/Flow.tsx`, `design/flowLayout.ts`) laid out by Daoris's own code (elkjs rejected at about 1.6 MB, dagre the named fallback; nodes are HTML whose size is known only once drawn), each process drawn from its record (a quest's life, a session's states and parts, a workflow and its run with the fabric's running view, a node's lifecycle, landing and clean-up), the rail kept as its narrow placement, the Map kept as the map of requests (MAPUX1). Its rows are FLOWCHART1a1-d. Another maker's read and the owner's review come before any build. On Opus: about 212 tool calls, 37 minutes. Detail: `docs/2026-10-20-flowchart-design.md`, D186.
+**Outcome** 2026-10-20: designed, proposed: one auto-laid, layered flowchart primitive (`design/Flow.tsx`, `design/flowLayout.ts`) laid out by Daoris's own code (elkjs rejected at about 1.6 MB, dagre the named fallback; nodes are HTML whose size is known only once drawn), each process drawn from its record (a quest's life, a session's states and parts, a workflow and its run with the fabric's running view, a node's lifecycle, landing and clean-up), the rail kept as its narrow placement, the Map kept as the map of requests (MAPUX1). Its rows are FLOWCHART1a1-d. Another maker's read and the owner's review come before any build. On Opus: about 212 tool calls, 37 minutes. Detail: `docs/archive/2026-10-20-flowchart-design.md`, D186.
 
 ## UIDESIGN1 — a UI/UX design for everything built since UX7 (2026-10-20, D185)
 
 > - [ ] **UIDESIGN1 — a UI/UX design for everything built since UX7** (design, reserving D185; the owner's report of 2026-10-20). The features since UX7 (D176 brainstorms, D177 meetings, D180 heavy runs, D182 pushed slices, D183 Ask Daoris's modes, D184 asking mode, the fabric, This Daoris) were built from decisions with no designed screens, unlike the fabric's own design. Audit every screen built since UX7 against platform-ux, then wireframes, a component catalogue extending platform-ux §4 (the wide-pane rule, steps with their phases, diagrams) and the rows it files. Opus, with another maker's read; the owner reviews it before any build. Proof: the document, its router row, D185, the rows.
 
-**Outcome** 2026-10-20: designed, proposed (`docs/2026-10-20-ui-ux-design.md`, D185): every screen since UX7 audited (§1, about 35 rows and eight things that cut across), seven rules amending platform-ux §4/§5 (§2: one label track and the pane, phases with their times, a refusal where it was pressed, a process drawn by FLOWCHART1's chart, every surface reached from the frame, stories at the frame's widths, no viewport breakpoints inside a region), the newer surfaces designed with wireframes (§3), the shared parts (§4), sixteen traps (§5), and its feature rows under D187 (§9: UIFIT1 and SIGNIN1 amended; ACCESSASK1, SESSACCESS1, MILESTONEUX1, HEAVYSLOT1, MEETUX1a-d, PUSHUX1, STORYGAP1 filed). Another maker's read and the owner's review come before any build. On Opus: about 183 tool calls, 37 minutes. Detail: the design, D185.
+**Outcome** 2026-10-20: designed, proposed (`docs/archive/2026-10-20-ui-ux-design.md`, D185): every screen since UX7 audited (§1, about 35 rows and eight things that cut across), seven rules amending platform-ux §4/§5 (§2: one label track and the pane, phases with their times, a refusal where it was pressed, a process drawn by FLOWCHART1's chart, every surface reached from the frame, stories at the frame's widths, no viewport breakpoints inside a region), the newer surfaces designed with wireframes (§3), the shared parts (§4), sixteen traps (§5), and its feature rows under D187 (§9: UIFIT1 and SIGNIN1 amended; ACCESSASK1, SESSACCESS1, MILESTONEUX1, HEAVYSLOT1, MEETUX1a-d, PUSHUX1, STORYGAP1 filed). Another maker's read and the owner's review come before any build. On Opus: about 183 tool calls, 37 minutes. Detail: the design, D185.
 
 ## PUSH1d1b — the words kept without a note, a family of their own (2026-10-20, D173)
 
@@ -19410,9 +19420,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## COWORK1 — agents working together (2026-10-20, D188)
 
-> - [ ] **COWORK1 — agents working together** (design; owner's direction given 2026-10-12). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation. The owner, 2026-10-12, after a Codex-driven task neared its usage limit: a task must be able to move between agents of different makers when one nears its limit, an agent must be able to call agents of other makers as helpers, decided by the agent or the person, and the person must see it happen. Hand-overs and helpers are designed (D163, `docs/2026-10-12-mixed-agents-design.md`) and built by the MIXAGENT rows below; this row keeps what D163 leaves: progress shared and questions asked between agents working at once. Decided 2026-10-20, the rule the design settles: a message to an agent never forces it to stop; whether and how it interrupts depends on the message's urgency. Today only the person's *Send now* interrupts, and on a door that holds words for the turn's end it stops the turn (D136 point 4, `DrivenInbox.SendNowAsync`); a channel claim enters the next step while a helper's answer and an opinion never enter a step in flight and reopen an ended record; an agent's post on a door that holds words is never held; no message carries a level. The design amends D136, D167 point 7, D163 point 2 and D155's XAGENT1e delivery rule, as a note on D173's ADR-D.
+> - [ ] **COWORK1 — agents working together** (design; owner's direction given 2026-10-12). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation. The owner, 2026-10-12, after a Codex-driven task neared its usage limit: a task must be able to move between agents of different makers when one nears its limit, an agent must be able to call agents of other makers as helpers, decided by the agent or the person, and the person must see it happen. Hand-overs and helpers are designed (D163, `docs/archive/2026-10-12-mixed-agents-design.md`) and built by the MIXAGENT rows below; this row keeps what D163 leaves: progress shared and questions asked between agents working at once. Decided 2026-10-20, the rule the design settles: a message to an agent never forces it to stop; whether and how it interrupts depends on the message's urgency. Today only the person's *Send now* interrupts, and on a door that holds words for the turn's end it stops the turn (D136 point 4, `DrivenInbox.SendNowAsync`); a channel claim enters the next step while a helper's answer and an opinion never enter a step in flight and reopen an ended record; an agent's post on a door that holds words is never held; no message carries a level. The design amends D136, D167 point 7, D163 point 2 and D155's XAGENT1e delivery rule, as a note on D173's ADR-D.
 
-**Outcome** 2026-10-20: designed, proposed (`docs/2026-10-20-message-urgency-design.md`, D188, a note on D173's ADR-D): three levels (ordinary waits for a natural point; urgent reaches the next step and cuts nothing; now steers the step in flight where the agent steers), and no message stops a turn, only a stop does; who may send each (only the person sends *now*; an unsolicited message never starts, reopens or extends a run; a solicited answer may go on with its asker's run once per ask; answers alone go on at most twice in a row); one delivery rule over every path; `said` each session's durable queue; four receipts (held, sent, taken, answered). Built by COWORK1a-d, which absorb MSG1d2 and FABRIC-CLOSE1c17. Another maker's read and the owner's review come before any build; once accepted, D136, D167, D163 and D155 each take a note pointing to D188. On Opus: about 107 tool calls, 25 minutes.
+**Outcome** 2026-10-20: designed, proposed (`docs/archive/2026-10-20-message-urgency-design.md`, D188, a note on D173's ADR-D): three levels (ordinary waits for a natural point; urgent reaches the next step and cuts nothing; now steers the step in flight where the agent steers), and no message stops a turn, only a stop does; who may send each (only the person sends *now*; an unsolicited message never starts, reopens or extends a run; a solicited answer may go on with its asker's run once per ask; answers alone go on at most twice in a row); one delivery rule over every path; `said` each session's durable queue; four receipts (held, sent, taken, answered). Built by COWORK1a-d, which absorb MSG1d2 and FABRIC-CLOSE1c17. Another maker's read and the owner's review come before any build; once accepted, D136, D167, D163 and D155 each take a note pointing to D188. On Opus: about 107 tool calls, 25 minutes.
 
 ## MSG1d2 — queued chat survives restart (2026-10-20, D188)
 
@@ -19790,11 +19800,11 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FABRIC-CUTOVER1 — a run bound to a graph version is governed by its graph** (driver; after GRAPH1b, WORKFLOW2b, RUN1; §E7). The steps-driven `WorkflowProcesses` holds a run on a graph version as unrun, and its involvement list (`WorkflowProcesses.cs:125`) skips an unrun newest for the newest version with steps. Proof: a run bound to a schema-2 version advances by its graph's wires, and a schema-1 run is unchanged. Amended on Codex pre-mortems (2026-10-18): after RUN1c; split governance and recovery from selection, involvement and presentation; the node runtime governs a schema-2 run through `WireEvaluation` and `WorkflowProcesses` stays the binding and gate interface; arming discovers bound schema-2 work (a saved, unbound graph arms nothing; a bound one arms even with no performed node). Settles WORKFLOW2b's `look-beside-opinion` and `cannot-start-holds-nothing` (the person's two choices: a look waits for a disputed opinion, or goes on beside it; a landing holds at a go-ahead that cannot start, or goes on past it); proof: both `WorkflowRunNodesTests` rows read with no difference.
 
-**Outcome** 2026-10-20: the cutover is designed, D190 proposed, the owner's review pending (`docs/2026-10-20-fabric-cutover-design.md`). Two engines, never on one run: a schema-1 run stays D157's, a bound schema-2 run is the node runtime's on its own unit `run:<run>`, and no run is governed by a decoded graph. Each node observes the subject its kind names (the chain's quests, the run's branch at its tip, the run's ask); a bound run arms the runtime with no performed node; `WorkflowProcesses` stays the binding and gate interface, reading a graph version's gate nodes; the look goes on beside an opinion owing only the person's press; a graph's go-ahead holds the landing. WORKFLOW2c, GRAPH1e, GRAPH1j and RUN1f are decided; CLOSE1k and whether WORKFLOW1j and 1k stay schema 1's are the owner's. Rows CUTOVER1a-g, GRAPH1e, GRAPH1j, RUN1f.
+**Outcome** 2026-10-20: the cutover is designed, D190 proposed, the owner's review pending (`docs/archive/2026-10-20-fabric-cutover-design.md`). Two engines, never on one run: a schema-1 run stays D157's, a bound schema-2 run is the node runtime's on its own unit `run:<run>`, and no run is governed by a decoded graph. Each node observes the subject its kind names (the chain's quests, the run's branch at its tip, the run's ask); a bound run arms the runtime with no performed node; `WorkflowProcesses` stays the binding and gate interface, reading a graph version's gate nodes; the look goes on beside an opinion owing only the person's press; a graph's go-ahead holds the landing. WORKFLOW2c, GRAPH1e, GRAPH1j and RUN1f are decided; CLOSE1k and whether WORKFLOW1j and 1k stay schema 1's are the owner's. Rows CUTOVER1a-g, GRAPH1e, GRAPH1j, RUN1f.
 
 ## PUSH1f — the CLI's management verbs as clients of the running instance (2026-10-20, D182, D171)
 
-> - [ ] **PUSH1f — the CLI's management verbs as clients of the running instance** (cli, modules; D182 point 6, D171 point 3, `docs/2026-10-16-terminal-rpc-design.md`). Over D171's pipe, the same handlers, refusals and publications; with no instance, the same .NET implementation under the home lease; never a standalone retry after a request whose result is unknown. Proof: a verb's answer and its publication identical by both routes; an interrupted request never runs twice. RPCOPEN1 (2026-10-20) built the driver host's half for the open routes; the CLI's pipe client (RPC1f) and the person-class presses (RPC1c) remain.
+> - [ ] **PUSH1f — the CLI's management verbs as clients of the running instance** (cli, modules; D182 point 6, D171 point 3, `docs/archive/2026-10-16-terminal-rpc-design.md`). Over D171's pipe, the same handlers, refusals and publications; with no instance, the same .NET implementation under the home lease; never a standalone retry after a request whose result is unknown. Proof: a verb's answer and its publication identical by both routes; an interrupted request never runs twice. RPCOPEN1 (2026-10-20) built the driver host's half for the open routes; the CLI's pipe client (RPC1f) and the person-class presses (RPC1c) remain.
 
 **Outcome** 2026-10-20: `daoris driver`, `agent`, `plugin` and `tool` send each change the window has a route for over the running Daoris's pipe: the window asks the person to confirm it (the terminal says it waits), the instance's own handler writes and publishes it, and the terminal prints the same words it prints acting alone, from one words function for both paths. With no instance the verb acts alone and holds the home's lease only for its write; an instance alive but not answering is refused (exit 2); a lost answer is asked for by `RESULT` with its key and never sent again or done alone; the CLI keeps the driver's sent-press record, so `daoris-driver result <id>` reads it. Verbs with no route (`cap`, `timeout`, `adapter`, `work-cycle`, workflow writes, sign-in, install, key and others) stay alone, each with its reason in `platform/door.ts`; `door.test.ts` holds every route sent to the census's class. While Daoris runs, `retry <quest>` is the window's *Try again*. The alone path's .NET implementation is PUSH1f2. Seeing it on the window follows the republish. Detail: D171's PUSH1f note, `twins.md`'s door row; commits 129f38043, 334487917, b27c46d28.
 
@@ -19978,7 +19988,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## SESSBADGE1 — the Sessions badge counts the sessions working, and the status bar the same (2026-10-20, D76)
 
-> - [ ] **SESSBADGE1 — the Sessions badge counts the sessions working, and the status bar the same** (web-shell, modules, driver; the owner's report, 2026-10-20; amends UX5 U20 and D76). The Sessions icon counts only sessions waiting on the person and quests parked on failed sessions (`NeedsAPerson.cs:299-313`, `AttentionStateSlice.cs:45`; UX5 U20 at `docs/2026-09-26-ux5-screen-audit.md:62`, `App.tsx:1108-1113`), so it is empty while driven sessions work; the status bar counts every active record, an idle Ask Daoris conversation among them (`frame.tsx:398-402`, `liveSessions`); the top bar's chip counts the sessions handed Daoris's browser, and its Chinese words drop the browser (`browser.driving.several`); and the window's title (the rows of *What needs you*, `App.tsx:446-447`, sent by a fire-and-forget `SET_BADGE`, `bridge/windows.ts:100-107`) once read 5 while the badge sharing its value read 4. Wanted: one count of the sessions the driver runs (CAPCOUNT1's `HoldsSlot`), read by the badge as a quantity and by the status bar, a session waiting on the person still marked in its own hue; the browser chip naming the browser in both languages; the title agreeing with *What needs you*. The owner's direction replaces U20's waiting-only badge: a note on D76. Proof: a one-count test over driven, intake, Ask Daoris and chat records; the badge's, the frame's and the chip's tests in en and zh; the window.
+> - [ ] **SESSBADGE1 — the Sessions badge counts the sessions working, and the status bar the same** (web-shell, modules, driver; the owner's report, 2026-10-20; amends UX5 U20 and D76). The Sessions icon counts only sessions waiting on the person and quests parked on failed sessions (`NeedsAPerson.cs:299-313`, `AttentionStateSlice.cs:45`; UX5 U20 at `docs/archive/2026-09-26-ux5-screen-audit.md:62`, `App.tsx:1108-1113`), so it is empty while driven sessions work; the status bar counts every active record, an idle Ask Daoris conversation among them (`frame.tsx:398-402`, `liveSessions`); the top bar's chip counts the sessions handed Daoris's browser, and its Chinese words drop the browser (`browser.driving.several`); and the window's title (the rows of *What needs you*, `App.tsx:446-447`, sent by a fire-and-forget `SET_BADGE`, `bridge/windows.ts:100-107`) once read 5 while the badge sharing its value read 4. Wanted: one count of the sessions the driver runs (CAPCOUNT1's `HoldsSlot`), read by the badge as a quantity and by the status bar, a session waiting on the person still marked in its own hue; the browser chip naming the browser in both languages; the title agreeing with *What needs you*. The owner's direction replaces U20's waiting-only badge: a note on D76. Proof: a one-count test over driven, intake, Ask Daoris and chat records; the badge's, the frame's and the chip's tests in en and zh; the window.
 
 **Outcome** 2026-10-20: Sessions' badge and the status bar count the attention slice's `working`, the sessions the driver runs by CAPCOUNT1's `HoldsSlot`; what waits there is a dot in the waiting hue. `SET_BADGE` carries an order, so the frame wears no older count; the browser chip names the browser. Detail: D76's SESSBADGE1 note. Not looked at on the window. On Opus.
 
@@ -20245,7 +20255,7 @@ in zh. The sessions page's held words (`WordsHold`) still carry the driver's sen
 
 > - [ ] **PUSH1f2 — a CLI verb acting alone runs the .NET implementation** (cli, modules; D182 point 6, D171's PUSH1f note). With no instance running, `daoris driver`, `agent`, `plugin` and `tool` still make their edits with their own TypeScript editors, held to the driver's by the twins' tables; D182 point 6 asks for the same .NET implementation under the home lease, never a TypeScript one. Proof: a verb's write and its refusals identical with and without an instance, from one implementation; the twins' tables for those editors retired.
 
-**Outcome** 2026-10-21: designed and accepted as D194 (`docs/2026-10-21-alone-path-design.md`) after three rounds (Codex's read, twenty findings; Fable's of §1.1 and §1.4, eleven), every finding taken. The CLI hands `daoris driver|agent|plugin|tool` to the driver's own program, as the running Daoris's client or alone under the lease; each change is one typed operation in the driver library with the routes kept; long verbs stage under their process's name and publish under the keep lock and the lease, waiting for it; the agent's own commands get the console at a terminal. The build rows are PUSH1f2a-f. On Opus, read by Codex and Fable.
+**Outcome** 2026-10-21: designed and accepted as D194 (`docs/archive/2026-10-21-alone-path-design.md`) after three rounds (Codex's read, twenty findings; Fable's of §1.1 and §1.4, eleven), every finding taken. The CLI hands `daoris driver|agent|plugin|tool` to the driver's own program, as the running Daoris's client or alone under the lease; each change is one typed operation in the driver library with the routes kept; long verbs stage under their process's name and publish under the keep lock and the lease, waiting for it; the agent's own commands get the console at a terminal. The build rows are PUSH1f2a-f. On Opus, read by Codex and Fable.
 
 ## SESSCTX1c — a session moves by itself only where it should (2026-10-21, D189)
 
@@ -20617,7 +20627,7 @@ unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRI
 >   - whether the tidy drops a set-aside tree's regenerable outputs at once and keeps only what cannot be made again.
 >   Proof: the design accepted and its build rows filed.
 
-**Outcome** 2026-10-21: designed and accepted as D195 (`docs/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
+**Outcome** 2026-10-21: designed and accepted as D195 (`docs/archive/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
 ## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
 
 > - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
@@ -20715,7 +20725,7 @@ they left. Foundations: `KeepKinds`, `KeepPolicy`, `keeping.json`, `KeepingRun`.
 >   - whether a press's two minutes still fit once it waits in the center.
 >   CONFIRMSEEN1, which the install is building, logs a card as shown and gives it a row; the design takes it as its first slice. Proof: the design accepted and its build rows filed.
 
-**Outcome** 2026-10-21: designed and accepted as D196 (`docs/2026-10-21-notification-design.md`) after three rounds (Codex's read, twenty-eight findings; Fable's of §2 to §3 and §5, fourteen), every finding taken. A *Notifications* view the bell opens; a press there in plain words, its signal kept while unshown; Overview a summary. The build rows are NOTIFY2a-j. On Opus, read by Codex and Fable.
+**Outcome** 2026-10-21: designed and accepted as D196 (`docs/archive/2026-10-21-notification-design.md`) after three rounds (Codex's read, twenty-eight findings; Fable's of §2 to §3 and §5, fourteen), every finding taken. A *Notifications* view the bell opens; a press there in plain words, its signal kept while unshown; Overview a summary. The build rows are NOTIFY2a-j. On Opus, read by Codex and Fable.
 
 ## FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn (2026-10-21, D173)
 
@@ -20907,7 +20917,7 @@ answer, the quest's stale `awaits` no longer read as a wait. Detail: `docs/FIX-L
 > - [ ] **ACCTPOOL1 — one pool of Daoris's accounts serves every workspace** (design; D197, drafting 2026-10-21; amends D125, D130 and D152). The owner decided that an agent's accounts signed in for Daoris are one pool for every workspace, and that the machine's own account stays the machine's, never changed by Daoris. The add-account dialog's *Let it run work in* step offered *This machine's list* in words that read as moving the machine onto the new account, while ticking it would narrow every workspace without a list of its own to that one account (`src/Daoris.Web/src/agents/agents.ts` `joinChoices`, `AddAccount.tsx` `choiceDetail`). Proof: D197 and its design read by Codex under D191, accepted, and its build rows filed.
 
 **Outcome** 2026-10-21: designed and accepted as D197, after Codex's read of round 1 (21 findings, 15 blocking) and Fable's of round 2
-(13 findings, 5 blocking), all taken; the build is POOL1a-d after PUSH1f2e. Detail: `docs/2026-10-21-account-pool-design.md` and D197's notes.
+(13 findings, 5 blocking), all taken; the build is POOL1a-d after PUSH1f2e. Detail: `docs/archive/2026-10-21-account-pool-design.md` and D197's notes.
 ## PUSH1f2e2 — `agent unpin` and the account verbs but `profile use` (2026-10-22, D194)
 
 > - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1 (archived); the rest starts at `agent list|install|…`. Proof: as §5 names it.
@@ -21225,7 +21235,7 @@ graph run drawn from its record, a fork and its join by its wires. No window was
 
 **Outcome** 2026-10-22: a park's question is recorded by its agent (`question_ask`) and bound to its park by the driver, and its box draws
 it with every answer a press (a choice, a go-ahead's yes or no, the free answer) through the box's own doors. Detail: the park's ask
-design (`docs/2026-10-22-park-ask-design.md`, its §8 Codex's read) and D185's PARKVIEW1 note. On Opus.
+design (`docs/archive/2026-10-22-park-ask-design.md`, its §8 Codex's read) and D185's PARKVIEW1 note. On Opus.
 ## POOL1a3 — the person's own sign-in never asked or written (2026-10-22, D197)
 
 > - [ ] **POOL1a3 — the person's own sign-in never asked or written** (driver, modules; after POOL1a1; D197 point 3). The `own` parameter leaving `ReportAsync`, `PressAsync`, `PressUsageAsync` and `HarnessProbe.ProbeAsync`, so `HARNESSES_REFRESH` with no agent and the driver's `agent list` ask no own sign-in; the own-home trust hold carrying `own` with no press and `TRUST_FOLDER` refusing it as `TRUST_OWN_HOME` before anything is written; `agent trust` with no account named trusting every account of the set and never the own home; and the own cool-off's *Read again* line settled (D197's acceptance note), as design §3 and §11 say. Proof: §11's rows for these, with a test that every sign-in action's spawn sets the configuration home under the home.
@@ -21555,7 +21565,7 @@ quest and tree held and where the answer goes fold under *While it waits* (a nat
 `start.stages` line per start: `main`, `home`, `driver`, `pipe`, `host`, `shown`, `browser`, `page`, `splash` in ms from the
 process's start, `by` and `missing`; once every stage came, a minute after the splash, or at the stop. Nothing that starts changed.
 `StartStagesTests` holds every stage once and in order, and each marked once in the sources. The reading and the proposed cut are
-`docs/2026-10-23-start-path-design.md`; the cut is STARTFAST1b. On Opus.
+`docs/archive/2026-10-23-start-path-design.md`; the cut is STARTFAST1b. On Opus.
 
 ## TERMTRUST1 — the person may trust this machine's terminal for management presses (2026-10-23, D201)
 
@@ -21725,7 +21735,7 @@ republish.
 and then the words the refused turns held (`Domain/LimitHeld.cs`). Each part says it once in en and zh. Ask Daoris's history folds
 the parts into one row, and the page shows them as one conversation. Held by `LimitGoesOnProcessTests` with a stand-in agent,
 `LimitHeldTests`, `HelpConversationsTests`, `DriverModuleHelpHistoryTests` and `AskDaoris.test.tsx`; the installed window is not
-yet looked at. Detail: `docs/2026-10-23-limit-goes-on-design.md`, D189's and D197's LIMITGOON1 notes, FIX-LOG's entry.
+yet looked at. Detail: `docs/archive/2026-10-23-limit-goes-on-design.md`, D189's and D197's LIMITGOON1 notes, FIX-LOG's entry.
 ## APIREFUSAL1 — a model call its provider refuses is a failed turn, never a question to the person (2026-10-23)
 
 > - [ ] **APIREFUSAL1 — a model call its provider refuses is a failed turn, never a question to the person** (driver; found 2026-10-23 on LIMITGOON1's first session). A driven session's turn ended on the provider's refusal (an `API Error: … safeguards flagged this message` with its request id, `[reasoning_extraction]`), and the observation concluded the run as a park for the person: *It stopped with its quest still taken, to ask you:* followed by the error, with nothing the person could answer. A provider's refusal or API error that ends a turn is a failed run with its own note code (the provider's words and the request id kept), counted as a strike, and the line goes on as a failed run does (another account or, under its actor, another choice, D205), never a park. Proof: a stand-in agent whose turn ends on a refusal sentence is concluded failed with the code, and is not shown in *What needs you*.
@@ -21739,9 +21749,9 @@ red-first tick proof and the classes run are in FIX-LOG's APIREFUSAL1 entry.
 
 > | **MODELROLE1a — what each door accepts, measured** (tools, stubs) | On `claude-agent-acp`, `codex-acp` and dsh: `set_config_option` for `model` and `thought_level` at a driven-shaped open, before the first prompt, the values offered, combined or apart, and whether a turn reports its model; **round 2 (Opus N2):** whether the offers differ by account, whether `set_config_option` on `claude-agent-acp` writes the account's `settings.json` (which would break D98's boundary and move every *account default* on it), whether the answer returns the option list, and whether `claude-agent-acp` offers the SDK's aliases or ids; **round 3 (Opus N5):** whether an accepted change returns the requested id as the current value. On the pipe door: `claude -p --model <alias>`, `--effort` (with `max`) **against a conflicting saved per-model effort**, `CLAUDE_CODE_EFFORT_LEVEL`'s rank, whether `--model` holds on a `--resume` run, and when and in what words an unknown or unentitled model is refused (on a silent turn or not). No spawn-file effort is measured as a carrier (§3.2). An evidence document; the ACP and pipe stubs speak the measured shapes | The evidence on the owner's install; the stubs' tests |
 
-(The row of `docs/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1.)
+(The row of `docs/archive/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1.)
 
-**Outcome** 2026-10-23: measured on the install, with the evidence in `docs/2026-10-23-model-effort-doors-evidence.md` and its
+**Outcome** 2026-10-23: measured on the install, with the evidence in `docs/archive/2026-10-23-model-effort-doors-evidence.md` and its
 findings in D205's MODELROLE1a note. `claude-agent-acp` and `codex-acp` were measured; dsh is not installed. No settings file
 changed, so nothing was restored. The ACP fakes in `AcpTests` and the pipe frames in `ClaudeStreamJsonTests` now speak the
 measured shapes. Three readers built on guessed shapes were corrected (FIX-LOG's MODELROLE1a entry). Not measured: a per-account
@@ -21843,18 +21853,18 @@ installed proof is 1g's. Detail: D206's LIMITRESUME1i note; FIX-LOG 2026-10-24.
 
 > | **MODELROLE1b — each session says its actor and what ran** (driver, service, web) | Every start names its actor (required parameter); the target's `Asked`, carried by the three native prepares; the record's five fields through their later doors; `ran` from the reported names before `TurnModels`; the brainstorm's pass records (§5); *Details*' rows and the parts fold's model; the usage history's `actor`; `actor.ran`. Behaviour unchanged: every choice `before` | The 13-start table; the loopback-only and no-sync tests; *ran* from each stub, *not reported* where a door says nothing; §13's record cases; a brainstorm pass and its restart naming actor and model; stories; on the install, a driven session's *Details* naming the model Claude reported |
 
-(The row of `docs/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1. Quest `#eb9269d33cff`.)
+(The row of `docs/archive/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1. Quest `#eb9269d33cff`.)
 
 **Outcome** 2026-10-24: every session record now carries its actor, choice, asked model and effort, and what its agent reported
 running, kept machine-local; *Details* and the parts fold show them in both languages. No start runs differently. The proofs
 named in the row pass as focused classes and the two Process classes run alone. What it fixes for later rows is in D205's
-MODELROLE1b note; the classes and what the installed window should show are in `docs/2026-10-24-modelrole1b-build.md`. The
+MODELROLE1b note; the classes and what the installed window should show are in `docs/archive/2026-10-24-modelrole1b-build.md`. The
 installed-window proof waits for the install to carry the build.
 ## MODELROLE1c — Build runs its choices (2026-10-24, D205; in parts, its rest MODELROLE1c2)
 
 > | **MODELROLE1c — Build runs its choices** (driver, modules, web, terminal) | `actors` read and written through, every change of `adapter` making Chat and Brainstorm explicit; `ActorChoices.Judge` and `Effective`; **round 3 (Codex 8): every compatibility reader and writer of the shared scalar in this row's boundary**, so Chat's agent (`ConversationRoutes.cs:48`, `:164`, `SessionsVerbs.cs:33`) and Brainstorm's fallback voice (`DriverBrainstorms.cs:348`) read `Effective`'s agent here, at account default, and `setting_propose`'s `adapter` door writes through the same write; rows d and e add their models and editors; the choice-major walk with its per-start passes and its one count per start; the carriers, on every run; per-account offers and refusals, §3.3's paths and §3.5 (a), (c) and (d) for driven starts and their continuations (round 4: `Release` and its two halves; the resume's put-back; `account.refused-model` left out of the strikes; `OpeningOptions`; `SessionStarted.NotOffered`; no *Ended* notice for a `choice-not-offered` end; the walk's model parameter); `no-posture`, `no-connector`; the drain's Intake *off*; `agent-offers` in the twins; `ACTORS`, `SET_ACTOR`; `daoris driver actor`, and `driver adapter` through it; AI features' *Actors* with Build's editor; the note, chip and wait; the Agents fold's line | The unit, walk, stub, census and invariant tests above; actual Chat and Brainstorm starts, and the legacy proposal door, after changing Build, each keeping its agent (not `Effective`'s table alone); on the install, a Build whose first choice names a model one account does not offer runs that choice on the other account, and with neither, runs its second and says so on the head and in the note |
 
-(The row of `docs/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1. Quest `#afa5e1ff13cf`.)
+(The row of `docs/archive/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1. Quest `#afa5e1ff13cf`.)
 
 **Outcome** 2026-10-24, in parts, as the quest allowed. **Built:** the stored actors with one judge and one reading; the write
 through the legacy keys, with Chat and Brainstorm kept on the agent they ran on every change of `adapter`; Chat's, Brainstorm's and
@@ -21864,7 +21874,7 @@ and the proposal door through the same write; the choice-major walk for a new qu
 editor. The row's proofs pass: a real Chat start, a real Brainstorm start and the legacy proposal door after Build changed, each
 keeping its agent. **Remaining, as MODELROLE1c2:** per-account offers and refusals and §3.3's and §3.5's paths after the open, with
 `choice-not-offered` and `Release`; `agent-offers` in the twins; the chip, the note's line and the Agents fold's line; the
-installed-window proof. Detail: D205's MODELROLE1c note; `docs/2026-10-24-modelrole1c-build.md`.
+installed-window proof. Detail: D205's MODELROLE1c note; `docs/archive/2026-10-24-modelrole1c-build.md`.
 ## CIFAST1 — the CI between releases runs the rehearsals only for a stage (2026-10-23, D180, D115)
 
 > **CIFAST1** (the owner report, 2026-10-24: CI is too slow): CI between releases runs the rehearsals only for a stage. Measured on 2026-10-23 and 24: a CI run (node tools/merge-branch.mjs --ci) takes 45 to 75 minutes of wall; three gates are nearly all of it: driver-process-git 24 to 44 minutes, rehearse-family 14 to 23, deployment 14 to 22; the two rehearsals run one after the other beside the git half, so a run waits about max(git half, family + deployment); and fix-forward means two or three runs per republish. Build in tools/merge-branch.mjs: (1) --ci gates main tip with every gate but the family and deployment rehearsals, recorded as owed for a stage rather than failed or passed; (2) the stage path (the stage-candidate CI that npm run publish:desktop --from-gated needs) runs those rehearsals on the commit being staged, so --from-gated still refuses a commit whose rehearsals did not pass on that tree (D115 point on the full set before a stage stands; only where they run changes); (3) measure the family and deployment rehearsals run side by side rather than one after the other (their ports, homes and memory need: REHEARSEPORT1, MEMGATE1, REHLANE2) and run them side by side where the measurement holds, else say why not. Record a D115 and a D180 note, update docs/development.md CI section, and the tool-tests. Proof: the tool-tests for the CI plan (rehearsals owed, not run, on a plain --ci; run and required on the stage path; side by side where chosen), and a timed --ci on a scratch commit before and after.
@@ -21927,7 +21937,7 @@ reported, or *model unreported* (`SessionTarget.LeftBy`, `CommitTrailers.For`). 
 told nothing more. `AdapterTests` and the new Process class `MakerTrailTickTests` prove it. Detail: FIX-LOG 2026-10-24.
 ## MODELROLE1c2 — Build's choices refused per account, and said (2026-10-24, D205; what remains MODELROLE1c3)
 
-> - [ ] **MODELROLE1c2 — Build's choices refused per account, and said** (driver, service, web; the rest of D205 row c, after MODELROLE1c). Per-account offers and refusals: `agent-offers` in the three home twins with D195's row; `OpeningOptions`; §3.3's paths and §3.5 (a), (c) and (d) for driven starts and their continuations, with `choice-not-offered`, `Release` and its two halves, the resume's put-back, `account.refused-model` left out of the strikes, `SessionStarted.NotOffered`, no *Ended* notice for that end, and the walk's model parameter; the head's *choice n* / *your pick* chip, the opening note's actor line and the Agents fold's line. Today a refused model runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1c-build.md`). Proof: design §13's per-account walk, stub and `Release` tests; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note.
+> - [ ] **MODELROLE1c2 — Build's choices refused per account, and said** (driver, service, web; the rest of D205 row c, after MODELROLE1c). Per-account offers and refusals: `agent-offers` in the three home twins with D195's row; `OpeningOptions`; §3.3's paths and §3.5 (a), (c) and (d) for driven starts and their continuations, with `choice-not-offered`, `Release` and its two halves, the resume's put-back, `account.refused-model` left out of the strikes, `SessionStarted.NotOffered`, no *Ended* notice for that end, and the walk's model parameter; the head's *choice n* / *your pick* chip, the opening note's actor line and the Agents fold's line. Today a refused model runs at account default, said as *not carried* (`docs/archive/2026-10-24-modelrole1c-build.md`). Proof: design §13's per-account walk, stub and `Release` tests; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note.
 
 (Quest `#0c52196a3b0f`.)
 
@@ -21939,7 +21949,7 @@ among the account's own lines; a resume refused by its own account's reading car
 the open; the opening note's actor line, the head's chip and the Agents fold's line. The proof runs on the protocol stand-in:
 the other account takes a first choice one account refuses, and with neither the second runs and says so. **Remaining, as
 MODELROLE1c3:** the pipe door's measured refusal, the quiet *Not started* row, the chip's stories, the installed-window proof.
-Detail: D205's MODELROLE1c2 note; `docs/2026-10-24-modelrole1c-build.md`.
+Detail: D205's MODELROLE1c2 note; `docs/archive/2026-10-24-modelrole1c-build.md`.
 ## CISCOPE1b — a Process half whose classes all stand passes without running, only from a pass gone stale by reach (2026-10-24, D207)
 
 > CISCOPE1b (a half whose classes all stand passes without running, only when its last verdict was a pass gone stale by reach; the sweep kept)
@@ -22014,7 +22024,7 @@ at the open re-asked, or ended `choice-not-offered` with its ask let go in the s
 and effort) and `IntakeTests` (a walk past a missing agent; a first account's refusal answered once on the second after a restart),
 the room's goldens and the web's AI features tests. **Remaining, as MODELROLE1d2:** §3.5(b)'s pending conversation start and what
 follows it, and the curve move's reading; the installed-window proof. Detail: D205's MODELROLE1d note;
-`docs/2026-10-24-modelrole1d-build.md`.
+`docs/archive/2026-10-24-modelrole1d-build.md`.
 ## LIMITGOON2 — a conversation whose agent has no account left goes on with another agent (2026-10-24, D205 §3.5(e), D163)
 
 > - [ ] **LIMITGOON2 — a conversation whose agent has no account left goes on with another agent** (driver, modules, web; after LIMITGOON1 and MODELROLE1's row c; the owner's direction, 2026-10-23). Where every account of the conversation's agent is cooling, the conversation goes on with its actor's next choice on another agent (D205's range) as a new part carrying Daoris's brief and the waiting words, said once with the agent it moved to; never a maker the person did not allow for that actor. Ask Daoris's conversation is included, as the named exception to its *never goes on elsewhere*, its new part in its workspace's room (D205's round-4 note, design §3.5(e)). Proof: a stand-in agent with every account cooling, the conversation going on with a second stand-in agent, and one with no other choice holding with its reason.
@@ -22215,7 +22225,7 @@ note.
 
 > **STEWARDROLE1a-i — the holder and the role's door** (modules, driver, web; after D209's acceptance; lands dark). Daoris starting its pinned `claude-code` itself as the holder's tab process (absolute path and hash, an argument vector, a composed environment, `holder-harness` with no pin; any shell the system's Windows PowerShell), the holder's owned configuration files and the walk by image and argument vector (`holder-config`); against SUPERVISOR1a-ii as built: a holder apart from its appointment, shared or its own; a holder's end by its last role or its tab's exit; `DAORIS_ROLE_KEY`; one role revoked alone, the hash kept to the holder's last; `work/rooms/roles/holders/<id>/`, never moved while the holder lives; every role's verb and the fixed initial prompt in the argument vector, and `roles brief`; `SET_APPOINTMENT`'s `scope`, `acts`, `setup`; *Appoint again* per role, the tick off; `SupervisorOffered` and `StewardOffered`, both false, decoupled from D201's offering; `ROLE_ACT` with admitted acts and pending operations by their stages, each consumer taking its own once, the execution cutoff and hand-over bindings, all a revoke cancels; the configuration walk on every `Role` route, `SUPERVISOR_DEFER` included; `role-terminal` by the entry's marker on every press verb and alone path. Proof: the design's §10 row 1a-i, `HolderHarnessTests` among it.
 
-(Row 1a-i of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6d1a1c38b300`.)
+(Row 1a-i of `docs/archive/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6d1a1c38b300`.)
 
 **Outcome** 2026-10-24, in three parts on one branch, dark (`SupervisorOffered` and `StewardOffered` both false). The driver: the
 variable `DAORIS_ROLE_KEY` at every entry and start, `HolderKey.RoleTerminal` recorded at the entry, a role's terminal refusing
@@ -22233,7 +22243,7 @@ STEWARDROLE1a-i note.
 
 > **STEWARDROLE1a-ii — `owner-set`'s census and the gates** (modules, driver, service; after 1a-i; lands dark). `owner-set` at every owner door, `none` only by its closed reasons and reviewed exemptions (naming told from mutating), the record kinds that mark, the sweep cross-checked against each handler, the gates of each act's target and its dependencies (a workspace resolved to its repositories) in a fixed order. Proof: the design's §10 row 1a-ii. *1a-i and 1a-ii were STEWARDROLE1a, split by round 3's read (finding 13).*
 
-(Row 1a-ii of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#92a1c81fb4ad`.)
+(Row 1a-ii of `docs/archive/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#92a1c81fb4ad`.)
 
 **Outcome** 2026-10-25, dark: an owner's door marks only where the build offers the steward, which it does not yet. Every person's
 and window's route has its mark in the census (`PipeTargets.Mark`), set by the driver module's router under the gates of what it
@@ -22354,7 +22364,7 @@ Detail: D156's CONFIRMWAIT1c note.
 
 ## MODELROLE1c3 — what row c still owed (2026-10-25, D205; its installed proof MODELROLE1c4)
 
-> - [ ] **MODELROLE1c3 — what row c still owes** (driver, web; after MODELROLE1c2). The pipe door's measured model refusal, `model_not_found` on a turn with no output and no tool use (`docs/2026-10-23-model-effort-doors-evidence.md`), on a first start and a go-on run: kept as the account's `refused` reading in `agent-offers`, the part ended with `account.refused-model` and no strike (D205 §3.3's pipe exception, §3.5(a)). The session list's and head's quiet *Not started* word for a `choice-not-offered` record, never the failure's red, and a teammate mirror's sentence naming no account (§3.5(c), §7.1). The head chip's stories at the frame's three widths in both languages. Proof: a pipe stub refusing `opus` on a silent turn passes that account at the next start, no strike; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note (`docs/2026-10-24-modelrole1c-build.md`).
+> - [ ] **MODELROLE1c3 — what row c still owes** (driver, web; after MODELROLE1c2). The pipe door's measured model refusal, `model_not_found` on a turn with no output and no tool use (`docs/archive/2026-10-23-model-effort-doors-evidence.md`), on a first start and a go-on run: kept as the account's `refused` reading in `agent-offers`, the part ended with `account.refused-model` and no strike (D205 §3.3's pipe exception, §3.5(a)). The session list's and head's quiet *Not started* word for a `choice-not-offered` record, never the failure's red, and a teammate mirror's sentence naming no account (§3.5(c), §7.1). The head chip's stories at the frame's three widths in both languages. Proof: a pipe stub refusing `opus` on a silent turn passes that account at the next start, no strike; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note (`docs/archive/2026-10-24-modelrole1c-build.md`).
 
 (Quest `#ec4d9e828b6e`.)
 
@@ -22364,13 +22374,13 @@ the choice's model and the part ended with `account.refused-model`, no strike, a
 words waiting for the next look (`Driver.ModelRefused`); a `choice-not-offered` record shown *not started*, quiet, on the list, the
 strip and both heads, with the code's sentence, its account here and none on a teammate's mirror; the head chip's stories at the
 three widths in en and zh. The proof's first half runs on a pipe stand-in (`ModelRefusalTickTests`). **Remaining, as
-MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/2026-10-24-modelrole1c-build.md`.
+MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/archive/2026-10-24-modelrole1c-build.md`.
 
 ## STEWARDROLE1b — the steward's immediate acts and their records, built dark (2026-10-25, D209)
 
 > **STEWARDROLE1b — the steward's immediate acts and their records** (modules, driver, web; after 1a-i and 1a-ii; dark). The design's §3.1 rows 1 to 8 (drive refused `no-tree` where the repository opens no session trees, and every start a steward's act causes held out of the checkout at the start, `held.checkout`; undrive, trees on, hold, resume, stop, finish, *Try again* on its own stop), the steward's releases in a role-only `roleReleases` no older reader takes as the owner's, *Try again*'s deferred authority proved, finish neither accepting nor closing its quest, the steward's own move notes with every reader updated by code, *Set by the steward*, *Roles* and the *Notifications* line. Proof: the design's §10 row 1b.
 
-(Row 1b of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6a7d452f729f`.)
+(Row 1b of `docs/archive/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6a7d452f729f`.)
 
 **Outcome** 2026-10-25, dark: `StewardOffered` stays false, so every steward's act is refused `not-offered` and the page draws
 nothing of it. The modules: `ROLE_ACT`'s steward table holds the eight acts in their exact forms (`StewardActRows`), each judged again
@@ -22411,7 +22421,7 @@ CHATFLOW1d note.
 
 > **STEWARDROLE1c — the steward's desk** (modules, driver; after 1a-i, sequenced after 1b). `STEWARD_REQUEST`, an open route any caller files, bounded per caller by its agent job or long-lived ancestor and in all, listed to the holder as claims, admitting nothing, closed by an act or a reasoned decline. Proof: the design's §10 row 1c.
 
-(Row 1c of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6b5e7d93ca83`.)
+(Row 1c of `docs/archive/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6b5e7d93ca83`.)
 
 **Outcome** 2026-10-25, dark: `StewardOffered` stays false, so a request is refused `not-offered` and the page draws nothing of the
 desk. The modules: `STEWARD_REQUEST` and `STEWARD_DESK`, both `Open`, the desk in the judge's memory (`StewardDesk`), ten open per
@@ -22499,7 +22509,7 @@ Detail: D195's KEEPSIZE1b3 note.
 
 ## MODELROLE1d2 — what row d still owed (2026-10-25, D205; its installed proof MODELROLE1d3)
 
-> - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.
+> - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/archive/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.
 
 (Quest `#006b2be2d299`.)
 
@@ -22513,7 +22523,7 @@ wait on the refused record. Its go-on after an interruption is a fresh start of 
 tried only on its own agent's entries on its own account, a refused continuation handed Daoris's brief of its line first. The window
 and Ask Daoris's panel follow the replacement; `not-offered` is a reason a record continues another by, worded in en and zh. Proved
 with real conversations on a stand-in that refuses a model per account (`ChatPendingProcessTests`). **Remaining, as MODELROLE1d3:**
-the installed proof. Detail: D205's MODELROLE1d2 note; `docs/2026-10-25-modelrole1d2-build.md`.
+the installed proof. Detail: D205's MODELROLE1d2 note; `docs/archive/2026-10-25-modelrole1d2-build.md`.
 
 ## CHATFLOW1e — a chat run's send-back only between turns (2026-10-25, D157, D155)
 
@@ -22550,7 +22560,7 @@ digest), `BrainstormLookTests`, `HandOverAtTurnEndTests` (a cooling Build under 
 `handOverOrder.test.ts` on the shared `actorRows`, `OneTurnReaskTests`, and with real processes `HelperProcessTests` and `ReviewTreeTests`
 (a first account's refusal answered once on the second). **Left, as MODELROLE1e2:** the editors for the four fenced actors, a
 conversation's hand-over opening on `handed`'s model, the partner's real-process case, and the installed proof. Detail: D205's
-MODELROLE1e note; `docs/2026-10-25-modelrole1e-build.md`.
+MODELROLE1e note; `docs/archive/2026-10-25-modelrole1e-build.md`.
 
 ## AGENTERRORS1b — a conversation's transient failure tried again in the same conversation (2026-10-25, D210)
 
@@ -22615,7 +22625,7 @@ for FOUNDATION1's row 1a, whose design keeps `accountPicked` on the record. Deta
 > **FOUNDATION1u — the role's name** (web: the glossary and ten Chinese strings; §6; round 4's named changes, O4-2). Ten Chinese strings that say 职责 for an
 > appointed role say 角色, 任命的角色 where the appointed shape must be said, under the UI and translation contracts; the glossary gains *role*, 角色, with its
 > match over the *Actor*, *Actors* and *Roles* labels and 职责 on its avoid list; *actor* becomes `use: "role"`, code and prose only. Proof: `i18n:check`,
-> `names:check -- --strict`, the glossary's own test over the new entry and the pointer. (`docs/2026-10-25-foundation-design.md` §10, row u of Part A.)
+> `names:check -- --strict`, the glossary's own test over the new entry and the pointer. (`docs/archive/2026-10-25-foundation-design.md` §10, row u of Part A.)
 
 (Quest `#308d072ce891`, asked by `#002379`.)
 
@@ -22837,7 +22847,7 @@ machine-log design §3 say the contract.
 
 ## FOUNDATION1mod-i to mod-xxi — the driver's folders moved, one subdomain a row (2026-10-29, D212)
 
-> **FOUNDATION1mod-i to mod-xxi — the driver's folders moved, one subdomain a row** (driver; §14.6). Each moves one subdomain's files into its folder, its namespace unchanged, every linked consumer with it (§14.6's list, O4-7), no behaviour changed; its cuts after it, one edge family per row, a port declared or a type moved to its one owner, each changing no behaviour; no move takes a class that names `LoopContext` out of Loop, and every cut into a file the map places in Loop lands before mod-xxi (O4-1). […] **mod-xxi's proof** is the end state (X4-1.26): the census with no upward exception left and no edge into Loop from outside it, the ten executors built from `LoopContext` still in Loop. (The row as `docs/2026-10-25-foundation-design.md` §17 gives it, cut where marked.)
+> **FOUNDATION1mod-i to mod-xxi — the driver's folders moved, one subdomain a row** (driver; §14.6). Each moves one subdomain's files into its folder, its namespace unchanged, every linked consumer with it (§14.6's list, O4-7), no behaviour changed; its cuts after it, one edge family per row, a port declared or a type moved to its one owner, each changing no behaviour; no move takes a class that names `LoopContext` out of Loop, and every cut into a file the map places in Loop lands before mod-xxi (O4-1). […] **mod-xxi's proof** is the end state (X4-1.26): the census with no upward exception left and no edge into Loop from outside it, the ten executors built from `LoopContext` still in Loop. (The row as `docs/archive/2026-10-25-foundation-design.md` §17 gives it, cut where marked.)
 
 **Outcome** 2026-10-29: built. Every one of the driver's twenty-one subdomains sits in its folder, in the design's order from Platform to Loop, with no namespace changed and no behaviour changed. The census of tuples naming a type above their own subdomain fell to 0 over mod-xi to mod-xviii. `StructureTests.Part_A_ends_with_every_subdomain_moved_no_upward_tuple_no_edge_into_Loop_and_the_ten_executors_in_Loop` holds the end state: every subdomain moved, no upward tuple, nothing outside Loop naming a type of Loop's, no file the map places in Loop outside it, and the ten executors in `Loop/`. Each row's move and cut, with its census and proof, is a dated D212 note; the integrations are D212's notes of 2026-10-28 and 2026-10-29. Part B stays on the FOUNDATION1 row.
 
@@ -22855,7 +22865,7 @@ machine-log design §3 say the contract.
 
 ## AGENTPROVIDER1a — the contract named, the registry over today's adapters, the census (2026-10-29, D213)
 
-> **a. The contract named, the registry over today's adapters, the census. No behaviour.** (driver, service, web-shell, tools; the accepted design `docs/2026-10-26-agent-provider-design.md` §11 row a.) The contract's records under `Agents/Contract/`, no port yet; `ProviderRegistry.Of(AdapterSet)` grouping today's adapters by their owner, held equal to the owner table; and a census of every provider-specific site in the desktop, the service, the page and the tools, each named by the row that removes it or kept as permanent.
+> **a. The contract named, the registry over today's adapters, the census. No behaviour.** (driver, service, web-shell, tools; the accepted design `docs/archive/2026-10-26-agent-provider-design.md` §11 row a.) The contract's records under `Agents/Contract/`, no port yet; `ProviderRegistry.Of(AdapterSet)` grouping today's adapters by their owner, held equal to the owner table; and a census of every provider-specific site in the desktop, the service, the page and the tools, each named by the row that removes it or kept as permanent.
 
 **Outcome** 2026-10-29: built in three parts, no behaviour changed. The contract is named as records with typed ids (`Agents/Contract/`), the registry over today's adapters is held equal to the owner table (`Agents/Registry/`, `ProviderRegistryTests`), and the census counts every site exactly in four twins reading one fixture (`provider-census.json`, the ids in `provider-vocabulary.json`; `ProviderCensusTests` in the driver and the service, `providerCensus.test.ts` in the page, `provider-census.test.ts` in the tools), which the merge tool sends to all four gates. Each part's shape and counts in D213's three row a notes; the twins in `.claude/knowledge/twins.md`. The AGENTPROVIDER1 row stays open for rows b to w.
 
@@ -22867,13 +22877,13 @@ machine-log design §3 say the contract.
 
 ## FOUNDATION1e — the course, beside (2026-10-29, D212)
 
-> **1e — the course, beside**: `LineCourse.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row. Proof: the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows; `StructureTests` whole and no production path reading it (round 6, *C5-1.14*, *C5-3.3*). (The row as `docs/2026-10-25-foundation-design.md` §10 gives it.)
+> **1e — the course, beside**: `LineCourse.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row. Proof: the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows; `StructureTests` whole and no production path reading it (round 6, *C5-1.14*, *C5-3.3*). (The row as `docs/archive/2026-10-25-foundation-design.md` §10 gives it.)
 
 **Outcome** 2026-10-29: built in two parts, read by nothing, no behaviour changed: the vocabulary and the trigger-site census, then `Course/Domain/LineCourse.Decide.cs` with its pinned table, `Driver.Tests/Course/course-cases.txt` (253 rows ported from the paths' suites), and ten differences between paths kept apart for rows h and i. Detail in D212's two FOUNDATION1e notes; the FOUNDATION1 row stays open.
 
 ## AGENTPROVIDER1b — the shim, the one registration list, the conformance suite and the stand-ins discovered (2026-10-30, D213)
 
-> **b. The shim, the one registration list, the conformance suite, and stand-ins discovered. No behaviour.** (driver, tools; the accepted design `docs/2026-10-26-agent-provider-design.md` §11 row b.) The ports a provider written on the contract alone needs; `Providers.Built()`, the one registration list, holding `stub` and `acp-stub` written on the contract; `LegacyDoor`, the shim that presents a contract door to today's readers; the conformance suite, each provider's pending cases in its own file by one layout; and the stand-ins' plumbing, so a later stand-in changes no rehearsal, suite or project file.
+> **b. The shim, the one registration list, the conformance suite, and stand-ins discovered. No behaviour.** (driver, tools; the accepted design `docs/archive/2026-10-26-agent-provider-design.md` §11 row b.) The ports a provider written on the contract alone needs; `Providers.Built()`, the one registration list, holding `stub` and `acp-stub` written on the contract; `LegacyDoor`, the shim that presents a contract door to today's readers; the conformance suite, each provider's pending cases in its own file by one layout; and the stand-ins' plumbing, so a later stand-in changes no rehearsal, suite or project file.
 
 **Outcome** 2026-10-30: built in three parts, nothing a person sees changed. Part 1: the ports, `Providers.Built()` with the stand-ins in `Agents/Providers/Stub/`, and `LegacyDoor`. Part 2: the conformance suite, every case of §10 run or held in each provider's `pending.json`. Part 3: the stand-in's program in its folder's `Program/`, carried by one glob, `provider.json` held to the list (`ProviderFilesTests`), the suite's live cases run on it, and the family rehearsal's section 18a driving the scenario contract over every stand-in the files declare (`tools/stand-ins.mjs`). Each part's shape in D213's three row b notes. The AGENTPROVIDER1 row stays open for rows c to u, which wait on AGENTLYNTAI1 (D213's direction note).
 
@@ -22891,13 +22901,13 @@ machine-log design §3 say the contract.
 
 ## FOUNDATION1d-ii — words follow the line's head, and the open moves them (2026-10-30, D212)
 
-> **1d-ii — words follow the line's head, and the open moves them**: §3.4 rules 2 and 3, on d-i's open: d-i's `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too (round 5, §19.13); the new `Continued` refusal with the head, each say caller's handling named; `SaidKeys.Settled` read over the line's records, the head walk's forward added to p's predecessors (round 6, *C5-1.2*; round 7, *C6-1.3*), a key whose word waits on the head answered `Settled` and one whose word waits on a record the line has left answered by the door as it stands (*O8-F1*); the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; the `opens` mark raised to 2 and the `head` mark added (*C5-1.12*); every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open), **each composing its delivery from the destination's moved words, the ended limit move's body, `DeliveredAsync` and `TakeUpBoxesAsync` named until f-vi (round 7, *O6-F13*), recording each moved word's `User` event under its id (*O6-F2*) and copying its files into the destination's folder before it delivers (*O6-F8*)**; moved words ahead of later ones. Proof: first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; **the head over a chain of three parts and a planted cycle ending the walk; an older desktop reading `Continued` as a refusal it does not know** (round 5, §19.12, §19.13); **row p's moved cases, now that words move: a retry through two successors one word; a keyless word moved and settled by its id; a word moved from a record with no stored `entry` to a successor holding one, taken there, its retry to the old record answered as kept** (round 6, *C5-1.2*, *C5-3.2*); **the same repeat open after the moved words were taken; against a d-i host (`opens` 1, no `head`), the key sent and the words moved by the executor as today** (*C5-1.12*); **Codex's case with the keyed open: a say kept with its answer lost, the word taken on its record, the record moved by a keyed open, and the pump's forward to the new head answered as kept, one word; a re-say at the head after `Continued` answered as kept** (round 7, *C6-1.3*, *O6-F1*); **each moved word shown on the destination by its own `User` event under its id, and the destination's go-on and a take-back finding each moved word's files in the destination's folder** (*O6-F2*, *O6-F8*); **the ended limit move's body, delivery and take-up composing from, taking and saying again the destination's moved words** (*O6-F13*); **an older build's unkeyed successor: its open moving nothing, K left waiting on the old record, and K's retry forwarded to the head kept and delivered there once, never `Settled`; a word the keyed open moved to the head, its retry naming the old record answered `Settled`, nothing kept** (round 8's named changes, *O8-F1*); the say door's latency on the install before and after, both branches of the walk measured (*C5-1.13*), landing only with its p95 within a tenth. (The row as `docs/2026-10-25-foundation-design.md` §10 gives it.)
+> **1d-ii — words follow the line's head, and the open moves them**: §3.4 rules 2 and 3, on d-i's open: d-i's `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too (round 5, §19.13); the new `Continued` refusal with the head, each say caller's handling named; `SaidKeys.Settled` read over the line's records, the head walk's forward added to p's predecessors (round 6, *C5-1.2*; round 7, *C6-1.3*), a key whose word waits on the head answered `Settled` and one whose word waits on a record the line has left answered by the door as it stands (*O8-F1*); the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; the `opens` mark raised to 2 and the `head` mark added (*C5-1.12*); every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open), **each composing its delivery from the destination's moved words, the ended limit move's body, `DeliveredAsync` and `TakeUpBoxesAsync` named until f-vi (round 7, *O6-F13*), recording each moved word's `User` event under its id (*O6-F2*) and copying its files into the destination's folder before it delivers (*O6-F8*)**; moved words ahead of later ones. Proof: first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; **the head over a chain of three parts and a planted cycle ending the walk; an older desktop reading `Continued` as a refusal it does not know** (round 5, §19.12, §19.13); **row p's moved cases, now that words move: a retry through two successors one word; a keyless word moved and settled by its id; a word moved from a record with no stored `entry` to a successor holding one, taken there, its retry to the old record answered as kept** (round 6, *C5-1.2*, *C5-3.2*); **the same repeat open after the moved words were taken; against a d-i host (`opens` 1, no `head`), the key sent and the words moved by the executor as today** (*C5-1.12*); **Codex's case with the keyed open: a say kept with its answer lost, the word taken on its record, the record moved by a keyed open, and the pump's forward to the new head answered as kept, one word; a re-say at the head after `Continued` answered as kept** (round 7, *C6-1.3*, *O6-F1*); **each moved word shown on the destination by its own `User` event under its id, and the destination's go-on and a take-back finding each moved word's files in the destination's folder** (*O6-F2*, *O6-F8*); **the ended limit move's body, delivery and take-up composing from, taking and saying again the destination's moved words** (*O6-F13*); **an older build's unkeyed successor: its open moving nothing, K left waiting on the old record, and K's retry forwarded to the head kept and delivered there once, never `Settled`; a word the keyed open moved to the head, its retry naming the old record answered `Settled`, nothing kept** (round 8's named changes, *O8-F1*); the say door's latency on the install before and after, both branches of the walk measured (*C5-1.13*), landing only with its p95 within a tenth. (The row as `docs/archive/2026-10-25-foundation-design.md` §10 gives it.)
 
 **Outcome** 2026-10-30: built in five parts: (1) the desktop's readers of `continued` and its head; (2) the head at the say door in the service, and the `head` mark; (3) the keyed open moving the old part's words in its own step, `opens: 2`; (4) the conversation sites delivering from the destination's moved words, each shown under its id, its files copied first; (5) the driven carry-on and a start refused at the open on the same open, and the late word to a closed quest's driven part proved end to end. Detail in D212's five FOUNDATION1d-ii notes; the install's say-door latency is the parent's to measure, and the FOUNDATION1 row stays open.
 
 ## FOUNDATION1f-i — the move record, read by nothing (2026-10-30, D212)
 
-> **1f-i — the move record, read by nothing**: `moves` and `move_words` in the store, one standing move per record left by the partial index `moves_standing` (round 6, *O5-F1*), the claim by process run (`store_runs`, `claim_run`, `claim_generation`), the effect marks, the take-up of dead runs' moves per kind before the sweep and after the imports, the imports run once the start's confirmation is settled; on d-i's keyed open; `move.quiet` said on the line and in the log (*O5-F15*); **`move_words`' `sent`, each moved word's delivery evidence, written as its door's write returns and before its take, the one reading of a crash at `delivering` (round 7, *C6-1.4*); a held move closing `resolved` by §3.3's one rule, read at each come-up and each look (*O6-F7*)** and wherever the course reads the destination's standing move as a precondition, a begun effect alone keeping no hold (round 8, *O7-F11*); a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2). Proof: the store's transactions over a claim; **a takeover only of a run dead by the lease's test, never of a live one: two shells on one home, each keeping its own conversation moves; a `--share` loop beside the instance, each keeping the moves of the lines it runs; a paused executor whose process lives, never taken over, and paused after its mark commits and before its effect, the effect then made once by it alone** (O3-1, X3-3.1); a killed executor's marked effect with no outcome held by the taker, never repeated (X2-3.1); a run whose start time cannot be read never taken over; a lost open's answer found by its key across a crash, never opened twice; an older host's lost open held, never searched; **two shells deciding a move of one line, one row; the second shell on a home said once; an executor paused past ten minutes said `move.quiet` once, on its line and in the log, and never taken over** (round 5, §19.1; round 6, *O5-F15*); **a move closed `superseded`, and one held and then resolved by the person's press, each followed by a second move of the same record, which claims** (*O5-F1*); **one newer shell resuming a record while another keyed-opens from it, in both orders: one of them made, the other refused by the service's step** (*O5-F2*); **a hold closed `resolved` by the person's press, and another at the look after nothing it names waits on its destination, each read at a come-up too** (round 7, *O6-F7*); **a shell beside a headless lease holder, running no look: a hold whose words the person took back closed when the course, called directly in the test, next reads its destination; a hold naming only a begun effect closed at its first read** (round 8, *O7-F11*; the destination's limit move then made is h's and i's, since no path reads the course before them, *O8-F6*); the two proofs that need a move that delivers, an older shell's resume beside a newer open and Codex's delayed older move, are f-ii's, the first row whose move delivers (round 7, *O6-F12*); `StructureTests` whole (*C5-1.14*). (The row as `docs/2026-10-25-foundation-design.md` §10 gives it.)
+> **1f-i — the move record, read by nothing**: `moves` and `move_words` in the store, one standing move per record left by the partial index `moves_standing` (round 6, *O5-F1*), the claim by process run (`store_runs`, `claim_run`, `claim_generation`), the effect marks, the take-up of dead runs' moves per kind before the sweep and after the imports, the imports run once the start's confirmation is settled; on d-i's keyed open; `move.quiet` said on the line and in the log (*O5-F15*); **`move_words`' `sent`, each moved word's delivery evidence, written as its door's write returns and before its take, the one reading of a crash at `delivering` (round 7, *C6-1.4*); a held move closing `resolved` by §3.3's one rule, read at each come-up and each look (*O6-F7*)** and wherever the course reads the destination's standing move as a precondition, a begun effect alone keeping no hold (round 8, *O7-F11*); a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2). Proof: the store's transactions over a claim; **a takeover only of a run dead by the lease's test, never of a live one: two shells on one home, each keeping its own conversation moves; a `--share` loop beside the instance, each keeping the moves of the lines it runs; a paused executor whose process lives, never taken over, and paused after its mark commits and before its effect, the effect then made once by it alone** (O3-1, X3-3.1); a killed executor's marked effect with no outcome held by the taker, never repeated (X2-3.1); a run whose start time cannot be read never taken over; a lost open's answer found by its key across a crash, never opened twice; an older host's lost open held, never searched; **two shells deciding a move of one line, one row; the second shell on a home said once; an executor paused past ten minutes said `move.quiet` once, on its line and in the log, and never taken over** (round 5, §19.1; round 6, *O5-F15*); **a move closed `superseded`, and one held and then resolved by the person's press, each followed by a second move of the same record, which claims** (*O5-F1*); **one newer shell resuming a record while another keyed-opens from it, in both orders: one of them made, the other refused by the service's step** (*O5-F2*); **a hold closed `resolved` by the person's press, and another at the look after nothing it names waits on its destination, each read at a come-up too** (round 7, *O6-F7*); **a shell beside a headless lease holder, running no look: a hold whose words the person took back closed when the course, called directly in the test, next reads its destination; a hold naming only a begun effect closed at its first read** (round 8, *O7-F11*; the destination's limit move then made is h's and i's, since no path reads the course before them, *O8-F6*); the two proofs that need a move that delivers, an older shell's resume beside a newer open and Codex's delayed older move, are f-ii's, the first row whose move delivers (round 7, *O6-F12*); `StructureTests` whole (*C5-1.14*). (The row as `docs/archive/2026-10-25-foundation-design.md` §10 gives it.)
 
 **Outcome** 2026-10-30: built in three parts, read by nothing, so Daoris works as before. Part 1: the store's `moves` and `move_words` (step 4), one standing move per record left by `moves_standing`, the claim by process run and the effect marks in `Course/MoveStore`, a record's moves deleted with it. Part 2: the take-up of dead runs' moves in the design's order with `move.quiet` (`Course/MoveTakeUp`), the box importers (`Course/MoveBoxImports`), step 5's columns, and two of the live-process cases. Part 3: the moved words' `sent` and the one reading of a crash at `delivering` (`Course/MoveDelivery`), a hold closed `resolved` by §3.3's one rule at the press, each come-up and look and the course's precondition (`Course/MoveResolve`), the service's door to a destination's `said` (`Course/MoveSaid`), and the live `--share` case with a deliverer killed after `sent`. The lost-open and resume-beside-open proofs stand on row d-i's keyed open (D212's row 1d-i note). Each part's shape, readings and proof are in D212's three FOUNDATION1f-i notes; the FOUNDATION1 row stays open.
 
@@ -23194,7 +23204,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 ## STEWARDROLE1 — the design rounds and built parts to 2026-10-31 (record; the row stays open)
 
-> **STEWARDROLE1 — the steward a role the owner appoints, so development's management needs no click** (design under D191, then rows; the owner's direction, 2026-10-24; reuses D208's appointment). Every management act the steward makes for the owner from the terminal waits for the window's Confirm today: a repository driven or given trees, a setup, a session's words (`sessions say`, a go-on after an outage), a hand-over, a finish. The owner directed that these sit under the role logic D208 begins: the owner appoints the steward once in the window, and it then makes development's management acts on the owner's behalf by its own decision, each recorded as the steward's and never as the owner's words, revocable at once; never a production or live go-ahead, a sign-in, an access widening, a push or publication, spending, or a deletion of the owner's data. Design which acts the role covers and how (D201's standing confirmation and D208's role, one appointment model), and what the record, the notice and the overrule say. Proof: the design's cases; with the role appointed, a drive, a trees switch and a session's go-on run with no card and are said; without it they ask as today. Sighting 2026-10-27: with the owner away, the parent's `sessions say`, `sessions stop`, `driver landing` and `opinion ask` each waited on a card while ask and quest publishing, `trees land`, `trees remove` and `quest done` did not, so a running session could not be steered at all. *2026-10-24: the design is written and proposed (D209, `docs/2026-10-24-steward-role-design.md`), round 1; open: Codex's read and the Opus foundation read, then the steward's settling. Its rows, STEWARDROLE1a-f below, wait on that. 2026-10-24: round 1 read (Codex another round; Opus accept after named changes, 20 findings, 7 blocking; `docs/2026-10-24-steward-role-reads.md`); round 2 written, every finding answered in the design's §12: own move notes, `owner-set` by repository or quest with a gate per target, closing as done the owner's (round 1's STEWARDROLE1e dropped), a fixed go-on in place of free words (STEWARDROLE1h, its own read if wanted), *Appoint again* per role with the tick off, 1a rewritten against SUPERVISOR1a-ii as built. Open: both readers' reads of round 2, then the steward's settling; the rows below wait on that. 2026-10-24: round 2 read (Codex another round, 12 findings, 8 blocking; Opus accept after named changes, 14 findings, 5 blocking); round 3 written, every finding answered in the design's §12.2: `owner-set` marked at every owner door with a census sweep, a flag per role (the steward's activation never the supervisor's), `landing-pushes` on trees on, stop and finish, the go-on as AGENTERRORS1's release of a transient hold (1f after AGENTERRORS1a), pending operations checked by their final consumers, the holder on Daoris's own configuration checked by what it started with. 2026-10-24: round 3 read by the Opus foundation reader alone (accept after named changes the steward checks without another read, 14 findings, 4 blocking; Codex's read owed, its credits out); its named changes taken in the design, each placed in §12.3: Daoris starts its pinned harness itself as the holder's tab process, a parked session's yes taken by `GoAsync` as the steward's, one go-on per quest per run with no briefed fallback or walk (D210's amendment a note in §4.3a for D210's next round), drive refused `no-tree`, 1a split into 1a-i and 1a-ii. The steward checked those changes, and the owner decided D209 on 2026-10-24 (its acceptance note); Codex's read of the final text is owed, a blocking finding an amendment before the row it touches. Next: STEWARDROLE1a-i. 2026-10-24: Codex's read of the final text (stands after named amendments, 14 findings, 7 blocking) taken as amendments, D209 still accepted (its amendment note; the design's §12.4 places each finding in the rows below). STEWARDROLE1a-i may be built as amended; 1f also waits on D210 carrying the design's §4.3a. 2026-10-24: STEWARDROLE1a-i built, dark (archived; D209's STEWARDROLE1a-i note says what 1a-ii to 1g still owe). Next: STEWARDROLE1a-ii. 2026-10-25: STEWARDROLE1a-ii built, dark (archived; D209's STEWARDROLE1a-ii note). Next: STEWARDROLE1b. 2026-10-25: STEWARDROLE1b built, dark (archived; D209's STEWARDROLE1b note). Next: STEWARDROLE1c. 2026-10-25: STEWARDROLE1c built, dark (archived; D209's STEWARDROLE1c note). Next: STEWARDROLE1d.*
+> **STEWARDROLE1 — the steward a role the owner appoints, so development's management needs no click** (design under D191, then rows; the owner's direction, 2026-10-24; reuses D208's appointment). Every management act the steward makes for the owner from the terminal waits for the window's Confirm today: a repository driven or given trees, a setup, a session's words (`sessions say`, a go-on after an outage), a hand-over, a finish. The owner directed that these sit under the role logic D208 begins: the owner appoints the steward once in the window, and it then makes development's management acts on the owner's behalf by its own decision, each recorded as the steward's and never as the owner's words, revocable at once; never a production or live go-ahead, a sign-in, an access widening, a push or publication, spending, or a deletion of the owner's data. Design which acts the role covers and how (D201's standing confirmation and D208's role, one appointment model), and what the record, the notice and the overrule say. Proof: the design's cases; with the role appointed, a drive, a trees switch and a session's go-on run with no card and are said; without it they ask as today. Sighting 2026-10-27: with the owner away, the parent's `sessions say`, `sessions stop`, `driver landing` and `opinion ask` each waited on a card while ask and quest publishing, `trees land`, `trees remove` and `quest done` did not, so a running session could not be steered at all. *2026-10-24: the design is written and proposed (D209, `docs/archive/2026-10-24-steward-role-design.md`), round 1; open: Codex's read and the Opus foundation read, then the steward's settling. Its rows, STEWARDROLE1a-f below, wait on that. 2026-10-24: round 1 read (Codex another round; Opus accept after named changes, 20 findings, 7 blocking; `docs/archive/2026-10-24-steward-role-reads.md`); round 2 written, every finding answered in the design's §12: own move notes, `owner-set` by repository or quest with a gate per target, closing as done the owner's (round 1's STEWARDROLE1e dropped), a fixed go-on in place of free words (STEWARDROLE1h, its own read if wanted), *Appoint again* per role with the tick off, 1a rewritten against SUPERVISOR1a-ii as built. Open: both readers' reads of round 2, then the steward's settling; the rows below wait on that. 2026-10-24: round 2 read (Codex another round, 12 findings, 8 blocking; Opus accept after named changes, 14 findings, 5 blocking); round 3 written, every finding answered in the design's §12.2: `owner-set` marked at every owner door with a census sweep, a flag per role (the steward's activation never the supervisor's), `landing-pushes` on trees on, stop and finish, the go-on as AGENTERRORS1's release of a transient hold (1f after AGENTERRORS1a), pending operations checked by their final consumers, the holder on Daoris's own configuration checked by what it started with. 2026-10-24: round 3 read by the Opus foundation reader alone (accept after named changes the steward checks without another read, 14 findings, 4 blocking; Codex's read owed, its credits out); its named changes taken in the design, each placed in §12.3: Daoris starts its pinned harness itself as the holder's tab process, a parked session's yes taken by `GoAsync` as the steward's, one go-on per quest per run with no briefed fallback or walk (D210's amendment a note in §4.3a for D210's next round), drive refused `no-tree`, 1a split into 1a-i and 1a-ii. The steward checked those changes, and the owner decided D209 on 2026-10-24 (its acceptance note); Codex's read of the final text is owed, a blocking finding an amendment before the row it touches. Next: STEWARDROLE1a-i. 2026-10-24: Codex's read of the final text (stands after named amendments, 14 findings, 7 blocking) taken as amendments, D209 still accepted (its amendment note; the design's §12.4 places each finding in the rows below). STEWARDROLE1a-i may be built as amended; 1f also waits on D210 carrying the design's §4.3a. 2026-10-24: STEWARDROLE1a-i built, dark (archived; D209's STEWARDROLE1a-i note says what 1a-ii to 1g still owe). Next: STEWARDROLE1a-ii. 2026-10-25: STEWARDROLE1a-ii built, dark (archived; D209's STEWARDROLE1a-ii note). Next: STEWARDROLE1b. 2026-10-25: STEWARDROLE1b built, dark (archived; D209's STEWARDROLE1b note). Next: STEWARDROLE1c. 2026-10-25: STEWARDROLE1c built, dark (archived; D209's STEWARDROLE1c note). Next: STEWARDROLE1d.*
 
 **Outcome** 2026-10-31: still open. The row was cut to its contract; this entry keeps the history of its design rounds and its built parts as they stood. D209 and its notes are the authority.
 
@@ -23218,7 +23228,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 ## KNOWCENTRAL1 — round 1 with Lyntai (2026-10-31 record; the row stays open)
 
-> **KNOWCENTRAL1 — the memory design a centralized, model-driven knowledge system rests on, made with Lyntai** (design under D191 across two repositories; after Lyntai's MC1 to MC5 answer). Sealed proposals from Codex and from Lyntai's session on one brief, Lyntai's session's synthesis and decision in its own repository, and reads by Codex and this repository's steward: retirement through the decay seam (Lyntai's D40, D41) beside MC1's end and MC5's failed check, which steps of upkeep a model takes alone and which a writer confirms, and a memory shared across repositories (Lyntai's roadmap Wave 4). Proof: Lyntai's decision and both reads; this repository's rows that consume it. Once BRAINSTORM1c is built, such a round runs through `daoris-driver brainstorm`. Round 1 (2026-10-30): both sealed proposals written (Codex's `docs/2026-10-30-memory-currency-proposal-codex.md`; Lyntai's in its repository), agreeing on retirement by an explicit end rather than burial and differing on shared memory, the confirmer and the order. Lyntai's synthesis is D241 there, rows MC1 to MC9. Both reads (Codex, the steward; 2026-10-30) accept after named changes: three are blocking (retirement applied through the decay seam with the writer deciding; the end's guard an opaque revision of the claim; MC8's arms from isolated snapshots). Lyntai amended D241 in place and built MC9, MC1, MC3, MC4, MC6, MC2, MC5 and MC8's harness in one session (quest `#a187f58b15a0`, 2026-10-30; merged into Lyntai's line on the owner's yes, 2026-10-31); MC7 waits for this repository's second-host contract; MC3's similarity basis needs a local embedding model and MC8's run two reviewers' labels and a bar; MC10, ended entries crowding current ones out of the candidate window, is Lyntai's. Round 2 (2026-10-31), Daoris as the coordinator: two sealed proposals, a synthesis (`docs/2026-10-31-memory-coordinator-design.md`) and both reads (`…-reads.md`: Codex asked another round, Opus accepted after changes), then a revision in place answering every blocking finding; a short third read by both makers runs. Once accepted, its rows KNOWCENTRAL2a onward are filed, and request A (an atomic supersession) and MC7's points go to Lyntai as quests.
+> **KNOWCENTRAL1 — the memory design a centralized, model-driven knowledge system rests on, made with Lyntai** (design under D191 across two repositories; after Lyntai's MC1 to MC5 answer). Sealed proposals from Codex and from Lyntai's session on one brief, Lyntai's session's synthesis and decision in its own repository, and reads by Codex and this repository's steward: retirement through the decay seam (Lyntai's D40, D41) beside MC1's end and MC5's failed check, which steps of upkeep a model takes alone and which a writer confirms, and a memory shared across repositories (Lyntai's roadmap Wave 4). Proof: Lyntai's decision and both reads; this repository's rows that consume it. Once BRAINSTORM1c is built, such a round runs through `daoris-driver brainstorm`. Round 1 (2026-10-30): both sealed proposals written (Codex's `docs/archive/2026-10-30-memory-currency-proposal-codex.md`; Lyntai's in its repository), agreeing on retirement by an explicit end rather than burial and differing on shared memory, the confirmer and the order. Lyntai's synthesis is D241 there, rows MC1 to MC9. Both reads (Codex, the steward; 2026-10-30) accept after named changes: three are blocking (retirement applied through the decay seam with the writer deciding; the end's guard an opaque revision of the claim; MC8's arms from isolated snapshots). Lyntai amended D241 in place and built MC9, MC1, MC3, MC4, MC6, MC2, MC5 and MC8's harness in one session (quest `#a187f58b15a0`, 2026-10-30; merged into Lyntai's line on the owner's yes, 2026-10-31); MC7 waits for this repository's second-host contract; MC3's similarity basis needs a local embedding model and MC8's run two reviewers' labels and a bar; MC10, ended entries crowding current ones out of the candidate window, is Lyntai's. Round 2 (2026-10-31), Daoris as the coordinator: two sealed proposals, a synthesis (`docs/2026-10-31-memory-coordinator-design.md`) and both reads (`…-reads.md`: Codex asked another round, Opus accepted after changes), then a revision in place answering every blocking finding; a short third read by both makers runs. Once accepted, its rows KNOWCENTRAL2a onward are filed, and request A (an atomic supersession) and MC7's points go to Lyntai as quests.
 
 **Outcome** 2026-10-31: still open. The row was cut; this entry keeps round 1's detail as it stood. Lyntai's D241 is the authority for its rows.
 
@@ -23466,7 +23476,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 **Outcome** 2026-10-31: built. An intake proposes as its ask, Ask Daoris as `daoris:help`, a person's own agent as the registered repository its directory sits in, each in its own workspace; the owner's quest body, packet and list say which proposed. A caller placed in no repository is refused in a sentence; the change doors stay a registered repository's session's alone. Left: a person's own agent is not told how its proposal settles (it has no session); an intake's proposal quest keeps its ask reading waiting until the owner closes it. Detail in D220's note.
 ## GITLOCK1 — every writer of a checkout under one lock (2026-10-31, D51)
 
-> - [ ] **GITLOCK1 — every writer of a checkout under one lock** (driver; found at GITAPP2's Codex read, 2026-10-31, `docs/2026-10-31-git-writes-read-codex.md` R2-11, round-1 20 and its second blocking finding). Today's writers of a repository's checkout do not all take `TreeLock`: D109's line pull writes before `TreeSync` takes it (`Workplace/LinePulls.cs:51`, `TreeSync.cs:220`), integration promotion fast-forwards the checkout itself (`Workplace/IntegrationPromotes.cs:424`, beside `TreeLands.MergeAsync` at `TreeLands.cs:299`), and checkout conversations skip it (`Loop/Chat/ChatRunner.cs:670`, `Course/Chat/ChatGoOn.cs:751`). A census of every checkout writer, each taking the one lock from its fresh judgement through its effect and reconciliation, in one acquisition order with no nesting through the legacy merge; readers start shared. Proof: the census test naming every writer; cross-process mutual exclusion of a line pull, a promotion, a conversation's write and a landing; no deadlock under the order.
+> - [ ] **GITLOCK1 — every writer of a checkout under one lock** (driver; found at GITAPP2's Codex read, 2026-10-31, `docs/archive/2026-10-31-git-writes-read-codex.md` R2-11, round-1 20 and its second blocking finding). Today's writers of a repository's checkout do not all take `TreeLock`: D109's line pull writes before `TreeSync` takes it (`Workplace/LinePulls.cs:51`, `TreeSync.cs:220`), integration promotion fast-forwards the checkout itself (`Workplace/IntegrationPromotes.cs:424`, beside `TreeLands.MergeAsync` at `TreeLands.cs:299`), and checkout conversations skip it (`Loop/Chat/ChatRunner.cs:670`, `Course/Chat/ChatGoOn.cs:751`). A census of every checkout writer, each taking the one lock from its fresh judgement through its effect and reconciliation, in one acquisition order with no nesting through the legacy merge; readers start shared. Proof: the census test naming every writer; cross-process mutual exclusion of a line pull, a promotion, a conversation's write and a landing; no deadlock under the order.
 
 **Outcome** 2026-10-31: built. `TreeLock` is the checkout's one lock, keyed by its common git directory; the pull and the promotion's effect hold it alone from their judgement through their read back, the legacy merge takes none, and every start (driven or a conversation, in its own tree or the checkout) holds it shared until its record is open, a held start naming its holder. `CheckoutWritersCensusTests` names every git write; `CheckoutLockProcessTests` proves the exclusion against another process and `daoris-driver`, a dead holder, and that nothing but a process start's place and a record's lock is waited for under it. A conversation's write is fenced, not locked; beside a session the ledger holds in the checkout, the pull and the transport's promotion wait, said, and go on at the next look (`CheckoutBesideGitTests`); a merge rule's own press still moves it, its doors carrying no ledger. Detail in D51's note; four FIX-LOG entries.
 
@@ -23490,9 +23500,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 ## PROFILEFIX1 — Daoris's repository facts handed to Lyntai as a profile fixture (2026-11-01, D220)
 
-> **PROFILEFIX1 — Daoris's repository facts handed to Lyntai as a profile fixture** (service, records; Lyntai's vNext Wave 1, its `docs/vnext-modular-capabilities.md` §8 and its VP3, 2026-11-01). Lyntai judged its schema-first profile against its D221 gate: not passed, no application uses the contract, and Daoris would be the first. If Daoris counts, it hands over by quest: the schema (each repository fact it keeps as a field id it names, scoped to a lane or a repository, and who may state it: the owner's word against an inference), a fixture (for a few repositories, the events those facts really went through in order with time and source: a first statement, a correction, a field changed while the rest stand, a disputed value, a renamed field, one forget, and the read the memory coordinator would make after each), the reads it makes (current, at a time, history, rivals, the whole subject), and where it does not fit (a list is one claim per member; a settled choice in prose is curated memory with an end). First decide, by D191, whether a profile serves Daoris's memory coordinator better than its curated entries for these facts. Proof: the decision; if yes, the fixture published to Lyntai and VP3 answered. The Opus maker's proposal is written (`docs/2026-11-01-profile-fixture-proposal.md`, 2026-11-01): no, so no fixture; it waits for another maker's read and the steward's decision.
+> **PROFILEFIX1 — Daoris's repository facts handed to Lyntai as a profile fixture** (service, records; Lyntai's vNext Wave 1, its `docs/vnext-modular-capabilities.md` §8 and its VP3, 2026-11-01). Lyntai judged its schema-first profile against its D221 gate: not passed, no application uses the contract, and Daoris would be the first. If Daoris counts, it hands over by quest: the schema (each repository fact it keeps as a field id it names, scoped to a lane or a repository, and who may state it: the owner's word against an inference), a fixture (for a few repositories, the events those facts really went through in order with time and source: a first statement, a correction, a field changed while the rest stand, a disputed value, a renamed field, one forget, and the read the memory coordinator would make after each), the reads it makes (current, at a time, history, rivals, the whole subject), and where it does not fit (a list is one claim per member; a settled choice in prose is curated memory with an end). First decide, by D191, whether a profile serves Daoris's memory coordinator better than its curated entries for these facts. Proof: the decision; if yes, the fixture published to Lyntai and VP3 answered. The Opus maker's proposal is written (`docs/archive/2026-11-01-profile-fixture-proposal.md`, 2026-11-01): no, so no fixture; it waits for another maker's read and the steward's decision.
 
-**Outcome** 2026-11-01: decided no, today, under D191: the Opus maker's proposal (`docs/2026-11-01-profile-fixture-proposal.md`) and Codex's read with its named changes, settled in `docs/2026-11-01-profile-fixture-reads.md`. No consumer in Daoris needs an exact read of a repository fact its declared home does not give; no fixture was written. Re-opens on one documented candidate (subject, field, scope, the person's and sessions' statements, conflicting entries, no home including machine settings, the query and its answer), first compared against curated supersession; KNOWCENTRAL2i's measurement looks for one. Lyntai told by quest. Detail in D220's note.
+**Outcome** 2026-11-01: decided no, today, under D191: the Opus maker's proposal (`docs/archive/2026-11-01-profile-fixture-proposal.md`) and Codex's read with its named changes, settled in `docs/archive/2026-11-01-profile-fixture-reads.md`. No consumer in Daoris needs an exact read of a repository fact its declared home does not give; no fixture was written. Re-opens on one documented candidate (subject, field, scope, the person's and sessions' statements, conflicting entries, no home including machine settings, the query and its answer), first compared against curated supersession; KNOWCENTRAL2i's measurement looks for one. Lyntai told by quest. Detail in D220's note.
 
 ## FOUNDATION1l-i to l-v — one end, one reader per branch (2026-10-30, D212)
 
@@ -24009,7 +24019,7 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 - [x] **REVIEW2 — a full code review of the session's changes** (reviewers by area, read-only; after the current waves merge). FABRIC2, LANDNODE1, AGENTSPLACE1, SETUPUX1, FLOWCHART2, I18NOPEN1 and their fixes changed the driver, the modules, the service and the page in a short time; reviewers by area (the driver's landing and workflows, the routes and authority, the service and Ask Daoris, the page's flows, tests and checks) find what the merges missed, each finding verified against the code. Proof: the findings, each fixed on main or filed as a row.
 
-  **Done 2026-11-02.** Five areas read over `f0674b65a..` main: 47 findings, 18 blocking, each fixed on main by a fixer that verified it first (the FIX-LOG's entries of 2026-11-02), the record `docs/2026-11-02-review2-findings.md`. What the fixes left is REVIEW2-LEFT1. The review also changed how merges are checked: merges go through `tools/merge-branch.mjs`, a `censuses` gate runs every census, and the post-merge CI keeps going past a red.
+  **Done 2026-11-02.** Five areas read over `f0674b65a..` main: 47 findings, 18 blocking, each fixed on main by a fixer that verified it first (the FIX-LOG's entries of 2026-11-02), the record `docs/archive/2026-11-02-review2-findings.md`. What the fixes left is REVIEW2-LEFT1. The review also changed how merges are checked: merges go through `tools/merge-branch.mjs`, a `censuses` gate runs every census, and the post-merge CI keeps going past a red.
 
 ## MEASUREDALONE1 — a clock gate's timed specs run again alone (2026-11-02)
 
@@ -24163,19 +24173,19 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## CONTEXTONE1 (2026-11-05)
 
-- [x] **CONTEXTONE1 — a repository owns its context and reconciles with the canon; Daoris manages only the sessions it runs** (cli, driver; D230): rows a, b, c, d, d2 and e. → `docs/2026-11-03-context-one-design.md` §4
+- [x] **CONTEXTONE1 — a repository owns its context and reconciles with the canon; Daoris manages only the sessions it runs** (cli, driver; D230): rows a, b, c, d, d2 and e. → `docs/archive/2026-11-03-context-one-design.md` §4
 
   **Outcome** 2026-11-05: built. Codex's read of round 2 is a Codex read owed while its spend cap holds, taken as an Opus read (D240 point 9). The older shapes went with NOCOMPAT1.
 
 ## FOUNDATION1 (2026-11-05)
 
-- [x] **FOUNDATION1 — one foundation for who acts, how work moves and what is said** (D212): every Part A and Part B row but **n**, the EVENTHOOK1 chain, and **v**, records last. → `docs/2026-10-25-foundation-design.md` §10, §19.12
+- [x] **FOUNDATION1 — one foundation for who acts, how work moves and what is said** (D212): every Part A and Part B row but **n**, the EVENTHOOK1 chain, and **v**, records last. → `docs/archive/2026-10-25-foundation-design.md` §10, §19.12
 
   **Outcome** 2026-11-05: every row built. n is EVENTHOOK1's own row; v's retirements became the migration's steps under D232.
 
 ## WORKFLOWCLEAN1 (2026-11-05)
 
-- [x] **WORKFLOWCLEAN1 — the old workflow logic retired and the default setup updated** (driver, modules, web; D227): waves 1 and 2 (1a to 1i). → `docs/2026-11-02-workflow-cleanup-design.md` §9
+- [x] **WORKFLOWCLEAN1 — the old workflow logic retired and the default setup updated** (driver, modules, web; D227): waves 1 and 2 (1a to 1i). → `docs/archive/2026-11-02-workflow-cleanup-design.md` §9
 
   **Outcome** 2026-11-05: waves 1 and 2 are built (`agents/modes.ts` is `['agents', 'setup']`, with no `daoris.agents.setup` flag). y was lit by NOCOMPAT1b3; j is not needed, because no work cycle survives the migration; z is NOCOMPAT1b2's; i and x stay SETUPUX1's.
 
@@ -24187,13 +24197,13 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## FABRIC-CUTOVER1h (2026-11-05)
 
-- [x] **FABRIC-CUTOVER1h — a run graph's close** (driver; with WORKFLOWCLEAN1j). → `docs/2026-10-20-fabric-cutover-design.md`
+- [x] **FABRIC-CUTOVER1h — a run graph's close** (driver; with WORKFLOWCLEAN1j). → `docs/archive/2026-10-20-fabric-cutover-design.md`
 
   **Outcome** 2026-11-05: not needed, because no work cycle survives the migration (WORKFLOWCLEAN1j). It reopens on a sighting.
 
 ## COMPANYVIEW1 (2026-11-05)
 
-- [x] **COMPANYVIEW1 — the agents' structure configured and seen, as a list and a diagram** (web, modules, driver): every row but **1h**, the steward's marks after STEWARDROLE1d. → `docs/2026-10-31-company-view-design.md` §7
+- [x] **COMPANYVIEW1 — the agents' structure configured and seen, as a list and a diagram** (web, modules, driver): every row but **1h**, the steward's marks after STEWARDROLE1d. → `docs/archive/2026-10-31-company-view-design.md` §7
 
   **Outcome** 2026-11-05: built. 1h, the steward's marks, folds into the parked STEWARDROLE1.
 
@@ -24242,7 +24252,7 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## SESSOPT1d and SESSCOMMIT1 (2026-11-06)
 
-- [x] **SESSOPT1d — the documentation relocation completed** (steward): the backlog stays within its budget, and FLAKE1, TEST1 and REH1 get diagnostic evidence homes. **FLAKE1**, tests that fail in a full run and pass alone, is this home's standing line: each sighting is recorded, and fixed only where its cause is found; a capture is no permission to change timeout policy (the sightings to 2026-11-04 are at `9f58e4f2a:TASKS.md`). → `docs/2026-10-02-session-economy-design.md` §4.3
+- [x] **SESSOPT1d — the documentation relocation completed** (steward): the backlog stays within its budget, and FLAKE1, TEST1 and REH1 get diagnostic evidence homes. **FLAKE1**, tests that fail in a full run and pass alone, is this home's standing line: each sighting is recorded, and fixed only where its cause is found; a capture is no permission to change timeout policy (the sightings to 2026-11-04 are at `9f58e4f2a:TASKS.md`). → `docs/archive/2026-10-02-session-economy-design.md` §4.3
 - [x] **SESSCOMMIT1 — the doctrine names the process's source**. → `docs/2026-11-02-parked-triage.md`, WORKFLOWCLEAN1
 
   **Outcome** 2026-11-06: BL27: the backlog is within its budget (6,423 of 6,600 words); FLAKE1, TEST1 and REH1 keep their open fix-log entries as their evidence homes, and `docs/development.md`'s records step says so. The canon's `persist-working-state` rule names the process's source (D164 point 4: where the starting tool tells the commit and landing process, follow it; otherwise the repository's own rules stand), synced here and to both examples.
@@ -24255,7 +24265,7 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## PERSONDOOR1j (2026-11-06)
 
-- [x] **PERSONDOOR1j — confirmation slots protected** (D156; ONEWAY1n, one confirmation queue): checked (BL26): the slots are protected (`PersonConfirmations.cs` ~142-148, ~451-462; `ConfirmationTests` ~361). Left: every ask without a session is one asker, so an agent that leaves its session off can hold both of the terminal's places; bound a nameless ask by its process or refuse it. The rest of PERSONDOOR1 (c to i) is parked with STEWARDROLE1. → `docs/2026-10-09-person-door-design.md` §10
+- [x] **PERSONDOOR1j — confirmation slots protected** (D156; ONEWAY1n, one confirmation queue): checked (BL26): the slots are protected (`PersonConfirmations.cs` ~142-148, ~451-462; `ConfirmationTests` ~361). Left: every ask without a session is one asker, so an agent that leaves its session off can hold both of the terminal's places; bound a nameless ask by its process or refuse it. The rest of PERSONDOOR1 (c to i) is parked with STEWARDROLE1. → `docs/archive/2026-10-09-person-door-design.md` §10
 
   **Outcome** 2026-11-06: BL36: a nameless confirmation ask is bound by its process (`AskerProcess`, the loopback port's owner), one of the terminal's two places each; where the process cannot be read the asks stay one asker, as before.
 
@@ -24267,13 +24277,13 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## COAGENT1c and COAGENT1g (2026-11-06)
 
-- [x] **COAGENT1c** a conversation as the lead, and the head's menu; **COAGENT1g** a hand-over waits for the outgoing part's background work and children (D199). → `docs/2026-10-22-coagent-design.md`
+- [x] **COAGENT1c** a conversation as the lead, and the head's menu; **COAGENT1g** a hand-over waits for the outgoing part's background work and children (D199). → `docs/archive/2026-10-22-coagent-design.md`
 
   **Outcome** 2026-11-06: BL46: one rule decides who leads pieces, so a conversation in its own tree shows the Pieces section and its head's ⋯ asks another agent to work on a piece (`PartnerChatProcessTests`); a conversation's hand-over and an account move take the outgoing part's job before the stop, then end and wait for what it still holds, up to 30 seconds, and the old record says so (`chat.left-ended`, `chat.left-running`; `HandOverLeftProcessTests`). A quest's session's hand-over stays on COAGENT1.
 
 ## REVIEW2-LEFT1 (2026-11-07)
 
-- [x] **REVIEW2-LEFT1 — what REVIEW2's fixes left** (tests): about 48 tick classes still root their homes under the OS temp, and the modules' `Bridge` home has no fixture. Proof: no test home under the OS temp, by the census. → `docs/2026-11-02-review2-findings.md`
+- [x] **REVIEW2-LEFT1 — what REVIEW2's fixes left** (tests): about 48 tick classes still root their homes under the OS temp, and the modules' `Bridge` home has no fixture. Proof: no test home under the OS temp, by the census. → `docs/archive/2026-11-02-review2-findings.md`
 
   **Outcome** 2026-11-07: every desktop test home roots under the checkout's `_fixtures/test-homes` (`TestHomes.Root`, 457 files moved by a count-asserted edit) and the modules' `Bridge` homes under `_fixtures/bridge-homes`; `TestHomesCensusTests` pins no `GetTempPath` or `GetTempFileName` in either test project but three named exceptions that create nothing there or need a folder outside any repository.
 
@@ -24294,7 +24304,7 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 ## MODELROLE1e2 and MODELROLE1l (2026-11-07)
 
 - [x] **MODELROLE1e2** what MODELROLE1e left: row d's hand-over and row f's editor; **MODELROLE1l** design and decision work starts on
-  its own role (driver, service, web; D205). → `docs/2026-10-23-actors-design.md`
+  its own role (driver, service, web; D205). → `docs/archive/2026-10-23-actors-design.md`
 
   **Outcome** 2026-11-07: e2 built with BL7 (`395b875ad`): a hand-over keeps its model and effort, a handed start takes the role's
   choice, and the four fenced roles are edited in the one role editor (D233 choice 5); its partner case goes with COAGENT1. l built
@@ -24303,26 +24313,26 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
 ## GITAPP1 (2026-11-07)
 
-- [x] **GITAPP1 — Daoris's git as comprehensive as a git management app, and Review fast** (design; D202). → `docs/2026-10-23-git-app-design.md`
+- [x] **GITAPP1 — Daoris's git as comprehensive as a git management app, and Review fast** (design; D202). → `docs/archive/2026-10-23-git-app-design.md`
 
   **Outcome** 2026-11-07: part one built (D202). Part two was measured as OPTIMIZE1a (BL54, `3453472de`): a review asks two or three
   object questions of its 23 git starts, so a held reader is not worth adding and none is built.
 
 ## GITAPP2 (2026-11-07)
 
-- [x] **GITAPP2 — the person's git acts and writes** (driver, modules, web; D204): a to n are built (g and n: one push act on the journal with a grant bound to its ref, *Push…* and *Push tag…* on the page; G7). Ask Daoris's sync card offers *Add a git identity for host…* where a fetch did not reach, and a push cut off mid-way and a refusing `pre-push` hook are proved. Stash Drop is built too (by commit id, offered only for a Save Daoris journaled, git naming another commit storing it back and reporting not done; no Undo, the commit and its `git stash store` kept on the answer and the journal). Its terminal twin is built (`daoris git stash drop <repository> <commit> [--plan|--yes]`, its card a person's press) and a race in which git names another commit stores it back and reports not done. → `docs/2026-10-23-git-writes-design.md` §12
+- [x] **GITAPP2 — the person's git acts and writes** (driver, modules, web; D204): a to n are built (g and n: one push act on the journal with a grant bound to its ref, *Push…* and *Push tag…* on the page; G7). Ask Daoris's sync card offers *Add a git identity for host…* where a fetch did not reach, and a push cut off mid-way and a refusing `pre-push` hook are proved. Stash Drop is built too (by commit id, offered only for a Save Daoris journaled, git naming another commit storing it back and reporting not done; no Undo, the commit and its `git stash store` kept on the answer and the journal). Its terminal twin is built (`daoris git stash drop <repository> <commit> [--plan|--yes]`, its card a person's press) and a race in which git names another commit stores it back and reports not done. → `docs/archive/2026-10-23-git-writes-design.md` §12
 
   **Outcome** 2026-11-07: every act of the design's §12 is built, Stash Drop last (by commit id, with its terminal twin and its race proof); the installed window's look goes with the installed batch.
 
 ## SESSWATCH1 (2026-11-07)
 
-- [x] **SESSWATCH1 — a quiet session seen, worded and set by one door** (driver, service, web): 1a, 1c (`quietMinutes`, the one quiet setting at every door, `settings_quiet`, Ask Daoris's answer) and 1b in most part (the watcher's one word on every door that takes words) are built. Left: **1b**'s rest, the session row's *told* line on the page and `LongCalls`' look folded into the watcher's. → `docs/2026-10-23-session-watch-design.md` §9; `docs/areas/driving.md`, Open
+- [x] **SESSWATCH1 — a quiet session seen, worded and set by one door** (driver, service, web): 1a, 1c (`quietMinutes`, the one quiet setting at every door, `settings_quiet`, Ask Daoris's answer) and 1b in most part (the watcher's one word on every door that takes words) are built. Left: **1b**'s rest, the session row's *told* line on the page and `LongCalls`' look folded into the watcher's. → `docs/archive/2026-10-23-session-watch-design.md` §9; `docs/areas/driving.md`, Open
 
   **Outcome** 2026-11-07: 1a, 1b and 1c are built: the watcher's one word on every door that takes words, the session row's *told* line in en and zh, and `LongCalls`' look folded into the watcher's (`LongCallLook`, `CallBound`, BL78); 1d (measured on the install) and 1e (the automatic end, after 1d) stay open.
 
 ## COAGENT1 (2026-11-07)
 
-- [x] **COAGENT1 — a partner of another maker in a line's work** (driver, web; D199): **COAGENT1b2** (the person's *Discard…* and *Hand over what it left* on a piece, a handed piece read taken in, every landing door refusing a piece's record, the partner's real-process case, the verdict at the landing where the lead's tree is gone, and a quest's session's hand-over waiting for what its outgoing part left running are built, BL75) its rest, retention through tidy, clear and sync, proven once the design's clearing of a closed quest's pieces (D153) is read against no tidy, clear or sync moving a piece's ref; COAGENT1e is AGENTPROVIDER1r. → `docs/2026-10-22-coagent-design.md`
+- [x] **COAGENT1 — a partner of another maker in a line's work** (driver, web; D199): **COAGENT1b2** (the person's *Discard…* and *Hand over what it left* on a piece, a handed piece read taken in, every landing door refusing a piece's record, the partner's real-process case, the verdict at the landing where the lead's tree is gone, and a quest's session's hand-over waiting for what its outgoing part left running are built, BL75) its rest, retention through tidy, clear and sync, proven once the design's clearing of a closed quest's pieces (D153) is read against no tidy, clear or sync moving a piece's ref; COAGENT1e is AGENTPROVIDER1r. → `docs/archive/2026-10-22-coagent-design.md`
 
   **Outcome** 2026-11-07: b2 is whole: a piece's ref and box stand through a tidy, a sync and a clear (D199 point 3 read over the design's D153 line), and a clear waits, `needs-you` naming the lead, while a piece is not yet taken in, discarded or refused (`HistoryPieces`, the `Piece*RetentionTests`); COAGENT1e goes on as AGENTPROVIDER1r.
 

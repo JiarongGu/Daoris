@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 internal static class PartnerStandIns
 {
     /// <summary>The evidence a stand-in's row names: the design's section on the stand-ins, since no run on a machine measured them.</summary>
-    public const string Evidence = "docs/2026-10-22-coagent-design.md";
+    public const string Evidence = "docs/archive/2026-10-22-coagent-design.md";
 
     /// <summary>A stand-in's row for <paramref name="agent"/> at <paramref name="version"/>, for a lead in <paramref name="repository"/>.</summary>
     public static PartnerMeasurement Row(

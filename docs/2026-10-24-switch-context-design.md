@@ -2,7 +2,7 @@
 
 **Standing: proposed, round 5, under D191; its line view, SWITCHCTX1c-i, accepted.** Round 1 was written by Claude Opus 5.5 from
 the code on main at `ddf0a24fd` and read at `ff2461081` by the independent Opus foundation reader, every read verbatim in
-`docs/2026-10-24-switch-context-reads.md`: 12 findings, 4 blocking, another round. Round 2, written from main at `426ed2b73`,
+`docs/archive/2026-10-24-switch-context-reads.md`: 12 findings, 4 blocking, another round. Round 2, written from main at `426ed2b73`,
 answered them in §8 and was read by the same reader at `260881273`: 10 findings, 3 blocking, accept after named changes. Round 3
 took those in §9, from main at `0d3af537b`. Codex read round 3 at `972b17577`: 26 findings, 17 blocking, another round. Round 4
 answered every one in §10, from main at `972b17577`, and adopted Codex's smaller shape: the corrected line view first, then the
@@ -17,7 +17,7 @@ its credits out. Nothing here is built.
 
 **2026-10-25, Codex's read of round 5 (the reads record): 21 findings, 10 blocking, another round.** Its remaining blockers are durable
 identity, delivery disposition and execution history across recovery, which it says need coordinated protocol changes rather than
-wording. That is the one durable move record FOUNDATION1 designs (`docs/2026-10-25-foundation-brief.md`, its three proposals and
+wording. That is the one durable move record FOUNDATION1 designs (`docs/archive/2026-10-25-foundation-brief.md`, its three proposals and
 their synthesis), into which this carry becomes a section. So by the steward's call the carry (SWITCHCTX1a onward) waits on that
 design rather than a sixth round here; it is re-cut onto the move record there, Codex's round-5 findings among its inputs.
 SWITCHCTX1c-i stays accepted and built.
@@ -96,7 +96,7 @@ move of the same agent by the same protocol; and another door only once it can r
   the record works (`:2735`).
 
 So every move over the curve is a new part on a new conversation, handed the brief. The account-switch design said what that
-costs and left this row to measure it (`docs/2026-10-12-account-switch-design.md:132-135`).
+costs and left this row to measure it (`docs/archive/2026-10-12-account-switch-design.md:132-135`).
 
 ### 1.2 A limit's go-on
 
@@ -114,7 +114,7 @@ costs and left this row to measure it (`docs/2026-10-12-account-switch-design.md
   carry-on have no such box.
 - **LIMITGOON2**: where no account of its agent has room, `ElsewhereAsync` walks its actor's effective order without that agent and
   opens the new part on the first choice that can run (`LimitMove.cs:92`, `:444`), handed the same brief and words: D205's (e)
-  (`docs/2026-10-23-actors-design.md:478-494`), *never the transcript*.
+  (`docs/archive/2026-10-23-actors-design.md:478-494`), *never the transcript*.
 - **Ask Daoris moves only by a limit**, by `LimitMove.HelpStartAsync`, in the room `HelpRoom.GoesOnIn` returns (`LimitMove.cs:420-434`),
   never by the curve (`CurveMove.cs:70-77`) or a hand-over (`HandOver.cs:190-193`). That room is the workspace's, which is not always
   the previous part's (ASKSCOPE1b, `Conversations/Chat/ChatGoOn.cs:648-649`).
@@ -183,7 +183,7 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   adapter's own pin, in a folder Daoris installed.
 - **Claude Code** keeps a conversation as `projects/<folder>/<id>.jsonl` under its home, `<folder>` the working directory with
   every character but a letter or a digit turned into `-` (`Platform/ToolHomeLeftovers.cs:30-31`, `Flatten` `:55`); its resume
-  reads it there and refuses a missing one with `resource_not_found` (`docs/2026-10-02-answer-continues-design.md:36-38`). Read on
+  reads it there and refuses a missing one with `resource_not_found` (`docs/archive/2026-10-02-answer-continues-design.md:36-38`). Read on
   this install's own account homes, 2026-10-24, by listing names only: beside `<id>.jsonl` is a folder `<id>/` holding that
   conversation's `tool-results/` and `subagents/`; the home also holds `.credentials.json`, `.claude.json` (the account's own
   configuration, a tree's trust among it, `ClaudeTrust.cs:82`), `sessions/` (running processes' files), `session-env/`,
@@ -223,14 +223,14 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   resume kills the process (`ChatRunner.cs:2649-2667`), under the rule that a new session would be *a new conversation under the
   same record* (`:2643-2644`, D137 point 8).
 - **HOMELAYOUT5** (open, `TASKS.md:120`) asks the neighbouring question, whether a conversation resumes from a *moved folder*
-  (`docs/2026-10-16-install-layout-design.md:166-167`, `:243-245`, `:272-273`): the tree moved and the home kept. Here the tree is
+  (`docs/archive/2026-10-16-install-layout-design.md:166-167`, `:243-245`, `:272-273`): the tree moved and the home kept. Here the tree is
   kept and the home changes, so its answer is not this one's, and neither has been measured.
 
 ### 1.6 What the decisions say of copying, and of one conversation per record
 
 - The account-rotation design, D125's contract, §3.5 point 5: *What does not travel is the harness's own conversation … which
   Daoris never reads or copies (D49 §4, D66 §3) … Daoris's accounts are separate homes by design, and what crosses between them is
-  Daoris's* (`docs/2026-10-01-account-rotation-design.md:336-339`). D125 point 4 and its rejection of *copying the harness's
+  Daoris's* (`docs/archive/2026-10-01-account-rotation-design.md:336-339`). D125 point 4 and its rejection of *copying the harness's
   conversation between account homes (a read inside an account's directory, D66 §3)* (`docs/decisions/D125.md:25-30`, `:61-62`).
 - D131 point 4, *One Daoris record for one harness conversation* (`docs/decisions/D131.md:24`); point 5, *a carry-on after … a
   refused turn* stays a new session (`:26-28`); its rejections of *a linked record that the page folds into one thread*, of
@@ -261,7 +261,7 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   (*never read from the agent's own home … which D125 rejected*) and `Continuation.cs:177-181` (*another account would not find
   it*).
 - The session-messages design §4.3: the person may open Daoris's conversation in their own terminal with the account's home, and
-  *Daoris neither offers nor prevents it* (`docs/2026-10-03-session-messages-design.md:291-295`).
+  *Daoris neither offers nor prevents it* (`docs/archive/2026-10-03-session-messages-design.md:291-295`).
 
 ### 1.7 What the record keeps, and what the pinned adapter replays
 
@@ -958,7 +958,7 @@ runs. The replay's unit and the stand-in's shape follow from that reading. What 
 - Whether the API takes the earlier turns' signed thinking under another account; until SWITCHCTX1f, a carry runs the same model
   and effort, judged on what ran (§2.1), and a provider's refusal of the history is seen at the first turn (§2.5). The
   account-rotation design saw a conversation outlive a re-sign-in in the maker's CLI
-  (`docs/2026-10-01-account-rotation-design.md:338`), in the same home, which lowers the risk without measuring it.
+  (`docs/archive/2026-10-01-account-rotation-design.md:338`), in the same home, which lowers the risk without measuring it.
 - **What the agent retains.** A replay that agrees shows what the transcript holds, not what the agent keeps in its working
   memory; only a carried part's first answer, read by the person, says that, and nothing here claims it.
 - What a carried part's first request costs: the prompt cache is per account, so it writes the whole context H, where a briefed
@@ -1243,7 +1243,7 @@ Daoris's account homes, never over a name that stands; and nothing here touches 
 
 ## 8. Round 2: round 1's read answered
 
-Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-switch-context-reads.md`, §4), each checked against the code
+Every finding of the Opus foundation read of round 1 (`docs/archive/2026-10-24-switch-context-reads.md`, §4), each checked against the code
 on main at `426ed2b73`. *Taken* means the design now says it; *answered* means it is not taken as named, for the reason given;
 *deferred* means a later row carries it. The read's §1 corrections are findings 2, 5, 6, 8, 11 and 12 below.
 
@@ -1266,7 +1266,7 @@ What round 2 left owed, the Opus reader's read of it, came at `260881273`; §9 t
 
 ## 9. Round 3: round 2's read taken
 
-Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-switch-context-reads.md`, its round 2 §4), each taken as the
+Every finding of the Opus foundation read of round 2 (`docs/archive/2026-10-24-switch-context-reads.md`, its round 2 §4), each taken as the
 read names its smallest change, and each checked against the code on main at `0d3af537b` (its `src/` the same as `260881273`'s) and,
 for findings 2 and 3, against the pinned adapter's own package (§1.7). The read's §1 corrections are finding 4; its §2 holes are
 findings 1 to 3 and 5 to 9; its §3 rows are finding 10.
@@ -1293,7 +1293,7 @@ reverses nothing, waits only for its own read.
 
 ## 10. Round 4: Codex's read answered
 
-Every finding of Codex's read of round 3 (`docs/2026-10-24-switch-context-reads.md`, its section *Codex, round 3*), numbered as
+Every finding of Codex's read of round 3 (`docs/archive/2026-10-24-switch-context-reads.md`, its section *Codex, round 3*), numbered as
 Codex numbers them, its section and item. Each is checked against the code on main at `972b17577`, the commit Codex read, and the
 package findings against the pinned adapter's own package, claude-agent-acp 0.84.0 on the SDK 0.3.284 with its CLI 2.1.284, read
 from the install's toolchain (§1.5, §1.7). *Taken* means the design now says it, and where; *disputed* means it is not taken, with
@@ -1361,7 +1361,7 @@ readers' check of its round-4 text, not the carry's acceptance.
 
 ## 11. Round 5: the reads of round 4 answered
 
-Both makers' reads of round 4 at `4698728a5` (`docs/2026-10-24-switch-context-reads.md`, its sections *Opus (foundation), round 4*
+Both makers' reads of round 4 at `4698728a5` (`docs/archive/2026-10-24-switch-context-reads.md`, its sections *Opus (foundation), round 4*
 and *Codex, round 4*), numbered as each numbers them: the Opus reader's findings as **O1** to **O11**, Codex's by its section and
 item. Each is checked against the code on main at `e1f4ecb5d`, whose cited sources are `972b17577`'s but `ServiceClient.cs`'s, and
 the package findings against the pinned adapter's own package (§1.5, §1.7). *Taken* means the design now says it, and where;
@@ -1424,7 +1424,7 @@ meanwhile.
 
 ## 12. Round 5's named changes, and where each went
 
-The independent Opus reader read round 5 at `90bbffe4b` (`docs/2026-10-24-switch-context-reads.md`, its section *Opus (foundation),
+The independent Opus reader read round 5 at `90bbffe4b` (`docs/archive/2026-10-24-switch-context-reads.md`, its section *Opus (foundation),
 round 5*): 11 findings, 4 blocking, accept after named changes the steward can check without another read. Each is taken as the
 read names it, where it offers two forms the one named below, and cited at `e1f4ecb5d`, whose sources the read read. Its §0 checks
 both reads of round 4 against round 5 and finds no finding of either wrong; its §1 claims are each finding's below.

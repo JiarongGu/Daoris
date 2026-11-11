@@ -1,0 +1,31 @@
+{
+  "_why": "The read-path bench's questions about this repository (D278): `present` asks how something works now, answered by a rule in an area document; `history` asks what happened or why, answered by the archive, the fix log or a decision, `by` an identifier as builders look it up or by its words. Each `answer` lists the files that count as right. Read by tools/read-path-bench.mjs and by the service's PresentFirstBenchTests.",
+  "present": [
+    { "question": "what does the comment gate refuse", "answer": ["docs/areas/code-structure-and-process.md"] },
+    { "question": "what does daoris check fail on", "answer": ["docs/areas/doctrine-and-cli.md"] },
+    { "question": "where is a fresh tree's worktree made and on which branch", "answer": ["docs/areas/driving.md"] },
+    { "question": "which bridge modules does the page reach the machine through", "answer": ["docs/areas/desktop-app.md"] },
+    { "question": "what makes a folder an install", "answer": ["docs/areas/install-home-update.md"] },
+    { "question": "what happens to a plugin whose apiVersion is newer", "answer": ["docs/areas/plugins.md"] },
+    { "question": "which workflow does a chain's work follow", "answer": ["docs/areas/workflows-review-landing.md"] },
+    { "question": "what does a channel message's level decide", "answer": ["docs/areas/co-working-and-messages.md"] },
+    { "question": "which agents are built in and how does each connect", "answer": ["docs/areas/agents-and-harnesses.md"] },
+    { "question": "which door changes a session's roles", "answer": ["docs/areas/roles-and-supervision.md"] },
+    { "question": "how often does a knowledge server over one checkout read it again", "answer": ["docs/areas/knowledge-memory-records.md"] },
+    { "question": "what does a conversation do at its account's limit", "answer": ["docs/areas/conversations-and-context.md"] }
+  ],
+  "history": [
+    { "question": "WORKFLOWCLEAN1", "by": "id", "answer": ["docs/task-archive.md"] },
+    { "question": "D228", "by": "id", "answer": ["docs/decisions/D228.md"] },
+    { "question": "FIX4", "by": "id", "answer": ["docs/FIX-LOG.md"] },
+    { "question": "LIMITSWITCH3", "by": "id", "answer": ["docs/FIX-LOG.md", "docs/task-archive.md"] },
+    { "question": "KEEPDATA1", "by": "id", "answer": ["docs/task-archive.md"] },
+    { "question": "D54", "by": "id", "answer": ["docs/decisions/D54.md"] },
+    { "question": "why is the archive kept in one file rather than split by month", "by": "words", "answer": ["docs/decisions/D278.md"] },
+    { "question": "when did every start inherit DAORIS_HOST_TOKEN", "by": "words", "answer": ["docs/FIX-LOG.md"] },
+    { "question": "why does a budget report and never fail", "by": "words", "answer": ["docs/decisions/D54.md"] },
+    { "question": "when was the old workflow logic retired", "by": "words", "answer": ["docs/task-archive.md"] },
+    { "question": "root cause of every account signed out after the application started", "by": "words", "answer": ["docs/FIX-LOG.md"] },
+    { "question": "why is each thing done one way only", "by": "words", "answer": ["docs/decisions/D228.md"] }
+  ]
+}

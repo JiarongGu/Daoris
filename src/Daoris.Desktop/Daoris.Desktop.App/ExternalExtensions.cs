@@ -4,7 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The extensions other software registered for Chrome on this machine, which the engine reads and
-/// offers for the person's approval (`docs/2026-09-28-chromium-embedding-evidence.md` §14). Measured
+/// offers for the person's approval (`docs/archive/2026-09-28-chromium-embedding-evidence.md` §14). Measured
 /// under Google Chrome's key; Chromium's own key is read too, being the same mechanism.
 /// </summary>
 internal static class ExternalExtensions

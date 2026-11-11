@@ -2,7 +2,7 @@
 
 **Round 6, proposed for both makers' reads before a decision is written** (2026-11-09). The owner finds reading a repository's
 Daoris configuration slow and wants it read once and better indexed. Round 1 (§0 to §5) measured every reader (§1, §2, §3) and
-proposed one store every reader passes (§4) and the rows that build it (§5). Both makers read it ([the reads](2026-11-09-repo-config-reads.md))
+proposed one store every reader passes (§4) and the rows that build it (§5). Both makers read it ([the reads](archive/2026-11-09-repo-config-reads.md))
 and found seventeen blocking sequences and thirteen readers it missed; round 2 (§6 to §17) answers them by class, and supersedes
 round 1 where it differs. Both read round 2 and found seven more and a leak in each census; round 3 (§18 to §28) closes them by
 construction, and supersedes round 2 where it differs. Both read round 3 and found seven more, and a planted member each census
@@ -660,7 +660,7 @@ Nothing was measured anew for round 2, and nothing in the product changed.
 §13.3's censuses by §23; §12's search key and its row d target by §22; §13.3's `WorkflowHomeTopic` exemption by §24; §14.1's one bound
 and §14.2's stamp column by §19 and §25; §17 by §28.*
 
-Both makers read round 2 ([the reads](2026-11-09-repo-config-reads.md), *Codex, round 2* and *Opus (independent), round 2*). Here
+Both makers read round 2 ([the reads](archive/2026-11-09-repo-config-reads.md), *Codex, round 2* and *Opus (independent), round 2*). Here
 Codex's five blocking gaps are **C1** to **C5**, Opus's two are **B1** and **B2**, the leaks each found in a census are *the leaks*, and
 the points that did not block are **N1** to **N6**. Round 3 closes each by a construction a member not yet found cannot pass, and shows
 each census red on a member planted where round 2's census was green. Written from the code at `bdef71a3e2`.
@@ -992,7 +992,7 @@ by §35.2; §25's N2 mark by §36; §28 by §40.*
 
 *Round 5 drops §29 to §34's site census (§51) and supersedes §40 by §55.*
 
-Both makers read round 3 ([the reads](2026-11-09-repo-config-reads.md), *Codex, round 3* and *Opus (independent), round 3*). Here
+Both makers read round 3 ([the reads](archive/2026-11-09-repo-config-reads.md), *Codex, round 3* and *Opus (independent), round 3*). Here
 Codex's four blocking gaps are **Codex 1** to **Codex 4**, Opus's three are **X1** to **X3**, and the members each read planted where a
 census of round 3 stayed green are *the planted members*. Three rounds closed the censuses' leaks one shape at a time (names through
 helpers, then listings, then stats, then metadata), and each round's reads found a shape the names did not reach. Round 4 stops
@@ -1372,7 +1372,7 @@ Nothing was measured anew for round 4 but the sites, counted from the code, and 
 *Supersedes round 4 where it differs: §29 to §34's site census by §42 to §46, §51 saying what goes and what stays; §32's run-time half by
 §46; §35.2's `Effective` by §48; §35.5's kind by §49; §40 by §55.*
 
-One maker read round 4 ([the reads](2026-11-09-repo-config-reads.md), *Opus (independent), round 4*); the other's read stopped at its
+One maker read round 4 ([the reads](archive/2026-11-09-repo-config-reads.md), *Opus (independent), round 4*); the other's read stopped at its
 spend cap before it answered. The read judged §29 to §34's census out of proportion to what it guards and proposed a smaller construction
 with the same guarantee for every reader that names a declaration. Round 5 adopts it. Here the read's blocking findings are **B1** to
 **B5** as it numbers them, its two other holes **H1** (`Driver.Host` and `AskConsole`) and **H2** (a start's site lost after an `await`),
@@ -1857,7 +1857,7 @@ Nothing was measured anew for round 5 but the counts of §44 and §45, taken fro
 test and projects by §61; §44's banned members by §61; §46's rule inside the scope by §62; §47's version types by §60 and its holder
 table by §58; §48 by §58; §50's a2 row by §59; §45's object names by §62. §55's rows a2, a3, c1, c2 and d1 are rewritten in place.*
 
-One maker read round 5 ([the reads](2026-11-09-repo-config-reads.md), *Opus (independent), round 5*); the other's read did not run. The
+One maker read round 5 ([the reads](archive/2026-11-09-repo-config-reads.md), *Opus (independent), round 5*); the other's read did not run. The
 read found a1 and a2 able to land green and four blocking findings, **N1** to **N4** as it numbers them, each a row that could not land
 as written; five gaps in the boundary's completeness; and five points that did not block. Each is answered here by construction, its
 proof added to its row. The code adds three the read did not name: GitDoor compiles two of the driver's readers of driver.json, and

@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// quoted, with the check that proves it; the service refuses a quote found in neither the ask nor what they
 /// said on it since, naming the words, and a chain step inherits its parent's requirements. The intake's
 /// paraphrase kept the word "bridge" and lost what the receiving repository's own documents said it meant
-/// (`docs/2026-10-02-ask-drift-evidence.md` §3.1); a quote is a fact a gate checks with no model.
+/// (`docs/archive/2026-10-02-ask-drift-evidence.md` §3.1); a quote is a fact a gate checks with no model.
 /// </summary>
 public sealed class QuestRequirementTests : IAsyncLifetime
 {

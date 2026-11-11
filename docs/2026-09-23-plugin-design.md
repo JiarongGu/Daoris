@@ -2,7 +2,7 @@
 
 > Router standing, moved here when the router was cut to its size (DOCSIZE1): also governed by D140, D145 and D146.
 
-> Written 2026-09-23 at the owner's direction. The 2026-09-22 study (`2026-09-22-plugin-design-study.md`)
+> Written 2026-09-23 at the owner's direction. The 2026-09-22 study (`archive/2026-09-22-plugin-design-study.md`)
 > found three extension seams nobody had named and declined a plugin *runtime*; the owner read the
 > result as *"the plugin is not built at all"* and, asked what shape it should take, answered: *"you
 > should check deepseek-harness design for plugin and idea from yaorin."* This is that design — the two
@@ -11,7 +11,7 @@
 > The decision is **D64**.
 
 *Extended by D119 (PLUGUI1a, 2026-10-01): plugins get a view of their own on the frame,
-`docs/2026-10-01-plugins-screen-design.md`. As PLUGUI1b–h build it, §6's and §9's screen column moves from
+`docs/archive/2026-10-01-plugins-screen-design.md`. As PLUGUI1b–h build it, §6's and §9's screen column moves from
 Settings → Plugins to the Plugins view. A plugin's calls are kept in the machine log without its words, and an
 installed plugin's last trial and test run are kept under the home.*
 
@@ -127,7 +127,7 @@ repository names one, and a scratch run redirects it with everything else.
 
 - *(D150, PLUGTOOL1a)* **`tools`** names the programs the plugin's process runs: each an `id`, a range of
   `versions`, `for` (why it runs it) and at most four `ready` checks. A problem there never refuses the plugin, and a tool
-  is found and checked only at a trial or on a press. `docs/2026-10-04-ux6-redesign.md` §7.2 is its table.
+  is found and checked only at a trial or on a press. `docs/archive/2026-10-04-ux6-redesign.md` §7.2 is its table.
 
 - *(D173, FABRIC-UNIT1d)* **`steps`** declares the plugin's steps, each read into the one node declaration a built-in step
   is, of the kind `<plugin>/<id>`: `id`, `version` (1 when absent), `reach` (`observed` or `performed`), `inputs` and

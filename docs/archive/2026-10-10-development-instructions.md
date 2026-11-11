@@ -13,9 +13,9 @@ previous guide's wording, including its dated status claims and generated import
 knowledge and work** across this family of projects — and, as of **D45, the driver**: the centralized
 workflow manager that triggers and coordinates the agent sessions doing that work, one session per
 domain-owning repository. **All three parts are built:** the per-repo **connector**, the **local
-driver** desktop app (**proven by a real driven run** — D46, `docs/2026-09-19-driver-design.md`), and
+driver** desktop app (**proven by a real driven run** — D46, `docs/archive/2026-09-19-driver-design.md`), and
 the **remote server** for teams (**built and proven by a two-machine rehearsal** — D47,
-`docs/2026-09-20-remote-design.md`). Each repository has its own agent, which owns that
+`docs/archive/2026-09-20-remote-design.md`). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
@@ -82,18 +82,18 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 **authorship** was at risk, not consistency.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
-- `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
+- `docs/archive/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/decisions/` — one file per numbered decision, and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
-  and there is no editor in the plan. `docs/2026-09-21-working-surface-design.md` is the contract,
-  `docs/2026-09-21-working-surface-components.md` the method — **a molecule imports no hook**, held
-  by a test — and `docs/2026-09-21-ide-reference-study.md` what changed it. **Every SURF item is
+  and there is no editor in the plan. `docs/archive/2026-09-21-working-surface-design.md` is the contract,
+  `docs/archive/2026-09-21-working-surface-components.md` the method — **a molecule imports no hook**, held
+  by a test — and `docs/archive/2026-09-21-ide-reference-study.md` what changed it. **Every SURF item is
   built**; Sessions is usable (`npm run desktop -- run`). Two rules that still bind: a timeline is
   **derived**, and **the stream has one home**.
 - **The application has a frame of its own** (SURF10/SURF7 → **D56**,
-  `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
+  `docs/archive/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
   bar**, a 48px **activity bar** as the one navigation (**D66**), one owner for the verbs, a **right dock**, and
   **D41 §3 amended to one denser scale** — seven named type tokens held by `tokens.test.ts`, after
   the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
@@ -114,7 +114,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are
   invisible in the source — a 190-character measure, a field with no border in dark, an icon rail
   stacked on the page at 680px — because they are properties of the assembled window at a real
-  width in a real theme. `docs/2026-09-19-platform-ux.md` §4 carries what each pass settled.
+  width in a real theme. `docs/archive/2026-09-19-platform-ux.md` §4 carries what each pass settled.
 - **The protocol door is open** (D53, `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a
   protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface
@@ -122,12 +122,12 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   seam carries a `Wire`, `AcpSession` speaks JSON-RPC over stdio, a permission request is **refused by
   construction** (D52), and the record still moves on the exit code and the quest — the wire flattens
   an aborted turn to `end_turn`, so it enriches and never decides. 🔴 **The posture is the ADAPTER's,
-  in that harness's own words** (`docs/2026-09-22-acp3-probe-evidence.md`): null means the wire
+  in that harness's own words** (`docs/archive/2026-09-22-acp3-probe-evidence.md`): null means the wire
   carries none, and is never a licence to guess a neighbouring mode. **ACP2 is proven** (17/17, a
   real login).
-- `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
+- `docs/archive/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
-- **The toolchain is Daoris's** (**D57**, `docs/2026-09-22-toolchain-design.md`): which binary runs
+- **The toolchain is Daoris's** (**D57**, `docs/archive/2026-09-22-toolchain-design.md`): which binary runs
   (`agent pin|unpin`; *explicit command → managed pin → `PATH`*; a pin nobody installed
   **refuses**), usage **measured before managed** (ACP's `usage_update` per session at its
   high-water mark, totalled per account, machine-local; 🔴 **absent is never zero**, no price
@@ -149,10 +149,10 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   the driver's kit** (D101, §9): `daoris-driver plugins new|try`, a folder whose own `node --test`
   needs no Daoris. One updates from where it came from; the install offers Daoris's own (D103).
 - **The conversation is built** (owner, 2026-09-25 → **D76**,
-  `docs/2026-09-24-reference-gap-study.md`): a session's structured updates are kept as typed events
+  `docs/archive/2026-09-24-reference-gap-study.md`): a session's structured updates are kept as typed events
   on the machine, and the page renders a conversation from them; the console becomes its raw view.
   **UX5 then checked every screen** against the reference; its ledger
-  (`docs/2026-09-26-ux5-screen-audit.md`) opens with what the instruments need to look at the window.
+  (`docs/archive/2026-09-26-ux5-screen-audit.md`) opens with what the instruments need to look at the window.
   The regular task (D65: an ask becomes quests through an **intake session**) is built.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.

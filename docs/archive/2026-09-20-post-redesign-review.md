@@ -117,7 +117,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
 - [x] Root `README.md` documents neither `domain` nor `remote` in the manifest — the arc's biggest doc
   gap: a shipped, review-gated disclosure field with no user-facing documentation. `status` cannot
   report it either (the one manifest field it cannot answer for).
-- [x] `docs/2026-09-20-remote-design.md` §9 lacks the second D47 amendment note (the registry mirrored
+- [x] `docs/archive/2026-09-20-remote-design.md` §9 lacks the second D47 amendment note (the registry mirrored
   down, foreign rows only) that §7 got for the first; §3's "today" paragraph describes the retired gate
   with no pointer. `docs/DECISIONS.md` D36 lacks the supersession note the file's convention gives
   every other superseded entry.

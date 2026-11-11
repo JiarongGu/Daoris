@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// about.</para>
 ///
 /// <para>The stand-ins speak the shapes the real binaries do: Claude Code's interrupt is the control
-/// request the probe measured (docs/2026-09-25-stream-json-evidence.md, § Stopping a turn), and ACP's
+/// request the probe measured (docs/archive/2026-09-25-stream-json-evidence.md, § Stopping a turn), and ACP's
 /// is <c>session/cancel</c>, answered by the prompt's own <c>cancelled</c>.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]

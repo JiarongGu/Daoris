@@ -88,7 +88,7 @@ answer would reach nobody.
 | Finding | Where | Label |
 |---|---|---|
 | Daoris's driven session runs `claude -p <target>` with no `--input-format stream-json`: nothing can be written to it mid-turn | `Adapters.cs` (`ClaudeCodeAdapter.Prepare`) | read |
-| A conversation on the native door runs `--input-format stream-json` and holds a mid-turn message until the turn's `result` (CONV3) | `Adapters.cs` (`PrepareChat`); `docs/2026-09-25-stream-json-evidence.md` | read |
+| A conversation on the native door runs `--input-format stream-json` and holds a mid-turn message until the turn's `result` (CONV3) | `Adapters.cs` (`PrepareChat`); `docs/archive/2026-09-25-stream-json-evidence.md` | read |
 | A stream-json user line with no `priority` is the same queued command the adapter pushes (§1), so it is folded at the next step | `claude.exe` @228094292, @209904095 | read |
 
 ## 5. `codex-acp` 2.1.1

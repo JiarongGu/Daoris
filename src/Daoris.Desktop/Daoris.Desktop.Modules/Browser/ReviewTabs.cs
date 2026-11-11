@@ -135,7 +135,7 @@ public static class ReviewRequests
 /// browser, and its build served to that tab alone, over the shell's own CDP connection to its own browser, at the rule's address
 /// and the build's base only. Held here, not by the session, so it lasts through reloads and the app's own navigation until the
 /// verdict lets it go: a session's own interception ends with it, and a reload would then load the person's own server
-/// (measured, <c>docs/2026-10-09-review-serving-evidence.md</c>).
+/// (measured, <c>docs/archive/2026-10-09-review-serving-evidence.md</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>Beside a session's browser server, never instead of it.</b> Interceptions chain on one tab, the session's first

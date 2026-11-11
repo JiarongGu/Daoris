@@ -9,7 +9,7 @@ import {
  * The marked region — where the always-loaded tier lives once it leaves
  * `.claude/rules/`, because that directory is read by exactly one of the three harnesses.
  *
- * `docs/2026-09-22-instruction-file-design.md` §4 is the table these tests implement: the three
+ * `docs/archive/2026-09-22-instruction-file-design.md` §4 is the table these tests implement: the three
  * states of a file beyond the lock × disk × canon table, and every one of them **refuses**.
  *
  * 🔴 The whole safety argument is one sentence: **never guess at a boundary.** The text on the other

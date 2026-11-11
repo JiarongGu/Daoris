@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The present records (docs/2026-10-30-knowledge-freshness-design.md §3.2 and §3.4), read for what
+ * The present records (docs/archive/2026-10-30-knowledge-freshness-design.md §3.2 and §3.4), read for what
  * the code no longer has.
  *
  *   node tools/doc-current.mjs                  report every declared present record's paths, names, routes and variables

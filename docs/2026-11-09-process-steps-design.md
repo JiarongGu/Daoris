@@ -4,7 +4,7 @@
 step may do a lot, but today none says what it is focused on, and the landing has no rebase of its own. Then, twice: Daoris runs a
 workflow system, so the steps are generic kinds any process composes, and *landing* is a composition at the workflow level, never
 a step in code. Round 1 (the document at `0422e84b1b`), round 2 (at `fd03c57109`), round 3 (at `fd2c1421c6`) and round 4 (at
-`b62716d462`) were each read by both makers (`docs/2026-11-09-process-steps-reads.md`); round 3 answered round 2's reads in place and
+`b62716d462`) were each read by both makers (`docs/archive/2026-11-09-process-steps-reads.md`); round 3 answered round 2's reads in place and
 stated the integration against its code (§2.6, §2.10), and round 4 answered round 3's in §11 to §18. Round 5 (at `880e551fe8`)
 answered round 4's reads in §19 to §26; it was read by the independent Opus reader alone. Round 6 answers that read in §27 to §33,
 which change the sections they name and hold where they differ, rewrites the rows (§7) in place, and says per finding its answer and

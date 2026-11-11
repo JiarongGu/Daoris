@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The screen counter (docs/2026-10-04-ux6-redesign.md §9.1–§9.3). One function counts a
+ * The screen counter (docs/archive/2026-10-04-ux6-redesign.md §9.1–§9.3). One function counts a
  * screen in its regions, the view's list pane and its main area, and the frame apart, and it runs in two places
  * from one source:
  *
