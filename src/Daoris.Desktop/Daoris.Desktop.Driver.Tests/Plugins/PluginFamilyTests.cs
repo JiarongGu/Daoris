@@ -17,7 +17,10 @@ public sealed class PluginFamilyTests : IDisposable
 
     private string Scratch => Path.Combine(_root, "scratch");
 
-    public void Dispose() => GitSeed.Discard(_root);
+    public void Dispose()
+    {
+        GitSeed.Discard(_root);
+    }
 
     [Theory]
     [InlineData("acme-quiet-hours", "acme", "quiet-hours")]

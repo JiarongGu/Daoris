@@ -40,7 +40,6 @@ public sealed class StartTreeCloseTests : IDisposable
     public StartTreeCloseTests()
     {
         _root = Path.Combine(_home, "engine");
-        // The place is read as git by its `.git` on disk; every git asked of it is the model below.
         Directory.CreateDirectory(Path.Combine(_root, ".git"));
         _agent = Path.Combine(_home, "agent.mjs");
         File.WriteAllText(_agent, "");

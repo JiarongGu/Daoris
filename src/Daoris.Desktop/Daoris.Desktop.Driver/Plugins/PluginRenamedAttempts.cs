@@ -1,9 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// What a rename asks of the workflows' node records, which own the attempts in flight: each attempt not settled that names the old
-/// id carried to the new one. Workflows installs it when the driver loads.
-/// </summary>
+/// <summary>What a rename asks of the node records, which own the attempts in flight: Workflows installs it when the driver loads.</summary>
 internal interface IPluginRenamedAttempts
 {
     /// <returns>True where it carried any attempt; null where none named the old id or nothing could be written.</returns>

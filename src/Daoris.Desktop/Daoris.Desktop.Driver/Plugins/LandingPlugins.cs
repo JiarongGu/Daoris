@@ -47,7 +47,6 @@ public sealed class LandingPlugins(
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="ProblemOf"/>).</summary>
     public string? Problem(string plugin) => ProblemOf(plugin, Catalog());
 
-    /// <inheritdoc/>
     public IReadOnlyDictionary<string, string> Formerly() => PluginFormerly.Of(home);
 
     /// <summary>

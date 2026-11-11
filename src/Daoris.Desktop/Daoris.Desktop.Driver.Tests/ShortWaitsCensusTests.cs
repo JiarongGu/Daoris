@@ -8,8 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a fast-half failure is never re-run. This census reads both desktop test projects' sources and counts each short fixed
 /// <c>WaitAsync(TimeSpan.From…)</c> and each <c>TimeSpan Name = TimeSpan.From…</c> shorter than <c>Poll.Patience</c>. Each is listed
 /// below with what it is that is not a wait on a signal (a bound that states the claim, a window in which nothing should happen,
-/// a staging delay, or an input the product itself honours), and a new one, or one gone, fails until the list says so.
-/// </summary>
+/// a staging delay, or an input the product itself honours), and a new one, or one gone, fails until the list says so.</summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class ShortWaitsCensusTests
 {

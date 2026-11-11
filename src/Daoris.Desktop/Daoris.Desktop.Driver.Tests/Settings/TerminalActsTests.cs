@@ -15,7 +15,10 @@ public sealed class TerminalActsTests : IDisposable
 
     public TerminalActsTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose() => GitSeed.Discard(_home);
+    public void Dispose()
+    {
+        GitSeed.Discard(_home);
+    }
 
     private string Path0 => DaorisHome.Entry(_home, HomeEntry.TerminalActs);
 
