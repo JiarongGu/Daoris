@@ -90,7 +90,7 @@ The last four (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1) wait on another o
 
 ## Another row first
 
-Several are re-cut onto the new structure when they come back. The review environment's rows (REVIEWENV1d2, e, g2) wait on REVIEWUX1's design, which says what of D154's environment the one review surface keeps. The plugin distribution rows are frozen with the plugin workshop and NuGet source (D233 point 3), and the co-agent rows with partners' remaining rows.
+Several are re-cut onto the new structure when they come back. The review environment's rows (REVIEWENV1d2, e, g2) wait on REVIEWUX1's build: its settled design (D273, one review record per attempt) names no environment, so they are re-cut onto that record when they come back. The plugin distribution rows are frozen with the plugin workshop and NuGet source (D233 point 3), and the co-agent rows with partners' remaining rows.
 
 - [ ] **FABRIC-COLLAB1 — the first cross-harness round trip** (service, driver; after FABRIC-C2b; the fabric events design's rows table (§E10), §D10). One message and one artifact by reference between a Claude Code and a Codex session.
 
