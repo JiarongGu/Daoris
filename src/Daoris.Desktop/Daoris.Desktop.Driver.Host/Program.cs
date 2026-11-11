@@ -526,7 +526,7 @@ try
     {
         var exit = UpdateCommand.Run(
             updateArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
-            out var updateSaid);
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var updateSaid);
         (exit == 2 ? Console.Error : Console.Out).Write(updateSaid);
         return exit;
     }

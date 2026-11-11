@@ -153,7 +153,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 34. A republish removes exactly what `app/shell-files.txt` lists (a line naming a path, not one name, is no entry) and the retired names, then places its own. A publish into an
     install carrying a service host, without `--service`, is refused. (from D93)
 35. It publishes only a tree the full gate set passed, unless the folder is under `_fixtures/` or `--force-ungated` is given,
-    which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. (from D115, D180)
+    which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. From a session's terminal
+    (`DAORIS_SESSION_ID`, Ask Daoris's among them) it neither stages nor publishes outside `_fixtures/`, and `daoris update`'s
+    verbs are refused there too: a stage drains the install, so it is the person's. (from D115, D180)
 36. `--stage` builds the same build into `update/staged/`, with `build.json` (schema 1: id, version, commit, time, every file's
     size and SHA-256). It refuses a non-install, a swap under way, and a missing `--service` where the install carries its HTTP
     host. A running install is never refused. A publish in place removes anything staged. A build's version is the release's,

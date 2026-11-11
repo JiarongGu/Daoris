@@ -190,6 +190,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("take the person there with a link to `sessions`'s `new`, the repository and their words filled.\n");
         text.Append("Daoris's own housekeeping is yours to do: its trees, the session branches whose work landed, and its home.\n");
         text.Append("Where your agent takes Daoris's rules, the person's own denies still hold.\n\n");
+        text.Append(HelpRoomFullReads.Render(machine));
         if (machine.PluginServers.Count > 0)
         {
             var servers = string.Join(", ", machine.PluginServers.Select(server => $"`{server.Server}` (plugin `{server.Plugin}`)"));

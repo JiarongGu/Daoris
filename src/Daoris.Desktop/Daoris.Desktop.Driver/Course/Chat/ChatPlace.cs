@@ -55,6 +55,9 @@ internal sealed record ChatPlace(
     /// </summary>
     public bool EveryServer { get; init; }
 
+    /// <summary>The families of the person's own tool home it is never handed, whatever their switches say: none but Ask Daoris's.</summary>
+    public OwnFamilies OwnWithheld { get; init; }
+
     /// <summary>
     /// Whether it is handed the tree guard where the person's rules keep it on: every conversation but Ask Daoris in full access.
     /// </summary>
