@@ -263,7 +263,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     per-place setting, and no build flag gates it. Held by rules alone, a place behaves as before: a `refer` point waits for
     the person. An agent-held supervisor's subjects are its own look's (`SuperviseLook`, after `course-release`), never listed
     to a terminal: each attempt (`SupervisePass`) walks the bound supervisor's order through the start plan less the choices its
-    attempts spent, writes the attempt, and runs one read-only turn (`SuperviseTurn`, a helper's shape) in a copy of the
+    attempts spent, handed the subject's writers (a range's of Ask Daoris's acts, so another maker reads first; none for a
+    decision), writes the attempt, and runs one read-only turn (`SuperviseTurn`, a helper's shape) in a copy of the
     subject's git work tree with its work in progress laid over it, or an empty folder of its own where the subject's record names
     no git work tree (Ask Daoris's room among them, never asked of git) or the subject is read from a packet (`SuperviseFolder`), removed
     however it ends, bounded by ten minutes, taking no place under the cap. A subject read from a packet alone
@@ -514,9 +515,32 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     partial, never clean. A selected turn joins its conversation's queued range (`AskDaorisRanges`, one report per range in its
     decisions folder, `AskDaorisReports`), whose packet is bounded at 40,000 characters: past it, or once a reader took the range,
     the next opens, and a turn alone over it is a range of its own, marked. While the check is off a selected turn is kept in a
-    report closed *disabled*; a range queued 24 hours closes *unread* with why; a turn that only read is written nowhere. At a
-    start the conversations seen before are caught up from where they were seen, and one never seen is taken from that start on.
-    The reading itself is not built: a range stays queued, and the door lists none. (from D183, D253, D271, D272)
+    report closed *disabled*; a turn that only read is written nowhere. At a start the conversations seen before are caught up
+    from where they were seen, and one never seen is taken from that start on. The ranges are read off the driver's loop
+    (`AskDaorisReadingQueue`): each look offers the queue the queued ranges and goes on at once, and one reading runs on the
+    machine at a time, oldest range first, through the one walk (rule 42) on the machine's supervisor deciding `ask-daoris`, handed
+    the range's writer (the agent its session's record opened on), held packet-only, its life the kind's own
+    (`AskDaorisReadingLife`). A reader takes the range frozen, `running`; its packet (`AskDaorisPacket`, at most 40,000
+    characters, kept beside the report under the prompt's nonce) holds each selected call with a packet id, its call id, kind,
+    title, tool, status, locations, its input as the record holds it and its output's first 1,000 characters, each press with its
+    route, place and outcome, the person's words opening each turn fenced as theirs (2,000 characters) with their three before the
+    range as context (1,000 each), Ask Daoris's words to the person (its last message 4,000 characters, each earlier one 1,000),
+    the known reads counted, and the evidence limits; never the reasoning or a read's contents. An address loses its credentials,
+    query and fragment, every secret the wiring reader meets is cut to `[key]`, a registered checkout's path is written as
+    `[repository]` and the path within it, and the home folder as `~` (`PacketRedaction`); past the bound the oldest calls'
+    inputs and outputs go first, each a limit. Its prompt (`AskDaorisCharge`) charges it to assess acts already done (an act
+    outside the person's words, an outward or destructive act not asked for and an evasion are findings; another workspace is
+    not), says its tools are off and that it answers one block, whose body `AskDaorisReport.Read` reads: at most eight findings,
+    each a severity (`flag`, `note`), a certainty (`sure`, `likely`, `unsure`), what it says, the packet id of its call and of
+    the person's words or `none`, with `more` counting the rest, or a leave by its bound and one to five reasons. The report keeps
+    it `read` or `left`, with its reader (role, revision, agent, model asked, effort, the model its harness reported, posture,
+    session, tokens), its independence (`another-maker`, `not-independent`, `not-counted`, or `unknown` where no writer is known)
+    and its findings. A range no choice can take now stays queued with the walk's sentence, the ranges behind it waiting too, and
+    closes *unread* with it at 24 hours; a reading that fails, ends with no block that reads, names another range or outlives its
+    role's revision, and a taken range whose next choice cannot run, close *unread* with why, logged `ask-daoris.unread` and never
+    said in the conversation; with the check off the queued ranges close *unread*, and the start's sweep closes a running one
+    *unread: Daoris restarted*. A terminal holder of the kind reads nothing: its ranges stay queued, and the door lists none.
+    (from D183, D253, D271, D272)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
     of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
