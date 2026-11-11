@@ -201,6 +201,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SENSLAND1 — a session's work is checked for private names before it lands (2026-11-12)
+
+> **SENSLAND1** (driver): Outcome: a landing, in every form, is held before any branch, merge or replay is made when the lines the work adds (`git diff --unified=0 <line>...HEAD`) match the repository's declared private patterns, read from the repository's own checkout (`sensitive.patternsFile`, kept under its `local/`; `TreeLocalInputs.PatternsFile`), case-insensitive as the devkit gate is; the refusal names the path and the pattern's number, never its text; a repository declaring none is unaffected (`SensitiveLandings`). Found when an install session's backlog row named a private workspace and landed unchecked. Proof: `SensitiveLandingTests` (process half, a neutral fixture pattern): a held landing lands nothing and its words carry no private text; a clean one lands.
+
+---
+
 ## PLUGINEXT1a and c, the window halves — the Set up tab and the round card (2026-11-12, D274)
 
 > **PLUGINEXT1a, PLUGINEXT1c (web)** (web, modules): Outcome: a plugin that declares interfaces opens at *Set up* (设置), *About* (关于) beside it with the old sections: each command with *Run* (运行), a refused entry drawn *not read* (未读入) with its reason and nothing to press, storage with what it keeps and its sign-out, *Where it is on* (在哪里启用) as a box per part and place pressing `PLUGIN_SWITCH`; *Run* or a palette row (*Plugin X: Sign in*) opens the round card over `PLUGIN_COMMAND`: the plugin's lines, *Open the page* in the person's own browser with the host shown, a code with *Copy*, a hidden field for a masked prompt, *Go on* (继续) and *Cancel* (取消), then *Done.* or the exit code; *Remove…* offers *Ask it to sign out first*; the offer lists its interfaces and the update plan marks *asks more of you* (需要你更多授权); `PLUGINS` sends each offer's interfaces. Proof: `pluginCommand.test` and `RoundCard.test` (red first), 315 tests across the plugin, bridge and menu folders; the Azure DevOps sign-in proved against a stand-in plugin, not yet on the window.
