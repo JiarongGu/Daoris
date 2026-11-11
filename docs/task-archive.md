@@ -201,6 +201,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1f's page — the run's review in the window (2026-11-12, D273)
+
+> **REVIEWUX1f (page)** (web, driver): Outcome: `review/<run>` shows a run's review from `RUN_REVIEW`, opened from a run outcome's line in *Done and failed* or from the session in view; its decision bar stays in reach with the sentence for the kind of work, the revision and its wait, *Accept…* (采纳…) on the record's attempt and revision, *Send back…* (退回…) with the person's words and the part chosen, *Stop…* (停止…) sending `whole` and saying what stays, and a supervisor's held decision with *Overrule*; a newer revision is announced with *Read it* (阅读它) and the older marked; below it each handback as Markdown, a folder's or copy's files with their versions opening on a line diff, a plan's operations (`RUN_REVIEW` answers `operations`), a branch's or checkout's files, and what follows; viewed marks kept by path and content. Proof: the `RunReview` component tests and the viewed-mark and line-diff tests (red first), `RunReviewsTests`' plan case.
+
+---
+
 ## PLUGINEXT1e — a plugin step performed by an agent, proven end to end (2026-11-12, D274)
 
 > **PLUGINEXT1e** (driver, examples): Outcome: a plugin step declaring a `goal` is delivered to the step agents alone, never to its plugin's `work/perform` (an attempt already there stays with its plugin); the loop starts the step's session (`StepSessionTurn`, a record of the run's own at `POST /api/step-sessions`, held as the build role, started on the door runner under the attempt's own step), at the place's checkout with no tree, holding only its plugin's tools and `step_answer`; Sessions names it a workflow step and closes it with the step's outcome. A defect the proof found: the session was held as actor `step`, which has no order, so a goal step's session could never run (since f6db00195c). Proof: `StepSessionProcessTests` on real processes: a stand-in harness starts `daoris-plugins`, calls the Azure DevOps example's `pull-request-status` against a loopback stand-in service, answers through `step_answer`, and the step is reached with the pull request's address; `StepAgentPerformTests`, the census.

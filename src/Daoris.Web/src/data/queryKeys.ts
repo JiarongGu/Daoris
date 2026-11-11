@@ -61,6 +61,10 @@ export const keys = {
   heavySlot: (repository: string) => ['driver', 'heavy-slot', repository] as const,
   /** A run's review at an attempt (0 for its newest record) — read from the run's own records, under the driver's key. */
   runReview: (run: string, attempt: number) => ['driver', 'run-review', run, attempt] as const,
+  /** The review of the run a session's quest is, read by the session — `not-run` where none governs it. */
+  sessionRunReview: (session: string) => ['driver', 'run-review', 'session', session] as const,
+  /** One file of a run's review record at its attempt, on a side: pinned, so a revision's file never changes. */
+  runReviewFile: (run: string, attempt: number, path: string, side: string) => ['driver', 'run-review-file', run, attempt, path, side] as const,
   // The running calls the shell pushes: written by the pushes alone, there is no pull beneath it.
   calls: ['driver', 'calls'] as const,
   /**
