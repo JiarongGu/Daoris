@@ -45,6 +45,9 @@ public sealed class HelpPressRecord(TimeProvider clock)
     private readonly object _gate = new();
     private readonly List<HelpPressNow> _presses = [];
 
+    /// <summary>A press as it moved (began, asked, placed, answered or ended), told after the record's lock is let go.</summary>
+    public event Action<HelpPressNow>? Moved;
+
     /// <summary>A covered press begun on <paramref name="session"/>'s conversation: its id, for <see cref="Ended"/>.</summary>
     public string Began(IpcRequest request, string session) => Keep(request, session, Running, null, asked: false);
 
@@ -76,15 +79,33 @@ public sealed class HelpPressRecord(TimeProvider clock)
             if (_presses.Count > Kept) _presses.RemoveAt(0);
         }
 
+        Tell(press);
         return id;
     }
 
-    private void Settle(string id, string outcome)
+    private void Settle(string id, string outcome) => Change(id, press => press with { Outcome = outcome });
+
+    private void Change(string id, Func<HelpPressNow, HelpPressNow> change)
     {
+        HelpPressNow? moved = null;
         lock (_gate)
         {
             var at = _presses.FindIndex(each => each.Id == id);
-            if (at >= 0) _presses[at] = _presses[at] with { Outcome = outcome };
+            if (at >= 0) moved = _presses[at] = change(_presses[at]);
+        }
+
+        if (moved is not null) Tell(moved);
+    }
+
+    private void Tell(HelpPressNow press)
+    {
+        try
+        {
+            Moved?.Invoke(press);
+        }
+        catch (Exception)
+        {
+            // A hearer's failure is its own: the press is kept here.
         }
     }
 
@@ -92,14 +113,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
     public void Ended(string id, bool succeeded) => Settle(id, succeeded ? Done : Failed);
 
     /// <summary>The place the press named, read against the registry and its conversation's focus once it began.</summary>
-    public void Placed(string id, HelpPressPlace place)
-    {
-        lock (_gate)
-        {
-            var at = _presses.FindIndex(each => each.Id == id);
-            if (at >= 0) _presses[at] = _presses[at] with { Place = place.Place.Wire(), Beyond = place.Beyond };
-        }
-    }
+    public void Placed(string id, HelpPressPlace place) => Change(id, press => press with { Place = place.Place.Wire(), Beyond = place.Beyond });
 
     /// <summary>The presses this run, newest first.</summary>
     public IReadOnlyList<HelpPressNow> Now()
