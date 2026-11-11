@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -31,27 +30,23 @@ public static class PluginToolCall
         if (args.Missing.Count > 0) return Error($"`{tool.Name}` needs {string.Join(", ", args.Missing.Select(each => $"`{each.Name}`"))}.");
         var call = new CommandCall(
             command.Name, CommandCall.NewRun(), args.Values, new Dictionary<string, string>(), CommandWire.Agent, at.Place, at.Language, at.Session);
-        var clock = Stopwatch.StartNew();
         CommandRound round;
         try
         {
-            round = await PluginCommandRun.RoundAsync(home, tool.Plugin, call, ct, start).ConfigureAwait(false);
+            round = await PluginCommandRun.RoundAsync(home, tool.Plugin, call, ct, start, log).ConfigureAwait(false);
         }
         catch (DriverException failed)
         {
-            log.Commanded(plugin, command.Name, CommandWire.Agent, at.Session, exit: null, clock.ElapsedMilliseconds);
             return Error(failed.Message);
         }
 
         var asked = round.Ask;
         if (asked is not null)
         {
-            log.Commanded(plugin, command.Name, CommandWire.Agent, at.Session, exit: null, clock.ElapsedMilliseconds);
             return Error($"`{tool.Name}` asked for `{asked.Name}`, and no person answers a tool call: the person runs "
                 + $"`daoris {plugin} {command.Name}` or its page's command instead.");
         }
 
-        log.Commanded(plugin, command.Name, CommandWire.Agent, at.Session, round.Exit, clock.ElapsedMilliseconds);
         var text = round.Said.Count > 0 ? string.Join("\n", round.Said) : round.Data is { } data ? data.GetRawText() : $"`{tool.Name}` ended {round.Exit}.";
         var result = new Dictionary<string, object?>(StringComparer.Ordinal)
         {

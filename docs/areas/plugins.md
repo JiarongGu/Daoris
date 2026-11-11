@@ -229,7 +229,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     terminal. The window's door is `PLUGIN_COMMAND` (`Window`, `PluginCommandRoutes`): one round per call, `from: window`, at the
     place it names, an argument missing refused before any process starts, the answer handing back the run's id, and the plugins slice pushed after each round, since a command may move a plugin's health or state. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
-    nothing in it. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
+    nothing in it. A removal first runs the command `forget` names, once, `from: removal` at the machine, bound to 10 seconds
+    (`PluginForget`, inside `PluginInstall.Remove`, so the terminal's and the window's removals both run it), its exit 0 said as signed
+    out and anything else, an ask or a timeout as not confirmed; the removal goes on whatever it says. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
@@ -245,8 +247,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     a choice's `enum`, the required ones), annotated read-only unless it `writes`. A call (`PluginToolCall`) is one round at
     `command/run` `from: agent` with the session, its place and language: `said` is the text, `data` the structured content, an exit
     other than 0 an error; a round that asks is refused and never answered, since no person answers a tool call; an argument missing or
-    not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round is a `plugin.command`
-    line by names alone (plugin, command, from, session, exit, ms). No call asks an approval: the switch `tools` per place is the
+    not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round of a command, by
+    whichever door (terminal, window, agent, removal), is a `plugin.command` line written by `PluginCommandRun.RoundAsync`, by names
+    alone (plugin, command, from, session, place, exit, ms; no exit where it asked). *Done and failed* reads from those lines, at each
+    look (`PluginCommandsLook`, `PluginCommandNotices`), the rounds nobody watched (an agent's, a removal's) and any that failed, one
+    notice by plugin, command and moment, over the last day. No call asks an approval: the switch `tools` per place is the
     opt-in. Ask Daoris is handed the same server only as the person approved it: a plugin's tool commands are one server of its
     to offer, named `daoris-plugins` and carrying no command of its own (`PluginCommandServer`), its reads and each write approved like
     any server's tools (rule 24, `HelpGrants`, the page's press and `daoris plugin approve <id> daoris-plugins`), its rules
@@ -297,7 +302,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
-`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`, `PluginToolsServerTests`, `PluginToolsProcessTests`, `PluginCommandServerTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
+`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`, `PluginToolsServerTests`, `PluginToolsProcessTests`, `PluginCommandServerTests`, `PluginCommandNoticesTests`, `PluginForgetTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
 `SystemReadBackTests`, the stand-in's process proofs `SystemPlanProcessTests` and `SystemReadBackProcessTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;
