@@ -107,7 +107,6 @@ public sealed class RoleActTests : IDisposable
     [InlineData("setup")]
     [InlineData("SET_CAP")]
     [InlineData("SESSION_GO_AHEAD")]
-    [InlineData("LAND_SESSION_TREE")]
     [InlineData("DISCARD_SESSION_TREE")]
     [InlineData("SESSION_INPUT")]
     public void Every_act_of_the_owner_s_is_refused_not_role(string act)

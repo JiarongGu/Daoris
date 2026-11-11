@@ -80,7 +80,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     public Task A_refusal_that_preserves_work_is_exit_1_in_the_same_words() =>
         AssertSameAsync(TreesWords.Remove(new TreeRemoval(false, "Not removed: it holds 2 commit(s) no branch of yours holds.")));
 
-    // trees land <session>: LAND_SESSION_TREE, with the plugin's lines beside the loop's output.
+    // A landing's words, with the plugin's lines beside the loop's output.
     [Fact]
     public Task A_landing_is_its_sentence() =>
         AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed on `main`."), []));

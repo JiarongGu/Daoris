@@ -22,7 +22,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class PipeConfirmTests : Bridge
 {
-    private const string Land = "LAND_SESSION_TREE";
+    private const string Land = "DISCARD_SESSION_TREE";
 
     /// <summary>The dispatcher as the shell composes it, the refusal log first, over the test's modules.</summary>
     private (IMessageDispatcher Dispatcher, ServiceProvider Services) Compose(MachineLog log, params IIpcModule[] modules)
@@ -125,9 +125,9 @@ public sealed class PipeConfirmTests : Bridge
         // Said in the machine log by codes alone: the state, the route and the terminal's door; never a value or an id.
         Assert.Equal(
             [
-                """{"state":"asked","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
-                """{"state":"checking","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
-                """{"state":"confirmed","route":"DAORIS.DRIVER.LAND_SESSION_TREE","door":"terminal"}""",
+                """{"state":"asked","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
+                """{"state":"checking","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
+                """{"state":"confirmed","route":"DAORIS.DRIVER.DISCARD_SESSION_TREE","door":"terminal"}""",
             ],
             Confirmations());
     }

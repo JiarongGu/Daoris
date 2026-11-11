@@ -206,9 +206,8 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
 
         var entry = await AnswerAsync(module, "LAND_ENTRY", new { entry = "e-1", follow = true });
         var ask = await AnswerAsync(module, "LAND_ASK", new { ask = "a1b2c3", follow = true });
-        var session = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1a2b3c4", follow = true });
 
-        foreach (var answer in new[] { entry, ask, session })
+        foreach (var answer in new[] { entry, ask })
         {
             Assert.Empty(answer.GetProperty("followed").EnumerateArray());
             Assert.Empty(Said(answer).Out);
@@ -219,35 +218,16 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(["engine"], RegistryFollowing.Due(Home));
     }
 
-    /// <summary><c>trees land &lt;session&gt;</c>: the refusals the verb says as words, where the route threw or landed nothing said.</summary>
+    /// <summary><c>trees land &lt;session&gt; --plan</c>: a session with no tree is the verb's words, exit 1, not an error.</summary>
     [Fact]
-    public async Task A_landing_of_a_session_with_no_tree_is_the_verbs_sentence_exit_1_not_an_error()
+    public async Task A_landing_plan_of_a_session_with_no_tree_is_the_verbs_sentence_exit_1_not_an_error()
     {
-        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+        var answer = await AnswerAsync(await ComeUpAsync(), "LANDING", new { id = "s1a2b3c4", said = true });
 
-        Assert.False(answer.GetProperty("done").GetBoolean());
         var (output, error, code) = Said(answer);
         Assert.Empty(output);
         Assert.Equal(TreesWords.NoTreeToLand("s1a2b3c4").Error, error);
         Assert.Equal(1, code);
-    }
-
-    [Fact]
-    public async Task A_landing_the_review_already_reads_as_landed_is_not_again_exit_1()
-    {
-        new SessionTrees(Home).Recorded.Record(new LandedBranch(
-            "engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", DateTimeOffset.UtcNow));
-
-        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
-
-        Assert.False(answer.GetProperty("done").GetBoolean());
-        var (output, error, code) = Said(answer);
-        Assert.Single(output);
-        Assert.StartsWith("trees: ", output[0]);
-        Assert.Contains("Nothing was landed again: its tree is gone.", output[0]);
-        Assert.Empty(error);
-        Assert.Equal(1, code);
-        Assert.Contains("Nothing was landed again", answer.GetProperty("message").GetString());
     }
 
     [Fact]
@@ -259,7 +239,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A tree's name given where the doors take a session names the session whose tree it is, at the press, the plan, the
+    /// A tree's name given where the doors take a session names the session whose tree it is, at the plan, the
     /// discard and the review, as the terminal's alone path says it; never that the session names no tree here.
     /// </summary>
     [Fact]
@@ -268,9 +248,6 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         var module = await ComeUpAsync(DaorisHome.Entry(Home, HomeEntry.Trees, "default", "engine", "s-92ed2c8c"));
         var sentence = $"`s-92ed2c8c` is a tree's name, and this verb takes the session: that tree is session `s1a2b3c4`'s, so say `s1a2b3c4`.";
 
-        var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s-92ed2c8c" });
-        Assert.False(press.GetProperty("done").GetBoolean());
-        Assert.Equal([$"trees: {sentence}"], Said(press).Error);
         Assert.Equal([$"trees: {sentence}"], Said(await AnswerAsync(module, "LANDING", new { id = "s-92ed2c8c", said = true })).Error);
 
         foreach (var (route, payload) in new (string, object)[]

@@ -20,7 +20,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [InlineData("cannot-start")]
     [InlineData("unread")]
     [Trait(Category.Name, Category.Process)]
-    public async Task The_landing_preview_and_refused_press_carry_the_same_workflow_hold(string state)
+    public async Task The_landing_preview_carries_the_workflow_hold_and_lands_nothing(string state)
     {
         var config = DriverConfig.Empty;
         StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"), null,
@@ -52,15 +52,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             var (module, _) = await UpAsync(tree);
 
             var preview = await AnswerAsync(module, "LANDING", new { id = "s1" });
-            var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1" });
 
             Assert.Equal(state, preview.GetProperty("workflow").GetProperty("state").GetString());
             Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
-            Assert.Equal(preview.GetProperty("workflow").GetRawText(), press.GetProperty("workflow").GetRawText());
-            Assert.False(press.GetProperty("done").GetBoolean());
-            // The refusal is also said in `trees land`'s words, exit 1, beside the page's fields.
-            Assert.Equal([$"trees: {press.GetProperty("message").GetString()}"], press.GetProperty("said").GetProperty("out").EnumerateArray().Select(line => line.GetString()));
-            Assert.Equal(1, press.GetProperty("said").GetProperty("code").GetInt32());
+            // A run whose graph holds no review offers no Accept.
+            Assert.Equal(JsonValueKind.Null, preview.GetProperty("accept").ValueKind);
             Assert.Empty(new LandedBranches(Home).Entries());
             var branches = await GitAsync(root, "branch", "--list", "feature/*");
             Assert.True(string.IsNullOrWhiteSpace(branches));

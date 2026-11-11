@@ -66,20 +66,16 @@ public sealed class SessionReadsBenchProcessTests(ITestOutputHelper output) : Dr
     }
 
     [Fact]
-    public async Task A_landing_s_plan_and_its_press_each_read_every_record_once()
+    public async Task A_landing_s_plan_reads_every_record_once()
     {
         var (_, module) = await UpAsync();
         var session = Bench.Trees[^1].Session;
         await AskAsync(module, "LANDING", new { id = session });
 
         var planned = await CountedAsync("the landing's plan", () => AskAsync(module, "LANDING", new { id = session }));
-        var pressed = await CountedAsync("the landing's press", () => AskAsync(module, "LAND_SESSION_TREE", new { id = session }));
 
-        foreach (var (what, asked) in new[] { ("the plan", planned), ("the press", pressed) })
-        {
-            Assert.True(BenchDoors.ListReads(asked) <= 1, $"{what} read every record {BenchDoors.ListReads(asked)} times");
-            Assert.Equal(0, asked.GetValueOrDefault(BenchDoors.WholeList));
-        }
+        Assert.True(BenchDoors.ListReads(planned) <= 1, $"the plan read every record {BenchDoors.ListReads(planned)} times");
+        Assert.Equal(0, planned.GetValueOrDefault(BenchDoors.WholeList));
     }
 
     [Fact]

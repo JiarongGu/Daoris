@@ -90,12 +90,6 @@ internal static class PipeReads
     public static PipeGround EntryLanding() =>
         Plan("ENTRY_LANDING", ["entry"], p => new { entry = Text(p, "entry") }, (a, _) => Entry(a), tips: (a, _) => EntryTips(a));
 
-    public static PipeGround TreeLanding() => Plan("LANDING", ["id", "branch"],
-        p => new { id = Text(p, "id"), branch = Text(p, "branch") }, (a, _) => Landing(a),
-        tips: (a, p) => Text(p, "id") is { Length: > 0 } session
-            ? [PipeRef.Of(session, "HEAD"), .. Text(At(a, "target")) is { Length: > 0 } target ? [PipeRef.Of(session, target)] : Array.Empty<PipeRef>()]
-            : []);
-
     public static PipeGround OpinionGate() =>
         Wait("OPINION_GATE", ["id"], p => new { id = Text(p, "id") },
             (a, _) => At(a, "opinion") is { } opinion ? $"{Text(At(opinion, "state"))}|{Raw(At(opinion, "holds"))}|{Text(At(opinion, "opinion"))}" : "");
@@ -359,14 +353,6 @@ internal static class PipeReads
             .Where(each => harness is null || Same(Text(At(each, "door")), harness))
             .OrderBy(each => Text(At(each, "door")), StringComparer.Ordinal)
             .Select(each => Fp(Pick(each, "door", "present", "version", "problem", "managed", "pinned"), Rows(At(each, "profiles"), ["name"], "login")))]);
-
-    /// <summary>A landing's plan as <c>LANDING</c> answers it: what lands and how, never a subject's words or a gate's time.</summary>
-    private static string Landing(JsonElement plan) => Fp(
-        Pick(plan, "form", "target", "source", "plugin", "problem", "own", "stands", "uncommitted"),
-        string.Join(",", Each(At(plan, "lands")).Select(each => Text(At(each, "commit")))),
-        string.Join(",", Each(At(plan, "leftOut")).Select(each => Text(At(each, "commit"))).Order(StringComparer.Ordinal)),
-        Text(At(plan, "conflict", "says")),
-        Text(At(plan, "workflow", "state")), Text(At(plan, "review", "state")), Text(At(plan, "opinion", "state")));
 
     /// <summary>An entry's landing as <c>ENTRY_LANDING</c> answers it: each part as a landing is taken, with what superseded it.</summary>
     private static string Entry(JsonElement entry) => Fp([

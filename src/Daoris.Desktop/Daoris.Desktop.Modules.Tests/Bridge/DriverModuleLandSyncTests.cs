@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The <c>LANDING</c> plan and the <c>LAND_SESSION_TREE</c> press carry what the
+/// The <c>LANDING</c> plan carries what the
 /// landing leaves out because the line holds it, beside the answer's fields as they were, and a conflict with the words the review
 /// offers to say to the session. Each is absent where the line holds none of the tree's commits, so the answer reads as before.
 /// What the landing leaves out over real git is held by the driver's <c>LineHoldsLandingTests</c>.
@@ -29,23 +29,6 @@ public sealed class DriverModuleLandSyncTests
         Assert.Equal("CONFLICT (content): Merge conflict in a.md.", read.GetProperty("says").GetString());
         Assert.Equal("Rebase your work onto `main`.", read.GetProperty("words").GetString());
     }
-
-    [Fact]
-    public void A_pressed_landing_answers_its_fields()
-    {
-        var landed = new TreeLanding(true, "merged into `main`.", null);
-
-        var read = Read(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []));
-
-        // `press` is what refused a chat run's press, null on every other.
-        Assert.Equal(JsonValueKind.Null, read.GetProperty("press").ValueKind);
-        Assert.Equal(
-            ["session", "done", "message", "branch", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press"],
-            read.EnumerateObject().Select(field => field.Name));
-    }
-
-    private static JsonElement Read(object answer) =>
-        JsonDocument.Parse(JsonSerializer.Serialize(answer, JsonSerializerOptions.Web)).RootElement;
 
     [Fact]
     public void Where_the_line_holds_none_nothing_is_added()

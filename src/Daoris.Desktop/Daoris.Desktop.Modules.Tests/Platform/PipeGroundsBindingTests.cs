@@ -64,11 +64,6 @@ public sealed class PipeGroundsBindingTests
             """{"all":true}""", "Lyntai:quest/x"
         },
         {
-            "LAND_SESSION_TREE", "LANDING",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0}""",
-            """{"id":"s1"}""", "s1:main"
-        },
-        {
             "LAND_ENTRY", "ENTRY_LANDING",
             """{"entry":"ask:a1/Lyntai","repository":"Lyntai","form":"merge","target":"main","parts":[{"session":"s1","lands":[{"commit":"0a1b2c3d"}]}]}""",
             """{"entry":"ask:a1/Lyntai"}""", "s1:HEAD"
@@ -206,7 +201,6 @@ public sealed class PipeGroundsBindingTests
         foreach (var (route, payload) in new (string, object)[]
                  {
                      ("SESSION_ARCHIVE", new { ids = new[] { "s1", "s2" }, archived = true }),
-                     ("LAND_SESSION_TREE", new { id = "s1" }),
                      ("WORK_ABANDON", new { ask = "a1", pieces = new[] { "quest:q1" } }),
                      ("DISCARD_SESSION_TREE", new { path = "C:\\t", force = true }),
                      ("SESSION_INPUT", new { id = "s1", text = "x", question = "q" }),

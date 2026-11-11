@@ -15,7 +15,6 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
     private static readonly DateTimeOffset At = new(2026, 10, 27, 9, 0, 0, TimeSpan.Zero);
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-course-ports", Guid.NewGuid().ToString("N"));
     private string Requests => DaorisHome.Entry(_home, HomeEntry.Requests);
-    private string ChatTree => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
 
     public WorkplaceCoursePortsTests() => Directory.CreateDirectory(_home);
     public void Dispose() => GitSeed.Remove(_home);
@@ -59,66 +58,16 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         Assert.IsType<WorkplacePressTellingOperation>(WorkplacePressTelling.Current);
         Assert.False(Directory.Exists(Requests));
 
-        Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.Land, "s1", At));
+        Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.DiscardTree, "s1", At));
         Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.LandEntry, "not/an/id", At.AddSeconds(1)));
         Assert.False(WorkplacePressTelling.Current.Tell(_home, "not a route", "s1", At));
         Assert.Equal(2, Directory.EnumerateFiles(Requests, "*" + PressesTold.Suffix).Count());
-        Assert.Equal([new PressTold(PressesTold.Land, "s1", At), new PressTold(PressesTold.LandEntry, null, At.AddSeconds(1))],
+        Assert.Equal([new PressTold(PressesTold.DiscardTree, "s1", At), new PressTold(PressesTold.LandEntry, null, At.AddSeconds(1))],
             new PressesTold(_home).Take(At.AddSeconds(2)));
 
         GitSeed.Remove(Requests);
         File.WriteAllText(Requests, "a file where the folder would be");
-        Assert.False(WorkplacePressTelling.Current.Tell(_home, TreesMarks.Land, "s1", At));
-    }
-
-    [Fact]
-    public async Task The_land_press_tells_through_the_supplied_operation_after_the_press_and_before_its_words_with_its_result_ignored()
-    {
-        var actual = WorkplacePressTelling.Current;
-        var spy = new Telling(world => world.Output.ToString() + world.Error);
-        using var client = Client();
-        var world = World(client);
-        spy.Watched = world;
-        try
-        {
-            WorkplacePressTelling.Current = spy;
-            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null));
-        }
-        finally { WorkplacePressTelling.Current = actual; }
-
-        Assert.Equal([(_home, "LAND_SESSION_TREE", "s1")], spy.Told.Select(each => (each.Home, each.Route, each.Session)));
-        Assert.All(spy.Told, each => Assert.InRange(each.At, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow));
-        // Told before the press's words are printed, and the false it answered changed nothing.
-        Assert.Equal("", spy.SeenWords[0]);
-        Assert.NotEqual("", ((StringWriter)world.Error).ToString() + world.Output);
-        Assert.False(Directory.Exists(Requests));
-    }
-
-    [Fact]
-    public async Task A_missing_telling_is_required_only_where_the_press_returns_and_its_failures_propagate_unchanged()
-    {
-        var actual = WorkplacePressTelling.Current;
-        using var client = Client();
-        try
-        {
-            WorkplacePressTelling.Current = null!;
-            var missing = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null));
-            Assert.Contains("Course installs it", missing.Message);
-
-            // A live conversation, and a binding that failed, answer before any note is told.
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", "[]", null));
-            var failed = WorkflowRunBindings.PathOf(_home, "chat-s2");
-            Directory.CreateDirectory(Path.GetDirectoryName(failed)!);
-            File.WriteAllText(failed, "{broken");
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s2", ChatTree, "chat-s2", Ended("s2"), null));
-
-            var failure = new IOException("refused");
-            WorkplacePressTelling.Current = new Telling(_ => "") { Fail = failure };
-            Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() =>
-                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null)));
-        }
-        finally { WorkplacePressTelling.Current = actual; }
+        Assert.False(WorkplacePressTelling.Current.Tell(_home, TreesMarks.DiscardTree, "s1", At));
     }
 
     [Fact]
@@ -194,33 +143,6 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
             Assert.Contains("Course installs it", missing.Message);
         }
         finally { WorkplaceHandedQuests.Current = actual; }
-    }
-
-    private ServiceClient Client() => new("http://ledger.test", null,
-        new HttpClient(new Handler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") })), disposeHandler: false));
-
-    private ChatLandWorld World(ServiceClient service) => new(service, _home, new SessionTrees(_home), null, new StringWriter(), new StringWriter());
-
-    private string Ended(string id) => JsonSerializer.Serialize(new[] { new { id, state = "completed", kind = "chat", repository = "engine", tree = ChatTree } });
-
-    private sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> answer) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) => answer(request);
-    }
-
-    private sealed class Telling(Func<ChatLandWorld, string> seen) : IWorkplacePressTelling
-    {
-        public ChatLandWorld? Watched { get; set; }
-        public Exception? Fail { get; init; }
-        public List<(string Home, string Route, string? Session, DateTimeOffset At)> Told { get; } = [];
-        public List<string> SeenWords { get; } = [];
-        public bool Tell(string home, string route, string? session, DateTimeOffset at)
-        {
-            if (Fail is not null) throw Fail;
-            Told.Add((home, route, session, at));
-            SeenWords.Add(Watched is null ? "" : seen(Watched));
-            return false;
-        }
     }
 
     private sealed class Stores(string[] readable) : IWorkplaceHandedQuestStores

@@ -78,7 +78,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     /// refuses it in the words that name its lead's merge of the frozen ref.
     /// </summary>
     [Fact]
-    public async Task A_partners_record_is_refused_at_the_press_the_plan_and_the_verb()
+    public async Task A_partners_record_is_refused_at_the_plan_and_the_verb()
     {
         const string sessions = """
             [{ "id": "pt1a2b3c", "repository": "engine", "state": "completed", "kind": "chat", "door": "codex-acp",
@@ -91,12 +91,9 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
             [new SessionRecord("pt1a2b3c", "engine", "completed") { Serves = "s1a2b3c4", Piece = "pc000001" }], "pt1a2b3c")!;
 
         var verb = await AnswerAsync(module, "LANDING", new { id = "pt1a2b3c", said = true });
-        var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "pt1a2b3c" });
 
         Assert.Equal(refused.Error, Said(verb).Error);
         Assert.Equal(1, Said(verb).Code);
-        Assert.False(press.GetProperty("done").GetBoolean());
-        Assert.Equal(refused.Error, Said(press).Error);
         Assert.Contains("lands nothing", await RefusalAsync(module, "LANDING", new { id = "pt1a2b3c" }));
     }
 

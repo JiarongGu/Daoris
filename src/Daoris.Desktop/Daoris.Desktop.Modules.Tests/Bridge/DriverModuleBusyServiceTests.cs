@@ -21,7 +21,7 @@ public sealed class DriverModuleBusyServiceTests : DriverModuleBridge
             using var http = new HttpClient(new StalledService()) { Timeout = TimeSpan.FromMilliseconds(200) };
             await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, http));
 
-            var refusal = await RefusalAsync(module, "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+            var refusal = await RefusalAsync(module, "LANDING", new { id = "s1a2b3c4" });
 
             Assert.StartsWith(Refusals.ServiceBusy, refusal);
             Assert.DoesNotContain("UNKNOWN_ERROR", refusal);

@@ -242,12 +242,6 @@ public sealed class PipeGroundsCensusTests
     public static TheoryData<string, string, string, string, string> Plans() => new()
     {
         {
-            "LAND_SESSION_TREE", "LANDING",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0,"lands":[{"commit":"0a1b2c3d","subject":"@@WORDS@@"}],"opinion":{"state":"settled","until":"@@DAY@@","says":"@@WORDS@@"}}""",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0,"lands":[{"commit":"9f8e7d6c","subject":"x"}],"opinion":{"state":"settled"}}""",
-            """{"id":"s1"}"""
-        },
-        {
             "SWEEP", "SWEEP_PLAN",
             """{"branches":[{"repository":"Lyntai","branch":"quest/x","kind":"landed","commits":2,"detail":"@@WORDS@@","removable":true,"discardable":false}],"landed":[]}""",
             """{"branches":[{"repository":"Lyntai","branch":"quest/x","kind":"unlanded","commits":3,"detail":"x","removable":false,"discardable":false}],"landed":[]}""",

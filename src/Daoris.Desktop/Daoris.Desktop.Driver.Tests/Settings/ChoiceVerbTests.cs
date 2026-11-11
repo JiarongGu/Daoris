@@ -55,7 +55,7 @@ public sealed class ChoiceVerbTests : IDisposable
         Assert.Same(_error, terminal.Error);
         Assert.Equal(_home, terminal.Home);
         Assert.Equal(InstanceRoute.DriverModule, TreesRoutes.DriverModule);
-        Assert.Equal(TreesRoutes.Land.Module, ChoiceRoutes.Language.Module);
+        Assert.Equal(TreesRoutes.LandEntry.Module, ChoiceRoutes.Language.Module);
         Assert.Equal(RouteClass.Person, ChoiceRoutes.Language.Class);
     }
 

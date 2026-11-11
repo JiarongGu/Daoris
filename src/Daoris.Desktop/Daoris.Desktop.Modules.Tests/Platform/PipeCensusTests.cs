@@ -332,7 +332,6 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "ASK_OPINION", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "HARNESSES_REFRESH", PipeClass.Person)]
     // The person's alone: a yes, a delete, a clear, their words, a standing choice.
-    [InlineData("DAORIS.DRIVER", "LAND_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
     // A ref made in a repository and its undo write the person's repository through git.
     [InlineData("DAORIS.DRIVER", "GIT_REF_CREATE", PipeClass.Person)]
@@ -465,7 +464,7 @@ public sealed class PipeCensusTests
         var routes = PipeCensus.Daoris.Routes;
 
         Assert.Equal(DriverModule.Routes.Count, routes.Count(each => each.Module == DriverModule.Name));
-        Assert.Contains(new PipeRoute(DriverModule.Name, "LAND_SESSION_TREE", PipeClass.Person), routes);
+        Assert.Contains(new PipeRoute(DriverModule.Name, "LAND_ENTRY", PipeClass.Person), routes);
         Assert.Contains(new PipeRoute("DAORIS.WINDOWS", null, PipeClass.Window), routes);
         Assert.Equal(routes.Count, routes.Select(each => (each.Module, each.Route)).Distinct().Count());
         var git = Assert.Single(routes, each => each.Route == "TOOLS_GIT");
@@ -482,7 +481,7 @@ public sealed class PipeCensusTests
 
         Assert.Equal(PipeClass.Open, census.Of("TEST.PRESS", "MOVE"));
         Assert.Equal(PipeClass.Person, census.Of("TEST.PRESS", "OTHER"));
-        Assert.Equal(PipeClass.Person, census.Of(DriverModule.Name, "LAND_SESSION_TREE"));
+        Assert.Equal(PipeClass.Person, census.Of(DriverModule.Name, "LAND_ENTRY"));
         Assert.Null(PipeCensus.Daoris.Of("TEST.PRESS", "MOVE"));
     }
 
@@ -522,7 +521,6 @@ public sealed class PipeCensusTests
     [InlineData("PLUGIN_TOOLS", PipeDrain.Waits)]
     [InlineData("PLUGIN_TOOL_FIX", PipeDrain.Waits)]
     [InlineData("TOOLS_DOWNLOAD", PipeDrain.Waits)]
-    [InlineData("LAND_SESSION_TREE", PipeDrain.Waits)]
     [InlineData("LAND_ASK", PipeDrain.Waits)]
     [InlineData("DISCARD_SESSION_TREE", PipeDrain.Waits)]
     [InlineData("SYSTEM_SPACE_FREE", PipeDrain.Waits)]

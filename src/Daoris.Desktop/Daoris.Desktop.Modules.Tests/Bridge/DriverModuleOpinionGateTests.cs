@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// The second opinion's gate over the bridge: beside a
-/// landing's plan and press, <c>LANDING</c> and <c>LAND_SESSION_TREE</c> answer what the opinion's part of the gate says while it
-/// holds the work, for the page to draw where *Accept…* would be, with the token a press sends back to answer what it
+/// landing's plan, <c>LANDING</c> answers what the opinion's part of the gate says while it
+/// holds the work, for the page to draw where *Accept…* would be, with the token the review's Accept sends back to answer what it
 /// showed; and the presses' bridge halves (<c>OPINION_GATE</c>, <c>ASK_OPINION</c>, <c>OPINION_ANYWAY</c>, <c>OPINION_MYSELF</c>,
 /// <c>STOP_OPINION</c>), each the driver's own press. The presses themselves are held by the driver's <c>OpinionLookTests</c>.
 /// </summary>

@@ -478,7 +478,6 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     public async Task Landing_before_the_driver_is_up_is_a_sentence()
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LANDING", new { id = "s1a2b3c4" }));
-        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
         // An entry's Accept and an ask's read the records too.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "ENTRY_LANDING", new { entry = "ask:a3/engine" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_ENTRY", new { entry = "ask:a3/engine" }));
@@ -497,7 +496,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// There is no merge-alone route: the page lands through `LAND_SESSION_TREE`, which merges
+    /// There is no merge-alone route: the work lands through its run's `land`, which merges
     /// where the repository's rule says merge, and a door that merged whatever the rule said would be a door past it.
     /// </summary>
     [Fact]
