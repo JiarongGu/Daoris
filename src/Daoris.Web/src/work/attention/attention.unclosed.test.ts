@@ -28,7 +28,7 @@ describe('a quest its finished session left taken, worded', () => {
     await i18n.changeLanguage('zh');
     try {
       expect(attentionWorded(row('q1', null), {}).detail)
-        .toBe('会话 `031217fe` 已结束，`#q1` 仍是已接下，本机不会再继续它：「标为完成…」关闭它，或给该会话留言让它继续。');
+        .toBe('会话 `031217fe` 已停下，`#q1` 仍是已接下，本机不会再继续它：「标为完成…」关闭它，或给该会话留言让它继续。');
     } finally {
       await i18n.changeLanguage('en');
     }

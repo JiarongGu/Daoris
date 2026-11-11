@@ -78,7 +78,7 @@ export type DriverState = {
   cap?: number;
   /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
   terminal?: string;
-  /** Who changed that tier and what a terminal pressed under act, newest first, read by `terminalActsOf`; absent from an older shell. */
+  /** Who changed that tier and what a terminal pressed under act, newest first, read by `terminalActsOf`; absent until one is recorded. */
   terminalActs?: unknown;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;

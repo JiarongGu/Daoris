@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '../locales/i18n';
 import type { PluginEntry } from '../bridge/plugins';
 import { systemsOffered } from './ProjectManage';
@@ -22,12 +23,14 @@ describe('a system on the add', () => {
     expect([...unguardedSystems([both, plugin({ id: 'other' })])]).toEqual(['stand-in-system/stand-in-unguarded']);
   });
 
-  it('hands back the system chosen and the name typed, and says what a system department is', () => {
+  it('hands back the system chosen and the name typed, and says what a system department is', async () => {
     const onSystem = vi.fn();
     const onName = vi.fn();
     render(<SystemChoiceField offered={systemsOffered([plugin({})])} system="" name="" onSystem={onSystem} onName={onName} />);
 
-    fireEvent.change(screen.getByLabelText('System'), { target: { value: 'stand-in-system/stand-in' } });
+    screen.getByRole('combobox', { name: 'System' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'The stand-in store · Stand-in system' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'store' } });
 
     expect(onSystem).toHaveBeenCalledWith('stand-in-system/stand-in');

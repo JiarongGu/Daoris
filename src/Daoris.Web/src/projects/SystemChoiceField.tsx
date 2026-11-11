@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { SelectField } from '../design/ui';
 
 /** One system an installed plugin adapts, as a department's registration names it: `<plugin>/<system>`. */
 export type SystemOffered = { system: string; name: string; plugin: string };
@@ -18,18 +19,16 @@ export function SystemChoiceField({ offered, system, name, onSystem, onName }: {
   if (offered.length === 0) return <p className="mt-3 text-body text-ink-soft">{t('projects.manage.systemNone')}</p>;
   return (
     <>
-      <label className="mt-4 block text-small text-ink-faint" htmlFor="add-system">{t('projects.manage.system')}</label>
-      <select
-        id="add-system"
-        value={system}
-        onChange={(event) => onSystem(event.target.value)}
-        className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-      >
-        <option value="">{t('projects.manage.systemPick')}</option>
-        {offered.map((each) => (
-          <option key={each.system} value={each.system}>{`${each.name} · ${each.plugin}`}</option>
-        ))}
-      </select>
+      <p className="mt-4 text-small text-ink-faint">{t('projects.manage.system')}</p>
+      <div className="mt-1">
+        <SelectField
+          value={system}
+          onChange={onSystem}
+          ariaLabel={t('projects.manage.system')}
+          placeholder={t('projects.manage.systemPick')}
+          options={offered.map((each) => ({ value: each.system, label: `${each.name} · ${each.plugin}` }))}
+        />
+      </div>
       <label className="mt-4 block text-small text-ink-faint" htmlFor="add-system-name">{t('projects.manage.systemName')}</label>
       <input
         id="add-system-name"

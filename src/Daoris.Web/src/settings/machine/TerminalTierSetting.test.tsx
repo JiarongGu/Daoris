@@ -34,7 +34,7 @@ describe("the terminal's tier row", () => {
 
   it.each([
     ['en', 'Turned on by Ask Daoris, with no card', 'Turned on outside Daoris: no change to it is recorded'],
-    ['zh', '由 Ask Daoris 未经确认卡开启', '在 Daoris 之外开启：没有记录这次更改'],
+    ['zh', '由 Ask Daoris 未经确认卡启用', '在 Daoris 之外启用：没有记录这次更改'],
   ])('says who turned act on, or that no change of it is recorded (%s)', async (language, by, unrecorded) => {
     await i18n.changeLanguage(language);
     const { unmount } = render(
