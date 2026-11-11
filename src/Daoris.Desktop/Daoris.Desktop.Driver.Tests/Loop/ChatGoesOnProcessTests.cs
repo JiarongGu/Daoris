@@ -439,7 +439,6 @@ public sealed class ChatGoesOnProcessTests : IDisposable
             () => Seen(ledger, events, id));
         var lost = events.After(id, 0).Events.Single(e => e.Text?.Contains("may have read") == true);
         Assert.Equal([word], lost.Words!);
-        // Its code, which the page words in the reader's language (MSG1c3).
         Assert.Equal(SessionEventCodes.Lost, lost.Code);
         Assert.True(runner.Finish(id));
     }

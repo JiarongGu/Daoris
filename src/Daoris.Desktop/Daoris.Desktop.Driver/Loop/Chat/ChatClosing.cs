@@ -8,20 +8,15 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
 {
     private ChatContext Context => wiring.Context;
 
-    /// <summary>The conversations the shell's close cut off, whose record keeps the word that Daoris restarted.</summary>
+    /// <summary>The conversations the close cut off, kept the restart word under <see cref="Restart"/>: a build, else the close's own moment.</summary>
     public System.Collections.Concurrent.ConcurrentDictionary<string, byte> Cuts { get; } = new();
 
-    /// <summary>
-    /// What this close's restart word is keyed by, set as the close begins: the update's build, or the moment any other close began, since a
-    /// key the line settled answers a later say as kept for seven days and each close's word must be its own.
-    /// </summary>
     public string? Restart { get; private set; }
 
     /// <summary>
     /// End every conversation this runner holds, as the driver's own act, and return once each record says so, or once <paramref name="bound"/>
     /// has passed, since a shutdown must not hang on one. Stopped, not finished: a harness given end-of-input finishes the sentence it is saying
-    /// first, which can take minutes, and the person is closing the application now. Whoever closes it, a conversation cut mid-turn goes on
-    /// by itself at the next start; one between turns waits for the person's next word.
+    /// first, which can take minutes, and the person is closing the application now.
     /// </summary>
     public void StopAll(TimeSpan bound)
     {
@@ -73,7 +68,6 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         }
     }
 
-    /// <summary>The note of a conversation the close cut mid-turn: Daoris's own stop, and it goes on by itself.</summary>
     public static Noted CutNoted => Noted.Of(ChatNoteCodes.ChatCut,
         "Daoris closed while this conversation's turn ran; it goes on by itself in its own conversation when Daoris starts again.");
 
@@ -101,7 +95,6 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or OperationCanceledException or ObjectDisposedException)
         {
-            // The close must not throw: a client already let go on the same shutdown keeps nothing, and is logged as any refusal is.
             using var log = new MachineLog(Context.Home, "driver");
             log.Warn("conversation.restart-unkept", ("session", session), ("error", error.GetType().Name));
         }
