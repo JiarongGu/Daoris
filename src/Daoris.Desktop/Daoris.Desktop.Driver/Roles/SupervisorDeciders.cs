@@ -39,7 +39,8 @@ public static class SupervisorDeciders
     }
 
     private static IReadOnlyList<DeciderLine> Lines(IReadOnlyList<RoleSlot> slots, RolePlace place, RuleWiderPlaces wider) =>
-        [.. SupervisorKinds.All.Select(kind => Line(SupervisorResolution.Find(slots, kind, place, wider), kind))];
+        [.. SupervisorKinds.All.Where(kind => place is { Workspace: null, Repository: null } || !SupervisorKinds.MachineOnly(kind))
+            .Select(kind => Line(SupervisorResolution.Find(slots, kind, place, wider), kind))];
 
     private static DeciderLine Line(SupervisorFound found, string kind) => found.Role is { Hold: { } hold } role
         ? new(kind, role.Id, PlaceOf(role.Scope), hold.Holder, [.. SupervisorKinds.ActsOf(kind).Where(act => hold.Acts.Contains(act, StringComparer.Ordinal))], null)

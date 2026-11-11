@@ -133,6 +133,29 @@ public sealed class RoleChangeViewTests : DriverModuleBridge
     }
 
     [Fact]
+    public async Task Turning_the_second_check_on_names_its_readers_providers_in_order_and_what_they_spend()
+    {
+        HomeMigration.Run(Home, [new SupervisorStep(() => null), new SecondCheckStep()]);
+        object Role(string holder) => new
+        {
+            name = new { en = "Second check", zh = "复核" }, scope = new { kind = "machine" }, filled = "appointed", kind = "supervisor",
+            decides = new[] { "ask-daoris" }, authority = new[] { "ask-daoris.report" }, holder, window = 5,
+        };
+        var choices = new object[] { new { agent = "codex" }, new { agent = "claude-code", model = "opus", effort = "high" } };
+
+        var viewed = await View(new { change = "set", id = SecondCheck.Role, revision = 0, role = Role("agent"), choices });
+        var kept = await View(new { change = "set", id = SecondCheck.Role, revision = 0, role = Role("rules") });
+
+        Assert.Null(viewed.Refusal);
+        var also = viewed.View!.Also!;
+        var on = Assert.Single(also, said => said.Kind == "second-check-on");
+        Assert.Equal("Codex (OpenAI), Claude Code (Anthropic)", on.Facts["readers"]);
+        Assert.Equal("40", Assert.Single(also, said => said.Kind == "second-check-spend").Facts["starts"]);
+        Assert.Null(kept.Refusal);
+        Assert.DoesNotContain(kept.View!.Also ?? [], said => said.Kind.StartsWith("second-check", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void The_role_route_has_its_view()
     {
         Assert.IsType<RoleChangeView>(PressViews.Find(DriverModule.Name, "SET_ROLE"));

@@ -88,6 +88,12 @@ public sealed class RoleChangeView : IPressView
         if (change is RoleChange.SetRole && choices is { Count: 0 }) also.Add(new PressSaid("role-choices-off"));
         else if (change is RoleChange.SetRole && choices is { Count: > 0 }) also.Add(new PressSaid("role-choices", ("choices", Choices(choices))));
         if (policy is null) also.AddRange(PolicyMoved(change, choices, staffing));
+        if (change is RoleChange.SetRole { Role: var reader })
+        {
+            var order = choices ?? (staffing.Read()?.Actors.TryGetValue(reader.Id, out var staffed) == true ? staffed : null);
+            also.AddRange(SecondCheckOnSaid.Of(reader, order, policy?.Policy ?? staffing.Policy(reader.Id).Policy));
+        }
+
         return PressViewed.Shown(also.Count > 0 ? view with { Also = also } : view);
     }
 

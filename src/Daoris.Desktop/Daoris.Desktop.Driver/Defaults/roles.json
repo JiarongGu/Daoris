@@ -11,6 +11,7 @@
     { "id": "ask-daoris", "name": { "en": "Ask Daoris", "zh": "问道衍" }, "work": "ask-daoris", "place": "machine", "filled": "always" },
     { "id": "chat", "name": { "en": "Chat", "zh": "聊天" }, "work": "chat", "place": "machine", "filled": "always" },
     { "id": "supervisor", "name": { "en": "Supervisor", "zh": "主管" }, "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "rules", "window": 5, "place": "machine", "filled": "appointed" },
-    { "id": "steward", "name": { "en": "Steward", "zh": "管家" }, "kind": "steward", "authority": ["drive", "undrive", "hold", "resume", "stop", "finish", "retry"], "place": "machine", "filled": "appointed" }
+    { "id": "second-check", "name": { "en": "Second check", "zh": "复核" }, "kind": "supervisor", "decides": ["ask-daoris"], "authority": ["ask-daoris.report"], "holder": "rules", "window": 5, "place": "machine", "filled": "appointed" },
+    { "id": "steward","name": { "en": "Steward", "zh": "管家" }, "kind": "steward", "authority": ["drive", "undrive", "hold", "resume", "stop", "finish", "retry"], "place": "machine", "filled": "appointed" }
   ]
 }

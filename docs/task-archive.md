@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSUPERVISE1's rows a and b as units, and a landing that reaches the line as the same changes (2026-11-11)
+
+> **ASKSUPERVISE1 a and b** (driver, modules, service, web; D272): Outcome: the `ask-daoris` supervisor kind with its one act `report`, refused below the machine (`AskDaorisKind`); the seeded `second-check` role (复核), held by rules and so off, with a run-once step writing its choices (Codex, then Claude Code · opus · high, 40 starts a day each) only where no staffing, record or person's own supervisor of the kind exists (`SecondCheckStep`); its card's provider and spend lines; `AskDaorisSelection` over the design's §2 table with each lineage line's act, and `AskDaorisRanges` with the 40,000-character bound, *disabled*, the 24-hour unread close and catch-up. Not yet called from a live conversation. Proof: `AskDaorisKindTests`, `SecondCheckStepTests`, `AskDaorisSelectionTests`, `AskDaorisRangesTests`, `AskDaorisSecondCheckTests`, `CallActTests`, `RoleChangeViewTests`, `SecondCheckOn.test`, each seen failing first.
+>
+> **A landing held as the same changes** (driver; built by Codex): Outcome: the landing and content-hold observations read the line through `LineHolds`, the judgement `tree land --plan` uses, so a branch rebased before it merged reaches the line with words saying so instead of retrying at every look; work the line lacks still lands. Found in the installed copy on a review quest. Proof: four regression cases (the loop seen failing first) and 41 existing landing checks.
+
+---
+
 ## Main's reds after the place and press merges (2026-11-11)
 
 > **Reds fixed** (web, cli, driver): Outcome: *Work in place*'s choice reaches the bridge from `bridge/repositories/setup.ts`, the presentational boundary holding; the history test waits for its section's data; the unclosed quest's and the terminal tier's Chinese words follow the glossary (已停下, 启用); the plans folder is the home's `plans` entry in all three twins; the tree console's source tests read every `Trees*Verb.cs`; the shipped-workflow flow test holds nine; three driver censuses follow the sync verb's move (FIX-LOG, one entry for the regressions). Proof: each file run filtered, `npm run quick`, `i18n:check`, `names:check --strict`.
