@@ -11,7 +11,8 @@
 //  DAORIS_HOST_TOKEN the identity's personal access token: never logged, never written, sent only to the API as Basic's password
 //  DAORIS_HOST_API the API's base address where it is not Azure DevOps' (a test's stand-in), put before the organization's name
 import { createInterface } from 'node:readline';
-import { Refusal, TRANSIENT, addressOf, call, choose, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
+import { autoComplete } from './auto-complete.mjs';
+import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { work } from './work.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
@@ -57,10 +58,11 @@ async function pullRequest(attempt) {
   }
 }
 
-function reached(attempt, repo, pr, message) {
+async function reached(attempt, repo, pr, message) {
+  const completion = await autoComplete(repo, pr, attempt.options);
   return {
     state: 'reached',
-    evidence: { ref: `${RECEIPT}:${attempt.invocation}`, url: addressOf(repo, pr), message },
+    evidence: { ref: `${RECEIPT}:${attempt.invocation}`, url: addressOf(repo, pr), message: fit(`${message} ${completion}`) },
     outputs: { 'pull-request': { ref: `${PULL_REQUEST}:${pr.pullRequestId}` } },
   };
 }
@@ -122,7 +124,7 @@ const kit = work({
     try {
       const repo = located(unit);
       const active = (await fromBranch(repo, unit.branch)).find((pr) => pr.status === 'active');
-      return active ? { state: 'done', outcome: reached(attempt, repo, active, `pull request ${active.pullRequestId} is active from \`${unit.branch}\`.`) } : { state: 'not-started' };
+      return active ? { state: 'done', outcome: await reached(attempt, repo, active,`pull request ${active.pullRequestId} is active from \`${unit.branch}\`.`) } : { state: 'not-started' };
     } catch (error) {
       if (!(error instanceof Refusal) || !TRANSIENT.includes(error.code)) return null;
       say(`${error.message}; attempt ${attempt.invocation} is asked again later.`);
