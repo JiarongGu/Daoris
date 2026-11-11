@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A quest stayed taken for days after its session was finished
+
+- **Symptom:** a review quest's session ended its turn without its done and parked, as it should; three hours later a terminal's
+  `daoris session finish` (the person confirming in the window) moved it to `completed`, and its quest stayed `Taken` for three days:
+  no resume, no done, no row in *What needs you*, and its tree kept as one "a session running or waiting holds".
+- **Root cause:** 0864af5524 gave a park its finish, which ends the session and leaves its quest as it stands, and from then on nothing
+  read that quest: `RoundReading.Plans` and `Planner.CarriesOn` take a taken quest up only after a failure, a stop, an answered park, a
+  person's words or a reopen, so a finished session gave no verdict, *What needs you* had no row, and Sessions placed it in Ended,
+  while `TidyHolders.LineHolders` kept its tree as the newest part of a taken quest. 839380d18d named the done door once, after the
+  finish, and nothing later.
+- **Fix:** the planner says such a quest `Unclosed` (`UnclosedQuests`): its session was finished, or went on from a finish, and left
+  it taken. *What needs you* lists it by the quest (`unclosed`), its door the quest's *Mark done…*, and a word to the session goes on
+  with it; the work in its tree stays to review.
+- **Verify:** `UnclosedQuestTests` and `UnclosedQuestRowsTests`, red first; `attention.unclosed.test.ts` words the row in both languages.
 ## 2026-11-11 - Changes left their censuses behind, and the fast half went red
 
 - **Symptom:** the CI run at a29752d failed the lane table's two reach tool-tests, the bridge's barrel test, the menus' count and

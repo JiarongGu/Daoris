@@ -28,60 +28,10 @@ import { draftToTell, noteTold } from '../help/openDraft';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import {
-  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, makerOf, publishedAnswer, settleBound, useDraftProposals, useHelpPublished, useHelpWired, useSettleHelp,
+  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, makerOf, publishedAnswer, useDraftProposals, useHelpPublished, useHelpWired, useSettleHelp,
   wiredAnswer, type HelpSettled,
 } from './help';
 import { useStateHub } from './state/stateHub';
-
-/**
- * Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own
- * look and press may take; the bridge's default 30 seconds would give up on the screen's look. Every other Apply is quick.
- */
-describe('how long an Apply may take', () => {
-  const minutes = (ms: number | undefined) => (ms === undefined ? undefined : ms / 60_000);
-  const proposal = (id: string, kind: HelpProposal['kind'], sync?: HelpProposal['sync']): HelpProposal =>
-    ({ id, kind, describe: '', terminal: '', why: '', sync }) as HelpProposal;
-
-  const client = () => {
-    const made = new QueryClient();
-    made.setQueryData(['help-proposals', 's1'], [
-      proposal('p1', 'clear'),
-      proposal('p2', 'sync', { looked: false, rows: [] }),
-      proposal('p3', 'sync', {
-        looked: true,
-        rows: [
-          { key: 'engine:main', step: 'line', moves: true, says: '' },
-          { key: 'engine:daoris/s-1', step: 'replay', moves: true, says: '' },
-          { key: 'engine:daoris/s-2', step: 'replay', moves: false, says: '' },
-        ],
-      }),
-    ]);
-    return made;
-  };
-
-  it('waits the bridge\'s default for every kind but bringing up to date', () => {
-    expect(settleBound(client(), 'p1')).toBeUndefined();
-    expect(settleBound(client(), 'nowhere')).toBeUndefined();
-  });
-
-  it('waits for the look as the screen does: a workspace\'s worth until the machine says how many it takes', () => {
-    const made = client();
-    expect(minutes(settleBound(made, 'p2'))).toBe(18);
-
-    made.setQueryData(['driver', 'trees-sync-scope'], {
-      repositories: [
-        { repository: 'engine', workspace: 'aurora', holds: true },
-        { repository: 'game', workspace: 'aurora', holds: false },
-      ],
-    });
-    // One repository holds Daoris's branches: one round of a fetch's two minutes, and two to spare.
-    expect(minutes(settleBound(made, 'p2'))).toBe(4);
-  });
-
-  it('waits for the press one replay after another, for the rows the look listed as moving', () => {
-    expect(minutes(settleBound(client(), 'p3'))).toBe(12);
-  });
-});
 
 /**
  * `proposal.settled` is the person's Apply or Not now once the proposal settles. A sync card's look
@@ -221,8 +171,7 @@ describe('what an Apply reads again', () => {
     expect(invalid(keys.repositories(null))).toBe(true);
   });
 
-  // A workflow card's Apply saves a version, so the workflow tabs (a repository's Current, a run's place),
-  // which sit under the driver's key, are read again at once.
+  // A workflow card's Apply saves a version, so the workflow tabs under the driver's key are read again at once.
   it('reads the workflow tabs again, which a saved workflow version changed', async () => {
     const tabs = [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')];
     const invalid = await settled({ id: 'p22', apply: true }, ...tabs);

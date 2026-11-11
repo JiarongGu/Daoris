@@ -74,11 +74,11 @@ Where your agent takes Daoris's rules, the person's own denies still hold.
   `daoris plugins approve <id> <server>` asks the person's approval of what a plugin's server offers you, with
   `--writes <tool>,…` naming only the writes outside Daoris they said they accept, or `--reads-only`; its card names every
   tool, and you are handed it from your next conversation. `daoris plugins withdraw <id> <server>` takes one back.
-- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →
-  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at
-  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace
-  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
-  then lists what the press would do; apply acts on those rows only. Daoris never pushes.
+- Repositories are brought up to date after a pull request merged by pressing, never proposed, as the workspace's page →
+  Branches → Updates does: `daoris tree sync --yes`, with `--repository <name>` or `--workspace <name>` to take those alone,
+  or `--all` for every one with a checkout here. Each line is fetched from `origin` as the person and fast-forwarded, the
+  branches still at work replayed onto it, the landed branches whose work reached it deleted. Its card shows the person each
+  row that moves. Daoris never pushes.
 - Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the
   person's own presses, on the quest's page and in the review, where `go_propose` takes them.
 - A repository registered here is moved to a workspace by pressing, never proposed:
@@ -105,13 +105,12 @@ Where your agent takes Daoris's rules, the person's own denies still hold.
   another pause over a quest of the work stays.
   Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
   ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.
-- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),
-  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest
-  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).
-  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged
-  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still
-  open or taken, a session still running and anything waiting on the person are never cleared, and the route
-  refuses them.
+- Finished history is cleared from this machine by pressing, never proposed, as the pages' *Clear from this machine…* do:
+  `daoris quest clear <id> --yes` (a closed quest's work), `daoris ask clear <id> --yes` (an ask's work with every quest it
+  became), `daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone, the quest and its other sessions
+  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it
+  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and
+  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.
 - `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new
   workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as
   `daoris workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`
@@ -151,7 +150,6 @@ Where your agent takes Daoris's rules, the person's own denies still hold.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
-a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 A press of not now comes back to you as the person's next message;
 dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing

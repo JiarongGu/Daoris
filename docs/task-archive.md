@@ -5,6 +5,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## A quest its finished session left taken waits on the person; the plugin kit answers each frame as it settles (2026-11-11)
+
+> **Unclosed quests and the kit's findings** (driver, web, examples): Outcome: a quest whose last session was finished by the person or the steward, or went on and ended, with the quest still taken, gets the planner's `Unclosed` verdict (`UnclosedQuests`) and an `unclosed` row in *What needs you* whose door opens its *Mark done…*; a word to the session still goes on with it, and work in its tree stays to review (FIX-LOG; driving rule 37). Found in the install: a code review's session parked, was finished from a terminal, and its quest stayed taken three days with no reader. The plugin kit's template and examples answer each frame as it settles, so a slow read no longer holds the others past the platform's patience; a check that cannot reach its platform answers `running` with the reason on stderr, a refused credential stops the step. Proof: the planner, groups, pausing, kit contract and attention tests, the page tests in both languages, each new test seen failing first.
+
+---
+
+## ASKFULL1g-vi's clear and sync — pressed, their kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, clear and sync** (driver, modules, service, web): Outcome: a clear presses `HISTORY_CLEAR`, its card the route's view (`HistoryClearView`, refusing at the ask what the verb would keep, in its words, then counting the plain list); `daoris tree sync --yes` presses the running Daoris's `TREES_SYNC` with fetch and follow (`Driver.Host/TreesSyncVerb.cs`), its card listing each row the route's list moves and refusing a place this machine lacks (`TreesSyncView`); both proposal kinds are gone whole (tools, writers, judges, doors, room lines, goldens, call tables, card parts, words, README rows). Proof: `HistoryClearViewTests`, `TreesSyncViewTests`, `HistoryClear.test` and `TreesSync.test` in both languages, seen failing first; the room, proposal, tool and `CoreSetTests`.
+
+---
+
 ## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
 
 > **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.

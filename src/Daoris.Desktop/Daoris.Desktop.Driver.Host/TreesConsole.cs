@@ -1,15 +1,11 @@
 namespace Daoris.Driver.Host;
 
-/// <summary>
-/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | state | sync | build &lt;path&gt;]`.
-/// </summary>
+/// <summary>The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | state | sync | build &lt;path&gt;]`.</summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
 /// checkouts, and the CLI's discipline is that it spawns nothing but this program (`driverprogram.ts`) — so the verbs live
 /// on the binary that already owns git (parity is between surfaces, not between packages). The
-/// standing opt-in is the workflow's <c>isolate</c> step, a file edit; the trees themselves are this side's, because they
-/// are processes and disk.</para>
-///
+/// standing opt-in is the workflow's <c>isolate</c> step, a file edit; the trees themselves are this side's, being processes and disk.</para>
 /// <para>Exit codes keep the family contract: 0 clean · 1 refused (work would be lost) · 2 tool error.</para>
 /// </remarks>
 internal static class TreesConsole
@@ -123,11 +119,6 @@ internal static class TreesConsole
             case ["clean", ..]:
                 return await TreesCleanVerb.RunAsync(args, home, trees, asking).ConfigureAwait(false);
 
-            // Bringing repositories up to date after a pull request merged: the list first — it fetches
-            // each line, which moves only origin's refs — and with --yes the press. A workspace's Branches tab is the
-            // other door, and --workspace takes that workspace's checkouts alone, as the tab does. The
-            // checkouts and the sessions in use are the service's. It takes the repositories holding Daoris's branches:
-            // --all takes every one, and a repository named is taken.
             case ["build", var named]:
                 return await TreeBaseBuilds.BuildAsync(home, named, Console.Out, Console.Error).ConfigureAwait(false);
 
@@ -135,59 +126,7 @@ internal static class TreesConsole
                 return Usage("`build` takes one path: a kept base, the project folder beside it, or a file under it.");
 
             case ["sync", ..]:
-            {
-                if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);
-                var scope = TreesCommand.Scope(ask);
-                using var service = ServiceClient.FromEnvironment();
-                var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);
-                if (taken.Refusal is { } refusal)
-                {
-                    Console.Error.WriteLine($"trees: {refusal}");
-                    return 1;
-                }
-
-                var repositories = taken.Repositories;
-                if (repositories.Count == 0)
-                {
-                    Console.Error.WriteLine(TreesCommand.NothingToSync(ask));
-                    return 1;
-                }
-
-                var inUse = await BranchTidying.HeldTreesAsync(home, service, CancellationToken.None).ConfigureAwait(false);
-
-                if (!ask.Yes)
-                {
-                    // The list is the running Daoris's where one answers (TREES_SYNC_PLAN: its fetch and its plugin asks, as the
-                    // person's look, which this verb is), in the words the alone path prints from the same function.
-                    if (await InstanceDoor.TryReadAsync(
-                            OpenRoutes.TreesSyncPlan, new { repository = ask.Repository, workspace = ask.Workspace, all = ask.All, said = true },
-                            TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } listed)
-                    {
-                        return listed;
-                    }
-
-                    // Its fetch first, then its plugin asks where git cannot tell.
-                    var plan = await asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
-                    // What is not fetched, said once and first, rather than at the end of every row.
-                    var listing = TreesPlanWords.SyncPlan(plan, ask, DateTimeOffset.UtcNow);
-                    listing.Print(Console.Out, Console.Error);
-                    return listing.Code;
-                }
-
-                // The sessions in use, asked again while each repository's trees are held for its replays.
-                var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true,
-                    inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
-                        .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-                        .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope,
-                    beside: token => BranchTidying.BesideAsync(home, service, token)).ConfigureAwait(false);
-                Told(home, PressesTold.TreesSync);
-                // The words are the route's too: what is not fetched, each row, what is left apart, the registry's
-                // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.
-                var followed = await TreesWords.FollowMovedAsync(service, home, () => DriverConfig.Load(DriverConfig.ResolvePath()), log).ConfigureAwait(false);
-                var said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed);
-                said.Print(Console.Out, Console.Error);
-                return said.Code;
-            }
+                return await TreesSyncVerb.RunAsync(args, home, trees, asking, log).ConfigureAwait(false);
 
             case ["land", "--entry" or "--ask", ..]:
                 return await TreesEntryLandVerb.RunAsync(args, home, configPath, log).ConfigureAwait(false);

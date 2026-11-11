@@ -44,7 +44,7 @@ internal static class ClaudeOwnServers
         try
         {
             if (!File.Exists(globalFile)) return [];
-            using var file = JsonDocument.Parse(File.ReadAllText(globalFile));
+            using var file = JsonDocument.Parse(AtomicFile.ReadText(globalFile));
             if (!file.RootElement.TryGetProperty(Servers, out var servers) || servers.ValueKind != JsonValueKind.Object) return [];
             return [.. servers.EnumerateObject().Where(server => Kept(server.Name, server.Value)).Select(server => (server.Name, server.Value.Clone()))];
         }

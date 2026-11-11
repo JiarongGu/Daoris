@@ -324,13 +324,6 @@ const lookCount = (client: QueryClient, include: SyncInclude, workspace: string 
 };
 
 /**
- * How long a look may take: a few repositories at a time, each within a fetch's bound, for as many as it takes —
- * Ask Daoris's sync card's look as well as the screen's (`bridge/help.ts`).
- */
-export const syncLookBound = (client: QueryClient, include: SyncInclude = []) =>
-  lookBound(lookCount(client, include) ?? UNKNOWN_COUNT);
-
-/**
  * The payload that asks a look to take `include` beside the default, every one or the ones named, and that names
  * the workspace it is asked for, whose checkouts alone it then takes.
  */

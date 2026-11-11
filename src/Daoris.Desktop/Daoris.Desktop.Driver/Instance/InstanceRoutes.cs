@@ -69,7 +69,7 @@ public static class OpenRoutes
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
-        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
+        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press, `TREES_SYNC`, confirmed in the window"),
         ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
