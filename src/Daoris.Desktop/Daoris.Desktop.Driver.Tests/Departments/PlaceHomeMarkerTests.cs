@@ -48,4 +48,21 @@ public sealed class PlaceHomeMarkerTests : IDisposable
         Assert.Null(PlaceHomeMarker.Claim(First, Place, "reports"));
         Assert.Null(PlaceHomeMarker.Claim(Second, Place, "reports"));
     }
+
+    [Fact]
+    public async Task A_conversation_in_the_checkout_is_asked_the_marker_and_one_in_a_tree_of_its_own_is_not()
+    {
+        Directory.CreateDirectory(Place);
+        Directory.CreateDirectory(First);
+        Directory.CreateDirectory(Second);
+        await GitFixture.RunAsync(Place, "init", "-q", "-b", "main");
+        Assert.Null(ChatStarts.PlaceHeld(First, Place, "reports", isolated: false, tree: null));
+
+        var refused = ChatStarts.PlaceHeld(Second, Place, "reports", isolated: false, tree: null);
+
+        Assert.Contains("another Daoris home on this machine", refused);
+        Assert.Null(ChatStarts.PlaceHeld(Second, Place, "reports", isolated: true, tree: null));
+        Assert.Null(ChatStarts.PlaceHeld(Second, Place, "reports", isolated: false, tree: Path.Combine(_scratch, "tree")));
+    }
 }
+

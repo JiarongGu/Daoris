@@ -10,6 +10,13 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
     /// <summary>Whether a conversation opens in a tree of its own: said, or else whether its repository's workflow sets its work apart.</summary>
     public static bool Isolates(bool? ownTree, IsolateStep? apart) => ownTree ?? apart is not null;
 
+    /// <summary>
+    /// Why a conversation that works the checkout itself may not start: another home on this machine works it in place
+    /// (<see cref="PlaceHomeMarker"/>), which a driven start is asked as well. Null for one in a tree, which is no place's lease.
+    /// </summary>
+    internal static string? PlaceHeld(string home, string root, string repository, bool isolated, string? tree) =>
+        isolated || tree is not null ? null : PlaceHomeMarker.Claim(home, root, repository);
+
     /// <summary>Open a chat and put a harness behind it.</summary>
     /// <param name="profile">The credential profile this conversation runs as. Null takes the workspace's default, then the machine's, then the harness's own.</param>
     /// <param name="picked">
@@ -196,6 +203,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
 
         var isolated = tree is null && Isolates(ownTree, ownTree is null ? PlaceIsolates.Of(home, config, repository, known?.Workspace) : null);
         // In the checkout itself too, so no writer moves it between the commit read below and the record that holds it.
+        if (PlaceHeld(home, root!, known.Repository, isolated, tree) is { } otherHome) return new(null, otherHome);
         var startIn = tree is not null ? StartIn.In(tree) : isolated ? StartIn.Fresh : StartIn.In(root!);
         using var starting = TreeLock.TryStarting(home, root!, startIn);
         if (starting is null) return new(null, TreeLock.StartHeld(home, root!, startIn, known.Repository).Why);
