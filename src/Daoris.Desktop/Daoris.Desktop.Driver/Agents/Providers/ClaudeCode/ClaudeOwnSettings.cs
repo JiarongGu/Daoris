@@ -106,7 +106,7 @@ internal static class ClaudeOwnSettings
     {
         try
         {
-            return File.Exists(path) ? JsonNode.Parse(File.ReadAllText(path)) as JsonObject : null;
+            return File.Exists(path) ? JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject : null;
         }
         catch (Exception problem) when (problem is IOException or UnauthorizedAccessException or JsonException)
         {
