@@ -2,7 +2,7 @@
 // sends the answers given so far, and says these lines, asks what is asked, and ends where nothing is.
 import { forget, keep, kept, stored } from './credential.mjs';
 
-const ID = 'github-pull-request';
+const ID = 'daoris-github';
 const MAKE = 'Make a fine-grained personal access token on GitHub with Pull requests (Read and write) and Contents (Read) on the repositories it opens pull requests in.';
 
 export async function run({ command, answers = {} }) {

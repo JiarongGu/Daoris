@@ -60,6 +60,15 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
         Save(home, read, [.. read.Disabled.Where(d => !Same(d, id))]);
     }
 
+    /// <summary>A renamed plugin's row: switched off under its old id, it is off under its new one; false where the old id had none.</summary>
+    public static bool Renamed(string home, string from, string to)
+    {
+        var read = Editable(home);
+        if (!read.Disabled.Any(each => Same(each, from))) return false;
+        Save(home, read, [.. read.Disabled.Where(each => !Same(each, from) && !Same(each, to)).Append(to)]);
+        return true;
+    }
+
     /// <exception cref="DriverException">The file could not be read, so an edit would rewrite it whole.</exception>
     internal static PluginState Editable(string home) =>
         Load(home) is { Problem: { } problem }

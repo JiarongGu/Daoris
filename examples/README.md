@@ -89,12 +89,13 @@ transcript in `_fixtures/rehearsal-logs/`:
 (`docs/2026-09-23-plugin-design.md`). A plugin declares harnesses on the ACP door and may speak from
 a process of its own; no code from one ever loads into Daoris. Two hand sessions a browser:
 [`plugins/browser`](plugins/browser/README.md) launches one of its own, and
-[`plugins/in-app-browser`](plugins/in-app-browser/README.md) attaches to Daoris's own window (D78),
-where the person signs in once. Two open a pull request (D241): once Daoris's `push` node has pushed a branch,
-[`plugins/github-pull-request`](plugins/github-pull-request/README.md) opens a pull request through GitHub's REST API, and
-[`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md) through Azure DevOps', each with the API token of
-the git identity serving origin and running no git or CLI. Neither runs until it is installed and a place's workflow holds its step. The
-published desktop carries those two and `in-app-browser` as **Daoris's own plugins**, offered in
+[`plugins/daoris-in-app-browser`](plugins/daoris-in-app-browser/README.md) attaches to Daoris's own window (D78),
+where the person signs in once. Two carry Daoris's work on a hosting service (D241, D274): once Daoris's `push` node has pushed a branch,
+[`plugins/daoris-github`](plugins/daoris-github/README.md) opens a pull request through GitHub's REST API, and
+[`plugins/daoris-azure-devops`](plugins/daoris-azure-devops/README.md) through Azure DevOps', setting it to auto-complete and
+following its release, each with the token its own `login` keeps and running no git or CLI. Neither runs until it is installed and a
+place's workflow holds its step. The published desktop carries those two and `daoris-in-app-browser` as **Daoris's own plugins**, the
+`daoris-` family, offered in
 Plugins and by `daoris plugin list` and never installed until a press (D103);
 `hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell. Two more show a performed
 step, which the plugin kit's own scaffold is filled in from: [`plugins/local-preview`](plugins/local-preview/README.md) writes a

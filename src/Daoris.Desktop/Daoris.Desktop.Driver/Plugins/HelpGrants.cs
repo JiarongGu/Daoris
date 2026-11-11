@@ -142,6 +142,17 @@ public static class HelpGrants
         Save(home, found: true, approvals, [.. approvals.Where(each => !Same(each, plugin, server))]);
     }
 
+    /// <summary>A renamed plugin's approvals carried to its new id, but where the new id holds one for that server: how many moved and stayed.</summary>
+    public static (int Moved, int Left) Renamed(string home, string from, string to)
+    {
+        if (!File.Exists(PathIn(home))) return (0, 0);
+        if (Approvals(home) is not { } approvals) return (0, 1);
+        var moving = approvals.Where(each => string.Equals(each.Plugin, from, StringComparison.OrdinalIgnoreCase)).ToList();
+        var taken = moving.Where(each => !approvals.Any(other => Same(other, to, each.Server))).ToList();
+        if (taken.Count > 0) Save(home, found: true, approvals, [.. approvals.Select(each => taken.Contains(each) ? each with { Plugin = to, Edited = true } : each)]);
+        return (taken.Count, moving.Count - taken.Count);
+    }
+
     /// <summary>The sound plugin, on or off (an approval stands while it is off), and its server declared for Ask Daoris, as an approval names them.</summary>
     /// <exception cref="DriverException">No such plugin here, sound, offering Ask Daoris that server.</exception>
     internal static (PluginEntry Entry, PluginServer Server) Declared(PluginCatalog catalog, string plugin, string server)

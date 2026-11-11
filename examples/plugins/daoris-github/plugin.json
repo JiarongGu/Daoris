@@ -1,10 +1,11 @@
 {
-  "id": "github-pull-request",
+  "id": "daoris-github",
+  "formerly": ["github-pull-request"],
   "apiVersion": 1,
-  "name": "GitHub pull request",
-  "version": "2.1.0",
-  "changes": "It signs in itself: `login` keeps a token in the plugin's own private storage (the one a git identity serving GitHub held is taken over once), `status` says whether one is kept and whether GitHub last refused it, and `logout` forgets it; no git identity's token is read any more.",
-  "description": "A performed step, pull-request: opens a GitHub pull request from the branch Daoris pushed, through GitHub's REST API with the token its own login keeps, and reads its state.",
+  "name": "GitHub",
+  "version": "3.0.0",
+  "changes": "It is `daoris-github` now, Daoris's own GitHub plugin, no longer only a pull request's: its sign-in, its switches and what it kept move over from `github-pull-request` once, a workflow naming `github-pull-request/pull-request` runs on it, and its commands are `daoris daoris-github login`, `status` and `logout`.",
+  "description": "Daoris's work on GitHub through its REST API, with the token its own login keeps: pull-request opens a GitHub pull request from the branch Daoris pushed and reads its state.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
     "points": ["work/watch", "work/step", "work/perform", "work/state"]
