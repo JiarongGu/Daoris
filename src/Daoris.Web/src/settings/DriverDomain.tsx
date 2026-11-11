@@ -63,6 +63,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         quiet: driver.data?.quiet,
         manifestFiles: driver.data?.manifestFiles,
         manifestMinutes: driver.data?.manifestMinutes,
+        manifestCopy: driver.data?.manifestCopy,
         cap: driver.data?.cap,
         terminal: terminalTierOf(driver.data?.terminal),
         machineAccess: driver.data?.machineAccess,
@@ -90,7 +91,9 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       onManifest={(bound) => setManifest.mutate(bound, {
         onSuccess: () => notify('files' in bound
           ? t('settings.manifest.setFiles', { count: bound.files })
-          : t('settings.manifest.setMinutes', { count: bound.minutes })),
+          : 'minutes' in bound
+            ? t('settings.manifest.setMinutes', { count: bound.minutes })
+            : t('settings.manifest.setCopy', { count: bound.copy })),
         onError,
       })}
       onCap={(value) => setCap.mutate({ cap: value }, {
