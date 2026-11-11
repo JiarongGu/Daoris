@@ -3,20 +3,14 @@ namespace Daoris.Driver;
 /// <summary>
 /// The person's Accept bound to the review record it names: checked when it is kept, against the record the review stands on, and when the
 /// pass applies it, against the run's work read afresh, since a page can be stale before the runtime has seen the work move. A word on
-/// another record is refused or dropped <see cref="Moved"/>, saying what it moved to.
+/// another record is refused or dropped <see cref="ReviewMoved.Word"/>, saying what it moved to.
 /// </summary>
 public static class ReviewAccepts
 {
-    /// <summary>The record the word names is not the one the review stands on, or the work moved from it before the pass applied it.</summary>
-    public const string Moved = "moved";
-
     /// <summary>The fewest characters of a revision that name it, as the terminal prints it short.</summary>
     private const int Shortest = 7;
 
     private static readonly IReadOnlyDictionary<string, string> None = new Dictionary<string, string>(StringComparer.Ordinal);
-
-    /// <summary>The first twelve characters of <paramref name="revision"/>, as the words name a record.</summary>
-    public static string Short(string? revision) => revision is null ? "none" : revision.Length > 12 ? revision[..12] : revision;
 
     /// <summary>Whether <paramref name="named"/>, whole or a prefix of at least seven characters, names <paramref name="revision"/>.</summary>
     public static bool Names(string named, string revision) =>
@@ -24,14 +18,14 @@ public static class ReviewAccepts
 
     /// <summary>
     /// The first check, as the word is kept on an active review at <paramref name="status"/>: the record of its attempt, or its binding where
-    /// none is kept. Refused <see cref="Moved"/> where the word names another attempt or another revision; the revision standing is returned
-    /// either way, which an unnamed word is bound to.
+    /// none is kept. Refused <see cref="ReviewMoved.Word"/> where the word names another attempt or another revision; the revision standing is
+    /// returned either way, which an unnamed word is bound to.
     /// </summary>
     public static (string? Refused, string? Standing) AtKeep(string home, string run, string node, NodeStatus status, int? attempt, string? revision)
     {
         var standing = ReviewRecords.Read(home, run, node, status.Attempt)?.Revision ?? status.Binding?.SubjectRevision;
-        if (attempt is { } named && named != status.Attempt) return (Moved, standing);
-        if (revision is { } drawn && standing is { } at && !Names(drawn, at)) return (Moved, standing);
+        if (attempt is { } named && named != status.Attempt) return (ReviewMoved.Word, standing);
+        if (revision is { } drawn && standing is { } at && !Names(drawn, at)) return (ReviewMoved.Word, standing);
         return (null, standing);
     }
 
@@ -68,7 +62,7 @@ public static class ReviewAccepts
 
     /// <summary>What the pass says of a word it dropped because the work moved from the record it named.</summary>
     public static string DroppedSaid(string unit, NodeWord word, IReadOnlyDictionary<string, string> present) =>
-        $"work  {unit}: your {word.Act} of `{word.Node}` was not applied (moved): the work moved from the record you pressed on ({Short(word.Revision)})"
-        + (present.GetValueOrDefault(word.Review ?? word.Node) is { } now ? $" and now reads {Short(now)}" : "")
+        $"work  {unit}: your {word.Act} of `{word.Node}` was not applied (moved): the work moved from the record you pressed on ({ReviewMoved.Short(word.Revision)})"
+        + (present.GetValueOrDefault(word.Review ?? word.Node) is { } now ? $" and now reads {ReviewMoved.Short(now)}" : "")
         + ", so read it again and say what it should do.";
 }

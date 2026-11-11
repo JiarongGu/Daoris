@@ -93,7 +93,7 @@ public static class EntryPartOutcome
     /// </summary>
     public const string Accepted = "accepted";
 
-    public const string Moved = ReviewAccepts.Moved;
+    public const string Moved = ReviewMoved.Word;
 }
 
 /// <summary>One part's outcome at an entry's Accept, with its landing's answer where it is tried.</summary>

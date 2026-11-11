@@ -24,7 +24,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
     public LimitGoesOnProcessTests()
     {
         _root = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_root);
+        GitSeed.PlainAsync(_root, "engine").GetAwaiter().GetResult();
         foreach (var account in new[] { "account-1", "account-2" })
         {
             Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
@@ -35,7 +35,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private string Heard => Path.Combine(_home, "heard.txt");

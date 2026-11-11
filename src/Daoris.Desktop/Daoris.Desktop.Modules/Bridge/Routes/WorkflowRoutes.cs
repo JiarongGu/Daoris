@@ -607,7 +607,7 @@ public sealed class WorkflowRoutes(DriverContext context)
                 cancellationToken)
                 .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
-        var revision = done.Done || done.Refused == ReviewAccepts.Moved ? done.Detail : null;
+        var revision = done.Done || done.Refused == ReviewMoved.Word ? done.Detail : null;
         var landing = await AcceptWaits.AwaitAsync(_loop, done, cancellationToken).ConfigureAwait(false);
         return new
         {

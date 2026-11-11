@@ -9,7 +9,7 @@ public static class EntryRunAccepts
 {
     /// <summary>What a part refused <c>moved</c> says: the revision its review stands on now.</summary>
     public static string MovedSaid(string session, string standing) =>
-        $"Not accepted (moved): session {session}'s work now reads revision {ReviewAccepts.Short(standing.Length > 0 ? standing : null)}; read it again.";
+        $"Not accepted (moved): session {session}'s work now reads revision {ReviewMoved.Short(standing.Length > 0 ? standing : null)}; read it again.";
 
     /// <summary>The entry's sentence over its parts' outcomes: one per outcome, each naming its sessions.</summary>
     public static string Said(IReadOnlyList<EntryPartLanding> parts)
