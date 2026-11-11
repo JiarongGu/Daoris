@@ -192,7 +192,7 @@ and merge commit as `data` (`pull-request-commands.mjs`).
 
 ## What it needs
 
-- **Node.js 22 or newer**, as `plugin.json` declares under `tools`: the process, its calls to the API, and its connection to Daoris's browser.
+- **Node.js**, as `plugin.json` declares under `tools`: the process, its calls to the API, and its connection to Daoris's browser.
 - **A personal access token, kept by `login`**, or the person's sign-in to Azure DevOps in Daoris's browser (the token is the first way), with the scopes Code (read and write) for the pull request and its auto-complete,
   Build (read) for the release step, and Release (read, write and execute) where it starts a stage by `deploy` (read alone otherwise).
   The token's user needs the repository's *Contribute to pull requests* permission to set auto-complete.

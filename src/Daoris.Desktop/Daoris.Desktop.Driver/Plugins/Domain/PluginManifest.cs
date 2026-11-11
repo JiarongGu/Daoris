@@ -46,9 +46,10 @@ public sealed record PluginHarness(
     string? AskingPosture = null);
 
 /// <summary>
-/// What a plugin speaks: the process, and the points it listens on.
+/// What a plugin speaks: the process, and the points it listens on; and whether its process is handed Daoris's own browser's DevTools
+/// address (<see cref="PluginBrowser"/>) to make its calls from the person's signed-in page.
 /// </summary>
-public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
+public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points, bool Browser = false);
 
 /// <summary>
 /// An MCP server a plugin hands to sessions — a browser, a ticket system, whatever the session should be able to

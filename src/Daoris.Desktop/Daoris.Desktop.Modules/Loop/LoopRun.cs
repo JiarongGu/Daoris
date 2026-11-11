@@ -83,6 +83,8 @@ internal sealed class LoopRun(
         lineage.Start();
         using var lineageResumed = loop.Power?.Hear(lineage.Resumed);
 
+        // The shell's browser reaches the plugins that declare it (`hooks.browser`) as their process is started, by the set and a command's round alike.
+        PluginBrowser.Hand(browser);
         // A plugin's word goes to the console under `plugin:<id>`; what the set does, without its words, to the log and the health record.
         shared.Hooks = PluginsAtStart.Set(homeDirectory, say: null, loop.Output, log, loop.Health);
         _ = Task.Run(() => PluginTokenAdoption.RunAsync(homeDirectory, log, CancellationToken.None));
