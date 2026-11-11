@@ -95,10 +95,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("keeps its name", text);
     }
 
-    /// <summary>
-    /// quest_publish's kind proposal says it quotes the person's own words, is at most 300 characters, is a kind and
-    /// not a workflow, and that only the person's press applies it.
-    /// </summary>
+    /// <summary>quest_publish's kind proposal quotes the person's words, at most 300 characters, a kind applied only by their press.</summary>
     [Fact]
     public void The_publish_tool_describes_the_kind_proposal_as_a_quote_only_the_person_applies()
     {

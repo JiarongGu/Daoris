@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { PresetWorkflow } from '../../workflow/edit/answers';
 
-// A place's quick set-up as the driver answers it (`PLACE_PLAN` and `PLACE_APPLY`): the shapes
-// the molecule draws, the ask the draft makes, and the draft the application holds for each place. The bridge leaves a null out.
+// A place's quick set-up as `PLACE_PLAN` and `PLACE_APPLY` answer it, the ask a draft makes, and each place's draft; nulls left out.
 
 /**
  * The deliveries a set-up offers, from the announced presets (`WORKFLOW_LIST`: `setUp`, `order` and `delivery`), in the data's order. The

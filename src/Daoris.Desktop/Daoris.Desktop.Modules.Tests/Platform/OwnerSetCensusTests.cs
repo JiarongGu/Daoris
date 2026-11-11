@@ -5,13 +5,11 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The owner's census sweep: every person's and window's route of the census has a mark
-/// (<see cref="PipeTargets.Mark"/>); every proposal door Ask Daoris's Apply takes of the setting and set-up kinds declares its target;
-/// every person's door of the service declares the record kind its effect is attributed on, by evidence the desktop's reader knows; and
-/// the sweep fails on any of them that names a repository, a quest or a session and marks nothing. A declaration can be wrong, so each
-/// is cross-checked against its handler: a route that publishes a session or the state a role's acts read names its target, a route
-/// that only names one is <c>none</c> only from the reviewed exemptions below, and a mutating route declaring <c>none</c>, or listing
-/// itself an exemption, fails.
+/// The owner's census sweep: every person's and window's route has a mark (<see cref="PipeTargets.Mark"/>); every person's door of
+/// the service declares the record kind its effect is attributed on, by evidence the desktop's reader knows; and the sweep fails on
+/// any that names a repository, a quest or a session and marks nothing. Each is cross-checked against its handler: a route that
+/// publishes a session or the state a role's acts read names its target, one that only names one is <c>none</c> only from the
+/// reviewed exemptions below, and a mutating route declaring <c>none</c>, or listing itself an exemption, fails.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class OwnerSetCensusTests

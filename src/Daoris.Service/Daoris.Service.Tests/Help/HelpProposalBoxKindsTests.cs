@@ -5,7 +5,6 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>Every kind the box writes is whole: its writer in a file of its own, and the connector's tool that proposes it.</summary>
 public sealed class HelpProposalBoxKindsTests
 {
     private static readonly (string Kind, string Tool)[] Table =

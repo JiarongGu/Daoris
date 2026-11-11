@@ -81,7 +81,6 @@ describe('a plan\'s refusals', () => {
   });
 });
 
-// A tick is bound to the declaration it is made at, and a changed blob clears it with a reason.
 
 const integrated = () => plan(['engine'], 'integrated');
 const moved = (read: PlacePlanned, blob: string): PlacePlanned => ({

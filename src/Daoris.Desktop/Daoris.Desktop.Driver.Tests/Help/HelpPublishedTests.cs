@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// What an Ask Daoris conversation's presses published, kept with it by id. The ids are
-/// the service's answer, never read from a sentence; the list survives a restart, since it is a file beside the conversation's other
-/// files, and goes with them at a delete. Files only, so this is the suite's fast half.
+/// What an Ask Daoris conversation's presses published, kept with it by the ids the service answered: a file beside the
+/// conversation's others, which survives a restart and goes with them at a delete.
 /// </summary>
 public sealed class HelpPublishedTests : HelpProposalsFixture
 {

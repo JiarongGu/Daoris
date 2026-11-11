@@ -4,8 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Every kind of Ask Daoris's proposal is whole: a class here, the service's writer, the tool and its card, none half-added or left behind.</summary>
-/// <remarks>The three share no code (<c>.claude/knowledge/twins.md</c>): this reads the service's and the page's source as text.</remarks>
+/// <summary>Every kind of Ask Daoris's proposal is whole: a class here, the service's writer, the tool and its card, read as text.</summary>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class HelpProposalKindsTests
 {

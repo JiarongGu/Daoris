@@ -2,7 +2,6 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>The terminal twin a card shows spells a workspace for any shell (<see cref="ShellWord"/>).</summary>
 public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 {
     private static readonly HelpMachineFacts Spelled = Machine with

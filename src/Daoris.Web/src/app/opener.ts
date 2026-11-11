@@ -9,9 +9,7 @@ import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tab
 import type { SettingsAnchor } from '../settings/SettingsView';
 import { LIST_BOUNDS, type ListView } from '../work/frame/layout';
 
-// The application's one opener: every door into a view says what it opens — the palette, a
-// status item, a row of *What needs you*, a map's detail, a notification, Ask Daoris's go — and the view's
-// chosen item takes it. Planned here, as a value, and applied by `App`, which holds what it changes.
+// The application's one opener: every door into a view says what it opens, and the view's chosen item takes it.
 
 const ASK = 'ask:';
 

@@ -3,9 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>Where Ask Daoris's proposals are written: one file each, under the driver's home, for the person to apply or not.</summary>
 /// <remarks>
 /// <para><b>One writer per kind</b>, listed in <see cref="Kinds"/>, hands its checked fields to <see cref="HelpProposalFile.Write"/>.</para>
-/// <para><b>This checks the shape and nothing more.</b> Whether the route would take it is the driver's, which judges each with
-/// the route's own code before the person sees it and hands a refusal back to the conversation in the route's words.</para>
-/// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it; each side's tests hold its shape.</para>
+/// <para><b>This checks the shape alone</b>; the driver's <c>HelpProposals</c> judges, reads and settles the file, the contract.</para>
 /// </remarks>
 public sealed class HelpProposalBox(string? home)
 {

@@ -8,10 +8,8 @@ import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
 
 /**
- * A place on the window a go names, as the driver judged it: a view, a Settings domain, a part — or
- * the one record of the view's list it opens, a quest's id or an ask's `ask:<id>`, or a session's
- * id, as the machine's record spells it. A go to Add repository or Import a folder may carry the workspace
- * the drawer opens filled with, as the driver normalized it; it names no folder.
+ * A place on the window a go names, as the driver judged it: a view, a Settings domain, a part, or the one record of the view's
+ * list it opens (a quest's id, an ask's `ask:<id>`, a session's id); a go to Add or Import may carry the workspace, never a folder.
  */
 export type HelpPlace = {
   view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
@@ -38,8 +36,7 @@ export const PLACE_VIEWS: readonly View[] = [
   'overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings',
 ];
 
-// The guide is Get started, and Plugins is a place of its own. Workspace and Permissions belong to a workspace's page, and
-// are kept below.
+// The guide is Get started, Plugins a place of its own; Workspace and Permissions are a workspace's page's, kept below.
 export const PLACE_DOMAINS: readonly SettingsSection[] = [
   'start', 'appearance', 'driver', 'ai', 'git', 'browser', 'space', 'updates', 'wiring', 'logs',
 ];

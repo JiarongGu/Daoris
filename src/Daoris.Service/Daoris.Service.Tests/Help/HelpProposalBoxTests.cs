@@ -3,9 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Ask Daoris's proposals: a change it wants is a file under the driver's home, shaped
-/// here and judged by the driver with the route's own code before the person sees it. Nothing here
-/// applies anything: every change is the person's press.
+/// Ask Daoris's proposals: a file under the driver's home, shaped here and judged by the driver; nothing here applies anything.
 /// </summary>
 public sealed class HelpProposalBoxTests : HelpProposalBoxFixture
 {

@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { askItem, doorOpening, opening, placeOpening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
-// One opener: every door into a view says what it opens, and the view's chosen item takes it.
-// Pure, so what each door does is an assertion, and `App` only applies it.
+// One opener, pure: every door into a view says what it opens, and `App` only applies it.
 
 describe('the opener', () => {
   /** A door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */

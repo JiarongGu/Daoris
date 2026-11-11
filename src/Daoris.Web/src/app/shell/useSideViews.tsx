@@ -39,8 +39,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
   // The Agents place: held on every view, as Plugins is; it reads the roster the frame holds and the
   // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it.
   const agentsPane = lists.pane('agents');
-  // The words to the session that proposed a rule an *Accept* on the page kept: the Agents place is handed the
-  // door, its own view pressing no say hook.
+  // The Agents place is handed the words to the session that proposed a rule an *Accept* kept, its view pressing no say hook.
   const sayToSession = useSay();
   const agents = useAgentsView({
     say: (session, text) => sayToSession.mutateAsync({ id: session, text }),

@@ -158,21 +158,13 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
 }
 
 /**
- * One change Ask Daoris proposes: what it changes, the terminal command that does the same,
- * and why — with **apply** and **not now**, since every change is the person's press.
+ * One change Ask Daoris proposes: what it changes, the terminal command that does the same, and why, with **apply** and
+ * **not now**. The description is the driver's sentence, rendered verbatim; only the chrome translates.
  *
  * @remarks
- * The description is the driver's sentence and renders verbatim, as every driver sentence does; only the
- * chrome around it translates. A molecule: the proposal arrives judged, a press goes out.
- *
- * **Each kind says what its press does**: a delete is titled as one, says it cannot be undone as
- * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
- * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody;
- * a go to a quest says, in the driver's sentence, whether it is taken.
- *
- * **A workflow version reads in the design's order**: *Your part* first, then the steps' diff, the acts that
- * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
- * the editor lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
+ * A go carries no command: its press is *go there*, and *dismiss* only takes the card away, told to nobody. A workflow version
+ * reads *Your part* first, then the steps' diff, the standing acts, what is needed first and who it applies to; a draft offers
+ * only *Not now*, and a change to the open draft's one press, *Open in the editor*, saves and settles nothing.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;

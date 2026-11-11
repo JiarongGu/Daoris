@@ -5,8 +5,7 @@ import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';
 import { draftDoor, PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
-// The places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
-// `HelpPlaces`, which judges a go before the person sees it: the tables below are the driver test's
+// The places Ask Daoris's go may name, a twin of the driver's `HelpPlaces`: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
 
 const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');

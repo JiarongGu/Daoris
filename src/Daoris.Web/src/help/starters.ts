@@ -22,9 +22,8 @@ export type StarterDoor = {
   drawerWorkspace?: string;
   /** The composer opened by a go to New conversation, with the repository it chooses and the words it opens with. */
   compose?: Compose;
-  /** A repository page's tab. */
   tab?: ProjectTab;
-  /** The host Settings → Git opens its Add a git identity form on: a sync card's door for a fetch that has not been made. */
+  /** The host Settings → Git opens its Add a git identity form on. */
   gitHost?: string;
   /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page. */
   placeOf?: string;

@@ -8,9 +8,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The tools the connector's host advertises, read through the SDK's own listing of what the host registers. The
-/// names are the wire, which the driver's connector and the family rehearsal call by name, so moving a tool to a class of
-/// its own changes none of them, and none is lost or offered twice.
+/// The tools the connector's host advertises, through the SDK's own listing: the names are the wire, which the driver's
+/// connector and the family rehearsal call by name, so none is lost or offered twice.
 /// </summary>
 public sealed class McpToolRegistrationTests : McpToolsFixture
 {

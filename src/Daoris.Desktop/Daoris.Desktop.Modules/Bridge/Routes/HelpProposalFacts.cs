@@ -2,10 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// What a proposal of Ask Daoris's is judged against: the driver's file, and the names the machine holds, with each kind's extra
-/// reading made only when a pending proposal needs it. The <c>JudgedAgainst</c> gates are public so the fast half holds each without a service.
-/// </summary>
+/// <summary>What a proposal of Ask Daoris's is judged against: the driver's file and the machine's names, each kind's extra reading made only when needed.</summary>
 public sealed class HelpProposalFacts(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
