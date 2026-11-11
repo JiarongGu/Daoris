@@ -14,7 +14,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public static class PresentFirst
 {
-    /// <summary>The places a present question keeps at its answer's end for the rest, when the rest matched.</summary>
+    /// <summary>The places a present question keeps at its answer's end for the rest, when the rest matched: a third at most.</summary>
     public const int RestKept = 3;
 
     /// <summary>The folder name, anywhere on a document's path, that files it as history.</summary>
@@ -72,7 +72,7 @@ public static class PresentFirst
     /// </summary>
     internal static SearchAnswer Order(string question, SearchAnswer present, SearchAnswer rest, int limit)
     {
-        var kept = Math.Min(RestKept, rest.Hits.Count);
+        var kept = Math.Min(Math.Min(RestKept, rest.Hits.Count), limit / 3);
         var ahead = AsksWhere(question) ? present.Hits : [.. present.Hits.OrderBy(hit => hit.Entry.Kind == EntryKind.Index)];
         var hits = ahead.Take(Math.Max(0, limit - kept)).ToList();
         hits.AddRange(rest.Hits.Take(limit - hits.Count));

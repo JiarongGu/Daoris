@@ -98,17 +98,22 @@ public sealed class PresentFirstTests : IDisposable
         return _composed.Service;
     }
 
-    private async Task<IReadOnlyList<KnowledgeEntry>> AskAsync(string question, string? kinds = null) =>
+    private async Task<IReadOnlyList<KnowledgeEntry>> AskAsync(string question, string? kinds = null, int limit = 10) =>
         [.. (await (await ServiceAsync()).SearchAsync(new KnowledgeQuery(question)
         {
-            Kinds = KnowledgeQuery.ParseKinds(kinds), Limit = 10,
+            Kinds = KnowledgeQuery.ParseKinds(kinds), Limit = limit,
         })).Select(hit => hit.Entry)];
 
-    /// <summary>The area's rule answers first, though every history entry is titled with the question's words.</summary>
-    [Fact]
-    public async Task A_present_question_answers_the_area_rule_first()
+    /// <summary>
+    /// The area's rule answers first, though every history entry is titled with the question's words, at any limit:
+    /// the rest keeps a third of the places at most.
+    /// </summary>
+    [Theory]
+    [InlineData(10)]
+    [InlineData(1)]
+    public async Task A_present_question_answers_the_area_rule_first(int limit)
     {
-        var first = (await AskAsync(PresentQuestion))[0];
+        var first = (await AskAsync(PresentQuestion, limit: limit))[0];
 
         Assert.Equal("docs/areas/gates.md", first.RelativePath);
     }
