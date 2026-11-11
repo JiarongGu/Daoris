@@ -12,46 +12,32 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
 {
     private static IReadOnlyList<string> Chosen(JsonElement state)
     {
-        var housekeeping = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "housekeeping");
-        return [.. housekeeping.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()!)];
-    }
-
-    /// <summary>🔴 The route chooses one operation at a time, and the state answers what the record holds: none until the person chooses.</summary>
-    [Fact]
-    public async Task The_route_chooses_an_operation_the_state_answers()
-    {
-        var module = Module();
-        Assert.Empty(Chosen(await AnswerAsync(module, "STATE")));
-
-        await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = true });
-        var both = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "clean-up", chosen = true });
-
-        Assert.Equal(["inspect", "clean-up"], Chosen(both));
-        Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], ConfiguredAccess.Read(Home).Housekeeping);
-
-        var one = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = false });
-        Assert.Equal(["clean-up"], Chosen(one));
+        var acts = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "acts");
+        return [.. acts.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()!)];
     }
 
     /// <summary>
-    /// The chosen settings are a grant of their own, chosen one setting at a time beside housekeeping, and the state answers
-    /// what it holds and the five it acts on.
+    /// 🔴 Housekeeping and the chosen settings are families of acts beside the pauses, chosen one family at a time, and the state
+    /// answers what the record holds, none until the person chooses, and the families it acts on; no grant of the older shape is drawn.
     /// </summary>
     [Fact]
-    public async Task The_route_chooses_a_setting_beside_housekeeping()
+    public async Task The_route_chooses_a_family_the_state_answers()
     {
         var module = Module();
-        await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = true });
+        var none = await AnswerAsync(module, "STATE");
+        Assert.Empty(Chosen(none));
+        Assert.DoesNotContain(none.GetProperty("helpGrants").EnumerateArray(), grant => grant.GetProperty("id").GetString() is "housekeeping" or "settings");
 
-        var state = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "cap", chosen = true });
+        await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "acts", operation = "settings", chosen = true });
+        var both = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "acts", operation = "clean-up", chosen = true });
 
-        var settings = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "settings");
-        Assert.Equal(["cap"], settings.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()));
-        Assert.Equal(
-            ["notify", "language", "cap", "cooloff", "quiet"], settings.GetProperty("built").EnumerateArray().Select(each => each.GetString()));
-        Assert.False(settings.GetProperty("pending").GetBoolean());
-        Assert.Equal(["inspect"], Chosen(state));
-        Assert.Contains("`mode`", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "mode", chosen = true }));
+        Assert.Equal(["clean-up", "settings"], Chosen(both));
+        Assert.Equal([ActFamilies.CleanUp, ActFamilies.Settings], ConfiguredAccess.Read(Home).Acts);
+        var acts = both.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "acts");
+        Assert.Equal(["pause", "clean-up", "discard", "settings"], acts.GetProperty("built").EnumerateArray().Select(each => each.GetString()));
+
+        var one = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "acts", operation = "clean-up", chosen = false });
+        Assert.Equal(["settings"], Chosen(one));
     }
 
     /// <summary>
@@ -147,9 +133,12 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
     {
         var module = Module();
 
-        Assert.Contains("not built", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "drop-recovery", chosen = true }));
+        Assert.Contains("families of acts", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "clean-up", chosen = true }));
+        Assert.Contains("families of acts", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "cap", chosen = true }));
+        Assert.Contains("`inspect`", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "acts", operation = "inspect", chosen = true }));
         Assert.Contains("plugin", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "browser", operation = "reads", chosen = true }));
-        Assert.Contains("operation", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", chosen = true }));
+        Assert.Contains("operation", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "acts", chosen = true }));
+        Assert.Contains("grant", await RefusalAsync(module, "SET_HELP_GRANT", new { operation = "settings", chosen = true }));
         Assert.False(File.Exists(ConfiguredAccess.PathOf(Home)));
     }
 
@@ -171,12 +160,12 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
         var module = Module();
 
         var before = await AnswerAsync(module, "STATE");
-        var after = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "housekeeping", operation = "inspect", chosen = true });
+        var after = await AnswerAsync(module, "SET_HELP_GRANT", new { grant = "acts", operation = "clean-up", chosen = true });
 
         foreach (var state in new[] { before, after })
         {
-            var housekeeping = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "housekeeping");
-            Assert.False(housekeeping.GetProperty("pending").GetBoolean());
+            var acts = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "acts");
+            Assert.False(acts.GetProperty("pending").GetBoolean());
             Assert.Equal(0, state.GetProperty("helpSwapping").GetArrayLength());
         }
 

@@ -25,19 +25,6 @@ public static class HelpSwap
             changed.Add($"its mode is now {(HelpModes.Recorded(chosenMode) == HelpModes.Full ? "full access" : "restricted")}");
         }
 
-        if (!handed.Housekeeping.SequenceEqual(chosen.Housekeeping, StringComparer.Ordinal))
-        {
-            changed.Add(chosen.Housekeeping.Count == 0
-                ? "its housekeeping grants nothing now"
-                : $"its housekeeping grants {Named(chosen.Housekeeping)} now");
-        }
-
-        // The chosen settings, said the same way.
-        if (!handed.Settings.SequenceEqual(chosen.Settings, StringComparer.Ordinal))
-        {
-            changed.Add($"its chosen settings are {(chosen.Settings.Count == 0 ? "none" : Named(chosen.Settings))} now");
-        }
-
         // The checkouts turned off, the grant being on by default.
         if (!handed.CheckoutsOff.SequenceEqual(chosen.CheckoutsOff, StringComparer.OrdinalIgnoreCase))
         {

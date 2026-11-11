@@ -11,7 +11,7 @@ public sealed record CallRefusal(string Code, string Text);
 /// <remarks>
 /// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. A box that judges by the
 /// work alone keeps its check as its store's guard, and the table refuses the same cells first in its words: the channel's, Ask Daoris's
-/// checkouts, housekeeping and settings, and a brainstorm's turn. A named session the connector cannot place is served the reads alone
+/// checkouts and a brainstorm's turn. A named session the connector cannot place is served the reads alone
 /// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11). A session
 /// working in a repository is served <see cref="CoreServed"/> and its own work's tools, since its harness loads every tool it is listed at
 /// its start; Ask Daoris is served every tool but the turns and the memory changes.
@@ -110,8 +110,7 @@ public static class CallTable
     /// <summary>Ask Daoris's own tools, whose boxes serve its record alone.</summary>
     private static readonly HashSet<string> AskDaorisOwn = new(
     [
-        "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_quiet",
+        "checkout_read",
     ],StringComparer.Ordinal);
 
     /// <summary>

@@ -274,11 +274,11 @@ public sealed class ReadShareConversationTests : IDisposable
     public void Configured_access_is_read_while_its_move_into_place_still_holds_it()
     {
         if (!OperatingSystem.IsWindows()) return;
-        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.Inspect, chosen: true);
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.ActsGrant, ActFamilies.CleanUp, chosen: true);
 
         var access = Held(ConfiguredAccess.PathOf(_home), () => ConfiguredAccess.Read(_home));
 
-        Assert.Equal([ConfiguredAccess.Inspect], access.Housekeeping);
+        Assert.Equal([ActFamilies.CleanUp], access.Acts);
     }
 
     /// <summary>
@@ -289,13 +289,13 @@ public sealed class ReadShareConversationTests : IDisposable
     public async Task A_configured_access_choice_loads_the_file_its_move_into_place_still_holds()
     {
         if (!OperatingSystem.IsWindows()) return;
-        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.Inspect, chosen: true);
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.CheckoutsGrant, "engine", chosen: false);
 
         var access = await HeldWhileReadAsync(ConfiguredAccess.PathOf(_home),
-            () => Task.FromResult(ConfiguredAccess.Choose(_home, ConfiguredAccess.SettingsGrant, ConfiguredAccess.Cap, chosen: true)));
+            () => Task.FromResult(ConfiguredAccess.Choose(_home, ConfiguredAccess.ActsGrant, ActFamilies.Settings, chosen: true)));
 
-        Assert.Equal([ConfiguredAccess.Inspect], access.Housekeeping);
-        Assert.Equal([ConfiguredAccess.Cap], access.Settings);
+        Assert.Equal(["engine"], access.CheckoutsOff);
+        Assert.Equal([ActFamilies.Settings], access.Acts);
     }
 
     // ——— Ask Daoris's proposals, each file as the service's box writes it.

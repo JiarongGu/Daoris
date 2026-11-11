@@ -203,8 +203,6 @@ internal sealed class ChatRun(
                     Servers = offered,
                     ServersHanded = !pipe || (servers is not null && HelpWired.Names(info, servers)),
                     Withheld = browserNotice,
-                    Housekeeping = place.Housekeeping,
-                    Settings = place.Settings,
                     Circle = place.Circle,
                 });
             }
@@ -276,7 +274,7 @@ internal sealed class ChatRun(
         // The access it got, its mode and its configured access, which a change of the person's is compared with while it runs.
         if (helpMode is not null)
         {
-            Context.AccessHanded[sessionId] = new ConfiguredAccess(place.Housekeeping) { Settings = place.Settings, CheckoutsOff = place.CheckoutsOff };
+            Context.AccessHanded[sessionId] = new ConfiguredAccess { CheckoutsOff = place.CheckoutsOff };
             Context.HelpModes[sessionId] = helpMode;
         }
 

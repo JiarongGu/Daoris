@@ -178,19 +178,16 @@ public sealed class HelpAccessTests : IDisposable
     [Fact]
     public void A_change_while_a_conversation_runs_says_what_changed_and_that_its_next_turn_takes_it()
     {
-        static ConfiguredAccess Of(string[] housekeeping, params string[] settings) => new(housekeeping) { Settings = settings };
+        static ConfiguredAccess Of(params string[] off) => new() { CheckoutsOff = off };
         var none = ConfiguredAccess.None;
-        var widened = HelpSwap.Changed(HelpModes.Restricted, none, HelpModes.Full, Of([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp]));
+        var widened = HelpSwap.Changed(HelpModes.Restricted, none, HelpModes.Full, Of("engine"));
 
-        Assert.Equal("its mode is now full access, and its housekeeping grants `inspect`, `clean-up` now", widened);
+        Assert.Equal("its mode is now full access, and the checkouts turned off for it are `engine` now", widened);
         Assert.Equal("its mode is now restricted", HelpSwap.Changed(HelpModes.Full, none, HelpModes.Restricted, none));
-        Assert.Equal("its housekeeping grants nothing now", HelpSwap.Changed(HelpModes.Restricted, Of([ConfiguredAccess.Inspect]), "RESTRICTED", none));
-        Assert.Null(HelpSwap.Changed(HelpModes.Full, Of([ConfiguredAccess.Inspect]), HelpModes.Full, Of([ConfiguredAccess.Inspect])));
-        Assert.Equal("its chosen settings are `notify`, `cap` now",
-            HelpSwap.Changed(HelpModes.Restricted, Of([ConfiguredAccess.Inspect]), HelpModes.Restricted,
-                Of([ConfiguredAccess.Inspect], ConfiguredAccess.Notify, ConfiguredAccess.Cap)));
-        Assert.Equal("its chosen settings are none now", HelpSwap.Changed(HelpModes.Restricted, Of([], ConfiguredAccess.Cap), HelpModes.Restricted, none));
-        Assert.Null(HelpSwap.Changed(HelpModes.Restricted, Of([], ConfiguredAccess.Cap), HelpModes.Restricted, Of([], ConfiguredAccess.Cap)));
+        Assert.Equal("it reads every checkout it may read now", HelpSwap.Changed(HelpModes.Restricted, Of("engine"), "RESTRICTED", none));
+        Assert.Null(HelpSwap.Changed(HelpModes.Full, Of("engine"), HelpModes.Full, Of("engine")));
+        // A family of acts is read at each press, so granting one asks no conversation to start again.
+        Assert.Null(HelpSwap.Changed(HelpModes.Restricted, none, HelpModes.Restricted, none with { Acts = [ActFamilies.Settings] }));
 
         var turning = HelpSwap.Said(widened!, idle: false);
         Assert.StartsWith("— Ask Daoris's access changed under this conversation: its mode is now full access", turning);

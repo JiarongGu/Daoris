@@ -71,13 +71,4 @@ internal sealed record ChatPlace(
 
     /// <summary>The checkouts the person turned off as its start is composed, what a later narrowing is compared with.</summary>
     public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
-
-    /// <summary>
-    /// The housekeeping operations its start is handed: Ask Daoris's, as the person chooses them when the place is
-    /// composed, in either mode; none for a repository's conversation. Its receipt keeps them, which each call is judged by.
-    /// </summary>
-    public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-    /// <summary>The chosen settings its start is handed, as <see cref="Housekeeping"/> is.</summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
 }

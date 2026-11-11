@@ -33,23 +33,9 @@ public static class SessionMove
     public const string TakeBack = "take-back";
 
     /// <summary>
-    /// Ask Daoris's housekeeping tool asking for one operation: written by the connector, the agent's
-    /// and never the person's, taken by the loop running the conversation, judged there at the call, and answered beside the
-    /// request in <see cref="HousekeepingAnswer"/>'s shape. Keyed as a say is.
-    /// </summary>
-    public const string Housekeep = "housekeep";
-
-    /// <summary>
-    /// Ask Daoris's chosen-settings tool asking to change one setting: written by the connector as a
-    /// housekeeping request is, taken by the loop running the conversation, judged and applied there at the call, and answered beside
-    /// the request in <see cref="SettingAnswer"/>'s shape. Keyed as a say is.
-    /// </summary>
-    public const string Set = "set";
-
-    /// <summary>
     /// Ask Daoris's checkout tool asking to read one checkout: a file, a folder, <c>git status</c> or the
-    /// branch list, by a repository and a path relative to its checkout; written by the connector as a setting request is, taken by
-    /// the loop running the conversation, judged there at the call, and answered beside the request in <see cref="CheckoutAnswer"/>'s
+    /// branch list, by a repository and a path relative to its checkout; written by the connector, the agent's and never the
+    /// person's, taken by the loop running the conversation, judged there at the call, and answered beside the request in <see cref="CheckoutAnswer"/>'s
     /// shape, what is read beside its words. Keyed as a say is.
     /// </summary>
     public const string Read = "read";
@@ -60,7 +46,7 @@ public static class SessionMove
     /// <summary>A session's <c>system_plan</c>: its changes as a JSON list in Text, taken by its loop and answered in <see cref="SystemPlanAnswer"/>'s shape.</summary>
     public const string Plan = "plan";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit or Plan;
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Read or Permit or Plan;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -75,7 +61,7 @@ public static class RequestDoor
     /// <summary>An abandon stopping or ending what of its work another process runs: <see cref="WorkAbandoning"/>.</summary>
     public const string Abandon = "abandon";
 
-    /// <summary>Ask Daoris's housekeeping tool: the agent's, through its connector, never the person's.</summary>
+    /// <summary>Ask Daoris's checkout tool: the agent's, through its connector, never the person's.</summary>
     public const string Help = "help";
 
     /// <summary>A working session's own connector tool, such as <c>system_plan</c>: the agent's, never the person's.</summary>
@@ -131,27 +117,11 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// <summary>A take-back's word: the id it waits under on the record; null for any other move.</summary>
     public string? Word { get; init; }
 
-    /// <summary>
-    /// A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/>; a setting request's
-    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/>; a checkout read's, one of
-    /// <see cref="HelpCheckouts.Operations"/>; null for any other move.
-    /// </summary>
+    /// <summary>A checkout read's operation, one of <see cref="HelpCheckouts.Operations"/>; null for any other move.</summary>
     public string? Operation { get; init; }
 
-    /// <summary>
-    /// A housekeeping request's repository, by its registered name, null for a look at every one; a language's repository, for a
-    /// setting request; the checkout's repository, for a checkout read; null for any other move.
-    /// </summary>
+    /// <summary>The checkout's repository, for a checkout read; null for any other move.</summary>
     public string? Repository { get; init; }
-
-    /// <summary>A housekeeping request's branches, by name, never a path; none for a look, and for any other move.</summary>
-    public IReadOnlyList<string> Branches { get; init; } = [];
-
-    /// <summary>A setting request's value, as the setting's door spells it; null for any other move.</summary>
-    public string? Value { get; init; }
-
-    /// <summary>A language's workspace, for a setting request; null for any other.</summary>
-    public string? Workspace { get; init; }
 
     /// <summary>
     /// A checkout read's path, relative to the checkout of <see cref="Repository"/> as the agent wrote it; null for its
@@ -257,9 +227,9 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
 /// loop that takes it writes where the words stand beside it (<see cref="Answer"/>), since a say moves no record the asker could
 /// watch. An answer nobody read is dropped with the requests nobody took.</para>
 ///
-/// <para><b>And for Ask Daoris's housekeeping tools</b>: the connector, which reaches no judge of its own,
-/// writes a keyed <see cref="SessionMove.Housekeep"/> for its conversation's session and waits for the answer beside it
-/// (<see cref="HousekeepingAnswer"/>), withdrawing it where nobody took it in time. The connector is the twin writer.</para>
+/// <para><b>And for Ask Daoris's checkout tool</b>: the connector, which reaches no judge of its own,
+/// writes a keyed <see cref="SessionMove.Read"/> for its conversation's session and waits for the answer beside it
+/// (<see cref="CheckoutAnswer"/>), withdrawing it where nobody took it in time. The connector is the twin writer.</para>
 /// </remarks>
 public sealed partial class SessionRequests(string home)
 {
@@ -521,15 +491,7 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(held));
     }
 
-    /// <summary>What became of a housekeeping request, written beside it as a say's answer is, for the tool that asked.</summary>
-    public void Answer(SessionRequest request, HousekeepingAnswer answer)
-    {
-        var path = AnswerPath(request);
-        Directory.CreateDirectory(Folder);
-        AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said));
-    }
-
-    /// <summary>What became of a permission ask, written beside it in housekeeping's answer's fields: done is the call allowed.</summary>
+    /// <summary>What became of a permission ask, written beside it in a checkout read's answer's fields: done is the call allowed.</summary>
     public void Answer(SessionRequest request, PermitAnswer answer)
     {
         var path = AnswerPath(request);
@@ -537,15 +499,7 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(answer.Tool, answer.Allowed, answer.Why, answer.Said));
     }
 
-    /// <summary>What became of a setting request, written beside it in housekeeping's answer's fields.</summary>
-    public void Answer(SessionRequest request, SettingAnswer answer)
-    {
-        var path = AnswerPath(request);
-        Directory.CreateDirectory(Folder);
-        AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
-    }
-
-    /// <summary>What became of a system plan, written beside it in housekeeping's answer's fields.</summary>
+    /// <summary>What became of a system plan, written beside it in a checkout read's answer's fields.</summary>
     public void Answer(SessionRequest request, SystemPlanAnswer answer)
     {
         Directory.CreateDirectory(Folder);
@@ -637,11 +591,6 @@ public sealed partial class SessionRequests(string home)
                 Word = Text("takeBackWord"),
                 Operation = Text("operation"),
                 Repository = Text("repository"),
-                Branches = root.TryGetProperty("branches", out var branches) && branches.ValueKind == JsonValueKind.Array
-                    ? [.. branches.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
-                    : [],
-                Value = Text("value"),
-                Workspace = Text("workspace"),
                 Path = Text("path"),
             };
         }
@@ -703,15 +652,7 @@ public sealed partial class SessionRequests(string home)
         if (request.Key is not null) writer.WriteString("key", request.Key);
         if (request.Level is not null) writer.WriteString("level", request.Level);
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
-        if (request.Operation is not null && request.Move == SessionMove.Set)
-        {
-            // A setting's fields, in the connector's order.
-            writer.WriteString("operation", request.Operation);
-            if (request.Value is not null) writer.WriteString("value", request.Value);
-            if (request.Repository is not null) writer.WriteString("repository", request.Repository);
-            if (request.Workspace is not null) writer.WriteString("workspace", request.Workspace);
-        }
-        else if (request.Operation is not null && request.Move == SessionMove.Read)
+        if (request.Operation is not null && request.Move == SessionMove.Read)
         {
             // A checkout read's fields, in the connector's order.
             writer.WriteString("operation", request.Operation);
@@ -722,9 +663,6 @@ public sealed partial class SessionRequests(string home)
         {
             writer.WriteString("operation", request.Operation);
             if (request.Repository is not null) writer.WriteString("repository", request.Repository);
-            writer.WriteStartArray("branches");
-            foreach (var branch in request.Branches) writer.WriteStringValue(branch);
-            writer.WriteEndArray();
         }
 
         writer.WriteEndObject();

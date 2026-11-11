@@ -5,8 +5,8 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// Ask Daoris's reading of the checkouts, the connector's half: each call
-/// of <c>checkout_read</c> is a keyed request in the home's session requests for the conversation's own session, as a chosen setting's
-/// is (<see cref="SettingsBox"/>), which the driver's loop running that conversation takes once, judges and answers beside it with
+/// of <c>checkout_read</c> is a keyed request in the home's session requests for the conversation's own session
+/// (<see cref="HelpRequestExchange"/>), which the driver's loop running that conversation takes once, judges and answers beside it with
 /// what it read. One tool for every agent, in place of the permission rules only Claude took.
 /// </summary>
 /// <remarks>

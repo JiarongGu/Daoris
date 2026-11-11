@@ -34,10 +34,8 @@ public sealed class CallPlaceFilterTests : IDisposable
     [InlineData("quest_list", "search")]
     [InlineData("handback_read", "search")]
     [InlineData("checkout_read", "read")]
-    [InlineData("housekeeping_inspect", "read")]
     [InlineData("go_propose", "propose")]
-    [InlineData("settings_language", "press")]
-    [InlineData("housekeeping_clean_up", "press")]
+    [InlineData("quest_publish", "press")]
     public void Each_door_s_call_is_its_act(string tool, string act)
     {
         var place = CallPlace.Of(tool, Arguments(new { workspace = "Work" }));

@@ -49,7 +49,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardHandOverAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the eighteen acts and the set-up act, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's two proposal kinds, `go` and `workflow`, each judged by its route's code and applied by the person |
-| `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
+| `HelpModes`, `HelpSwap`, `ConfiguredAccess`, `ActFamilies`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Knowledge/ConfiguredAccess.cs`, `Knowledge/ActFamilies.cs`, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access and its families of acts, what a start handed |
 | `SupervisorResolution`, `SupervisorGrants`, `SupervisorKinds`, `SupervisorDeciders`, `SupervisorConversion` | `Roles/Supervisor{Resolution,Grants,Kinds,Deciders,Conversion}.cs` | Who decides a kind at a place; the one grant check; the kinds and their acts; `ROLES`' `deciders`; the door's `not-converted` until the migration record (`Store/MigrationRecord.cs`) lists `supervisor-kinds` |
 | The page | `Web/agents/roles/`, `Web/agents/setup/` | One role editor and policy form, appointed roles, structure and call table; a place's Roles, its supervisor, *Who decides here* (`WhoDecidesHere`, `whoDecides.ts`) |
 
@@ -442,7 +442,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
-    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
+    held quest (`quest retry`), a clean-up and a session branch's discard (`tree clean --yes`, `tree remove <session|branch>`, the
+    views of `SWEEP` and `DISCARD_SESSION_BRANCH`, each verb pressing the running Daoris's route and acting alone where none runs), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
     (`settings notify|cap|cooloff|quiet|keep|terminal`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
     the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
@@ -467,13 +468,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (`workflow_propose`), judged by its route's own code against the machine now and applied only by the person's *Apply* through
     that route, and `go` (`go_propose`), which changes nothing; every other change Ask Daoris asks for is a press of the verb. `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)
-57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
-    and quiet), checkouts and families of acts, each request
-    judged at the call by the door's own judges, in any workspace's repositories; the checkouts it is handed are every
-    readable one on the machine, its own workspace's first. A granted family (`acts`, `ActFamilies`: `pause` is a quest's or
-    an ask's pause and resume, a repository's hold and a session's stop) runs Ask Daoris's proved press of it with no card as the
-    person's own, read at each press, so a change asks no conversation to start again. Its tool calls outside its allow-list
-    are held for the person (agents-and-harnesses 23). No settings grant reaches a role. (from D183, D205, D253)
+57. Restricted mode adds the access the person configures: the checkouts it reads, each read judged at the call, every readable
+    one on the machine handed, its own workspace's first; and the families of acts it presses with no card (`acts`,
+    `ActFamilies`), the one shape a grant has: `pause` (a quest's or an ask's pause and resume, a repository's hold, a session's
+    stop), `clean-up` (`tree clean --yes`, `SWEEP`), `discard` (`tree remove <session|branch>`, `DISCARD_SESSION_BRANCH`) and
+    `settings` (`settings notify|cap|cooloff|quiet` and `place language`). A granted family runs Ask Daoris's proved press of it
+    with no card as the person's own, read at each press, so a change asks no conversation to start again; the room names each
+    granted family's verbs (`HelpRoomFamilies`). A look (`tree clean` with no `--yes`) is a read and asks no grant. A record an older
+    build kept with `housekeeping` and `settings` lists is converted into the families by the home's migration
+    (`ConfiguredAccessStep`), and those lists grant nothing before it. Its tool calls outside its allow-list are held for the person
+    (agents-and-harnesses 23). No family reaches a role. (from D183, D205, D253, D261)
 58. Full access runs its harness's unrestricted mode, and a press it proves runs at once with no card as the person's own, said
     once on its conversation's console, logged `help.pressed` and kept in this run's memory (`HelpPressRecord`: route, conversation,
     when, outcome, and the workspace or repository it named, or for a press naming only a quest the repository that quest asks,

@@ -231,7 +231,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     [InlineData("partner", null, "quest_list", "not a partner's to call")]
     [InlineData("help", null, "quest_publish", "publishes, takes and closes no quest")]
     [InlineData("help", null, "channel_post", "has no channel")]
-    [InlineData("build", null, "settings_cap", "is Ask Daoris's alone")]
+    [InlineData("build", null, "checkout_read", "is Ask Daoris's alone")]
     [InlineData("build", null, "brainstorm_give", "serves no brainstorm turn Daoris started")]
     [InlineData("brainstorm", "generator", "quest_list", "not a brainstorm pass's to call")]
     [InlineData("brainstorm", "generator", "brainstorm_synthesize", "answer through `brainstorm_give`")]

@@ -111,12 +111,11 @@ public static class HelpRoom
     {
         var room = PathOf(home, machine.Home);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
-        // The housekeeping granted, the chosen settings and the checkouts turned off, as the record
-        // holds them as this start writes its room.
+        // The families of acts granted and the checkouts turned off, as the record holds them as this start writes its room.
         var access = ConfiguredAccess.Read(home);
         AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine with
         {
-            Housekeeping = access.Housekeeping, Settings = access.Settings, CheckoutsOff = access.CheckoutsOff,
+            Acts = access.Acts, CheckoutsOff = access.CheckoutsOff,
             // The roles' policies and weeks are the home's records, read as the room is written like the access.
             Roles = HelpRoleFacts.Read(home),
             Rules = HelpRuleFacts.Read(home),
@@ -184,23 +183,14 @@ public static class HelpRoom
     /// The workspace its tools are bound to (<see cref="HelpCircle"/>), whose denies the person wrote it is handed;
     /// null is <c>default</c>'s, the whole machine's room.
     /// </param>
-    /// <param name="housekeeping">
-    /// The housekeeping operations the person granted it (<see cref="ConfiguredAccess"/>), each one's connector tool
-    /// allowed beside the room's own; none by default. The tool's call is judged again by the driver, so this list is no ceiling
-    /// for an agent that takes no rules.
-    /// </param>
-    /// <param name="settings">The chosen settings the person granted it, each one's connector tool allowed the same way.</param>
     public static RuleLists Rules(
         PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null, IReadOnlyList<string>? plugins = null,
-        IReadOnlyList<string>? asked = null, string? workspace = null, IReadOnlyList<string>? housekeeping = null,
-        IReadOnlyList<string>? settings = null)
+        IReadOnlyList<string>? asked = null, string? workspace = null)
     {
         var composed = PermissionRules.Compose(file, workspace, repository: null);
         return new RuleLists(
             [
                 .. Allowed,
-                .. (housekeeping ?? []).Select(operation => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.ToolOf(operation)}"),
-                .. (settings ?? []).Select(setting => $"mcp__{KnowledgeConnector.ServerName}__{ConfiguredAccess.SettingToolOf(setting)}"),
                 PermissionRules.ReadRule(kept),
                 .. reads is { Count: > 0 } ? [$"mcp__{KnowledgeConnector.ServerName}__{HelpCheckouts.Tool}"] : Array.Empty<string>(),
                 .. plugins ?? [],

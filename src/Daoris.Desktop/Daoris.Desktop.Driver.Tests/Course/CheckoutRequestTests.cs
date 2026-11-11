@@ -57,7 +57,6 @@ public sealed class CheckoutRequestTests : IDisposable
 
         Assert.Equal(("h1", SessionMove.Read, RequestDoor.Help, "0123456789ab", Now), (read.Session, read.Move, read.By, read.Key, read.At));
         Assert.Equal(("read", "engine", "src/Game.cs"), (read.Operation, read.Repository, read.Path));
-        Assert.Null(read.Value);
     }
 
     /// <summary>A request written here reads back the same, its path kept beside the repository: the driver's own writer is the twin's shape.</summary>
