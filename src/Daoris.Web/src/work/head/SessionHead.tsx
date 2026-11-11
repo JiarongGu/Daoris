@@ -31,6 +31,7 @@ import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPla
 import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
+import { leftParts } from '../notes/leftNote';
 import { type HeadLink, linkRow } from './headRows';
 import { type AskOrigin, originsOf, OriginLine, startedRows, startingOf } from './startedFrom';
 import type { HelperWaits } from '../waits/HelperAsks';
@@ -530,7 +531,7 @@ export function SessionHead({
           sentence, quiet, in place of the failure's note: the account it is refused on here, none on a teammate's mirror. */}
       {shown === 'not-started'
         ? <p className="m-0 text-body leading-relaxed text-ink-soft">{notStartedLine(t, session)}</p>
-        : !running && noted && <Said parts={session.noteParts} />}
+        : !running && noted && <Said parts={leftParts(session.noteParts, quest)} />}
 
       {/* What it left, and the move that acts on it: work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}

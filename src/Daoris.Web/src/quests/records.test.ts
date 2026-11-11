@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Ask, Quest, Session } from '../data/api';
 import { aQuest } from './aQuest';
 import {
-  answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding, shownStatus,
+  answered, askStanding, freshest, isLeft, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding, shownStatus,
   sourceReady, standingStep,
 } from './records';
 import { REOPENED, SEALED, STANDING, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
@@ -75,8 +75,43 @@ describe("Quests' groups", () => {
 
   it('groups by where each quest is in its life, open first', () => {
     expect(questGroups(rows, false).map(({ group, quests }) => [group, quests.map((q) => q.id)])).toEqual([
-      ['held', []], ['open', ['o1']], ['progress', ['t1']],
+      ['held', []], ['left', []], ['open', ['o1']], ['progress', ['t1']],
     ]);
+  });
+
+  /**
+   * A done that departed is unfinished work, accepted or not: the person's yes lets what follows go on and finishes nothing, so the
+   * quest reads *Unfinished*, is listed apart from finished work where open work is, and is never in *Closed*.
+   */
+  describe('a done that departed from a requirement', () => {
+    const departed = quest({ id: 'u1', status: 'Done', accepted: '2026-10-02T10:00:00Z', answers: [{ requirement: 1, met: 'built' }, { requirement: 2, departed: 'held', quote: 'their words' }] });
+    const met = quest({ id: 'm1', status: 'Done', answers: [{ requirement: 1, met: 'built' }, { requirement: 2, met: 'also built' }] });
+
+    it('reads unfinished, accepted or not, and a done answered met in full, a taken quest or one with no answers reads as its status', () => {
+      expect(isLeft(departed)).toBe(true);
+      const heldOne: Quest = { ...departed, held: true };
+      expect(isLeft(heldOne)).toBe(true);
+      expect(shownStatus(departed)).toBe('Unfinished');
+      expect(shownStatus(met)).toBe('Done');
+      expect(shownStatus({ ...departed, status: 'Taken' })).toBe('Taken');
+      expect(shownStatus(quest({ id: 'n1', status: 'Done' }))).toBe('Done');
+      expect(shownStatus({ ...departed, answers: [{ requirement: 2, departed: '  ', quote: 'x' }] })).toBe('Done');
+    });
+
+    it('is listed in its own group, with closed quests shown or not, and never among the closed', () => {
+      expect(questGroups([...rows, departed, met], false).map(({ group, quests }) => [group, quests.map((q) => q.id)]))
+        .toEqual([['held', []], ['left', ['u1']], ['open', ['o1']], ['progress', ['t1']]]);
+      const shown = questGroups([...rows, departed, met], true);
+      expect(shown.at(-1)!.quests.map((q) => q.id)).toEqual(['d1', 'x1', 'm1']);
+      expect(shown.find(({ group }) => group === 'left')!.quests).toEqual([departed]);
+    });
+
+    it('stays live for Quests to reopen on, until it is finished, and a held one is listed once, as held', () => {
+      expect(questStanding(departed, true)).toBe('live');
+      expect(questStanding(met, true)).toBe('closed');
+      const held = { ...departed, held: true };
+      expect(questGroups([held], false).map(({ group, quests }) => [group, quests.length])).toEqual([['held', 1], ['left', 0], ['open', 0], ['progress', 0]]);
+    });
   });
 
   it('adds the closed group, done and declined, only where closed quests are shown', () => {
