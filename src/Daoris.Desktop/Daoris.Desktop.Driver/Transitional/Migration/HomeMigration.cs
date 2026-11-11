@@ -10,6 +10,8 @@ public sealed record HomeMigrated(string Migration, IReadOnlyList<string> Ran, I
 {
     /// <summary>Whether this start found anything to do or to say.</summary>
     public bool Any => Ran.Count > 0 || Held is not null || Failed is not null;
+
+    public IReadOnlyDictionary<string, int> Counts { get; init; } = new Dictionary<string, int>();
 }
 
 /// <summary>
@@ -54,6 +56,7 @@ public static class HomeMigration
         new PlaceWorkStep(),
         new SecondCheckStep(),
         new HelpProposalsStep(),
+        new ClosedRunsStep(),
     ];
 
 
@@ -101,13 +104,13 @@ public static class HomeMigration
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException
                                               or DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or InvalidOperationException)
             {
-                return new(Name, ran, run.Changed, Failed: (step.Name, error.Message));
+                return new(Name, ran, run.Changed, Failed: (step.Name, error.Message)) { Counts = run.Counts };
             }
 
             ran.Add(step.Name);
         }
 
-        return new(Name, ran, run.Changed);
+        return new(Name, ran, run.Changed) { Counts = run.Counts };
     }
 
     /// <summary>Run again once the launcher's swap has let the home go (the update confirmed), waiting up to <paramref name="within"/> for it.</summary>
@@ -124,7 +127,8 @@ public static class HomeMigration
         if (migrated.Held is { } held) log.Info("home.migration-held", ("migration", migrated.Migration), ("reason", held));
         if (migrated.Ran.Count > 0)
         {
-            log.Info("home.migrated", ("migration", migrated.Migration), ("steps", string.Join(",", migrated.Ran)), ("files", migrated.Changed.Count));
+            log.Info("home.migrated", ("migration", migrated.Migration), ("steps", string.Join(",", migrated.Ran)), ("files", migrated.Changed.Count),
+                ("counts", string.Join(",", migrated.Counts.Select(each => $"{each.Key}={each.Value}"))));
         }
 
         if (migrated.Failed is { } failed) log.Warn("home.migration-failed", ("migration", migrated.Migration), ("step", failed.Step), ("reason", failed.Said));

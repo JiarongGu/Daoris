@@ -281,6 +281,7 @@ internal static class NodeGoverning
             Quests = work,
             Branch = branch,
             Branches = branches,
+            Attributed = read.Unread.Count == 0,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             // The quests a session serving the run's work published, which its `work.requests` holds the work on.

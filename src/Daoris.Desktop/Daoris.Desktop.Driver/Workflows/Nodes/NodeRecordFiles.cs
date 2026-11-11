@@ -39,12 +39,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     public Func<bool> HoldsLease => _holdsLease;
 
     /// <summary>The folder the records sit in, beside the runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
-    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
+    public static string FolderOf(string home) => WorkplaceRunFiles.UnitsFolder(home);
 
     /// <summary>A unit's record's file: its id's digest, so no unit id is read as a path.</summary>
     public static string PathOf(string home, string unit) => Path.Combine(FolderOf(home), KeyOf(unit) + ".json");
 
-    public static string KeyOf(string unit) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(unit)))[..32];
+    public static string KeyOf(string unit) => WorkplaceRunFiles.UnitKey(unit);
 
     /// <summary>The unit's record: an empty one where it has none, null where its file does not read.</summary>
     public NodeRecord? Read(string unit)
@@ -261,6 +261,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteStartObject("ended");
             writer.WriteString("quest", ended.Quest);
             writer.WriteString("at", Moments.Write(ended.At));
+            if (ended.Why is { } why) writer.WriteString("why", why);
             writer.WriteEndObject();
         }
 
@@ -533,7 +534,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             if (root.TryGetProperty("ended", out var end))
             {
                 if (end.ValueKind != JsonValueKind.Object || Text(end, "quest") is not { } quest || Moments.Read(end, "at") is not { } endedAt) return null;
-                ended = new RunEnd(quest, endedAt);
+                ended = new RunEnd(quest, endedAt) { Why = Text(end, "why") };
             }
 
             var pending = new List<NodeWord>();

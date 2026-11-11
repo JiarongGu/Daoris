@@ -147,7 +147,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     A branch two runs worked before each run had its own tree is told once for both, and a plugin's event on it goes to each run
     whose own node awaits it there at the event's commit, else to each run whose graph names its step (`ToldRuns`). (from D190, D259, D260)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes, done, approve, reject) on the
-    record, and the next pass applies it; a run does not end while a word waits on that pass. The terminal says each of those words as
+    record, and the next pass applies it; a run does not end while a word waits on that pass. A run ends when its graph's end settles or
+    no node can move (`NodeRunKeeping.EndAsync`), or when its quest closed (done or declined) and every step still standing observes its
+    branch and cannot move: the line holds each one's bound commit whole (`LineHolding.Whole`, the landing's judgement by content and
+    patch, asked at the checkout through the look's `OnLine`), ended `on-line`, or no branch of the run stands, ended `branch-gone`
+    (`ClosedRunEnds`); its steps stay as they stood and the end keeps why. An ended run is not governed again until its chain comes back
+    here, so no look pays for it. The terminal says each of those words as
     `daoris workflow <act> <run> <node>`, every act of `NodeWordActs` a verb of the group the tree routes to the host's `WorkflowNodeCommand`,
     which presses the page's `WORKFLOW_NODE` (`WorkflowNodeWordsRouteTests`). A word names its author: the person's names none, a landing supervisor's names its role, its
     decision and the attempt it was released on (`NodeWordBy`), a node taking it as `supervisor` where the person's is `person`. A

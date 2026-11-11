@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public static class RunUnits
 {
-    public const string Prefix = "run:";
+    public const string Prefix = WorkplaceRunFiles.RunUnitPrefix;
 
     public static string IdOf(string run) => Prefix + run;
 
@@ -202,6 +202,8 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
 
     /// <summary>Every branch the run's quests produced, its earlier subjects included: what an answer for one maps back to the run by.</summary>
     public IReadOnlyList<WorkUnit> Branches { get; init; } = [];
+
+    public bool Attributed { get; init; } = true;
 
     /// <summary>The nodes a wire path leads to from <c>handed</c>: they observe the run's branch at its landing, at the landing's tip.</summary>
     public IReadOnlySet<string> AfterHanded { get; init; } = new HashSet<string>(StringComparer.Ordinal);

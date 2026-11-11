@@ -128,6 +128,7 @@ public static class HistoryClearing
                 foreach (var run in unit.Bindings.Where(bound.Add))
                 {
                     took += machine.Files.Take(WorkplaceRunFiles.PathOf(world.Home, run), folder: false, failed).Bytes;
+                    took += machine.Files.Take(WorkplaceRunFiles.RecordPathOf(world.Home, run), folder: false, failed).Bytes;
                 }
 
                 return unit with { Bytes = bytes with { Kept = bytes.Kept + took } };

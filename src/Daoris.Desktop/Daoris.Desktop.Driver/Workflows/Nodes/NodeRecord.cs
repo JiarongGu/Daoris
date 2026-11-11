@@ -188,7 +188,14 @@ public sealed record ObservedEvent(string Plugin, string Repository, string Step
 /// Where a run bound to a graph version ended: its newest quest here when its end is judged, and
 /// when. Kept by the runtime on the run's record; a quest of its chain coming back here moves it, and the run goes on.
 /// </summary>
-public sealed record RunEnd(string Quest, DateTimeOffset At);
+public sealed record RunEnd(string Quest, DateTimeOffset At)
+{
+    /// <summary>
+    /// Why a run whose quest closed ended with steps still standing (<see cref="ClosedRunEnds"/>): its branch is gone, or the line holds its
+    /// work. Null for a run whose graph settled.
+    /// </summary>
+    public string? Why { get; init; }
+}
 
 /// <summary>What the person may say of a run's node at its door: pass it over, or stop it.</summary>
 public static class NodeWordActs
