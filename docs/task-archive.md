@@ -5,6 +5,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSUPERVISE1's hook-up and rows c, d and e: Ask Daoris's acts read, shown and told (2026-11-12)
+
+> **ASKSUPERVISE1 hook-up** (driver, modules, web; D272): Outcome: Ask Daoris's turn ends are heard off its conversations' event appends (`AskDaorisWatch`, `AskDaorisTurnEnds`) on a task no turn, press or start waits for, the start's catch-up first; its presses and answered holds kept beside the reports (`AskDaorisKept`, `SecondCheckHookUp`); a protocol door's subagent read by its stream (`ChildCalls`); the *Turn on…* press in the role editor and *Who decides here*.
+>
+> **ASKSUPERVISE1c** (driver, modules): Outcome: the reading queue reads the queued ranges off the driver's loop, one at a time, oldest first, through the one walk handed the range's writer; `AskDaorisPacket` (bounded, redacted, fenced), `AskDaorisCharge`, `AskDaorisReport.Read`, the empty folder and machine opening, `ran` as reported, the unread closes and the start's sweep; the packet-only reader proved on Claude Code's native door (`PacketOnlyReaderProcessTests`), Codex passed *not enforced*; a hung, slow, malformed or over-budget reader delays no turn, press or driven start (`AskDaorisReadingNeverWaitsTests`).
+>
+> **ASKSUPERVISE1d** (driver, modules, web): Outcome: `HELP_READINGS` pages a conversation's readings from the reports alone, each state derived (`AskDaorisReadings`), with the check's standing and, for one range, the packet; one line under the last turn each covers with *Details* and *What was sent*; the chip *Second check on · N pending* beside the access chip with today's readings and reported tokens; every unseen flag a `second-check` row of *What needs you*, counted on the bell, with *Seen* (`HELP_READING_SEEN`, the window's alone); en and zh. Left: the press line's reading, the chip's readers and budget, the room's role tokens, a flag opening its own conversation, paging in the window.
+>
+> **ASKSUPERVISE1e** (driver): Outcome: a flag rides the person's next words at the one dispatch every word passes (`TurnState.Dispatched`, `AskDaorisTold`), pumped, steered or a resume's go-on, told once and kept told with the word it rode when written; a word not written leaves it pending; Daoris's own words and notes carry none.
+
+---
+
 ## GITREV3a to GITREV3m — thirteen fixes in the driver's git layer (2026-11-11)
 
 > **GITREV3a** (driver): Outcome: a lease file's first line names its package, `GitLibraryLeases.Left` returns each repository with it, and a fault found after an update is journalled under the package that faulted.

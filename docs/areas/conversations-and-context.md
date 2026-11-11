@@ -275,7 +275,13 @@ of everything it handed, section by section.
     turn, press or start waits for (`AskDaorisTurnEnds`, the start's catch-up first), the second check's selection of what the turn
     did that no card or hold put to the person (`AskDaorisSelection`, roles rule 58): a turn runs from the person's words where the session took them to its
     `turn` event, or to the log's last event, interrupted; a word shown waiting is no turn, and one taken while a turn runs joins
-    it; a call's updates merge by its id; its known reads are counted, never quoted. (from D89, D170, D183, D158, D253, D272)
+    it; a call's updates merge by its id; its known reads are counted, never quoted. A flag the second check raised on a
+    conversation's acts rides the person's next words in it at the one dispatch every word passes before its door writes it
+    (taken from the queue, handed to a running turn at its next step, or a resume's go-on; `TurnState.Dispatched` with
+    `AskDaorisTold`): one line per flag ahead of the words, the reader's claim with whom it is from, and that it is answered to
+    the person and acted on only from their words. It is kept told with that word once the word is written; a word taken back
+    or a send that failed leaves it pending, Daoris's own words carry none, a note is never told and no flag makes a turn of
+    its own. (from D89, D170, D183, D158, D253, D272)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
     every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there. The
     panel's *Showing* chip chooses among them, *This workspace* marked as the window's and each workspace unfolding onto its
