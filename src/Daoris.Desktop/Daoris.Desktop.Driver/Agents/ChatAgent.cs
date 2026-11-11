@@ -74,7 +74,6 @@ internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
     /// <summary>The native door's line that stops a turn, or null where it has none.</summary>
     public string? FrameInterrupt() => adapter.FrameInterrupt();
 
-    /// <summary>The native door's line for words sent now, echoed by its uuid, or null where the harness echoes none.</summary>
     public string? FrameSteer(string text, string uuid) => adapter.FrameSteer(text, uuid);
 
     /// <summary>A refused call read as one kind, from this door's tables and, through <paramref name="adapters"/>, its owner's.</summary>

@@ -27,7 +27,6 @@ public static class DoorPorts
         /// <summary>The line that stops a conversation's turn on the door's stdin, null where it has none.</summary>
         public string? FrameInterrupt() => Native(door)?.FrameInterrupt();
 
-        /// <summary>Words sent now on a conversation's stdin as a line echoed by its uuid, null where the harness echoes none.</summary>
         public string? FrameSteer(string text, string uuid) => Native(door)?.FrameSteer(text, uuid);
 
         /// <summary>What a protocol-door session carries on <c>session/new</c> to take its rules file, plugins and own tool home, null for none.</summary>

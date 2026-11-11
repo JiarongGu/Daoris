@@ -5,9 +5,10 @@ namespace Daoris.Driver;
 /// <summary>
 /// The person's *Send now*: the words steered into the running turn by the adapter's <c>_session/steering</c>, which delivers them at
 /// priority <c>now</c>, cutting the step in flight. A steer passes the run's door and its words' mark as a prompt does
-/// (<see cref="AcpPrompting"/>), and reaches the session through <see cref="ITurnPromptWiring"/>.
+/// (<see cref="AcpPrompting"/>), and reaches the session through <see cref="ITurnPromptWiring"/>. Where the words landed is said:
+/// <c>injected</c> in the running turn, <c>startedNewTurn</c> as the next (<see cref="AcpStartedTurn"/>).
 /// </summary>
-internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompting)
+internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompting, AcpStartedTurn started)
 {
     /// <summary>
     /// The words steered into the running turn. The request asks the adapter never to start a turn of its own
@@ -44,9 +45,20 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
             prompting.Wrote(null, words),
             answered: frame =>
             {
-                if (Outcome(frame) != "injected") return;
-                wiring.Calls.CutOpen();
-                prompting.Asked(words);
+                switch (Outcome(frame))
+                {
+                    case "injected":
+                        wiring.Calls.CutOpen();
+                        prompting.Asked(words);
+                        Landed(Noted.Of(ChatNoteCodes.WordsSentNowInTurn, "Sent now: it went into the turn it was on."));
+                        break;
+                    case "startedNewTurn":
+                        // Codex reads no idleBehavior: the turn just ended, and the words began the next, which no prompt owns.
+                        prompting.Asked(words);
+                        Landed(Noted.Of(
+                            ChatNoteCodes.WordsSentNowNextTurn, "Sent now: its turn ended before it could take this, so this began the next."));
+                        break;
+                }
             },
             admit: () => wiring.Open.Admit(passage)).ConfigureAwait(false);
         return Outcome(answer) ?? "unknown";
@@ -70,6 +82,12 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
         {
             var outcome = await SteerAsync(words, ct).ConfigureAwait(false);
             if (outcome == "promptRequired" && handBack?.Invoke(words) == true) return outcome;
+            if (outcome == "startedNewTurn")
+            {
+                await started.EndedAsync(ct).ConfigureAwait(false);
+                return outcome;
+            }
+
             if (outcome != "injected") NoteWords(WordsNotes.NeverReached(NotSteered(outcome)), words);
             return outcome;
         }
@@ -104,6 +122,13 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
             Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
             Words = words.Id is { } id ? [id] : null,
         });
+    }
+
+    /// <summary>Where the words sent now landed, said once they are taken there, on the reader's thread before what follows.</summary>
+    private void Landed(Noted noted)
+    {
+        wiring.Say(noted.Note);
+        wiring.Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts });
     }
 
     /// <summary>A steer's <c>outcome</c>, from its answer frame or its result; null where it said none.</summary>

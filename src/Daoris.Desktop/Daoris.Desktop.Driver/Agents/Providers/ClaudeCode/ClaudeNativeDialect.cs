@@ -17,11 +17,7 @@ internal sealed class ClaudeNativeDialect : INativeDialect
         message = new { role = "user", content = new[] { new { type = "text", text } } },
     });
 
-    /// <summary>
-    /// Words sent now as one user line with no <c>priority</c>, under <paramref name="uuid"/>. Measured on 2.1.322: written during a tool,
-    /// the binary folds it into the running turn at its next step; written while the turn's last text streams, it is the next turn; under
-    /// <c>--replay-user-messages</c> its echo carries the uuid either way, before the turn's <c>result</c> or after it.
-    /// </summary>
+    /// <summary>Words sent now as one user line with no <c>priority</c>, echoed under <paramref name="uuid"/> (2.1.322, measured).</summary>
     public string FrameSteer(string text, string uuid) => JsonSerializer.Serialize(new
     {
         type = "user",

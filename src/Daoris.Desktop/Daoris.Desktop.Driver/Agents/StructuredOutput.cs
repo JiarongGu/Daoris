@@ -300,7 +300,6 @@ public sealed class ClaudeStreamJson : IStreamMapper
             return StreamMapped.Nothing;
         }
 
-        // The person's words echoed where the harness took them: recorded before they were written, so only where they landed is read.
         if (frame.TryGetProperty("isReplay", out var replay) && replay.ValueKind == JsonValueKind.True)
         {
             return StreamMapped.Nothing with { Echoed = Text(frame, "uuid") };

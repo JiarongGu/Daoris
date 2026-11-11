@@ -67,8 +67,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// <summary>
     /// A conversation on its structured wire: each message a <c>stream-json</c> line on stdin, one turn each. Its posture is a
     /// driven session's, for the same reason, or its mode that asks nothing where the person's own setting names it.
-    /// One that goes on resumes its own conversation by the id kept for its record, never <c>--continue</c>. Each line it takes is echoed
-    /// (<c>--replay-user-messages</c>), so words sent now are read where they landed (<see cref="ClaudeNativeDialect.FrameSteer"/>).
+    /// One that goes on resumes its own conversation by the id kept for its record, never <c>--continue</c>; each line it takes is echoed.
     /// </summary>
     public ProcessRecipe Chat(SpawnRequest request)
     {

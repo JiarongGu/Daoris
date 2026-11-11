@@ -69,11 +69,15 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 2. A level says when a word may reach its reader, never its order. Ordinary waits for a natural point: the turn's end, between turns,
    the next part, or the agent's own read. Urgent goes at the next step where the door takes words then. Now cuts the step in flight
    where the agent steers. (from D188, D136)
-3. A level is a request. On a door that takes words only at its turn's end, urgent waits for that end, and says so. Now waits too
-   where the door cannot stop a turn keeping its session (a driven native run); a conversation's door that can (the native wire's
-   interrupt, `codex-acp`'s cancel) cuts in: the word goes first among what waits, the turn is stopped, and the word is the next
-   turn's first, its ask marked sent now. Never on a next-step door, nor with a word on its way. A text-only conversation honours no
-   level. (from D188, D136)
+3. A level is a request. On a door that takes words only at its turn's end, urgent waits for that end, and says so. Now goes into
+   the running turn where the door can put it there and tell where it landed: the protocol door's `_session/steering` wherever the
+   agent offers it (Claude's adapter, `codex-acp`), answered `injected` for the running turn or, on Codex, `startedNewTurn` for the
+   next; the native wire's line with no priority, echoed under `--replay-user-messages` before the turn's result (the running turn) or
+   after it (the next). The person is told which by a note, and a word that began the next turn holds the turn sent now until that
+   turn ends. Where the door neither steers nor echoes but stops a turn keeping its session (a protocol agent with no steering
+   extension), it cuts in: the word goes first among what waits, the turn is stopped, and the word is the next turn's first, its ask
+   marked sent now. Never on a next-step door, nor with a word on its way. Now waits where the door does none of these (a driven
+   native run). A text-only conversation honours no level. (from D188, D136)
    What each harness does with a word written mid-turn, measured keylessly against a stub model endpoint on loopback (STEER3,
    `docs/2026-10-03-steer-evidence.md` §8): Claude Code's stream-json folds a line with no priority into the running turn at its next
    step (into the tool's result, one `result` for the turn; echoed under `--replay-user-messages`), or makes it the next turn where no
@@ -295,7 +299,10 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 ## Open
 
-- **MSG1h**, **MSG1i**: next-step words on Codex and on the native door, built on STEER3's measured turns (rule 3) in the spend sitting. MSG1h's design must meet that `codex-acp` honours no `idleBehavior`: a steer that finds no live turn starts one (`docs/2026-10-03-steer-evidence.md` §5, §8), so the door steers only while a turn it prompted is live and treats `startedNewTurn` as a turn nobody asked for. MSG1i's must learn where a folded line landed, which only `--replay-user-messages` tells (§8).
+- **MSG1h**, **MSG1i**: an urgent word on Codex and on the native door still waits for the turn's end; only the person's *Send now*
+  goes into the running turn there (rule 3). Both measured deliveries are next-step ones (a no-priority line folded after the tool's
+  result; Codex's steer joining after a running tool), so an urgent word could ride the same echoed line and the same steer, said at
+  `next-step`.
 - **COWORKUX1** (row i): the lead's wait on its own partner.
 - The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the

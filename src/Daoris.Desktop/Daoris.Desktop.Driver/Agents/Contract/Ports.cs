@@ -83,10 +83,6 @@ public interface INativeDialect : IDialect
     /// <summary>The line that stops a turn and keeps the session; null where the program has none.</summary>
     string? FrameInterrupt() => null;
 
-    /// <summary>
-    /// A person's message written while a turn runs, as a line the program echoes under <paramref name="uuid"/> where it takes it; null
-    /// where it echoes nothing, so where the words landed could not be told.
-    /// </summary>
     string? FrameSteer(string text, string uuid) => null;
 }
 
