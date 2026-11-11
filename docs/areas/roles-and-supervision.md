@@ -480,7 +480,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves, and wording its scope as the route takes it: the repositories holding a branch of Daoris's, every checkout with `--all`), a place's set-up applied (`place
     <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
     the plan refuses and an acceptance it does not offer), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
-    its view judged by the verb's own judges, `AskNewCommand.Unfit`, and a `--file` this machine lacks, so Ask Daoris makes an ask in full access with no card and in
+    its view judged by the verb's own judges, `AskNewCommand.Unfit`, a workspace no registered repository is in (the default's name included) and a `--file` this machine lacks, so Ask Daoris makes an ask in full access with no card and in
     restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
