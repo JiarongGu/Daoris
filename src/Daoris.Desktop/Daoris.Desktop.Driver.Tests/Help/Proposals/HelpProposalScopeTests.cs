@@ -45,12 +45,10 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_move_and_a_workflow_naming_another_workspace_are_judged_by_their_kinds()
+    public void A_move_naming_another_workspace_is_judged_by_its_kind()
     {
         Reaches(Of("repository", "wire", "engine", "beta"));
         Reaches(Of("repository", "wire", "game", "alpha"));
-        Reaches(Of("workflow", "new") with { Scope = "game", Workflow = "docs-flow" });
-        Reaches(Of("workflow", "new") with { Scope = "beta", Workflow = "docs-flow" });
     }
 
     [Fact]

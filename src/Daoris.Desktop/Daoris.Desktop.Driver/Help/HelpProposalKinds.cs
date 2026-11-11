@@ -72,7 +72,6 @@ internal static class HelpProposalKinds
     public static readonly IReadOnlyList<IHelpProposalKind> All =
     [
         new HelpGoProposals(),
-        new HelpWorkflowProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

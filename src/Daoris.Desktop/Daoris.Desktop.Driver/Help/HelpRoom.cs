@@ -56,10 +56,23 @@ public static class HelpRoom
     /// <summary>Daoris's own verb in the forms the harness matches: unasked, since each change it presses waits on the person's card.</summary>
     public static readonly IReadOnlyList<string> Verb = ["Bash(daoris:*)", "PowerShell(daoris:*)"];
 
-    /// <summary>The tools the room allows: reading the family and Daoris's own verb, and nothing that writes without the person.</summary>
+    /// <summary>
+    /// The folder of the room where a workflow's drafts are kept: the graph a <c>daoris workflow apply</c> press names, which changes
+    /// nothing until the person's yes on its card.
+    /// </summary>
+    public const string Drafts = "drafts";
+
+    /// <summary>The one write the room allows: a file under <see cref="Drafts"/>.</summary>
+    public const string DraftsRule = $"Edit(./{Drafts}/**)";
+
+    /// <summary>
+    /// The tools the room allows: reading the family, Daoris's own verb, and writing a workflow's draft in <see cref="Drafts"/>; nothing
+    /// that changes the machine without the person.
+    /// </summary>
     public static readonly IReadOnlyList<string> Allowed =
     [
         .. Verb,
+        DraftsRule,
         $"mcp__{KnowledgeConnector.ServerName}__registry",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_search",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_get",
@@ -111,6 +124,7 @@ public static class HelpRoom
     {
         var room = PathOf(home, machine.Home);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
+        Directory.CreateDirectory(Path.Combine(room, Drafts));
         // The housekeeping granted, the chosen settings and the checkouts turned off, as the record
         // holds them as this start writes its room.
         var access = ConfiguredAccess.Read(home);

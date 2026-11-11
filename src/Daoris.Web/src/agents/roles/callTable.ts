@@ -12,7 +12,6 @@ export const REGISTERED_TOOLS: readonly string[] = [
   'partner_answer', 'permission_propose', 'quest_list', 'quest_publish', 'quest_respond', 'question_ask',
   'registry', 'review_ready', 'review_serve', 'settings_cap',
   'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'system_plan',
-  'workflow_propose',
 ];
 
 type Column = { only: readonly string[] } | { allBut: readonly string[] };

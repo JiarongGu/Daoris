@@ -34,53 +34,6 @@ public sealed record HelpProposal(
 
     /// <summary>A go's one quest or ask or session, as the service's box wrote it, or null.</summary>
     public string? Item { get; init; }
-
-    // The workflow kind's.
-
-    /// <summary>A workflow proposal's repository or workspace, one word, which its judge finds which of.</summary>
-    public string? Scope { get; init; }
-
-    /// <summary>A workflow proposal's workflow, by its id.</summary>
-    public string? Workflow { get; init; }
-
-    /// <summary>The version a workflow proposal's edit is made on; null for a new workflow.</summary>
-    public int? Base { get; init; }
-
-    /// <summary>Whether a workflow proposal also chooses the workflow for its scope (the <c>use</c> door).</summary>
-    public bool Choose { get; init; }
-
-    /// <summary>A workflow proposal's whole steps, a JSON list, as the box wrote them; null where none are.</summary>
-    public JsonElement? Steps { get; init; }
-
-    /// <summary>A new workflow's name, the person's words; null where the box wrote none, and the id names it.</summary>
-    public string? Name { get; init; }
-
-    /// <summary>
-    /// A workflow proposal's graph version, the graph's JSON object as the box wrote it;
-    /// null where it carries steps or no version.
-    /// </summary>
-    public JsonElement? Graph { get; init; }
-
-    /// <summary>
-    /// The route a workflow proposal chooses its workflow for: <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>;
-    /// null where it names none, and <see cref="Choose"/> asks the default.
-    /// </summary>
-    public string? Route { get; init; }
-
-    /// <summary>
-    /// The fingerprint of the draft open in the person's editor a workflow proposal changes, as the box wrote it: the
-    /// <c>draft</c> door; null for every other.
-    /// </summary>
-    public string? Draft { get; init; }
-
-    /// <summary>
-    /// The changes of a <c>draft</c> card the person's press says were taken into the draft, and those left,
-    /// by their ids: the press's, never the file's; null where the press names none, which opens the editor.
-    /// </summary>
-    public IReadOnlyList<string>? Taken { get; init; }
-
-    /// <inheritdoc cref="Taken"/>
-    public IReadOnlyList<string>? Left { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>
@@ -149,33 +102,6 @@ public sealed record HelpMachineFacts(
     /// procedure is looked for in, the one repository it names or each of the workspace's, and where a go or a workflow finds a repository's workspace. Empty where not asked.
     /// </summary>
     public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
-
-    // The workflow kind's.
-
-    /// <summary>
-    /// The named workflows saved under the home, each as found (<see cref="WorkflowStore.List"/>): what a workflow proposal's base
-    /// is held to. Read only for one.
-    /// </summary>
-    public IReadOnlyList<WorkflowFileFound> Workflows { get; init; } = [];
-
-    /// <summary>
-    /// The runs bound on this machine (<see cref="WorkflowRunBindings"/>): how many keep the version they started on, which a
-    /// workflow card says. Read only for a workflow proposal.
-    /// </summary>
-    public IReadOnlyList<WorkflowRunBinding> WorkflowRuns { get; init; } = [];
-
-    /// <summary>
-    /// The gates each registered repository's accepted integration declaration names, by repository: what a workflow card
-    /// that chooses a graph asking with <c>done</c> or <c>steward</c> is judged by (<see cref="IntegrateChoice.ReadAcceptedAsync"/>). Read
-    /// only for one; a repository with no entry is unread, and the card holds on that.
-    /// </summary>
-    public IReadOnlyDictionary<string, AcceptedGates> AcceptedGates { get; init; } = new Dictionary<string, AcceptedGates>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// The workflow drafts the proposing conversation's record says it has been told, by fingerprint (<see cref="WorkflowDraftTold.Told"/>):
-    /// what a <c>draft</c> proposal is judged against. Read only for one.
-    /// </summary>
-    public IReadOnlyDictionary<string, WorkflowDraftTold> Drafts { get; init; } = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -191,11 +117,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
-
-    // The workflow kind's.
-
-    /// <summary>A workflow proposal's card data, what its Apply saves and chooses; null for every other kind.</summary>
-    public HelpWorkflowCard? Workflow { get; init; }
 }
 
 /// <summary>What the person's Apply did: whether it applied, and what the conversation is told.</summary>
@@ -205,14 +126,6 @@ public sealed record HelpApplied(bool Applied, string Told)
 
     /// <summary>Where a go takes the person: the page navigates there, as its starters' doors do.</summary>
     public HelpPlace? Go { get; init; }
-
-    // The workflow kind's.
-
-    /// <summary>
-    /// The proposal still waits for the person: a draft's change opened in the editor, which settles nothing, so the card stays
-    /// and the page logs no settlement. False for every Apply that settles.
-    /// </summary>
-    public bool Stands { get; init; }
 }
 
 /// <summary>

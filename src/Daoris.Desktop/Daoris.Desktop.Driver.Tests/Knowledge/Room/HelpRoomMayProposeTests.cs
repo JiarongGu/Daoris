@@ -14,12 +14,10 @@ public sealed class HelpRoomMayProposeTests
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every other card reads **apply** and **not now**", agents);
         // A go card's second press only takes the card away, and the room says nothing comes back of it.
-        Assert.Contains("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**)", agents);
-        Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
-        Assert.Contains("**应用**", agents);
-        Assert.Contains("**前往**", agents);
+        Assert.Contains("**go there** and **dismiss** (in 中文 **前往** and **移除**)", agents);
+        Assert.Contains("Dismissing it only takes it out of the conversation: nothing comes back to you", agents);
+        Assert.DoesNotContain("**apply** and **not now**", agents);
         Assert.DoesNotContain("a delete card", agents);
         Assert.DoesNotContain("**查看更新**", agents);
     }
@@ -265,16 +263,16 @@ public sealed class HelpRoomMayProposeTests
     /// optional; a stale base is refused, what a step needs first makes a draft, and a merge with nobody is never proposed.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_workflow_is_proposed_and_what_makes_it_a_draft()
+    public void The_room_says_a_workflow_s_version_is_pressed_from_a_draft_it_keeps()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n", proposes);
-        Assert.Contains("`choose` to make it the scope's workflow too.", proposes);
-        Assert.Contains("A base that is not the newest is refused as stale.", proposes);
-        Assert.Contains("makes the card a draft with no apply until it is.", proposes);
-        Assert.Contains("Changes against a base, a kind and an import are not\n  proposed yet.", proposes);
-        Assert.Contains("Merging with nobody is never proposed:", proposes);
+        Assert.Contains("- A workflow's new version is saved by pressing, never proposed,", proposes);
+        Assert.Contains("as a draft in this room's `drafts/` folder, the one place you\n  may write,", proposes);
+        Assert.Contains("press `daoris workflow apply <id> drafts/<id>.json --base <version>`", proposes);
+        Assert.Contains("Its card draws the graph for the person as the editor draws it", proposes);
+        Assert.Contains("Merging with nobody is never pressed:", proposes);
+        Assert.DoesNotContain("workflow_propose", proposes);
     }
 
     /// <summary>Every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>

@@ -11,7 +11,6 @@ public sealed class HelpProposalBox(string? home)
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
         ("go", "go_propose"),
-        ("workflow", "workflow_propose"),
     ];
 
     private readonly HelpProposalFile file = new(home);
@@ -28,11 +27,4 @@ public sealed class HelpProposalBox(string? home)
         string view, string? domain, string? part, string? item, string why, string? session, DateTimeOffset at, string? workspace = null,
         string? repository = null, string? sentence = null) =>
         new HelpGoProposalWriter(file).Propose(view, domain, part, item, why, session, at, workspace, repository, sentence);
-
-    /// <inheritdoc cref="HelpWorkflowProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeWorkflow(
-        string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
-        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null,
-        string? graph = null, string? route = null, string? draft = null) =>
-        new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name, graph, route, draft);
 }

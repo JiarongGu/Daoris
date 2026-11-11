@@ -17,7 +17,6 @@ public sealed class HelpRoomDoorAsksTests
     {
         var proposing = HelpRoomDoors.Doors.Where(door => door.Ask?.Through is not null).ToList();
 
-        Assert.NotEmpty(proposing);
         foreach (var door in proposing)
         {
             var (kind, name) = door.Ask!.Through!.Value;

@@ -47,54 +47,6 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("quest_publish", tool == "quest_publish" ? "quest_publish " + text : text);
     }
 
-    /// <summary>The workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
-    [Fact]
-    public void The_workflow_tool_says_it_only_proposes_whole_steps()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
-
-        Assert.Contains("Nothing changes until the person presses Apply", text);
-        Assert.Contains("whole", text);
-        Assert.Contains("Not proposed yet", text);
-    }
-
-    /// <summary>The workflow tool says a verification pipeline takes a graph, and a route alone chooses and saves nothing.</summary>
-    [Fact]
-    public void The_workflow_tool_says_a_graph_and_a_route_alone()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
-
-        Assert.Contains("verification pipeline", text);
-        Assert.Contains("graph", text);
-        Assert.Contains("`kind:<id>`", text);
-        Assert.Contains("saving nothing", text);
-    }
-
-    /// <summary>The workflow tool says a change to the open draft goes by its fingerprint with the whole graph, saving and choosing nothing.</summary>
-    [Fact]
-    public void The_workflow_tool_says_a_change_to_the_open_draft_saves_nothing()
-    {
-        var parameter = typeof(HelpWorkflowTool).GetMethod(nameof(HelpWorkflowTool.ProposeWorkflow))!.GetParameters().Single(each => each.Name == "draft");
-        var said = parameter.GetCustomAttribute<DescriptionAttribute>()!.Description;
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
-
-        Assert.Contains("fingerprint", said);
-        Assert.Contains("whole", said);
-        Assert.Contains("nothing is saved or chosen", said);
-        Assert.Contains("open in the person's editor", text);
-    }
-
-    /// <summary>The workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
-    [Fact]
-    public void The_workflow_tool_says_a_new_workflow_takes_the_persons_name()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
-
-        Assert.Contains("name", text);
-        Assert.Contains("at most 60", text);
-        Assert.Contains("keeps its name", text);
-    }
-
     /// <summary>quest_publish's kind proposal quotes the person's words, at most 300 characters, a kind applied only by their press.</summary>
     [Fact]
     public void The_publish_tool_describes_the_kind_proposal_as_a_quote_only_the_person_applies()
