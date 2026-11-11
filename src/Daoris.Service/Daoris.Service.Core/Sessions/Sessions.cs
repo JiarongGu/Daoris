@@ -3,9 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
 
-/// <summary>
-/// Session records, held by the service beside the quests they serve.
-/// </summary>
+/// <summary>Session records, held by the service beside the quests they serve.</summary>
 /// <remarks>
 /// <para><b>The record is service state; the process is not.</b> Every client benefits from the record —
 /// the platform renders it, it survives a driver restart, and a remote deployment can sync records where
@@ -150,11 +148,6 @@ public sealed class SessionStore
 
     /// <summary>The session with a process in a directory, the intake room's lock; see <see cref="SessionReads.RunningInTreeAsync"/>.</summary>
     public Task<Session?> RunningInTreeAsync(string tree, CancellationToken ct = default) => reads.RunningInTreeAsync(tree, ct);
-
-    /// <summary>Ask Daoris's one at a time, per workspace; see <see cref="SessionReads.RunningInWorkspaceAsync"/>.</summary>
-    public Task<Session?> RunningInWorkspaceAsync(
-        string repository, string workspace, bool parked = false, CancellationToken ct = default) =>
-        reads.RunningInWorkspaceAsync(repository, workspace, parked, ct);
 
     /// <summary>Sessions in one repository, or everywhere, live work first; see <see cref="SessionReads.ListAsync"/>.</summary>
     public Task<IReadOnlyList<Session>> ListAsync(

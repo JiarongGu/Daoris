@@ -25,7 +25,7 @@ of everything it handed, section by section.
 | `ChatRun` | `Loop/Chat/ChatRun.cs` | The run of a conversation whose record is open, one method for every kind: its process spawned with its rules and servers, its door's turns held, its watch started, or its record concluded when the spawn fails |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
-| `ChatHelp`, `IChatHelping` | `Help/ChatHelp.cs`, `Course/Chat/ChatHelping.cs` | Executor `help-rooms`: a start from an earlier Ask Daoris conversation's words, a workspace's running one set aside, the room as it stands; the course reaches it by its port |
+| `ChatHelp`, `IChatHelping` | `Help/ChatHelp.cs`, `Course/Chat/ChatHelping.cs` | Executor `help-rooms`: a start from an earlier Ask Daoris conversation's words, beside any running, the room as it stands; the course reaches it by its port |
 | `HelpAccessSwap`, `HelpPlacement` | `Help/` | A change of Ask Daoris's access ending its running conversations at their turn's end, and the receipt of what a start was handed, with what the native door's init frame said it loaded (`WireReading.Loaded` from `NativeInit`, kept by `HelpLoaded` on the newest receipt and shown beside it); the place Ask Daoris runs in, under its access |
 | `BriefedMove` | `Course/Chat/BriefedMove.cs` | The move to a new part handed Daoris's brief: by itself where a conversation is proven lost, or by the person's press |
 | `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
@@ -240,7 +240,12 @@ of everything it handed, section by section.
 
 **Ask Daoris**
 
-42. Ask Daoris is a conversation in its own room, one at a time per workspace. It presses Daoris's verbs, and the person
+42. Ask Daoris is a conversation in its own room, each conversation its own: any number run at once, in one workspace or
+    many, and one answering a turn never holds another's open, start, go-on or words. Every *New conversation* press and
+    `START_HELP` places a conversation of its own, never handed one running or starting, so a new conversation's first word
+    starts its own turn (`HelpStarting` holds the words of each starting conversation by its id). What they share is the
+    workspace's room folder, whose files each open and go-on writes whole under the room's own gate (`HelpRoomWrites`),
+    never a turn's. It presses Daoris's verbs, and the person
     says yes on the card to every change (roles-and-supervision 56); a place it names is a go link in its answer, which the
     window opens (roles-and-supervision 55). A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
     its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository

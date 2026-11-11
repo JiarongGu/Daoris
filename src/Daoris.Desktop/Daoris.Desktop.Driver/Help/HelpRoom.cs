@@ -110,6 +110,11 @@ public static class HelpRoom
     public static string Prepare(string home, HelpMachine machine)
     {
         var room = PathOf(home, machine.Home);
+        lock (HelpRoomWrites.Of(room)) return Write(home, room, machine);
+    }
+
+    private static string Write(string home, string room, HelpMachine machine)
+    {
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
         Directory.CreateDirectory(Path.Combine(room, KnowledgeRoomPaths.Drafts));
         // The families of acts granted and the checkouts turned off, as the record holds them as this start writes its room.

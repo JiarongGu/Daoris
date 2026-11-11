@@ -44,10 +44,7 @@ public static class ResumeAccount
         };
     }
 
-    /// <summary>
-    /// Whether the scope uses the account: its list names it, or, with no list, it is the scope's one account,
-    /// the tool's own sign-in where the scope names none.
-    /// </summary>
+    /// <summary>Whether the scope uses the account: its list names it, else the scope's one account, the tool's own where none.</summary>
     public static bool InScope(string? account, RotationScope scope) =>
         scope.List.Count > 0
             ? account is not null && scope.List.Contains(account, StringComparer.OrdinalIgnoreCase)
@@ -68,10 +65,7 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     /// <summary>The person chose a new session while its account cooled (*Go on in a new session*).</summary>
     public bool NewSession { get; init; }
 
-    /// <summary>
-    /// The record an account's limit ended: its words go where the line goes,
-    /// with a briefed part on another account, never waiting for its own to reset while another could take them.
-    /// </summary>
+    /// <summary>The record an account's limit ended: its words go on in a briefed part on another account that could take them.</summary>
     public bool Limited { get; init; }
 
     /// <summary>
@@ -172,17 +166,6 @@ public static class HeldWords
         var why = $"{holder}, so a session does not start in one of its trees until that is done; it starts at the next look.";
         return (why, Whole(code, why, ("repository", repository)));
     }
-
-    /// <summary>Ask Daoris is answering in another conversation of its room.</summary>
-    public static (string Why, Noted Line) Answering(string session)
-    {
-        var why = AnsweringWhy(session);
-        return (why, Whole(HeldNoteCodes.HeldAnswering, why, ("session", session)));
-    }
-
-    /// <summary>The reason <see cref="Answering"/> says, which a new conversation's refusal says too.</summary>
-    public static string AnsweringWhy(string session) =>
-        $"Ask Daoris is answering in conversation `{session}`; once its turn ends, a word said here takes these with it";
 
     /// <summary>This machine's driver.json could not be read, the program's message after it as its words (it may hold a path).</summary>
     public static (string Why, Noted Line) ConfigUnread(string message)
