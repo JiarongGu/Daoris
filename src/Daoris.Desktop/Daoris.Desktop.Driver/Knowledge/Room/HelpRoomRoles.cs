@@ -26,8 +26,8 @@ internal sealed class HelpRoomRoles : IHelpRoomSection
         if (machine.Workspace is not null) text.Append("The last 7 days' starts and moves below are the whole machine's, every workspace's, not this workspace's alone.\n\n");
         text.Append("Each working role with its choices (numbered as its policy numbers them), its policy in the words a card says it in, the next new\n");
         text.Append("start the policy would take and what the last 7 days did: answer *why did this run on that agent?* from these lines. A policy\n");
-        text.Append("only orders the choices a role already lists; it is proposed with `role_propose`'s `policy` (a preset's name, `first`, `even` or\n");
-        text.Append("`weighted`, or the record) and `policy_revision`, the number below, and it is the person's Apply alone, whatever access you have.\n\n");
+        text.Append("only orders the choices a role already lists; it is pressed with `daoris role policy <id> --preset first|even|weighted` or its\n");
+        text.Append("flags, a choice named by its number below, and its card shows the person the change.\n\n");
         foreach (var role in roles) text.Append($"- {Line(role)}\n");
         text.Append('\n');
         return text.ToString();
@@ -85,7 +85,7 @@ public sealed record HelpRole(string Id, string Name, IReadOnlyList<string> Take
     /// <summary><see cref="Set"/>, <see cref="Stale"/> or <c>default</c>.</summary>
     public string PolicyState { get; init; } = "default";
 
-    /// <summary>The policy's revision, which <c>role_propose</c>'s <c>policy_revision</c> carries back.</summary>
+    /// <summary>The policy's revision, which a press of it is judged against.</summary>
     public long PolicyRevision { get; init; }
 
     /// <summary>The policy in the fold's words; <i>First that can run</i> where none is set.</summary>

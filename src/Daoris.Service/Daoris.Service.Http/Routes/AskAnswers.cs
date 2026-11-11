@@ -18,7 +18,7 @@ public sealed class AskAnswers(HostWiring host)
             ToAsk(outcome.Ask!, host.Service.Files, host.MachineLocal(http)), outcome.Message,
             outcome.Quest is null ? null : QuestAnswers.ToQuest(outcome.Quest, host.Service.Files, host.MachineLocal(http), here: _quests.HereFor(http))),
         AskRefusal.UnknownWorkspace or AskRefusal.NotFound => Refusal.NotFound(outcome.Message),
-        AskRefusal.Closed or AskRefusal.QuestRefused => Refusal.Conflict(outcome.Message),
+        AskRefusal.Closed or AskRefusal.QuestRefused or AskRefusal.IntakeAnswering => Refusal.Conflict(outcome.Message),
         _ => Refusal.BadRequest(outcome.Message),
     };
 

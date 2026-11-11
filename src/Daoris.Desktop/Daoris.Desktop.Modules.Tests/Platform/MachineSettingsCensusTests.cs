@@ -8,10 +8,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// The settings census: every machine setting is declared once, in <see cref="MachineSettings.All"/>, and has one key, which
 /// each of its doors spells. The terminal's verb is the key, in the <c>settings</c> group; its route is <c>SET_&lt;KEY&gt;</c>, a
-/// machine's setting that says the driver's state changed; the terminal sends that route from that verb alone; and Ask Daoris's
-/// <c>setting</c> door is the key. A setting listed twice, two keys on one field of <c>driver.json</c>, or a second verb on one
-/// setting's route fails. The page's half (its words and rows) is <c>settings/everySetting.test.ts</c>, over the list as
-/// <c>SETTINGS</c>.
+/// machine's setting that says the driver's state changed; and the terminal sends that route from that verb alone. A setting listed twice,
+/// two keys on one field of <c>driver.json</c>, or a second verb on one setting's route fails. The page's half is <c>settings/everySetting.test.ts</c>.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class MachineSettingsCensusTests
@@ -23,8 +21,7 @@ public sealed class MachineSettingsCensusTests
         IReadOnlyCollection<string> Routes,
         IReadOnlyCollection<string> MachineRoutes,
         IReadOnlyCollection<string> DriverRoutes,
-        IReadOnlyList<(string Verb, string Route)> Sends,
-        IReadOnlyCollection<string> HelpDoors);
+        IReadOnlyList<(string Verb, string Route)> Sends);
 
     private static readonly Regex OneWord = new("^[a-z]+$");
 
@@ -41,8 +38,7 @@ public sealed class MachineSettingsCensusTests
                 StatePublisher.Declared(new IpcRequest { Id = "census", Module = DriverModule.Name, Type = route }) is { } change
                 && change.Scopes.HasFlag(StateScopes.Driver))],
             [.. ChoiceRoutes.Verbs.Where(each => each.Route is not null)
-                .SelectMany(each => each.Verb.Split(' ')[1].Split('|').Select(word => (word, each.Route!.Route)))],
-            HelpProposals.DoorsOf("setting"));
+                .SelectMany(each => each.Verb.Split(' ')[1].Split('|').Select(word => (word, each.Route!.Route)))]);
     }
 
     /// <summary>Each way the list and the doors part: a sentence a problem, none where each setting is one declaration and one key.</summary>
@@ -73,8 +69,6 @@ public sealed class MachineSettingsCensusTests
                 problems.Add($"`{verb}` is a second key for `{key}`: both send {setting.Route}");
             }
 
-            if (setting.Door && !doors.HelpDoors.Contains(key)) problems.Add($"`{key}` has no Ask Daoris door `{key}`");
-            if (!setting.Door && doors.HelpDoors.Contains(key)) problems.Add($"Ask Daoris's door `{key}` is not declared a door of the setting");
         }
 
         return problems;
@@ -90,7 +84,7 @@ public sealed class MachineSettingsCensusTests
     [Fact]
     public void Each_field_the_list_names_is_the_one_the_file_writes()
     {
-        var written = DriverConfig.Empty.WithNotify(false).WithCap(3).WithCoolOff(30).WithQuiet(15).ToJson();
+        var written = DriverConfig.Empty.WithNotify(false).WithCap(3).WithCoolOff(30).WithQuiet(15).WithManifest(5000, 2).WithTerminal(TerminalTiers.Act).ToJson();
         foreach (var setting in MachineSettings.All.Where(setting => setting.Key != "keep"))
         {
             Assert.Contains($"\"{setting.File}\":", written);
@@ -98,6 +92,7 @@ public sealed class MachineSettingsCensusTests
 
         Assert.Equal(KeepChoices.Key, MachineSettings.Of("keep")!.File);
         Assert.Equal(QuietSetting.File, MachineSettings.Of("quiet")!.File);
+        Assert.Equal(TerminalTiers.File, MachineSettings.Of("terminal")!.File);
     }
 
     [Fact]
@@ -111,7 +106,7 @@ public sealed class MachineSettingsCensusTests
     [Fact]
     public void Two_keys_on_one_field_fail()
     {
-        MachineSetting[] two = [.. MachineSettings.All, new("timeout", "quietMinutes", Door: false, Card: null)];
+        MachineSetting[] two = [.. MachineSettings.All, new("timeout", "quietMinutes", Card: null)];
 
         Assert.Contains("`quiet` and `timeout` are two keys for one setting, driver.json's `quietMinutes`", Problems(two, Built()));
     }
@@ -125,12 +120,4 @@ public sealed class MachineSettingsCensusTests
         Assert.Contains("`timeout` is a second key for `quiet`: both send SET_QUIET", Problems(MachineSettings.All, doors));
     }
 
-    [Fact]
-    public void A_door_spelled_another_way_fails()
-    {
-        var built = Built();
-        var doors = built with { HelpDoors = [.. built.HelpDoors.Where(door => door != "cooloff"), "cool-off"] };
-
-        Assert.Contains("`cooloff` has no Ask Daoris door `cooloff`", Problems(MachineSettings.All, doors));
-    }
 }

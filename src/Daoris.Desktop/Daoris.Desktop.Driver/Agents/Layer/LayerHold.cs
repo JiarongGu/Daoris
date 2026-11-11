@@ -32,7 +32,7 @@ internal sealed class LayerHold(ITransportHost host, TransportStart start) : IDi
     {
         get
         {
-            lock (_gate) return new Dictionary<string, string?>(Start.Info.Environment, StringComparer.OrdinalIgnoreCase);
+            lock (_gate) return LayerEnvironment.Of(Start.Info);
         }
     }
 

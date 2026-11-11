@@ -16,7 +16,8 @@ internal sealed class AcpOpening(
     Func<JsonElement, CancellationToken, bool, Task> setPosture,
     Action<string?> opened,
     Action<string?> replaying,
-    Action<string> told)
+    Action<string> told,
+    Func<ConnectorPlan?, IReadOnlyList<ServerEntry>> own)
 {
     /// <summary>
     /// A new session: the handshake, a session on the tree, and the posture — everything before the first prompt, done once.
@@ -24,7 +25,7 @@ internal sealed class AcpOpening(
     public async Task OpenAsync(string cwd, CancellationToken ct, ConnectorPlan? plan)
     {
         await handshake(ct).ConfigureAwait(false);
-        var offered = AcpProtocol.Offer(plan);
+        var offered = AcpProtocol.Offer(plan, own(plan));
 
         // The rules composed for this session ride here when the adapter takes them —
         // and a session given none sends no rules.
@@ -88,7 +89,7 @@ internal sealed class AcpOpening(
         var method = AcpProtocol.ResumeMethod(initialized)
             ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
 
-        var offered = AcpProtocol.Offer(plan);
+        var offered = AcpProtocol.Offer(plan, own(plan));
         var openMeta = AcpProtocol.OpenMeta(meta, offered);
         object parameters = openMeta is null
             ? new { sessionId = conversation, cwd, mcpServers = offered }

@@ -28,10 +28,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     private readonly HelpProposalFacts _facts = new(context);
 
-    // Ask Daoris's conversation, one per workspace: the one running in the press's workspace, carried on, or a new one in its room.
-    // Answered once the conversation is placed, with `starting`, its agent spawned after, off the request, since on a loaded
-    // machine the room's look alone took 24.9 s and the page stops waiting at 30. `workspace` is read at the press and carried to
-    // the record, so a window that changes workspace while it starts moves nothing; a name this machine does not hold is refused.
+    // Ask Daoris's conversation, one per workspace, carried on or new in its room; answered once placed, with `starting`, its agent spawned
+    // off the request, since the room's look alone can near the page's 30 s wait. A workspace this machine lacks is refused.
     [DriverRoute("START_HELP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("START_HELP", None = OwnerNone.OwnConversation)]
     [GroundRepository("START_HELP", "workspace")]
@@ -63,13 +61,18 @@ public sealed class HelpRoutes(DriverContext context)
 
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
             var spelled = HeldWorkspace(snapshot, circle);
+            var focus = HelpFocusRoutes.Asked(press.Focus, snapshot.Repositories);
             var held = _loop.Processes.Running;
             var runningHere = snapshot.Active.Where(session =>
                 session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
                 && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)).ToList();
             if (runningHere.FirstOrDefault(session => !chat.Finishing(session.Id)) is { } running)
             {
-                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
+                return new
+                {
+                    SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle,
+                    Focus = HelpFocusRoutes.Started(_loop.Home, running.Id, circle, null),
+                };
             }
 
             // one the person finished is winding up, and the person's words are a new conversation's. It is waited for
@@ -92,9 +95,10 @@ public sealed class HelpRoutes(DriverContext context)
             if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
 
             starting.Placed(circle, id);
+            var started = HelpFocusRoutes.Started(_loop.Home, id, circle, focus);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle };
+            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle, Focus = started };
         }
         finally
         {
@@ -197,8 +201,6 @@ public sealed class HelpRoutes(DriverContext context)
                 continue;
             }
 
-            // A clear's card holds the units it listed, once, so its Apply sends exactly those.
-            HelpProposals.Drawn(_loop.Home, proposal, plan);
             shown.Add(Card(proposal, plan).Card);
         }
 
@@ -225,33 +227,6 @@ public sealed class HelpRoutes(DriverContext context)
         new
         {
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-            // What a plugin runs, as its manifest writes it, for the card to show before Apply.
-            Plugin = plan.Plugin is { } plugin
-                ? new
-                {
-                    plugin.Id, plugin.Name, plugin.Version, plugin.Command, plugin.Points,
-                    Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
-                    Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
-                    plugin.Copied, plugin.Problem,
-                    // An offer's requirement lines, and an update's changes.
-                    plugin.Needs, plugin.Replaced,
-                    Changes = PluginsRoutes.ChangesOf(plugin.Changes),
-                }
-                : null,
-            // An approval of what a plugin's server offers Ask Daoris, or its withdrawal: every tool, reads and
-            // writes apart, and the writes it accepts.
-            Grant = plan.Grant is { } grant
-                ? new { grant.Plugin, grant.Name, grant.Server, grant.Reads, grant.Writes, grant.Accepted, grant.Withdraw }
-                : null,
-            // A place's supervisor rules before and after, as the rules' own fields for the page to word.
-            Rules = plan.Rules is { } rules
-                ? new { rules.Place, Before = RuleShown(rules.Before), After = RuleShown(rules.After) }
-                : null,
-            // A supervisor's kinds, acts, holder and window after the change and before it, for the page to word.
-            Supervisor = plan.Supervisor is { } supervisor
-                ? new { supervisor.Id, supervisor.Names, Scope = new { supervisor.Scope.Kind, supervisor.Scope.Id }, Hold = HoldShown(supervisor.Hold), Before = supervisor.Before is { } before ? HoldShown(before) : null }
-                : null,
-            Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
             // A place's quick set-up: the ask, its workspace, each change once, and the plan's digest, so a plan that moved
@@ -267,25 +242,6 @@ public sealed class HelpRoutes(DriverContext context)
                 }
                 : null,
         };
-
-    private static object HoldShown(RoleHold hold) => new { hold.Kind, hold.Acts, hold.Holder, hold.Window, hold.Decides };
-
-    private static object[] RuleShown(IReadOnlyList<SupervisorRule> rules) =>
-        [.. rules.Select(rule => new { rule.Count, rule.At, rule.Do, rule.UpTo, rule.Roles })];
-
-    /// <summary>
-    /// What a bring-up-to-date card shows, the page's <c>HelpSyncShown</c>: whether the person has looked, every
-    /// row the look listed in the terminal's words, and what the rows do not say — each repository not fetched,
-    /// with git's reason, when it last heard from origin and how origin is reached, and the repositories left apart.
-    /// Null for every other kind.
-    /// </summary>
-    public static object? SyncShown(HelpSyncPlan? sync) => sync is null ? null : new
-    {
-        sync.Looked,
-        Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray(),
-        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach, line.Host }).ToArray(),
-        Apart = sync.Besides.Apart.ToArray(),
-    };
 
     // The person's Apply: made through the door the screen's own route uses, judged again
     // first, since the machine may have moved after the card's drawing. The result goes back into
@@ -304,7 +260,7 @@ public sealed class HelpRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        if (proposal.State != "proposed") return AppliedAgain(proposal);
         // The card's revision: without one there is no card this Apply stands for.
         var shown = press.Revision;
         if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
@@ -314,7 +270,7 @@ public sealed class HelpRoutes(DriverContext context)
             ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
         // The winner may have settled it between the read above and the claim.
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        if (proposal.State != "proposed") return AppliedAgain(proposal);
         // the editor's press on a draft card names each change it took into the draft and each it left.
         proposal = proposal with { Taken = press.Taken, Left = press.Left };
 
@@ -325,7 +281,7 @@ public sealed class HelpRoutes(DriverContext context)
         if (plan.Refusal is null && Card(proposal, plan).Revision != shown)
         {
             var changed = $"The plan for `#{id}` changed since this card was drawn, so nothing was applied. It now reads: {plan.Describe}. Look at the new card and press Apply on it.";
-            return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
+            return new { Message = changed, Applied = false, Go = (object?)null, Stands = true, Changed = true };
         }
 
         // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word.
@@ -351,6 +307,13 @@ public sealed class HelpRoutes(DriverContext context)
         return ApplyAnswer(proposal, applied);
     }
 
+    /// <summary>A press on a card already settled: answered with what its first press came to, and logged with its reason.</summary>
+    private object AppliedAgain(HelpProposal proposal)
+    {
+        _loop.Log?.Write("info", HelpAppliedAgain.Event, HelpAppliedAgain.Line(proposal));
+        return ApplyAnswer(proposal, HelpAppliedAgain.Answer(_loop.Home, proposal));
+    }
+
     /// <summary>What an Apply's plan acts on (<see cref="HelpProposals.Owned"/>), as the owner's mark names it.</summary>
     public static IReadOnlyList<OwnerNamed> Owned(HelpOwned owned) =>
     [
@@ -373,12 +336,7 @@ public sealed class HelpRoutes(DriverContext context)
         // the driver judged filled, or New conversation with the repository and words it judged, or an Agents
         // place's Setup with its set-up open on the ask; each null on any other go.
         Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
-        // The action an update or a pin started, so the Agents screen follows its console and its end. A default
-        // is a file edit that starts nothing, so there is nothing to follow.
-        HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
-            ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
-            : null,
-        // The card stands for another press: a sync card's look settles nothing, so the page logs no settlement.
+        // The card stands for another press: a draft's change opened in the editor settles nothing, so the page logs no settlement.
         applied.Stands,
     };
 
@@ -478,6 +436,10 @@ public sealed class HelpRoutes(DriverContext context)
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
+        // `about`, a place's conversations, is never asked beside a workspace.
+        var about = HelpFocusRoutes.Place(press.About);
+        if (about is not null && !string.IsNullOrWhiteSpace(press.Workspace)) throw new DriverException("both: a list is one workspace's or one place's, not both.");
+
         // `help list` in the verb's words, `--json` its own answer.
         if (press.Said)
         {
@@ -488,6 +450,7 @@ public sealed class HelpRoutes(DriverContext context)
                 Limit = press.Limit is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
                 Workspace = press.Workspace,
                 All = press.All,
+                About = about?.Said,
                 Json = press.Json,
             };
             return await SessionsVerbs.HelpSaidAsync(_context, listed, cancellationToken).ConfigureAwait(false);
@@ -499,7 +462,7 @@ public sealed class HelpRoutes(DriverContext context)
             records, _loop.Events, Resumes, press.Q,
             (int)Math.Clamp(press.Offset ?? 0, 0, int.MaxValue),
             (int)Math.Clamp(press.Limit ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit),
-            press.Workspace);
+            press.Workspace, about);
         return HistoryAnswer(listing);
     }
 
@@ -511,9 +474,10 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            // the mode it ran under, its record's, after whether it runs, then the workspace it started in.
+            // the mode it ran under, its record's, after whether it runs, then the workspace it started in, then its focus.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
-            row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
+            Focus = row.Focus.Wire(), FocusNext = row.FocusNext?.Wire(),
+            Marks = row.Marks.Select(mark => mark.Wire()).ToArray(), row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),
         listing.Cut,
         listing.Total,
@@ -611,9 +575,10 @@ public sealed class HelpRoutes(DriverContext context)
             if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
             starting.Placed(circle, placedId);
+            var focus = await HelpFocusRoutes.CarriedAsync(_loop, id, placedId, circle, cancellationToken).ConfigureAwait(false);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = placedId, place.Message, From = id, Workspace = circle };
+            return new { SessionId = placedId, place.Message, From = id, Workspace = circle, Focus = focus };
         }
         finally
         {

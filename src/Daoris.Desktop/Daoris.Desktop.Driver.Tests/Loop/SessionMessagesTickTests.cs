@@ -53,7 +53,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = command ?? ["node", Agent(), Log, mode] },
@@ -134,7 +134,6 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
-        // Said whole on failure: the record before the look, the plan, what the look did, and the record after it.
         var seen = $"before: {before}\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
                    + $"\nlook: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nquest: {service.Status("q1")}";
         Assert.True(service.SessionCount == 1, seen);
@@ -453,7 +452,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -503,7 +502,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
@@ -703,7 +702,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Path.Combine(_home, "taken.flag"), go] },
         };
@@ -983,7 +982,6 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             const url = process.env.DAORIS_SERVICE_URL;
             const session = process.env.DAORIS_SESSION_ID;
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
-            // TREEGONE1: each line names the folder the harness runs in, so a test sees where a resume went on.
             const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session, cwd: process.cwd() }) + '\n');
             const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -1033,7 +1031,6 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                   await respond({ action: 'take' });
                   say('Which port should it listen on?');
                 } else if (mode === 'asks') {
-                  // SAYHELD1: it takes its quest and asks another repository, so it ends waiting on the answer (D79).
                   await respond({ action: 'take' });
                   await respond({ action: 'wait', on: 'q2' });
                   say('Asked backend for the contract.');

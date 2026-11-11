@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { type AskOpening } from '../../help/ask/askTypes';
+import type { Place } from '../../help/focus';
 import { useFrameClosings } from '../../work/frame/closings';
 import { type ListMode } from '../../work/frame/layout';
 import { usePlacements } from '../../work/frame/placements';
@@ -20,6 +21,12 @@ export function useFrameDoors() {
   // Its doors open it, never close it — `F1`, `Ctrl+Alt+I`, the palette, Quick Ask's *Open in the side
   // bar*; the region's own close and toggle are what close it, on every view alike.
   const openHelp = useCallback(() => setHelpFocus((was) => was + 1), []);
+  // The palette's *Change focus…*: Ask Daoris opens with its picker open, one number per ask.
+  const [focusAsk, setFocusAsk] = useState(0);
+  const changeFocus = useCallback(() => {
+    setFocusAsk((was) => was + 1);
+    setHelpFocus((was) => was + 1);
+  }, []);
   const onSessions = useRef(false);
   // A question handed to Ask Daoris gets an id no earlier one had, whichever door handed it: each is let
   // go once sent, so an id counted from the last one held would repeat.
@@ -36,16 +43,16 @@ export function useFrameDoors() {
     setHelpOpening({ text: message, id: openings.current });
     openHelp();
   };
-  /** Quick Ask, with a question it sends, or with a draft in its box for the person to finish (*Ask Daoris about it*). */
-  const askQuickly = (question?: string, draft = false) => {
+  /** Quick Ask, with a question it sends, or a draft in its box for the person to finish, and the focus its door chose. */
+  const askQuickly = (question?: string, draft = false, focus?: Place) => {
     if (question) {
       openings.current += 1;
-      setQuickOpening({ text: question, id: openings.current, ...(draft ? { draft } : {}) });
+      setQuickOpening({ text: question, id: openings.current, ...(draft ? { draft } : {}), ...(focus ? { focus } : {}) });
     }
     // 🔴 A beat after the palette closes, never with it: closing, the palette hands focus back to where
     // it came from, which would pull it out of a box opened in the same step, and the box's trap would catch it on its
     // frame instead of its message box.
     window.setTimeout(() => setQuick(true), 0);
   };
-  return { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening };
+  return { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, focusAsk, changeFocus, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening };
 }

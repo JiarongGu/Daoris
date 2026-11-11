@@ -18,7 +18,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
 
     /// <summary>The choices every case starts from: something of each, so an edit meets a rule already set.</summary>
     private static DriverConfig Before() =>
-        DriverConfig.Empty.WithDrivable("engine", true).WithDrivable("game", true).WithHold("game", true).WithTrees("docs", true)
+        DriverConfig.Empty.WithDrivable("engine", true).WithDrivable("game", true).WithHold("game", true)
             .WithLine("engine", "main").WithWorkspaceLine("aurora", "main")
             .WithReadAcross("engine", true).WithWorkspaceReadAcross("aurora", false).WithWriteAcross("game", "tools", true)
             .WithStanding("engine", "the old words", Moment).WithLanguage("engine", "en").WithWorkspaceLanguage("aurora", "zh")
@@ -92,12 +92,11 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("undrive game")]
     [InlineData("hold engine")]
     [InlineData("resume game")]
-    [InlineData("trees engine on")]
-    [InlineData("trees docs off")]
     [InlineData("notify off")]
     [InlineData("cap 4")]
     [InlineData("cooloff 30")]
     [InlineData("quiet 25")]
+    [InlineData("terminal ask")]
     [InlineData("line engine develop")]
     [InlineData("line --workspace aurora --clear")]
     [InlineData("across engine read off")]
@@ -120,6 +119,22 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("commits --workspace aurora --mode at-end")]
     public async Task A_standing_choice_says_and_writes_the_same_alone_and_through_its_route(string words) =>
         await BothWaysAsync(Module(), words);
+
+    /// <summary>A terminal's act is granted only through its route, whose press the person confirms; alone, with no card to show, it is refused.</summary>
+    [Fact]
+    public async Task A_terminal_s_act_is_set_through_its_route_and_refused_alone()
+    {
+        Before().Save(DriverConfigPath);
+        var text = File.ReadAllText(DriverConfigPath);
+
+        var alone = await AloneAsync(text, ["terminal", "act"]);
+        var route = await RouteAsync(Module(), text, ["terminal", "act"]);
+
+        Assert.Equal((1, TerminalTiers.Ask), (alone.Exit, DriverConfig.Parse(alone.File!).Terminal));
+        Assert.Contains(TerminalVerb.AloneAct, alone.Error);
+        Assert.Equal((0, TerminalTiers.Act), (route.Exit, DriverConfig.Parse(route.File!).Terminal));
+        Assert.StartsWith("daoris: a press from a terminal on this machine that no Daoris session owns runs at once as yours", route.Out);
+    }
 
     /// <summary>
     /// *Try again* both ways: from the same verdicts the operation marks a parked quest at its failures, releases a

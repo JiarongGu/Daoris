@@ -45,6 +45,16 @@ public sealed class WorkflowNodeCommandTests : IDisposable
         Assert.Contains("\n  workflow skip <run> <node> \"…\"\n  workflow stop <run> <node> [\"…\"]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 
+    /// <summary>A run's Accept has a terminal verb: the node door's accept act, named in the usage.</summary>
+    [Fact]
+    public void A_runs_Accept_is_the_node_doors_accept_act_and_the_usage_names_it()
+    {
+        Assert.Equal(new WorkflowNodeAsk(NodeWordActs.Accept, "q7", "review", null), WorkflowNodeCommand.Read(["accept", "q7", "review"], out var problem));
+        Assert.Null(problem);
+        Assert.True(WorkflowNodeCommand.Asks(["accept", "q7", "review"]));
+        Assert.Contains("workflow accept <run> <node>", WorkflowNodeCommand.Usage);
+    }
+
     /// <summary>Alone, the word is kept on the run's record by the door's own path, its sentence printed; a refusal is its sentence and exit 1.</summary>
     [Fact]
     public async Task Alone_the_word_is_kept_on_the_runs_record_and_a_refusal_is_said()

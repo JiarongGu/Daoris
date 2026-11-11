@@ -21,7 +21,6 @@ public sealed class StartWithTests : IDisposable
 
     private static Task<ChatStart> Opened(CancellationToken _) => Task.FromResult(new ChatStart("c9", "Conversation `c9` opened in `engine`."));
 
-    /// <summary>The words are the conversation's first message, with the files as said, and no preface.</summary>
     [Fact]
     public async Task The_words_and_files_are_the_first_message()
     {
@@ -94,18 +93,14 @@ public sealed class StartWithTests : IDisposable
         Assert.Equal(0, said);
     }
 
-    /// <summary>The tree choice is three-way: absent is the driver's own (the repository's standing choice), true and false are said.</summary>
+    /// <summary>The tree choice is three-way: absent is the repository's workflow's (its isolate step), true and false are said.</summary>
     [Theory]
     [InlineData(null, true, true)]
     [InlineData(null, false, false)]
     [InlineData(true, false, true)]
     [InlineData(false, true, false)]
-    public void The_tree_choice_is_absent_true_or_false(bool? asked, bool standing, bool expected)
-    {
-        var config = standing ? DriverConfig.Empty.WithTrees("engine", true) : DriverConfig.Empty;
-
-        Assert.Equal(expected, ChatStarts.Isolates(asked, config, "engine"));
-    }
+    public void The_tree_choice_is_absent_true_or_false(bool? asked, bool apart, bool expected) =>
+        Assert.Equal(expected, ChatStarts.Isolates(asked, apart ? IsolateStep.Trees : null));
 
     private static StartedFrom Said(string session) => new(session, true, null, $"conversation `{session}` starts.");
 

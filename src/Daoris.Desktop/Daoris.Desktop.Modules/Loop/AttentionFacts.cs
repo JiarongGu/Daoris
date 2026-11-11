@@ -39,6 +39,9 @@ public sealed record AttentionFacts
     /// <summary>Each session's place in Sessions' list, as the groups slice holds its rows.</summary>
     public IReadOnlyList<JsonObject> Groups { get; init; } = [];
 
+    /// <summary>The quests of the runs the person stopped, from the node records (<c>StoppedRuns</c>): their sessions are ready for no one.</summary>
+    public IReadOnlySet<string> StoppedQuests { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>The second opinions that wait on the person, as <c>OPINION_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Opinions { get; init; } = [];
 

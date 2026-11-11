@@ -101,7 +101,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("`settings_language`", granted);
         Assert.DoesNotContain("`settings_cap`", granted);
         Assert.Contains("no Apply", granted);
-        Assert.Contains("`setting_propose`", granted);
+        Assert.Contains("Every setting is pressed, never proposed", granted);
         Assert.DoesNotContain("housekeeping_", granted);
         Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language], Rules = HelpRuleFacts.Read(_home) }), granted);
 
@@ -155,24 +155,25 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__knowledge_search", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
         // It proposes, and the person applies — never a rule proposal, whose narrowing applies itself.
-        Assert.Contains("mcp__daoris-knowledge__setting_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__setting_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
         // The four further kinds, each a card the person applies.
-        Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__delete_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__agent_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__agent_settings_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
-        // Adding a landed plugin, or switching one, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
+        // Adding a landed plugin, or switching one, is pressed, never proposed.
+        Assert.DoesNotContain("mcp__daoris-knowledge__plugin_propose", allowed);
         // A quest's yes and a landed branch's hand-off are the person's own presses, never a card.
         Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
         // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
-        // Archiving or unarchiving sessions, a card the person applies like the rest.
-        Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__repository_propose", allowed);
+        // Archiving or unarchiving sessions, and pausing work, are pressed, never proposed.
+        Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
-        Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
+        Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
@@ -198,8 +199,8 @@ public sealed class HelpRoomTests : IDisposable
 
     /// <summary>
     /// With a checkout it may read, what it is handed adds the connector's <c>checkout_read</c>, which
-    /// the driver judges at every call, and no <c>Read</c> rule or git prefix on any checkout, so no command at all and nothing that
-    /// writes. The refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
+    /// the driver judges at every call, and no <c>Read</c> rule or git prefix on any checkout, so no command but Daoris's own verb and
+    /// nothing that writes. The refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
     /// </summary>
     [Fact]
     public void Its_rules_read_the_checkouts_through_the_tool_and_run_no_command()
@@ -210,7 +211,8 @@ public sealed class HelpRoomTests : IDisposable
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), $"mcp__{KnowledgeConnector.ServerName}__checkout_read"], rules.Allow);
         Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal) || rule.Contains("console-ui", StringComparison.Ordinal));
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
+            || rule.Contains("console-ui", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -229,7 +231,7 @@ public sealed class HelpRoomTests : IDisposable
         // A write the person has not accepted is asked, which its asking mode refuses.
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
@@ -270,8 +272,7 @@ public sealed class HelpRoomTests : IDisposable
     {
         var config = DriverConfig.Empty with
         {
-            Drivable = ["console-ui", "reports-db"], Holds = ["reports-db"], Trees = ["console-ui"],
-            Cap = 4, Actors = StaffedRoles.On("claude-code", "claude-code-acp", "claude-code-acp"),
+            Drivable = ["console-ui", "reports-db"], Holds = ["reports-db"],            Cap = 4, Actors = StaffedRoles.On("claude-code", "claude-code-acp", "claude-code-acp"),
         };
         var snapshot = new Snapshot(
             [],
@@ -283,7 +284,7 @@ public sealed class HelpRoomTests : IDisposable
             [
                 new SessionView("s1", "console-ui", "awaiting-person"),
                 new SessionView("s2", "reports-db", "working"),
-            ]);
+            ]).Apart("console-ui");
         IReadOnlyList<RepositoryLine> lines =
         [
             new("console-ui", "work", "feature/app", LineSource.Repository),

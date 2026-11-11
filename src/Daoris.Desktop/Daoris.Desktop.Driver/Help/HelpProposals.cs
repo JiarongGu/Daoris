@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it.</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `ask`, `go`, `workflow` or `setup`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris place`, `daoris settings`, `daoris quest` or `daoris git` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
@@ -16,48 +16,8 @@ public sealed record HelpProposal(
     string Id, string Kind, string Door, string? Target, string? Workspace, string? Value, string? Sentence,
     string Why, string? Session, string State)
 {
-    /// <summary>
-    /// The repository whose checkout holds a plugin to add, or null for a whole path the person gave.
-    /// </summary>
+    /// <summary>The repository a go starts a conversation in; null for every other.</summary>
     public string? Repository { get; init; }
-
-    // The session kind's.
-
-    /// <summary>
-    /// The <c>helper</c> and <c>pass</c> doors' fields: the agent, the ask it asks again after or the answer to pass, and
-    /// that the answer is the person's; null for every other door and kind.
-    /// </summary>
-    public HelperProposalFields? Helper { get; init; }
-
-    // The account kind's.
-
-    /// <summary>An account's name, for an account's settings.</summary>
-    public string? Account { get; init; }
-
-    /// <summary>The model an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Model { get; init; }
-
-    /// <summary>The effort an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Effort { get; init; }
-
-    // The agent kind's: the <c>use</c> door's fields, as <see cref="HelpAgentProposals.Read"/> reads them from a file.
-
-    /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
-    public UseChange? AccountUse { get; init; }
-
-    /// <summary>
-    /// The <c>use</c> door's curve where the file's breaks a rule: the twins' sentence, which its card refuses with;
-    /// null where it names no curve or a curve that reads.
-    /// </summary>
-    public string? AccountCurveRefused { get; init; }
-
-    /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door.</summary>
-    public AccountOrder? AccountOrder { get; init; }
-
-    /// <summary>The <c>ready</c> door's account: an id, or <c>own</c> for the tool's own sign-in; null for any other door.</summary>
-    public string? ReadyAccount { get; init; }
-
-    // The ask kind's.
 
     /// <summary>
     /// The review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
@@ -76,14 +36,6 @@ public sealed record HelpProposal(
     /// <summary>A favorite's title, for a browser proposal that keeps one, or null for the page's host.</summary>
     public string? Title { get; init; }
 
-    // The clear kind's.
-
-    /// <summary>
-    /// The units a clear proposal's card listed, held in its file from its first draw: what its Apply sends.
-    /// Null before the card listed anything.
-    /// </summary>
-    public IReadOnlyList<HistoryUnitName>? Units { get; init; }
-
     // The go kind's.
 
     /// <summary>A go's Settings domain, or null.</summary>
@@ -95,40 +47,10 @@ public sealed record HelpProposal(
     /// <summary>A go's one quest or ask or session, as the service's box wrote it, or null.</summary>
     public string? Item { get; init; }
 
-    // The plugin kind's.
-
-    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path.</summary>
-    public string? Folder { get; init; }
-
-    /// <summary>One of the install's own plugins to add, by its id — never a path on this machine.</summary>
-    public string? Offer { get; init; }
-
-    /// <summary>
-    /// The server an <c>approve</c> or a <c>withdraw</c> names, as the plugin declares it for Ask Daoris; null where
-    /// the plugin offers it one only.
-    /// </summary>
-    public string? Server { get; init; }
-
-    /// <summary>The writes an <c>approve</c> accepts, each by name; null or empty accepts none, its reads only.</summary>
-    public IReadOnlyList<string>? Writes { get; init; }
-
-    // The role kind's.
-
-    /// <summary>A role proposal's own <c>press</c>: its names, work, scope, choices and the revision read; null for every other kind.</summary>
-    public System.Text.Json.JsonElement? RolePress { get; init; }
-
     // The setup kind's.
 
     /// <summary>The place's quick set-up a <c>place</c> proposal asks, from the file's <c>place</c>; null for every other door and kind.</summary>
     public PlaceAsk? Place { get; init; }
-
-    // The sync kind's.
-
-    /// <summary>The rows a sync proposal's look listed, kept in its file; null before the person looked.</summary>
-    public IReadOnlyList<HelpSyncRow>? Listed { get; init; }
-
-    /// <summary>What a sync proposal's look kept beside its rows; nothing before the person looked.</summary>
-    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
 
     // The workflow kind's.
 
@@ -186,93 +108,35 @@ public sealed record HelpMachineFacts(
     // Every kind's.
 
     /// <summary>
-    /// The workspace the conversation that proposed it is bound to, read from its record
-    /// (<see cref="HelpCircle.OfRecord"/>): a proposal naming another workspace, a repository of another, or every workspace at once
-    /// is refused before its kind judges it (<see cref="HelpProposalScope"/>). Null for <c>default</c>'s room, the whole machine.
+    /// The workspace the conversation that proposed it belongs to, read from its record (<see cref="HelpCircle.OfRecord"/>): the
+    /// focus of what a list shows first, no limit on what a proposal names. Null for <c>default</c>'s room, the whole machine.
     /// </summary>
     public string? Circle { get; init; }
-
-    /// <summary>Each door as the Agents screen's roster reads it, for an agent's update or pin and an account's settings.</summary>
-    public IReadOnlyList<HelpDoorFacts> Doors { get; init; } = [];
 
     /// <summary>The git identities on this machine (labels and hosts, never a key or a token), for a <c>git-use</c> door's judge.</summary>
     public IReadOnlyList<HelpGitIdentity> GitIdentities { get; init; } = [];
 
-    /// <summary>This machine's plugins, for a landing rule that names one and a plugin proposal.</summary>
+    /// <summary>This machine's plugins, for a landing rule that names one and a plugin's press.</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
-
-    // The agent kind's: the machine's wiring a proposal is judged against, <c>harnesses.json</c> as the screen reads it.
-
-    /// <summary>The lists, defaults and settings, for a default's scope and a use's; null where nothing is read.</summary>
-    public HarnessSettings? Wiring { get; init; }
-
-    /// <summary>The accounts cooling now, for a <c>ready</c>'s judge; none where nothing is read.</summary>
-    public IReadOnlyList<CoolingEntry> Cooling { get; init; } = [];
-
-    // The browser kind's.
-
-    /// <summary>What Daoris's browser's files hold, read by the desktop for a browser proposal; null where none is read.</summary>
-    public HelpBrowserFacts? Browser { get; init; }
-
-    // The clear kind's.
-
-    /// <summary>
-    /// What this machine keeps of each quest, ask and workspace a clear proposal names, as <c>HISTORY_PLAN</c> answers it
-    /// (<see cref="HistoryClearing.PlanAsync"/>): what a clear proposal is judged by. Read only for one.
-    /// </summary>
-    public IReadOnlyList<HistoryPlan> History { get; init; } = [];
-
-    // The delete kind's.
-
-    /// <summary>The quests, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
-    public IReadOnlyList<HelpQuestFacts> Quests { get; init; } = [];
-
-    /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
-    public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
-
-    /// <summary>
-    /// The sessions the ledger would delete whose tree or landing this machine still holds: the
-    /// machine's half, as <see cref="SessionDeletion.Kept"/> reads it. Read only for a session's delete.
-    /// </summary>
-    public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
-
-    /// <summary>
-    /// The ledger's judgement of deleting each session a delete names, by id: the record's half, its
-    /// refusal in its own sentence, as <see cref="ServiceClient.JudgeSessionDeleteAsync"/> answers it. Read only for one.
-    /// </summary>
-    public IReadOnlyDictionary<string, SessionDeleteAnswer> SessionDeletes { get; init; } = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
 
     // The go kind's.
 
+    /// <summary>The quests, closed ones included, which a go naming one is judged against; read only for one.</summary>
+    public IReadOnlyList<HelpQuestFacts> Quests { get; init; } = [];
+
+    /// <summary>The asks, closed ones included, which a go naming one is judged against; read only for one.</summary>
+    public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
+
     /// <summary>
     /// This machine's own session records, closed ones included, as the Sessions list reads them: what a go naming a session
-    /// is judged against, and a session proposal and a session's delete; read only for those.
+    /// is judged against; read only for one.
     /// </summary>
     public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
 
-    // The pause kind's.
-
-    /// <summary>
-    /// The work of each ask and quest a pause proposal names, with what a pause would do with each piece:
-    /// <see cref="WorkPausing.PlanAsync"/>'s answer for the id read as an ask's and as a quest's, each that this machine has.
-    /// What a pause proposal is judged by, beside the pauses <c>driver.json</c> keeps. Read only for one.
-    /// </summary>
-    public IReadOnlyList<WorkPlan> Work { get; init; } = [];
-
-    /// <summary>
-    /// The workspaces whose quests this machine syncs with a remote, every one where the environment names the remote
-    /// whole: where another machine may still take an open quest a pause holds here, as the page's
-    /// <c>wiredFor</c> reads the wiring. Read only for a pause proposal.
-    /// </summary>
-    public IReadOnlyCollection<string> Wired { get; init; } = [];
-
-    // The plugin kind's.
+    // The plugin views'.
 
     /// <summary>The Daoris home, which a plugin is never added from; null where none is named.</summary>
     public string? Home { get; init; }
-
-    /// <summary>Each registered repository's checkout on this machine, or null where it has none.</summary>
-    public IReadOnlyDictionary<string, string?> Checkouts { get; init; } = new Dictionary<string, string?>();
 
     /// <summary>The harness names this build carries, which a plugin may not declare.</summary>
     public IReadOnlyCollection<string> Reserved { get; init; } = [];
@@ -283,15 +147,7 @@ public sealed record HelpMachineFacts(
     /// <summary>The install's offers, as the Plugins place lists them under Daoris's own plugins.</summary>
     public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
 
-    // The session kind's.
-
-    /// <summary>
-    /// Where Sessions' list places each of this machine's sessions, with its archive mark: what a
-    /// session proposal is judged by, as <see cref="SessionArchive"/> judges an archive. Read only for one.
-    /// </summary>
-    public IReadOnlyList<SessionGrouping> Placed { get; init; } = [];
-
-    // The setting kind's.
+    // The rule views'.
 
     /// <summary>
     /// The quests the loop's last tick parked by their failed sessions, which a retry must name: the verdict
@@ -307,7 +163,7 @@ public sealed record HelpMachineFacts(
 
     /// <summary>
     /// Each registered repository with its workspace and its checkout here, or none: what a <c>review</c>'s
-    /// procedure is looked for in, the one repository it names or each of the workspace's. Empty where not asked.
+    /// procedure is looked for in, the one repository it names or each of the workspace's, and where a go or a workflow finds a repository's workspace. Empty where not asked.
     /// </summary>
     public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
 
@@ -347,39 +203,6 @@ public sealed record HelpMachineFacts(
     public IReadOnlyDictionary<string, WorkflowDraftTold> Drafts { get; init; } = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
 }
 
-/// <summary>One door as the Agents screen reads it: what its Update does, whether it pins, whose accounts it runs as.</summary>
-/// <param name="Name">The harness, as `daoris agent` spells it.</param>
-public sealed record HelpDoorFacts(string Name)
-{
-    public bool Present { get; init; }
-
-    /// <summary>The roster's `updates`: `pin`, `tool`, or null for none.</summary>
-    public string? Updates { get; init; }
-
-    /// <summary>This machine's pin for it, or null.</summary>
-    public string? Pinned { get; init; }
-
-    /// <summary>The package a pin installs from, or null.</summary>
-    public string? Package { get; init; }
-
-    /// <summary>The maker's release channel a pin installs from, or null.</summary>
-    public string? Channel { get; init; }
-
-    public string? Product { get; init; }
-
-    /// <summary>Whose accounts it runs as; null is itself.</summary>
-    public string? Owner { get; init; }
-
-    /// <summary>The owner's accounts on this machine, by name.</summary>
-    public IReadOnlyList<string> Accounts { get; init; } = [];
-
-    /// <summary>Whether Daoris knows the tool's own settings file, and so offers its model and effort.</summary>
-    public bool SettingsKnown { get; init; }
-
-    /// <summary>The name its accounts live under.</summary>
-    public string AccountsOf => Owner is { Length: > 0 } owner ? owner : Name;
-}
-
 /// <summary>
 /// A proposal judged: what it changes, the terminal command that does the same, and the edit to
 /// make — or the route's refusal, and nothing to make.
@@ -389,73 +212,15 @@ public sealed record HelpDoorFacts(string Name)
 /// <remarks>What only one kind's card or Apply needs is read by that kind in its file; the members stay in this one declaration, under a comment per kind.</remarks>
 public sealed record HelpPlan(string? Refusal, string Describe, string Terminal, Func<DriverConfig, DriverConfig>? Apply)
 {
-    // The setting kind's.
-
-    /// <summary>A git identity a setting proposal points a repository's remote or a workspace's host at, applied through the pointer's own write; null for every other plan.</summary>
-    public HelpGitUse? GitUse { get; init; }
-
-    // The clear kind's.
-
-    /// <summary>What a clear proposal's Apply sends; null where the card changes nothing, and for every other kind.</summary>
-    public HelpClearPlan? Clear { get; init; }
-
     // The go kind's.
 
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The pause kind's.
-
-    /// <summary>
-    /// The pause a pause proposal's Apply makes or lifts: its scope and id as this machine spells them. Null where the
-    /// card changes nothing, and for every other kind.
-    /// </summary>
-    public PausedBy? Pause { get; init; }
-
-    // The plugin kind's.
-
-    /// <summary>What a plugin proposal's plugin runs, as its manifest writes it; null for every other kind.</summary>
-    public HelpPluginView? Plugin { get; init; }
-
-    /// <summary>The folder a plugin is added from, resolved on this machine; null for every other plan.</summary>
-    public string? Source { get; init; }
-
-    /// <summary>What an approval or a withdrawal names, every tool; null for every other plan.</summary>
-    public HelpGrantView? Grant { get; init; }
-
-    // The repository kind's.
-
-    /// <summary>For a move the route takes: what moves, and where to; null for every other kind.</summary>
-    public HelpRepositoryMove? Move { get; init; }
-
-    // The role kind's.
-
-    /// <summary>For a role change the judge takes: the change, its choices and the revision read; null for every other kind.</summary>
-    public HelpRoleChange? Role { get; init; }
-
-    /// <summary>For the supervisor's rules at a place: the rules before and after as fields, which the page words from its catalogue; null for every other plan.</summary>
-    public HelpRulesView? Rules { get; init; }
-
-    /// <summary>For a supervisor set: its kinds, acts, holder and window as fields, which the page words from its catalogue; null for every other plan.</summary>
-    public HelpSupervisorView? Supervisor { get; init; }
-
-    // The session kind's.
-
-    /// <summary>
-    /// The sessions a session proposal's Apply archives or unarchives, or a delete's one session, as this machine's
-    /// records spell them; empty where the card changes nothing, null for every other kind.
-    /// </summary>
-    public IReadOnlyList<string>? Sessions { get; init; }
-
     // The setup kind's.
 
     /// <summary>For a <c>place</c> the plan allows: the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
     public HelpPlaceSetUp? Place { get; init; }
-
-    // The sync kind's.
-
-    /// <summary>What a sync card shows; null for every other kind.</summary>
-    public HelpSyncPlan? Sync { get; init; }
 
     // The workflow kind's.
 
@@ -471,11 +236,11 @@ public sealed record HelpApplied(bool Applied, string Told)
     /// <summary>Where a go takes the person: the page navigates there, as its starters' doors do.</summary>
     public HelpPlace? Go { get; init; }
 
-    // The sync kind's.
+    // The workflow kind's.
 
     /// <summary>
-    /// The proposal still waits for the person: a sync card's look that listed rows, which settles nothing, so
-    /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
+    /// The proposal still waits for the person: a draft's change opened in the editor, which settles nothing, so the card stays
+    /// and the page logs no settlement. False for every Apply that settles.
     /// </summary>
     public bool Stands { get; init; }
 }
@@ -486,9 +251,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// </summary>
 /// <remarks>Each kind's file declares the doors its Apply goes through as its own interface, gathered here.</remarks>
 public interface IHelpDoors :
-    IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
-    IHelpDeleteDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
-    IHelpSettingDoors, IHelpSyncDoors
+    IHelpAskDoors, IHelpConfigDoors
 {
 }
 
@@ -638,26 +401,11 @@ public static class HelpProposals
     /// <summary>The doors <paramref name="kind"/> takes, as its file spells them; none for a kind none judges. What the owner's census sweep reads.</summary>
     public static IReadOnlyList<string> DoorsOf(string kind) => HelpProposalKinds.Find(kind)?.Doors ?? [];
 
-    /// <summary>
-    /// Judge a proposal with the route's own code, against the machine as it stands: first against the workspace its conversation is
-    /// bound to (<see cref="HelpProposalScope"/>), then by its kind.
-    /// </summary>
+    /// <summary>Judge a proposal with the route's own code, against the machine as it stands, by its kind; the workspace it names is its kind's to judge.</summary>
     public static HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts) =>
         HelpProposalKinds.Find(proposal.Kind) is not { } kind
             ? new HelpPlan(Unknown(proposal.Kind), "", "", null)
-            : HelpProposalScope.Refusal(kind.Named(proposal, facts), facts) is { } outside
-                ? new HelpPlan(outside, "", "", null)
-                : kind.Plan(proposal, config, facts);
-
-    /// <summary>
-    /// A card drawn for the person: <c>HELP_PROPOSALS</c> calls this for each proposal it shows, with the plan it
-    /// showed, so a kind whose Apply sends exactly what its card listed holds that in the proposal's file. A refused plan is
-    /// never shown, and holds nothing.
-    /// </summary>
-    public static void Drawn(string home, HelpProposal proposal, HelpPlan plan)
-    {
-        if (plan.Refusal is null) HelpProposalKinds.Find(proposal.Kind)?.Drawn(home, proposal, plan);
-    }
+            : kind.Plan(proposal, config, facts);
 
     /// <summary>
     /// The person's Apply: the plan made through the door the screen's own route uses, the

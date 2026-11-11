@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BUDGET_LEFT, STRAY_AUDITED } from './namesAudit';
 import {
   type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, validate, verdict,
 } from '../../scripts/names-check.mjs';
@@ -380,8 +381,7 @@ describe('the real glossary and catalogues', () => {
     const found = check(glossary, en, zh);
     const approved: Record<string, [string, string]> = {
       'settings.domain.ai': ['AI features', 'AI 功能'],
-      // Agents left Settings for a place of its own, keeping the name the owner approved; *Agent settings*
-      // went with the domain it opened.
+      // Agents left Settings for a place of its own, keeping its approved name; *Agent settings* went with its domain.
       'nav.agents': ['Agents', '智能体'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
@@ -444,7 +444,6 @@ describe('the real glossary and catalogues', () => {
  */
   it('name the budget judgements NAME2 renamed by the shorter names that say the same', () => {
     const renamed: Record<string, [string, string]> = {
-      'help.proposal.titleSync': ['Ask Daoris proposes updates', '问道衍提议更新到最新'],
       'quests.groups.open': ['Open — waiting to be taken ({{count}})', '待接——等人接下（{{count}}）'],
       'work.intakeRunning.title': ['This intake is reading ask #{{ask}}', '受理会话正在读需求 #{{ask}}'],
       'scope.none': ['no workspace yet', '尚无工作区'],
@@ -458,16 +457,7 @@ describe('the real glossary and catalogues', () => {
 
   it('leave on the report only the budget judgements the window must make', () => {
     const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
-    expect(left).toEqual([
-      'help.setup:en', 'help.setup:zh',
-      // The chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
-      'review.act.withoutLook:en',
-      'scope.every:en', 'scope.every:zh',
-      'signin.titleNew:en', 'signin.titleNew:zh',
-      // The owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
-      'work.act.handOver:en',
-      'work.group.noCheckout:en',
-    ]);
+    expect(left).toEqual(BUDGET_LEFT);
   });
 
   /**
@@ -607,12 +597,12 @@ describe('the real glossary and catalogues', () => {
       expect(names('workflow')).toEqual([
         'Merge workflow | 合并工作流', 'Automatic merge workflow | 自动合并工作流', 'Documents workflow | 文档工作流',
         'Branch workflow | 分支工作流', 'Hosted merge workflow | 托管合并工作流', 'Integration workflow | 集成工作流',
-        'No-press integration workflow | 免按键集成工作流', 'Release workflow | 发版工作流',
+        'No-press integration workflow | 免按键集成工作流', 'Release workflow | 发版工作流', 'In-place workflow | 原处工作流',
       ]);
       expect(names('delivery')).toEqual([
         'Merge after you accept | 你采纳后合并', 'A branch to push | 留给你推送的分支', 'A pull request | 拉取请求',
         'Integrated into the line | 集成到主线', 'Merge with no review | 无需审阅即合并', 'Integrated with no press | 集成到主线，无需按键',
-        'Not driven | 未驱动',
+        'Work in place | 在原处工作', 'Not driven | 未驱动',
       ]);
       expect(names('step')).toEqual(expect.arrayContaining([
         'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已交接',
@@ -658,16 +648,7 @@ describe('the real glossary and catalogues', () => {
     const stray = check(glossary, en, zh, { all: true })
       .filter((finding) => finding.rule === 'glossary' && finding.kind === 'sentence')
       .map(({ key, language }) => `${key}:${language}`).sort();
-    expect(stray).toEqual([
-      'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
-      // 远程 here is the act's own: a git act on a git remote, which is no Daoris remote.
-      'person.route.GIT_ANSWER:zh',
-      // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
-      'projects.workspace.machines.none:zh',
-      'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
-      // A subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
-      'work.atWork.child.finished:zh',
-    ]);
+    expect(stray).toEqual(STRAY_AUDITED);
   });
 });
 

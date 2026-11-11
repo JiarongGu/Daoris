@@ -41,12 +41,35 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
                 continue;
             }
 
-            // Due first and judged idle after, so a turn ending between the two is ended by TurnChanged, and once.
+            // Due first and judged idle after, so a turn ending between the two is ended by TurnChanged, and once; its keys go at once.
             context.HelpEnding[sessionId] = true;
+            context.Processes.Delegates.Forget(sessionId);
             var idle = !wiring.Taking(sessionId);
             context.Output?.Append(sessionId, HelpSwap.Said(changed, idle));
             if (idle && context.HelpEnding.TryUpdate(sessionId, false, true)) wiring.Finish(sessionId);
         }
+    }
+
+    /// <summary>
+    /// The person chose another focus for a conversation running here: a change of focus takes its next turn as a
+    /// change of access does, since its start's room is for the focus it started under. Its agent ends at its turn's end, or now
+    /// where it is idle; a choice back to the applied focus (<paramref name="waiting"/> false) withdraws an end not yet begun.
+    /// </summary>
+    public void Refocused(string sessionId, bool waiting)
+    {
+        var context = wiring.Context;
+        if (!context.HelpModes.ContainsKey(sessionId)) return;
+        if (!waiting)
+        {
+            context.HelpEnding.TryRemove(new KeyValuePair<string, bool>(sessionId, true));
+            return;
+        }
+
+        if (context.HelpEnding.TryGetValue(sessionId, out var due) && !due) return;
+        context.HelpEnding[sessionId] = true;
+        context.Processes.Delegates.Forget(sessionId);
+        var idle = !wiring.Taking(sessionId);
+        if (idle && context.HelpEnding.TryUpdate(sessionId, false, true)) wiring.Finish(sessionId);
     }
 
     /// <summary>
@@ -85,12 +108,14 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// A conversation's run is over: what its start handed is not compared with the person's access, so nothing is pending.
-    /// Said before its end is told, so the state judged at that word reads it gone.
+    /// A conversation's run is over: what its start handed is not compared with the person's access, so nothing is pending, and its
+    /// delegate keys go with its mode, so no press is judged by a mode no longer held. Said before its end is told, so the state judged at
+    /// that word reads it gone.
     /// </summary>
     public void Forget(string sessionId)
     {
         var context = wiring.Context;
+        context.Processes.Delegates.Forget(sessionId);
         context.HelpModes.TryRemove(sessionId, out _);
         context.AccessHanded.TryRemove(sessionId, out _);
         context.HelpEnding.TryRemove(sessionId, out _);
@@ -107,7 +132,14 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
         try
         {
             var catalog = PluginCatalog.Load(context.Home, ProviderRegistry.Built().Names);
-            new HelpWired(context.Home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(context.Home, catalog), DateTimeOffset.UtcNow));
+            // The focus its room is written for, as its file holds it at this start, and where its connector starts.
+            var receipt = HelpWired.Compose(handed, catalog, HelpGrants.Read(context.Home, catalog), DateTimeOffset.UtcNow) with
+            {
+                // With none kept, the focus is its room's place, where its connector is bound.
+                Focus = new HelpFocusing(context.Home).Applied(sessionId, handed.Circle),
+                Starts = handed.Circle ?? HelpWired.All,
+            };
+            new HelpWired(context.Home).Keep(sessionId, receipt);
             WiredKept?.Invoke(sessionId);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

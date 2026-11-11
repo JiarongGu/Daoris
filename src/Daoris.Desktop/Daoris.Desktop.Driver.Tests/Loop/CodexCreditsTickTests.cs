@@ -55,9 +55,7 @@ public sealed class CodexCreditsTickTests : IDisposable
 
     private DriverConfig Config() => DriverConfig.Empty with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Actors = StaffedRoles.On("codex-acp"),
+        Drivable = ["engine"],        Actors = StaffedRoles.On("codex-acp"),
         TestBound = 1,
         PollSeconds = 1,
         // One failure would park it: the limit must hold none.

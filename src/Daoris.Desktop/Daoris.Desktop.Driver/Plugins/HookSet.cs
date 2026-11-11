@@ -76,6 +76,7 @@ public sealed class HookSet(
 
     // The plugins whose last start failed, by the kind it failed with: a failure repeated at every look is one line.
     private readonly Dictionary<string, string> _unstarted = new(StringComparer.Ordinal);
+    private readonly HandRefusals _refused = new();
 
     private readonly Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>> _start =
         start ?? ((plugin, onLine, ct) => HookChannels.StartAsync(plugin, home, onLine, ct));
@@ -235,13 +236,13 @@ public sealed class HookSet(
 
                 var id = plugin.Manifest.Id;
                 // Its wait asked again: an exit counted partway through this look holds it from this start.
-                if (WorkPlugins.Speaks(plugin) && !_work.MayStart(key, now)) continue;
+                if (_refused.Waits(key, now) || (WorkPlugins.Speaks(plugin) && !_work.MayStart(key, now))) continue;
                 var took = Stopwatch.StartNew();
                 try
                 {
                     // The place's own hand: the token of the identity serving its origin, or the refusal that leaves it unstarted.
                     var hand = hostToken is not null && _placed.PlaceOf(key) is { } place ? await hostToken(plugin, place, ct).ConfigureAwait(false) : null;
-                    if (hand?.Refusal is { } refused) throw new DriverException($"plugin `{id}`: {refused}.");
+                    if (hand?.Refusal is { } refused) throw _refused.Refused(key, now, id, refused);
                     IHookChannel channel;
                     HookProcess.HostToken.Value = hand?.Token;
                     HookProcess.Events.Value = holds && WorkEventPlugins.Declares(plugin) ? WorkEventPlugins.Join(Events, key, home) : null;
@@ -285,7 +286,7 @@ public sealed class HookSet(
                     _unstarted[key] = kind;
 
                     // A start that failed waits as an unasked exit does, so it is not tried at every look.
-                    if (WorkPlugins.Speaks(plugin) && _work.Exited(key, now) is null)
+                    if (kind != PluginEvents.Refused && WorkPlugins.Speaks(plugin) && _work.Exited(key, now) is null)
                     {
                         Waiting(lines, id, null);
                         Log.Failed(id, PluginEvents.AtStart, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop);

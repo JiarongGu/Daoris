@@ -59,8 +59,9 @@ public static class GroupsStateSlice
         ["row"] =
         [
             "session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds",
-            "deletable", "lands", "discards", "repository", "created", "updated",
+            "deletable", "lands", "discards", "waits", "repository", "created", "updated",
         ],
+        ["waits"] = ["run", "node", "why", "since"],
         ["work"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
         ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
@@ -78,6 +79,7 @@ public static class GroupsStateSlice
         ["row.holds"] = "holds",
         ["row.lands"] = "lands",
         ["row.discards"] = "discards",
+        ["row.waits"] = "waits",
         ["entry.parts"] = "part",
     };
 
@@ -136,7 +138,10 @@ public static class GroupsStateSlice
                 service, config, DriverContext.UnadoptedOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
                 turnEnded: chat is null ? null : chat.TurnEnded)
             .ConfigureAwait(false);
-        look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions() };
+        look = look with
+        {
+            Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions(), RunWaits = loop.PersonWaits,
+        };
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);

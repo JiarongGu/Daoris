@@ -23,10 +23,11 @@ export type DetailRow = {
  * which is the same reason the trace folds. A molecule: its one state is whether it is open, and whether it
  * just copied.
  */
-export function DetailsFold({ summary, rows, className }: {
+export function DetailsFold({ summary, rows, aside, className }: {
   /** The folded line: a few of the facts, joined, so the fold says what it holds. */
   summary: string;
   rows: readonly DetailRow[];
+  aside?: ReactNode;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -46,18 +47,21 @@ export function DetailsFold({ summary, rows, className }: {
 
   return (
     <section aria-label={t('work.head.details')} className={cn('min-w-0', className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((was) => !was)}
-        className="flex w-full min-w-0 cursor-pointer items-start gap-1.5 border-0 bg-transparent p-0 text-left text-small text-ink-faint hover:text-ink"
-      >
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} className="mt-1 shrink-0" />
-        <span className="min-w-0 truncate">
-          <span className="font-semibold">{t('work.head.details')}</span>
-          {summary && <span className="ml-2">{summary}</span>}
-        </span>
-      </button>
+      <div className="flex min-w-0 items-start gap-x-4">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((was) => !was)}
+          className="flex min-w-0 cursor-pointer items-start gap-1.5 border-0 bg-transparent p-0 text-left text-small text-ink-faint hover:text-ink"
+        >
+          <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} className="mt-1 shrink-0" />
+          <span className="min-w-0 truncate">
+            <span className="font-semibold">{t('work.head.details')}</span>
+            {summary && <span className="ml-2">{summary}</span>}
+          </span>
+        </button>
+        {aside && <span className="min-w-0 shrink-[4] text-small text-ink-soft">{aside}</span>}
+      </div>
       {open && (
         <dl className="m-0 mt-2 grid min-w-0 grid-cols-[max-content_1fr] gap-x-4 gap-y-1 pl-[1.125rem] text-small">
           {shown.map((row) => (

@@ -38,7 +38,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null)
     {
         // Reads only (the remark above): each question of git is asked once, the tree's layout in one start.
-        using var once = GitReadOnce.Within();
+        using var once = GitReadOnce.Within(ct);
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
         // The paths, the head and the branch are one start (status), not three; a status git could not give is asked as before.

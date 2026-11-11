@@ -1,3 +1,5 @@
+using Daoris.Desktop.Driver.Tests;
+
 namespace Daoris.Driver.Tests;
 
 /// <summary>
@@ -10,19 +12,22 @@ public sealed class OverlapPlannerTests
     private static QuestView Quest(string id, string status, params string[] paths) =>
         new(id, "Asker", "Game", $"Ask {id}", "Here is why.", status) { Paths = paths };
 
-    private static DriverConfig Rule(string? overlap) =>
-        (DriverConfig.Empty with { Drivable = ["Game"], Cap = 4 }).WithLinePolicy("Game", new LandingIntegrate(Overlap: overlap));
+    private static readonly IsolateStep Waits = IsolateStep.Trees with { OverlapWaits = true };
 
-    private static Consideration Plan(QuestView[] quests, DriverConfig config, Snapshot? with = null)
+    private static readonly IsolateStep Warns = IsolateStep.Trees;
+
+    private static readonly DriverConfig Config = DriverConfig.Empty with { Drivable = ["Game"], Cap = 4 };
+
+    private static Consideration Plan(QuestView[] quests, IsolateStep step, Snapshot? with = null)
     {
         var snapshot = (with ?? new Snapshot([], [], [])) with { Quests = quests, Repositories = [new RepoView("Game", true, "D:/fam/Game")] };
-        return Planner.Plan(snapshot, config, false).Single(c => c.Quest.Id == "q2");
+        return Planner.Plan(snapshot.Apart(step, "Game"), Config, false).Single(c => c.Quest.Id == "q2");
     }
 
     [Fact]
     public void An_overlapping_start_under_wait_is_held_and_says_the_earlier_quest_and_the_paths_both_meet()
     {
-        var held = Plan([Quest("q1", "Taken", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs", "docs/cap.md")], Rule(LandingIntegrate.Wait));
+        var held = Plan([Quest("q1", "Taken", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs", "docs/cap.md")], Waits);
 
         Assert.Equal(StartVerdict.RepositoryBusy, held.Verdict);
         Assert.Equal(SittingFact.Overlaps, held.Said!.Code);
@@ -34,7 +39,7 @@ public sealed class OverlapPlannerTests
     [Fact]
     public void Under_warn_the_overlapping_start_starts_and_carries_the_overlap_to_say()
     {
-        var started = Plan([Quest("q1", "Taken", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")], Rule(null));
+        var started = Plan([Quest("q1", "Taken", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")], Warns);
 
         Assert.Equal(StartVerdict.Start, started.Verdict);
         Assert.Equal("q1", started.Overlaps!.Quest);
@@ -53,7 +58,7 @@ public sealed class OverlapPlannerTests
             Changed = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["q1"] = ["src/frame/cap.cs"] },
         };
 
-        var held = Plan([Quest("q1", "Taken", "docs/**"), Quest("q2", "Open", "src/frame/**")], Rule(LandingIntegrate.Wait), snapshot);
+        var held = Plan([Quest("q1", "Taken", "docs/**"), Quest("q2", "Open", "src/frame/**")], Waits, snapshot);
 
         Assert.Equal(SittingFact.Overlaps, held.Said!.Code);
         Assert.Equal(["src/frame/**"], held.Said.Paths);
@@ -71,8 +76,8 @@ public sealed class OverlapPlannerTests
             },
         };
 
-        Assert.Equal(StartVerdict.Start, Plan(quests, Rule(LandingIntegrate.Wait), limited).Verdict);
-        Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Rule(LandingIntegrate.Wait)).Verdict);
+        Assert.Equal(StartVerdict.Start, Plan(quests, Waits, limited).Verdict);
+        Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Waits).Verdict);
     }
 
     [Fact]
@@ -85,16 +90,16 @@ public sealed class OverlapPlannerTests
             IntegratingQuests = [Quest("q1", "Done", "src/frame/**")],
         };
 
-        Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Rule(LandingIntegrate.Wait), integrating).Verdict);
-        Assert.Equal(StartVerdict.Start, Plan(quests, Rule(LandingIntegrate.Wait)).Verdict);
+        Assert.Equal(StartVerdict.RepositoryBusy, Plan(quests, Waits, integrating).Verdict);
+        Assert.Equal(StartVerdict.Start, Plan(quests, Waits).Verdict);
     }
 
     [Fact]
     public void Two_open_starts_at_one_look_meeting_on_a_path_start_one_and_hold_the_later()
     {
         var plan = Planner.Plan(
-            new Snapshot([Quest("q1", "Open", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")], [new RepoView("Game", true, "D:/fam/Game")], []),
-            Rule(LandingIntegrate.Wait) with { Trees = ["Game"] }, false);
+            new Snapshot([Quest("q1", "Open", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")], [new RepoView("Game", true, "D:/fam/Game")], []).Apart(Waits, "Game"),
+            Config, false);
 
         Assert.Equal(StartVerdict.Start, plan.Single(c => c.Quest.Id == "q1").Verdict);
         Assert.Equal(SittingFact.Overlaps, plan.Single(c => c.Quest.Id == "q2").Said!.Code);
@@ -103,7 +108,7 @@ public sealed class OverlapPlannerTests
     [Fact]
     public void A_start_declaring_no_paths_meets_nothing()
     {
-        Assert.Equal(StartVerdict.Start, Plan([Quest("q1", "Taken", "src/**"), Quest("q2", "Open")], Rule(LandingIntegrate.Wait)).Verdict);
+        Assert.Equal(StartVerdict.Start, Plan([Quest("q1", "Taken", "src/**"), Quest("q2", "Open")], Waits).Verdict);
     }
 
     [Fact]

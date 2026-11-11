@@ -82,7 +82,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             + ".\n");
         // What each workspace keeps, so a clear names one that keeps something.
         text.Append(HistoryLines(machine.History, machine.NotReadYet.History));
-        // As its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
+        // As its two files hold it, so a press names a favorite kept; only where the desktop read them.
         if (machine.Browser is { } browser)
         {
             text.Append($"- Daoris's browser: {(browser.Browser == "edge" ? "your Edge" : "Daoris's own")}; links on the page open in "

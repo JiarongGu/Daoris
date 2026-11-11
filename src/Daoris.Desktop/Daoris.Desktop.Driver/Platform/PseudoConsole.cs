@@ -342,8 +342,9 @@ public sealed class PseudoConsole : ITerminal
 
         variables.Remove(ChildMarks.SessionVariable);
         variables.Remove(ChildMarks.LineageProcVariable);
-        // The holder key is never inherited; the holder's own tab alone adds it back.
+        // The holder key is never inherited; the holder's own tab alone adds it back. A session's delegate key is never handed on.
         variables.Remove(ChildMarks.RoleKeyVariable);
+        variables.Remove(ChildMarks.DelegateKeyVariable);
 
         var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
             ?? DaorisHome.Resolve();

@@ -25,7 +25,7 @@ internal static class QuestReviewConsole
         using var service = ServiceClient.FromEnvironment();
         var sessions = new SessionsWorld(service, home, config, SetupWorld.Unadopted(config, home), log);
 
-        return await QuestReviewCommand.RunAsync(ask, new QuestReviewWorld(service)
+        return await QuestReviewCommand.PressAsync(ask, new QuestReviewWorld(service)
         {
             // The rule a set-up's choice is judged against: the service holds none.
             Config = config,
@@ -33,6 +33,6 @@ internal static class QuestReviewConsole
             Say = (session, words, ct) =>
                 SessionsCommand.RunAsync(new SessionsAsk("say") { Ids = [session], Text = words }, sessions, Console.Out, ct),
             Log = line => SessionLog.WriteLanding(log, line),
-        }, Console.Out).ConfigureAwait(false);
+        }, Console.Out, InstanceHost.World(home, "quest")).ConfigureAwait(false);
     }
 }

@@ -50,9 +50,7 @@ public sealed class AccountRotationHoldTests : IDisposable
 
     private static DriverConfig Config => DriverConfig.Empty with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Actors = StaffedRoles.On("stub"),
+        Drivable = ["engine"],        Actors = StaffedRoles.On("stub"),
         // One failure would park it: a limit must not, and nor must a wait over an order.
         PollSeconds = 1,
     };

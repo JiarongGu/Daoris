@@ -19,7 +19,6 @@ public sealed class StewardCommandTests : IDisposable
     [Theory]
     [InlineData("drive engine", "drive", """{"repository":"engine","drivable":true}""")]
     [InlineData("undrive engine", "undrive", """{"repository":"engine","drivable":false}""")]
-    [InlineData("trees engine on", "trees", """{"repository":"engine","ownTree":true}""")]
     [InlineData("hold engine", "hold", """{"repository":"engine","held":true}""")]
     [InlineData("resume engine", "resume", """{"repository":"engine","held":false}""")]
     [InlineData("stop s1", "stop", """{"id":"s1","said":true}""")]
@@ -45,9 +44,9 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Equal(form, JsonSerializer.Serialize(read.Value.Form));
     }
 
-    /// <summary>What is the owner's has no verb here: trees off, a decline, words, a forced clean, an update's later word, a hand-over naming no agent.</summary>
+    /// <summary>What is the owner's has no verb here: a place's trees, a decline, words, a forced clean, an update's later word, a hand-over naming no agent.</summary>
     [Theory]
-    [InlineData("trees engine off")]
+    [InlineData("trees engine on")]
     [InlineData("decline s1")]
     [InlineData("clean s1 --force")]
     [InlineData("update when-idle")]
@@ -84,7 +83,6 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Contains($"({StewardCommand.NoInstance})", output.ToString(), StringComparison.Ordinal);
     }
 
-    // ——— The desk.
 
     [Theory]
     [InlineData("request|drive|engine|the next row is for engine", "request", """{"act":"drive","target":"engine","why":"the next row is for engine"}""")]

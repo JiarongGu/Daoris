@@ -17,7 +17,6 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("STATE", PipeClass.Open)]
     private object? GetState(NoPayload _) => State(_loop);
 
-    /// <summary>What is under way, numbered as the last <c>UNDER_WAY</c> telling, for a window opened mid-press.</summary>
     [DriverRoute("UNDER_WAY", PipeClass.Open)]
     private object? GetUnderWay(NoPayload _) => _loop.UnderWay.Now();
 
@@ -52,19 +51,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    [DriverRoute("SET_TREES", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("SET_TREES", Repository = "repository")]
-    [GroundRepository("SET_TREES", "repository")]
-    [GroundListed("SET_TREES", "trees", "ownTree")]
-    [Says("SET_TREES", "repository:repository")]
-    [Publishes("SET_TREES", StateScopes.Driver)]
-    private object? SetTrees(SetTrees press)
-    {
-        _context.Change(config => config.WithTrees(press.Repository, press.OwnTree));
-        return State(_loop);
-    }
-
-    // *Daoris may change this checkout's files*, off by default: it writes nothing to a repository, it lets the Changes tab's acts be offered.
     [DriverRoute("SET_CHECKOUT_WRITES", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_CHECKOUT_WRITES", Repository = "repository")]
     [GroundRepository("SET_CHECKOUT_WRITES", "repository")]
@@ -77,7 +63,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // A repository's standing answer, the person's words handed to every session there; no words clears it.
     [DriverRoute("SET_STANDING", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_STANDING", Repository = "repository")]
     [GroundRepository("SET_STANDING", "repository")]
@@ -275,6 +260,21 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // The bounds of a folder's manifest read, one at a time: whole files or whole minutes in the setting's bounds, the same `manifest`
+    // `daoris settings manifest files|minutes <n>` edits. Both, neither, or one out of its bounds is the driver's refusal.
+    [DriverRoute("SET_MANIFEST", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_MANIFEST", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_MANIFEST", nameof(PipeReads.Manifest))]
+    [Publishes("SET_MANIFEST", StateScopes.Driver)]
+    private object? SetManifest(SetManifest press)
+    {
+        if (press.Files is null == press.Minutes is null) throw new DriverException(ManifestSetting.OneRefusal);
+        var files = press.Files is { } f ? (ManifestSetting.TakesFiles(f) ? (int)f : throw new DriverException(ManifestSetting.FilesRefusal)) : (int?)null;
+        var minutes = press.Minutes is { } m ? (ManifestSetting.TakesMinutes(m) ? (int)m : throw new DriverException(ManifestSetting.MinutesRefusal)) : (int?)null;
+        _context.Change(config => config.WithManifest(files, minutes));
+        return State(_loop);
+    }
+
     // One kind's keep rule: the set-aside folders' days, `whole` or not, the
     // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris settings keep` edits, judged by the
     // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the
@@ -459,7 +459,7 @@ public sealed class DriverRoutes(DriverContext context)
     };
 
     // A role added, changed, removed or given back its seed, the supervisor and the steward among them: the person's press, as `daoris
-    // driver role` and `role_propose` make it, through one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A removed
+    // role` makes it, through one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A removed
     // role's work holds its starts, said; a running session goes on; a role's terminal it no longer staffs ends.
     [DriverRoute("SET_ROLE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_ROLE", None = OwnerNone.MachineSetting)]

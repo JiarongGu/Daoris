@@ -24,6 +24,7 @@ internal static class SuperviseAllows
     {
         { Kind: SupervisorKinds.Files } => $"allow {subject.Act?.What} {subject.Id} in {subject.Session}, asked at start {subject.Act?.Start}",
         { IsAsk: true } => $"allow the steward's {SupervisePointPrint.Text(listed, "act")} {subject.Id}",
+        { IsPress: true } => $"allow the working session's press {SupervisePointPrint.Text(listed, "act")} {subject.Id}",
         { IsProposal: true } => $"allow widening {subject.Id}",
         _ => $"allow permission request {subject.Id}",
     };

@@ -30,6 +30,13 @@ public sealed record OpenHelp(
     public static string Path => "/api/sessions/help";
 }
 
+/// <summary>Release a parked line's uncommitted paths: all at the person's press, or the <paramref name="Paths"/> a discard took out.</summary>
+public sealed record ReleasePlace(string Id, IReadOnlyList<string>? Paths = null) : IRoute<SessionActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/sessions/{id}/release-place";
+}
+
 /// <summary>The access mode an Ask Daoris conversation going on runs under, where the person's mode changed since it last ran.</summary>
 public sealed record KeepHelpMode(string Id, string? Mode) : IRoute<SessionActionResponse>
 {

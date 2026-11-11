@@ -72,7 +72,7 @@ public sealed class RoleCatalog
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
 
     /// <summary>The refusal of a press made against a revision its role has moved past.</summary>
-    internal static DriverException Moved(string id, long seen, long now) =>
+    public static DriverException Moved(string id, long seen, long now) =>
         new($"the role `{id}` changed since it was read (revision {seen}, now {now}), so nothing was written; read it again.");
 
     /// <summary>The revision of <paramref name="id"/>'s record as the catalogue reads it; 0 for the seed and for an id it does not hold.</summary>

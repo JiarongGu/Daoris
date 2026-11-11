@@ -29,8 +29,8 @@ const IMPORTED = PLACES({ detail: { workspace: 'aurora', repository: 'archive-1'
 const WORKSPACE = READ.workspaces[0]!.place;
 
 const DRIVING: PlaceDriving = {
-  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris place drive|undrive engine',
-  onDrive: nothing, onHold: nothing, onTrees: nothing, onOpenAppointed: nothing, onOpenRepositories: nothing,
+  drivable: true, held: false, busy: false, terminal: 'daoris place drive|undrive engine',
+  onDrive: nothing, onHold: nothing, onOpenAppointed: nothing, onOpenRepositories: nothing,
 };
 
 const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing };
@@ -129,7 +129,7 @@ export const RepositoryDarkHalf: Story = { decorators: [storyWidths.half, dark] 
 export const RepositoryDarkNarrow: Story = { decorators: [storyWidths.narrow, dark] };
 
 /** A repository not driven, read through its detail: its pill, *Set up…* primary, no Hold, and the same three sections. */
-export const NotDriven: Story = { args: { row: IMPORTED, driving: { ...DRIVING, drivable: false, ownTree: false } } };
+export const NotDriven: Story = { args: { row: IMPORTED, driving: { ...DRIVING, drivable: false } } };
 export const NotDrivenHalf: Story = { ...NotDriven, decorators: [storyWidths.half] };
 export const NotDrivenNarrowChinese: Story = { ...NotDriven, decorators: [storyWidths.narrow, chinese] };
 

@@ -35,8 +35,8 @@ const HEAD: PlaceHeadProps = {
 };
 
 const DRIVING = (patch: Partial<PlaceDriving> = {}): PlaceDriving => ({
-  drivable: true, held: false, ownTree: true, busy: false, terminal: 'daoris place drive|undrive engine',
-  onDrive: vi.fn(), onHold: vi.fn(), onTrees: vi.fn(), ...patch,
+  drivable: true, held: false, busy: false, terminal: 'daoris place drive|undrive engine',
+  onDrive: vi.fn(), onHold: vi.fn(), ...patch,
 });
 
 const draw = (props: Partial<Parameters<typeof PlacePageView>[0]> = {}) =>
@@ -90,7 +90,6 @@ describe('the place page', () => {
     draw();
     await userEvent.click(screen.getByRole('button', { name: 'Roles' }));
     expect(SECTIONS[1]!.onOpenChange).toHaveBeenCalledWith(true);
-    // The holder has not opened it, so it stays folded.
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -199,13 +198,12 @@ describe('the head\'s driving acts', () => {
     expect(driving.onDrive).toHaveBeenCalledWith(false, expect.objectContaining({ done: expect.any(Function) }));
   });
 
-  it('turns a tree per session on or off from the menu, and keeps the head\'s note', async () => {
+  it('keeps the head\'s note, and offers no tree switch in the menu: the workflow sets the work apart', async () => {
     const driving = DRIVING({ note: 'This machine drives on a direct agent.', stewardSet: 'Set by the steward at 10:00' });
     draw({ driving });
     expect(screen.getByText('This machine drives on a direct agent.')).toBeInTheDocument();
     expect(screen.getByText('Set by the steward at 10:00')).toBeInTheDocument();
     await openMore();
-    await userEvent.click(await screen.findByRole('menuitemcheckbox', { name: 'A tree per session' }));
-    expect(driving.onTrees).toHaveBeenCalledWith(false);
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'A tree per session' })).toBeNull();
   });
 });

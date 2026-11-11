@@ -282,37 +282,55 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
    * between the two in its head; every workspace's labels each row with its workspace, a row kept with no workspace as
    * `default`'s, and the window's own labels none. A search says it searched the scope it ran over.
    */
-  it('offers the window’s workspace or every one’s, labelling each row with its workspace under every one', async () => {
+  it('shows by home under All workspaces, the window’s first; a chosen place is About it; a row’s chip says a focus that is not its home', async () => {
     await i18n.changeLanguage(language);
-    const onEvery = vi.fn();
+    const onShowing = vi.fn();
+    const engine = { kind: 'repository', workspace: 'games', repository: 'engine' } as const;
     const rows = [
-      row({ session: 'h1', workspace: 'games' }),
-      row({ session: 'h2', title: 'and the remote?', opening: 'and the remote?', workspace: 'work' }),
+      row({ session: 'h1', workspace: 'games', focus: engine }),
+      row({ session: 'h2', title: 'and the remote?', opening: 'and the remote?', workspace: 'work', focus: { kind: 'workspace', workspace: 'work' } }),
       row({ session: 'h3', title: 'and before?', opening: 'and before?' }),
     ];
-    const label = (workspace: string) => new RegExp(i18n.t('help.history.in', { workspace }));
-    draw({ rows, scope: { workspace: null, here: 'games', onEvery } });
+    const repositories = [{ name: 'engine', workspace: 'games', checkout: true }, { name: 'ledger', workspace: 'work', checkout: true }];
+    const scope = { showing: { kind: 'all' as const }, window: 'games', workspace: null, repositories, recent: [], onShowing };
+    draw({ rows, scope });
 
-    const choice = within(history()).getByRole('group', { name: i18n.t('help.history.scope') });
-    expect(within(choice).getByRole('button', { name: i18n.t('help.history.every') })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(history()).getByText(label('games'))).toBeInTheDocument();
-    expect(within(history()).getByText(label('work'))).toBeInTheDocument();
-    expect(within(history()).getByText(label('default'))).toBeInTheDocument();
-    await userEvent.click(within(choice).getByRole('button', { name: 'games' }));
-    expect(onEvery).toHaveBeenCalledWith(false);
+    const headings = within(history()).getAllByRole('heading', { level: 4 }).map((heading) => heading.textContent);
+    expect(headings).toEqual([
+      i18n.t('help.history.groupHere', { workspace: 'games' }), i18n.t('help.history.groupHome', { workspace: 'default' }),
+      i18n.t('help.history.groupHome', { workspace: 'work' }),
+    ]);
+    // Only the row whose focus is not its home says it.
+    expect(door('what is a workspace?')).toHaveTextContent(i18n.t('help.history.rowFocus', { place: 'engine' }));
+    expect(door('and the remote?')).not.toHaveTextContent(i18n.t('help.history.rowFocus', { place: 'work' }));
+    expect(door('and before?')).not.toHaveTextContent(i18n.t('help.history.rowFocus', { place: i18n.t('help.focus.machine') }));
+
+    const chip = within(history()).getByRole('button', { name: i18n.t('help.history.showingIs', { value: i18n.t('help.history.every') }) });
+    await userEvent.click(chip);
+    const options = screen.getAllByRole('option').map((option) => option.textContent);
+    expect(options.slice(0, 2)).toEqual([`${i18n.t('help.history.showingHere', { workspace: 'games' })} ${i18n.t('help.focus.thisWindow')}`,i18n.t('help.history.every')]);
+    await userEvent.keyboard('eng');
+    await userEvent.click(screen.getByRole('option', { name: /^engine/ }));
+    expect(onShowing).toHaveBeenCalledWith({ kind: 'about', place: engine });
 
     cleanup();
-    draw({ rows: [rows[0]!], search: 'workspace', total: 1, scope: { workspace: 'games', here: 'games', onEvery } });
-    expect(within(history()).getByRole('button', { name: 'games' })).toHaveAttribute('aria-pressed', 'true');
-    expect(door('what is a workspace?')).not.toHaveTextContent(label('games'));
+    draw({ rows: [rows[0]!], search: 'workspace', total: 1, scope: { ...scope, showing: { kind: 'here' }, workspace: 'games' } });
+    expect(within(history()).getByRole('button', { name: i18n.t('help.history.showingIs', { value: i18n.t('help.history.showingHere', { workspace: 'games' }) }) })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(
       i18n.t('help.history.searchedIn', { count: 1, words: 'workspace', workspace: 'games' }));
 
-    // A window on every workspace has no workspace of its own to offer: its list is every one's, labelled.
     cleanup();
-    draw({ rows, scope: { workspace: null } });
-    expect(within(history()).queryByRole('group', { name: i18n.t('help.history.scope') })).toBeNull();
-    expect(within(history()).getByText(label('work'))).toBeInTheDocument();
+    draw({ rows: [rows[0]!], search: 'workspace', total: 1, scope: { ...scope, showing: { kind: 'about', place: engine } } });
+    expect(screen.getByRole('status')).toHaveTextContent(i18n.t('help.history.searchedAbout', { count: 1, words: 'workspace', place: 'engine' }));
+    cleanup();
+    draw({ rows: [], scope: { ...scope, showing: { kind: 'about', place: engine } } });
+    expect(screen.getByText(i18n.t('help.history.emptyAbout', { place: 'engine' }))).toBeInTheDocument();
+
+    // A window on every workspace has no workspace of its own to offer: *All workspaces* and places only.
+    cleanup();
+    draw({ rows, scope: { ...scope, window: null } });
+    await userEvent.click(within(history()).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.history.showingIs', { value: '' })) }));
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent(i18n.t('help.history.every'));
   });
 
   it('lists more on a press, saying how many of how many are listed, and takes the reader to the first row it brought', async () => {

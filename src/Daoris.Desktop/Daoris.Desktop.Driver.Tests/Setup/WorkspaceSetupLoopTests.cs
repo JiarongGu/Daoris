@@ -34,9 +34,9 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>Drivable here, in trees of its own, on an agent that rides the protocol door.</summary>
-    private static DriverConfig Config => (ActorChoices.With(DriverConfig.Empty, "build", [new ActorChoice("claude-code-acp")]) with { Cap = 2 })
-        .WithDrivable("atlas", true).WithTrees("atlas", true);
+    /// <summary>Drivable here, working apart (its workflow's isolate step), on an agent that rides the protocol door.</summary>
+    private DriverConfig Config => (ActorChoices.With(DriverConfig.Empty, "build", [new ActorChoice("claude-code-acp")]) with { Cap = 2 })
+        .WithDrivable("atlas", true).Isolating(_home, "atlas");
 
     [Fact]
     public async Task A_look_publishes_the_plans_next_set_up_before_it_plans_so_the_same_look_starts_it()
@@ -58,7 +58,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
     {
         _world.With(WorkspaceSetupStandIn.Row("atlas"), WorkspaceSetupStandIn.Row("billing"));
         _ledger.Register("billing", "/checkouts/billing");
-        var config = Config.WithDrivable("billing", true).WithTrees("billing", true);
+        var config = Config.WithDrivable("billing", true).Isolating(_home, "billing");
         var ask = new PlaceAsk(["atlas", "billing"], SetupPresets.Keep) { Adoption = true, AtOnce = 1, Pilot = 0 };
         var doors = new PlaceApplyDoors(
             new Places(), _world, _home, new SetupPresetsTests.Catalog(), true, () => config, _ => { }, new DateOnly(2026, 11, 2));

@@ -120,12 +120,13 @@ public sealed class WorkflowBindStartTickTests : IDisposable
         Assert.DoesNotContain(taken.Events, line => line.StartsWith("held  #q1", StringComparison.Ordinal));
     }
 
-    /// <summary>A start held before its tree opens (the checkout holds work in flight) binds nothing, as before.</summary>
+    /// <summary>A start held before its tree opens (another Daoris home on this machine works the checkout in place) binds nothing.</summary>
     [Fact]
     public async Task A_start_held_before_its_tree_opens_binds_nothing()
     {
         Save();
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine, in flight\n");
+        var another = Directory.CreateDirectory(Path.Combine(_home, "another-home")).FullName;
+        File.WriteAllText(Path.Combine(_repository, ".git", PlaceHomeMarker.Name), another + "\n");
         await using var service = StandInService.Start(_repository);
         service.Publish("q1");
         var driver = Driver(service, """{"workflows":{"engine":{"default":"merge-after"}}}""");

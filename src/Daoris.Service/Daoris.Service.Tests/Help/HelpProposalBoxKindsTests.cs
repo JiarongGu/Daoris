@@ -5,32 +5,15 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>
-/// Every kind the box writes is whole: its writer in a file of its own that writes exactly that kind, and
-/// the connector's tool that proposes it. The driver's <c>HelpProposalKindsTests</c> holds the same table, and
-/// also checks that each kind has its judge there and its card on the page.
-/// </summary>
+/// <summary>Every kind the box writes is whole: its writer in a file of its own, and the connector's tool that proposes it.</summary>
 public sealed class HelpProposalBoxKindsTests
 {
-    /// <summary>The kinds, and the connector's tool that proposes each — the driver's table, line for line.</summary>
     private static readonly (string Kind, string Tool)[] Table =
     [
-        ("setting", "setting_propose"),
         ("ask", "ask_propose"),
-        ("agent", "agent_propose"),
-        ("delete", "delete_propose"),
-        ("account", "agent_settings_propose"),
         ("go", "go_propose"),
-        ("plugin", "plugin_propose"),
-        ("browser", "browser_propose"),
-        ("sync", "sync_propose"),
-        ("repository", "repository_propose"),
-        ("session", "session_propose"),
-        ("pause", "pause_propose"),
-        ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
-        ("role", "role_propose"),
     ];
 
     private static string RepositoryRoot()
@@ -48,11 +31,6 @@ public sealed class HelpProposalBoxKindsTests
         Assert.Equal(Table, HelpProposalBox.Kinds);
     }
 
-    /// <summary>
-    /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c> (the name the driver's twin tests read), holds that kind's
-    /// writer class of the same name, writing exactly that kind, and no part of the box: with no partial type without generated code,
-    /// the box is the one class of <c>HelpProposalBox.cs</c>.
-    /// </summary>
     [Fact]
     public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
     {
@@ -74,7 +52,6 @@ public sealed class HelpProposalBoxKindsTests
     [Fact]
     public void Every_kind_has_its_connectors_tool()
     {
-        // Every class the host registers, so a kind's tool is found whichever class holds it.
         var tools = KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
             .OfType<string>()

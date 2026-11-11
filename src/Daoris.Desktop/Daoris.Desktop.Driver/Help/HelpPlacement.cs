@@ -19,19 +19,19 @@ internal static class HelpPlacement
     /// accepted are allowed, any other write asked, which its mode refuses. It is handed none, since a browser brought up for
     /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
     ///
-    /// <para>Its tools are bound to its room's workspace (<see cref="HelpCircle.Of"/>): its
-    /// connector's circle, and the person's denies for that workspace in its rules beside the checkouts its room grants.</para>
+    /// <para>Its tools default to its room's workspace (<see cref="HelpCircle.Of"/>): its connector's circle, and the
+    /// person's denies for that workspace in its rules beside the checkouts its room grants, every workspace's.</para>
     /// </remarks>
     /// <param name="workspace">The workspace its record keeps: what setting it aside is judged by; null is <c>default</c>.</param>
-    internal static ChatPlace In(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
+    internal static ChatPlace In(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null)
     {
-        var circle = HelpCircle.Of(home, room, workspace);
+        var circle = focus is null ? HelpCircle.Of(home, room, workspace) : HelpCircle.OfFocus(focus);
         // The housekeeping the person chose, and the settings, read once for this start,
         // so its allow-list and its receipt say the same; each tool's call is judged again by the record then (HelpHousekeeping,
         // HelpSettings).
         var access = ConfiguredAccess.Read(home);
         var housekeeping = access.Housekeeping;
-        // The readable checkouts the person left on, read through `checkout_read`, which each call judges again.
+        // The readable checkouts the person left on, in any workspace, read through `checkout_read`, which each call judges again.
         IReadOnlyList<HelpRead> handed = [.. reads.Where(read => access.Reads(read.Name))];
         return new(
             HelpRoom.Repository, room,
@@ -60,7 +60,7 @@ internal static class HelpPlacement
     /// asks nothing and allows nothing by list, its harness's mode doing neither; keeps every deny the person's rules compose; is
     /// handed every plugin server here, approved or not; and is handed no tree guard, which would keep its
     /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it. Its circle
-    /// stays its room's workspace, so its connector's searches stay scoped though its shell reaches anything.
+    /// stays its room's workspace, so its connector's searches default there though its shell reaches anything.
     /// </summary>
     internal static ChatPlace Under(ChatPlace place, HelpAccess access) => access is not { Full: true, Refusal: null }
         ? place

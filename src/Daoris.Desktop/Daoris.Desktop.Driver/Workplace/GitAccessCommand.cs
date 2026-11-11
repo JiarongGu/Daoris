@@ -43,12 +43,6 @@ public static class GitAccessCommand
             return 2;
         }
 
-        if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
-        {
-            await error.WriteLineAsync($"git: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
-            return 1;
-        }
-
         try
         {
             var json = args.Contains("--json");
@@ -65,6 +59,11 @@ public static class GitAccessCommand
             await error.WriteLineAsync(refused.Message.StartsWith("git: ", StringComparison.Ordinal) ? refused.Message : $"git: {refused.Message}").ConfigureAwait(false);
             return 1;
         }
+    }
+
+    private static void NotFromSession(GitAccessWorld world)
+    {
+        if (world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 }) throw new DriverException(DriverChoicesCommand.SessionsTerminal);
     }
 
     private static int Refuse(TextWriter error, string text, int code)
@@ -110,7 +109,11 @@ public static class GitAccessCommand
         }
 
         return world.Press(PersonPresses.GitAnswer, new Dictionary<string, object?> { ["ask"] = id, ["answer"] = allow ? "allow" : "refuse" },
-            () => Task.FromResult(Said(GitAsks.Answer(world.Home, id, allow, DateTimeOffset.UtcNow))),
+            () =>
+            {
+                NotFromSession(world);
+                return Task.FromResult(Said(GitAsks.Answer(world.Home, id, allow, DateTimeOffset.UtcNow)));
+            },
             data => Said(data.ValueKind == JsonValueKind.Object && data.TryGetProperty("waiting", out var waiting) && waiting.ValueKind == JsonValueKind.True));
     }
 
@@ -143,6 +146,7 @@ public static class GitAccessCommand
         {
             if (oneValue is not null || clear || edit.Repository is not null || edit.Workspace is not null || edit.Machine)
                 throw new DriverException($"a session's git access is read or tightened with its own class words alone.\n{Usage}");
+            if (Changes(args)) NotFromSession(world);
             return GitSessionAccessVerb.Run(world.Home, session, set, json, output);
         }
 
@@ -164,6 +168,7 @@ public static class GitAccessCommand
 
         Task<int> Alone()
         {
+            NotFromSession(world);
             GitAccessActs.Apply(world.Home, edit);
             output.WriteLine("git: git access changed.");
             return Task.FromResult(0);

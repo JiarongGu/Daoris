@@ -31,7 +31,10 @@ public sealed record SessionWork(string Work, string? Turn = null)
     /// <summary>A brainstorm synthesis's pass (<c>s1</c>, <c>s1r</c>).</summary>
     public static readonly SessionWork Synthesizing = new(ParticipantWork.Brainstorm, Synthesizer);
 
-    public override string ToString() => Turn is null ? Work : $"{Work}:{Turn}";
+    /// <summary>That the record's department is a system reached only through its console, whose work is served <c>system_plan</c> beside its own.</summary>
+    public bool InSystem { get; init; }
+
+    public override string ToString() => (Turn is null ? Work : $"{Work}:{Turn}") + (InSystem ? " in a system" : "");
 }
 
 /// <summary>
@@ -56,7 +59,9 @@ public sealed class SessionWorks(SessionLedger? ledger, IntakeScope? intake, Bra
 
         var record = await ledger.FindAsync(session, ct).ConfigureAwait(false);
         if (record is null) return SessionWork.Unplaced;
-        _found = ParticipantWork.Of(record) is { } work ? new SessionWork(work) : SessionWork.Unplaced;
+        _found = ParticipantWork.Of(record) is { } work
+            ? new SessionWork(work) { InSystem = await ledger.InSystemAsync(record, ct).ConfigureAwait(false) }
+            : SessionWork.Unplaced;
         return _found;
     }
 }

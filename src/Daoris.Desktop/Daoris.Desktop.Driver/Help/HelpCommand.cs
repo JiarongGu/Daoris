@@ -32,6 +32,9 @@ public sealed record HelpVerbAsk(string Verb)
     /// <summary>A listing's <c>--all</c>: every workspace's, said outright, as a listing that names none is.</summary>
     public bool All { get; init; }
 
+    /// <summary>A listing's <c>--about</c>: the place, as the terminal spells it, whose conversations it lists (<see cref="HelpFoci.About"/>).</summary>
+    public string? About { get; init; }
+
     /// <summary>A rename's <c>--clear</c>: its first question is its title again.</summary>
     public bool Clear { get; init; }
 
@@ -53,29 +56,30 @@ public sealed record HelpVerbAsk(string Verb)
 ///
 /// <para>Exit codes are the family's: 0 done or listed · 1 refused · 2 could not, the usage among them.</para>
 /// </remarks>
-[CommandGroup("ask-daoris", "list", "rename", "pin", "unpin", "delete", "mode")]
+[CommandGroup("ask-daoris", "list", "rename", "pin", "unpin", "delete", "mode", "focus")]
 public static class HelpCommand
 {
     public const string Usage =
         """
-        usage: daoris ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
+        usage: daoris ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all | --about <place>]
                daoris ask-daoris rename <id> "…" | --clear  ·  daoris ask-daoris pin <id>  ·  daoris ask-daoris unpin <id>
+               daoris ask-daoris focus <id> machine | <workspace> | <workspace>/<repository>
                daoris ask-daoris delete <id> [--yes]
                daoris ask-daoris mode [restricted|full]
         """;
 
     /// <summary>The verbs this door answers; <c>help</c> alone, or anything else after it, is the host's usage.</summary>
     public static IReadOnlySet<string> Verbs { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { "list", "rename", "pin", "unpin", "delete", "mode" };
+        new HashSet<string>(StringComparer.Ordinal) { "list", "rename", "pin", "unpin", "delete", "mode", "focus" };
 
     /// <summary>
     /// The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.
-    /// Its <c>workspace</c>, the one it started in, follows <c>mode</c>.
+    /// Its <c>workspace</c>, the one it started in, follows <c>mode</c>, and its <c>focus</c> and <c>focusNext</c> follow that.
     /// </summary>
     public static IReadOnlyList<string> JsonFields { get; } =
     [
-        "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "resumable", "from",
-        "handed", "found", "foundLine", "parts",
+        "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "focus", "focusNext", "marks",
+        "resumable", "from", "handed", "found", "foundLine", "parts",
     ];
 
     /// <summary>
@@ -119,9 +123,14 @@ public static class HelpCommand
             case ["mode", ..]:
                 problem = $"`mode` takes `{HelpModes.Restricted}` or `{HelpModes.Full}`, or nothing to say which Ask Daoris runs in.";
                 return null;
+            case ["focus", var id, var place] when SessionEventText.IsId(id) && HelpFocus.FromSaid(place) is { } focus:
+                return new HelpVerbAsk("focus") { Id = id, Text = focus.Said };
+            case ["focus", ..]:
+                problem = "`focus` takes one conversation's id, then `machine`, a workspace, or a workspace's repository as `<workspace>/<repository>`.";
+                return null;
         }
 
-        problem = "`help` takes `list`, `rename`, `pin`, `unpin`, `delete` or `mode`.";
+        problem = "`help` takes `list`, `rename`, `pin`, `unpin`, `focus`, `delete` or `mode`.";
         return null;
     }
 
@@ -195,9 +204,16 @@ public static class HelpCommand
                 case "--limit":
                     problem = $"`--limit` takes how many a page holds: a whole number from 1 to {HelpConversations.PageLimit}.";
                     return null;
-                // One workspace's, or every one's; never both, and each said once.
-                case "--workspace" or "--all" when ask.Workspace is not null || ask.All:
-                    problem = "`help list` takes one of `--workspace <name>` and `--all`, once.";
+                // One workspace's, every one's, or one place's; never two, and each said once.
+                case "--workspace" or "--all" or "--about" when ask.Workspace is not null || ask.All || ask.About is not null:
+                    problem = "`help list` takes one of `--workspace <name>`, `--all` and `--about <place>`, once.";
+                    return null;
+                case "--about" when at + 1 < rest.Count && !rest[at + 1].StartsWith('-') && HelpFocus.FromSaid(rest[at + 1]) is { } about:
+                    ask = ask with { About = about.Said };
+                    at++;
+                    break;
+                case "--about":
+                    problem = "`--about` takes one place: `machine`, a workspace, or `<workspace>/<repository>`.";
                     return null;
                 case "--workspace" when at + 1 < rest.Count && !rest[at + 1].StartsWith('-') && rest[at + 1].Trim() is { Length: > 0 } workspace:
                     ask = ask with { Workspace = workspace };
@@ -230,9 +246,10 @@ public static class HelpCommand
         {
             "list" => (OpenRoutes.HelpConversations, InstanceDoor.Said(
                 ("q", ask.Search), ("offset", ask.Offset == 0 ? null : ask.Offset), ("limit", ask.Limit), ("workspace", ask.Workspace),
-                ("all", ask.All ? true : null), ("json", ask.Json ? true : null))),
+                ("all", ask.All ? true : null), ("about", HelpFocus.FromSaid(ask.About)?.Wire()), ("json", ask.Json ? true : null))),
             "rename" => (PersonPresses.HelpRename, InstanceDoor.Said(("id", ask.Id), ("name", ask.Clear ? null : ask.Text))),
             "pin" or "unpin" => (PersonPresses.HelpPin, InstanceDoor.Said(("id", ask.Id), ("pinned", ask.Verb == "pin"))),
+            "focus" => (PersonPresses.HelpFocus, InstanceDoor.Said(("session", ask.Id), ("focus", HelpFocus.FromSaid(ask.Text)?.Wire()))),
             // SESSION_DELETE's own delete, asked to say it as `help delete` does: its checks first, then `sessions delete`'s words.
             "delete" when ask.Yes => (PersonPresses.SessionDelete, InstanceDoor.Said(("id", ask.Id), ("help", true))),
             _ => null,
@@ -255,12 +272,21 @@ public static class HelpCommand
         {
             // The workspace named, or every one's; a terminal stands in no workspace, so naming none is every one's.
             var listing = new HelpConversations(world.Home).List(
-                records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit, ask.Workspace);
+                records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit, ask.Workspace,
+                HelpFocus.FromSaid(ask.About));
             output.WriteLine(ask.Json ? Json(listing) : Listed(listing, ask, DateTimeOffset.UtcNow));
             return 0;
         }
 
         var id = ask.Id!;
+        if (ask.Verb == "focus")
+        {
+            var registry = await world.Service.RegistryAsync(ct).ConfigureAwait(false);
+            var chosen = new HelpFocusing(world.Home).Choose(id, records, registry, events, resumes, HelpFocus.FromSaid(ask.Text)!);
+            output.WriteLine(chosen.Line);
+            return chosen.Refused is null ? 0 : 1;
+        }
+
         var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         if (record is null || record.Teammate || !WordsNever.IsHelp(record))
         {
@@ -345,6 +371,8 @@ public static class HelpCommand
             if (row.Mode == HelpModes.Full) marks.Add("full access");
             if (row.From is { } from) marks.Add($"from {from}");
             if (circle is null) marks.Add($"in {row.Workspace}");
+            if (!row.Focus.Equals(HelpFocus.Home(row.Workspace))) marks.Add($"focus {row.Focus.Said}");
+            if (row.FocusNext is { } next) marks.Add($"focus {next.Said} next");
             text.Append(row.Session).Append("  ").Append(Ago(row.Last, now)).Append("  ").Append(row.Title);
             if (marks.Count > 0) text.Append("  · ").Append(string.Join(" · ", marks));
             text.Append('\n');
@@ -409,6 +437,14 @@ public static class HelpCommand
                 writer.WriteBoolean("live", row.Live);
                 writer.WriteString("mode", row.Mode);
                 writer.WriteString("workspace", row.Workspace);
+                writer.WritePropertyName("focus");
+                row.Focus.Write(writer);
+                writer.WritePropertyName("focusNext");
+                if (row.FocusNext is { } waiting) waiting.Write(writer);
+                else writer.WriteNullValue();
+                writer.WriteStartArray("marks");
+                foreach (var mark in row.Marks) mark.Write(writer);
+                writer.WriteEndArray();
                 writer.WriteBoolean("resumable", row.Resumable);
                 Text(writer, "from", row.From);
                 Text(writer, "handed", row.Handed);

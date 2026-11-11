@@ -108,23 +108,32 @@ public static class PipeDoor
     /// </summary>
     public static PipeClientProcess? Client => Current.Value == Terminal ? Connected.Value : null;
 
+    private static readonly AsyncLocal<string?> Working = new();
+
+    /// <summary>The working session whose own press this request is (<see cref="PipeDelegate"/>), never made the owner's; null for every other.</summary>
+    public static string? Worker => Current.Value == Terminal ? Working.Value : null;
+
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
-    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(role: null, client);
+    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(role: null, client, worker: null);
 
     /// <summary>The same, for a role's act the judge's role method covered (<see cref="Role"/>).</summary>
-    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client);
+    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client, worker: null);
 
-    private static IDisposable Enter(RoleJudgement? role, PipeClientProcess? client)
+    /// <summary>The same, for a working session's own press (<see cref="Worker"/>).</summary>
+    internal static IDisposable EnterWorker(string session, PipeClientProcess? client = null) => Enter(role: null, client, session);
+
+    private static IDisposable Enter(RoleJudgement? role, PipeClientProcess? client, string? worker)
     {
-        var before = (Current.Value, Appointed.Value, Connected.Value);
+        var before = (Current.Value, Appointed.Value, Connected.Value, Working.Value);
         Current.Value = Terminal;
         Appointed.Value = role;
         Connected.Value = client;
+        Working.Value = worker;
         return new Restore(before);
     }
 
-    private sealed class Restore((string? Door, RoleJudgement? Role, PipeClientProcess? Client) before) : IDisposable
+    private sealed class Restore((string? Door, RoleJudgement? Role, PipeClientProcess? Client, string? Worker) before) : IDisposable
     {
-        public void Dispose() => (Current.Value, Appointed.Value, Connected.Value) = before;
+        public void Dispose() => (Current.Value, Appointed.Value, Connected.Value, Working.Value) = before;
     }
 }

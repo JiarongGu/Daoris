@@ -545,14 +545,14 @@ public sealed class DriverCommandTests
         var reading = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var reopen = reading.IndexOf("QuestReopenCommand.Asks(questArgs)", StringComparison.Ordinal);
         Assert.True(reopen > 0 && reading.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal) > reopen);
-        Assert.Contains("QuestReopenCommand.RunAsync(reopenAsk, reopenClient, Console.Out)", reading);
+        Assert.Contains("QuestReopenCommand.PressAsync(reopenAsk, reopenClient,", reading);
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var done = program.IndexOf("QuestDoneCommand.Asks(questArgs)", StringComparison.Ordinal);
         var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
         Assert.True(done > 0 && questUsage > done, $"`quest done` asked for at {done}, the quest's usage at {questUsage}");
         Assert.Contains("QuestDoneCommand.Read(questArgs, out var doneProblem)", program);
-        Assert.Contains("QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out)", program);
+        Assert.Contains("QuestDoneCommand.PressAsync(doneAsk, doneClient,", program);
         Assert.Contains("quest done <id> [--note \\\"…\\\"]", program[questUsage..]);
     }
 

@@ -5,7 +5,9 @@ import type { StarterDoor } from '../help/starters';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
+import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
+import { type TerminalTier, TerminalTierSetting } from './machine/TerminalTierSetting';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
 
@@ -20,8 +22,12 @@ export type DriverFacts = {
   coolOff?: number | null;
   /** Minutes a session may be quiet before Daoris looks in; absent where the answer lacks it. */
   quiet?: number | null;
-  /** How many sessions Daoris starts at once here; absent where the answer lacks it. */
+  /** How many sessions Daoris starts at once here, and the tier of a terminal's presses; absent where the answer lacks it. */
   cap?: number | null;
+  terminal?: TerminalTier | null;
+  /** The most files, and the most minutes, a folder's manifest read spends; absent where the answer lacks them. */
+  manifestFiles?: number | null;
+  manifestMinutes?: number | null;
   /** This machine's sessions' access; absent where the answer lacks it. */
   machineAccess?: AccessLevel | null;
   /** This machine's git access as set; absent where the answer lacks it. */
@@ -34,10 +40,10 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onManifest, onCap, onTerminal, onAccess, onGitAccess }: {
   facts: DriverFacts;
-  /** The two settings held in minutes as the driver's list declares them, which the domain reads from the list. */
-  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared };
+  /** The settings held in minutes as the driver's list declares them, which the domain reads from the list. */
+  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; manifest?: MinutesDeclared };
   busy: { access: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
@@ -45,8 +51,11 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onCoolOff: (minutes: number) => void;
   /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
   onQuiet?: (minutes: number) => void;
+  /** One bound of a folder's manifest read the person typed and left: whole, and not the one held. */
+  onManifest?: (bound: { files: number } | { minutes: number }) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held. */
   onCap: (cap: number) => void;
+  onTerminal?: (tier: TerminalTier) => void;
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
   /** A change to this machine's git access, a loosening confirmed in its row first. */
   onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
@@ -90,6 +99,17 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             <MinutesSetting setting={minutes.quiet} held={facts.quiet} onSet={onQuiet} />
           )}
 
+          {/* How large a folder's manifest read may grow before the folder is too large to follow: files and minutes, one setting. */}
+          {typeof facts.manifestFiles === 'number' && typeof facts.manifestMinutes === 'number' && minutes.manifest && onManifest && (
+            <ManifestBoundsSetting
+              setting={minutes.manifest}
+              files={facts.manifestFiles}
+              minutes={facts.manifestMinutes}
+              onFiles={(files) => onManifest({ files })}
+              onMinutes={(value) => onManifest({ minutes: value })}
+            />
+          )}
+
           {/* How many sessions Daoris starts at once: the person's one dial for the machine,
               never per account. Offered where the shell answers the field, as the cool-off is. */}
           {typeof facts.cap === 'number' && (
@@ -117,6 +137,8 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
               )}
             />
           )}
+
+          {facts.terminal && onTerminal && <TerminalTierSetting held={facts.terminal} onSet={onTerminal} />}
 
           {facts.pluginsFolder && (
             <SettingRow

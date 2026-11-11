@@ -294,7 +294,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             // sentence is about, never something the plugin contributes.
             if (problem is not null)
             {
-                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Tools = [], ToolsProblem = null };
+                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Systems = [], Tools = [], ToolsProblem = null };
             }
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
@@ -552,6 +552,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             // `steps.ts`, the same rules and words in the same order; a problem refuses the plugin, as a skill's does.
             var declaredSteps = PluginSteps.Read(id, root);
             if (declaredSteps.Problem is not null) return (PluginManifest.Empty(id), declaredSteps.Problem);
+            var declaredSystems = PluginSystems.Read(root);
+            if (declaredSystems.Problem is not null) return (PluginManifest.Empty(id), declaredSystems.Problem);
 
             // Its icon, last: an icon's problem is said and never refuses the plugin.
             var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
@@ -578,6 +580,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 Skills = skills,
                 Steps = declaredSteps.Steps,
                 Resources = declaredSteps.Resources,
+                Systems = declaredSystems.Systems,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);

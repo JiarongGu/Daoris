@@ -479,7 +479,7 @@ public sealed class Driver(
 
     internal Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop) => StoppedRecord.EndAsync(service, sessionId, stop);
 
-    private SessionEquipment Equipment => LazyInitializer.EnsureInitialized(ref _equipment, () => new SessionEquipment(home, config));
+    private SessionEquipment Equipment => LazyInitializer.EnsureInitialized(ref _equipment, () => new SessionEquipment(home, config, Context.Processes.Delegates));
 
     private SessionEquipment? _equipment;
 

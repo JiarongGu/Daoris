@@ -16,6 +16,14 @@ public sealed record Snapshot(
     public IKnowledgeSnapshot Within(IReadOnlyList<QuestView> quests, IReadOnlyList<RepoView> repositories, IReadOnlyList<SessionView> active) =>
         this with { Quests = quests, Repositories = repositories, Active = active };
 
+    /// <summary>
+    /// The <c>isolate</c> step of each repository whose workflow sets its work apart (<see cref="IWorkOrdersWorkflows.Isolations"/>), read by the look; a
+    /// repository absent runs one session at a time in its own place.
+    /// </summary>
+    public IReadOnlyDictionary<string, IsolateStep> Isolations { get; init; } = new Dictionary<string, IsolateStep>(StringComparer.OrdinalIgnoreCase);
+
+    public IsolateStep? IsolationOf(string repository) => Isolations.GetValueOrDefault(repository);
+
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -25,7 +33,6 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, StaffMoving> PolicyMoving { get; init; } = new Dictionary<string, StaffMoving>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The failures in a row each quest's last choice made (<see cref="ServiceClient.ReadFailedRuns"/>): what a <c>failed</c> move's <c>after</c> is weighed against.</summary>
     public IReadOnlyDictionary<string, int> FailedRuns { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The quests a role's policy holds for the person's yes, by quest: <c>policy-ask</c> or <c>moves-bound</c>.</summary>

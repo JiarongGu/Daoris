@@ -406,7 +406,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}}, "trees": ["engine"] }
+            { "drivable": ["engine"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}} }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

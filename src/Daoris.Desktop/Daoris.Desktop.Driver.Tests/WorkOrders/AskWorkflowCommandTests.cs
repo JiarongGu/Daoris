@@ -171,13 +171,16 @@ public sealed class AskWorkflowCommandTests : IDisposable
         Assert.Contains("\n  ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]\n", usage);
         Assert.Contains("\n  ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n", usage);
 
+        var read = AskArguments.Read(["--kind", "docs", "--workflow", "current", "fix it"], out _)!;
+        Assert.Equal(("docs", "current"), (read.Kind, read.Workflow));
+        Assert.True(AskArguments.Read(["--set-workflow", "a1", "--clear"], out _)!.ClearWorkflow);
         var console = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
-        Assert.Contains("case \"--kind\": kind = Value(); break;", console);
-        Assert.Contains("case \"--set-workflow\": setWorkflow = Value(); break;", console);
-        Assert.Contains("AskWorkflowCommand.Read(setWorkflow, kind, workflow, clearWorkflow, words, out var workflowProblem)", console);
-        Assert.Contains("AskWorkflowCommand.Compose(kind, workflow, workflowWords, out var workflowComposeProblem)", console);
-        Assert.Contains("workflow: chosenWorkflow", console);
+        Assert.Contains("AskWorkflowCommand.Read(setWorkflow, read.Kind, read.Workflow, read.ClearWorkflow, read.Words, out var workflowProblem)", console);
+        var made = File.ReadAllText(Path.Combine(
+            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
+        Assert.Contains("AskWorkflowCommand.Compose(ask.Kind, ask.Workflow, ask.WorkflowWords, out var workflowProblem)", made);
+        Assert.Contains("workflow: workflow", made);
     }
 
     private AskWorkflowWorld World(ServiceClient service) => new(service, () => DriverConfig.Parse("""

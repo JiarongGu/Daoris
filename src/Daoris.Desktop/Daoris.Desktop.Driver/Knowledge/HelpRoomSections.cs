@@ -27,6 +27,7 @@ internal static class HelpRoomSections
     public static readonly IReadOnlyList<IHelpRoomSection> All =
     [
         new HelpRoomIntro(),
+        new HelpRoomInFocus(),
         new HelpRoomMayDo(),
         new HelpRoomMayPropose(),
         new HelpRoomMakingAPlugin(),

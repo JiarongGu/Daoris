@@ -62,7 +62,6 @@ export type GitAccessSetup = {
 export type HeavySetup = {
   /** In the order they run; none where none is set here. */
   gates: HeavyGate[];
-  /** Whether its own file wins, as the driver read it; none until it has answered. */
   marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
   /**
@@ -97,7 +96,6 @@ export type Driving = {
   ownTree: boolean;
   onDrive: (drivable: boolean) => void;
   onHold: (held: boolean) => void;
-  onTrees: (ownTree: boolean) => void;
   /** What driving here does that the choice alone does not say: a direct door leaves a quest here sitting. */
   note?: string;
   /**

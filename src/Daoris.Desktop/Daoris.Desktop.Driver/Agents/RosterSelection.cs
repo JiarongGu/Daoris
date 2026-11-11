@@ -160,7 +160,16 @@ internal sealed class RosterSelection(HarnessRoster roster)
         }
 
         var names = AccountNames.Of(roster.Home, owner);
-        var before = roster.Before(owner, named, roster.Clock(), names, model: model);
+        // The own account is judged as the walk judges one: its reading at a whole window cools it until that reset, where the person
+        // did not pick it (a pick waits only on a cool-off a start recorded).
+        AccountState Before()
+        {
+            var now = roster.Clock();
+            var fact = picked || named is null ? null : HarnessRoster.FactOf(roster.Facts(owner, [named], now), named);
+            return roster.Before(owner, named, now, names, fact, model);
+        }
+
+        var before = Before();
         var own = ResumeAccount.Judge(named, scope, kind, before, present);
         // A limited record's own account, ready by its cool-off, is asked its maker's
         // reading first, where its door carries none of its windows, and judged again on what that left; where its door carries them, the
@@ -168,7 +177,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         if (limited && named is not null && own == NextHold.Ready)
         {
             await roster.FreshenAsync(adapter, owner, [named], config, ct).ConfigureAwait(false);
-            before = roster.Before(owner, named, roster.Clock(), names, model: model);
+            before = Before();
             own = ResumeAccount.Judge(named, scope, kind, before, present);
         }
 

@@ -14,8 +14,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
     private const string Config = """
         {
           "adapter": "claude-code-acp",
-          "drivable": ["engine"],
-          "trees": ["engine"]
+          "drivable": ["engine"]
         }
         """;
 
@@ -36,8 +35,6 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         var module = await ModuleAsync();
         var plan = await AnswerAsync(module, "PLACE_PLAN", Ask);
         var digest = plan.GetProperty("digest").GetString()!;
-        Assert.False(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
-
         var answer = await AnswerAsync(module, "PLACE_APPLY", new { repositories = new[] { "atlas" }, preset = SetupPresets.Merge, digest });
 
         Assert.True(answer.GetProperty("done").GetBoolean(), answer.ToString());
@@ -49,7 +46,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         var operation = Assert.Single(operations, each => each.GetProperty("id").GetString() == PlaceOperations.Configuration);
         Assert.Equal((PlaceOperations.Configuration, PlaceOutcomes.Done), (operation.GetProperty("id").GetString(), operation.GetProperty("outcome").GetString()));
         Assert.All(operations, each => Assert.Equal(PlaceOutcomes.Done, each.GetProperty("outcome").GetString()));
-        Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
+        Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(DriverConfig.Load(DriverConfigPath), "atlas", null, task: null).Workflow);
         Assert.Equal(PlaceOutcomes.Done, new PlaceReceipts(Home).Read(digest)!.Of(PlaceOperations.Configuration)!.Outcome);
     }
 
@@ -70,7 +67,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         Assert.Equal(plan, lines.Take(plan.Count));
         Assert.Equal("place: workflow `merge-after-accept` saved; configuration applied.", lines[^1]);
         Assert.DoesNotContain(lines, line => line!.StartsWith("--plan:", StringComparison.Ordinal));
-        Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
+        Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(DriverConfig.Load(DriverConfigPath), "atlas", null, task: null).Workflow);
     }
 
     private async Task<List<string?>> PlaceCommandPlan(DriverModule module)

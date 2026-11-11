@@ -31,6 +31,8 @@ public static class HandedSections
     /// <summary>For a carry-on: what the session before left, its record's end, its tree, its plan and its last words.</summary>
     public const string CarryOn = "carry-on";
 
+    public const string Place = "place";
+
     /// <summary>How to take the quest and close it, or carry it on.</summary>
     public const string Close = "close";
 

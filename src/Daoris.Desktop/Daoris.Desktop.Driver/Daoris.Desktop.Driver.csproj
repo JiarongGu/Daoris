@@ -51,7 +51,9 @@
        publish layout. -->
   <ItemGroup>
     <EmbeddedResource Include="Workplace\hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
+    <EmbeddedResource Include="Workplace\hooks\subagent-worktree.mjs" LogicalName="Daoris.Driver.subagent-worktree.mjs" />
     <EmbeddedResource Include="Agents\Providers\ClaudeCode\hooks\lineage-hook.mjs" LogicalName="Daoris.Driver.lineage-hook.mjs" />
+    <EmbeddedResource Include="Agents\Providers\ClaudeCode\hooks\permission-ask.mjs" LogicalName="Daoris.Driver.permission-ask.mjs" />
     <EmbeddedResource Include="Agents\keeper\server-keeper.mjs" LogicalName="Daoris.Driver.server-keeper.mjs" />
   </ItemGroup>
 

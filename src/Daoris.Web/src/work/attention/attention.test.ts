@@ -826,7 +826,7 @@ describe('a quest its role’s policy holds, worded', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', unclosed: 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
       permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding',
@@ -847,8 +847,8 @@ describe('the groups', () => {
   });
 
   /**
-   * A tree its session recorded and no branch record follows is named by that session as Sessions names it, and its
-   * block is worded by its code in the reader's language, the reason said once, the tree by its folder's name and never its path.
+   * A tree its session recorded and no branch record follows is named by that session as Sessions names it, and the
+   * tree by its folder's name, never its path.
    */
   it('names a unit by the session that recorded its tree, and words its block by its code, once, in each language', async () => {
     const reopened = row('work', 'c0nv0001', null, {
@@ -1248,7 +1248,7 @@ describe('the place each wait is counted at', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
+      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', unclosed: 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions',
     });

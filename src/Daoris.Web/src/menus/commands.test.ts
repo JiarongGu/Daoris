@@ -39,7 +39,7 @@ const doors = (): CommandDoors => ({
   toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), notifications: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
   zoom: vi.fn(),
   refresh: vi.fn(), go: vi.fn(), knowledge: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
-  quickAsk: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
+  quickAsk: vi.fn(), changeFocus: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
 });
 
 /** The catalogue's key as the label, its values after it: every string is still a key a test can read. */
@@ -149,7 +149,7 @@ describe('each menu (the design §3.2)', () => {
   it('Terminal and Help', () => {
     expect(ids(inMenu(table(), 'terminal'))).toEqual(['terminal.new', 'terminal.here', 'terminal.folder', 'terminal.show']);
     expect(ids(inMenu(table(), 'help'))).toEqual([
-      'help.ask', 'help.quickAsk', 'help.setup', 'help.shortcuts', 'help.log', 'help.update', 'help.about',
+      'help.ask', 'help.quickAsk', 'help.changeFocus', 'help.setup', 'help.shortcuts', 'help.log', 'help.update', 'help.about',
     ]);
   });
 });

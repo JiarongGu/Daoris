@@ -8,9 +8,9 @@ import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help
 import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
-import type { HelpPublishedEntry } from '../help/published';
-import { call, pressBound } from './call';
-import { syncLookBound } from './repositories/lines';
+import { type Place, placeSaid } from '../help/focus';
+import type { HelpPublishedEntry } from '../help/published/published';
+import { call } from './call';
 import { logEvent } from './log';
 import { usePollUnlessTold } from './state/published';
 import { askHeld } from './state/held';
@@ -37,7 +37,8 @@ import { useHarnesses } from './agents/agents';
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: (workspace?: string) => call('START_HELP', workspace ? { workspace } : {}) as Promise<
+    mutationFn: ({ workspace, focus }: { workspace?: string; focus?: Place } = {}) =>
+      call('START_HELP', { ...(workspace ? { workspace } : {}), ...(focus ? { focus } : {}) }) as Promise<
       { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,
   });
 
@@ -89,8 +90,7 @@ export const useHelpReadied = () => {
     ready: (id: string, workspace?: string) => change((was) => (was.spoken.includes(id) ? was : {
       ...was, readied: id, ...(workspace === undefined ? {} : { workspaces: { ...was.workspaces, [id]: workspace } }),
     })),
-    /** The person's words went to it: seen from now on. */
-    spoke: (id: string) => change((was) => ({
+      spoke: (id: string) => change((was) => ({
       readied: was.readied === id ? null : was.readied,
       spoken: was.spoken.includes(id) ? was.spoken : [...was.spoken, id],
     })),
@@ -184,26 +184,10 @@ export type HelpSettled = {
    * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
    */
   go?: HelpPlace | null;
-  harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
-  /** The card still stands for another press: a sync card's look, which settles nothing. A host without it answers none. */
+  /** The card still stands for another press: a draft's change opened in the editor, which settles nothing. A host without it answers none. */
   stands?: boolean;
   /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */
   changed?: boolean;
-};
-
-/**
- * How long an Apply may take: a sync card's first Apply is the look, which fetches, and its second the press,
- * which replays, and each waits as long as the screen's own would; every other Apply is quick, and waits the bridge's
- * default. The proposal is the one the conversation's list holds, found by its id.
- */
-export const settleBound = (client: QueryClient, id: string): number | undefined => {
-  const proposal = client.getQueriesData<HelpProposal[]>({ queryKey: HELP_PROPOSALS })
-    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
-    .find((each) => each.id === id);
-  if (proposal?.kind !== 'sync') return undefined;
-  return proposal.sync?.looked
-    ? pressBound(proposal.sync.rows.filter((row) => row.moves).length)
-    : syncLookBound(client);
 };
 
 /**
@@ -236,13 +220,14 @@ const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPag
  * driver before it takes a page, or every workspace's for null. It is part of the key, so one scope's pages never answer
  * another's.
  */
-export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null) => {
+export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null, about: Place | null = null) => {
   const { isAvailable } = useShenora();
   const words = search.trim();
   return useInfiniteQuery({
-    queryKey: [...HISTORY, workspace ?? '*', words],
+    queryKey: [...HISTORY, workspace ?? '*', about ? placeSaid(about) : '', words],
     queryFn: async ({ pageParam }) => listingPage(await call('HELP_CONVERSATIONS', {
       ...(workspace ? { workspace } : {}),
+      ...(about ? { about } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
     })),
@@ -376,6 +361,16 @@ export const useRenameHelp = () =>
       call('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }) as Promise<{ session: string; name: string | null }>,
   });
 
+export type HelpFocusAnswer =
+  | { session: string; focus: Place; focusNext: Place | null; reopens?: boolean; refused?: undefined }
+  | { session: string; refused: 'unknown-place' | 'not-help' | 'ended'; said: string };
+
+/** Choose a conversation's focus at once, so a reload or another window shows it; after its first words its next words take it. */
+export const useHelpFocus = () =>
+  useMutation({
+    mutationFn: (choice: { session: string; focus: Place }) => call('HELP_FOCUS', choice) as Promise<HelpFocusAnswer>,
+  });
+
 /** Pin an Ask Daoris conversation to the top of its history, or unpin it. */
 export const usePinHelp = () =>
   useMutation({
@@ -412,14 +407,12 @@ export const useSettleHelp = () => {
           {
             id: settle.id, revision: shownRevision(client, settle.id),
             ...(settle.taken ? { taken: [...settle.taken], left: [...(settle.left ?? [])] } : {}),
-          },
-          { timeoutMs: settleBound(client, settle.id) })
+          })
         : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
     onSuccess: (answer, settle) => {
-      // Whether Ask Daoris's proposals help: the person's Apply or Not now, once it lands and settles the
-      // proposal. A sync card's look settles nothing, and its card stands for the press that does.
+      // Whether Ask Daoris's proposals help: the person's Apply or Not now, once it settles the proposal; a standing card has not.
       if (!answer?.stands) logEvent('proposal.settled', { applied: settle.apply });
     },
   });

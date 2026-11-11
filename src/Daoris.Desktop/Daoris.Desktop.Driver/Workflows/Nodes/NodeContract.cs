@@ -6,6 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class NodeKinds
 {
+    /// <summary>The work set apart from the place's other sessions: the graph's entry, performed by the start before its record opens.</summary>
+    public const string Isolate = "isolate";
+
     /// <summary>The agent's done, on the ledger: a claim, and never the end.</summary>
     public const string Claimed = "claimed";
 
@@ -56,6 +59,9 @@ public static class NodeKinds
     /// <c>integrate</c>; its start is <see cref="IntegrateNode"/>.
     /// </summary>
     public const string Integrate = "integrate";
+
+    /// <summary>A system place's apply of its reviewed change set, under each operation's precondition: <see cref="ApplyNode"/>.</summary>
+    public const string Apply = "apply";
 
     /// <summary>
     /// The hold on the work's own requests: observed from the quests the run's sessions published,
@@ -311,6 +317,9 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// record, where no branch landed to open one on. Null for every other kind, which the person alone passes over. Never the person's skip: it carries no words, and its source is the record's.
     /// </summary>
     public string? SkipBy { get; init; }
+
+    /// <summary>The source an observed reach of a pressed kind carries: a <c>review</c> seen landed is git's, never the person's.</summary>
+    public string? ObservedBy { get; init; }
 }
 
 /// <summary>The authority by kind: each kind's unit's (<see cref="INodeKind.Authority"/>), a plugin's own node's from its declaration.</summary>

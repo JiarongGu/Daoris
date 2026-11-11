@@ -63,6 +63,8 @@ public static class PluginRoutes
     /// <summary><c>plugin add --offer &lt;id&gt;</c>: the Install beside one of the install's offers.</summary>
     public static InstanceRoute Install { get; } = Person("PLUGIN_INSTALL");
 
+    public static InstanceRoute Replace { get; } = Person("PLUGIN_REPLACE");
+
     /// <summary><c>plugin update &lt;id&gt; --yes</c>: the update's press, the person's with <c>apply: true</c>, the only form sent.</summary>
     public static InstanceRoute Update { get; } = Person("PLUGIN_UPDATE");
 
@@ -77,7 +79,7 @@ public static class PluginRoutes
         ("plugin update <id> --yes", Update, "the update's press, sent with `apply: true`; the plan without --yes is read here"),
         ("plugin remove|enable|disable <id>", Action,
             "the row's switch, and its remove, which stops the plugin's process before the folder goes"),
-        ("plugin add … (installed already)", null,
-            "alone: PLUGIN_ADD and PLUGIN_INSTALL add and never replace; a replace is the terminal's, on its word (D50)"),
+        ("plugin add … (installed already)", Replace,
+            "the replace, which PLUGIN_ADD and PLUGIN_INSTALL never make: the person's press, confirmed in the window (D50)"),
     ];
 }

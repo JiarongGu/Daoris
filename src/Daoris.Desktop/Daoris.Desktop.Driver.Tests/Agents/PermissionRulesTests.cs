@@ -58,6 +58,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__memory_write",
         "mcp__daoris-knowledge__memory_end",
         "mcp__daoris-knowledge__memory_propose",
+        "mcp__daoris-knowledge__system_plan",
     ];
 
     /// <summary>What the `commit` default allows, a rename among it.</summary>
@@ -203,6 +204,7 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("memory_write")]
     [InlineData("memory_end")]
     [InlineData("memory_propose")]
+    [InlineData("system_plan")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
@@ -513,17 +515,13 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>No rules to hand still hands the session its own context, and nothing else: no hooks, no classifier.</summary>
     [Fact]
-    public void Nothing_to_hand_still_hands_the_sessions_own_context()
+    public void Nothing_to_hand_hands_the_permissions_alone_with_no_hook_classifier_or_account_key()
     {
         var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, []);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
-        Assert.Equal(
-            ["permissions", .. ClaudeRules.OwnContext.Select(pair => pair.Key)],
-            document.RootElement.EnumerateObject().Select(property => property.Name));
-        Assert.All(ClaudeRules.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
+        Assert.Equal(["permissions"], document.RootElement.EnumerateObject().Select(property => property.Name));
     }
 
     // ——— A driven session may commit.

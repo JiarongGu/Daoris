@@ -62,7 +62,7 @@ public sealed class MemoryTools(
         if (engines is null) return NotOn;
 
         var told = await ToldAsync(caller, ct).ConfigureAwait(false);
-        var found = new List<(MemoryReference Reference, MemoryEntry Entry)>();
+        var perRepository = new List<List<(MemoryReference Reference, MemoryEntry Entry)>>();
         var unread = new List<string>();
         var check = new MemoryWorkspaceCheck(service, caller.Workspace);
         foreach (var repository in caller.Members)
@@ -71,8 +71,13 @@ public sealed class MemoryTools(
             if (unviewable) unread.Add(repository);
             if (reads is null) continue;
             var entries = await reads.SearchAsync(query, Limit, ct).ConfigureAwait(false);
-            found.AddRange(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)));
+            perRepository.Add(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)).ToList());
         }
+
+        var found = Enumerable.Range(0, perRepository.Count == 0 ? 0 : perRepository.Max(list => list.Count))
+            .SelectMany(round => perRepository.Where(list => round < list.Count).Select(list => list[round]))
+            .Take(Limit)
+            .ToList();
 
         told += string.Concat(unread.Select(repository => MemoryViews.Unviewable(repository) + Environment.NewLine + Environment.NewLine));
         await KeepReadsAsync(caller, found.Take(Limit).Select(each => new MemoryRead(each.Reference, each.Entry.Revision)), ct).ConfigureAwait(false);

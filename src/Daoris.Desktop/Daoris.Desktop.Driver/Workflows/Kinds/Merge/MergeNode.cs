@@ -55,4 +55,6 @@ internal sealed class MergeNode : BuiltInNode
     public override string? Title => "The merge";
 
     public override NodeLook Look => NodeLook.Landing;
+
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
 }

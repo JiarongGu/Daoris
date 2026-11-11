@@ -133,6 +133,15 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         }
     }
 
+    /// <summary><c>--chrome</c> and the memory file where the person's own run reads them (<see cref="ClaudeOwnChrome"/>, <see cref="ClaudeOwnMemory"/>).</summary>
+    public void HandOwn(ProcessStartInfo info, OwnTools own)
+    {
+        if (ClaudeOwnChrome.On(own)) info.ArgumentList.Add(ClaudeOwnChrome.Flag);
+        if (ClaudeOwnMemory.File(own) is not { } memory) return;
+        info.ArgumentList.Add(ClaudeOwnMemory.Flag);
+        info.ArgumentList.Add(memory);
+    }
+
     /// <summary>
     /// The prompt goes on stdin under a bare <c>-p</c> (<see cref="NativePrompt"/>), as BOM-less UTF-8: a process's
     /// arguments are readable machine-wide.

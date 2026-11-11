@@ -528,7 +528,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             && scope.Use.Keep is { } kept
             && scope.List.Contains(kept, StringComparer.OrdinalIgnoreCase)
             && !states.Any(state => string.Equals(state.Account, kept, StringComparison.OrdinalIgnoreCase))
-            && roster.Before(owner, kept, now).IsReady)
+            && roster.Before(owner, kept, now, names, HarnessRoster.FactOf(roster.Facts(owner, [kept], now), kept)).IsReady)
         {
             var aside = RotationWords.KeptAsideOf(kept, names);
             sentence += " " + aside.Note;

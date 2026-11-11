@@ -16,7 +16,8 @@ internal sealed class SessionsRecordDesk(DriverContext context)
     public async Task<object?> OpeningsAsync(SessionOpeningsRead press)
     {
         await Task.CompletedTask;
-        return new { Openings = _loop.Events.Openings([.. press.Ids ?? []]) };
+        var ids = press.Ids ?? [];
+        return new { Openings = _loop.Events.Openings([.. ids]), Briefs = _loop.Events.Briefs([.. ids]) };
     }
 
     public async Task<object?> RelatedAsync(SessionRelatedRead press, CancellationToken cancellationToken)

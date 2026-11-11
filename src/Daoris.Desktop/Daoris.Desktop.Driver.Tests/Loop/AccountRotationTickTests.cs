@@ -67,9 +67,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
     private DriverConfig Config(string signedOut = "-") => StaffedRoles.Config("stub") with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        TestBound = 1,
+        Drivable = ["engine"],        TestBound = 1,
         PollSeconds = 1,
         // Two failures park it, and the quest already holds one: a limit must hold none.
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, signedOut] },
@@ -184,9 +182,7 @@ public sealed class AccountRotationTickTests : IDisposable
         client.AccountLined += line => { lock (lines) lines.Add(line); };
         var config = StaffedRoles.Config("acp-stub") with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            TestBound = 1,
+            Drivable = ["engine"],            TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: the limit must hold none.
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
@@ -312,9 +308,7 @@ public sealed class AccountRotationTickTests : IDisposable
     /// <summary>The protocol door onto the stub's accounts, its agent resuming conversations; <paramref name="signedOut"/> as the stub's sign-in answers it.</summary>
     private DriverConfig Resuming(string mode, string signedOut = "-") => StaffedRoles.Config("acp-stub") with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        TestBound = 1,
+        Drivable = ["engine"],        TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>>
         {

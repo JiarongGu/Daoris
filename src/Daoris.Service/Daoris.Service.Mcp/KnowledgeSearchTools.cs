@@ -65,7 +65,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         CancellationToken ct = default)
     {
         if (UnknownKinds(kinds) is { } refused) return refused;
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var (answered, refusedIndex) = await FromIndexAsync(service.AnswerAsync(
             new KnowledgeQuery(query)
@@ -88,6 +87,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                  + "empty result: nothing could read the index. Try again, or call `knowledge_refresh`.";
         }
 
+        CallFound.Say(hits.Count);
         if (hits.Count == 0)
         {
             return answer.Semantic
@@ -154,8 +154,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         var (entry, refusedIndex) = await FromIndexAsync(service.FindAsync(id, ct)).ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
         if (entry is null) return $"No entry with id `{id}`. Ids come from `knowledge_search`.";
-        // An id is no argument past the workspace a conversation is bound to.
-        if (circle.Outside(entry) is { } outside) return outside;
 
         // The same line a hit carries, so what a search said of its standing holds when the entry is read.
         var standing = (await service.StandingsAsync([entry], ct).ConfigureAwait(false))[entry.Id].Says;
@@ -196,7 +194,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var (summarized, refusedIndex) = await FromIndexAsync(service.SummarizeAsync(scope, ct)).ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
@@ -239,7 +236,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         CancellationToken ct = default)
     {
         if (UnknownKinds(kinds) is { } refused) return refused;
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var (found, refusedIndex) = await FromIndexAsync(service.FindConvergenceAsync(
             new ConvergenceOptions(
@@ -306,7 +302,6 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var registered =await service.RegistryAsync(scope, ct).ConfigureAwait(false);
         if (registered.Count == 0)

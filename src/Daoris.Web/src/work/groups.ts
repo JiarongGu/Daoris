@@ -87,6 +87,7 @@ export type SessionGrouping = {
    * Daoris told the session this call ran past its pipeline's bound.
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
+  waits?: { run: string; node: string; why: string; since?: string | null }[] | null;
 };
 
 /** The characters a running call's head is said in at most, its ellipsis among them. */

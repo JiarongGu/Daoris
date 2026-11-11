@@ -17,23 +17,29 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "handover", "brainstorms")]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms", "terminal")]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
-        "brainstorms", "workflow", "keep", "role",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "brainstorms", "workflow", "keep", "role", "terminal",
     ];
+
+    /// <summary>What the gone <c>trees</c> verb answers: where a place's sessions are set apart now.</summary>
+    public const string TreesMoved =
+        "`place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an "
+        + "`isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its "
+        + "checkout one at a time. `daoris workflow show <workflow>` names the step.";
 
     public const string Usage =
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris place trees <repository> on|off · notify on|off
-               daoris settings cap <n> · cooloff <minutes> · quiet <minutes>
+               daoris place notify on|off · trees (gone: a workflow's `isolate` step)
+               daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
@@ -68,7 +74,6 @@ public static class DriverChoicesCommand
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
-    /// <summary>The marker a shell Daoris started carries: its session's record id.</summary>
     public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>
@@ -238,28 +243,7 @@ public static class DriverChoicesCommand
             }
 
             case "trees":
-            {
-                var repository = Named(args, verb);
-                var direction = args.Skip(1).FirstOrDefault(token => token is "on" or "off")
-                    ?? throw new ChoiceWords("`driver trees` needs on|off — e.g. `daoris place trees aurora-engine on`.");
-                var on = direction == "on";
-                return Change(ChoiceRoutes.Trees, new JsonObject { ["repository"] = repository, ["ownTree"] = on },
-                    config => config.WithTrees(repository, on), () =>
-                    {
-                        Say(on ? $"daoris: sessions in `{repository}` open their own worktree (D51)." : $"daoris: sessions in `{repository}` run in its registered root again.");
-                        if (on)
-                        {
-                            // npm's dependencies are copied in where the tree's lockfile matches the checkout's.
-                            Say("  A fresh tree holds nothing git does not track but the npm dependencies copied");
-                            Say("  from your checkout where the tree's lockfile matches — no build outputs, no other");
-                            Say("  installs — so a session pays the rest of that repository's own setup cost per tree.");
-                            Say("  In exchange, your uncommitted work in the root no longer holds the driver.");
-                        }
-
-                        Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-                        return 0;
-                    });
-            }
+                throw new ChoiceWords(TreesMoved, exit: 1);
 
             case "notify":
             {
@@ -328,6 +312,32 @@ public static class DriverChoicesCommand
                 {
                     Say($"daoris: a session that says nothing and runs nothing for {minutes} minutes is looked in on; none is ever stopped for running long.");
                     Say($"  Written to {path} — read at the next look, so nothing restarts.");
+                    return 0;
+                });
+            }
+
+            case "manifest":
+            {
+                var which = args.ElementAtOrDefault(1);
+                var value = args.Count == 3 ? Number(args[2]) : double.NaN;
+                var files = which == "files" && IsWhole(value) && ManifestSetting.TakesFiles((long)value) ? (int)value : (int?)null;
+                var minutes = which == "minutes" && IsWhole(value) && ManifestSetting.TakesMinutes((long)value) ? (int)value : (int?)null;
+                if (files is null && minutes is null)
+                {
+                    throw new ChoiceWords(which switch
+                    {
+                        "files" => ManifestSetting.FilesRefusal,
+                        "minutes" => ManifestSetting.MinutesRefusal,
+                        _ => ManifestSetting.OneRefusal,
+                    });
+                }
+
+                return Change(ChoiceRoutes.Manifest, new JsonObject { [which!] = files ?? minutes }, config => config.WithManifest(files, minutes), () =>
+                {
+                    Say(files is { } count
+                        ? $"daoris: a folder's manifest read stops at {count} files; a folder past it is too large to follow, and still works in place."
+                        : $"daoris: a folder's manifest read stops after {minutes} minutes; a folder past it is too large to follow, and still works in place.");
+                    Say($"  Written to {path} — read at the next manifest, so nothing restarts.");
                     return 0;
                 });
             }
@@ -471,7 +481,6 @@ public static class DriverChoicesCommand
         }
     }
 
-    /// <summary><c>list</c>: what this machine drives, as <c>daoris place list</c> always said it.</summary>
     private static int List(DriverConfig choices, DriverChoicesWorld world) => DriverChoicesList.List(choices, world);
 
     /// <summary><c>across</c>: whether a checkout is read by agents outside it, and the writes declared into another.</summary>

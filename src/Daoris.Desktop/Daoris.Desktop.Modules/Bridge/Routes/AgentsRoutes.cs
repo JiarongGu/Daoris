@@ -349,6 +349,20 @@ public sealed class AgentsRoutes(DriverContext context)
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(HarnessActionPress press, CancellationToken cancellationToken)
     {
+        try
+        {
+            return await RunHarnessActionAsync(press, cancellationToken);
+        }
+        catch (Exception failed) when (press.Action is "update" or "pin" && failed is not OperationCanceledException)
+        {
+            // An update or a pin Ask Daoris pressed that fails before it starts has no end of its own to say, so its failure is said here.
+            _loop.PressedEnds.Ended(press.Door, press.Action, -1, failed.Message, _loop.Chat is { } chat ? chat.Tell : null);
+            throw;
+        }
+    }
+
+    private async Task<object?> RunHarnessActionAsync(HarnessActionPress press, CancellationToken cancellationToken)
+    {
         var (action, harness) = (press.Action, press.Door);
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter

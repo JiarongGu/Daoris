@@ -15,7 +15,7 @@ public sealed class IntegrateWatchTests : IDisposable
     private const string T1 = "1111111111111111111111111111111111111111";
 
     private const string Rules = """
-        { "drivable": ["engine", "shop"], "adapter": "stub", "cap": 3, "pollSeconds": 600, "trees": ["engine", "shop"] }
+        { "drivable": ["engine", "shop"], "adapter": "stub", "cap": 3, "pollSeconds": 600 }
         """;
 
     private static readonly DateTimeOffset Then = new(2026, 10, 30, 9, 0, 0, TimeSpan.Zero);

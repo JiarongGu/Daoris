@@ -33,6 +33,11 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
         return rows.Count == 0 ? null : string.Join(";", rows);
     }
 
+    public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken) =>
+        [.. (await Service().RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(each => new PipeRegistered(each.Repository, each.Workspace, each.Kind, each.Excludes))];
+
+    public Task<PipeMachine> MachineAsync(CancellationToken cancellationToken) => PipeMachine.ReadAsync(loop, Service(), cancellationToken);
+
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
     {
         var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);
@@ -227,6 +232,11 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
 
             case "file":
                 return Hash(Rooted(PipeGround.Text(payload, "file")));
+            case "import-folder":
+                return PipeGround.Text(payload, "folder") is not { Length: > 0 } ? "root"
+                    : Rooted(PipeGround.Text(payload, "folder")) is { } folder && Directory.Exists(folder)
+                        ? PipeGround.Fingerprint(Directory.EnumerateDirectories(folder).Select(Path.GetFileName).Order(StringComparer.Ordinal))
+                        : "none";
             case "declaration":
                 return Rooted(PipeGround.Text(payload, "path")) is { } repository ? Hash(Path.Combine(repository, DeclarationNames.Manifest)) : "none";
             case "notices":

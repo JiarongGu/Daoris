@@ -4,11 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>
-/// What every kind's proposal tests stand on: a home of the test's own with the proposals folder, the
-/// file as the service's box writes it, the machine a proposal is judged against, and an Apply through
-/// <see cref="HelpStandInDoors"/>, whose doors each kind's test file adds.
-/// </summary>
+/// <summary>What every kind's proposal tests stand on: a home, the file as the box writes it, the machine, and an Apply through <see cref="HelpStandInDoors"/>.</summary>
 public abstract class HelpProposalsFixture : IDisposable
 {
     protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
@@ -27,7 +23,6 @@ public abstract class HelpProposalsFixture : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>A folder beside the home, never inside it, removed with the home when the test ends.</summary>
     protected string Beside(string suffix)
     {
         var folder = _home + suffix;
@@ -38,9 +33,7 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static readonly HelpMachineFacts Facts = new(
         Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"])
     {
-        // What the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
         Parked = [new ParkedQuest("q1a2b3c4", "engine")],
-        // What its last look held by the person's stop, and the session each is stopped in.
         Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
     };
 
@@ -61,27 +54,9 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static HelpProposal Setting(string door, string? target = null, string? workspace = null, string? value = null) =>
         new("p1", "setting", door, target, workspace, value, null, "why", "h1", "proposed");
 
-    /// <summary>
-    /// The machine as the Agents screen, the quest drawer and the ask's record read it: each door's roster
-    /// row, and each record with the service's own <c>deletable</c>.
-    /// </summary>
+    /// <summary>The machine as the Agents screen, the quest drawer and the ask's record read it, each record with its <c>deletable</c>.</summary>
     protected static readonly HelpMachineFacts Machine = Facts with
     {
-        Doors =
-        [
-            new HelpDoorFacts("claude-code")
-            {
-                Present = true, Updates = "tool", Channel = "claude-code-releases", Owner = "claude-code",
-                Accounts = ["work"], SettingsKnown = true, Product = "Claude Code",
-            },
-            new HelpDoorFacts("claude-code-acp")
-            {
-                Present = true, Updates = "pin", Pinned = "0.84.0", Package = "@agentclientprotocol/claude-agent-acp",
-                Owner = "claude-code", Accounts = ["work"], SettingsKnown = true,
-            },
-            new HelpDoorFacts("dsh") { Present = true, Owner = "dsh", Product = "DeepSeek" },
-            new HelpDoorFacts("codex-acp") { Present = false, Updates = "tool", Package = "@zed-industries/codex-acp", Owner = "codex-acp" },
-        ],
         Quests =
         [
             new HelpQuestFacts("q1a2b3c4", "Cap the chunk budget", "engine", "Open", Deletable: true),
@@ -99,8 +74,7 @@ public abstract class HelpProposalsFixture : IDisposable
     };
 
     /// <summary>
-    /// This machine's sessions as Sessions' list reads them: each record, where the list places it with its
-    /// archive mark, the one a tree or a landing keeps, and the ledger's judgement of a delete one names.
+    /// This machine's session records, as a go naming a session is judged against them.
     /// </summary>
     protected static readonly HelpMachineFacts SessionsHere = Machine with
     {
@@ -119,27 +93,6 @@ public abstract class HelpProposalsFixture : IDisposable
             new SessionRecord("c3named0", "engine", "completed") { Kind = "chat" },
             new SessionRecord("c4remote", "game", "stopped") { Kind = "chat" },
         ],
-        Placed =
-        [
-            new SessionGrouping("s4parked", SessionGroup.You, "parked"),
-            new SessionGrouping("s5review", SessionGroup.Review, "completed"),
-            new SessionGrouping("s3live00", SessionGroup.Working, "working"),
-            new SessionGrouping("s1ended0", SessionGroup.Ended, "completed"),
-            new SessionGrouping("s2ended0", SessionGroup.Ended, "failed"),
-            new SessionGrouping("h1helper", SessionGroup.Ended, "completed"),
-            new SessionGrouping("north/s7team0", SessionGroup.Ended, "completed") { Teammate = true },
-            new SessionGrouping("c1chat00", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c2tree00", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c3named0", SessionGroup.Ended, "completed"),
-            new SessionGrouping("c4remote", SessionGroup.Ended, "stopped"),
-            new SessionGrouping("s6archiv", SessionGroup.Archived, "completed") { Archived = true },
-        ],
-        Kept = new HashSet<string>(["c2tree00"], StringComparer.Ordinal),
-        SessionDeletes = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal)
-        {
-            ["c1chat00"] = new(true, "Session `c1chat00` may be deleted."),
-            ["c3named0"] = new(false, "Session `c3named0` is named by ask `#a1b2c3d4` as its intake.") { Refusal = "named", Ask = "a1b2c3d4" },
-        },
     };
 
     protected static HelpProposal Of(string kind, string door, string? target = null, string? value = null) =>
@@ -178,64 +131,6 @@ public sealed class HelpStandInDoors : IHelpDoors
 {
     public List<string> Calls { get; } = [];
 
-    // IHelpAccountDoors
-    public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort)
-    {
-        string Said(AgentSettingEdit? edit) => edit is null ? "-" : edit.Value ?? "clear";
-        Calls.Add($"SET_AGENT_SETTINGS {harness} {account} {Said(model)} {Said(effort)}");
-        return new AgentSettingsRead(model?.Value, effort?.Value, [], null);
-    }
-
-    // IHelpAgentDoors
-    public Action<int, string?>? Ended { get; private set; }
-
-    /// <summary>An action that ends before its start is answered: a pin already installed does.</summary>
-    public bool EndsAtOnce { get; init; }
-
-    public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
-    {
-        Calls.Add($"HARNESS_ACTION {harness} {action} {version}".TrimEnd());
-        Ended = ended;
-        if (EndsAtOnce) ended(0, null);
-        return Task.CompletedTask;
-    }
-
-    /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
-    public string? UseRefusal { get; init; }
-
-    public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
-    {
-        if (UseRefusal is { } refused) throw new DriverException(refused);
-        // The switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
-        var curve = change.Curve is { } set
-            ? string.Join(";", UseCurve.Windows.Where(window => set[window] is not null)
-                .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
-            : "";
-        Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} "
-            + $"switch={change.Switch} curve={curve} noCurve={change.NoCurve}");
-        return Task.CompletedTask;
-    }
-
-    /// <summary>What the order's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
-    public string? OrderRefusal { get; init; }
-
-    /// <summary>Whether the account is still cooling when the ready's door ends it.</summary>
-    public bool ReadyEnded { get; init; } = true;
-
-    public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
-    {
-        Calls.Add($"ACCOUNT_USE {harness} ready {account ?? "own"}");
-        return Task.FromResult(ReadyEnded);
-    }
-
-    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
-    {
-        if (OrderRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"ACCOUNT_USE {harness} order {string.Join(",", accounts)} clear={clear}");
-        return Task.CompletedTask;
-    }
-
-    // IHelpAskDoors
     /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
 
@@ -246,139 +141,6 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(Asked);
     }
 
-    // IHelpBrowserDoors
-    /// <summary>What the browser's door refuses with, as the Browser screen's route would; null to make the change.</summary>
-    public string? BrowserRefusal { get; init; }
-
-    public void ChangeBrowser(string setting, string value, string? address, string? title)
-    {
-        if (BrowserRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
-    }
-
-    // IHelpClearDoors
-    /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
-    public HistoryOutcome? HistoryCleared { get; set; }
-
-    public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
-    {
-        Calls.Add($"HISTORY_CLEAR {HistoryClearing.Word(scope)} {id} {string.Join(",", units.Select(unit => $"{unit.Kind}:{unit.Id}"))}");
-        return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
-    }
-
-    // IHelpDeleteDoors
-    public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
-
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/quests/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/asks/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_DELETE {id}");
-        return Task.FromResult(Deleted);
-    }
-
-    // IHelpPauseDoors
-    public (bool Ok, string Message) WorkPaused { get; set; } = (true, "Paused it.");
-
-    public (bool Ok, string Message) WorkResumed { get; set; } = (true, "Resumed it.");
-
-    public Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_PAUSE {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkPaused);
-    }
-
-    public Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_RESUME {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkResumed);
-    }
-
-    // IHelpPluginDoors
-    /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card is drawn.</summary>
-    public string? PluginRefusal { get; init; }
-
-    public void AddPlugin(string folder)
-    {
-        Calls.Add($"PLUGIN_ADD {folder}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public void SwitchPlugin(string id, bool on) => Calls.Add($"PLUGIN_ACTION {(on ? "enable" : "disable")} {id}");
-
-    public void AddOffer(string id)
-    {
-        Calls.Add($"PLUGIN_INSTALL {id}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public Task UpdatePluginAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"PLUGIN_UPDATE {id}");
-        return PluginRefusal is { } refused ? Task.FromException(new DriverException(refused)) : Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// The home whose approvals a plugin's approve and withdraw write, through <see cref="HelpGrants"/> as the page's press does;
-    /// null records the call only.
-    /// </summary>
-    public string? GrantsHome { get; init; }
-
-    public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes)
-    {
-        Calls.Add($"HELP_APPROVE {plugin} {server} {string.Join(",", writes)}".TrimEnd());
-        if (GrantsHome is { } home) HelpGrants.Approve(home, PluginCatalog.Load(home), plugin, server, writes);
-    }
-
-    public void WithdrawHelp(string plugin, string server)
-    {
-        Calls.Add($"HELP_WITHDRAW {plugin} {server}");
-        if (GrantsHome is { } home) HelpGrants.Withdraw(home, plugin, server);
-    }
-
-    // IHelpRepositoryDoors
-    public (bool Ok, string Message) Wired { get; set; } = (true, "`engine` is now in workspace `studio`.");
-
-    public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/registry/{repository}/workspace {workspace}");
-        return Task.FromResult(Wired);
-    }
-
-    // IHelpSessionDoors
-    public (bool Ok, string Message) Archived { get; set; } = (true, "Archived it.");
-
-    public Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_ARCHIVE {(archived ? "archive" : "unarchive")} {string.Join(",", ids)}");
-        return Task.FromResult(Archived);
-    }
-
-    public (bool Ok, string Message) Helped { get; set; } = (true, "Asked #h1.");
-
-    public Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_HELPER_ASK {session} {question} agent={agent} after={after} toPerson={toPerson}");
-        return Task.FromResult(Helped);
-    }
-
-    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_HELPER_PASS {session} {ask}");
-        return Task.FromResult(Helped);
-    }
-
-    // IHelpSettingDoors
     public DriverConfig Config { get; private set; } = DriverConfig.Empty;
 
     public void Change(Func<DriverConfig, DriverConfig> edit)
@@ -387,46 +149,9 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
-    public List<HelpGitUse> GitUses { get; } = [];
-
-    public Task UseGitAsync(HelpGitUse use, CancellationToken ct)
-    {
-        GitUses.Add(use);
-        Calls.Add("git-use");
-        return Task.CompletedTask;
-    }
-
     public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices)
     {
         Config = ActorChoices.With(Config, actor, choices);
         Calls.Add("change");
-    }
-
-    // IHelpSyncDoors
-    /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
-    public SyncPlan Listed { get; init; } = new([], [], []);
-
-    /// <summary>What the look's door refuses with; null to list.</summary>
-    public string? SyncRefusal { get; init; }
-
-    /// <summary>A replay the press stops at a conflict, in the tree layer's words; null for none.</summary>
-    public string? Conflict { get; init; }
-
-    public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
-    {
-        if (SyncRefusal is { } refused) throw new DriverException(refused);
-        // The workspace is recorded only where one is named, so a call without one records none.
-        Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(Listed);
-    }
-
-    public Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
-    {
-        Calls.Add($"TREES_SYNC {repository} {string.Join(' ', only.Order(StringComparer.Ordinal))}" + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(new SyncDone(
-            [.. Listed.Lines.Where(pull => only.Contains($"{pull.Repository}:{pull.Line}")).Select(pull => new PullResult(pull, pull.Moves, "moved"))],
-            [.. Listed.Rebases.Where(item => only.Contains($"{item.Repository}:{item.Branch}"))
-                .Select(item => Conflict is { } conflict ? new RebaseResult(item, false, conflict) : new RebaseResult(item, item.Replays, "replayed"))],
-            [.. Listed.Deletes.Where(item => only.Contains($"{item.Repository}:{item.Branch}")).Select(item => new LandedResult(item, item.Removable, "removed"))]));
     }
 }

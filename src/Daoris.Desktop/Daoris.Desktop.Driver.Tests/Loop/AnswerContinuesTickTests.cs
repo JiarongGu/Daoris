@@ -56,9 +56,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var adapters = set ?? ProviderRegistry.Built();
         var config = StaffedRoles.Config("acp-stub") with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            TestBound = 1,
+            Drivable = ["engine"],            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };
@@ -333,9 +331,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
     private DriverConfig Config(string agent, string mode, string permissions) => (StaffedRoles.Config("acp-stub") with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        TestBound = 1,
+        Drivable = ["engine"],        TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", agent, Log, mode] },
     }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, permissions)] });

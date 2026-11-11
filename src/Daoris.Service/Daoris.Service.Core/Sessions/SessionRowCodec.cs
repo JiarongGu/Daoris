@@ -59,6 +59,7 @@ internal static class SessionRowCodec
         Override = ActorElement(reader, "actor_override"),
         Ran = ActorElement(reader, "ran"),
         Chosen = ActorElement(reader, "chosen"),
+        HoldsPlace = ResolvedRead(reader.IsDBNull(reader.GetOrdinal("holds_place")) ? null : reader.GetString(reader.GetOrdinal("holds_place"))),
     };
 
     /// <summary>One of the actor columns' provenance objects as kept; null for none.</summary>

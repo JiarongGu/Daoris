@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { accountLabel, accountName, accountWho } from '../../agents/agents';
 import type { Account } from '../../agents/tools';
 import { Icon, Menu } from '../../design/ui';
-import { CHIP } from './RepositoryPicker';
+import { CHIP } from '../../design/atoms/ChipCombobox';
 
 /** "Leave it to the driver", as a radio row's value: a row's value is never empty, and a default stays choosable. */
 const DEFAULT = '*';

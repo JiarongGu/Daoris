@@ -21,7 +21,7 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
 /**
  * The work points' handlers, built around the author's external calls:
- *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`
+ *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
  *                      or null when the platform cannot say
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
@@ -109,7 +109,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
       const known = journal.attempts[call.idempotencyKey];
       if (!known) {
         const attempt = { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
-          stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs, deadlineAt: call.deadlineAt,
+          stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs, options: call.options ?? {}, deadlineAt: call.deadlineAt,
           state: 'begun', life };
         journal.attempts[call.idempotencyKey] = attempt;
         keep();

@@ -52,6 +52,7 @@ export const GRANTS: readonly GrantSpec[] = [
     id: 'settings', operations: ['notify', 'language', 'cap', 'cooloff', 'quiet'],
     byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'settings',
   },
+  { id: 'acts', operations: ['pause'], byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'operations' },
   { id: 'shell', operations: [], byDefault: 'off', needsRules: false, later: true, onPlugin: false, door: null },
 ];
 

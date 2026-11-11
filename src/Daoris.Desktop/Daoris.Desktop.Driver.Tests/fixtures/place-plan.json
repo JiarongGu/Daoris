@@ -9,7 +9,6 @@
         "place: `solo` — Merge after you accept; general driving",
         "  `solo`: now Not driven · after Merge after you accept · suggested Merge after you accept",
         "changes, each said once:",
-        "  `solo`: a tree per session, off → on",
         "  `solo`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
         "  `solo`: the workflow its work follows, Current → `merge-after-accept`",
         "  `solo`: general driving, off → on",
@@ -59,7 +58,6 @@
         "place: `atlas` — Merge after you accept; adoption",
         "  `atlas`: now Not driven · after Not driven · suggested Merge after you accept, with adoption",
         "changes, each said once:",
-        "  `atlas`: a tree per session, off → on",
         "  `atlas`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
         "  `atlas`: the workflow its work follows, Current → `merge-after-accept`",
         "  `atlas`: a set-up asked of its own session, not asked → asked",
@@ -75,7 +73,6 @@
         "place: `atlas` — Merge after you accept; adoption; general driving",
         "  `atlas`: now Not driven · after Merge after you accept · suggested Merge after you accept, with adoption",
         "changes, each said once:",
-        "  `atlas`: a tree per session, off → on",
         "  `atlas`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
         "  `atlas`: the workflow its work follows, Current → `merge-after-accept`",
         "  `atlas`: general driving, off → on",
@@ -104,7 +101,6 @@
         "place: `solo` — Keep how it lands; general driving",
         "  `solo`: now Not driven · after 1 change of your own (no workflow is chosen) · suggested Merge after you accept",
         "changes, each said once:",
-        "  `solo`: a tree per session, off → on",
         "  `solo`: general driving, off → on",
         "--plan: nothing was written, and nothing was asked."
       ]

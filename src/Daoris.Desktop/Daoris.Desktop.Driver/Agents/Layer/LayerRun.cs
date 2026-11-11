@@ -167,6 +167,14 @@ internal sealed class LayerRun(
             resume.Again();
             Input.MayRetry = false;
             await LegAsync(_conversation, first: false, opening: null, preamble: null, Told, ct).ConfigureAwait(false);
+            // A stop asked while the retry started found the ended process: stopped again once this one is spawned, as the transport's is.
+            if (hold?.StopAsked == true && _leg is { } retry)
+            {
+                await Task.WhenAny(retry.Spawned, retry.Turn).ConfigureAwait(false);
+                retry.Readings.Stop();
+                retry.Runner.Stop();
+            }
+
             end = await EndedAsync(_leg!, bounded: false, ct).ConfigureAwait(false);
         }
 

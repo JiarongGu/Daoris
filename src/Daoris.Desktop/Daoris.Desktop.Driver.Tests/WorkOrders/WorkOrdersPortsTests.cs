@@ -176,11 +176,16 @@ public sealed class WorkOrdersPortsTests : IDisposable
 
         public IReadOnlySet<string> Owing(string home) => Owes;
 
+        public IReadOnlyList<PersonWait> PersonWaits(string home) => [];
+
         public string? Unusable(string home, string workflow)
         {
             Unusables.Add(home);
             return $"stood in: {workflow}";
         }
+
+        public Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<string>>([]);
 
         public (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
             string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds)
@@ -188,5 +193,8 @@ public sealed class WorkOrdersPortsTests : IDisposable
             KindsAsked.AddRange(kinds);
             return ("`stand` v1", [("`first` v2", ["drops a step"]), ("`second` v1", null)]);
         }
+
+        public IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories) =>
+            new Dictionary<string, IsolateStep>();
     }
 }

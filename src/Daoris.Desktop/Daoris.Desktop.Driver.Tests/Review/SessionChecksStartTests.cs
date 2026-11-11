@@ -35,7 +35,7 @@ public sealed class SessionChecksStartTests : IDisposable
     [Fact]
     public async Task A_light_start_is_told_its_checks_and_holds_its_tree_and_its_checks_while_it_runs()
     {
-        var run = await StartAsync(DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light));
+        var run = await StartAsync(DriverConfig.Empty, SessionChecks.Light);
 
         var session = run["session"]!.GetValue<string>();
         Assert.Contains(HeavyTold.LightWords(["universal"], ["driver"], takesRules: false), run["target"]!.GetValue<string>());
@@ -72,7 +72,7 @@ public sealed class SessionChecksStartTests : IDisposable
     /// One look's start of q1 in a repository that marks one gate heavy, under <paramref name="choices"/>: what the stand-in harness wrote
     /// down of its run.
     /// </summary>
-    private async Task<JsonObject> StartAsync(DriverConfig choices)
+    private async Task<JsonObject> StartAsync(DriverConfig choices, string? checks = null)
     {
         var checkout = Path.Combine(_folder, "engine");
         Directory.CreateDirectory(checkout);
@@ -88,7 +88,7 @@ public sealed class SessionChecksStartTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(checkout);
         var config = choices with
         {
-            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
+            Drivable = ["engine"], DefaultWorkflow = IsolatedPlaces.In(Home, checks: checks), Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, DaorisHome.Entry(Home, HomeEntry.Spawn)] },
         };
         var adapters = ProviderRegistry.Built();

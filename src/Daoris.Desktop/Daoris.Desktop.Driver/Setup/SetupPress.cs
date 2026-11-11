@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// <para><b>Never Daoris writing into the repository</b>: a set-up is the repository's own session's work, on its
 /// branch, landed by the workspace's rule. The press only asks, and adds a rule, and where the repository is not driven its quest's
 /// admission, in Daoris's own files.</para>
-///
 /// <para><b>The rule is exact verbs</b>, never a runner, since a session on the protocol door cannot ask for
 /// another: no <c>upstream</c> for a set-up, and only <c>upstream --all</c> for a reconcile, which outside the canon's
 /// own checkout composes a request's words and writes nothing; and no management verb, since a set-up registers
@@ -27,7 +26,6 @@ namespace Daoris.Driver;
 public static class SetupPress
 {
     /// <summary>What a press on <paramref name="repository"/> would do today. Reads, and writes nothing.</summary>
-    /// <param name="unadopted">Whether this machine's driven sessions may drive a repository that has not adopted (<see cref="Adoption"/>).</param>
     public static Task<SetupPlan> PlanAsync(
         ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, CancellationToken ct = default) =>
         PlanAsync(world, config, unadopted, repository, day, builds: null, ct);
@@ -51,7 +49,7 @@ public static class SetupPress
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
-        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row, world.IsolationOf(config, row) is not null).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -132,7 +130,7 @@ public static class SetupPress
             Alone =!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
             Case = SetupCase.Reconcile,
         };
-        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row, world.IsolationOf(config, row) is not null).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -194,7 +192,8 @@ public static class SetupPress
     /// where the repository is not driven is admitted alone (<see cref="SetupPlan.Alone"/>). Read by the press and by a
     /// place's plan over the configuration it would leave, so the two refuse alike.
     /// </summary>
-    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row)
+    /// <param name="apart">Whether the workflow the repository follows sets its sessions apart, each in a tree of its own.</param>
+    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row, bool apart)
     {
         if (row.Root is null)
         {
@@ -216,13 +215,13 @@ public static class SetupPress
                 + "which rides the pipe. Choose an ACP agent for Build in Agents → Roles, or with `daoris role set build \"<agent>\"`."));
         }
 
-        // A tree per session is the repository's own, on its Setup → Driving.
-        if (!config.OpensOwnTree(row.Repository))
+        // A tree per session is the repository's workflow's: its `isolate` step.
+        if (!apart)
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,
                 $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
-                + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
-                + $"the repository's page → Setup → Driving, or with `daoris place trees {row.Repository} on`."));
+                + "every later session there reads, so it lands on a branch of its own. Start the workflow it follows with "
+                + "*Work apart* (its `isolate` step) in the workflow's editor, or choose a set-up preset whose workflow holds one."));
         }
 
         return refusals;

@@ -3,8 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One kind of Ask Daoris's proposal: the fields only it carries, its judge — the route's own code,
-/// run against the machine as it stands — and its Apply, through the door the screen's own route uses.
+/// One kind of Ask Daoris's proposal: the fields only it carries, its judge (the route's own code, against the machine now) and its Apply.
 /// </summary>
 /// <remarks>
 /// <para>A kind is a class in a file of its own under <c>Help/Proposals/</c>, registered in
@@ -23,27 +22,12 @@ internal interface IHelpProposalKind
     /// <summary>The connector's tool that proposes it, which the room allows.</summary>
     string Tool { get; }
 
-    /// <summary>
-    /// The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.
-    /// </summary>
-    /// <remarks>
-    /// What the service's writer of the same kind spells, which the kinds' structural test reads, and what the room's doors table
-    /// names where a row proposes (a door only where one is wanted).
-    /// </remarks>
+    /// <summary>The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.</summary>
     IReadOnlyList<string> Doors { get; }
 
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 
-    /// <summary>
-    /// The workspaces and repositories it names: what a conversation bound to one workspace may name only of its own,
-    /// judged before <see cref="Plan"/> (<see cref="HelpProposalScope"/>). By default the file's <c>workspace</c> and
-    /// <c>repository</c>; a kind whose target or value names one says so in its file, and one naming a quest, an ask or a session
-    /// by id names that record with its workspace, as the facts its judge reads hold it.
-    /// </summary>
-    HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Repository]);
-
-    /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
     /// <summary>
@@ -51,14 +35,6 @@ internal interface IHelpProposalKind
     /// by default nothing; a kind whose doors act on a repository, a workspace or a quest says which.
     /// </summary>
     HelpOwned Owned(HelpProposal proposal) => HelpOwned.Nothing;
-
-    /// <summary>
-    /// Its card drawn for the person, judged as <paramref name="plan"/>: a kind whose Apply sends exactly what its
-    /// card listed keeps that now, in the proposal's file, for <see cref="Read"/> to hand its next judge. Nothing for every other.
-    /// </summary>
-    void Drawn(string home, HelpProposal proposal, HelpPlan plan)
-    {
-    }
 
     /// <summary>The person's Apply of a plan the route takes, through the screen's own door, settled either way.</summary>
     /// <remarks>A refusal a door raises before anything happened is let through, unsettled (<see cref="HelpProposals.ApplyAsync"/>).</remarks>
@@ -77,7 +53,6 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
 
     public IHelpDoors Doors => doors;
 
-    /// <summary>The conversation, for what is said after the Apply's own answer: an agent action's end.</summary>
     public Action<string> Later => later;
 
     public string Id => proposal.Id;
@@ -91,34 +66,20 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
     {
         if (applied && published is { Names: true }) HelpProposals.KeepPublished(home, proposal, published);
         HelpProposals.Settle(home, proposal.Id, applied ? "applied" : "refused", note);
+        HelpAppliedAgain.Keep(home, proposal.Id, told);
         return new HelpApplied(applied, told);
     }
 }
 
-/// <summary>
-/// The kinds Ask Daoris proposes, one line each, in the order the room allows their tools. A new kind
-/// is a file under <c>Help/Proposals/</c> and a line here.
-/// </summary>
+/// <summary>The kinds Ask Daoris still proposes, in the order the room allows their tools.</summary>
 internal static class HelpProposalKinds
 {
     public static readonly IReadOnlyList<IHelpProposalKind> All =
     [
-        new HelpSettingProposals(),
         new HelpAskProposals(),
-        new HelpAgentProposals(),
-        new HelpDeleteProposals(),
-        new HelpAccountProposals(),
         new HelpGoProposals(),
-        new HelpPluginProposals(),
-        new HelpBrowserProposals(),
-        new HelpSyncProposals(),
-        new HelpRepositoryProposals(),
-        new HelpSessionProposals(),
-        new HelpPauseProposals(),
-        new HelpClearProposals(),
         new HelpWorkflowProposals(),
         new HelpSetupProposals(),
-        new HelpRoleProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

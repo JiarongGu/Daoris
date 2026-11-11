@@ -40,6 +40,12 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     private async Task<object?> DiffAsync(SessionDiff press, CancellationToken cancellationToken)
     {
         var id = press.Id;
+        if (PlaceChanges.Of(_loop.Home, id) is { } placed)
+        {
+            return TreesReviewWires.ReviewAnswer(id, placed, TreesReviewWires.ReviewSource.Place, null, treeGone: false, unattributed: TurnUnattributed.Of(_loop.Home, id));
+        }
+
+        if (SystemChanges.Of(_loop.Home, id) is { } planned) return TreesReviewWires.ReviewAnswer(id, planned, TreesReviewWires.ReviewSource.Place, null, treeGone: false);
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -61,7 +67,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
             ? TreesReviewWires.ReviewAnswer(id, review.Diff, TreesReviewWires.ReviewSource.Branch, review.Landed, treeGone: review.TreeGone)
             : TreesReviewWires.ReviewAnswer(
                 id, review.Diff, TreesReviewWires.ReviewSource.Tree, review.Landed, treeGone: false, uncommitted: review.Uncommitted, behind: review.Behind,
-                treeBranch: review.TreeBranch, offer: review.Offer);
+                treeBranch: review.TreeBranch, offer: review.Offer, unattributed: TurnUnattributed.Of(_loop.Home, id));
     }
 
     /// <summary>
@@ -327,8 +333,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         Carried = carried is null ? null : new { carried.Carries, carried.Awaiting },
     };
 
-    /// <summary>The part a session's own Accept is named for: the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>
-    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryAccepts.EntryLead(records, session);
 
     /// <summary>A landing's left-out commits on the wire: short id, subject, why, and the line's commit with its patch.</summary>
     public static object[]? LeftOut(IReadOnlyList<LeftOutCommit>? leftOut) => leftOut?

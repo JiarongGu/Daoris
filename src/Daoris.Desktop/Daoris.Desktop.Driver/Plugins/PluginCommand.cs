@@ -24,7 +24,7 @@ public sealed record PluginWorld
 
 /// <summary>
 /// One plugin's press: the route the window's press sends, or none where the terminal's verb alone does it
-/// (a replace), the payload the verb writes from its words, the operation it calls alone, and the one function that says it on both paths.
+/// (a remove of what is not installed, a switch that changes nothing), the payload the verb writes from its words, the operation it calls alone, and the one function that says it on both paths.
 /// <see cref="PluginCommand.Plan"/> makes it; a test sends its payload through the route.
 /// </summary>
 /// <param name="Route">The route, or null where none takes the press: it then acts alone, on the terminal's word.</param>
@@ -46,8 +46,8 @@ public sealed class PluginWords(string message, int exit = 2) : Exception(messag
 /// <c>daoris plugin</c>: this machine's plugins from a terminal, the words
 /// <c>daoris plugin …</c> hands this program, beside the host's own <c>plugins</c> (the kit, a package, a plugin's page); no sub-verb
 /// is shared. Each change is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its
-/// window; else its operation, on the terminal's word, refused from a session's terminal. A replace has no route: the
-/// window's add adds and never replaces, so the terminal's replace is this program's alone. Its words are one function per verb on both
+/// window; else its operation, on the terminal's word, refused from a session's terminal. A replace is its own route
+/// (<c>PLUGIN_REPLACE</c>): the window's add adds and never replaces. Its words are one function per verb on both
 /// paths, today's text kept (<c>fixtures/plugins-text.json</c>).
 /// </summary>
 /// <remarks>
@@ -168,8 +168,8 @@ public static class PluginCommand
     }
 
     /// <summary>
-    /// The press <paramref name="args"/> ask for, where they name a change: an add (a route where nothing of its id is installed, else the
-    /// terminal's replace alone), an update with <c>--yes</c>, a remove, a switch. Null for a read; a refusal of the words or of the
+    /// The press <paramref name="args"/> ask for, where they name a change: an add (a route where nothing of its id is installed, else
+    /// the replace's own), an update with <c>--yes</c>, a remove, a switch. Null for a read; a refusal of the words or of the
     /// command's own checks is <see cref="PluginWords"/>, nothing done. A test sends its payload through the route.
     /// </summary>
     public static PluginPress? Plan(IReadOnlyList<string> args, PluginWorld world)
@@ -256,7 +256,7 @@ public static class PluginCommand
     /// <summary>
     /// An add: a folder named, or one of the install's offers by its id; judged first by the driver's own add (where it is, then
     /// its manifest read as the catalogue reads it, with nothing this build refuses), so a refusal copies nothing. Where nothing of its id
-    /// is installed it is the window's add; where something is, the terminal's replace, which no route makes.
+    /// is installed it is the window's add; where something is, the replace, a route of its own.
     /// </summary>
     private static PluginPress Add(IReadOnlyList<string> args, PluginWorld world)
     {
@@ -316,8 +316,13 @@ public static class PluginCommand
             return 0;
         }
 
-        // The window's install adds and never replaces: a replace is this verb's alone, on the terminal's word.
-        if (replacing) return new PluginPress("add", null, [], () => PluginInstall.Replace(home, from, recorded, reserved), Said);
+        // The window's install adds and never replaces: a replace is its own route, the person's press of the terminal's word.
+        if (replacing)
+        {
+            return new PluginPress("add", PluginRoutes.Replace, offer is null ? new JsonObject { ["folder"] = from } : new JsonObject { ["folder"] = from, ["offer"] = offer },
+                () => PluginInstall.Replace(home, from, recorded, reserved), Said);
+        }
+
         return offer is not null
             ? new PluginPress("add", PluginRoutes.Install, new JsonObject { ["offer"] = offer },
                 () => PluginInstall.AddOffer(home, Offers(world, home), offer, reserved), Said)

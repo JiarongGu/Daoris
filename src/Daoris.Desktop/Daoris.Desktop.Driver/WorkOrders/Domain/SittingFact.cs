@@ -52,8 +52,11 @@ public sealed record SittingFact(string Code)
     /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest going into that tree at this look.</summary>
     public const string TreeThisLook = "treeThisLook";
 
-    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: a session is active in the repository, whose root is its one tree.</summary>
-    public const string InRepository = "repository";
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: the session holds the place <see cref="Repository"/>, parked with <see cref="Paths"/> where named.</summary>
+    public const string Place = "place";
+
+    /// <summary><see cref="StartVerdict.RepositoryBusy"/>: <see cref="Cap"/> sessions work apart in <see cref="Repository"/> at once, its isolate step's count.</summary>
+    public const string Apart = "apart";
 
     /// <summary><see cref="StartVerdict.RepositoryBusy"/>: queued behind a quest starting in the repository at this look.</summary>
     public const string Queued = "queued";
@@ -117,6 +120,9 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.Blocked"/>: a start a steward's act caused would work in the owner's checkout, so it is held for the owner.</summary>
     public const string Checkout = "checkout";
+
+    /// <summary><see cref="StartVerdict.Unclosed"/>: <see cref="Session"/> ended and left the quest taken, and nothing here carries it on.</summary>
+    public const string Unclosed = "unclosed";
 }
 
 /// <summary>A quest a second opinion sits, with the sentence the look said and its code, so the planner's verdict carries both.</summary>

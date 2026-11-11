@@ -55,17 +55,30 @@ public sealed class CoreSetTests(ITestOutputHelper output)
             ParticipantWork.Intake => Core.Except([.. memoryChanges, "helper_ask"]),
             ParticipantWork.Help => [.. Core.Except(["channel_post", "channel_read", "memory_propose", "quest_publish", "quest_respond", .. memoryChanges]),
                 "helper_answer"],
-            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", "helper_ask", .. memoryChanges]),
+            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", "helper_ask", "system_plan", .. memoryChanges]),
         };
 
         Assert.Equal(expected.Order(StringComparer.Ordinal), Served(new SessionWork(work)));
+    }
+
+    /// <summary>A quest's session in a system department alone is served <c>system_plan</c>, keeping a build session within the measure below.</summary>
+    [Theory]
+    [InlineData(ParticipantWork.Build)]
+    [InlineData(ParticipantWork.Design)]
+    [InlineData(ParticipantWork.Exact)]
+    public void A_system_department_s_session_alone_is_served_its_plan(string work)
+    {
+        Assert.Equal(Core.Concat(Working).Append("system_plan").Order(StringComparer.Ordinal), Served(new SessionWork(work) { InSystem = true }));
+        var refused = CallTable.Refusal(new SessionWork(work), "system_plan");
+        Assert.Equal(CallTable.ForbiddenWork, refused?.Code);
+        Assert.EndsWith("Nothing was planned.", refused!.Text, StringComparison.Ordinal);
     }
 
     /// <summary>🔴 A tool outside a kind's row is refused in words that name what the kind is served, and nothing runs.</summary>
     [Fact]
     public void A_tool_outside_a_kinds_row_is_refused_naming_the_core_set()
     {
-        var refusal = CallTable.Refusal(new SessionWork(ParticipantWork.Build), "agent_propose");
+        var refusal = CallTable.Refusal(new SessionWork(ParticipantWork.Build), "go_propose");
         var chat = CallTable.Refusal(new SessionWork(ParticipantWork.Chat), "question_ask");
 
         Assert.Equal(CallTable.ForbiddenWork, refusal?.Code);
@@ -76,7 +89,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
 
     /// <summary>
     /// The measure (CONTEXTONE1d2): each kind's served definitions, as <c>tools/list</c> answers them, against every tool's. The core set
-    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 28,341 and at most 39,229, of 102,191 for
+    /// stays within 30,000 characters and a repository kind's row within 40,000 (measured at 29,042 and a build session's at 39,856, of 85,561 for
     /// every tool); the sizes are written to the test's output and recorded in the changelog, so a description grown past the budget is
     /// seen here.
     /// </summary>

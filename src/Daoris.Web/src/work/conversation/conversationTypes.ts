@@ -302,6 +302,8 @@ export type Block = {
  * it is composed of: its account, or `null` for one handed before the driver kept one.
  */
 export type Ask = {
+  /** The id the record gives these words, where it does: what a host keys a line above them by. */
+  id?: string;
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
   /** Another agent's findings, handed as the session's next turn: the second opinion they are from. */
   opinion?: string;

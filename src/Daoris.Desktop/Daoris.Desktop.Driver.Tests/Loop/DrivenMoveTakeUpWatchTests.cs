@@ -59,7 +59,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
     private string Configured()
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60, "trees": ["engine"] }""");
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60 }""");
         return config;
     }
 
@@ -127,7 +127,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         Assert.Equal("old-ended", MoveFrom("s1")!.PhaseWord);
 
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60, "trees": ["engine"] }""");
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60 }""");
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
             harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));

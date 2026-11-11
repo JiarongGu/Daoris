@@ -90,6 +90,11 @@ public static class QuestWorkflowCommand
         return new QuestWorkflowAsk(id.TrimStart('#'), kind, workflow, said.Length == 0 ? null : said);
     }
 
+    public static Task<int> PressAsync(QuestWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.QuestWorkflow,
+            InstanceDoor.Said(("quest", ask.Quest), ("kind", ask.Kind), ("workflow", ask.Workflow), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
+
     /// <summary>Set the choice on the quest, as its page's will, and print the service's sentence.</summary>
     public static async Task<int> RunAsync(QuestWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, CancellationToken ct = default)
     {

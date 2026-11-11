@@ -118,9 +118,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("claude-code") with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            TestBound = 1,
+            Drivable = ["engine"],            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log] },
         };
         var driver = new Daoris.Driver.Driver(
@@ -297,9 +295,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("acp-stub") with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            TestBound = 1,
+            Drivable = ["engine"],            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };

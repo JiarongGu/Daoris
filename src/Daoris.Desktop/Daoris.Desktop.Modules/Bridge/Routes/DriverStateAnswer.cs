@@ -44,7 +44,11 @@ internal static class DriverStateAnswer
             // Notifications read it: offered, on, the presses granted and built, since, a record not honoured, its count this run, and
             // the holds a terminal made under it. None where this shell serves no pipe.
             StandingConfirmation = loop.Pipe is { } pipe ? pipe.StandingConfirmation.Now() with { StewardLands = pipe.StewardAllows.Lands() } : null,
-            config.Trees,
+            // The repositories whose workflow sets their sessions apart, each in a tree of its own: read from each one's `isolate` step.
+            Trees = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } known
+                ? known.Snapshot.Repositories.Where(each => PlaceIsolates.Of(loop.Home, config, each.Repository, each.Workspace) is not null)
+                    .Select(each => each.Repository).Order(StringComparer.OrdinalIgnoreCase).ToArray()
+                : [],
             config.Cap,
             config.PollSeconds,
             config.Notify,
@@ -54,6 +58,9 @@ internal static class DriverStateAnswer
             CoolOff = (int)config.CoolOff.TotalMinutes,
             // How long a session may be quiet before Daoris looks in, in minutes: the file's, or the default.
             Quiet = (int)QuietSetting.Of(config).TotalMinutes,
+            // The bounds of a folder's manifest read: the file's, or the defaults.
+            ManifestFiles = config.Manifest.Bounds.Files,
+            ManifestMinutes = (int)config.Manifest.Bounds.Time.TotalMinutes,
             config.Forgiven,
             // The stops the person released, the quest against the session, as the terminal lists them.
             config.Released,
@@ -66,6 +73,7 @@ internal static class DriverStateAnswer
             // Ask Daoris's access mode as the person chose it: `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
+            config.Terminal,
             // Restricted mode's access as the person chose it: each grant by its id, with the operations chosen and those it acts on,
             // so the page offers no other, and whether a running conversation is handed another choice its next turn takes. The
             // browser's is read only from its plugin's approval, with no `built`, so the page offers nothing to choose.
@@ -73,6 +81,7 @@ internal static class DriverStateAnswer
             {
                 Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
                 Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
+                new HelpGrantRow(ConfiguredAccess.ActsGrant, access.Acts, ActFamilies.Built, false, false, null),
                 new HelpGrantRow(
                     ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,
                     loop.Chat?.GrantPending(ConfiguredAccess.CheckoutsGrant, access) == true, false, null),

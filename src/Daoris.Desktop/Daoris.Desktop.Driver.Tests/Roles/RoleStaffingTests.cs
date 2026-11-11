@@ -302,8 +302,8 @@ public sealed class RoleStaffingTests : IDisposable
                 // The role door alone writes the family; SET_ACTOR, its context write and the retired verbs' press do not; the limit move reads it.
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
+                "../Daoris.Desktop.Modules/Platform/Views/RoleChangeView.cs",
                 "Course/Chat/LimitMove.cs",
-                "Help/Proposals/HelpRoleProposals.cs",
                 "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
                 // The release's migration writes an older home's orders into the family once.
                 "Transitional/Migration/StaffingStep.cs",

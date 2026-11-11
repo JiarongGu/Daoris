@@ -1,4 +1,5 @@
 import { type Carry, NO_CARRY } from '../../compose/carry';
+import type { Place } from '../focus';
 import { type ChatMessage } from '../../work/conversation/conversation';
 
 /** How often the list is asked again while words to an ended conversation wait for it to go on. */
@@ -45,6 +46,6 @@ export const NEW_DRAFT = 'new';
 
 /**
  * Words handed to Ask Daoris from another door, once per `id`: a question, sent as a typed one is (the palette's, the
- * setup guide's), or a draft, put in the box for the person to finish (*Ask Daoris about it*).
+ * setup guide's), or a draft for the person to finish, with the focus its door chose (*Make it a task with Daoris…*'s).
  */
-export type AskOpening = { text: string; id: number; draft?: boolean };
+export type AskOpening = { text: string; id: number; draft?: boolean; focus?: Place };

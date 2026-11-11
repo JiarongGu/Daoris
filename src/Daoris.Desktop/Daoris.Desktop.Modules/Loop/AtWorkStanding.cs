@@ -52,19 +52,20 @@ public sealed class AtWorkStanding(Func<StateSlice?> driver)
             lanes = _lanes.GetValueOrDefault(repository);
         }
 
-        if (Config() is not { } config) return AtWorkRouting.Unheard;
+        if (Config() is not var (config, apart)) return AtWorkRouting.Unheard;
         if (lanes is null) return AtWorkRouting.Unnamed;
-        return RoutingStanding.Of(config, new RepoView(repository, true, null) { Lanes = lanes }).Standing;
+        return RoutingStanding.Of(config, new RepoView(repository, true, null) { Lanes = lanes },
+            apart.Contains(repository, StringComparer.OrdinalIgnoreCase)).Standing;
     }
 
-    /// <summary>The drive and trees as the driver slice's choices hold them, or null before the slice has judged.</summary>
-    private DriverConfig? Config()
+    /// <summary>The drive, and the repositories set apart by their workflows, as the driver slice's choices hold them; null before the slice has judged.</summary>
+    private (DriverConfig Config, string[] Apart)? Config()
     {
         if (driver() is not { } slice) return null;
         var choices = slice.Snapshot().Partitions.FirstOrDefault(each => each.Partition == "choices")?.Data;
         var node = choices as JsonNode ?? (choices is null ? null : JsonSerializer.SerializeToNode(choices, IpcJson.Options));
         if (node is not JsonObject fields || fields["drivable"] is not JsonArray drivable) return null;
-        return DriverConfig.Empty with { Drivable = Names(drivable), Trees = Names(fields["trees"] as JsonArray) };
+        return (DriverConfig.Empty with { Drivable = Names(drivable) }, Names(fields["trees"] as JsonArray));
     }
 
     private static string[] Names(JsonArray? names) =>

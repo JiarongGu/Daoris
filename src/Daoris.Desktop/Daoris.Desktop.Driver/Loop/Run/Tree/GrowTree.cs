@@ -18,7 +18,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         var start = run.Start;
         var quest = run.Quest;
         var root = start.Root!;
-        var isolated = context.Config.OpensOwnTree(quest.To);
+        var isolated = start.Isolate is not null;
 
         var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && context.Trees.Holds(resumesIn) ? resumesIn : null;
         var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
@@ -186,9 +186,9 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         }
     }
 
-    /// <summary>The branch a session's work last landed on here: the newest of its parts' landings in the repository whose record stands.</summary>
+    /// <summary>The branch a session's work last landed on here: the newest of its own run's parts' landings in the repository whose record stands.</summary>
     private string? EntryLanded(EntryParts entry, string repository) =>
-        entry.Parts
+        entry.Run
             .Select(part => wiring.Context.Trees.Recorded.Landing(part.Session))
             .FirstOrDefault(landing => landing is { GoneAt: null }
                                        && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase))

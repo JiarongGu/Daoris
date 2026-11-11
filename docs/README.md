@@ -31,6 +31,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/README.md`|Plugin examples
 |`../examples/plugins/local-release/README.md`|Release steps plugin
 |`../examples/plugins/hold-by-title/README.md`|Rehearsal plugin fixture
+|`../examples/plugins/stand-in-system/README.md`|Stand-in system adapter
 |`../examples/plugins/browser/README.md`|Browser plugin
 |`../examples/plugins/in-app-browser/README.md`|Browser connection plugin
 |`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin
@@ -247,10 +248,13 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-05-merge-tool-design.md`|Proposed design: MERGETOOL1 (D237)
 |`2026-11-06-terminal-conversation-design.md`|Proposed design: RPC1g (D238)
 |`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
+|`2026-11-10-isolation-beyond-git-survey.md`|Survey: PLACEWORK1a, parallel work beyond git (D254)
+|`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
 |`2026-11-07-dogfood-measurements.md`|Evidence: DOGFOOD1 rows measured
+|`2026-11-11-placework1g-clone-measurements.md`|Evidence: PLACEWORK1g, block clones on a Dev Drive measured
 |`2026-11-06-node-kit-design.md`|Proposed design: NODEKIT1 (D247)
 |`2026-11-06-lyntai-requests.md`|Quest text: needs of Lyntai's agent layer (D248)
 |`2026-11-07-backlog-plan-3.md`|Plan: backlog chunks BL70-BL82
@@ -262,6 +266,10 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-09-process-steps-reads.md`|Reads: PROCSTEPS1
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
 |`2026-11-09-repo-config-reads.md`|Reads: REPOCONFIG1
+|`2026-11-10-agent-free-census.md`|Census: AGENTFREE1, what a session narrows (D253 point 7)
+|`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
+|`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
+|`2026-11-11-ask-daoris-second-check-design.md`|Proposed design: ASKSUPERVISE1, Ask Daoris's acts read by a second model (D272 reserved)
 
 ## UI, browser, tools and plugin contracts
 

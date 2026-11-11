@@ -34,6 +34,8 @@ internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public override NodeArrivals Arrives { get; } =

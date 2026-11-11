@@ -5,6 +5,293 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
+
+> **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.
+
+---
+
+## ASKFULL1g-vi's ask route and the setup view, and the ask defects Ask Daoris met in the install (2026-11-11)
+
+> **ASKFULL1g-vi, routes** (driver, modules, service, web): Outcome: `daoris ask "…"` is a person's press `ASK_NEW` (`AskArguments` reads the words before anything is sent, `AskNewCommand` makes the ask, `AskNewRoutes`, `AskNewView` on the card), so Ask Daoris in full access starts an ask with no card and in restricted on a card naming it; `PLACE_APPLY`'s card lists each change the plan makes (`PlaceApplyView`); a quest Ask Daoris publishes is filed in the named repository's workspace and a refusal with nothing addressable says so in words (`QuestPublishing`); `--help` prints the usage and an unknown flag is refused. Found by Ask Daoris in the installed copy, refused at each. Proof: `PipeDelegateTests`' new-ask case and `QuestExchangeTests`' cross-workspace case (seen failing first), `AskArgumentsTests`, the two view tests in both languages.
+
+---
+
+## A terminal's presses at a tier the person sets (2026-11-11, D271)
+
+> **TERMTIER1** (driver, modules, web): Outcome: a machine setting decides whether a person's press from a terminal no Daoris session owns waits on the Confirm card (`ask`, the default) or runs at once as the person's (`act`): `daoris settings terminal ask|act`, itself pressed so turning on `act` is confirmed once (`Settings/TerminalTiers.cs`, `TerminalVerb.cs`, `TerminalTierRoutes`, the Settings row); under `act` such a press goes through the delegate's no-card path (`PipeTerminalTier`), logged `terminal.pressed` and listed in Notifications as a terminal's; a process inside an agent's job, or one the pipe cannot place, still gets a card, and a session's own press keeps its tier. Left: a `hold: true` start and `HOLD` still ask under `act`. Proof: `PipeTerminalTierTests` (seen failing first), `TerminalTiersTests`, the route, view and census tests, the text fixtures, the web tests in both languages.
+
+---
+
+## A quest its finished session left taken waits on the person; the plugin kit answers each frame as it settles (2026-11-11)
+
+> **Unclosed quests and the kit's findings** (driver, web, examples): Outcome: a quest whose last session was finished by the person or the steward, or went on and ended, with the quest still taken, gets the planner's `Unclosed` verdict (`UnclosedQuests`) and an `unclosed` row in *What needs you* whose door opens its *Mark done…*; a word to the session still goes on with it, and work in its tree stays to review (FIX-LOG; driving rule 37). Found in the install: a code review's session parked, was finished from a terminal, and its quest stayed taken three days with no reader. The plugin kit's template and examples answer each frame as it settles, so a slow read no longer holds the others past the platform's patience; a check that cannot reach its platform answers `running` with the reason on stderr, a refused credential stops the step. Proof: the planner, groups, pausing, kit contract and attention tests, the page tests in both languages, each new test seen failing first.
+
+---
+
+## ASKFULL1g-vi's clear and sync — pressed, their kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, clear and sync** (driver, modules, service, web): Outcome: a clear presses `HISTORY_CLEAR`, its card the route's view (`HistoryClearView`, refusing at the ask what the verb would keep, in its words, then counting the plain list); `daoris tree sync --yes` presses the running Daoris's `TREES_SYNC` with fetch and follow (`Driver.Host/TreesSyncVerb.cs`), its card listing each row the route's list moves and refusing a place this machine lacks (`TreesSyncView`); both proposal kinds are gone whole (tools, writers, judges, doors, room lines, goldens, call tables, card parts, words, README rows). Proof: `HistoryClearViewTests`, `TreesSyncViewTests`, `HistoryClear.test` and `TreesSync.test` in both languages, seen failing first; the room, proposal, tool and `CoreSetTests`.
+
+---
+
+## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
+
+> **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.
+
+---
+
+## PLACEWORK1e's place-kind at the bind (2026-11-11)
+
+> **PLACEWORK1e, place-kind** (driver, modules): Outcome: each node kind declares the kinds of place it runs in (`INodeKind.Places`): git's own steps (land, push, rebase, isolate and the rest) in a git repository, `apply` in a system, every other step and any plugin step anywhere (D264); choosing a workflow a department cannot run (`daoris workflow use`, `WORKFLOW_USE`) is refused with nothing written, naming the department, the step and where it runs (`place-kind`, `WorkflowPlaceKinds`). Proof: `NodePlacesTests`, `WorkflowUsePlaceKindTests` (seen failing first), `npm run quick`, the module tests.
+
+---
+
+## The fast halves' reds after the day's merges (2026-11-11)
+
+> **CI reds, fast halves** (tools, driver, modules, web): Outcome: the lane table reaches the rehearsal's `rehearsal-apart.mjs` and the moved landing-says fixture from the suites that read them; the review and second-opinion rules' rows no longer name the service; `helpBeyond` is served through `shell.ts`; the place usage names the gone trees verb again while it still answers; the Help menu says *Change focus…*; the plan step's Chinese words carry 计划; the trees cases are gone or moved to the hold; the steward allow tests' stand-in registers the repository its hold names; the glossary drops the plugin kind's title and says 采纳 for accept (FIX-LOG, one entry per cause). Proof: each class filtered, `npm run quick`, `i18n:check`, `names:check --strict`, `test-map --check`, the web typecheck and the reach tool-tests.
+
+---
+
+## PLACEWORK1c whole, and 1e's unattributed paths (2026-11-11)
+
+> **PLACEWORK1c's rest and 1e's part** (driver, service, web): Outcome: in a repository's own checkout a pull or promotion waits only for the lease's holder — a turn running, or a parked line with uncommitted paths of its own — and in a session's own tree for any session there, as before (`CheckoutBeside`; driving rule 12 rewritten to the design); a person's commit or stash releases a parked line's marked paths that no longer differ from HEAD and the place once none is left, and the person's acts in the checkout are refused only while a turn runs (git rule 39); a path the turn changed that none of its tools named is listed above the session's review and told to the line at its next turn. Proof: real-git tests for the pull and promotion wait (two seen failing first), the service lease tests and a real-git release test, the review's web test (seen failing first).
+
+---
+
+## ASKFULL1g-v's plugin half — `daoris plugin` pressed, the plugin kind gone (2026-11-11)
+
+> **ASKFULL1g-v, plugin** (modules, service, driver, web): Outcome: `PLUGIN_ADD`, `PLUGIN_INSTALL`, `PLUGIN_UPDATE` and `PLUGIN_ACTION` each judge a press as the Plugins place does, refuse to the terminal with no card, and otherwise put what the plugin runs, or every tool an approval names, on the Confirm card (`Platform/Views/Plugin*View`, `PluginGrantJudge`, `PluginShown`, web `person/view/PluginRuns`); the room names the verbs; the plugin proposal kind, `plugin_propose` and its writer, the screen doors, the box row, the call-table entries and the card's plugin and grant parts are gone whole. Proof: `PluginViewsTests`, `PluginRuns.test` in both languages, the room, kinds, tool-registration and call-table tests.
+
+---
+
+## PLACEWORK1h (part) — an unguarded system read back, and the kit's system plugin (2026-11-11)
+
+> **PLACEWORK1h, third part** (driver, web, examples): Outcome: a system declaring its precondition `none` is read before each write (`plan/read` for that one change) and read back after it (`Plugins/Systems/SystemReadBack.cs`): a moved version is `stale` and nothing is written, a read-back that differs is `changed`, set by Daoris alone, and fails the node with *changed while applying* naming what the resource holds now; the department's row says *unguarded*; the "nothing to write" answer is `unchanged`, so `none` is only the precondition; `daoris plugin new` scaffolds a system adapter and `plugin try` checks `plan/read` and `apply/perform` (both in `HookPoints.All`), the examples' tests regenerated from the kit; the stand-in declares `stand-in-unguarded`. Proof: `SystemReadBackTests`, `SystemReadBackProcessTests` (stale, changed while applying, applied), `PluginKitSystemTests`, the stand-in's own tests and the web tests, each seen failing first.
+
+---
+
+## A conversation's place told under a note of its own, and the merged words to the glossary (2026-11-11)
+
+> **The told place and the catalogue reds** (driver, web): Outcome: the place a conversation is told before its first words rides its own field (`ChatMessage.Place`) and is kept under `chat.told-place`, so the page no longer says the agent was told of Daoris's browser (FIX-LOG); the pressed settings', isolate and apply words follow the glossary (委托 for a quest, 智能体 for an agent, 本机, counts said in their number, *Apply the reviewed changes*), *Work apart* accepted as the isolate step's own name, the browser's *profile* as the browser's word. Proof: `ChatAttachmentTests` (red before), `noteToldPlace.test`, `i18n.test`, `names.test`, `noteLines.test`, `i18n:check` and `names:check --strict`.
+
+---
+
+## ASKFULL1g-v's role half — `daoris role` pressed, the role kind gone (2026-11-11)
+
+> **ASKFULL1g-v, role** (modules, service, driver, web): Outcome: each role verb (set, remove, default, policy, rules, a supervisor's set) presses `SET_ROLE`, judged at the ask by the role door's own judges and refused with no card where they refuse; the Confirm card draws the place's rules and the supervisor's record before and after (`RoleChangeView`, `PressView`'s `Rules` and `Supervisor`, web `person/view/RulesChange|SupervisorChange`); the role proposal kind, its service tool and writer, its box row, call-table column, room line and card kind are gone whole. Proof: `RoleChangeViewTests` (seen failing first), the moved card tests in both languages, the room goldens; rules 9, 40, 41 and 56 rewritten.
+
+---
+
+## ASKSCOPE2's counts, the card's place line and the *Asked you* rows (2026-11-11)
+
+> **ASKSCOPE2, the rest of 2e-2i** (service, driver, modules, web): Outcome: `knowledge_search` and `quest_list` say how many they found as they answer (`CallFound`), noted as `found` beside the call's place, so the receipt says *Searched workspace … · N found*; a restricted press reads its place before its card through the delegate that judges full-access presses, and the card says *In …, outside this conversation's focus (…)* only when it lies beyond (`HelpCardPlace`); an asked press is kept marked asked from waiting to allowed, refused, changed or unanswered (`HelpAskedPress`), and the receipt and Notifications list it apart with no *Resume*; a press naming only a quest is judged at the repository its quest asks (`HelpPressPlace.QuestOnly`). Proof: `CallPlaceFilterTests`, `McpHelpCircleTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `PipeDelegateTests`, `BeyondReceipt`, `HelpPressLine` and `helpPlaceSaid` in both languages, seen failing first.
+
+---
+
+## The process halves' reds after the place work (2026-11-11)
+
+> **CI reds, process halves** (driver, modules): Outcome: the chat classes' stand-ins set apart the place section a conversation in a plain folder is told before its first words (driving rule 12; `StubPlace.cs`); the transport test waits for the retry's leg, whose lineage start is written before its spawn; the review's read flows pass their own token, so a review the page leaves no longer keeps its git running (FIX-LOG); the git half, the limit-move crash, the server keeper and the cap count pass on main as they stand. Left: the place section is filed under the browser's note (`chat.told-browser`), so the page says the agent was told of Daoris's browser — a note code of its own with its words. Proof: each class run filtered, green but `ChatAttachmentTests`' browser case; 319 memo-read tests.
+
+---
+
+## PLACEWORK1h (part) — a real session plans a system, and a system is a department (2026-11-11)
+
+> **PLACEWORK1h, second part** (service, driver, web, examples): Outcome: a session in a system department calls the connector's `system_plan`, which the loop hands to the department's plugin, keeps under the session's record and answers with the plan's number and resources (Service `Systems/SystemPlanBox.cs`, `Mcp/SystemPlanTools.cs`; driver `Departments/Systems/SystemPlanning.cs`); the tool is served to that session alone (D270); a department registers as a system with no root and its plugin's `<plugin>/<system>`, through *A system…* on the add or `daoris repository add --system`, refused where no switched-on plugin declares it; two sessions planning at once keep their own plans and the second apply is refused as stale; an apply answered `none` settles with nothing written. Proof: `McpSystemPlanToolTests`, `RegistrationStoreTests`, `SystemAddTests`, `SystemPlanningTests`, `SystemChoiceField.test`, `CoreSetTests` (seen failing first), and `SystemPlanToolProcessTests` on the stand-in's real process.
+
+---
+
+## ASKFULL1g's browser kind, keeping and early ends — the last proposal kinds pressed (2026-11-11)
+
+> **ASKFULL1g, browser and g-ii** (driver, modules, service, web): Outcome: `daoris browser favorite add|remove|use|links|extensions` presses the Person routes `BROWSER_FAVORITE` and `BROWSER_SETTING`, their Confirm card the routes' views (`BrowserFavoriteView`, `BrowserSettingView`), the alone path the same `BrowserPresses` unit; the browser proposal kind and its service tool are gone whole; an ask or quest a pressed verb's answer names is kept with its conversation and named in the press line (`Loop/PressedEnds.cs`, `Confirmations.Answered`); an update or pin that fails before it starts, or ends before its settle is registered, is said at its end. Proof: `BrowserViewsTests`, `BrowserPersonRoutesTests`, `PressedEndsTests`, the modules census, the room goldens and the service's tool tests.
+
+---
+
+## PLACEWORK1h (part) — a system reached through a console: plan, review, apply (2026-11-11)
+
+> **PLACEWORK1h, part** (driver, modules, web, examples): Outcome: a plugin declares `systems` and answers `plan/read` and `apply/perform` (`Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/`); a session's plans are kept per record as numbered files under the home's work folder and its Review shows the newest one resource by resource, before and after, in the diff pane (`Departments/Systems/`, `SESSION_DIFF`); the workflow's `apply` step runs one apply at a time through its door, and an apply whose resources moved since the plan fails with words naming each one's present version, which the way back hands the work (`Workflows/Kinds/Apply/`); `examples/plugins/stand-in-system/` is a system to try it on. Proof: `PluginSystemsTests`, `SystemPlanTests`, `ApplyDoorTests`, `NodeKitTests`, each seen failing first, and `SystemPlanProcessTests` (plan, review, apply, stale, plan again) on the stand-in's real process.
+
+---
+
+## PLACEWORK1d — the isolate step, its count, and the trees switch converted (2026-11-11)
+
+> **PLACEWORK1d** (driver, modules, web, tools): Outcome: a workflow that starts with an `isolate` step (*Work apart* in its editor) gives each of a repository's sessions a tree of its own, and its `at-once` says how many run at once; without one they work in the checkout one at a time under the writer's lease. The planner reads the count; the work order carries the step's value through its Workflows port; `daoris place trees` and its press are gone, answering `TreesMoved` with where the step is; the tests, fixtures and the family rehearsal (`tools/rehearsal-apart.mjs`) bind the step in its place. Proof: the converted planner, tick, standing and setup tests, the text fixtures, `HelpRoomTests` and the driver build; the censuses run at the CI boundary.
+
+---
+
+## The service, driver and modules reds after the place work, and the session head's height (2026-11-11)
+
+> **CI reds, part B** (service, driver, modules, web): Outcome: the route-view press tests' grounds hold the sessions, registry and quests their presses name, the shared cause of the two-minute timeouts; the sessions slice pushes `holdsPlace` again, so the work page's place-hold line shows (FIX-LOG); the release-place door is classed Person; the home tables name `places`, read by the manifest and turn stores; the place tests use neutral tree paths; the scope door tests read D253's rule. `CapCountTickTests` stays with the process-half reds. Proof: the censuses, `StructureTests`, the CLI home census and `npm run quick`, green.
+>
+> **The session head's height** (web): Outcome: *Started from* sits on the Details line as one press, so the head keeps its measured height at every width; the ask scope tests read the mark the history draws. Proof: the measured head spec, 30 of 30.
+
+---
+
+## ASKSCOPE2's receipt — what a turn reached beyond its focus (2026-11-11)
+
+> **ASKSCOPE2's receipt** (service, driver, modules, web): Outcome: a connector bound to a workspace notes each answered call that names a workspace or repository in the session's `places.jsonl` (Service `Mcp/CallPlace*`); the driver judges each against the focus held then, from the marks, and a full-access press keeps its place and whether it lay beyond (`Help/HelpPlaceNotes.cs`, `HelpBeyond.cs`, `HelpPressPlace.cs`); `HELP_BEYOND` answers it (told by event); the page folds one receipt under each turn with *Make … the focus* through the chip's choice (`help/focus/BeyondReceipt.tsx`), and Notifications says *in X, outside its focus*; the Showing picker marks *this window* and unfolds workspaces (`useFolds`), and the chip says when the driver widened the focus. Proof: `CallPlaceFilterTests`, `HelpBeyondTests`, `HelpPressBeyondTests`, `BeyondReceipt.test`, `ShowingPicker.test`, `focusPlaces.test`, `HelpPressLine.test`, each seen failing first.
+
+---
+
+## PLACEWORK1e (part) and ASKSCOPE2's history and divider (2026-11-11)
+
+> **PLACEWORK1e (part)** (service, driver, modules, web): Outcome: a plain folder registers as a `folder` place (`PlaceKinds`, the registry's `kind` column; the window's Add drawer shows its kind) and is worked in place under the lease with its own manifest and content store (`FolderManifestReader`, `FolderExcludes`, `ManifestBounds`, `FolderChanges`, `FolderTurns`, `FolderPrompt`); its review lists the files a turn changed against its start's manifest with text diffs (`Departments/Review/PlaceChanges.cs`, `TextPatch.cs`; `SESSION_DIFF` answering `source: place`); its Branches, History and Integration tabs say only git offers them. Proof: `FolderPlaceTests`, `PlaceChangesTests`, `RegistrationFollowTests`, `RegistrationStoreTests`, `RegistryImportTests`, `DriverModuleTreesTests`, `PlaceNote.test.tsx` (not seen failing first).
+> **ASKSCOPE2's history and divider** (driver, modules, web): Outcome: Ask Daoris's history shows by home under *All workspaces* and *About a place*, a row's focus chip where its focus left home (`historyHome.ts`, `ShowingPicker`, `HistoryShowing`); `HELP_CONVERSATIONS` and `ask-daoris list --json` carry `marks`; the transcript draws a divider above the message that carried a focus change (`FocusDivider`); the palette's *Change focus…* opens the picker and the pending chip narrows by container query; the census, usage and route reds of 2a-2d fixed. Proof: the help, menus, app and conversation tests (1228), `HelpFocusTests`, `HelpCommandTests`, `HelpRoomDoorsTests`. The chip and breadcrumb seen in the installed window.
+
+---
+
+## APPROVE1y's check and AGENTFREE1's Codex servers — `plugin try` asks the start's token question, a Codex session gets the person's servers (2026-11-11)
+
+> **APPROVE1y (the check), AGENTFREE1 (Codex servers)** (driver): Outcome: `daoris plugin try` adds a `host-token` step for a plugin that takes the token, asking the same `PluginHostToken.Hand` the desktop's start asks on the origin of the checkout it runs in, failing "this plugin's start needs an API token on identity X; set it in Settings → Git" (`Plugins/PluginTrialHand.cs`); the person's own Codex `mcp_servers` (local programs) are added to `session/new` and the resume after the plan's servers, the plan's name winning a clash, `daoris-knowledge`, a `DAORIS_` variable, a disabled or remote server kept out, all off under `own-servers` and for connector-only passes (`Providers/Codex/CodexOwnServers.cs`, `ISpawn.OwnServers`). Proof: `PluginTrialHandTests`, `CodexOwnServersTests`. Not run against a real Codex session.
+
+---
+
+## WFREVIEW3a, 3l — a performed land's press says what it came to, a moved tip waits on both tips (2026-11-11)
+
+> **WFREVIEW3a, 3l** (driver, modules): Outcome: every try the land performer makes keeps its end under its own code (`Workplace/LandEnds.cs`), and the desk answers a press from that end (`Bridge/PerformedAnswers.cs`): *landing* only where no try ended within the twenty-second bound, *carried* only where the session was carried on, never guessed from a repair on the record; the graph's and the chat's paths keep the tree's tip and the start's tip (`AutoTry.Start`) and try again once either moves, so a tree back at its start tip lands with no press. The `merge` kind's runtime stays PROCSTEPS1's. Proof: `PerformedEndsTests` (Process, Git; all four seen failing first), `LandEndsTests`, `LandTriesMovedTests`, `PerformedAnswersTests`.
+
+---
+
+## AGENTFREE1c — the person's settings, memory file, Chrome on both doors and Codex home reach a session (2026-11-11)
+
+> **AGENTFREE1c** (driver; D266): Outcome: the person's `settings.json` merges into a Claude session's rules beneath Daoris's, the repository's and the account's, lists joining so their denies hold and a value entering only where nothing above sets one, sign-in, mode, plugin and hook-off keys kept out, a pass shaped for one job taking nothing that widens it (`ClaudeOwnSettings`); their `CLAUDE.md` appended to the system prompt, the native door through `--append-system-prompt-file`, the protocol door through `systemPrompt.append`, Chrome there through `extraArgs.chrome` (`ClaudeOwnMemory`); their Codex home handed as codex-acp's `CODEX_CONFIG` (`config.toml` where the account's sets nothing, `AGENTS.md`, skills, prompts; `CodexOwnHome`, `Platform/TomlReader`); rule defaults `own-settings` and `own-memory`. Census row 22 (other providers' sign-ins) kept as the person's own; row 29 measured on Claude Code 2.1.322 (`-p` starts a repository's servers with no approval). Proof: `OwnSettingsTests`, `OwnMemoryTests`, `CodexOwnHomeTests`, each seen failing first.
+
+---
+
+## APPROVE1u, v, w, x — a refused plugin start said as refused, a live run keeps its branch, a tidied chain's clean-up ends, a stopped review leaves Ready for you (2026-11-11)
+
+> **APPROVE1u, v, w, x** (driver, modules): Outcome: the desktop's start of a plugin first asks the API token of the identity serving origin; the work workspace's only identity is SSH with no token, so the start was refused, logged `unstartable` and counted as a crash until the plugin read `unsound`: a refused hand is now said `refused`, never makes it unsound, and is asked again each minute (`Plugins/HandRefusals.cs`); the person's token is the way on. A run with live steps keeps its session-branch entry, so its landing binds (`Workflows/RunHeldUnits.cs`). A chain's clean-up completes when the look's own tidy already removed its landing (`Kinds/Tidy/TidiedByTheLook.cs`). *Ready for you* drops sessions of a run whose review the person stopped (`Workflows/StoppedRuns.cs`, `NeedsAPerson`). Proof: `RefusedHandTests`, `RunHeldTraceTests`, `TidyAfterTheLookTests`, `StoppedReviewAttentionTests`, each seen failing first.
+
+---
+
+## PLACEWORK1c — the writer's lease and git's manifest in a turn (2026-11-11)
+
+> **PLACEWORK1c** (service, driver, web; D254, D258): Outcome: the ledger holds a place's writer's lease (`Sessions/SessionPlaceLease.cs`, `holds_place`; a record in the place's root holds it while queued, starting or working, a parked or waiting one only with its mark; the open and a park's move into working refused `RepositoryBusy` naming the holder; `ReleasePlace`); the planner sits a start behind the holder (`WorkOrders/Domain/PlaceHolders.cs`, `SittingFact.Place`); `CleanCheckout` is gone. A quest start in place keeps its start's manifest (Driver `Departments/Manifest/`) and is told in a `place` section what changed outside Daoris and which uncommitted paths are not its own, its rules denying add-all, commit-all and stash where there are such paths (`PlaceTurns`, `PlacePrompt`, `PlaceDenies`); every move out of a running state reads the turn's end and sends `holdsPlace`, a commit clearing it; a marker in the common git folder holds another home's in-place start (`PlaceHomeMarker`); a parked line keeping its checkout says so with *Let others work here* (`PlaceHoldFact.tsx`). Proof: `PlaceLeaseTests`, `ManifestTests`, `PlaceHoldersTests`, `PlaceTurnsTests`, `PlaceHomeMarkerTests`, `PlaceEndMoveTests`, `PlaceHoldFact.test.tsx`; `HomeSizeBench` 69 ms a look, 146 ms the start's manifest. Today's trees still run where a repository has them, until the `isolate` step.
+
+---
+
+## APPROVE1o, p — a run's steps that wait on the person in the groups, abandoned runs swept once (2026-11-11)
+
+> **APPROVE1o, p** (driver, modules, web): Outcome: every step only the person can move (an active review, task or approval, an active go-ahead, a step held `unknown`; `Workflows/Nodes/PersonWaits.cs`) places its run's newest session in *To review* (an Accept) or *Waiting on you* (anything else), ended or archived, with a `waits` field on the row; Accept waits show in *What needs you* as review rows opening the run, and `session list` names each waiting step with `daoris workflow run --session <id>` (`WorkOrders/Sessions/RunWaitSessions.cs`, `RunWaitWords.cs`, the page's `runWaitFact.ts`). The `abandoned-runs` home step records a stop on each open step of a run whose quest is Declined or whose ask is Closed, once (`Transitional/Migration/AbandonedRunsStep.cs`). Proof: `RunWaitGroupsTests`, `PersonWaitsTests`, `AbandonedRunsStepTests`, `runWaitFact.test.ts`, each seen failing first. Left: the sweep reads a run's first quest only; a go-ahead nobody raised shows in the group alone.
+
+---
+
+## APPROVE1q, r, s, t — every node word routed, nothing to deliver ends a run, a stopped step drawn stopped (2026-11-11)
+
+> **APPROVE1q, r, s, t** (driver, web): Outcome: the `workflow` group's verb list lacked `accept`, `send`, `ask-again` and `go-on`, and routed `done`, `approve` and `reject` to the driver's own command, which refused them; every node word now routes to `WorkflowNodeCommand` and the usage names each (`Loop/CommandTree.cs`, `DriveUsageMachine.cs`, `DriverWorkflowsCommand.cs`). After a `land` on an empty landing every step not yet started is skipped as nothing to deliver, an active push through the landing record (`Workflows/Nodes/NothingToDeliver.cs`, `PushNode`, `PushReading`); once the line holds the landed branch, push and pull-request steps not yet started are skipped, the monitor reading no plugin answer as merged (`PullRequestReading`): the pull-request plugin had failed to start all day, so the step was never sent. A stopped step is no longer drawn as the live current one (`WorkflowRunView.tsx`). Proof: `WorkflowNodeWordsRouteTests`, `NothingToDeliverTests`, `RunViewStopped.test.tsx`, each seen failing first. Left: a pull-request step already sent to a plugin is not closed when the line holds the branch.
+
+---
+
+## APPROVE1k, l, m — a later quest its own tree, a shared branch's event to the run awaiting it, a ready landing bound (2026-11-11)
+
+> **APPROVE1k, l, m** (driver; D260): Outcome: a later quest of a line goes into an earlier tree only when it is that run's own part (a step in the same chain, same repository), else a tree and branch of its own (`WorkOrders/Domain/LineRuns.cs`, `RoundJoining.cs`; `EntryParts.Run` read by `GrowTree.EntryLanded`); the run rule lives once (`Service/Domain/QuestRuns.cs`), so `Workplace/RunParts.cs` names no Workflows type (StructureTests green); an event on a branch two runs share goes to each run whose own node waits for it at that commit, else each whose graph names that step (`Workflows/Nodes/ToldRuns.cs`, `WorkObserver`); a landing `ready` with no binding binds at the commit the review accepted (`ReviewedTip.cs`). Proof: `SharedRunBranchTests`, `ReadyLandingTests`, `EntryPartsPlanTests`, the tick tests, `NodeRuntimeTests`, `StructureTests`, Driver.Tests' census (1787). The shared-branch test's red was the runtime fixture's port, which never answered what it had told.
+
+---
+
+## AGENTFREE1b — the person's own tool home reaches a Claude session (2026-11-11)
+
+> **AGENTFREE1b** (driver; D262): Outcome: a Claude session is handed the person's own skills, subagents, commands and servers, copied from their tool home into one plugin, `own`, removed with the session (`OwnTools`, `ClaudeOwnHome`, `ClaudeOwnServers`); their enabled plugins where installed (`ClaudeOwnPlugins`); `--chrome` on the native door (`ClaudeOwnChrome`); each family a rule default (`own-*`) the person can switch off; a server named `daoris-knowledge` or carrying a `DAORIS_` variable left out, review and helper passes handed none, nothing handed in the person's own home or a scratch home. Proof: `OwnToolHomeTests` (8), `DriverModuleRulesTests`. Not proved in a real session.
+
+---
+
+## AGENTREV3o and the merges' reds — test declarations brought to the merged code (2026-11-11)
+
+> **AGENTREV3o** (driver tests): Outcome: `TransportRunProcessTests` holds a run let go while its retry hangs (`againhangs`), whose retry's process exits and whose lineage end is unclean (19 of 19 with the process settings; not seen failing first). The unit half's reds from this session's merges were test declarations, never product code: `course-cases.txt`'s row for the new `AgentOfDoorTests` case; `LayerHoldProcessTests` alone in its collection and kept in the environment census; `HelpRoleProposalsTests` asserting no workspace refusal (D253); `DriverCommandTests` reading `PressAsync`. Left red then: three `StructureTests` on `Workplace/RunParts.cs` (fixed with APPROVE1k-m) and one load flake in `DesktopStoreTests`.
+
+---
+
+## ASKFULL1f, h — below full access a call is held, a working session's tier is its access setup (2026-11-11)
+
+> **ASKFULL1f, h** (driver, modules, web; D253 points 5, 6): Outcome: a working session's proved press is judged by its repository's access setup (`Modules/Loop/DelegateTiers.cs`, `PipeDelegate`): unrestricted runs it with no card as the session's own (`session.pressed`, never the owner's); asking and the judged default raise it first as the `allow` supervisor's subject `{ press }` at its repository (`SessionPressAllows`, `PressAllowSubjects`, shape `press`), its `allow.once` running it as the session's, a leave or ten minutes falling to the card. Below full access a tool call is held for the person on both doors: chats and Ask Daoris restricted on the protocol door (`Loop/Chat/ChatHolds.cs`), and the native door through a PreToolUse hook that asks Daoris and waits up to 900 s (`ClaudeAskHook.cs`, `hooks/permission-ask.mjs`, reading the person's path rules), its answer through the session requests (`NativePermits`). Granted act families run Ask Daoris restricted's press with no card (`Knowledge/ActFamilies.cs`, `ConfiguredAccess` `acts`, Configured access's *Acts without asking*); Ask Daoris's conversation shows its own held asks (`help/ask/AskHeld.tsx`). Proof: `PipeDelegateTests`, `SessionPressAllowTests`, `ChatHoldsTests`, `ClaudeAskHookTests`, the hook's node tests, the web's grant and held-ask tests. Not seen in the window.
+
+---
+
+## AGENTREV3n — the third cycle's hardening (2026-11-11)
+
+> **AGENTREV3n** (driver): Outcome: a retry leg is the opened one once captured (`TransportRun.RetriedAsync`); the layer run's retry is stopped after its spawn when a stop was asked, as the transport's is (`LayerRun.EndAsync`); `RosterWalk.Unready`'s kept-account `Before` passes the account's facts, so a spent kept account is not kept for conversations; the process cases for a sources-alone start and for stripped variables written. Proof: `KeptAsideSpentTests` and the retry-stop case seen failing first; `LayerHoldProcessTests` and `ClaudeDrivenSpawnParityProcessTests` run filtered. The retry leg's opening has no test: AGENTREV3o.
+
+---
+
+## AGENTREV3a-m — the agents review's third cycle, its thirteen defects fixed (2026-11-11)
+
+> **AGENTREV3a-m** (driver): Outcome, one commit each: a layer-held Claude start carrying `--setting-sources` or `--strict-mcp-config` stays on its transport (a); one `LayerEnvironment.Of` hands every stripped name as null, for `LayerHold` and `LayerUsageRead` (b); a layer start's stdin closes in a `finally` (c); a stop between a native resume's failed exit and its retry is carried onto the new entry and re-stopped after the retry's spawn (d); the reader's line writers and the held-permission line are guarded (e); any non-cancellation mark failure is `AcpWordsUnmarked`, faulting its own word (f); `agent list`, `login` and `update` read `driver.json`'s `commands` (`AgentsCommand.ConfiguredCommand`, g); an exact prerelease pin starts (h); a scope held in two spellings is edited and judged in both (i); `agent key --remove` says a lock's refusal (j); a resume of a non-picked account and `ReadyAsync` pass the account's facts, D206 exempting no resume (k); an account's cooling lines are grouped and distinct (l); one `ProviderRegistry.ProviderNamed` answers the door-to-provider lookup (m). Proof: `ClaudeDrivenLayerRunTests`, `LayerEnvironmentTests`, `AgentConfiguredCommandTests`, `ServerPrereleaseTests`, `RuleScopeSpellingsTests`, `AgentCoolingLinesTests`, `ResumeSpentTests` and extended classes; a, c, d, e, f, i, j, k seen failing first. The hardening left is AGENTREV3n.
+
+---
+
+## APPROVE1d, g, i — a shared branch each run's subject, each run lands on its own branch, a press heard out of focus said in front (2026-11-10)
+
+> **APPROVE1d, g, i** (driver, modules, web; D259): Outcome: the three runs stuck at `content` (18cabf94816d, 5a4f8e6af239, d183a5682959) had their later quest's session placed in a tree an earlier run of the line opened, so the branch belonged to two graph runs and `RunOwners` called it held, leaving the run no branch; a branch only graph runs produced is now each run's subject, the Current's work beside a graph run's still held (`GraphRuns.cs`, `NodeGoverning.cs`; D259). A session's landing is named for the first part of its own run, not the line's first session (`Workplace/RunParts.cs`, `SessionTrees.cs`; the entry-wide lead gone from `EntryLands.cs` and `EntryAccepts.cs`). A terminal's press that reached the window out of focus is said when the window comes in front while it still waits unshown (`notifications/inFront.ts`, `announce.ts`). Proof: `SharedRunBranchTests`, `OwnAcceptSubjectTests`, `announce.test`, each seen failing first. Not seen in the window.
+
+---
+
+## SESSIONORIGIN1b — a start's handed brief in Started with, a line's own intake quest its own (2026-11-10)
+
+> **SESSIONORIGIN1b** (driver, modules, web): Outcome: the record already kept a go-on's or hand-over's first message whole (the event carrying `Continues`), so nothing new is stored: `SESSION_OPENINGS` answers `{openings, briefs}` (`Context/Events/StartBrief.cs`, `SessionEventLog.Briefs()`), a brief cut at 4000 characters with its length said, and *Started with* shows a folded *Handed brief* beside the quest's or ask's words or alone; a quest its own line's ask's intake published opens its part instead of being marked `asked` (`SessionEntryReader` `LinesOwn`), and the page's corrective wording is gone. Proof: `StartBriefTests`, `DriverModuleBriefsTests`, `SessionEntryOwnIntakeTests`, `SessionHead.origin.test.tsx` (not seen failing first).
+
+---
+
+## ASKFULL1d — the window lists what Ask Daoris pressed (2026-11-10)
+
+> **ASKFULL1d** (modules, web; D253 point 1): Outcome: each press Ask Daoris's key ran with no card is kept this run (route, conversation, target, time, outcome; the newest 100; a restart empties it; `Modules/Platform/HelpPressRecord.cs`), told to the windows at the press and at its answer and read as `standingConfirmation.helpPresses`; Notifications shows them as a folded section in the standing slot (`notifications/HelpPressLine.tsx`) in the window's route words with their outcome, each opening Ask Daoris's panel, a done pause offering *Resume*. Proof: `HelpPressRecordTests`, `PipeDelegateTests`, `HelpPressLine.test.tsx` in both languages. Left: a reverse for other acts, and opening the exact conversation.
+
+---
+
+## CODESTRREV3a, b and KNOWREV3a, b — a lock's holder by pid and start, a deleted session's staged memory dropped, a fair memory search (2026-11-10)
+
+> **CODESTRREV3a, b** (tools): Outcome: the gate tree's and the CI watch's locks record their holder's process start beside its pid, and `running` means the pid lives and is that holder (`tools/merge-branch/holder.mjs`: `processStart`, `sameHolder`, `holderRuns`); a take-over ends only the children created after the dead holder began and before its pid was taken again (`endOrphans(parent, since, until)`). Proof: `tool-test/merge-branch/holder.test.ts` (not seen failing first).
+> **KNOWREV3a, b** (service, connector): Outcome: deleting a session drops its staged memory rows in the same transaction, nothing staged applying by itself, and an awaiting replacement whose session is gone is listed as a wait with no session; a memory search across repositories takes its ten places round-robin across the members, each engine's order kept within. Proof: `MemoryDecisionTests` (seen failing first), `McpMemoryToolsTests`.
+
+## PLACEWORK1b — the design for work in place under a writer's lease (2026-11-10)
+
+> **PLACEWORK1b** (records; D254, D258): Outcome: `docs/2026-11-10-place-work-design.md`. The writer's lease is the ledger's, held by a running turn and, in a git place, by a line's uncommitted work; a manifest at each turn's start and end with a text content store; four place kinds (git, jj, folder, system); an `isolate` node kind with `kind`, `at-once` and `overlap` and four providers, each place kind's return (git's landing, a folder's or jj's `return`); systems through plan, review and `apply`; the migration (`PlaceWorkStep` converts `trees` and `overlap`). D258: the count on the step, not a place setting; the lease lasts a turn. Rows 1c-1j wait for the owner's read.
+
+---
+
+## ASKFULL1a — a delegate key for every session, its press judged by its tier (2026-11-10)
+
+> **ASKFULL1a** (driver, modules, web; D253 points 1, 5, 6): Outcome: every session Daoris starts is handed its own delegate key (`DAORIS_DELEGATE_KEY`, drawn per start in `Platform/DelegateKey.cs`, its hash held by session in `Agents/SessionDelegates.cs`, forgotten at the process's end, the conversation's end and an access swap; stripped at every executable's entry and dropped from every other start beside `DAORIS_ROLE_KEY`); the `daoris` verb takes it at its entry and proves a person's press over the hello's nonce (`Instance/DelegateProof.cs`, one keyed-proof type `Platform/KeyedProof.cs` shared with the holder key and the supervisor's proof). The pipe judges a proved press by its tier (`Modules/Platform/PipeDelegate.cs`, seam `InstancePipe.Delegates`): a full-access Ask Daoris press runs with no card, said on its conversation (`HelpPressed`) and logged `help.pressed`; restricted's goes to the card naming Ask Daoris; another kind's to a card naming its session; a bad proof, a reused nonce or a session with no key is refused `delegate-unproved`. Restricted Ask Daoris runs `daoris` (`Bash(daoris:*)`, `PowerShell(daoris:*)`), and the room says full access acts as the person and restricted asks. The person-route words ASKFULL1b's routes lacked are in both catalogues. Proof: `PipeDelegateTests`, `DelegateKeyStripTests`, `SessionProcessesProcessTests`, `HelpAccessSwapTests`, the room goldens, both projects' censuses. Not seen in the window.
+
+---
+
+## APPROVE1a, b, h — an ask published once, a done checked against nothing waits unchecked, an abandon ends its runs' waits (2026-11-10)
+
+> **APPROVE1a, b, h** (service, driver; D255): Outcome: `AskPublishGuard` runs first in `AskPublishing.PublishAsync`: a publish to a receiver the ask already holds an open, taken or done quest for, from another publisher than that quest's, answers with that quest and publishes nothing, and a session's publish is refused while the ask's intake is queued, starting or working or before any intake served it, the person's own press never refused; `daoris ask publish` names its session and takes `--require "<words>" "<check>"`, and a publish with no requirement says so; the creation sentence names the intake's condition instead of *Nothing was published*. A done of a quest from an ask carrying no requirement waits at `quest.holds` as *unchecked*, naming the note to read (D255; rejected: the ask's words as one requirement at publish). Abandoning an ask stops every live step of its runs through the person's own stop on the run's step (`AbandonRuns`). Proof: `AskPublishOnceTests`, `AskPublishRequestTests`, `AbandonRunsTests`, `QuestHoldsNodeTests`. Service.Http.Tests not run; not seen in the window.
+
+---
+
+## APPROVE1c, e, f, j — an early Accept kept, an observed review git's, a landing that needs no review worded so, a second Apply answered (2026-11-10)
+
+> **APPROVE1c, e, f, j** (driver, modules, web; D256): Outcome: an Accept pressed before the gate judged the run, or before its review is active, is kept on the run's record for the commit pressed on and applied by the first pass that finds the review active, answered *Accepted; it lands at the next look* (`Workflows/Nodes/EarlyAccepts.cs`), ending where the review begins at another commit, the person says a later word, or the run ends; a review reached by seeing its landing is recorded as git's, never the person's; an automatic landing whose line holds everything closes its entry (`line-holds`) and one tried again at each look says so (`queued`), neither worded as waiting for review; a second Apply on a settled card answers *Already applied* with the first's outcome and logs `help.apply.again` (`Help/HelpAppliedAgain.cs`). Proof: `EarlyAcceptsTests`, `GraphPressTests`, `ReviewObservedTests`, `LandTriesLineTests`, `HelpAppliedAgainTests`, `landingLineNote.test.ts`. Not seen in the window.
+
+---
+
+## AGENTFREE1a — the census of what a session narrows, and its first two lifts (2026-11-10)
+
+> **AGENTFREE1a** (driver; D253 point 7): Outcome: `docs/2026-11-10-agent-free-census.md`, 29 rows, each narrowing with what it stops, why, and kept or lifted. Lifted: a Claude session keeps its account's memory, synced skills, plugins and connectors (the four account keys gone from its settings file; `AccountContextTests` replaces `OwnContextTests`); the tree guard lets a subagent's call write inside its own worktree, which Claude makes under the repository's main checkout, checked against the session's repository, the session's own agent still writing only in its tree (`Workplace/hooks/subagent-worktree.mjs`, `SubagentWorktreeShippedTests`, the node test beside it). The worktree's place was read from the installed binary, not measured in a real session; `TreeGuardTests` (a Process class) not run.
+
+---
+
+## SESSIONORIGIN1 — a session shows where it started from and what it started with (2026-11-10)
+
+> **SESSIONORIGIN1** (web): Outcome: a session's head and *Details* say *Started from* as a press that opens it (its quest, ask, earlier session, repository, or Ask Daoris's room and workspace; `work/head/startedFrom.tsx` `originsOf`) and *Started with* (the quest's requirements, else its words, else the ask's words, else the first message; `startingOf`), and *How this came to be* takes the same; a rail line holding several quests says which each session holds, and a quest its own ask published is no longer worded a sibling's. Proof: `SessionHead.origin.test.tsx`, `SessionRow.quests.test.tsx`, both languages. Left as SESSIONORIGIN1b: the brief a start was handed, which no record keeps. Not seen in the window.
+
+---
+
+## ASKFULL1b — every person-only verb reaches the running Daoris (2026-11-10)
+
+> **ASKFULL1b** (driver, modules; D253 points 2 and 4): Outcome: with Daoris running, `quest accept`, `reopen`, `go-on`, `review`, `workflow`, `done` and `delete`, `ask workflow` and `review`, `repository retire`, `wire` and `import`, a plugin's replacement, `git identity` and `git access` press Person routes over the pipe (new: QUEST_ACCEPT, QUEST_REOPEN, QUEST_GO_ON, QUEST_REVIEW, QUEST_WORKFLOW, ASK_WORKFLOW, ASK_REVIEW, REGISTRY_RETIRE, REGISTRY_REWIRE, REGISTRY_IMPORT, PLUGIN_REPLACE), the window's Confirm card standing for the person and the in-process service client calling with the person key; `daoris workflow accept <run> <node>` presses WORKFLOW_NODE's accept; with none running each verb acts alone or refuses a session's terminal as before. Proof: `PersonVerbRoutesTests`, `PipeCensusTests`, `WorkflowNodeCommandTests`, `PluginCommandTests`, the censuses, the help-room goldens. Not seen in the window; the delegate key (1a) covers these routes for Ask Daoris in full access.
+
+---
+
+## ASKFULL1c — Ask Daoris reaches every workspace (2026-11-10)
+
+> **ASKFULL1c** (service, driver; D253 point 3): Outcome: an Ask Daoris conversation's connector answers a named workspace and `all` (`WorkspaceScope.ResolveAsync`, the bound workspace answering only where none is named; its refusals deleted from the knowledge, quest and handback tools); a proposal, a housekeeping call, a checkout read and a setting are judged by their own judges with no workspace refusal (`HelpProposalScope` and every kind's `Named` deleted); the restricted grant hands every readable checkout, the room's own workspace first; the room still projects its own workspace and says it may reach the rest. A repository registered in several workspaces resolves to its first registration for housekeeping and checkout reads. Proof: `McpHelpCircleTests`, `HelpProposalScopeTests`, `HelpCheckoutsTests`, `HelpHousekeepingTests`, `HelpChosenSettingsTests`, `HelpCircleTests`, `HelpRoomScopeTests`, the `scoped` room golden. Not seen in the window.
+## PLACEWORK1a — the survey of parallel work beyond git (2026-11-10)
+
+> **PLACEWORK1a** (records; D254): Outcome: `docs/2026-11-10-isolation-beyond-git-survey.md`. No agent product isolates work that is not in git: each uses a worktree, a cloud machine with a branch, or nothing, and Claude Code's worktree hooks are the one seam for another mechanism. Four candidates ranked for D254, first a writer's lease per place with a manifest at each run's start, isolation providers by kind of place (worktree, jj workspace, copy-on-write clone, a full copy) and a return merged against the manifest; places reached through a console take plan, review and apply. PLACEWORK1b designs from it.
+
+---
+
 ## The agents-and-harnesses code review, third cycle (2026-11-10)
 
 > **The agents review, third cycle** (driver): Outcome: ten defects fixed, each with a regression test seen to fail first (the stop-reason helper's test failed by not compiling), and thirteen filed as AGENTREV3a to AGENTREV3m with their evidence. A session's end whose saying failed starts the finishing of the tasks it marked, so the end said again no longer waits on them (38598525de, `AcpStreamsTests`). A typed prompt answer whose `_meta` is not an object is no failure and no longer leaves its request unanswered (b1b34310a3, `AcpTypedFailureTests`). The second stand-in's limit marker allows the protocol door's `Internal error: ` preface (efd94a18a7, `AgentErrorsTests`). `agent trust` refuses an account not on this machine instead of making its folder (aed560dc64, `AgentTrustAccountTests`, the text golden's case 1a5172c247). `agent rules default` refuses a workspace or repository scope (a22209a50b, `AgentVerbFlagsTests`). A later refused model leaves an earlier refusal's day as it was (ee4346d2f9, `AgentOffersTests`). `agent key` reaches an account whose key this user cannot open (4561a9961b, `AgentKeyVerbTests`). A preamble or opening the sink refuses leaves both pipes read to their ends (2f3f123f01, `HarnessCaptureDrainTests`). A stand-in with no command names one that runs (a440e375a5, `ProvidersBuiltTests`). The stop reason of a prompt answer is read by one shape-checked `AcpProtocol.StopReason` (8323a993b6, `AcpStopReasonTests`). Read and left: `RetryTable.RestartsResume` has no production caller and the area already says so, the layer door's adoption being its caller; `GitCommandsCensusTests` fails on this tree from the git area's table commit, not from this review.

@@ -325,6 +325,7 @@ public static class PersonDoors
         new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
+        new("POST", "/api/sessions/{id}/release-place", DoorClass.Person, "a parked line's place let go") { Marks = OwnerMark.None("a session's place mark, which names no quest") },
         new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
         // Only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
         // for their yes, which a terminal's confirmation in the window is.
@@ -339,6 +340,7 @@ public static class PersonDoors
         new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },
+        new("POST", "/api/registry/{repository}/excludes", DoorClass.Person, "a folder's excludes rewritten") { Marks = OwnerMark.None("a folder's excludes, the registry's") },
         new("POST", "/api/registry/import", DoorClass.Person, "a folder's import") { Marks = OwnerMark.None("a folder's import, the registry's") },
         // The answers to a terminal's ask, never themselves asked for.
         Confirm,

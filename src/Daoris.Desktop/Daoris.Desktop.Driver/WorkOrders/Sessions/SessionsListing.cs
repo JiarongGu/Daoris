@@ -16,6 +16,7 @@ internal static class SessionsListing
         // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account.
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
+        look = look with { RunWaits = WorkOrdersWorkflows.Current.PersonWaits(world.Home) };
         foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow)) output.WriteLine(line);
         return 0;
     }
@@ -161,6 +162,7 @@ internal static class SessionsListing
         }
 
         if (row.Shown == ShownState.Answered) yield return "your answer goes on at the driver's next look";
+        foreach (var said in RunWaitWords.Of(row)) yield return said;
         if (row.Group == SessionGroup.Review && row.Work is { } work)
         {
             yield return work.Commits is > 0 and var commits ? $"{commits} commit{(commits == 1 ? "" : "s")} to review"

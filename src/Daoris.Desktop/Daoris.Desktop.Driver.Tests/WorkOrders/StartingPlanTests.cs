@@ -15,11 +15,11 @@ public sealed class StartingPlanTests
 
     private static RepoView Repo(string name = "Game", string? root = null) => new(name, true, root ?? $"D:/fam/{name}");
 
-    private static DriverConfig Config(int cap = 3, bool trees = true) =>
-        DriverConfig.Empty with { Drivable = ["Game", "Tools", "Docs"], Cap = cap, Trees = trees ? ["Game", "Tools", "Docs"] : [] };
+    private static DriverConfig Config(int cap = 3) =>
+        DriverConfig.Empty with { Drivable = ["Game", "Tools", "Docs"], Cap = cap };
 
-    private static Snapshot Snapshot(QuestView[] quests, StartReservation[] starting, SessionView[]? active = null) =>
-        new(quests, [Repo("Game"), Repo("Tools"), Repo("Docs")], active ?? []) { Starting = starting };
+    private static Snapshot Snapshot(QuestView[] quests, StartReservation[] starting, SessionView[]? active = null, bool apart = true) =>
+        new Snapshot(quests, [Repo("Game"), Repo("Tools"), Repo("Docs")], active ?? []) { Starting = starting }.Apart(apart, "Game", "Tools", "Docs");
 
     [Fact]
     public void A_quest_a_start_here_is_still_opening_is_not_started_again()
@@ -69,7 +69,7 @@ public sealed class StartingPlanTests
     [Fact]
     public void Without_trees_a_start_still_opening_holds_its_repository_s_root()
     {
-        var plan = Planner.Plan(Snapshot([Quest("q2")], [new StartReservation("q1", null, "Game", null)]), Config(trees: false));
+        var plan = Planner.Plan(Snapshot([Quest("q2")], [new StartReservation("q1", null, "Game", null)], apart: false), Config());
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);

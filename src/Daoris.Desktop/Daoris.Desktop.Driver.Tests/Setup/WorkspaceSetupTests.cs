@@ -234,8 +234,9 @@ public sealed class WorkspaceSetupTests : IDisposable
     {
         var world = World(Four);
         world.SetUp("docs");
+        world.InPlace.Add("billing");
 
-        var preview = await PreviewAsync(world, Driven(3).WithTrees("billing", false));
+        var preview = await PreviewAsync(world, Driven(3));
 
         // A repository set up is still to go for its index until the plan has asked it.
         var docs = preview.Rows.Single(row => row.Repository == "docs").Standing;
@@ -399,7 +400,8 @@ public sealed class WorkspaceSetupTests : IDisposable
     public async Task A_repository_the_press_refuses_is_skipped_with_its_reason_and_never_judged_again()
     {
         var world = World(Four);
-        var config = Driven(3).WithTrees("atlas", false);
+        world.InPlace.Add("atlas");
+        var config = Driven(3);
         await PressAsync(world, config, new(Pilot: 0));
 
         var said = await TickAsync(world, config);
@@ -415,7 +417,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(["billing", "cargo", "docs"], Asked(world));
         var skip = Plan().Skipped["atlas"];
         Assert.Equal(SetupRefusals.NoOwnTree, skip.Code);
-        Assert.Contains("`daoris place trees atlas on`", skip.Said, StringComparison.Ordinal);
+        Assert.Contains("*Work apart*", skip.Said, StringComparison.Ordinal);
         Assert.Contains(said, line => line.StartsWith("setup  work: skipped `atlas`", StringComparison.Ordinal));
         Assert.Equal(judged, world.LinesRead.Count(read => read == "atlas"));
         var logged = Assert.Single(world.Logged, line => line.Event == "setup.skipped");
@@ -667,13 +669,15 @@ public sealed class WorkspaceSetupTests : IDisposable
     public async Task A_resume_judges_the_skipped_again()
     {
         var world = World("atlas", "billing");
-        var config = Driven(3).WithTrees("atlas", false);
+        world.InPlace.Add("atlas");
+        var config = Driven(3);
         await PressAsync(world, config, new(Pilot: 0));
         await TickAsync(world, config);
 
         var resumed = WorkspaceSetup.Resume(world, _home, "work");
         world.Close(world.SetupOf("billing").Id, "Done");
-        await TickAsync(world, config.WithTrees("atlas", true));
+        world.InPlace.Remove("atlas");
+        await TickAsync(world, config);
 
         Assert.True(resumed.Ok);
         Assert.Contains("judged again", resumed.Message, StringComparison.Ordinal);
@@ -823,7 +827,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     private static DriverConfig Driven(int cap) =>
         new[] { "atlas", "billing", "cargo", "docs", "echo" }.Aggregate(
             DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = cap },
-            (config, repository) => config.WithDrivable(repository, true).WithTrees(repository, true));
+            (config, repository) => config.WithDrivable(repository, true));
 
     private static WorkspaceSetupStandIn World(params string[] repositories) =>
         new WorkspaceSetupStandIn().With([.. repositories.Select(repository => WorkspaceSetupStandIn.Row(repository))]);

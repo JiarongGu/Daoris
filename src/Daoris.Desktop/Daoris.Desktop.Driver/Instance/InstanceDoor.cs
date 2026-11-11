@@ -188,12 +188,15 @@ public static class InstanceDoor
         JsonElement? answer;
         // `--no-wait` leaves the line once the instance says the press waits, the id already said.
         using var leave = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        Func<string, object>? delegated = route.Class == RouteClass.Person && world.Delegate() is { } held && look.Nonce is { } nonce
+            ? text => new { session = held.Session, proof = DelegateProof.Prove(held.Key, nonce, route.Module, route.Route, text, key) }
+            : null;
         await using (var client = look.Client!)
         {
             answer = await client.RequestAsync(id, route.Module, route.Route, payload, key, told =>
             {
                 if (Told(told, id, world) && world.Wait <= TimeSpan.Zero) leave.Cancel();
-            }, world.Within, leave.Token).ConfigureAwait(false);
+            }, world.Within, leave.Token, delegated).ConfigureAwait(false);
         }
 
         // The answer is lost (the connection, or the verb's wait over): asked for, never sent again, never done here. Which

@@ -35,7 +35,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     private DriverWatch Watch(ProviderRegistry? adapters, HarnessRoster? harnesses = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1, "trees": ["engine"] }""");
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1 }""");
         var service = _ledger.Client();
         return new DriverWatch(service, config, _home, new SessionProcesses(), sync: null, harnesses: harnesses, adapters: adapters)
         {

@@ -424,16 +424,24 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _walk.AskAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
 
     /// <summary>Where Ask Daoris's conversation runs (<see cref="HelpPlacement.In"/>).</summary>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlacement.In(_home, room, reads, workspace);
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null) =>
+        HelpPlacement.In(_home, room, reads, workspace, focus);
 
     /// <inheritdoc cref="HelpAccessSwap.Chosen"/>
     public void HelpAccessChosen(string mode) => Executors.Of<HelpAccessSwap>().Chosen(mode);
+
+    public void HelpFocusChosen(string sessionId, bool waiting) => Executors.Of<HelpAccessSwap>().Refocused(sessionId, waiting);
 
     /// <inheritdoc cref="HelpAccessSwap.Swapping"/>
     public IReadOnlyList<string> HelpSwapping(string mode) => Executors.Of<HelpAccessSwap>().Swapping(mode);
 
     /// <inheritdoc cref="HelpAccessSwap.GrantPending"/>
     public bool GrantPending(string grant, ConfiguredAccess chosen) => Executors.Of<HelpAccessSwap>().GrantPending(grant, chosen);
+
+    /// <summary>The mode a running Ask Daoris conversation's start got; null for any other session, or one not running here.</summary>
+    public string? HelpModeOf(string sessionId) => _context.HelpModes.GetValueOrDefault(sessionId);
+
+    public void HelpPressed(string sessionId, string route) => global::Daoris.Driver.HelpPressed.Tell(_context.Output, sessionId, route);
 
     /// <inheritdoc cref="HelpAccessSwap.TurnChanged"/>
     internal void HelpTurnChanged(string sessionId, ChatQueue queue) => Executors.Of<HelpAccessSwap>().TurnChanged(sessionId, queue);
@@ -580,7 +588,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         bool answers) =>
         RepositoryPlace(config, registry, known, repository, workTree, continued, answers);
 
-    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace) => HelpPlace(room, reads, workspace);
+    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace, HelpFocus? focus) => HelpPlace(room, reads, workspace, focus);
 
     Task<bool> IChatRunning.AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => AnswersFindingsAsync(sessionId, tree, config);
 

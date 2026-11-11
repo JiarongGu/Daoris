@@ -251,7 +251,7 @@ public static class WorkflowRunWords
                     : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
                 // Each holds the work until it lets go, and passing it over lets it go on.
                 NodeKinds.QuestHolds or NodeKinds.ContentHolds when step.Words is { Length: > 0 } why => $"Holds the work: {why.TrimEnd('.')}.",
-                NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, or is held for your yes or its evidence's verdict.",
+                NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, is held for your yes or its evidence's verdict, or is unchecked: an ask's quest with no requirement.",
                 NodeKinds.ContentHolds => "Holds the work while the line or a branch of yours already holds it, or it holds no commit left to land.",
                 _ => on is null ? "Under way." : $"Observed on {on}.",
             },
@@ -260,6 +260,8 @@ public static class WorkflowRunWords
             // A declined request is yours to ask again or go on without; its quest's note is what the receiver said.
             WorkflowGraphDetails.Failed when node == NodeKinds.Request && step.Code == RequestOptions.DeclinedCode =>
                 "The repository it asked declined the quest: ask again, or go on without it with your words.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Apply && step.Code == ApplyDoor.ChangedWhileApplying =>
+                "Changed while applying: something else wrote to the system as it applied, so the work plans again from the system as it stands.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",

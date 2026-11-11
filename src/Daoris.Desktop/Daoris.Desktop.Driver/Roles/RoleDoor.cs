@@ -26,7 +26,7 @@ public sealed record RoleRow(
 
 /// <summary>
 /// The person's one door into the role catalogue: Settings' <c>SET_ROLE</c>,
-/// <c>daoris role</c> and Ask Daoris's <c>role_propose</c>, applied by the person's press, each call <see cref="Apply"/>, so each
+/// and <c>daoris role</c>, Ask Daoris's press of it among them, each call <see cref="Apply"/>, so each
 /// answers the judge's closed codes alike. A role's record and its staffing are set together: the staffing first, a row no record reads
 /// until the record lands, then the catalogue's one write, then the staffing's check, which writes the projection the narrowing moved.
 /// </summary>
@@ -65,7 +65,6 @@ public static class RoleDoor
     {
         public const string Window = "window";
         public const string Terminal = "terminal";
-        public const string Proposal = "proposal";
     }
 
     /// <summary>
@@ -110,7 +109,6 @@ public static class RoleDoor
         foreach (var press in batch)
         {
             var (change, choices, read, policy) = (press.Change, press.Choices, press.Read, press.Policy);
-            // A place's rules are judged by their own judge inside the one transaction below.
             if (change is RoleChange.SetRules { Press: var rules })
             {
                 if (choices is not null || policy is not null) throw new ArgumentException("a place's rules carry no staffing and no policy", nameof(batch));

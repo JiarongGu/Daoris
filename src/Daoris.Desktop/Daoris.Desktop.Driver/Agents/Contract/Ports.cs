@@ -56,6 +56,12 @@ public interface ISpawn
 
     /// <summary>Hands a pipe-door spawn the harness plugins composed for it; nothing by default.</summary>
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
+
+    /// <summary>Hands a spawn the switches of the person's own tool home its program reads from its command line; nothing by default.</summary>
+    void HandOwn(ProcessStartInfo info, OwnTools own) { }
+
+    /// <summary>The person's own servers a protocol door's open hands <c>session/new</c> beside the plan's, where its adapter keeps none of its own; none by default.</summary>
+    IReadOnlyList<ServerEntry> OwnServers(OwnTools own) => [];
 }
 
 /// <summary>What a door reads of its program's wire beyond the transport's: a native door's lines, or a protocol door's frames.</summary>
@@ -83,10 +89,10 @@ public interface INativeDialect : IDialect
 /// </summary>
 public interface IProtocolDialect : IDialect
 {
-    /// <summary>What <c>session/new</c> carries to take the rules file and the plugins composed for the session; null sends no <c>_meta</c>.</summary>
-    object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins) => null;
+    /// <summary>What <c>session/new</c> carries to take the rules file, the plugins and the person's own tool home; null sends no <c>_meta</c>.</summary>
+    object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own) => null;
 
-    object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins) => SessionMeta(settingsFile, plugins);
+    object? SourcesAloneMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own) => SessionMeta(settingsFile, plugins, own);
 }
 
 /// <summary>How an account's windows are asked between turns: the program, the command, the answers recorded and the freshness.</summary>
@@ -209,4 +215,7 @@ public interface ISkillLayout
 {
     /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>
     (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, IReadOnlyList<SkillSource> sources);
+
+    /// <summary>What the person's own run loads from its tool home, laid out beside <see cref="Write"/>'s; none by default.</summary>
+    (string? Folder, IReadOnlyList<string> Plugins) Own(string home, string sessionId, OwnTools tools) => (null, []);
 }

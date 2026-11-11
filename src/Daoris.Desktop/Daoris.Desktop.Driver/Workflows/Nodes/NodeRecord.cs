@@ -257,6 +257,11 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>The supervisor's decision this person's word took the place of, which the pass settles <c>superseded</c>.</summary>
     public string? Supersedes { get; init; }
 
+    /// <summary>An Accept kept for a review not begun yet (<see cref="EarlyAccepts"/>), at the commit it is pressed on (<see cref="Tip"/>).</summary>
+    public bool Kept { get; init; }
+
+    public string? Tip { get; init; }
+
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
 }

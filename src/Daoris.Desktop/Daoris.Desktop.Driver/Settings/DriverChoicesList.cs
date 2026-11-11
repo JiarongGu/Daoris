@@ -17,7 +17,6 @@ internal static class DriverChoicesList
         foreach (var (quest, mark) in choices.Forgiven) Say($"  retried    #{quest}  (counting from {mark} failure(s))");
         foreach (var (quest, session) in choices.Released) Say($"  released   #{quest}  (your stop of session {session})");
 
-        // Each pause this machine keeps, said as paused, never held, with the door that resumes it.
         foreach (var (scope, pauses) in new[] { ("ask", choices.PausedAsks), ("quest", choices.PausedQuests) })
         {
             foreach (var (id, pause) in pauses)
@@ -33,11 +32,15 @@ internal static class DriverChoicesList
             ? $"  quiet      {quiet} minutes before Daoris looks in on a session"
             : $"  quiet      {QuietSetting.Default} minutes before Daoris looks in on a session  (the default — "
               + "`daoris settings quiet <minutes>` changes it)");
+        var manifest = choices.Manifest.Bounds;
+        Say($"  manifest   {manifest.Files} files and {(int)manifest.Time.TotalMinutes} minutes before a folder is too large to follow"
+            + (choices.Manifest == ManifestSetting.Unset ? "  (the default — `daoris settings manifest files|minutes <n>` changes either)" : ""));
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
               + "`daoris settings cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
+        Section(TerminalTiers.File);
 
         if (choices.Drivable.Count == 0)
         {
@@ -48,13 +51,7 @@ internal static class DriverChoicesList
         foreach (var repository in choices.Drivable)
         {
             var held = FindName(choices.Holds, repository) is not null;
-            var trees = FindName(choices.Trees, repository) is not null;
-            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}{(trees ? "  (sessions open their own tree — D51)" : "")}");
-        }
-
-        foreach (var repository in choices.Trees.Where(each => FindName(choices.Drivable, each) is null))
-        {
-            Say($"  trees      {repository}  (sessions there open their own tree when anything spawns one)");
+            Say($"  drivable   {repository}{(held ? "  (held by you — `daoris place resume` releases it)" : "")}");
         }
 
         foreach (var (repository, branch) in choices.Lines) Say($"  line       {repository}  {branch}");

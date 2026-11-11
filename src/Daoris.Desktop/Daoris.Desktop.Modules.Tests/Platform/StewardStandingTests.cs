@@ -60,7 +60,10 @@ public sealed class StewardStandingTests : Bridge
     {
         var standing = new StandingConfirmation(
             Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked()).Staff(RoleKit.Steward(acts));
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing)
+        {
+            Grounds = new StubGrounds { Quests = { ["q1"] = "Open" } },
+        };
         Assert.NotNull(pipe.Serve());
         var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
@@ -135,7 +138,10 @@ public sealed class StewardStandingTests : Bridge
     {
         var standing = new StandingConfirmation(
             Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked()).Probing(probe);
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing)
+        {
+            Grounds = new StubGrounds { Registered = { "engine" } },
+        };
         Assert.NotNull(pipe.Serve());
         var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
@@ -610,7 +616,7 @@ public sealed class StewardStandingTests : Bridge
         Assert.Single(driver.World.Moved);
     }
 
-    public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["trees", "engine", "on"], ["hold", "engine"],
+    public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["hold", "engine"],
         ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"],
         ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"],
         ["hand-over", "s1", "--agent", "codex"], ["hand-over", "s1", "--agent", "codex", "--account", "work"]];

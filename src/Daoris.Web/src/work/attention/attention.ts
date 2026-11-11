@@ -8,6 +8,7 @@ import type { Tool } from '../../agents/tools';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded } from './accountWords';
+import { askerSaid } from '../../person/askerSaid';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
 import { taskRead } from './taskRead';
@@ -39,6 +40,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'steward-stopped': 'holding',
   // A quest its role's policy holds for the person's yes to one move to another choice.
   'policy-hold': 'holding',
+  // A quest its finished session left taken holds its tree until the person's done or word.
+  unclosed: 'holding',
   // A run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
   // A run waiting on a person's task stands still until they press it.
@@ -172,6 +175,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'steward-stopped': return { session: item.session ?? null, quest: item.id };
     // A policy's hold: its quest, as a parked quest's.
     case 'policy-hold': return { quest: item.id };
+    case 'unclosed': return { session: item.session ?? null, quest: item.id };
     // The run's newest work quest here, whose run the step waits in.
     case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
     case 'task': return item.task?.work ? { quest: item.task.work } : null;
@@ -209,7 +213,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  * a volume below its floor, a held git remote and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -369,6 +373,13 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       return {
         ...base,
         title: questOf(row.id)?.title ?? `#${row.id}`,
+        detail: row.sitting ? sittingSentence(row.sitting) : null,
+      };
+    case 'unclosed':
+      return {
+        ...base,
+        title: questOf(row.id)?.title ?? `#${row.id}`,
+        session: row.session ?? null,
         detail: row.sitting ? sittingSentence(row.sitting) : null,
       };
     // The run's work as its quest names it, and the quest declined, to where it went, held until passed over.
@@ -598,22 +609,12 @@ function agentNamed(harness: string, tools: readonly Tool[] = []): string {
   return door?.door.product || door?.tool.product || harness;
 }
 
-/**
- * A terminal's press waiting for the window, in its card's own words: what it asks, by its route's act where the page
- * has one; what sent it; and that it runs only on the card's Confirm, and waits until the person answers. Never a value
- * it carries.
- */
+/** A terminal's press waiting for the window, in its card's words: what it asks, what sent it, that it runs only on Confirm; no value. */
 function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
   const act = `person.route.${waiting.route}`;
-  const asker = waiting.asker;
   return {
     title: i18n.exists(act) ? i18n.t('person.ask.to', { act: i18n.t(act) }) : i18n.t('person.ask.for', { act: waiting.route }),
-    detail: [
-      asker?.process && asker.pid != null
-        ? i18n.t('person.asker.process', { process: asker.process, pid: asker.pid })
-        : asker?.pid != null ? i18n.t('person.asker.pid', { pid: asker.pid }) : i18n.t('person.asker.unknown'),
-      i18n.t('work.attention.confirmationWhy'),
-    ].join(' '),
+    detail: [askerSaid(i18n.t, waiting.asker), i18n.t('work.attention.confirmationWhy')].join(' '),
   };
 }
 

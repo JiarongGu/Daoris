@@ -6,10 +6,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// The connector's server as a session meets it: its tool classes, as the one list the host registers and the tests read,
-/// and what it says before the first search.
-/// </summary>
+/// <summary>The connector's server as a session meets it: its tool classes, as the one list the host registers, and what it says first.</summary>
 /// <remarks>
 /// <para>Each tool class takes only the services its tools use, and the SDK builds it from the host's services for each
 /// call. A new class of tools is one new file and one line in <see cref="ToolTypes"/>; nothing finds one by scanning. The
@@ -32,52 +29,29 @@ public static class KnowledgeServer
         typeof(RuleProposalTools),
         typeof(ReviewTools),
         typeof(GoAheadTools),
-        // A driven session's question to the person before it parks, drawn at its conversation's end with its answers as presses.
         typeof(QuestionTools),
         typeof(HelperTools),
-        // A partner's answer for its piece, refused to every session that writes no piece.
         typeof(PartnerTools),
-        // A working session's ask to go on with another agent, settled by the person's hand-over rule.
         typeof(HandOverTools),
-        // A session's line read back from this machine's event files: what its brief's bound left out, a page at a time.
         typeof(LineTools),
-        // One quest's handback read whole, by its id or its session's, in any state, from the session's own workspace.
         typeof(HandbackTools),
         // A repository's memory: read across the session's workspace, changed in its own repository, corrected by proposal.
         typeof(MemoryTools),
         typeof(ChannelTools),
         typeof(OpinionTools),
-        // A brainstorm pass's result tools, refused to every session the driver names no brainstorm turn for.
         typeof(BrainstormTools),
-        // Ask Daoris's proposals, a class for each kind of proposal the box writes.
-        typeof(HelpAccountTool),
-        typeof(HelpAgentTool),
         typeof(HelpAskTool),
-        typeof(HelpBrowserTool),
-        typeof(HelpClearTool),
-        typeof(HelpDeleteTool),
         typeof(HelpGoTool),
-        typeof(HelpPauseTool),
-        typeof(HelpPluginTool),
-        typeof(HelpRepositoryTool),
-        typeof(HelpRoleTool),
-        typeof(HelpSessionTool),
-        typeof(HelpSettingTool),
         typeof(HelpSetupTool),
-        typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
-        // Ask Daoris's housekeeping (HELPMODE1c2a): requests the driver judges at every call, refused unless the person granted it.
+        // Ask Daoris's housekeeping and chosen settings: requests the driver judges at every call, refused unless the person granted it.
         typeof(HousekeepingTools),
-        // And its chosen settings (HELPMODE1c3): the same kind of request, each setting refused unless the person granted it.
         typeof(ChosenSettingsTools),
-        // And its reading of the checkouts (HELPMODE1c4): one read the driver judges at every call, for every agent.
         typeof(CheckoutTools),
+        typeof(SystemPlanTools),
     ];
 
-    /// <summary>
-    /// The connector's host, before its services are added: its configuration read from the folder its build is in, and no
-    /// file of it watched.
-    /// </summary>
+    /// <summary>The connector's host, before its services are added: its configuration read from its build's folder, no file of it watched.</summary>
     /// <remarks>
     /// The generic host's defaults take the working folder for the content root and watch it, with everything below it, for
     /// <c>appsettings.json</c> to change, and the framework's watcher walks the whole of each folder renamed anywhere beneath.

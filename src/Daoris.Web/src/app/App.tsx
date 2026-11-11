@@ -102,7 +102,7 @@ export function App() {
   // zooms its page itself, so it is left its wheel and its keys.
   const zoom = useZoom();
   useZoomWheel(attached);
-  const { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening } = useFrameDoors();
+  const { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, focusAsk, changeFocus, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening } = useFrameDoors();
   const { attention, presses, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, roster, openWindow, openBrowser, messages, markNoticesRead, linkOpener, notices, setNotificationsToggle, showReviewAgain, reviewActs, update, sayUpdate, dismissUpdate, unkeyedHost, unkeyedSaid, setUnkeyedSaid, answerConfirmation, pressShown, notificationsAt, setNotificationsOpen, dismissNotice, markChannel, notificationsShow, notificationsToggle } = useShellFeeds({ notify });
 
   // Sessions does not exist in a browser: no stream, no tree path, nothing honest to show. A
@@ -152,7 +152,7 @@ export function App() {
   const { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed } = useShellFigures({ repositories, driver, attached, attention, presses, t, outstanding, scope, workspaces, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, notify });
   const { open, openSettings, apply, chooseSettings } = useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, lists, view, knowledgeMode, setSettingsAnchor, setSettingsGitHost, setAgentPart, setListGroup, setDrawerWorkspace, composes, setCompose, setAddRequested, setImportRequested, chooseProjectTab, setBranchAsked, chooseWorkspaceTab, setWorkspaceSection, setMapCode, closings, setTab, circle });
   const { plugins, agents } = useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open });
-  const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, askQuickly, setShortcuts, setAbout });
+  const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout });
   useShortcuts({ commandState, commandDoors, translate, openMenu, attached, setMnemonics, setOpenMenu });
   const { openInWork, openRun, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
   const { quests, projects, knowledge } = useWorkViews({ lists, view, notify, attached, openInWork, openRun, openAtWork, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked });
@@ -366,7 +366,7 @@ export function App() {
               onIntentTaken={() => setWorkIntent(null)}
               compose={compose}
               // The composer's quiet press: its draft in Quick Ask, for the person to send.
-              onMakeTask={(text) => askQuickly(text, true)}
+              onMakeTask={(text, focus) => askQuickly(text, true, focus)}
               // Sending work back is publishing a request, which is the platform's own door — so
               // this goes to the composer rather than growing a second one here.
               onSendBack={(repository) => {
@@ -380,7 +380,7 @@ export function App() {
               // How a landed branch landed: the work's milestone and the run's landing step open its page in Repositories.
               onOpenBranch={(repository, branch) => open('projects', repository, { branch })}
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
-              ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
+              ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} changeFocus={focusAsk} />}
               askFocus={helpFocus}
               // *Notifications* as a view of the frame's regions: the presses of both sources as their cards, then
               // What needs you; shown where it stands by the bell and every door into it.
@@ -415,7 +415,7 @@ export function App() {
                   onOpenAsk={(entry) => openAsk(entry.ask)}
                   onMarkAsk={(entry) => markChannel.mutate({ ask: entry.ask, through: entry.newest?.at })}
                   onOpenAnswer={(notice) => { if (notice.session) openAnswer(notice.session, notice.repository); }}
-                  standing={<NotificationsStanding notify={notify} />}
+                  standing={<NotificationsStanding notify={notify} onOpenHelp={openHelp} />}
                 />
               )}
               notificationsShow={notificationsShow}

@@ -16,6 +16,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         routes.Map<RegisterRepository, RegisteredResponse>(RegisterAsync);
         routes.Map<RetireRepository, RetiredResponse>(RetireAsync);
         routes.Map<WireRepository, RegisteredResponse>(WireAsync);
+        routes.Map<SetFolderExcludes, RegisteredResponse>(ExcludesAsync);
         routes.Map<ImportRepositories, ImportedResponse>(ImportAsync);
         routes.Map<ListRegistry, RegistrationResponse[]>(ListAsync);
         routes.Map<ReadCodeMap, JsonObject>(CodeMapAsync);
@@ -79,7 +80,10 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
                 ? null
                 : Declared.Lanes(body.Lanes.Select(lane => lane is null
                     ? null
-                    : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))));
+                    : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))),
+            Kind: PlaceKinds.Of(body.Kind),
+            Excludes: body.Excludes is null ? null : [.. body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim())],
+            System: PlaceKinds.SystemOf(body.System));
 
         // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each carries, as it
         // orders their knowledge. A local host's registration is this machine's own: nothing to order.
@@ -141,6 +145,25 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         return new RegisteredResponse(wired.Repository, DateTimeOffset.UtcNow, wired.InWorkspace);
     }
 
+    private async Task<Answer<RegisteredResponse>> ExcludesAsync(SetFolderExcludes body, HttpContext http, CancellationToken ct)
+    {
+        var existing = (await Service.Service.RegistryAsync(ct: ct)).Named(body.Repository);
+        if (existing is null)
+        {
+            return Refusal.NotFound($"`{body.Repository}` is not registered here — `daoris repository add <folder>` registers a folder.");
+        }
+
+        if (existing.PlaceKind != PlaceKinds.Folder)
+        {
+            return Refusal.Conflict($"`{body.Repository}` is not a folder: excludes are a folder department's, for the files its manifest passes by.");
+        }
+
+        // Each glob once, trimmed; an empty list is `[]`, which clears, where null would keep what the row held.
+        var excludes = body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim()).Distinct(StringComparer.Ordinal).ToArray();
+        var set = await Service.Service.RegisterAsync(existing with { Excludes = excludes }, DateTimeOffset.UtcNow, ct);
+        return new RegisteredResponse(set.Repository, DateTimeOffset.UtcNow, set.InWorkspace);
+    }
+
     // Local only: a shared deployment is fed, and has no disk of its own to read.
     private async Task<Answer<ImportedResponse>> ImportAsync(ImportRepositories body, HttpContext http, CancellationToken ct)
     {
@@ -177,7 +200,12 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
             Root: host.MachineLocal(http) ? r.Root : null,
             r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable, r.DependsOn,
             // What an asker may address there: each lane's words, never its paths.
-            r.DeclaredLanes.Select(lane => new LaneWire(lane.Id, lane.Title, lane.Summary, lane.Steward)).ToList())).ToArray();
+            r.DeclaredLanes.Select(lane => new LaneWire(lane.Id, lane.Title, lane.Summary, lane.Steward)).ToList())
+        {
+            Kind = r.PlaceKind,
+            Excludes = r.Excludes ?? [],
+            System = r.PlaceKind == PlaceKinds.System ? r.System : null,
+        }).ToArray();
 
     // Read from the repository's own committed file where it has a checkout here, else what is fed or brought down from the
     // circle's remote. Nothing machine-local rides this door: the provenance names a commit and a key, never a path.

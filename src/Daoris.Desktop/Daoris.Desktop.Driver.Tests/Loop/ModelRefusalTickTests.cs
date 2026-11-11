@@ -57,9 +57,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Drivable = ["engine"],
-                Trees = ["engine"],
-                Actors = StaffedRoles.On("acp-stub"),
+                Drivable = ["engine"],                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
                 // One failure would park it: a choice its agent did not offer must hold none.
@@ -239,9 +237,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Drivable = ["engine"],
-                Trees = ["engine"],
-                Actors = StaffedRoles.On(PipeStub.Named),
+                Drivable = ["engine"],                Actors = StaffedRoles.On(PipeStub.Named),
                 TestBound = 1,
                 PollSeconds = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { [PipeStub.Named] = ["node", PipeAgent(), Log, refuses] },

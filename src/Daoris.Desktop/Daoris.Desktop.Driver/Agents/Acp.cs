@@ -67,6 +67,8 @@ public sealed class AcpSession(
     /// </summary>
     public Func<string, string, string>? Unoffered { get; set; }
 
+    public Func<ConnectorPlan?, IReadOnlyList<ServerEntry>>? OwnServers { get; set; }
+
     /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
     public IReadingSink? Children { get; init; }
 
@@ -380,7 +382,7 @@ public sealed class AcpSession(
 
     private AcpOpening Opening => LazyInitializer.EnsureInitialized(ref _opening, () => new AcpOpening(
         meta, Options, HandshakeAsync, OpeningAsync, (method, args, ct) => RequestAsync(method, args, ct), SetPostureAsync,
-        id => _sessionId = id, replaying => _replaying = replaying, Told));
+        id => _sessionId = id, replaying => _replaying = replaying, Told, plan => OwnServers?.Invoke(plan) ?? []));
     private AcpOpening? _opening;
 
     /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>

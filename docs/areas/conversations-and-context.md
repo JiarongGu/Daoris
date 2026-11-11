@@ -68,7 +68,7 @@ of everything it handed, section by section.
 | `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
-| `HelpSettingProposals`, `HelpWorkflowProposals` | `Help/Proposals/HelpSettingProposals.cs`, `HelpRuleSettings.cs`, `HelpAcrossSetting.cs`, `HelpRetrySetting.cs`, `HelpGitUseSetting.cs`, `HelpSettingWords.cs`, `HelpWorkflowProposals.cs`, `HelpWorkflowDrafts.cs`, `HelpWorkflowRoutes.cs`, `HelpWorkflowCard.cs` | The `setting` and `workflow` proposals: the plan of the simple doors in the hub; the rule doors, across, retry, git-use, the draft door, the routes and the card each apart |
+| `HelpWorkflowProposals` | `Help/Proposals/HelpWorkflowProposals.cs`, `HelpWorkflowDrafts.cs`, `HelpWorkflowRoutes.cs`, `HelpWorkflowCard.cs` | The `workflow` proposal: the hub, the draft door, the routes and the card each apart |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
 
 ## Its rules
@@ -209,7 +209,13 @@ of everything it handed, section by section.
     only by a message a turn takes: one refused (finishing, held, gone) gives them back to the words said again, and the
     person waits on no answer to it. (from D162, D163, D164, D230)
 38. A session is listed only the tools its kind may call: the core 18 plus its kind's. Ask Daoris gets every tool but the turns and the memory changes. A Claude
-    session runs with auto-memory and synced skills, plugins and connectors off. No account home is written. (from D230)
+    session keeps its account's auto-memory and synced skills, plugins and connectors, as by hand, and is handed the skills,
+    subagents, commands, servers, enabled plugins, Chrome switch, settings beneath Daoris's rules and memory file of the person's
+    own tool home; a Codex session its configuration, instructions, skills and prompts; each family the person's to switch off
+    (agents-and-harnesses 15). Daoris writes no account home.
+    Each start of every kind is handed a delegate key beside its id and its repository; a press its verb proves with it is taken by
+    its tier: its repository's access setup for a working session, its mode and granted acts for Ask Daoris
+    (roles-and-supervision 56-58). Its held tool calls are shown on its own panel too, Ask Daoris's included. (from D230, D253, D262, D266)
 
 **Counts and the handed account**
 
@@ -219,14 +225,49 @@ of everything it handed, section by section.
     where a count is above zero. They are never instructions and never another agent's text. (from D229)
 41. Everything handed is accounted: each section's size, source and cuts, by `HandedSections` and `HandedCuts` codes. The
     account rides the event of the instruction or first message. A section that could have been handed and was not is
-    said, with why. (from D143, D189)
+    said, with why. The words themselves of a go-on's or hand-over's first message stay on its event, and the openings route
+    answers them as `briefs`, bounded (`StartBrief`, 4000 characters, the cut said with the full length), for the head's
+    *Started with*; they are no session's opening. A session working in its place is handed `place` where its start's
+    manifest found any: what changed there outside Daoris since the last session, and the uncommitted paths that are not its
+    own with how to leave them out of its commits, 30 of each named and the rest counted (`PlacePrompt`). (from D143, D189, D254)
 
 **Ask Daoris**
 
 42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
-    change. A limit move opens it again in its room. (from D89, D170, D183, D158)
-43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
-    They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
+    change. A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
+    its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository
+    (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its name and pin with the one
+    waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for the focus
+    (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
+    repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
+    the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
+    workspace by naming it, or every workspace with `all`, and proposes, inspects, reads checkouts and sets settings in any
+    workspace's repositories, each judged by its own judge and none refused for the workspace it names. What a turn looked at
+    or did beyond its focus is one folded receipt under that turn (`help/focus/BeyondReceipt.tsx`, `HELP_BEYOND`), only as
+    Daoris's doors saw it: each call its connector answered naming a workspace or a repository, noted in the session's
+    `places.jsonl` (`CallPlaceFilter`) with how many a search's or the quests' answer found, as its tool says it answering
+    (`CallFound`), and each press it made whose place was beyond, one run in full access as *Did* and one asked on a card as
+    *Asked you* with the card's state, judged against the focus
+    held then (`HelpBeyond`: nothing is beyond this machine, a repository's own workspace is near), each row offering *Make …
+    the focus*; a shell command is never parsed. The focus is chosen
+    in the chip that leads the panel's composer bar, a picker of the window's place, *Recent*, this machine and the other
+    workspaces with their repositories (`help/focus/FocusPicker.tsx`), the chip saying a focus the driver widened from a place
+    gone until another is chosen, and named under the conversation's title as a
+    breadcrumb marking a focus outside the window's workspace, a home that is not the window's, a change waiting and a place
+    gone (`FocusCrumb.tsx`). A choice is sent at once (`HELP_FOCUS`). Chosen before its first words the focus is its first,
+    carried by the start where none was opened ahead, and an agent opened ahead under another place ends at once so the page
+    opens it ahead again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or
+    now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
+    in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
+    which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
+    another home goes on where it is shown, the window unmoved. (from D89, D170, D183, D158, D253)
+43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
+    every workspace's, one workspace's, or those about a place: homed there or inside it, or that held a focus there. The
+    panel's *Showing* chip chooses among them, *This workspace* marked as the window's and each workspace unfolding onto its
+    repositories by the focus picker's keys (`useFolds`): this workspace's by day, the others grouped by home with the window's first,
+    a row's focus chip only where its focus is not its home. A row carries the messages that changed its focus (`marks`),
+    and the transcript draws a divider above each from them, *Focus widened* where the driver widened it. The palette's
+    *Ask Daoris: Change focus…*, the Help menu's *Change focus…*, opens the picker. They resume by kept id. A briefed continuation stays one history row, a replacement of its refused start included. (from D158, D189)
 44. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
     of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
     words* carries the words alone. A start its agent refuses at the open, before a word took the brief, hands it to its

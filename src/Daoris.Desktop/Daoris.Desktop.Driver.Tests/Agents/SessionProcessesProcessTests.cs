@@ -47,6 +47,24 @@ public sealed class SessionProcessesProcessTests : IDisposable
 
     private string MarkedProcess() => File.ReadAllText(Path.Combine(Markers, Session + ".pid")).Split(' ')[0];
 
+    /// <summary>A stop pressed after a process exited and before its retry is tracked goes on, with its reason, to the retry.</summary>
+    [Fact]
+    public async Task A_stop_pressed_between_a_process_s_exit_and_its_retry_is_carried_onto_the_retry()
+    {
+        var processes = new SessionProcesses(Markers);
+        var first = Process.Start(new ProcessStartInfo("node", ["-e", "process.exit(1)"]) { UseShellExecute = false, CreateNoWindow = true })!;
+        _spawned.Add(first);
+        await first.WaitForExitAsync();
+        processes.Track(Session, first);
+
+        var reason = new Noted("stopped for the test", []);
+        Assert.True(processes.Stop(Session, reason));
+        processes.Track(Session, Holding());
+
+        Assert.True(processes.WasStopRequested(Session));
+        Assert.Same(reason, processes.StopReason(Session));
+    }
+
     /// <summary>One track and its end, as before: running and marked while it lasts, gone and unmarked once it ends.</summary>
     [Fact]
     public void One_track_and_its_end_leave_the_session_unrun_and_unmarked()
@@ -65,6 +83,23 @@ public sealed class SessionProcessesProcessTests : IDisposable
         Assert.Empty(Directory.GetFiles(Markers));
         Assert.False(new SessionProcesses(Markers).AliveOnThisMachine(Session));
         Assert.False(processes.Stop(Session));
+    }
+
+    /// <summary>A session's process ending forgets the delegate keys drawn up to it; one drawn after it is tracked belongs to a start still coming, and stays.</summary>
+    [Fact]
+    public void The_session_s_process_end_forgets_its_delegate_keys_and_keeps_one_still_coming()
+    {
+        var processes = new SessionProcesses(Markers);
+        processes.Delegates.Draw(Session);
+        var tracked = processes.Track(Session, Holding());
+        var coming = processes.Delegates.Draw(Session);
+        Assert.Equal(2, processes.Delegates.Of(Session).Count);
+
+        tracked.Dispose();
+        Assert.Equal(KeyedProof.Hash(coming), Assert.Single(processes.Delegates.Of(Session)));
+
+        processes.Delegates.Forget(Session);
+        Assert.Empty(processes.Delegates.Of(Session));
     }
 
     /// <summary>The second start's end, the first still running: still run here, stoppable from the window, marked as the first's.</summary>

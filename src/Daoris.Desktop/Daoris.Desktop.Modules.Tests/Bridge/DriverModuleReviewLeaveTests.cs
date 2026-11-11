@@ -196,7 +196,19 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
     /// <summary>Every git the flow started has exited: a cancelled read's owner waits for each before it is done.</summary>
     private async Task AllExitedAsync()
     {
-        foreach (var started in Starts) await started.WaitForExitAsync().WaitAsync(Poll.Patience);
+        var starts = Starts;
+        var commands = Commands;
+        for (var at = 0; at < starts.Count; at++)
+        {
+            try
+            {
+                await starts[at].WaitForExitAsync().WaitAsync(Poll.Patience);
+            }
+            catch (TimeoutException)
+            {
+                Assert.Fail($"`git {commands[at]}` still ran after the read was left, of [{string.Join(" | ", commands)}]");
+            }
+        }
     }
 
     private void Release() => File.WriteAllText(_released!, "go");
@@ -207,8 +219,9 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         _released = Path.Combine(Home, "released");
         return ProcessStarts.Within(info =>
         {
-            // The stand-in takes this test's pid and a bound, and gives up with the one or at the other.
-            var stand = ReleaseStandIn.For(info, _released, Environment.ProcessId, Poll.Patience);
+            // The stand-in takes this test's pid and a bound, and gives up with the one or at the other: a bound past the test's own wait,
+            // so only the leave's kill ends it within that wait.
+            var stand = ReleaseStandIn.For(info, _released, Environment.ProcessId, Poll.Patience * 2);
             var process = Process.Start(stand)!;
             var watched = Process.GetProcessById(process.Id);
             lock (_watched)

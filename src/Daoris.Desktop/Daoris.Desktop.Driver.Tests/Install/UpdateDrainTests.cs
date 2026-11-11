@@ -243,7 +243,7 @@ public sealed class UpdateDrainTests : IDisposable
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { "drivable": ["engine", "tools"], "holds": {{holds}}, "adapter": "stub", "cap": 3, "pollSeconds": 1, "trees": ["engine", "tools"] }
+            { "drivable": ["engine", "tools"], "holds": {{holds}}, "adapter": "stub", "cap": 3, "pollSeconds": 1 }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);

@@ -24,7 +24,7 @@ public sealed class WorkWireTests
         Assert.Equal(["work/watch", "work/step", "work/perform"], HookPoints.Work);
         // They follow the kit's earlier points in their order, and work/event follows them,
         // so every earlier point keeps its place.
-        Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.TakeLast(4));
+        Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.Skip(4).Take(4));
         Assert.Equal(("hook/work/watch", "hook/work/perform", "hook/work/reconcile", "work/step"),
             (WorkWire.WatchMethod, WorkWire.PerformMethod, WorkWire.ReconcileMethod, WorkWire.StepMethod));
         Assert.Equal("work.perform@1", WorkWire.Capability);
@@ -116,6 +116,33 @@ public sealed class WorkWireTests
         Assert.False(WorkWire.ReadPerformAnswer(Parse("""{"received":true}"""), "i1"));
         Assert.False(WorkWire.ReadPerformAnswer(Parse("true"), "i1"));
         Assert.False(WorkWire.ReadPerformAnswer(default, "i1"));
+    }
+
+    [Fact]
+    public void A_perform_call_carries_its_nodes_options_as_json_values_and_writes_none_where_it_has_none()
+    {
+        var bare = new WorkPerformCall("u1", "acme.deploy/deploy", 1, "i1", "k1", "r1", [], At.AddMinutes(10));
+        Assert.False(WorkWire.Perform(bare).ContainsKey("options"));
+        Assert.Empty(WorkWire.ReadPerform(Parse(WorkWire.Perform(bare)))!.Options);
+
+        var call = bare with
+        {
+            Options = new Dictionary<string, string> { ["mergeStrategy"] = "\"squash\"", ["autoComplete"] = "true", ["depth"] = "2", ["bare"] = "squash" },
+        };
+        var written = WorkWire.Perform(call);
+
+        var options = written["options"]!.AsObject();
+        Assert.Equal(("squash", true, 2, "squash"), (options["mergeStrategy"]!.GetValue<string>(), options["autoComplete"]!.GetValue<bool>(),
+            options["depth"]!.GetValue<int>(), options["bare"]!.GetValue<string>()));
+
+        var read = WorkWire.ReadPerform(Parse(written))!;
+        Assert.Equal("true", read.Options["autoComplete"]);
+        Assert.Equal("\"squash\"", read.Options["mergeStrategy"]);
+        Assert.Equal(written.ToJsonString(), WorkWire.Perform(read with { Options = call.Options }).ToJsonString());
+
+        var broken = WorkWire.Perform(bare);
+        broken["options"] = "squash";
+        Assert.Null(WorkWire.ReadPerform(Parse(broken)));
     }
 
     public static TheoryData<string, string?, string?> ReconcileAnswers => new()

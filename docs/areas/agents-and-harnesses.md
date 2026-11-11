@@ -162,8 +162,27 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     copies them per session under the home's spawn folder; a provider that states none, Codex, dsh and the stand-ins, is handed none)
     and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
-15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that
-    run. No account home, vendor folder or the person's tool home is written. (from D230)
+15. A Claude session keeps the account's auto-memory, synced skills, synced plugins and connectors: its settings file says none
+    of them, so the account's own settings decide, as by hand. Daoris writes no account home, vendor folder or the person's tool
+    home. It is handed what the person's own run reads from that tool home (`CLAUDE_CONFIG_DIR`, else `.claude` in the profile,
+    its global file beside it), each family unless the person switches its default off (`OwnHomeDefaults`, `ClaudeOwnHome`):
+    the skills, subagents and commands copied into one harness plugin `own` beside Daoris's plugins (`own-skills`); the global
+    file's user-scope servers in that plugin's `.mcp.json`, but one named as Daoris's connector or whose environment names a
+    `DAORIS_` variable, and none to a pass held to Daoris's connector alone (`own-servers`); each plugin its user settings
+    enable at its user-scope install folder, read in place (`own-plugins`); and its Chrome switch as `--chrome` on the native
+    door and the SDK's `extraArgs` on the protocol door (`own-chrome`); its `settings.json` merged into the session's rules file
+    beneath Daoris's rules, the repository's project settings in the session's folder and the account's own, a list joined and a
+    value only where none of them sets one, without what signs in, sets the mode, names plugins or switches hooks off, a variable
+    the session's process holds or any provider's or Daoris's, and without what widens a session shaped for one job (`own-settings`,
+    `ClaudeOwnSettings`); and its `CLAUDE.md` appended to the system prompt, by `--append-system-prompt-file` on the native door and
+    on the SDK's preset on the protocol door (`own-memory`, `ClaudeOwnMemory`). A Codex session is handed the person's Codex home
+    (`CODEX_HOME`, else `.codex`) as codex-acp's `CODEX_CONFIG`: its `config.toml` where the account's sets nothing, never the
+    provider, sign-in, approval policy, sandbox or trusted projects, and its `AGENTS.md` and the folders of its skills and prompts in
+    `developer_instructions` after the account's own (`CodexOwnHome`); its `mcp_servers` ride the open instead, since the adapter replaces
+    the configuration's with the open's: the protocol door's `session/new` lists the plan's servers and then the person's local ones,
+    but one named as Daoris's connector, one whose environment names a `DAORIS_` variable, one switched off and a plan's own name, none to
+    a pass held to Daoris's connector alone (`own-servers`, `CodexOwnServers`, `AcpProtocol.Offer`). Nothing is handed to a session in
+    the person's own home, on a plugin's door or under a scratch home. (from D230, D253, D262, D266)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters, the text `DAORIS_TARGET` carries too); past it the block goes in
     its own file and the prompt names it. (from D230)
@@ -173,9 +192,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 **Permissions and posture**
 
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
-    defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
+    defaults `connector`, `commit`, `no-push`, `no-publish`, `tree-guard` and the six of the person's own tool home (rule 15),
+    each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
-    the harness's own precedence decides, and `deny` wins. (from D72)
+    the harness's own precedence decides, and `deny` wins. `tree-guard` refuses a write outside the session's tree and its declared
+    targets, but a subagent's in the worktree its harness made for it beside the repository's main checkout
+    (`.claude/worktrees/<name>`, `subagent-worktree.mjs`); the session's own agent never writes there. (from D72, D253)
 19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, its settings
     file with the tree guard's and the lineage hook's entries and the hard denials, for its two doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
@@ -188,13 +210,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     switches off a denying default, or (while `no-publish` is on) lets a publish through (`PublishForms`) stays the person's
     (`WideningAllows`). Every writer of the rule file reads, decides and saves under its one lock (`PermissionChange.Change`).
     Every change records who made it. (from D74)
-21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door; `acceptEdits`
-    on its pipe; `agent` on Codex; `workspace-write` through dsh's environment. (from D81, D53)
+21. A driven session runs in its harness's own judged mode: `auto`, else `acceptEdits`, on Claude's protocol door, the posture
+    marked so the door holds what the harness asks (`PostureAsked.Held`); `acceptEdits` on its pipe; `agent` on Codex;
+    `workspace-write` through dsh's environment. (from D81, D53, D253)
 22. Full access (`bypassPermissions`, `agent-full-access`) and the asking mode (`default`, `workspace-write`) are used only by the
     person's own setting: Ask Daoris's full access or a repository's access setup. A harness with no mapped mode refuses the
     start; it never runs a narrower mode under the label. (from D183, D184)
-23. A permission request reaching the driver is refused, except in the asking mode on the protocol door, where it is held for the
-    person to allow once or refuse. (from D81, D184)
+23. A permission request reaching the driver is held for the person to allow once or refuse, or for the allow supervisor at the
+    session's repository where one is staffed, on every door and mode below full access; only an unanswered hold's bound
+    (`HeldPermissions.Bound`, 15 minutes) refuses it, said as such. The protocol door holds on its wire: a driven session under
+    asking or the judged default, a chat, and Ask Daoris restricted (`ChatHolds`). The native door, which refuses under `-p` what
+    its rules do not allow, is handed a `PreToolUse` hook last beside the tree guard and the lineage hook (`permission-ask.mjs`,
+    `ClaudeAskHook`, `HandedRules.Asked`) on a working session's or a conversation's file: for a call its mode and rules would
+    ask about (a rule allows a call by its tool, a Bash command, a fetch's domain or an `Edit(/path/**)`-style pattern read as the
+    harness reads it), it writes a `permit` request to the session requests box, the loop holds it in the same registry
+    (`NativePermits`), and the hook answers the harness allow or deny from the answer beside it. A session shaped for one job
+    (review, helper, intake, brainstorm, partner, supervise) is handed none. (from D81, D184, D253)
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's own file. With no account
     named it trusts the folder for every account of the set, never the person's own home; an account it names must be one on
     this machine, refused rather than made (`AgentsCommand.AccountHere`, as `settings` does). Trust gates a start only where
@@ -242,7 +273,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     every window), never mid-turn, and not again within 30 minutes of its last curve move. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home. A start on
-    another agent is on another account, whatever the names. (from D131, D137)
+    another agent is on another account, whatever the names. A resume judges that account as the walk does: its reading at a whole
+    window with the reset ahead cools it until then, unless the person picked it. (from D131, D137, D206)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (from D125, D150)
 
 **Usage, limits and errors**
@@ -382,7 +414,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
   `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
   readings and the sink, each door's event file as before, a subagent's card `think` on both doors);
-- spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `OwnContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
+- spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `AccountContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
   `StandingHandedTests`, `TargetPromptGoldenTests`;
 - accounts: `AccountRotation*Tests`, `AccountSetTests`, `AccountNextStartTests`, `SwitchDecisionTests`, `UsageCurvesTests`,
   `AccountCoolingTests`, `ModelCoolingTests`, `AccountLimitsTests`, `ResumeAccountTests`, `LineAccountTests` and its callers' census;
@@ -579,7 +611,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   door over the program the start resolved (its file and the arguments before `-p`, the launcher's seat starting it in the door's
   command's place) and the environment its shell composed, its two refused-model entries, a tool call read by Claude Code's own
   vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and servers files (a door's
-  `Options`) carried as today's spawn carries them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
+  `Options`) carried as today's spawn carries them; a start that hands the sources alone (a supervisor's turn) stays on `TransportRun`,
+  the layer's start having no field for them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
   on the run its door's binding answers (`DrivenRuns`, bound when the driver loads), today's `TransportRun` otherwise; both are a
   `HeldRun`, the run and the hold's own steps around it, and a partner's piece stays on today's. A held `LayerRun` is one turn per
   process, the first's, the native resume's one retry's and each go-on's, and takes today's steps through the same host

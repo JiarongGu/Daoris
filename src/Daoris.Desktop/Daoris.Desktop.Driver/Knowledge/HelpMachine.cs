@@ -53,9 +53,44 @@ public sealed record HelpMachine
     public HelpMachine Within(string? workspace)
     {
         var scope = KnowledgeHelp.Current.ScopeOf(workspace);
-        if (string.Equals(scope, Workspace, StringComparison.OrdinalIgnoreCase)) return this;
-        return Whole is { } whole ? whole.Describe(scope) : this with { Workspace = scope };
+        if (Focus is null && string.Equals(scope, Workspace, StringComparison.OrdinalIgnoreCase)) return this;
+        return Whole is { } whole ? whole.Describe(scope) : this with { Workspace = scope, Focus = null, Home = scope };
     }
+
+    /// <summary>
+    /// The room of <paramref name="workspace"/>, its conversation's home, written for <paramref name="focus"/>: the machine's facts
+    /// projected to the focus's workspace, or kept whole for this machine, in the home's folder (<see cref="Home"/>). Null is
+    /// <see cref="Within(string?)"/>, the home's own focus.
+    /// </summary>
+    public HelpMachine Within(string? workspace, HelpFocus? focus)
+    {
+        if (focus is null) return Within(workspace);
+        var home = KnowledgeHelp.Current.ScopeOf(workspace);
+        if (focus.Equals(Focus) && string.Equals(home, Home, StringComparison.OrdinalIgnoreCase)) return this;
+        return Whole is { } whole
+            ? whole.Describe(home, focus)
+            : this with { Workspace = KnowledgeHelp.Current.ScopeOf(focus.Workspace), Focus = focus, Home = home };
+    }
+
+    /// <summary>The place its conversation is about, which the room is written for; null for its home's own (<see cref="HelpFocus.Home"/>).</summary>
+    public HelpFocus? Focus { get; init; }
+
+    /// <summary>
+    /// The workspace whose room folder it is written in, its conversation's home: <see cref="Workspace"/> unless a focus elsewhere
+    /// projects its facts to another; null for <c>default</c>'s.
+    /// </summary>
+    public string? Home
+    {
+        get => _homeSet ? _home : Workspace;
+        init
+        {
+            _home = value;
+            _homeSet = true;
+        }
+    }
+
+    private readonly string? _home;
+    private readonly bool _homeSet;
 
     // The agents section's.
 

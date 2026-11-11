@@ -6,11 +6,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>
-/// What a session reads when it chooses a tool. The connector is handed to repositories that know
-/// nothing of this one, so its words are the canon's, never this repository's decision numbers — the
-/// rule the driven instruction already keeps.
-/// </summary>
+/// <summary>What a session reads when it chooses a tool: the canon's words, never this repository's decision numbers.</summary>
 public sealed partial class McpToolDescriptionTests
 {
     /// <summary>Every method of every tool class the host registers, tool or not.</summary>
@@ -38,10 +34,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.True(numbered.Count == 0, string.Join("\n", numbered.Select(d => $"{d.Tool}: {d.Text}")));
     }
 
-    /// <summary>
-    /// Ask and wait: a session that needs another repository is steered to ask it and wait, from each
-    /// tool it might otherwise reach for — publishing, answering its own quest, and widening its rules.
-    /// </summary>
+    /// <summary>A session that needs another repository is steered to ask it and wait, from each tool it might reach for instead.</summary>
     [Theory]
     [InlineData("quest_publish")]
     [InlineData("quest_respond")]
@@ -181,7 +174,7 @@ public sealed partial class McpToolDescriptionTests
 
     /// <summary>
     /// Removing a record is a person's act, so no connector tool clears history, and none is handed the
-    /// desk that would. Ask Daoris may only propose one, as it proposes a delete.
+    /// desk that would. Ask Daoris presses the clear, as it presses a delete.
     /// </summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
@@ -189,11 +182,7 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames();
 
         Assert.Contains("quest_publish", tools);
-        // `clear_propose` only writes a proposal the person applies, as `delete_propose` does.
-        Assert.DoesNotContain(
-            tools.Where(name => name != "clear_propose"),
-            name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
-        Assert.Contains("clear_propose", tools);
+        Assert.DoesNotContain(tools, name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
         Assert.DoesNotContain(
             KnowledgeServer.ToolTypes.SelectMany(type => type.GetConstructors()).SelectMany(constructor => constructor.GetParameters()),
             parameter => parameter.ParameterType == typeof(Daoris.Knowledge.HistoryDesk)
@@ -505,35 +494,7 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
     }
 
-    /// <summary>The role tool says a policy is a change of spending, shown before and after on the card, and names the moves it enforces.</summary>
-    [Fact]
-    public void The_role_tool_says_its_policy_is_shown_before_and_after_and_names_the_revision_it_reads()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "role_propose").Select(d => d.Text));
-
-        Assert.Contains("before and after", text);
-        Assert.Contains("a change of spending", text);
-        Assert.Contains("The policy revision you read", text);
-        Assert.Contains("\"moves\"", text);
-        Assert.Contains("\"most\"", text);
-        Assert.DoesNotContain("not enforce yet is refused. A change", text);
-    }
-
-    /// <summary>The role tool says the supervisor's rules are a set of `supervisor`, names their counts and actions, and the revision read.</summary>
-    [Fact]
-    public void CONTEXTDRIVE1d_the_role_tool_names_the_supervisor_s_rules_their_counts_and_the_revision_read()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "role_propose").Select(d => d.Text));
-
-        Assert.Contains("a `set` of the id `supervisor`", text);
-        Assert.Contains("`answers-alone`", text);
-        Assert.Contains("`tries` cannot be removed", text);
-        Assert.Contains("the revision of the place's rules you read", text);
-        Assert.Contains("before and after: say what holds earlier or later", text);
-    }
-
-    // Not after `#`: an entry id's anchor is in the reader's own
-    // repository, not a citation of this one's.
+    // Not after `#`: an entry id's anchor is in the reader's own repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]
     private static partial Regex DecisionNumber();
 }

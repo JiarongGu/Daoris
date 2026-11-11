@@ -96,6 +96,12 @@ public static class WireEvaluation
         if (missing.Count > 0) return new(now, [], [], [], [], []) { Refusal = NoRevision, Missing = missing };
         var subjects = declared.ToDictionary(node => node.Id, node => SubjectOf(run, node, now[node.Id]), StringComparer.Ordinal);
 
+        // A step past a landing that leaves it nothing to deliver is Daoris's skip on the path, which holds while that landing does.
+        WorkUnit? UnitOf(string id) =>
+            subjects.GetValueOrDefault(id) is { Withheld: null, Subject: { } subject } && run.Units.TryGetValue(subject, out var unit) ? unit : null;
+        NodeMove? Undelivered(NodeDeclaration node) => NothingToDeliver.Skip(node, declared, wires, now, UnitOf, run.ScopeOf(node.Id));
+        bool Delivers(NodeDeclaration node) => Undelivered(node) is null;
+
         // 1. Invalidations, transitively, before anything is observed: a node whose binding lapsed is invalidated, never
         // observed, so no receipt the same evaluation would invalidate is exposed, and nothing starts on one. Each round takes away the
         // receipts of what the last one lapsed, so it ends within the nodes. A back wire's target goes first, so what rests on it lapses
@@ -112,7 +118,7 @@ public static class WireEvaluation
             {
                 if (lapsing.ContainsKey(node.Id)) continue;
                 var lapse = Lapse(node, now[node.Id], run, current, subjects[node.Id]) ?? WireTargets.Lapse(node, now[node.Id], run, now, wires)
-                    ?? (WireSkips.Lapses(node, now[node.Id], wires, standing) ? (WireWhy.Upstream, null) : null);
+                    ?? (WireSkips.Lapses(node, now[node.Id], wires, standing) && Delivers(node) ? (WireWhy.Upstream, null) : null);
                 if (lapse is null) continue;
                 lapsing[node.Id] = lapse.Value;
                 found = true;
@@ -201,6 +207,12 @@ public static class WireEvaluation
             if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated && WireSkips.Producer(node, wires, receipts) is { } producer)
             {
                 Make(node, WireSkips.With(producer, run.ScopeOf(node.Id)), WireWhy.Path, producer);
+                continue;
+            }
+
+            if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated && Undelivered(node) is { } nothing)
+            {
+                Make(node, nothing, WireWhy.Path, null);
                 continue;
             }
 

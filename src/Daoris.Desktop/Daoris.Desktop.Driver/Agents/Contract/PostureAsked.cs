@@ -30,6 +30,8 @@ public sealed record PostureAsked(string Modes, bool Required = false, bool Pers
         return new(posture?[at..] ?? "", required, held);
     }
 
+    public static string? Held(string? posture) => posture is { Length: > 0 } ? (Parse(posture) with { PersonAnswers = true }).Wire() : posture;
+
     /// <summary>The modes as a sentence says them: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
     public string Spelled() => string.Join(
         " or ",
