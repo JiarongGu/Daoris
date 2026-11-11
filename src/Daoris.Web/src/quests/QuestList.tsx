@@ -10,6 +10,7 @@ import { type Consideration, sittingSentence } from '../data/signals';
 import { Button, Inline, Pill, QUEST_TONE, SESSION_ACTIVE, SESSION_TONE } from '../design/ui';
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
+import { usePluginRecordActs } from '../plugins/recordActs';
 import { questName } from '../work/identity';
 import { groupHeading, ListGroup, ListRowDoor } from '../work/frame/ListPane';
 import { questGroups, shownStatus } from './records';
@@ -156,6 +157,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
   onResume?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
+  const pluginActs = usePluginRecordActs('quest', facts.quest.id);
   const { quest, session, waits, sitting } = facts;
   const sat = sittingDays(quest.filed);
   // The ask's short title names the work where it gave one; else the quest's own name, as before.
@@ -176,6 +178,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
         ? [{ id: 'resume', label: t('quests.card.resume', { repository: quest.to }), icon: 'resume' as const, disabled: resuming, onSelect: () => resume(quest.to) }]
         : []),
       { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id },
+      ...pluginActs,
     ],
   };
 

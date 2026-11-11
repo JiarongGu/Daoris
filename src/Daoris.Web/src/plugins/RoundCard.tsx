@@ -71,10 +71,12 @@ function ArgField({ arg, value, language, onChange }: {
  * dropped with the card. **Cancel sends nothing more**: a round already under way finishes in its own process and its answer is
  * not drawn. A refused round says the driver's own sentence, since it names what to do.
  */
-export function RoundCard({ plugin, pluginName, command, place, send, onEnded, onClose }: {
+export function RoundCard({ plugin, pluginName, command, given, place, send, onEnded, onClose }: {
   plugin: string;
   pluginName: string;
   command: CommandShown;
+  /** Arguments already known, the record a menu was opened on: filled in, still the person's to confirm. */
+  given?: Record<string, string>;
   /** The place in force: `machine`, `workspace:<name>` or `repository:<id>`. */
   place: string;
   /** One round, as the bridge sends it. */
@@ -87,7 +89,7 @@ export function RoundCard({ plugin, pluginName, command, place, send, onEnded, o
   const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
   const asksFirst = command.args.length > 0 || command.confirm !== null;
   const [stage, setStage] = useState<Stage>(asksFirst ? 'starting' : 'working');
-  const [typed, setTyped] = useState<Record<string, string | boolean>>({});
+  const [typed, setTyped] = useState<Record<string, string | boolean>>({ ...given });
   const [rounds, setRounds] = useState<PluginCommandRound[]>([]);
   const [draft, setDraft] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);

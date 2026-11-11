@@ -47,16 +47,22 @@ internal sealed class ChatServers(ChatContext context)
     /// Every server the plugins here declare, for whomever and approved or not, each said once in the log (Ask Daoris in full access); false
     /// takes those <paramref name="to"/> takes.
     /// </param>
+    /// <param name="tools">
+    /// The entry of the plugins' own commands as tools (<see cref="PluginToolsHand"/>), built only where it is handed: to a session's
+    /// conversation, and to Ask Daoris only where the person approved them (<see cref="PluginCommandServer"/>) or in full access; null hands none.
+    /// </param>
     public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandAsync(
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions,
-        bool every = false)
+        bool every = false, Func<ServerEntry?>? tools = null)
     {
         var catalog = PluginCatalog.Load(home, ProviderRegistry.Built().Names);
         // Ask Daoris takes only the servers the person approved for it; a session, its own.
+        var grants = to == PluginServerTo.Help && !every ? HelpGrants.Read(home, catalog) : null;
         var servers = every ? [.. PluginServerTo.All.SelectMany(catalog.ServersTo).DistinctBy(server => server.Name)]
-            : to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
+            : grants is not null ? grants.Servers : catalog.ServersTo(to);
+        var own = tools is not null && (to != PluginServerTo.Help || every || grants!.CommandsApproved) ? tools() : null;
         using var log = new MachineLog(home, "driver");
-        var handed = await SessionServers.HandNotedAsync(home, servers, browser, log, ct).ConfigureAwait(false);
+        var handed = await SessionServers.HandNotedAsync(home, servers, browser, log, ct, own).ConfigureAwait(false);
         if (every) ServedEvery(plugins, catalog, sessionId, handed.Handed);
         else plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;

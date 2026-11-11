@@ -5,6 +5,7 @@ import { ago, elapsed, moment } from '../../locales/format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { contextOffer } from '../../menus/press';
+import { usePluginRecordActs } from '../../plugins/recordActs';
 import { actMenu, type SessionActId } from '../acts';
 import { callHead, type SessionGrouping, shownOf } from '../groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from '../identity';
@@ -249,7 +250,8 @@ export function SessionRow({
 
   // What the rule offered, each absent where it does not apply and never disabled; nothing at all where there
   // is nowhere to report a press. One list for its ⋯ and its right-click.
-  const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session);
+  const pluginActs = usePluginRecordActs('session', session.id);
+  const actions = [...actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session), ...pluginActs];
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;

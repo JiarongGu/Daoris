@@ -70,7 +70,7 @@ public static class HelpGrants
         var grants = new List<HelpGrant>();
         foreach (var plugin in withSwitchedOff ? catalog.Plugins.Where(each => each.Problem is null) : catalog.Contributing)
         {
-            foreach (var server in plugin.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)))
+            foreach (var server in PluginCommandServer.OfferedToHelp(plugin.Manifest))
             {
                 if (Refusal(server) is { } refusal)
                 {
@@ -158,8 +158,8 @@ public static class HelpGrants
     internal static (PluginEntry Entry, PluginServer Server) Declared(PluginCatalog catalog, string plugin, string server)
     {
         var entry = catalog.Plugins.FirstOrDefault(each => each.Problem is null && string.Equals(each.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
-        var declared = entry?.Manifest.Servers.FirstOrDefault(each =>
-            string.Equals(each.Name, server, StringComparison.Ordinal) && each.HandedTo(PluginServerTo.Help))
+        var declared = (entry is null ? null : PluginCommandServer.OfferedToHelp(entry.Manifest).FirstOrDefault(each =>
+            string.Equals(each.Name, server, StringComparison.Ordinal)))
             ?? throw new DriverException(
                 $"no sound plugin `{plugin}` on this machine offers Ask Daoris a server `{server}`; `daoris plugin show {plugin}` says what it offers.");
         return (entry!, declared);
@@ -292,7 +292,7 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
     private IEnumerable<HelpGrant> Granted => All.Where(grant => grant.State == HelpGrants.Approved && !grant.Off);
 
     /// <summary>The approved servers, as the protocol door carries one; no other reaches Ask Daoris.</summary>
-    public IReadOnlyList<ServerEntry> Servers => [.. Granted.Select(grant =>
+    public IReadOnlyList<ServerEntry> Servers => [.. Granted.Where(grant => !PluginCommandServer.Is(grant.Server)).Select(grant =>
         new ServerEntry(grant.Server.Name, grant.Server.Command[0], grant.Server.Command.Skip(1).ToList(), grant.Server.Environment))];
 
     /// <summary>Each approved read and accepted write, as the harness spells a server's tool, <c>mcp__&lt;server&gt;__&lt;tool&gt;</c>.</summary>
@@ -302,6 +302,9 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
     /// <summary>Each write of an approved server the person did not accept: asked, which Ask Daoris's asking mode refuses.</summary>
     public IReadOnlyList<string> Ask => [.. Granted.SelectMany(grant =>
         grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).Select(tool => $"mcp__{grant.Server.Name}__{tool}"))];
+
+    /// <summary>Whether a server of the plugins' own tool commands (<see cref="PluginCommandServer"/>) is approved here and on.</summary>
+    public bool CommandsApproved => Granted.Any(grant => PluginCommandServer.Is(grant.Server));
 
     /// <summary>
     /// The browser's grant of Ask Daoris's configured access: the server declared for it that

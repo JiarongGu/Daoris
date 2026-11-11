@@ -160,7 +160,13 @@ internal sealed class ChatRun(
             {
                 IReadOnlyList<string> drivers;
                 (pluginServers, browserNotice, drivesBrowser, drivers) = await ChatServers.HandAsync(
-                    home, browser, plugins, sessionId, ct, place.ServersTo, place.EveryServer).ConfigureAwait(false);
+                    home, browser, plugins, sessionId, ct, place.ServersTo, place.EveryServer,
+                    () => PluginToolsHand.Entry(
+                        home,
+                        place.ServersTo == PluginServerTo.Help
+                            ? new PluginToolsAt(sessionId, new PluginPlace(null, place.Circle), "en")
+                            : PluginToolsAt.OfQuest(sessionId, config, place.Name, null),
+                        PluginToolsHand.Program(home))).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message; one going on resumes a conversation already told
                 // when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) Context.Browsers[sessionId] = line;

@@ -21,7 +21,7 @@ export function pluginCommandRows(catalog: { plugins?: unknown } | undefined, la
 }
 
 /** A command a door outside the Plugins view asked to run: the plugin's id, the command's name, and the ask's number. */
-export type CommandAsked = { plugin: string; command: string; n: number };
+export type CommandAsked = { plugin: string; command: string; n: number; given?: Record<string, string> };
 
 let asked: CommandAsked | null = null;
 let count = 0;
@@ -31,9 +31,9 @@ const listeners = new Set<() => void>();
  * The palette's door onto a plugin's command: the ask is kept for the Plugins view, which opens the plugin's page and its round
  * card there, since the card belongs to the page whatever door opened it.
  */
-export function askCommand(plugin: string, command: string): void {
+export function askCommand(plugin: string, command: string, given?: Record<string, string>): void {
   count += 1;
-  asked = { plugin, command, n: count };
+  asked = { plugin, command, n: count, ...(given ? { given } : {}) };
   listeners.forEach((listener) => listener());
 }
 

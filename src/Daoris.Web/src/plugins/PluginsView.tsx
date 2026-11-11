@@ -192,15 +192,12 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     act.mutate(action === 'help-approve' ? { id, action, server, writes } : { id, action, server }, { onError: failed });
   const commands = usePluginCommands({ plugins, answered, onChoose, refetch: () => void catalog.refetch(), notify });
   // A refusal is said inside the ask, where *Remove plugin* is pressed, not in a toast; a plugin the driver does not
-  // hold any more is the exception, since the page itself then says it has gone. A sign-out the person left ticked goes first.
-  const remove = async (id: string, answered: Answered, signOut: boolean) => {
-    const plugin = plugins.find((each) => each.id === id);
-    if (signOut && plugin) await commands.signOutFirst(plugin);
-    removeNow(id, answered);
-  };
-  const removeNow = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
+  // hold any more is the exception, since the page itself then says it has gone. The driver asks the plugin to sign out first and
+  // answers how it went.
+  const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
     onSuccess: (result) => {
       notify(t(result.data ? 'plugin.removedKept' : 'plugin.removed', { id, data: result.data ?? '' }));
+      if (result.forgot) notify(t(result.forgot === 'confirmed' ? 'plugin.signedOut' : 'plugin.notSignedOut', { id }));
       // Removed by the person's own press, so the page goes back to choosing, not to *gone*.
       onChoose(null);
       answered.done();
@@ -305,7 +302,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             onApplyUpdate={update}
             onCancelUpdate={() => putAway(shown.plugin.id)}
             onAskRemove={setAsking}
-            onRemove={(id, answering, signOut) => void remove(id, answering, signOut)}
+            onRemove={remove}
             onCancelRemove={() => setAsking(null)}
             {...commands.pageParts(shown.plugin)}
           />

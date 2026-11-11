@@ -37,7 +37,7 @@
   "plugin.update.interface.storage": "Storage",
   "plugin.update.interface.views": "View {{name}}",
   "plugin.update.asksMore": "asks more of you",
-  "plugin.removeSignOut": "Ask it to sign out at its service first, by `{{command}}`; a sign-in it held there is revoked only where it says it signed out.",
+  "plugin.removeSignOut": "It is asked to sign out at its service first, by `{{command}}`; a sign-in it held there is revoked only where it says it signed out.",
   "plugin.removeSignOutNot": "It is not asked to sign out: {{why}}",
   "plugin.signedOut": "{{id}} says it signed out at its service.",
   "plugin.notSignedOut": "{{id}} did not confirm it signed out at its service.",

@@ -402,12 +402,15 @@ public static class PluginInstall
     /// nothing taken.
     /// </summary>
     /// <exception cref="PluginRefusal">Not installed (<see cref="PluginRefusal.Unknown"/>), or its folder held (<see cref="PluginRefusal.Busy"/>).</exception>
-    public static PluginEntry Remove(string home, string id)
+    /// <param name="forgot">Told how the plugin's own sign-out went (<see cref="PluginForget"/>), run once its processes are stopped and before its files go.</param>
+    public static PluginEntry Remove(string home, string id, Action<ForgetOutcome>? forgot = null, PluginCommandRun.Starter? start = null)
     {
         var entry = PluginCatalog.Load(home).Plugins.FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new PluginRefusal(PluginRefusal.Unknown, $"no plugin `{id}` on this machine.", ("id", id));
 
         PluginState.Editable(home); // before the move: a switch file that cannot be edited would refuse the row's clearing after the folder is gone
+        var forgotten = PluginForget.Run(home, entry, start);
+        forgot?.Invoke(forgotten);
         // 🔴 Moved aside WHOLE, then deleted: on Windows a running hook holds its folder, and a recursive delete takes every file it
         // can before failing, stranding a plugin with no manifest.
         var aside = Path.Combine(Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");

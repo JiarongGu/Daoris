@@ -217,16 +217,19 @@ public static class PluginCommand
                 }
 
                 var data = DaorisHome.Entry(home, HomeEntry.Plugins, PluginCatalog.DataFolder, id);
+                var forgot = ForgetOutcome.None;
                 int Said()
                 {
                     Say(world, $"{Prefix}: plugin `{id}` removed from this machine.");
+                    if (forgot == ForgetOutcome.Confirmed) Say(world, "  It signed out at its service.");
+                    else if (forgot == ForgetOutcome.NotConfirmed) Say(world, "  Its sign-out at its service was not confirmed.");
                     if (PluginFolders.There(data)) Say(world, $"  What it kept is still at {data} — yours to delete, never Daoris's.");
                     return 0;
                 }
 
                 // While Daoris runs, the row's remove stops the plugin's process before the folder goes; alone, the same operation.
                 return new PluginPress("remove", PluginRoutes.Action, new JsonObject { ["action"] = "remove", ["id"] = id },
-                    () => PluginInstall.Remove(home, id), Said);
+                    () => PluginInstall.Remove(home, id, outcome => forgot = outcome), Said);
             }
 
             case "enable" or "disable":

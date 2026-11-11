@@ -33,13 +33,29 @@ public static class PluginCommandRun
 
     /// <summary>One round: the plugin's process started for it, asked, and stopped.</summary>
     /// <exception cref="DriverException">The process did not start or answer, or answered in another shape.</exception>
-    public static async Task<CommandRound> RoundAsync(string home, PluginEntry plugin, CommandCall call, CancellationToken ct, Starter? start = null)
+    /// <remarks>Every round is a <c>plugin.command</c> line by names alone, whichever door asked: its exit, null where it asked or did not end.</remarks>
+    /// <param name="log">The plugin log the line goes to; null writes it to the driver's own file under <paramref name="home"/>.</param>
+    public static async Task<CommandRound> RoundAsync(
+        string home, PluginEntry plugin, CommandCall call, CancellationToken ct, Starter? start = null, PluginLog? log = null)
     {
-        var channel = await (start ?? ((entry, token) => HookChannels.StartAsync(entry, home, _ => { }, token)))(plugin, ct).ConfigureAwait(false);
-        await using (channel.ConfigureAwait(false))
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        using var own = log is null ? new MachineLog(home, "driver") : null;
+        var said = log ?? new PluginLog(own);
+        int? exit = null;
+        try
         {
-            var answer = await channel.CommandAsync(CommandWire.Frame(call), ct).ConfigureAwait(false);
-            return CommandWire.Read(plugin.Manifest.Id, answer);
+            var channel = await (start ?? ((entry, token) => HookChannels.StartAsync(entry, home, _ => { }, token)))(plugin, ct).ConfigureAwait(false);
+            await using (channel.ConfigureAwait(false))
+            {
+                var answer = await channel.CommandAsync(CommandWire.Frame(call), ct).ConfigureAwait(false);
+                var round = CommandWire.Read(plugin.Manifest.Id, answer);
+                exit = round.Ask is null ? round.Exit : null;
+                return round;
+            }
+        }
+        finally
+        {
+            said.Commanded(plugin.Manifest.Id, call.Command, call.From, call.Session, exit, clock.ElapsedMilliseconds, call.Place.Key);
         }
     }
 }

@@ -319,12 +319,11 @@ export function PluginPage({
   onCancelUpdate: () => void;
   onAskRemove: (id: string) => void;
   /** The second press, told how the removal ended (a refusal is said inside the ask) and whether to ask it to sign out first. */
-  onRemove: (id: string, answered: Answered, signOut: boolean) => void;
+  onRemove: (id: string, answered: Answered) => void;
   onCancelRemove: () => void;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'setup' | 'about'>(setupFirst ? 'setup' : 'about');
-  const [signingOut, setSigningOut] = useState(true);
   const word = STATE_WORD[pluginState(plugin)];
   const tryable = canTry && speaks(plugin);
   // Its own record's update, or the install's copy where it has none; never for a copy whose files the person changed,
@@ -411,20 +410,13 @@ export function PluginPage({
           says={(
             <span className="flex flex-col gap-1.5">
               <Inline text={t('plugin.removeConfirm', { data: plugin.data })} />
-              {signOut?.command && (
-                <CheckField
-                  className="text-small"
-                  checked={signingOut}
-                  onChange={setSigningOut}
-                  label={t('plugin.removeSignOut', { command: signOut.command })}
-                />
-              )}
+              {signOut?.command && <span className="text-small"><Inline text={t('plugin.removeSignOut', { command: signOut.command })} /></span>}
               {signOut?.why && <span className="text-small"><Inline text={t('plugin.removeSignOutNot', { why: signOut.why })} /></span>}
             </span>
           )}
           meanIt={t('plugin.removeMeanIt')}
           busy={acting}
-          onConfirm={(answered) => onRemove(plugin.id, answered, Boolean(signOut?.command) && signingOut)}
+          onConfirm={(answered) => onRemove(plugin.id, answered)}
           onClose={onCancelRemove}
         />
       )}
