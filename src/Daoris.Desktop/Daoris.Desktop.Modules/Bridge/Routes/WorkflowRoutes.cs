@@ -564,7 +564,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// `not-act`, `not-review`, `not-task`, `not-waiting`, `ended`, `worded`, the one table's `no-words`,
     /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`, an Accept's `moved` with the `revision` standing and `none-unchecked`) and
     /// the terminal's sentence; a kept Accept answers the `revision` it is bound to, and `early` where its review has not begun, and where a
-    /// `land` follows the review, the `landing` its try came to within the bound (<see cref="AcceptWaits"/>). A `stop` with `whole` is the
+    /// `land` follows the review, the `landing` its try came to within the bound (<see cref="AcceptWaits"/>). An Accept's `answers` is kept at the
+    /// second opinion's gate first (<see cref="AcceptAnswers"/>), and an Accept on a conversation's run is its press (<see cref="ChatAccepts"/>),
+    /// answering its `landing` and the `press` code a refusal is worded by. A `stop` with `whole` is the
     /// review's Stop (<see cref="ReviewStops"/>), answering `following`, `stopped`, `happened` and `stays`. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
@@ -597,6 +599,9 @@ public sealed class WorkflowRoutes(DriverContext context)
             return new { stopped.Run, Node = stopped.Review, Act = act, stopped.Done, stopped.Refused, stopped.Following, stopped.Stopped, stopped.Happened,
                 stopped.Stays, Message = ReviewStops.Said(stopped) };
         }
+
+        if (press.Act == NodeWordActs.Accept && ChatRuns.IsChatRun(run)) return await new ChatAccepts(_loop).NodeAsync(press, cancellationToken).ConfigureAwait(false);
+        if (press.Act == NodeWordActs.Accept) await AcceptAnswers.KeepAsync(_loop, run, node, press.Answers, cancellationToken).ConfigureAwait(false);
 
         // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
         var done = press is { Act: NodeWordActs.Accept, Unchecked: true, Revision: { } drawn }

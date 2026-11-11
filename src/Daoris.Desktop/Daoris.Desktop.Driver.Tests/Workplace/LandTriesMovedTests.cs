@@ -16,8 +16,16 @@ public sealed class LandTriesMovedTests
     private static LandEntry Refused() =>
         new("s1", "q1", "web-app", "work", "tree", DateTimeOffset.UnixEpoch)
         {
-            Tries = [new AutoTry(DateTimeOffset.UnixEpoch, LandingCode.Refused) { Tip = Moved, Start = Start, Status = "clean" }],
+            Tries = [new AutoTry(DateTimeOffset.UnixEpoch, LandingCode.Moved) { Tip = Moved, Start = Start, Status = "clean" }],
         };
+
+    /// <summary>A moved head waits for the tree to move again and closes nothing.</summary>
+    [Fact]
+    public void A_moved_head_waits_for_a_change_and_closes_nothing()
+    {
+        Assert.True(LandingCode.OnChange(LandingCode.Moved));
+        Assert.False(LandingCode.Closes(LandingCode.Moved));
+    }
 
     [Fact]
     public void Nothing_moved_since_the_refusal_tries_nothing()

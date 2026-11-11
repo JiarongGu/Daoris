@@ -58,6 +58,6 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps
     /// changes its rejection on that attempt, with their words, which the table needs.
     /// </summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act == NodeWordActs.Accept
-        ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = word.Source, Attempt = status.Attempt, Acceptance = status.Binding }
+        ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = word.Source, Attempt = status.Attempt, Acceptance = status.Binding, Words = word.Words }
         : new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words };
 }

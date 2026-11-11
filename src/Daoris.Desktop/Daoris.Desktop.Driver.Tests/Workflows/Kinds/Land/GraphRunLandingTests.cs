@@ -460,7 +460,7 @@ public sealed class GraphRunLandingTests : GraphRunFixture
         var moved = await trees.LandAsync(tree, Work, gate: gate);
 
         Assert.False(moved.Landed, moved.Message);
-        Assert.Equal(LandingCode.Refused, moved.Refusal);
+        Assert.Equal(LandingCode.Moved, moved.Refusal);
         Assert.Contains("moved after its landing was judged", moved.Message);
         Assert.False(await BranchAsync(root, PushBranch), "nothing is made from a commit nobody judged");
         Assert.Equal(line, await HeadAsync(root));

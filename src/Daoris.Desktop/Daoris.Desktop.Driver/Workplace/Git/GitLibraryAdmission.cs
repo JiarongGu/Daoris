@@ -44,7 +44,7 @@ internal static class GitLibraryAdmission
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return NoRepository;
+            return Configuration;
         }
     }
 

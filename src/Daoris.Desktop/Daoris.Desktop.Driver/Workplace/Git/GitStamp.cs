@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -30,9 +29,6 @@ internal sealed class GitStamp
         "GIT_NO_REPLACE_OBJECTS", "GIT_REPLACE_REF_BASE", "GIT_DEFAULT_HASH", "GIT_DEFAULT_REF_FORMAT", "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM",
         "GIT_CONFIG_GLOBAL", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "HOME", "XDG_CONFIG_HOME",
     ];
-
-    // The system file each git in use names, by its file and write time: asked once, since a git names one place for its life.
-    private static readonly ConcurrentDictionary<string, string> SystemFiles = new(StringComparer.Ordinal);
 
     private readonly StatFence _fence;
 
@@ -70,10 +66,9 @@ internal sealed class GitStamp
         variable ??= Environment.GetEnvironmentVariable;
         if (RefFiles.GitDirOf(folder) is null || RefFiles.CommonDirOf(folder) is null) return null;
         var git = GitRuns.GitInUse(ProgramHome.Named) ?? "";
-        if (Nosystem(variable) is false && variable("GIT_CONFIG_SYSTEM") is not { Length: > 0 } && !SystemFiles.ContainsKey(git))
+        if (Nosystem(variable) is false && variable("GIT_CONFIG_SYSTEM") is not { Length: > 0 })
         {
-            var (code, stdout, _) = await WorkingTree.GitAsync(folder, ["var", "GIT_CONFIG_SYSTEM"], ct).ConfigureAwait(false);
-            SystemFiles[git] = code == 0 && stdout.Trim() is { Length: > 0 } named ? Path.GetFullPath(named) : "";
+            await GitSystemFiles.Shared.LearnAsync(git, folder, ct).ConfigureAwait(false);
         }
 
         return Read(folder, variable, git);
@@ -104,7 +99,7 @@ internal sealed class GitStamp
                 if (data.Length > 0) walk.Config("programdata", Path.Combine(data, "Git", "config"), tree: false);
             }
 
-            var system = variable("GIT_CONFIG_SYSTEM") is { Length: > 0 } named ? named : SystemFiles.GetValueOrDefault(git);
+            var system = variable("GIT_CONFIG_SYSTEM") is { Length: > 0 } named ? named : GitSystemFiles.Shared.Of(git);
             if (system is { Length: > 0 }) walk.Config("system", system, tree: false);
         }
 

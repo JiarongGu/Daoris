@@ -34,12 +34,12 @@ internal static class GitLibrary
         where T : class
     {
         var began = System.Diagnostics.Stopwatch.GetTimestamp();
-        if (GitLibraryFaults.RefusalOf(folder) is { } fault) return Fell<T>(folder, fault);
-        if (GitLibraryAdmission.RefusalOf(folder, question) is { } refusal) return Fell<T>(folder, refusal);
-        if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return Fell<T>(folder, GitLibraryAdmission.NoRepository);
         await s_calls.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (GitLibraryFaults.RefusalOf(folder) is { } fault) return Fell<T>(folder, fault);
+            if (GitLibraryAdmission.RefusalOf(folder, question) is { } refusal) return Fell<T>(folder, refusal);
+            if (RefFiles.GitDirOf(folder) is not { } gitDir || RefFiles.CommonDirOf(folder) is not { } commonDir) return Fell<T>(folder, GitLibraryAdmission.NoRepository);
             var (answer, why) = await Task.Run(() => Call(folder, gitDir, commonDir, call), ct).ConfigureAwait(false);
             if (answer is null) return Fell<T>(folder, why ?? GitLibraryJournal.Unanswered);
             GitLibraryJournal.Answered(folder);
@@ -70,7 +70,7 @@ internal static class GitLibrary
             using var repository = new Repository(folder);
             return (call(new GitLibraryCall(repository, gitDir, commonDir)), null);
         }
-        catch (Exception error) when (error is LibGit2SharpException or IOException or UnauthorizedAccessException)
+        catch (Exception)
         {
             return (null, GitLibraryJournal.Failed);
         }

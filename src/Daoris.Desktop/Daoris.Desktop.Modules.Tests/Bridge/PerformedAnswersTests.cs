@@ -24,7 +24,7 @@ public sealed class PerformedAnswersTests
 
     /// <summary>A refusal other than a carry-on says itself, even on a run whose review holds a repair from an earlier carry-on.</summary>
     [Theory]
-    [InlineData(LandingCode.Refused, "the work moved since it was judged; press Accept again.")]
+    [InlineData(LandingCode.Moved, "the work moved since it was judged; press Accept again.")]
     [InlineData(LandingCode.Undone, "its quest is no longer done, so nothing lands.")]
     [InlineData(LandingCode.Nothing, "its quest was done and its work made no commits, so nothing was landed.")]
     public void Any_other_end_is_answered_as_it_was_said(string code, string said)

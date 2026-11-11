@@ -111,7 +111,7 @@ public static class ChatPresses
 
             var landed = await land(judged, ct).ConfigureAwait(false);
             // The pinned path refused a tree that moved past the tip judged: said as the press says it, so the person presses again.
-            if (!landed.Landed && landed.Refusal == LandingCode.Refused
+            if (!landed.Landed && landed.Refusal is LandingCode.Refused or LandingCode.Moved
                 && await head(ct).ConfigureAwait(false) is { } now && !string.Equals(now, tip, StringComparison.OrdinalIgnoreCase))
             {
                 landed = landed with { Message = Moved };

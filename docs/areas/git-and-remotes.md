@@ -255,10 +255,11 @@ and its checks); the start gate and `HeldChild` refuse a git's image holding no 
 Four run at once; the background and every git waiting outside Daoris (a remote act, an act that may run a hook) hold three together,
 so a person's read always finds the fourth; outside-waiting gits hold at most two and count toward no repository's two; one
 repository runs at most two of the background's reads. Asks queue per repository by common directory, a person's oldest that may go
-first, else the oldest that may go; a write passes nothing queued ahead of it and nothing passes it. An ask shares an identical start
+first, else the oldest that may go; a write passes nothing queued ahead of it and nothing passes it. A read shares an identical start
 (file, folder, arguments, variables, runner, bound) only while that start is queued with no write of its repository queued after it,
-never one running. A read `GitEndable` calls
-lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`) is dropped while
+never one running; a write never shares, so one asked twice runs twice. A read `GitEndable` calls
+lock-free (a `status` with `--no-optional-locks`, a working-tree diff also told `-c diff.autoRefreshIndex=false`, never one told
+`--output` a file) is dropped while
 queued and ended while running once its askers leave, the last answered only once its runner has returned: with its own
 cancellation, or as `ProcessUnendedException` where the git outlived its kill; every other git, placed, runs untokened to its end or
 its bound. A
@@ -273,16 +274,21 @@ read for its refspecs and pruning), with the branches it names and the commit it
 writes. The write test (`GitCommands.Writes`), the bounds and the local waits read their columns there. An unrowed start is read as a
 drop of every word it names and the folder's current branch; nothing is refused at run time for want of a row, since
 `GitCommandsCensusTests` holds every literal start in the sources to a row and the tests run the gate strict (`GitStartGate.Strict`).
-An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
+A git that exits while a descendant holds its pipe open answers at its exit, waiting `PipeGrace.Wait` (two seconds) for the pipe, never
+until the descendant ends. A scheduler refusal (`stalled`, `going`, `depth`) is git's failure in the held, claim, tool and child
+runs as in the others (exit -1 with its reason), never an exception; an act step's bound counts from its git's placing, the deadline
+journalled again as the process is held. An ask beneath any placed git takes a place that git lends, above the four, one a parent, two deep,
 deeper refused as `git.start.depth`: a pipe request's caller is told beneath one by its process ancestry (`PipeGitCaller`,
 `GitCallers`, read only while a git holds a place), so a push's hook and a diff's textconv or filter helper that ask the window
 never wait behind the place their own git holds. Lazy fetch is off for every read in a repository with a promisor
 (`GitLazyFetch`): the git in use (`GitInUse`) is proved once to honour `GIT_NO_LAZY_FETCH`, by two starts in that repository with
 every transport refused and git's trace on, the plain run fetching and the told one not, since git's sources read the variable in
 2.39.4, 2.44.1 and 2.45.1 but not 2.44.0 or 2.45.0; a git not so proved is never told it, and its reads there wait outside Daoris
-from their start and are never ended. Every object Daoris reads, a blob's bytes or text, an object's type or its presence, is one
+from their start and are never ended. A proof is kept only where both starts ran and the plain one fetched; a start that did not run
+proves nothing, so the next read asks again. The repository's `promisor` and object format are read through `FileStamp`'s parse of
+`config`, by content. Every object Daoris reads, a blob's bytes or text, an object's type or its presence, is one
 `cat-file --batch` start asked one question and read by one parser (`GitObjectReads`, `GitObjectAnswer`), its size and type the
-header's, a text decoded as git's text output is (UTF-8, a leading byte-order mark taken as one); a missing answer repeats the question, so the parser reads to the first line feed and each read's room adds the question's
+header's, a text decoded as git's text output is (UTF-8, a leading UTF-8 byte-order mark taken as one and no other); a missing answer repeats the question, so the parser reads to the first line feed and each read's room adds the question's
 bytes; a question is one line, so a path
 holding a line break is asked by the id `rev-parse --verify` resolves for it (`GitObjectName`), and `GitObjectFormsCensusTests` is red
 on any other form (`cat-file blob`, `-e`, `-t`, `show <rev>:<path>`, `ls-tree -l`) or a second parser of the answer, the lazy-fetch
@@ -292,7 +298,7 @@ from its stored bytes: its parents are git's history's (a history edit lists the
 boundary is a root and a graft's parents are the graft's), the rest the format reads. `GitStamp` is the one stamp of what a git
 answer rests on, for the folder that asks: the git in use, every configuration file git would read there, present or absent (the
 `ProgramData` file on Windows, the system file, `GIT_CONFIG_SYSTEM`'s or the one the git in use names to `git var GIT_CONFIG_SYSTEM`,
-asked once a git in use; Daoris's global file, the person's and the XDG file; the repository's `config` and the tree's
+asked once a git in use has answered (`GitSystemFiles`; a start that did not run is asked again); Daoris's global file, the person's and the XDG file; the repository's `config` and the tree's
 `config.worktree`; each file an `include.path` or `includeIf.*.path` names, followed to git's depth, conditional or not, a leading UTF-8 mark skipped as git skips it), the asking
 folder where a `gitdir:` include stands and the tree's `HEAD` where an `onbranch:` one does, the replacements (loose, and the
 `packed-refs` lines under `refs/replace/`), `info/grafts`, `shallow`, `reftable/tables.list` and the variables that change an answer;
@@ -441,13 +447,16 @@ for that file's length and write time, so a converted repository is read again a
 counted for each common directory, `ReadsOf`, so a test asserts its own repository's reads and no neighbour class moves them); only
 SHA-1 objects in files refs are the library's, and each other format is refused by its own word (`sha256`, `reftable`, `object-format`,
 `ref-format`) before the library is opened. `GitLibraryJournal` keeps, per repository in `run/git/library.json`, each reason a question
-went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count, and the
+went to git (every admission refusal, an unreadable repository, a failed call, a call the library declined) with its count; a call
+that throws anything at all is a failed call and git's, and a configuration file that cannot be read now is refused as `configuration`; and the
 answers the library gave; a reason new to a repository is written at once, counts at most every five seconds.
 libgit2 runs in the desktop's process, so a fault there ends the window and .NET cannot catch it: every call appends its open before the library
 is entered and its close after it returns (`GitLibraryLeases`, a file for each process in `run/git/library-leases/`, named by its id and start time,
-unbuffered and written through, so its death keeps each line), and the first question of a start in a home reads the files of processes
-that are gone (`GitLibraryFaults`), every other question of that start waiting for that reading. A repository such a process ended inside, its last open with no close, is journalled in `library.json`
-as faulted under the library package's version and refused for every question while the package is that one: its reason is `native-fault`,
+unbuffered and written through, so its death keeps each line; its first line names the library package the process carried, and an orderly
+exit closes every lease still open, so a window closed with a call on the pool is no fault), and the first question of a start in a home reads the files of processes
+that are gone (`GitLibraryFaults`), every other question of that start waiting for that reading. A question is admitted (the fault guard, then the
+admission) once it holds one of the eight call slots, never before its wait. A repository such a process ended inside, its last open with no close, is journalled in `library.json`
+as faulted under the package its file names and refused for every question while the package is that one: its reason is `native-fault`,
 which the Git page's listing says, and each refused question is git's. A new package version lifts the refusal; the first fault itself is
 accepted, and a home with none named runs no guard. `GitLibraryFaultProcessTests` kills the owner stand-in's `lease` mode inside a lease
 and proves the next start refusing that repository alone, and the refusal lapsing when the package version moves. Each library answer is also a

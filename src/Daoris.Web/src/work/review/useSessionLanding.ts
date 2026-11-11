@@ -1,7 +1,7 @@
 import { type ComponentProps, useEffect, useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
-  type useChatTurns, useDiscardSessionTree, useDriver, useEntryLanding, useLandEntry, useLanding, useLandSessionTree, useOpinionGate,
+  drawnRevisions, type useChatTurns, useDiscardSessionTree, useDriver, useEntryLanding, useLandEntry, useLanding, useLandSessionTree, useOpinionGate,
   type useRunNodeWord, useSessionDiff, type useSessionGroups, useUnderWay, useUnderWaySubject, type withCall,
 } from '../../bridge/shell';
 import type { Quest, Session } from '../../data/api';
@@ -191,7 +191,7 @@ export function useSessionLanding({
     busy: entryLandsNow,
     numberOf: (session) => attendedEntry.parts.findIndex((part) => part.session === session) + 1 || null,
     // Told back to its ask: every part landed, or the driver's sentence of what landed and what is refused, said inside it.
-    onLand: (leaveOut, answered) => landEntry.mutate({ entry: entryAccepts, parts: entryOffered, leaveOut }, {
+    onLand: (leaveOut, answered) => landEntry.mutate({ entry: entryAccepts, parts: entryOffered, leaveOut, revisions: drawnRevisions(entryPlan.data) }, {
       onSuccess: (result) => {
         if (!result.done) {
           answered.refused(result.message);
