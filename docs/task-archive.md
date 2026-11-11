@@ -82,6 +82,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1e's first part and REVIEWUX1h's `choose` — a run's review read by run; a return's choice a person wait (2026-11-12, D273)
+
+> **REVIEWUX1e, first part** (driver, modules): Outcome: `RUN_REVIEW { run | session, attempt }` (modules `RunReviewRoutes`, told by event) answers a run's review read by `RunReviews` from the run's binding, node record and review records alone, so it opens after its trees and sessions are gone: the newest record or an attempt named, where the review stands, the presses only on the attempt it stands on, a newer record with the paths whose content it changed, the steps an Accept may start with their states, the run's end; a session opens its run's review by the run its quest is (`QuestRuns.Of`), an earlier part's included; `RUN_REVIEW_FILE` draws a folder's or a copy's file at the record's hash from the content store, or from the place only while it still hashes so, else refused `moved` (`ReviewContent`). Proof: `RunReviewsTests` (driver), `DriverModuleRunReviewTests` seen failing first (the route refused unknown), the held reads' payloads.
+>
+> **REVIEWUX1h, first part** (driver, web): Outcome: a `return` active on `both-changed` is the person wait `choose`, said in the terminal's and the list's words in both languages. Proof: `PersonWaitsTests` (seen failing first), `i18n:check`.
+
+---
+
 ## REVIEWUX1d — runs in flight: a review's words that name no record (2026-11-12, D273)
 
 > **REVIEWUX1d** (driver): Outcome: the `review-records` home step (`ReviewRecordsStep`, `ReviewLegacy`) converts the words an older build kept on a branchless review: a person's Accept given with no commit is kept as legacy only where the run's pinned graph ends at its review with nothing after it, its receipt carried to the review's Accept (*accepted as it stood at …, before Daoris drew a revision*), and is otherwise dropped and said on the run's history; a supervisor's such word is dropped stale; a branch run's words stand; no pinned graph is edited, and the pass gives each standing review its record. Proof: `ReviewRecordsStepTests` (seen failing first), the step run twice changing nothing.

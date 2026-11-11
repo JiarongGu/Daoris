@@ -9,6 +9,7 @@ const LINES: Record<string, string> = {
   task: 'work.rail.runWaits.task',
   'go-ahead': 'work.rail.runWaits.goAhead',
   held: 'work.rail.runWaits.held',
+  choose: 'work.rail.runWaits.choose',
 };
 
 /**
@@ -24,7 +25,7 @@ export function runWaitFact(grouping: SessionGrouping): { line: string; values?:
 }
 
 /**
- * Whether the driver placed the row of `session` by its run's waits (`why`: `accept`, `approval`, `task`, `go-ahead`, `held`): the
+ * Whether the driver placed the row of `session` by its run's waits (`why`: `accept`, `approval`, `task`, `go-ahead`, `held`, `choose`): the
  * list opens it on its run's view, where the step is acted on.
  */
 export function opensRun(groups: readonly SessionGrouping[] | undefined, session: string): boolean {
