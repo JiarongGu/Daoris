@@ -369,7 +369,7 @@ public static class OpenPgp
 /// detached signature under the PINNED release key, and only then its SHA-256 trusted for the binary,
 /// fetched directly. Never the bootstrap and never <c>claude install</c> — the bootstrap always fetches
 /// latest, and what the subcommand verifies is undocumented
-/// (<c>docs/2026-09-24-agt2b-channel-evidence.md</c>). The twin of the CLI's <c>channels.ts</c>.
+/// (<c>docs/archive/2026-09-24-agt2b-channel-evidence.md</c>). The twin of the CLI's <c>channels.ts</c>.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The binary is installed and run as published</b> (the vendor's terms): the bytes that verified

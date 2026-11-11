@@ -1,7 +1,7 @@
 # FLOWCHART2: the workflow flowchart, and Ask Daoris composing beside you
 
-Status: accepted by the steward 2026-11-02 (D223), the synthesis of `2026-11-02-flowchart-proposal-opus.md` and
-`2026-11-02-flowchart-proposal-codex.md`, which answer `2026-11-02-flowchart-brief.md`. Both makers' reads run beside the first
+Status: accepted by the steward 2026-11-02 (D223), the synthesis of `archive/2026-11-02-flowchart-proposal-opus.md` and
+`archive/2026-11-02-flowchart-proposal-codex.md`, which answer `archive/2026-11-02-flowchart-brief.md`. Both makers' reads run beside the first
 rows (the owner's direction for pace) and are settled as findings on main. It amends D221 (`2026-11-01-setup-ux-design.md`) §2.3
 and its rows q to t, and D186's flowchart. Web paths start at `src/Daoris.Web/src/`, driver paths at
 `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
@@ -107,7 +107,7 @@ keyboard throughout; the installed window where it changes it. Each writes its o
 
 ## 8. Settled after Codex's read
 
-Codex's read (`docs/2026-11-02-flowchart-reads.md`) is taken whole; these amend §2 to §7, and each row carries its part.
+Codex's read (`docs/archive/2026-11-02-flowchart-reads.md`) is taken whole; these amend §2 to §7, and each row carries its part.
 
 1. **Ways keep the graph's whole meaning** (row b). *Earlier* means an ancestor the driver reaches upstream through `after`,
    `trigger`, `data` or `when` (`Nodes/NodeWires.cs`), never a step drawn above; a row of `WaysOnTable` may hold several targets

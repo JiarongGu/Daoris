@@ -28,7 +28,7 @@ public interface ICookieSeal
 /// <remarks>
 /// <para><b>Why.</b> An identity server's session cookie has no expiry, so it ends with the browser
 /// process. Edge restores none, even with its own <i>continue where you left off</i>
-/// (`docs/2026-09-28-managed-edge-evidence.md`), and carrying them over CDP brought the session back.
+/// (`docs/archive/2026-09-28-managed-edge-evidence.md`), and carrying them over CDP brought the session back.
 /// Daoris's own browser needs none of this: its engine keeps them itself. The profile already
 /// keeps every cookie that has an expiry, so only session cookies are kept here, and never a second copy
 /// of one the profile holds.</para>

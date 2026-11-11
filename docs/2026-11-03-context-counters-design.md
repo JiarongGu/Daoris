@@ -8,7 +8,7 @@ parts of this text are superseded: §6.2-§6.4 (the conversion door's `rules` pa
 kept reads) are D232's migration step and row l's deletions; §6.1's policy moves are passed over; one seed serves a fresh home and the
 migration; a count takes one rule per place and roles, so §4.5's ladder and its decide are gone; §2.2's shown counts that no reader asks
 for (`tokens`, `minutes`, `quests-handed`, `results-waited`, `refusals.*`, `over-budget`, `posts`, `starts`) are not read; and the
-backlog's letters differ from §9's: its installed proof is §9's m. It answers `2026-11-03-context-counters-brief.md`, whose §2 binds every section:
+backlog's letters differ from §9's: its installed proof is §9's m. It answers `archive/2026-11-03-context-counters-brief.md`, whose §2 binds every section:
 each piece joins a structure that exists, and none runs beside one. Each claim about the code was read at `6bcd5cce9`. Driver paths
 start at `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the modules' at `src/Daoris.Desktop/Daoris.Desktop.Modules/` (written `Mod/`),
 the web's at `src/Daoris.Web/src/`, the service's at `src/Daoris.Service/Daoris.Service.Core/`.

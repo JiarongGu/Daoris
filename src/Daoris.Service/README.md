@@ -59,7 +59,7 @@ two are held to one table, `tools/orient-index-fixtures/decision-notes.json`, ro
 `DecisionNotesTests` holds this side, `tools/orient-index.test.mjs` the digest's, so the two give the same lines and
 labels in the same order. A fix, an outcome and a decisions log in one file keep their notes inside.
 
-Since **ORIENT2e** (D151 §6, `docs/2026-10-04-orientation-everywhere-design.md` §3.1–§3.2) the scanner reads a
+Since **ORIENT2e** (D151 §6, `docs/archive/2026-10-04-orientation-everywhere-design.md` §3.1–§3.2) the scanner reads a
 repository's **declared index of where things are** (`documents.index`, the role ORIENT2b added; `RepositoryDocuments`
 lists it after the router, as the CLI does): every markdown file in the folder the declared README is in, and below,
 split at every heading (`IndexSections`), as entries of a kind of their own, `index`, the repository's own. Each is
@@ -298,7 +298,7 @@ that keeps no asks. A step of the chain inherits its parent's requirements. They
 quest in the log and the sync, written only when there are some, and a remote checks only that each
 has both halves, since it holds no asks.
 
-**A requirement may name its evidence** (EVID1a, D144; `docs/2026-10-03-evidence-design.md` §2–§3,
+**A requirement may name its evidence** (EVID1a, D144; `docs/archive/2026-10-03-evidence-design.md` §2–§3,
 §6). `evidence` is a list of at most 5 items, each exactly one of a `path` the done's commit must hold
 or a `gate`. A path is judged at every door (`QuestEvidence.JudgePath`): repository-relative with
 forward slashes, inside the tree and outside `.git`, at most 300 characters. So no machine's path is
@@ -322,7 +322,7 @@ held step in the same transaction; anything else keeps it held until a later che
 person's yes (`accept`) takes the done as it stands.
 
 **A chain's work may be reviewed where it runs** (REVIEWENV1b, D154;
-`docs/2026-10-08-review-environment-design.md` §1.4–§1.5, §2.1, §2.6, §3.5). A chain carries a review
+`docs/archive/2026-10-08-review-environment-design.md` §1.4–§1.5, §2.1, §2.6, §3.5). A chain carries a review
 choice, `review` (`off`, `on` or an environment's name, with the person's `words`), inherited by each
 step: the person's own at their door, an agent's only on the person's words, checked against the ask's
 as a requirement's quote is (`quest_publish`'s `review`). Every connector is an agent's, whether or not
@@ -352,7 +352,7 @@ lifts the review's hold; a yes accepts a departure or its evidence and never a r
 record, the gate at every landing door and the step's driving, is the driver's (REVIEWENV1c).
 
 **A second opinion is kept on the machine whose work it read** (XAGENT1c, D155;
-`docs/2026-10-08-second-agent-design.md` §5.4, §6.1–§6.4). One pass is one row of `opinions`, beside the
+`docs/archive/2026-10-08-second-agent-design.md` §5.4, §6.1–§6.4). One pass is one row of `opinions`, beside the
 session records and never a quest operation: its occasion, the candidate (base, tip and the commits
 between, by full id), the reviewer the driver's walk chose (adapter, label, product, maker, account),
 the families that wrote the work, the posture that held, the rule's `minutes`, and its tier. Asking one
@@ -915,7 +915,7 @@ by diverging. The service indexes the second kind.
 
 ## The design is written
 
-**`docs/2026-08-05-knowledge-service-design.md`** — read it before writing code. It settles:
+**`docs/archive/2026-08-05-knowledge-service-design.md`** — read it before writing code. It settles:
 
 - **Local-first, sharing as configuration** (D21). One service, two modes, one binary; local needs no
   server, no account and no network, and must stay fully useful alone.

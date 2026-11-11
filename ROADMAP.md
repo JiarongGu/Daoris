@@ -3,7 +3,7 @@
 Daoris runs a development company whose staff are agents (D193): the person owns it and gives it work, Ask Daoris is
 its front desk, each repository is a department that owns its work, sessions are its staff, the fabric is how each
 department works, message levels keep its rhythm, the CLI and the connector are its network, knowledge is its growing
-know-how, and machines are its offices. [The concept](docs/2026-10-21-company-concept.md) maps each part to the
+know-how, and machines are its offices. [The concept](docs/archive/2026-10-21-company-concept.md) maps each part to the
 mechanism that serves it. The desktop is where the owner sees and steers it (D45).
 
 This file gives the forward sequence. [TASKS.md](TASKS.md) holds open work and dependencies;
@@ -45,6 +45,6 @@ Account policy and session limits need usage evidence. A release needs the decla
 rehearsals; adoption and publication remain the owner's call. Development is currently unpublished
 `0.0.x` (D105); the [release workflow](.github/workflows/release.yml) owns version stamping.
 
-The longer horizon is weighed in [the future-directions review](docs/2026-10-03-future-directions-review.md).
+The longer horizon is weighed in [the future-directions review](docs/archive/2026-10-03-future-directions-review.md).
 Its proposals require their own decisions before becoming work. Earlier milestones and the former
 roadmap are retained in [the historical roadmap](docs/archive/2026-10-10-roadmap.md).

@@ -7,7 +7,7 @@ round; the Opus foundation reader: 12 findings, 3 blocking, accept after three n
 both read round 3 at `91d236a85` (Codex: 12 findings, 7 blocking, another round; the Opus foundation reader: 8 findings, 3 blocking,
 accept after named changes); and revised for round 5 at `f88222e2a` after the Opus foundation reader alone read round 4 at `739856c8b`
 (7 findings, 3 blocking, accept after named changes the steward can check without another read; Codex's workspace was out of credits).
-Every read is kept verbatim in `docs/2026-10-24-supervisor-reads.md`. Each finding was checked against the
+Every read is kept verbatim in `docs/archive/2026-10-24-supervisor-reads.md`. Each finding was checked against the
 code on main and is taken, answered or deferred in §13. Both readers endorse the foundation, which rounds 4 and 5 keep: a role appointed only in
 the window, recorded as itself, choice-only first, a decision record kept apart from the session's words, the holder key and the
 appointment's generation, the service composing the word, one answers-alone count shared with helpers and opinions, the actor's result
@@ -65,9 +65,9 @@ role. The frame is the company's (D193): the person is the owner and gives roles
 its holder's own decision; the one grant in the window is the owner appointing the role, not a confirmation of each act; each act is
 recorded as the role's, on the owner's behalf, never as the owner's own words, so the owner can read who decided and overrule.
 
-Read for it: D193 and `docs/2026-10-21-company-concept.md`'s frame; D188 and `docs/2026-10-23-coworker-design.md` (the co-work
-roles); D205 and `docs/2026-10-23-actors-design.md`; D135 (KNOWUSE1-2, PARKVIEW1's note); D156 and
-`docs/2026-10-09-person-door-design.md`; D185 with PARKVIEW1, PARKWORDS1 and WAITPANEL1, and `docs/2026-10-22-park-ask-design.md`;
+Read for it: D193 and `docs/archive/2026-10-21-company-concept.md`'s frame; D188 and `docs/archive/2026-10-23-coworker-design.md` (the co-work
+roles); D205 and `docs/archive/2026-10-23-actors-design.md`; D135 (KNOWUSE1-2, PARKVIEW1's note); D156 and
+`docs/archive/2026-10-09-person-door-design.md`; D185 with PARKVIEW1, PARKWORDS1 and WAITPANEL1, and `docs/archive/2026-10-22-park-ask-design.md`;
 PARKANSWER1 (`docs/FIX-LOG.md`, the archive); D201 and `docs/2026-10-23-terminal-trust-design.md`; D191; the UI/UX design §4;
 `.claude/knowledge/person-waits.md`, `session-words.md`, `bridge-presses.md`, `translation-parity.md`; the glossary.
 
@@ -184,14 +184,14 @@ read's round-4 finding 6); before the build each choice was a bare button that s
 - D135 point 6: a model's review "never answers in the person's place until" a replay shows it classes questions as the person did;
   its rejection list holds *a model that answers parked questions from the knowledge, unmeasured*. Its evidence: of 46 items that
   reached the owner, 25 needed them (13 of those go-aheads on a production write) and 21 did not
-  (`docs/2026-10-03-knowledge-use-evidence.md`, finding 2). D135 point 7: a repository document that requires the person's agreement
+  (`docs/archive/2026-10-03-knowledge-use-evidence.md`, finding 2). D135 point 7: a repository document that requires the person's agreement
   stands; the session asks once and names it.
 - The bench is `tools/question-bench.mjs` (KNOWUSE2), its cases classed K, R, B, O, D, S. **O and R are the person's own**: "any answer to
   one is an answer in their place" (`:78-79`; D135, `D135.md:218-223`), and a source counts only where its quote is in the named file at
   the record's own line (`scoreCase`, `:455-475`). Its fixtures hold six cases (`tools/question-bench-fixtures/cases.json`), not the 46;
   no recorded question is kept past its run's opening (`QuestionFiles.Clear`, `:137-142`).
 - D193 rejects *a hierarchy of agents directing agents*; the co-worker design rejects a coordinator agent for the same reason
-  (`docs/2026-10-23-coworker-design.md` §3.4).
+  (`docs/archive/2026-10-23-coworker-design.md` §3.4).
 - D188: a solicited answer may reopen its asker once per ask, and a line goes on by answers alone at most twice before it waits for
   the person (COWORK1e).
 - D191 point 3 and D193 point 1 name what is the owner's: direction, money beyond the company's own runs, sign-ins, publishing and
@@ -1319,7 +1319,7 @@ its oracle (the settled answer or the class that must be deferred). Its corpus: 
 offered choices, so each is **constructed** from its evidence entry, labelled `constructed`, never `replay`: the steward writes its
 question and two to four choices, the expected answer among them where the class is settled. **Each oracle records its actual source and
 author** (Codex's round-3 finding 11): `owner`, only where the evidence quotes the owner's own answer (items 7 and 36-37,
-`docs/2026-10-03-knowledge-use-evidence.md:117`, `:140`, both O cases the supervisor must leave to the owner); otherwise `steward`, an
+`docs/archive/2026-10-03-knowledge-use-evidence.md:117`, `:140`, both O cases the supervisor must leave to the owner); otherwise `steward`, an
 expected answer the steward constructed and grounds in versioned fixtures (a document's quoted line, a probe's kept output), so every
 settled case's oracle today is the steward's. The 46 items' classes are the evidence author's, not the owner's (`D135.md:57-58`), and a later probe, a code observation or a grouped ticket reading is not an owner's
 answer to a complete question. A case whose inputs or oracle cannot be completed from versioned fixtures is left out of qualification
@@ -1425,7 +1425,7 @@ chose to trust with them: §4.6 re-weighed for words, the handed text's paragrap
 ## 13. The reads
 
 Round 1 was read by Codex (D191 point 1) and an independent Opus 5.5 reader as a foundation (D191's amendment of 2026-10-23), each at
-`fa3124699`, read-only, kept verbatim in `docs/2026-10-24-supervisor-reads.md`. Both found the foundation's shape sound and asked another
+`fa3124699`, read-only, kept verbatim in `docs/archive/2026-10-24-supervisor-reads.md`. Both found the foundation's shape sound and asked another
 round. Round 2 checked each finding at the lines it cites on main at `fb34cf7db`: every cited line held, a few in part (noted), and
 `InstanceRoutes.cs`' route and `Permissions.cs`' deny rule had moved a line. The Opus read expects round 2 to be acceptable without a
 further foundation read with its findings 1 to 11 taken as named; each is taken as named below, with finding 1 taken in the steward's
@@ -1493,7 +1493,7 @@ rows' order and the independent card. Whether another read follows is the stewar
 | 8 | Historical attribution depends on a current-run set | design only (§3.4, §6.1 of round 3) | taken | `Authored` (live, by the recorded word id, through `went-on`), `Handable` (authored and `released`, or `admitted` under the ticket) and `Unattributed`; history after a restart reads files as history, marked *kept in an earlier run*, granting nothing; an earlier `went-on` decision's holder and reasons tested after a restart (§6.1, §11 1a-i, QUESTIONUI1b) |
 | 9 | The holder key can propagate through ordinary inheritance | `Agents/Tools.cs:669-695` (`Hand` keeps inherited variables); `GitWiring.cs:44`, `:65-95` | taken | Every Daoris executable removes the variable at its entry, and every start it builds strips it beside `SessionTokens`; the ask says every program the holder's terminal starts gets the key; the holder is a dedicated session that does only the role; starts from a sentinel-holding parent tested (§2.2, §4.6, §11 1a-ii) |
 | 10 | Quarantine needs explicit exclusion from the handed word list | `GoOnMarks.cs:131-134` (`Judged` needs every word marked); `Continuation.cs:258-259` (`HandedAfterMove` returns them all) | taken | The move refuses `words-changed` while any non-`expect` supervisor word waits; every handed list keeps a supervisor word only where it is the ticket's; a forged word beside a helper's and an owner's, and after planning, tested (§6.1, §6.3, §11 1a-i) |
-| 11 | Constructed benchmark oracles overstated as the owner's | `docs/2026-10-03-knowledge-use-evidence.md:117`, `:140`; `D135.md:57-58` | taken | Each oracle records its source and author, `owner` only where quoted, otherwise `steward` from versioned fixtures; cases whose inputs or oracle cannot be completed are left out of qualification and listed (§11 1d) |
+| 11 | Constructed benchmark oracles overstated as the owner's | `docs/archive/2026-10-03-knowledge-use-evidence.md:117`, `:140`; `D135.md:57-58` | taken | Each oracle records its source and author, `owner` only where quoted, otherwise `steward` from versioned fixtures; cases whose inputs or oracle cannot be completed are left out of qualification and listed (§11 1d) |
 | 12 | Rollback's exposure is not bounded to one look | `Planner.cs:1469-1471`; `ConversationView.tsx:501` | taken | *Until the word is consumed or removed, potentially across several looks* (§6.1) |
 
 **The Opus foundation read, round 3.** 8 findings, 3 blocking. Its three blocking findings are taken as it names them, with the steward's

@@ -8,7 +8,7 @@
  * A session pays for what it reads on every step after it reads it. A ceiling on a document read
  * whole says when the document is long. It cannot say which kind of line made it long, and a trimmed
  * backlog grows back while its rows go on being written the same way
- * (`docs/2026-10-02-session-economy-design.md` §1.5). So the canon gives each entry a shape
+ * (`docs/archive/2026-10-02-session-economy-design.md` §1.5). So the canon gives each entry a shape
  * (`development-documents`: a row or a router row, 60 words; an archive outcome, 60), and this reports
  * the entries over theirs, by name, longest first, so the one to move is the one at the top.
  *

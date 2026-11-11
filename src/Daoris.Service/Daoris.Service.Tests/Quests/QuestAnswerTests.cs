@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// words it turns on, quoted. A done that leaves one unanswered is refused, naming it; a departure is kept on the
 /// quest and holds what follows it, a chain's next step or a quest waiting on it, until the person accepts it.
 /// One session closed its quest "per your answer", on its own reading, and the next verified that reading rather
-/// than the ask (<c>docs/2026-10-02-ask-drift-evidence.md</c> §4.5).
+/// than the ask (<c>docs/archive/2026-10-02-ask-drift-evidence.md</c> §4.5).
 /// </summary>
 public sealed class QuestAnswerTests : IAsyncLifetime
 {

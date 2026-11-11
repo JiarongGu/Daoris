@@ -2,7 +2,7 @@
 
 **Standing:** accepted 2026-10-24 by the steward under D191 (D157's CHATFLOW1 acceptance note; amended 2026-10-24 by Codex's owed read of it, D157's amendment note), round 2 with its named changes, a note amending D157 (the workflow) and D155 (the second opinion) for CHATFLOW1. Round 1
 was written by Claude Opus 5.5 from the code on main at `8cc3936b0` and read at `94c9065f4` by the independent Opus foundation reader
-alone, its read verbatim in `docs/2026-10-24-chat-flow-reads.md`: 24 findings, 8 blocking, another round; Codex's read is owed, its
+alone, its read verbatim in `docs/archive/2026-10-24-chat-flow-reads.md`: 24 findings, 8 blocking, another round; Codex's read is owed, its
 credits out. Round 2 is written by Claude Opus 5.5 from the code on main at `ca046e7fe`. Since the read's `ffcf42926`, `src/` changed in
 tests (GITHUBDOCS1's and CI's), in `Platform/WiringVariables.cs` and in the CLI's `package.json`, and SUPERVISOR1b moved `Driver.cs` and
 `SessionLedger.cs` by a few lines; no claim turns on these, and the citations are re-pinned. It answers every finding in §15, each checked
@@ -28,8 +28,8 @@ row that builds from them, before it does.
 The row CHATFLOW1 in `TASKS.md` carries the case. A chat working in a tree of its own serves no quest, so the session's *Workflow*
 view shows only the driver's English sentence, in zh too, and its work reaches the review list with none of its repository's
 workflow: no checks, no second opinion and no landing gate. The workflow design left *a conversation's work under a workflow* out,
-not rejected (`docs/2026-10-09-workflow-design.md` §12.2), and the second-agent design did the same for *opinions on a conversation's
-work* (`docs/2026-10-08-second-agent-design.md` §12.2). §2 says what changed since and why it now belongs in.
+not rejected (`docs/archive/2026-10-09-workflow-design.md` §12.2), and the second-agent design did the same for *opinions on a conversation's
+work* (`docs/archive/2026-10-08-second-agent-design.md` §12.2). §2 says what changed since and why it now belongs in.
 
 **What changed in round 2.** The read's finding 23 is taken: a chat's *Accept…* is gated as a quest's is today. The gate reads the
 chat's run, refuses the press with its reason where a part holds, and asks the second opinion at that press. The person presses
@@ -1079,7 +1079,7 @@ a chat only through CHATFLOW1f. The zh words follow the glossary, and no transla
 
 ## 15. Round 2: the read's findings and their answers
 
-Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-chat-flow-reads.md` §4), each checked against the code on main at
+Every finding of the Opus foundation read of round 1 (`docs/archive/2026-10-24-chat-flow-reads.md` §4), each checked against the code on main at
 `ca046e7fe`. *Taken* means the design now says it; *answered* means it is not taken, for the reason given; *deferred* means a later row
 carries it. The read's §1 to §3 corrections are findings below, and the rest are taken where they are named. This table is kept as
 round 2 answered; where round 2's read changed an answer (rows 6, 8, 11, 14, 15 and 17), §16 says what the text now holds.
@@ -1116,7 +1116,7 @@ may go ahead; the rest wait until both reads' blocking findings are taken. The d
 
 ## 16. Round 2's read: where each named change went
 
-Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-chat-flow-reads.md`, round 2 §4), taken as the read names it.
+Every finding of the Opus foundation read of round 2 (`docs/archive/2026-10-24-chat-flow-reads.md`, round 2 §4), taken as the read names it.
 Each place was checked against the code on main at `507b1925d`.
 
 | # | Finding (blocking in bold) | Where it went |
@@ -1138,7 +1138,7 @@ read. The design and its D157 and D155 notes stay proposed.
 
 ## 17. Codex's read of the accepted text: where each went
 
-Every finding of Codex's owed read of the accepted text (`docs/2026-10-24-chat-flow-reads.md`, *Codex, the accepted text*, §4), taken
+Every finding of Codex's owed read of the accepted text (`docs/archive/2026-10-24-chat-flow-reads.md`, *Codex, the accepted text*, §4), taken
 as the read names it, each blocking one before the row it names. Each place was checked against the code on main at `5d19f6b3a`, whose
 `src/` is identical to the read's `7cda79f01` (rows a and b are in both; corrected by the Opus check's finding 10), so the read's
 citations hold there to the line. §15 and §16 are kept as answered.
@@ -1165,7 +1165,7 @@ rows c to i may be built in their order, each with its amendment above.
 ## 18. The Opus check of the amendment: where each went
 
 Every finding of the independent Opus 5.5 reader's check of the amendment (`e9bca8aa5`), standing in for Codex while its credits are out
-(`docs/2026-10-24-chat-flow-reads.md`, *Opus, the amendment checked*, §3), taken as the check names it. Each place was checked against
+(`docs/archive/2026-10-24-chat-flow-reads.md`, *Opus, the amendment checked*, §3), taken as the check names it. Each place was checked against
 the code on main at `bcb97c274`, whose `src/` is `5d19f6b3a`'s with row a's correction (`Workflows/WorkflowRun.Read.cs` and its tests).
 §15 to §17 are kept as answered.
 

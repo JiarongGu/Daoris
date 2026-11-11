@@ -1,8 +1,8 @@
 # COMMS1: one model for how sessions, agents and the person talk and hand work to each other
 
 Status: accepted by the steward 2026-11-02 (D225), the synthesis of both sealed proposals; both makers' reads run beside wave 1's
-first rows. It answers `2026-11-02-comms-brief.md` from `2026-11-02-comms-proposal-opus.md` and
-`2026-11-02-comms-proposal-codex.md`, each claim this design relies on checked at `16cc8107b`. Paths: `Svc/` is
+first rows. It answers `archive/2026-11-02-comms-brief.md` from `archive/2026-11-02-comms-proposal-opus.md` and
+`archive/2026-11-02-comms-proposal-codex.md`, each claim this design relies on checked at `16cc8107b`. Paths: `Svc/` is
 `src/Daoris.Service/Daoris.Service.Core/`, `Mcp/` `src/Daoris.Service/Daoris.Service.Mcp/`, `Drv/`
 `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Mod/` `src/Daoris.Desktop/Daoris.Desktop.Modules/`, `Web/` `src/Daoris.Web/src/`.
 
@@ -101,7 +101,7 @@ type Exchange = {
 };
 ```
 
-It is the reader COWORKUX1a's parked exchange read was to be (`docs/2026-10-23-coworker-design.md:490-497`), widened from helpers
+It is the reader COWORKUX1a's parked exchange read was to be (`docs/archive/2026-10-23-coworker-design.md:490-497`), widened from helpers
 to every case, and the co-workers COWORKVIEW1 waits on (R11.4). `HelperWaits.Open`, `Observation.Conclude`'s wait input, the strip's
 waits, *At work*, the head's *Waiting on*, the brief and `sessions at-work` read it.
 
@@ -313,7 +313,7 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 
 ## 13. Settled after Opus's read
 
-Opus's read (`docs/2026-11-02-comms-reads.md`) is taken whole; Codex's read is owed (its run stopped at the workspace's spend cap)
+Opus's read (`docs/archive/2026-11-02-comms-reads.md`) is taken whole; Codex's read is owed (its run stopped at the workspace's spend cap)
 and is settled here when it lands. These amend §3 to §10, and each row carries its part.
 
 1. **Row b goes through the looks, not only the desks** (B1): the opinion deliverer's and the partner look's pre-checks

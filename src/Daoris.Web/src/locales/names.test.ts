@@ -10,7 +10,7 @@ import {
 /**
  * The names check: `scripts/names-check.mjs`, beside the parity check. Its
  * facts' half is a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
- * the budgets report and never fail (`docs/2026-10-01-naming-design.md` §6).
+ * the budgets report and never fail (`docs/archive/2026-10-01-naming-design.md` §6).
  */
 
 const MEASURE: Glossary['measure'] = {

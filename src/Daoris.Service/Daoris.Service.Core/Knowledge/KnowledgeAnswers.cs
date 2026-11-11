@@ -26,8 +26,17 @@ internal sealed class KnowledgeAnswers(
 
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct)
     {
+        if (!PresentFirst.Applies(query)) return await AnswerMixedAsync(query, ct).ConfigureAwait(false);
+
+        var present = await AnswerMixedAsync(query with { Present = true }, ct).ConfigureAwait(false);
+        var rest = await AnswerMixedAsync(query with { Present = false }, ct).ConfigureAwait(false);
+        return PresentFirst.Order(query.Text, present, rest, query.Limit);
+    }
+
+    private async Task<SearchAnswer> AnswerMixedAsync(KnowledgeQuery query, CancellationToken ct)
+    {
         var answer = await AnswerEntriesAsync(query, ct).ConfigureAwait(false);
-        if (records is null || query.Provenance == Provenance.Canonical) return answer;
+        if (records is null || query.Provenance == Provenance.Canonical || query.Present == true) return answer;
         if (query.Kinds is not null && !query.Kinds.Contains(EntryKind.Record)) return answer;
 
         IReadOnlyList<KnowledgeHit> found;
