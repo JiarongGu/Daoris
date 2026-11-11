@@ -1,7 +1,7 @@
 # Plugins — what Daoris already has, what to take, and what to decline again
 
 > Written 2026-09-22 at the owner's direction: *"we should also have plugin system (you might check
-> how yaorin did or if deepseek-harness has a even better plugin design you can also take)"*. This is
+> how the sibling app did or if deepseek-harness has a even better plugin design you can also take)"*. This is
 > **ARCH1**, which the backlog held for exactly this question, widened by one reference.
 >
 > Both references were **read on this machine**, never built or modified — one is another
@@ -26,13 +26,13 @@ So the useful question is not "should Daoris have plugins" but **"where is exten
 and what do the two references do better where it is possible?"** Answering it that way keeps three
 standing decisions intact instead of reopening them by accident.
 
-## 2. Yaorin — a manifest, a capability list, and definitions beside code
+## 2. The sibling app — a manifest, a capability list, and definitions beside code
 
 Read from its installed `data/plugins/<id>/`:
 
 ```json
-{ "id": "yaorin.source", "apiVersion": 3, "name": "…", "version": "1.0.0",
-  "entry": "Yaorin.Plugins.Source.dll", "capabilities": ["browse"], "definitions": true }
+{ "id": "sibling.source", "apiVersion": 3, "name": "…", "version": "1.0.0",
+  "entry": "Sibling.Plugins.Source.dll", "capabilities": ["browse"], "definitions": true }
 ```
 
 Four things are worth taking, and one is worth taking **now**:
@@ -69,7 +69,7 @@ preview whose tree moved 1,687 commits in the week it was measured, and D52/D53 
 
 | Gap | Verdict |
 |---|---|
-| A pack cannot say which canon it needs | 🔴 **Fix — PLUG1.** Yaorin's `apiVersion`, exactly. |
+| A pack cannot say which canon it needs | 🔴 **Fix — PLUG1.** The sibling app's `apiVersion`, exactly. |
 | A pack cannot disable or override what core installs | **Consider — PLUG2.** dsh's layer rule; wants a decision, since D4 says core installs with no opt-out. |
 | A third party cannot add a session adapter | **Decline, again.** D23, D24 and TOOL5 all say *not a registry* — and the **ACP door is already the answer**: a harness speaking the protocol needs no Daoris code at all. This is a protocol where the references have a binary API, which is strictly the better position. |
 | A third party cannot add a view | **Decline, again.** D52 rejected the plugin runtime for the surface, and nothing here changes that evidence. |
@@ -82,7 +82,7 @@ that returns its disposer.** Daoris has no dynamic loading today, which is preci
 cheap to adopt now and expensive later — a seam built without it acquires unload bugs that are
 indistinguishable from leaks.
 
-And Yaorin's, which costs nothing: **a manifest declares its API version and its capabilities, and the
+And the sibling app's, which costs nothing: **a manifest declares its API version and its capabilities, and the
 host reads both before it loads anything.**
 
 ## 5a. Read again after D64 (2026-09-23) — what else the two references offer, and why not now
@@ -97,10 +97,10 @@ taking. Recorded so the next reader does not redo the survey:
 | dsh's session query and search over session logs | The Work frame lists sessions; nothing searches transcripts | Not asked for; transcripts are machine-local by D47 §4, so it would be shell-only — **held until somebody wants it** |
 | dsh's workflow engine, agent teams, PTC runtime | — | **D1**: Daoris is process tooling, not an LLM product |
 | dsh's `--dump-config` (see the tree your machine boots) | `daoris status --machine`, `daoris plugin list`, `daoris harness list` | Already three doors; no fourth |
-| Yaorin's self-improvement cortex (memory, scoring, traces around every model call) | The knowledge index is the memory; no model runs in Daoris (D24) | **Declined** — the harness owns its own learning |
-| Yaorin's plugin tasks as durable jobs with progress | A session IS the job, with a record, a transcript and a console | Already true |
-| Yaorin's UI federation for plugin screens | D52: no plugin views | **Declined again** |
-| Yaorin's cross-device pairing | The remote (D47) | Already true, differently |
+| The sibling app's self-improvement cortex (memory, scoring, traces around every model call) | The knowledge index is the memory; no model runs in Daoris (D24) | **Declined** — the harness owns its own learning |
+| The sibling app's plugin tasks as durable jobs with progress | A session IS the job, with a record, a transcript and a console | Already true |
+| The sibling app's UI federation for plugin screens | D52: no plugin views | **Declined again** |
+| The sibling app's cross-device pairing | The remote (D47) | Already true, differently |
 
 The system taken from the two references is complete for what a plugin can do today; what would
 change it is a plugin somebody writes asking for a point the host lacks (PLUG7).

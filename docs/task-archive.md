@@ -5620,7 +5620,7 @@ already had entries of their own, so those rows were simply removed.
 
 - [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
   structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
-  (*"you might check how yaorin did"*). `docs/archive/2026-09-22-plugin-design-study.md` is the note.
+  (*"you might check how the sibling app did"*). `docs/archive/2026-09-22-plugin-design-study.md` is the note.
   🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
   the declared gate list, and the ACP door — and none of them is called one. So the finding is not
   "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a
