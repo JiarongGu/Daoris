@@ -52,14 +52,14 @@ internal sealed class TreePoolMakes(TreePool pool, PoolSeams seams)
         var takes = new TreePoolTakes(pool, seams);
         if (await PoolLocks.SetAsync(git, folder, PoolLocks.Claimed(pool.Run), ct).ConfigureAwait(false) is { } lockWhy)
         {
-            await TreeOpenings.UndoAsync(site.Root, folder, branch, ours: true).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(site.Root, folder, branch, ours: true, home: site.Home).ConfigureAwait(false);
             pool.Complete(fence, null);
             return PoolDone.Not(lockWhy);
         }
 
         if (await takes.CheckAsync(site, slot, branch, null, strict: true, ct).ConfigureAwait(false) is { } failed)
         {
-            await TreeOpenings.UndoAsync(site.Root, folder, branch, ours: true).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(site.Root, folder, branch, ours: true, home: site.Home).ConfigureAwait(false);
             pool.Complete(fence, null);
             return PoolDone.Not($"the new slot did not pass the check: {failed}");
         }
