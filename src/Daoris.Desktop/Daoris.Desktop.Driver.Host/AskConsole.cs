@@ -1,123 +1,44 @@
-using Daoris.Contracts.Quests;
-
 namespace Daoris.Driver.Host;
 
 /// <summary>
 /// Asks, from a terminal: a sentence entered at a WORKSPACE rather than at a repository.
 /// </summary>
 /// <remarks>
-/// <code>
-/// daoris ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] [--file &lt;path&gt;]… [--url &lt;address&gt;]… "…"
-/// daoris ask publish &lt;id&gt; --to &lt;repo&gt; [--require "&lt;the person's words&gt;" "&lt;the check&gt;"]…
-/// daoris ask close &lt;id&gt; --reason "…"
-/// daoris ask delete &lt;id&gt;
-/// daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
-/// daoris ask … --short "…"
-/// daoris ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
-/// daoris ask review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
-/// daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]
-/// daoris ask workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]
-/// </code>
-/// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
-/// when one of them must stay — the ask's record's <i>Delete</i> is the other door.</para>
-/// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any:
-/// every session on the ask is handed the answer, and a parked session none of whose go-aheads waits any more goes on with
-/// them. The ask's page's <i>Go-aheads</i> is the other door.</para>
-/// <para><c>--review</c> chooses whether a new ask's work is reviewed before it lands, and where, as the composer does, <c>rule</c>
-/// (its default) sending none; <c>--set-review</c> changes an ask's choice, or applies its intake's proposal, as its page's
-/// <i>Set</i> and <i>Apply</i> do. The judgement is the library's (<see cref="AskReviewCommand"/>).</para>
-/// <para><c>--kind</c> and <c>--workflow</c> say what kind of task a new ask is and which workflow its work follows, as the composer
-/// will; <c>--set-workflow</c> changes an ask's, or clears it with <c>--clear</c>. The person's door: the window confirms a
-/// keyless call. The judgement is the library's (<see cref="AskWorkflowCommand"/>).</para>
-/// <para><c>--short</c> names a new ask in a list by a short title, as the composer's field does. It is sent as typed: the
-/// service judges it, and its sentence is printed, so the driver holds no second judge.</para>
-/// <para>The service answers with the tier that answered — by declarations only, with no intake
-/// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
-/// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
-/// one.</para>
-///
-/// <para>Exit codes keep the family contract: 0 answered · 1 refused (a receiver that cannot be asked,
-/// a closed ask) · 2 tool error.</para>
+/// <para>The words are read first (<see cref="AskArguments"/>), and a problem sends nothing: <c>--help</c> prints the usage, and a flag
+/// the verb does not take is never the ask's words.</para>
+/// <para>A new ask is the person's press (<see cref="AskNewCommand"/>, <c>ASK_NEW</c>), confirmed in the running Daoris's window, or Ask
+/// Daoris's delegate press; alone where none runs. <c>--short</c> is sent as typed: the service judges it, and its sentence is printed.</para>
+/// <para><c>delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole when one of them must stay.
+/// <c>go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any: every session on the ask is handed
+/// the answer, and a parked session none of whose go-aheads waits any more goes on with them.</para>
+/// <para><c>--review</c> chooses whether a new ask's work is reviewed before it lands, and where, <c>rule</c> (its default) sending none;
+/// <c>review</c> changes an ask's choice, or applies its intake's proposal (<see cref="AskReviewCommand"/>). <c>--kind</c> and
+/// <c>--workflow</c> say what kind of task a new ask is and which workflow its work follows; <c>workflow</c> changes an ask's, or
+/// clears it with <c>--clear</c> (<see cref="AskWorkflowCommand"/>).</para>
+/// <para>Exit codes keep the family contract: 0 answered · 1 refused (a receiver that cannot be asked, a closed ask) · 2 tool error.</para>
 /// </remarks>
 internal static class AskConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null, goAhead = null;
-        string? review = null, reviewWords = null, setReview = null;
-        string? kind = null, workflow = null, workflowWords = null, setWorkflow = null;
-        string? shortTitle = null;
-        var clearWorkflow = false;
-        var files = new List<string>();
-        var links = new List<string>();
-        var words = new List<string>();
-        var requirements = new List<QuestRequirementWire>();
-
-        for (var i = 0; i < args.Length; i++)
+        if (AskArguments.Read(args, out var problem) is not { } read) return Usage(problem!);
+        if (read.Help)
         {
-            string Value() => i + 1 < args.Length ? args[++i] : throw new DriverException($"{args[i]} needs a value");
-
-            switch (args[i])
-            {
-                case "--workspace": workspace = Value(); break;
-                case "--to": to = Value(); break;
-                case "--file": files.Add(Value()); break;
-                case "--url": links.Add(Value()); break;
-                case "--publish": publish = Value(); break;
-                case "--close": close = Value(); break;
-                case "--delete": delete = Value(); break;
-                case "--go-ahead": goAhead = Value(); break;
-                case "--reason": reason = Value(); break;
-                case "--short": shortTitle = Value(); break;
-                // The composer's review choice, and the ask page's.
-                case "--review": review = Value(); break;
-                case "--review-words": reviewWords = Value(); break;
-                case "--set-review": setReview = Value(); break;
-                // The composer's kind and workflow, and the ask's.
-                case "--kind": kind = Value(); break;
-                case "--workflow": workflow = Value(); break;
-                case "--workflow-words": workflowWords = Value(); break;
-                case "--set-workflow": setWorkflow = Value(); break;
-                case "--clear": clearWorkflow = true; break;
-                case "--require": requirements.Add(new QuestRequirementWire(Value(), Value())); break;
-                default: words.Add(args[i]); break;
-            }
+            foreach (var line in Forms()) Console.WriteLine(line);
+            return 0;
         }
 
         try
         {
-            // A new ask's choice is a new ask's: beside another verb it would be dropped unsaid, so it is a problem instead.
-            if ((review ?? reviewWords) is not null && (publish ?? close ?? delete ?? goAhead ?? setReview) is not null)
-            {
-                return Usage("--review goes with a new ask's words; --set-review <id> changes an ask's review choice");
-            }
-
-            if (shortTitle is not null && (publish ?? close ?? delete ?? goAhead ?? setReview ?? setWorkflow) is not null)
-            {
-                return Usage("--short goes with a new ask's words: an ask's title is given when it is asked");
-            }
-
-            // A kind and a workflow go with a new ask's words or --set-workflow; --clear only with --set-workflow, since `ask --clear <id>`
-            // clears an ask's work from this machine.
-            if ((kind ?? workflow ?? workflowWords) is not null && (publish ?? close ?? delete ?? goAhead ?? setReview) is not null)
-            {
-                return Usage("--kind and --workflow go with a new ask's words; --set-workflow <id> changes an ask's");
-            }
-
-            if (clearWorkflow && setWorkflow is null)
-            {
-                return Usage("--clear goes with --set-workflow <id> here; `ask --clear <id>` clears an ask's work from this machine");
-            }
-
             using var service = ServiceClient.FromEnvironment();
             var reviews = new AskReviewWorld(service, () => DriverConfig.Load(DriverConfig.ResolvePath()));
             var workflows = new AskWorkflowWorld(
                 service, () => DriverConfig.Load(DriverConfig.ResolvePath()), DriverConfig.HomeOf(DriverConfig.ResolvePath()));
 
-            if (setWorkflow is not null)
+            if (read.SetWorkflow is { } setWorkflow)
             {
-                if (workflowWords is not null) return Usage("--set-workflow takes your words after it, not --workflow-words");
-                if (AskWorkflowCommand.Read(setWorkflow, kind, workflow, clearWorkflow, words, out var workflowProblem) is not { } set)
+                if (read.WorkflowWords is not null) return Usage("`ask workflow <id>` takes your words after it, not --workflow-words");
+                if (AskWorkflowCommand.Read(setWorkflow, read.Kind, read.Workflow, read.ClearWorkflow, read.Words, out var workflowProblem) is not { } set)
                 {
                     return Usage(workflowProblem!);
                 }
@@ -125,35 +46,25 @@ internal static class AskConsole
                 return await AskWorkflowCommand.PressAsync(set, workflows, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
-            if (setReview is not null)
+            if (read.SetReview is { } setReview)
             {
-                if (AskReviewCommand.Read(setReview, words, out var setProblem) is not { } chosen) return Usage(setProblem!);
+                if (AskReviewCommand.Read(setReview, read.Words, out var setProblem) is not { } chosen) return Usage(setProblem!);
                 // The ask page's twin: its *Set*, and *Apply* on an intake's proposal.
                 return await AskReviewCommand.PressAsync(chosen, reviews, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
-            if (publish is not null)
+            if (read.Publish is { } publish)
             {
-                if (to is null) return Usage("--publish needs --to: the repository the ask becomes a quest for");
                 var session = Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable);
-                return Report(await service.PublishAskAsync(publish, to, session, requirements).ConfigureAwait(false));
+                return Report(await service.PublishAskAsync(publish, read.To!, session, read.Requirements).ConfigureAwait(false));
             }
 
-            if (requirements.Count > 0) return Usage("--require goes with --publish: a requirement travels on the quest an ask becomes");
+            if (read.Close is { } close) return Report(await service.CloseAskAsync(close, read.Reason ?? "").ConfigureAwait(false));
+            if (read.Delete is { } delete) return await AskDeleteCommand.PressAsync(delete, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
 
-            if (close is not null)
+            if (read.GoAhead is { } goAhead)
             {
-                return Report(await service.CloseAskAsync(close, reason ?? "").ConfigureAwait(false));
-            }
-
-            if (delete is not null)
-            {
-                return await AskDeleteCommand.PressAsync(delete, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
-            }
-
-            if (goAhead is not null)
-            {
-                if (GoAheadCommand.Read(words, out var problem) is not { } answer) return Usage(problem!);
+                if (GoAheadCommand.Read(read.Words, out var answerProblem) is not { } answer) return Usage(answerProblem!);
                 // The ask page's twin: the answer that leaves none of a parked session's go-aheads waiting sends it on.
                 var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words, goesOn: true)
                     .ConfigureAwait(false);
@@ -161,44 +72,18 @@ internal static class AskConsole
                 return ok ? 0 : 1;
             }
 
-            var sentence = string.Join(' ', words).Trim();
-            if (sentence.Length == 0) return Usage("an ask needs its words");
-
-            // The composer's twin: `rule` sends none, and a named environment is one the workspace declares, as it offers.
-            if (AskReviewCommand.Compose(review, reviewWords, out var reviewProblem) is not { } composed) return Usage(reviewProblem!);
-            if (composed.Choice is { } choice
-                && await AskReviewCommand.UndeclaredAsync(choice, workspace ?? "default", reviews).ConfigureAwait(false) is { } undeclared)
+            // Full paths, as this terminal names them: the press is read where Daoris runs, whose folder is its own.
+            var ask = new AskNew(read.Workspace ?? "default", read.Sentence, read.To, read.Links, [.. read.Files.Select(Path.GetFullPath)],
+                read.Review, read.ReviewWords, read.Kind, read.Workflow, read.WorkflowWords, read.Short);
+            var registry = (await service.RegistryAsync().ConfigureAwait(false)).Select(row => (row.Repository, (string?)row.Workspace));
+            if (AskNewCommand.Unfit(ask, reviews.Config(), workflows.Home, registry, out var usage) is { } unfit)
             {
-                Console.WriteLine(undeclared);
+                if (usage) return Usage(unfit);
+                Console.WriteLine(unfit);
                 return 1;
             }
 
-            // The composer's kind and workflow: a kind the workspace declares, a workflow saved here that reads.
-            if (AskWorkflowCommand.Compose(kind, workflow, workflowWords, out var workflowComposeProblem) is not { } chosenWorkflow)
-            {
-                return Usage(workflowComposeProblem!);
-            }
-
-            if (AskWorkflowCommand.Unchoosable(chosenWorkflow.Kind, chosenWorkflow.Workflow, workspace ?? "default", workflows) is { } unchoosable)
-            {
-                Console.WriteLine(unchoosable);
-                return 1;
-            }
-
-            // Files are read HERE, on the machine that has them, and travel whole to the local host —
-            // which keeps them under this machine's home.
-            var read = new List<(string Name, byte[] Content)>();
-            foreach (var path in files)
-            {
-                var full = Path.GetFullPath(path);
-                if (!File.Exists(full)) throw new DriverException($"`{path}` is not a file on this machine");
-                read.Add((Path.GetFileName(full), await File.ReadAllBytesAsync(full).ConfigureAwait(false)));
-            }
-
-            return Report(await service.AskAsync(
-                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words, workflow: chosenWorkflow,
-                shortTitle: shortTitle)
-                .ConfigureAwait(false));
+            return await AskNewCommand.PressAsync(ask, reviews, workflows, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -220,20 +105,18 @@ internal static class AskConsole
         return answer.Ok ? 0 : 1;
     }
 
+    private static IEnumerable<string> Forms() => AskArguments.Usage.Append($"daoris {ChannelCommand.Usage}");
+
     private static int Usage(string why)
     {
         Console.Error.WriteLine($"ask: {why}");
-        Console.Error.WriteLine("usage: daoris ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
-        Console.Error.WriteLine("       daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…");
-        Console.Error.WriteLine("       daoris ask close <id> --reason \"…\"");
-        Console.Error.WriteLine("       daoris ask delete <id>");
-        Console.Error.WriteLine("       daoris ask go-ahead <id> <n> approve|refuse [\"…\"]");
-        Console.Error.WriteLine($"       daoris {ChannelCommand.Usage}");
-        Console.Error.WriteLine("       daoris ask … --short \"…\"");
-        Console.Error.WriteLine("       daoris ask … --review rule|on|<environment>|off [--review-words \"…\"]");
-        Console.Error.WriteLine("       daoris ask review <id> on|<environment>|off [\"…\"]");
-        Console.Error.WriteLine("       daoris ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]");
-        Console.Error.WriteLine("       daoris ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]");
+        var first = true;
+        foreach (var form in Forms())
+        {
+            Console.Error.WriteLine((first ? "usage: " : "       ") + form);
+            first = false;
+        }
+
         return 2;
     }
 }

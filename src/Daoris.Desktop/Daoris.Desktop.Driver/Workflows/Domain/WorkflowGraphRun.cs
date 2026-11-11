@@ -214,6 +214,7 @@ public static class WorkflowGraphRuns
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
                 Held = checkHeld?.Held,
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
+                Wait = NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }

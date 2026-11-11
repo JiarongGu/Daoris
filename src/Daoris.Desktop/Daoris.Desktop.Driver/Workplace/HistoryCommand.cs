@@ -226,14 +226,14 @@ public static class HistoryCommand
             var work = Join([Count(reading.Quests, "closed quest"), Count(reading.Asks, "ask")]);
             var sessions = Join([Count(reading.Sessions, "session"), Copies(reading.Teammates)]);
             lines.Add($"{workspace} keeps {work} on this machine, with {(sessions.Length == 0 ? "no session" : sessions)}: "
-                      + $"{Size(reading.Bytes.Total + reading.Intake)}.");
+                      + $"{ByteSizes.Said(reading.Bytes.Total + reading.Intake)}.");
         }
 
         var disk = Join(
         [
             Of(reading.Bytes.Conversations, "conversations"), Of(reading.Bytes.Transcripts, "transcripts"), Of(reading.Bytes.Files, "files"),
             Of(reading.Bytes.Kept, "kept files"), Of(reading.Bytes.Other, "the small files beside them"),
-            reading.Intake > 0 ? $"{Size(reading.Intake)} in the intake's room" : null,
+            reading.Intake > 0 ? $"{ByteSizes.Said(reading.Intake)} in the intake's room" : null,
         ]);
         if (disk.Length > 0) lines.Add($"  on the disk: {disk}.");
 
@@ -246,7 +246,7 @@ public static class HistoryCommand
         ]);
         lines.Add(takes.Length == 0
             ? "  a clear would take nothing now."
-            : $"  a clear would take {takes}, {Size(reading.Takes.Bytes)}: `{Door(HistoryScope.Workspace, workspace)}` lists it first.");
+            : $"  a clear would take {takes}, {ByteSizes.Said(reading.Takes.Bytes)}: `{Door(HistoryScope.Workspace, workspace)}` lists it first.");
 
         foreach (var (word, count) in reading.KeptBy.OrderByDescending(each => each.Value).ThenBy(each => each.Key, StringComparer.Ordinal))
         {
@@ -256,7 +256,7 @@ public static class HistoryCommand
         if (reading.Conversations > 0)
         {
             lines.Add($"  {Count(reading.Conversations, "conversation that served no quest", "conversations that served no quest")}, "
-                      + $"{Size(reading.ConversationBytes)}: a clear never takes one; `daoris session delete <id>` does.");
+                      + $"{ByteSizes.Said(reading.ConversationBytes)}: a clear never takes one; `daoris session delete <id>` does.");
         }
 
         return lines;
@@ -266,9 +266,9 @@ public static class HistoryCommand
     private static string Home(HistoryReading reading) =>
         (reading.LeftOver == 0
             ? "the home as a whole: nothing left over from records already gone; "
-            : $"the home as a whole: {Count(reading.LeftOver, "file")} left over from records already gone, {Size(reading.LeftOverBytes)}, "
+            : $"the home as a whole: {Count(reading.LeftOver, "file")} left over from records already gone, {ByteSizes.Said(reading.LeftOverBytes)}, "
               + "which a workspace's clear takes; ")
-        + $"the machine log holds {Size(reading.Log)}, which a clear never touches.";
+        + $"the machine log holds {ByteSizes.Said(reading.Log)}, which a clear never touches.";
 
     /// <summary>Why units are kept, by the word that keeps them, with the line that frees them where one does.</summary>
     private static string Because(string word) => word switch
@@ -321,7 +321,7 @@ public static class HistoryCommand
             var stays = ask.Scope == HistoryScope.Failed ? $" #{plan.Id} and its other sessions stay." : "";
             Write(output,
             [
-                $"clearing {named} would take {Contents(unit)}, with what this machine kept of them ({Size(unit.Bytes.Total)}): their "
+                $"clearing {named} would take {Contents(unit)}, with what this machine kept of them ({ByteSizes.Said(unit.Bytes.Total)}): their "
                 + $"words, transcripts and files.{stays} Nothing brings it back; `{Door(ask.Scope, plan.Id)}` clears it.",
                 .. Remote(unit.Forgotten.Count, unit.Workspace),
                 .. Pieces(unit),
@@ -335,7 +335,7 @@ public static class HistoryCommand
             var stays = ask.Scope == HistoryScope.Failed ? $"; #{plan.Id} and its other sessions stay" : "";
             Write(output,
             [
-                $"cleared {named} from this machine: {Contents(cleared)}, {Size(outcome.Bytes)}{stays}.",
+                $"cleared {named} from this machine: {Contents(cleared)}, {ByteSizes.Said(outcome.Bytes)}{stays}.",
                 .. Remote(outcome.Forgotten, cleared.Workspace),
                 .. Pieces(cleared),
                 .. Failed(outcome.Failed),
@@ -379,17 +379,17 @@ public static class HistoryCommand
             ]);
             var lines = new List<string>
             {
-                $"clearing {workspace}'s finished history would take {takes}, {Size(reading.Takes.Bytes)}, and keep "
+                $"clearing {workspace}'s finished history would take {takes}, {ByteSizes.Said(reading.Takes.Bytes)}, and keep "
                 + $"{kept.Count.ToString(CultureInfo.InvariantCulture)}; `{Door(HistoryScope.Workspace, workspace)} --yes` clears what this "
                 + "list holds. Nothing brings it back.",
             };
-            lines.AddRange(going.Select(unit => $"  takes {Name(unit)}: {Contents(unit)}, {Size(unit.Bytes.Total)}."));
+            lines.AddRange(going.Select(unit => $"  takes {Name(unit)}: {Contents(unit)}, {ByteSizes.Said(unit.Bytes.Total)}."));
             if (reading.LeftOver > 0)
             {
-                lines.Add($"  takes {Count(reading.LeftOver, "file")} left over from records already gone, {Size(reading.LeftOverBytes)}.");
+                lines.Add($"  takes {Count(reading.LeftOver, "file")} left over from records already gone, {ByteSizes.Said(reading.LeftOverBytes)}.");
             }
 
-            if (room) lines.Add($"  takes the intake's room, {Size(reading.Intake)}: no ask of {workspace} is kept.");
+            if (room) lines.Add($"  takes the intake's room, {ByteSizes.Said(reading.Intake)}: no ask of {workspace} is kept.");
             lines.AddRange(keeps);
             var forgotten = going.Sum(unit => unit.Forgotten.Count);
             if (forgotten > 0)
@@ -422,7 +422,7 @@ public static class HistoryCommand
         var said = new List<string>
         {
             outcome.Took
-                ? $"cleared {workspace}'s finished history from this machine: {listed}{(went.Length == 0 ? "nothing" : went)}, {Size(outcome.Bytes)}{changes}"
+                ? $"cleared {workspace}'s finished history from this machine: {listed}{(went.Length == 0 ? "nothing" : went)}, {ByteSizes.Said(outcome.Bytes)}{changes}"
                 : $"nothing of {workspace}'s finished history was cleared{changes}",
         };
         if (outcome.Forgotten > 0)
@@ -441,11 +441,8 @@ public static class HistoryCommand
         return outcome.Failed > 0 ? 2 : 0;
     }
 
-    /// <summary>
-    /// Whether a workspace's reading counts its intake's room in what a clear would take: its takes are the clearable units', the
-    /// left-over files' and the room's where no ask of the workspace is kept (<see cref="HistoryReading.Takes"/>), so what is left
-    /// once the units' and the left-over files' are taken away is the room or nothing.
-    /// </summary>
+    /// <summary>Whether a workspace's reading counts its intake's room in what a clear would take: its takes less the units' and the
+    /// left-over files' are the room, where no ask of the workspace is kept, or nothing (<see cref="HistoryReading.Takes"/>).</summary>
     internal static bool TakesRoom(HistoryPlan plan) =>
         plan.Reading is { Intake: > 0 } reading
         && reading.Takes.Bytes - reading.LeftOverBytes - plan.Units.Where(unit => unit.Clearable).Sum(unit => unit.Bytes.Total) >= reading.Intake;
@@ -514,7 +511,7 @@ public static class HistoryCommand
 
     internal static string? Copies(int count) => Count(count, "teammate's copy", "teammate's copies");
 
-    private static string? Of(long bytes, string what) => bytes > 0 ? $"{Size(bytes)} of {what}" : null;
+    private static string? Of(long bytes, string what) => bytes > 0 ? $"{ByteSizes.Said(bytes)} of {what}" : null;
 
     /// <summary>The parts said, in English: <c>a</c>, <c>a and b</c>, <c>a, b and c</c>; empty for none.</summary>
     internal static string Join(IEnumerable<string?> parts)
@@ -528,15 +525,8 @@ public static class HistoryCommand
         };
     }
 
-    /// <summary>A size as a person reads it, in bytes, KB, MB or GB of 1024.</summary>
-    public static string Size(long bytes) => bytes switch
-    {
-        1 => "1 byte",
-        < 1024 => $"{bytes.ToString(CultureInfo.InvariantCulture)} bytes",
-        < 1024 * 1024 => string.Create(CultureInfo.InvariantCulture, $"{bytes / 1024.0:0.#} KB"),
-        < 1024L * 1024 * 1024 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (1024.0 * 1024):0.#} MB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes / (1024.0 * 1024 * 1024):0.##} GB"),
-    };
+    /// <summary>A size as a person reads it (<see cref="ByteSizes.Said"/>), for the doors above the settings that name it so.</summary>
+    public static string Size(long bytes) => ByteSizes.Said(bytes);
 
     /// <summary>An id as a person writes it, without its <c>#</c>, or null where it is none or a flag.</summary>
     private static string? Id(string word) =>

@@ -46,7 +46,7 @@ public sealed class WorkRequestsNode : BuiltInNode, IObserves
         }
 
         var early = NodeGraphStarts.StartsWithout(standing.ById, standing.Starts, standing.Local, each => each.Id == node.Id);
-        foreach (var landing in standing.Landings.Where(landing => early.Contains(landing.Id)))
+        foreach (var landing in standing.Judged.Where(landing => early.Contains(landing.Id)))
         {
             yield return new WireProblem(GraphRefusal.WorkRequestsLate, null, node.Id,
                 $"node `{node.Id}`: the landing `{landing.Id}` can start before `{node.Id}` is reached, and a `{NodeKinds.WorkRequests}` holds the work before every landing: "

@@ -70,7 +70,7 @@ internal static class DriveUsageSession
               the supervisor's holder's verb (D208), only in the terminal Daoris started for it: what waits, one
               question's fenced print, and the answer or the question left to the owner. No alone path.
           settings  ·  settings notify on|off  ·  settings cooloff <minutes>  ·  settings cap <n>  ·  settings quiet <minutes>
-          settings manifest files|minutes <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
+          settings manifest files|minutes|copy <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
           settings handover …  ·  settings brainstorms …
               this machine's standing choices: whether a park or an end you did not ask for is said, how long an account
               cools, how long a silent session runs before it is looked in on, the cap, a folder's manifest bounds, whether a

@@ -91,7 +91,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `MachineSettings` | `Settings/List/MachineSettings.cs` | Every machine setting declared once: its one key, which the terminal's verb, the route, Ask Daoris's door and the page's words spell, and its field in `driver.json`; the page reads it as `SETTINGS` |
 | `MachineSettingsSaid` | `Settings/MachineSettingsSaid.cs` | Each machine setting said with its value and the verb that changes it, `(the default — …)` or `(set — …)`: every one for `daoris settings` with no verb, one for a setting's verb with no value, and each in `daoris place list` |
 | `QuietSetting` | `Settings/QuietSetting.cs` | `quietMinutes`, the one quiet setting: its bounds as the list declares them, its read, its edit and the watcher's Q |
-| `ManifestSetting`, `ManifestSettingEdit` | `Settings/ManifestSetting.cs`, `Settings/ManifestSettingEdit.cs` | `manifest` in `driver.json`, `{ files, minutes }` each written only when set: the most files (1,000 to 10,000,000) and minutes (1 to 60) a folder's manifest read spends, set one at a time by `daoris settings manifest files\|minutes <n>`, `SET_MANIFEST` (shown by `MachineSettingView.Manifest`) and Settings' one *A folder is too large to follow past* row; the answer's `manifestFiles` and `manifestMinutes` |
+| `ManifestSetting`, `ManifestSettingEdit` | `Settings/ManifestSetting.cs`, `Settings/ManifestSettingEdit.cs` | `manifest` in `driver.json`, `{ files, minutes, copy }` each written only when set: the most files (1,000 to 10,000,000) and minutes (1 to 60) a folder's manifest read spends, and the most megabytes (1 to 1,048,576, 2 GB by default) a folder's followed files may hold to be copied for a session working apart, set one at a time by `daoris settings manifest files\|minutes\|copy <n>` and `SET_MANIFEST` (shown by `MachineSettingView.Manifest`), the first two also by Settings' one *A folder is too large to follow past* row; the answer's `manifestFiles`, `manifestMinutes` and `manifestCopy` |
 | `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigWrites`, `DriverConfigEdits`, `Effective` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands, and the keyed-map edits; its one writer, which reads the file under its lock before every change (a save, a standing choice, the git access and identity keys), writes atomically and drops the file's kept stamp; what a load decided from (the content key, and the staffing's revision where the store's staffing was laid over it, none where that store failed); the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
 | `LinePolicyKey`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | A line policy's reading, writing and sentences (`LinePolicyKey`), and the integrate policy, form and names it reads |
 | `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
@@ -156,7 +156,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
 12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
-    graph's one entry wired into its work: its `kind` (`auto`, `worktree`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
+    graph's one entry wired into its work: its `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
     alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
     into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
     which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
@@ -176,6 +176,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     commit clears it. A folder that is no git repository is worked in place the same way: its turn alone holds it, its start
     reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
     marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
+    Under the step a folder's session works in a copy of its own (`CopyStart`, `FolderCopies`): every followed file copied to
+    `copies/c-<8 hex>` under the place's folder in the home, the copy's own bytes hashed afresh as its return's base (a file that
+    cannot be read refuses the copy) and the records that work there named in its sidecar, so a carry-on goes back into it; its turns
+    are compared with the copy's own last manifest, never the folder's, and its review is the copy against that base. A folder past
+    the copy bound (`daoris settings manifest copy <megabytes>`, 2 GB by default; 20,000 files), too large to follow, or more than half
+    the home's free disk is not copied, and the start is held with words naming the bound and the size and how to go on (raise the
+    bound, or choose a workflow with no isolate step); it never works in the folder itself in a copy's place. The workflow's `return`
+    brings the copy back (the workflows area's return kind).
     In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
     ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
     A git place's first in-place start marks its common git directory with its home, and another home on
@@ -186,7 +194,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
     existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
     of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
-    D258, D260)
+    D258, D260, D265)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
 14. Under the isolate step's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the

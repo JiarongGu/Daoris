@@ -73,6 +73,8 @@ export type DriverState = {
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;
+  /** The most megabytes a folder may hold to be copied for a session its workflow sets apart. */
+  manifestCopy?: number;
   cap?: number;
   /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
   terminal?: string;

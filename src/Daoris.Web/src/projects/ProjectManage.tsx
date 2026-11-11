@@ -6,6 +6,7 @@ import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
 import { FolderExcludesField, parseExcludes } from './FolderExcludesField';
 import { SystemChoiceField, type SystemOffered } from './SystemChoiceField';
+import { chooseInPlace, choosesInPlace, type DepartmentKind } from './inPlace';
 import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
@@ -60,6 +61,19 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
   const [systemName, setSystemName] = useState('');
   const plugins = usePlugins({ enabled: system !== null });
   const filled = Boolean(initialWorkspace);
+  // A repository may be worked in place; a folder and a system always are, since no other shipped workflow runs there.
+  const [inPlace, setInPlace] = useState(false);
+
+  /** Told the department registered: where the add chooses *Work in place*, its set-up of one is applied in the same press. */
+  const added = (name: string, kind: DepartmentKind) => {
+    if (!choosesInPlace(kind, inPlace)) return;
+    chooseInPlace(name).then(
+      (applied) => notify(applied.done
+        ? t('projects.manage.inPlaceChosen', { name })
+        : t('projects.manage.inPlaceRefused', { name, why: applied.message })),
+      failure(notify),
+    );
+  };
 
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
@@ -78,6 +92,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     }, {
       onSuccess: (registered) => {
         notify(t('projects.manage.added', { name, workspace: registered.workspace }));
+        added(registered.repository, 'system');
         onAdded?.(registered.repository);
         onClose();
       },
@@ -111,6 +126,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     }, {
       onSuccess: (registered) => {
         notify(t('projects.manage.added', { name: found.name, workspace: registered.workspace }));
+        added(registered.repository, found.git ? 'git' : 'folder');
         onAdded?.(registered.repository);
         onClose();
       },
@@ -171,6 +187,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
             onSystem={setSystem}
             onName={setSystemName}
           />
+          <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceSystem')}</p>
           {field}
         </div>
       )}
@@ -203,6 +220,15 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && <FolderExcludesField value={excludes} onChange={setExcludes} />}
+
+          {found.git ? (
+            <label className="mt-3 flex items-start gap-2 text-small text-ink-soft">
+              <input type="checkbox" className="mt-0.5" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
+              <span>{t('projects.manage.inPlaceTick')}</span>
+            </label>
+          ) : (
+            <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceFolder')}</p>
+          )}
 
           {field}
         </div>

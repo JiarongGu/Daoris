@@ -40,7 +40,7 @@ public static class DriverChoicesCommand
                daoris place drive|undrive|hold|resume <repository>
                daoris place trees (gone: a workflow's `isolate` step)
                daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
-               daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act
+               daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
@@ -326,20 +326,24 @@ public static class DriverChoicesCommand
                 var value = args.Count == 3 ? Number(args[2]) : double.NaN;
                 var files = which == "files" && IsWhole(value) && ManifestSetting.TakesFiles((long)value) ? (int)value : (int?)null;
                 var minutes = which == "minutes" && IsWhole(value) && ManifestSetting.TakesMinutes((long)value) ? (int)value : (int?)null;
-                if (files is null && minutes is null)
+                var copy = which == "copy" && IsWhole(value) && ManifestSetting.TakesCopy((long)value) ? (int)value : (int?)null;
+                if (files is null && minutes is null && copy is null)
                 {
                     throw new ChoiceWords(which switch
                     {
                         "files" => ManifestSetting.FilesRefusal,
                         "minutes" => ManifestSetting.MinutesRefusal,
+                        "copy" => ManifestSetting.CopyRefusal,
                         _ => ManifestSetting.OneRefusal,
                     });
                 }
 
-                return Change(ChoiceRoutes.Manifest, new JsonObject { [which!] = files ?? minutes }, config => config.WithManifest(files, minutes), () =>
+                return Change(ChoiceRoutes.Manifest, new JsonObject { [which!] = files ?? minutes ?? copy }, config => config.WithManifest(files, minutes, copy), () =>
                 {
                     Say(files is { } count
                         ? $"daoris: a folder's manifest read stops at {count} files; a folder past it is too large to follow, and still works in place."
+                        : copy is { } megabytes
+                        ? $"daoris: a folder of more than {megabytes} MB is not copied for a session working apart; its session works in the folder itself when it is free."
                         : $"daoris: a folder's manifest read stops after {minutes} minutes; a folder past it is too large to follow, and still works in place.");
                     Say($"  Written to {path} — read at the next manifest, so nothing restarts.");
                     return 0;

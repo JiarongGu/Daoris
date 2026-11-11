@@ -422,7 +422,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 **Ask Daoris**
 
 55. Ask Daoris answers from the records, takes the person to a place (`go`), starts work as an ask the intake turns into
-    quests, or proposes a change. A quest's or session's own acts stay in its own conversation: accepting a departure and
+    quests, or proposes a change. A quest it publishes (`daoris:help`, no registry row) is filed in the workspace of the repository
+    it names, every workspace being within its reach (D253 point 3). A quest's or session's own acts stay in its own conversation: accepting a departure and
     handing a landed branch to a landing plugin are the person's own presses, never proposed; a run's Accept has a terminal
     verb (`daoris workflow accept <run> <node>`), still the person's press. (from D161, D193, D233, D253)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
@@ -452,7 +453,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (`quest clear <id> [--failed] --yes`, `ask clear <id> --yes`, `history clear --workspace <name> --yes`, the view of `HISTORY_CLEAR`,
     counted from its first press's list, `HISTORY_PLAN`, and what that list keeps refused in the verb's own words), and bringing
     repositories up to date (`tree sync [--repository|--workspace <name>|--all] --yes`, the running Daoris's `TREES_SYNC` pressed by the
-    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves). A press of Ask Daoris's that
+    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves), a place's set-up applied (`place
+    <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
+    the plan refuses), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
+    its view judged by the verb's own judges, `AskNewCommand.Unfit`, so Ask Daoris makes an ask in full access with no card and in
+    restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
     kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for

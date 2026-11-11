@@ -49,8 +49,8 @@ internal static class MachineSettingsSaid
                 break;
             case "manifest":
                 var bounds = choices.Manifest.Bounds;
-                write.WriteLine($"  manifest   {bounds.Files} files and {(int)bounds.Time.TotalMinutes} minutes before a folder is too large to follow"
-                    + Set(choices.Manifest == ManifestSetting.Unset, "manifest files|minutes <n>", "either"));
+                write.WriteLine($"  manifest   {bounds.Files} files and {(int)bounds.Time.TotalMinutes} minutes before a folder is too large to follow, "
+                    + $"{ByteSizes.Said(bounds.Copy)} before it is too large to copy" + Set(choices.Manifest == ManifestSetting.Unset, "manifest files|minutes|copy <n>", "each"));
                 break;
             default:
                 world.Verbs.FirstOrDefault(each => each.Word == key)?.Listed(choices, world);
