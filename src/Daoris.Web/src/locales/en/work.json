@@ -281,7 +281,7 @@
   "work.options.label": "this conversation's {{name}}",
   "work.steer.placeholder": "tell it something while it works — the conversation shows when it reads it. Enter sends, Shift+Enter makes a newline.",
   "work.steer.now": "Send now",
-  "work.steer.nowTip": "send this now, in the turn it is on. The session keeps going, and keeps what it has done.",
+  "work.steer.nowTip": "send this now, into the turn it is on; if that turn ends before it takes this, this begins the next. The session keeps going, and keeps what it has done.",
   "work.steer.nowStopsTip": "it cannot take words mid-turn, so this stops its turn, keeping what it has done, and goes as the next turn's first words.",
   "work.steer.stopKeeping": "Stop its turn so this goes next…",
   "work.steer.stopKeepingConfirm": "Stop its turn",

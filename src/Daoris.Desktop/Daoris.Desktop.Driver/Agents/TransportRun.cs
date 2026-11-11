@@ -432,7 +432,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             // words went.
             var structured = HarnessCapture.CaptureStructuredAsync(
                 host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
-                preamble, observed: _start.Observed, opened: opening, append: append, named: named, own: _own);
+                preamble, observed: _start.Observed, opened: opening, append: append, named: named, own: _own, echoed: _start.Echoed);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }

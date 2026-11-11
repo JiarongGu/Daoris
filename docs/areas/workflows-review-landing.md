@@ -165,7 +165,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one
     step wired into it and reaches with that step's state; open or unanswered it is pending and never fails. A pull request is
     `merged` once its plugin says completed into the work's line (a squash counts), or unanswered once the keeper proves the line
-    holds it, and `closed` once abandoned. A landing with nothing to deliver passes over the steps after it not yet started, said.
+    holds it, and `closed` once abandoned. A landing with nothing to deliver passes over the steps after it not yet started, said;
+    a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
+    after its step failed), so the run goes on to its monitor and the held list clears.
     A `tidy`, reached only by a `when merged` way, ends each part of the chain off the pass: its commits kept on a recovery ref, its
     branch deleted through the journal with its Undo, `tidied` written when every part ended, else `partly` for the next pass;
     nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`

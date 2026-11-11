@@ -17,6 +17,14 @@ internal sealed class ClaudeNativeDialect : INativeDialect
         message = new { role = "user", content = new[] { new { type = "text", text } } },
     });
 
+    /// <summary>Words sent now as one user line with no <c>priority</c>, echoed under <paramref name="uuid"/> (2.1.322, measured).</summary>
+    public string FrameSteer(string text, string uuid) => JsonSerializer.Serialize(new
+    {
+        type = "user",
+        uuid,
+        message = new { role = "user", content = new[] { new { type = "text", text } } },
+    });
+
     /// <summary>
     /// The turn's stop as a <c>control_request</c> of subtype <c>interrupt</c>: the binary answers with a <c>control_response</c>, the
     /// turn ends <c>aborted_streaming</c> or <c>aborted_tools</c>, and the session takes the next turn (stream-json evidence, § Stopping a

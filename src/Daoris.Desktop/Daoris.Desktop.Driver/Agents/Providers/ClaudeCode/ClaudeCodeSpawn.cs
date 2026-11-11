@@ -67,7 +67,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// <summary>
     /// A conversation on its structured wire: each message a <c>stream-json</c> line on stdin, one turn each. Its posture is a
     /// driven session's, for the same reason, or its mode that asks nothing where the person's own setting names it.
-    /// One that goes on resumes its own conversation by the id kept for its record, never <c>--continue</c>.
+    /// One that goes on resumes its own conversation by the id kept for its record, never <c>--continue</c>; each line it takes is echoed.
     /// </summary>
     public ProcessRecipe Chat(SpawnRequest request)
     {
@@ -75,7 +75,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         return ProcessRecipe.Of(
             resolved,
             [
-                "-p", "--input-format", "stream-json", "--permission-mode", Mode(request),
+                "-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", Mode(request),
                 .. request.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : Array.Empty<string>(),
                 .. request.Asked?.NativeArguments(resolved) ?? [],
                 .. StreamJsonOut,

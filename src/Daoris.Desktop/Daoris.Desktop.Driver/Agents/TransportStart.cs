@@ -93,6 +93,9 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// </summary>
     public Action<SessionEvent>? Observed { get; init; }
 
+    /// <summary>Told the uuid of each line the native harness echoed where it took it, in the wire's order beside <see cref="Observed"/>.</summary>
+    public Action<string>? Echoed { get; init; }
+
     /// <summary>The protocol door's session over the process: what its open is handed. Null on a native door.</summary>
     public TransportProtocol? Protocol { get; init; }
 }

@@ -285,6 +285,10 @@ public static class NodeLifecycle
             rows.Add(new(from, NodeStates.Skipped, daoris, "a producer feeding its input was skipped, so it carries no value: it is skipped with it (WireSkips)"));
         }
 
+        // A delivery step that failed, its branch then held by the line (its pull request merged another way), has nothing left to
+        // deliver: the same path skip (NothingToDeliver), which only that rule makes.
+        rows.Add(new(NodeStates.Failed, NodeStates.Skipped, daoris, "a failed delivery step whose branch the line holds: nothing left to deliver (NothingToDeliver)"));
+
         // An opinion's gate passes its attempt over where nothing is asked of it, as the run reads it; never the person's.
         rows.Add(new(NodeStates.Active, NodeStates.Skipped, authority,
             "its kind's record passes its attempt over for this graph and run, where nothing is asked of it (NodeAuthority.SkipBy)"));
