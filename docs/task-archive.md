@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## An accepted run's landing judged at once, however many runs there are (2026-11-11)
+
+> **The landing judgement's starvation** (driver): Outcome: a pass judges at most 32 runs; past that it took them in id order, so with about 600 open runs in the work workspace each came round once in some 19 passes, and a person's land press — which asks for a pass assuming it judges every run — was refused "has not judged … yet" again and again (introduced by 34fa9cde69; FIX-LOG). Now a press's ask names its run and the pass judges it first, then held events' runs and runs the pass's own answers changed (an Accept it applied), then a rotation that keeps at least a quarter for unchanged runs; the press is answered as soon as its run is judged, and a refusal says the landing step's state and commit, or that no pass came within 20 s. Found on the owner's own work in the installed copy. Proof: `AskedRunTurnTests` (70 runs; the asked run skipped before, seen failing first), `GraphPressTests`.
+
+---
+
 ## The Azure DevOps plugin carries a change through merge and release (2026-11-11)
 
 > **The Azure DevOps example plugin, 2.1.0** (examples, docs): Outcome: the `pull-request` step sets auto-complete when its options say `autoComplete: true` (the token's identity from `connectionData`, `completionOptions` with the merge strategy, source-branch deletion, work items and a message), off by default, its evidence saying set, not set with Azure DevOps's words, or off; a refusal by policy or permission never fails the step; a new `release` step finds the build of the merged commit on the target branch, then the classic release made from it or the YAML run's stages, and watches each to its end (`stage-failed`, `no-release`, `timeout`), with `deploy: <stage>` starting a classic stage where no trigger does, approvals deciding; the REST client in `azure.mjs` and the stand-in shared (`stand-in.mjs`); the README names the token's scopes (plugins rule 17a). Found because the installed copy's workflow asked for auto-complete this plugin ignored. Proof: 28 plugin tests against the loopback stand-in (auto-complete set, off, refused by policy and permission; release watched, failed, pending approval, deploy, no build, no release, YAML stages, timeout), the C# offer and manifest tests.
