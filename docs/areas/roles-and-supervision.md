@@ -476,8 +476,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     kept there too, marked asked, its outcome its card's state: waiting, allowed, refused, changed or unanswered; the newest 100, a
     restart empties it) and told to the windows, which list it in *Notifications* beside the steward's line, the asked apart
     under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A terminal's press under the
-    terminal's tier `act` (desktop-app 15) is kept and listed the same way, marked a terminal's, under its own line and with no
-    conversation to open. A proof that does not hold, a nonce used already or a session
+    terminal's tier `act` is kept apart, in the tier's own record (desktop-app 15). A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
     Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253, D271)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
