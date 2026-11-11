@@ -162,4 +162,24 @@ public sealed class PlaceLeaseTests : IAsyncLifetime
 
         Assert.Equal(SessionOpenRefusal.None, copy.Refusal);
     }
+
+    [Fact]
+    public async Task A_finished_record_with_a_mark_holds_the_place_only_while_it_waits_on_its_own_helper()
+    {
+        var first = await Running("First");
+        var done = await _ledger.AdvanceAsync(first.Id, "completed", null, null, null, Now.AddMinutes(1), holdsPlace: ["a.txt"]);
+        Assert.Equal(SessionAdvanceRefusal.None, done.Refusal);
+
+        Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenChatAsync("Reports", "stub", Now.AddMinutes(2))).Refusal);
+    }
+
+    [Fact]
+    public async Task A_record_that_ended_waiting_on_its_own_helper_with_a_mark_keeps_the_place()
+    {
+        var first = await Running("First");
+        await _ledger.AdvanceAsync(
+            first.Id, "completed", "It asked a helper.", null, null, Now.AddMinutes(1), holdsPlace: ["a.txt"], noteParts: """[{"code":"ended.awaits-helper"}]""");
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, (await _ledger.OpenChatAsync("Reports", "stub", Now.AddMinutes(2))).Refusal);
+    }
 }
