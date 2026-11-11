@@ -321,6 +321,7 @@ public static class WorkflowGraphRuns
 
     private static string? WordsOf(NodeDeclaration node, NodeStatus status) =>
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
+        : node.Kind == NodeKinds.Land && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
         : status.State == NodeStates.Active ? status.Holds
         : null;

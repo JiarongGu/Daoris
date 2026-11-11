@@ -50,7 +50,7 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>Whether that failure is declared transient: only such a failure retries without the person.</summary>
     public bool Transient { get; init; }
 
-    /// <summary>The person's words: a rejection's reason, a skip's, a stop's where given.</summary>
+    /// <summary>Words kept with an outcome: its proof, or the person's reason.</summary>
     public string? Words { get; init; }
 
     /// <summary>When the newest attempt started, as the move that started it clocked it; null on a node never started, or started unclocked.</summary>
