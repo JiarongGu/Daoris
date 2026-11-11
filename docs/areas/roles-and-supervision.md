@@ -445,13 +445,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     is the one way to ask the person: a route with a view (`PressViews`, one unit per route) judges the press at the ask with the
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
-    archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
+    archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`; refused at the ask where the service's own `deletable` says work stands on it) and the
     pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
     used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), a repository's drive and hold
     switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
-    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
+    held quest (`quest retry`), a git identity's use (`git use`, every form pressed, judged as the route reads it: exact `own`, a repository's checkout, remote and the remote's host) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
     (`settings notify|cap|cooloff|quiet|keep|terminal`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
     the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
@@ -463,10 +463,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (`quest clear <id> [--failed] --yes`, `ask clear <id> --yes`, `history clear --workspace <name> --yes`, the view of `HISTORY_CLEAR`,
     counted from its first press's list, `HISTORY_PLAN`, and what that list keeps refused in the verb's own words), and bringing
     repositories up to date (`tree sync [--repository|--workspace <name>|--all] --yes`, the running Daoris's `TREES_SYNC` pressed by the
-    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves), a place's set-up applied (`place
+    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves, and wording its scope as the route takes it: the repositories holding a branch of Daoris's, every checkout with `--all`), a place's set-up applied (`place
     <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
-    the plan refuses), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
-    its view judged by the verb's own judges, `AskNewCommand.Unfit`, so Ask Daoris makes an ask in full access with no card and in
+    the plan refuses and an acceptance it does not offer), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
+    its view judged by the verb's own judges, `AskNewCommand.Unfit`, and a `--file` this machine lacks, so Ask Daoris makes an ask in full access with no card and in
     restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
