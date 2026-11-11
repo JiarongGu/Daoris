@@ -15,7 +15,7 @@ vi.mock('@shenora/react', async (original) => ({
 }));
 
 import type { PlaceAsk } from '../../agents/setup/placePlan';
-import { usePlaceApply, usePlacePlan } from './setup';
+import { chooseInPlace, usePlaceApply, usePlacePlan } from './setup';
 
 const ASK: PlaceAsk = { repositories: ['engine'], preset: 'pull-request', opinion: false, look: true, adoption: true, builds: 'service', drive: true };
 
@@ -47,5 +47,37 @@ describe("a place's plan and apply", () => {
       payload: { ...ASK, digest, accept: [{ repository: 'engine', purpose: 'integration' }] },
     }));
     expect([applied.done, applied.refused]).toEqual([false, 'moved']);
+  });
+});
+
+describe('the add choosing Work in place', () => {
+  afterEach(() => invoke.mockReset());
+
+  const IN_PLACE_ASK = { repositories: ['reports'], preset: 'in-place', opinion: false, look: false, adoption: false, drive: false };
+
+  it('plans a set-up of one and applies that plan by its digest', async () => {
+    invoke
+      .mockResolvedValueOnce({ refusals: [], digest: 'd'.repeat(64) })
+      .mockResolvedValueOnce({ done: true, message: 'Applied.', digest: 'd'.repeat(64), operations: [] });
+
+    const applied = await chooseInPlace('reports');
+
+    expect(applied.done).toBe(true);
+    expect((invoke.mock.calls as unknown[][]).map(([, route, sent]) => [route, (sent as { payload: unknown }).payload])).toEqual([
+      ['PLACE_PLAN', IN_PLACE_ASK],
+      ['PLACE_APPLY', { ...IN_PLACE_ASK, digest: 'd'.repeat(64), accept: [] }],
+    ]);
+  });
+
+  it('applies nothing where the plan refuses, and says why', async () => {
+    invoke.mockResolvedValueOnce({
+      refusals: [{ repository: 'reports', part: 'delivery', code: 'place-kind', sentence: '`reports` cannot follow it.' }],
+      digest: 'e'.repeat(64),
+    });
+
+    const applied = await chooseInPlace('reports');
+
+    expect([applied.done, applied.refused, applied.message]).toEqual([false, 'place-kind', '`reports` cannot follow it.']);
+    expect(invoke).toHaveBeenCalledTimes(1);
   });
 });
