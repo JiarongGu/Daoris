@@ -83,10 +83,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Assert.Equal("there is no ask `#zz000000` on this machine.", Refusal(Of("go", "go", "quests") with { Item = "ask:zz000000" }));
     }
 
-    /// <summary>
-    /// The circle is read from the conversation's record: Ask Daoris's, its room's workspace, so one going on in <c>help</c>, where
-    /// it started before each workspace had a room, and <c>default</c>'s, have none; any other record has none.
-    /// </summary>
+    /// <summary>The circle is read from the conversation's record: Ask Daoris's is its room's workspace, so one going on in <c>help</c>, and <c>default</c>'s, have none.</summary>
     [Fact]
     public void The_circle_is_the_record_s_room_s_workspace()
     {

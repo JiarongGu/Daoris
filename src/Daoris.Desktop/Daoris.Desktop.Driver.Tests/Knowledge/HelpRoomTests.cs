@@ -174,7 +174,6 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
-        // A workflow's version is pressed from a draft the room keeps: its one write, and no proposal.
         Assert.DoesNotContain("mcp__daoris-knowledge__workflow_propose", allowed);
         Assert.Contains("Edit(./drafts/**)", allowed);
         Assert.True(Directory.Exists(Path.Combine(room, "drafts")));

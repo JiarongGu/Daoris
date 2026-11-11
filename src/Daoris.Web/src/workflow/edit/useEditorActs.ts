@@ -1,27 +1,23 @@
 import type * as React from 'react';
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect } from 'react';
 import { isComposing } from '../../lib/composing';
-import { fillAskDaoris } from '../../help/askFill';
 import { registerOpenDraft } from '../../help/openDraft';
-import { sentence } from '../../locales/format';
 import { isTextField } from '../../menus/press';
 import { type ChartEdit } from '../chart/FlowChart';
 import { isHoldKind } from '../graphFlow';
 import { type GraphProblem, type WorkflowPaletteAnswer, type WorkflowSaveAnswer, type WorkflowSaveAsk } from './answers';
 import { draftFlow } from './EditCanvas';
-import { carriedSaid, plain, rowSaid, stepTitle } from './editWords';
+import { carriedSaid, rowSaid, stepTitle } from './editWords';
 import { gitTail } from './gitTail';
 import { canInsertOn, type Carried, type Clip, commit, connect, copySteps, duplicateStep, type GraphDraft, type History, type InsertAt, insertStep, joinOf, movePlan, pasteSteps, redo, removeStep, type StepChoice, targetsOf, undo, type WayRowKey, type GraphJson } from './graphDraft';
 import { type Confirming } from './Inspector';
-import { type ChangeRow, changeSaid, changeStep, MARK_SIGN, withChanges } from './ChangeList';
-import { closureOf, type Decided, decide, everyNamed, leftWith, needsOf, type ProposalShown, staleOf, take as takeInto, UNDECIDED, unionOf } from './proposalTake';
 import { withRefusals } from './refusalMarks';
 import { type RolePlace } from './StepRole';
-import { HOLDS, PICKABLE, RETURN, type Settling, type Choosing, type Said, QUIET } from './editorTypes';
+import { HOLDS, PICKABLE, RETURN, type Choosing, type Said, QUIET } from './editorTypes';
 import { type TFunction, type i18n } from 'i18next';
 import { type Snapshot, type Target } from './WorkflowEditor';
 
-export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, setSaid, setConfirming, history, setChoosing, setChosen, setAlso, wide, setDrawer, returnTo, setPicker, focusOn, selected, picker, choosing, also, setClip, clip, menu, judged, judgedOf, fingerprint, judgeFailed, judging, settled, ask, place, target, graph, saveId, route, pipeline, setHoldsOpen, offered, onSettleProposal, onDismissProposal, holdsOpen }: {
+export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, setSaid, setConfirming, history, setChoosing, setChosen, setAlso, wide, setDrawer, returnTo, setPicker, focusOn, selected, picker, choosing, also, setClip, clip, menu, judged, judgedOf, fingerprint, judgeFailed, judging, settled, ask, place, target, graph, saveId, route, pipeline, setHoldsOpen, holdsOpen }: {
   draft: GraphDraft;
   t: TFunction<"translation", undefined>;
   i18n: i18n;
@@ -60,9 +56,6 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   route: string | null;
   pipeline: "development" | "verification" | null;
   setHoldsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  offered: ProposalShown | null;
-  onSettleProposal: ((id: string, taken: readonly string[], left: readonly string[]) => Promise<unknown>) | undefined;
-  onDismissProposal: ((id: string) => Promise<unknown>) | undefined;
   holdsOpen: boolean;
 }) {
   const nodeOf = (id: string) => draft.nodes.find((node) => node.id === id);
@@ -314,110 +307,10 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   // A refusal inside the holds opens them and they stay open: the judgement goes invalid on the next edit, and the drawing must not jump.
   useEffect(() => { if (holdRefused) setHoldsOpen(true); }, [holdRefused]);
 
-  // Ask Daoris's proposal: drawn on the chart beside the draft, taken whole or change by change as one step of
-  // history each, its record undone with it, and settled by the one press naming every change taken or left. Opening it settles nothing.
-  const [settling, setSettling] = useState<Readonly<Record<string, Settling>>>({});
-  const [setAside, setSetAside] = useState<readonly string[]>([]);
-  const proposal = offered && !setAside.includes(offered.id) ? offered : null;
-  const needs = useMemo(() => (proposal ? needsOf(proposal) : new Map<string, string[]>()), [proposal]);
-  const decided = (proposal ? history.present.decided?.[proposal.id] : undefined) ?? UNDECIDED;
-  const stale = useMemo(() => (proposal ? staleOf(draft, proposal, decided) : new Map<string, string>()), [draft, proposal, decided]);
-  const named = (id: string) => decided.taken.includes(id) || decided.left.includes(id);
-  const undecided = proposal ? proposal.changes.map((change) => change.id).filter((id) => !named(id)) : [];
-  const open = undecided.filter((id) => !stale.has(id));
-  const union = proposal ? unionOf(draft, proposal, open) : null;
-  const changeWords = (id: string) => {
-    const change = proposal?.changes.find((each) => each.id === id);
-    return proposal && change ? plain(changeSaid(t, i18n, palette, proposal, change)) : id;
-  };
-  const wordsOf = (ids: readonly string[]) => ids.map(changeWords).join(t('workflow.listJoin'));
-  /** A take or a leave: the draft and the proposal's record as one step of history. */
-  const record = (next: Decided, nextDraft: GraphDraft, words: string) => {
-    if (!proposal) return;
-    const id = proposal.id;
-    setHistory((was) => commit(was, { draft: nextDraft, said: words, decided: { ...was.present.decided, [id]: next } }));
-    setHeard(words);
-    setSaid(QUIET);
-    setConfirming(null);
-  };
-  const takeChanges = (ids: readonly string[]) => {
-    if (!proposal || ids.length === 0) return;
-    const result = takeInto(draft, proposal, ids, decided);
-    if (!result.ok) {
-      setHeard(t('workflow.edit.proposal.heard.refused', { change: changeWords(result.at) }));
-      return;
-    }
-    // A take makes a new draft, so the judgement it had goes at once and the head says it is judged again.
-    record(decide(decided, { taken: result.taken }), result.draft, t('workflow.edit.proposal.heard.took', { changes: wordsOf(result.taken) }));
-  };
-  const leaveChanges = (ids: readonly string[]) => {
-    if (!proposal) return;
-    const left = [...new Set(ids.flatMap((id) => leftWith(proposal, id, needs)))].filter((id) => !named(id));
-    if (left.length > 0) record(decide(decided, { left }), draft, t('workflow.edit.proposal.heard.left', { changes: wordsOf(left) }));
-  };
-  // The press naming every change, once each proposal: told again only after it failed, at the next change of its record.
-  const press = useRef(onSettleProposal);
-  press.current = onSettleProposal;
-  const pressed = useRef(new Map<string, Settling['state']>());
-  const complete = proposal !== null && everyNamed(proposal, decided);
-  useEffect(() => {
-    if (!complete || !proposal || !press.current) return;
-    const id = proposal.id;
-    if (pressed.current.get(id) === 'pending' || pressed.current.get(id) === 'told') return;
-    pressed.current.set(id, 'pending');
-    setSettling((was) => ({ ...was, [id]: { state: 'pending' } }));
-    press.current(id, decided.taken, decided.left).then(
-      () => {
-        pressed.current.set(id, 'told');
-        setSettling((was) => ({ ...was, [id]: { state: 'told' } }));
-        setHeard(t('workflow.edit.proposal.settled'));
-      },
-      (refused: unknown) => {
-        pressed.current.set(id, 'failed');
-        setSettling((was) => ({ ...was, [id]: { state: 'failed', why: sentence(refused) } }));
-      },
-    );
-    // Pressed as the record becomes whole: its changes' identity is the record's.
-  }, [complete, proposal?.id, decided]);
-  const dismiss = () => {
-    if (!proposal || !onDismissProposal) return;
-    const id = proposal.id;
-    setSettling((was) => ({ ...was, [id]: { state: 'pending' } }));
-    onDismissProposal(id).then(
-      () => {
-        setSetAside((was) => [...was, id]);
-        setHeard(t('workflow.edit.proposal.heard.dismissed'));
-      },
-      (refused: unknown) => setSettling((was) => ({ ...was, [id]: { state: 'failed', why: sentence(refused) } })),
-    );
-  };
-  // *Ask again* fills Ask Daoris in with the changes the draft no longer fits, for the person to send with the draft as it is now.
-  const askAgain = () => {
-    if (!proposal) return;
-    const which = proposal.base === null ? proposal.changes.map((change) => change.id) : undecided.filter((id) => stale.has(id));
-    fillAskDaoris(t('workflow.edit.proposal.askAgain', { changes: which.map(changeWords).join('; ') }));
-  };
-  const rows: ChangeRow[] = proposal ? proposal.changes.map((change) => {
-    const at = stale.get(change.id);
-    const step = changeStep(proposal, change);
-    const drawn = step === null ? undefined : union?.draft.nodes.find((node) => node.id === step);
-    return {
-      id: change.id,
-      said: changeSaid(t, i18n, palette, proposal, change),
-      mark: change.change,
-      step: drawn ? { id: drawn.id, title: stepTitle(t, i18n, palette, drawn) } : null,
-      state: decided.taken.includes(change.id) ? 'taken' : decided.left.includes(change.id) ? 'left' : at !== undefined ? 'stale' : 'open',
-      with: closureOf(proposal, change.id, needs).filter((id) => id !== change.id && !decided.taken.includes(id)).map(changeWords),
-      staleAt: at !== undefined && at !== change.id ? changeWords(at) : null,
-    };
-  }) : [];
-  const busy = proposal !== null && settling[proposal.id]?.state === 'pending';
-
-  const drawnDraft = union?.draft ?? draft;
-  const flow = drawnDraft.nodes.length > 0
-    ? withRefusals(t, i18n, withChanges(t, draftFlow(
-      t, i18n, palette, drawnDraft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) }, select,
-    ), union), problems)
+  const flow = draft.nodes.length > 0
+    ? withRefusals(t, i18n, draftFlow(
+      t, i18n, palette, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) }, select,
+    ), problems)
     : null;
 
   const edit: ChartEdit = {
@@ -436,7 +329,6 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
     },
     insertAt: (node) => {
       const none = /^(.+):none:(.+)$/.exec(node.id);
-      // A ◎ of a step the proposal would add is no place in the draft yet.
       if (!none || !nodeOf(none[1]!)) return null;
       return {
         label: t('workflow.edit.insert.at', { from: titleOf(none[1]!), outcome: none[2]! }),
@@ -446,10 +338,6 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
     onPort: (from, outcome) => choose(from, `outcome:${outcome}`),
     onGround: () => { if (choosing) openPicker({ from: choosing.from, row: choosing.row }); },
     pick: choosing ? { key: `${choosing.from}\n${choosing.row}`, can: (id) => takerAt(id) !== null, onPick: take, onCancel: giveUp } : null,
-    wayMark: (edge) => {
-      const mark = union?.ways.get(edge);
-      return mark ? { sign: MARK_SIGN[mark], word: t(`workflow.edit.proposal.mark.${mark}`) } : null;
-    },
   };
-  return { wireOf, titleOf, change, judgement, nodeOf, carried, words, choose, openPicker, duplicate, copy, remove, rolePlace, atStep, atWire, onKeyDown, undoChange, redoChange, problems, stepOf, select, unjudged, proposal, decided, undecided, settling, open, busy, takeChanges, leaveChanges, dismiss, askAgain, rows, flow, edit, pickedStep, closePicker, closeDrawer };
+  return { wireOf, titleOf, change, judgement, nodeOf, carried, words, choose, openPicker, duplicate, copy, remove, rolePlace, atStep, atWire, onKeyDown, undoChange, redoChange, problems, stepOf, select, unjudged, flow, edit, pickedStep, closePicker, closeDrawer };
 }

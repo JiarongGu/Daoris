@@ -56,19 +56,13 @@ public static class HelpRoom
     /// <summary>Daoris's own verb in the forms the harness matches: unasked, since each change it presses waits on the person's card.</summary>
     public static readonly IReadOnlyList<string> Verb = ["Bash(daoris:*)", "PowerShell(daoris:*)"];
 
-    /// <summary>
-    /// The folder of the room where a workflow's drafts are kept: the graph a <c>daoris workflow apply</c> press names, which changes
-    /// nothing until the person's yes on its card.
-    /// </summary>
+    /// <summary>The room's folder for a workflow's drafts: the graph a <c>daoris workflow apply</c> press names, which changes nothing until the person's yes.</summary>
     public const string Drafts = "drafts";
 
     /// <summary>The one write the room allows: a file under <see cref="Drafts"/>.</summary>
     public const string DraftsRule = $"Edit(./{Drafts}/**)";
 
-    /// <summary>
-    /// The tools the room allows: reading the family, Daoris's own verb, and writing a workflow's draft in <see cref="Drafts"/>; nothing
-    /// that changes the machine without the person.
-    /// </summary>
+    /// <summary>The tools the room allows: reading the family, Daoris's own verb and writing a draft in <see cref="Drafts"/>; nothing else that changes the machine.</summary>
     public static readonly IReadOnlyList<string> Allowed =
     [
         .. Verb,

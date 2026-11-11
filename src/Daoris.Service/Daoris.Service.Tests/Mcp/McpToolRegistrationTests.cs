@@ -7,10 +7,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>
-/// The tools the connector's host advertises, through the SDK's own listing: the names are the wire, which the driver's
-/// connector and the family rehearsal call by name, so none is lost or offered twice.
-/// </summary>
+/// <summary>The tools the connector's host advertises, through the SDK's own listing: the names are the wire, called by name, so none is lost or offered twice.</summary>
 public sealed class McpToolRegistrationTests : McpToolsFixture
 {
     private static readonly string[] Advertised =

@@ -37,8 +37,6 @@ export type ChartEdit = {
   onPort?: (node: string, outcome: string) => void;
   onGround?: () => void;
   pick?: FlowPick | null;
-  /** How a proposal marks a way: new or to remove, its sign and its word, drawn in the way's chip; null where it marks none. */
-  wayMark?: (edge: string) => { sign: string; word: string } | null;
 };
 
 function drawNode(context: NodeContext, edit: ChartEdit | undefined) {
@@ -50,9 +48,8 @@ function drawNode(context: NodeContext, edit: ChartEdit | undefined) {
   return <StepNode context={context} step={step} edit={edit} />;
 }
 
-function drawLabel({ style, text, count, edge }: LabelContext, edit: ChartEdit | undefined) {
-  const mark = edge && edit?.wayMark ? edit.wayMark(edge.id) : null;
-  return <EdgeChip style={style} text={text} count={count} problem={edge?.problem} {...(mark ? { mark } : {})} />;
+function drawLabel({ style, text, count, edge }: LabelContext) {
+  return <EdgeChip style={style} text={text} count={count} problem={edge?.problem} />;
 }
 
 /**
@@ -105,7 +102,7 @@ export function FlowChart({ edit, canvas, ...props }: Omit<FlowCanvasProps, 'ren
     <FlowCanvas
       {...props}
       renderNode={(context) => drawNode(context, acting)}
-      renderLabel={(context) => drawLabel(context, edit)}
+      renderLabel={(context) => drawLabel(context)}
       {...(offerOn ? { renderInsert: (edge: FlowEdge) => { const offer = offerOn(edge); return offer ? <GapInsert offer={offer} /> : null; } } : {})}
       pick={edit?.pick ?? null}
       viewport={canvas ? workflowViewport(t, canvas) : 'none'}

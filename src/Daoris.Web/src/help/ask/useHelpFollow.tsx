@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { sentence } from '../../locales/format';
 import { useEveryAsk, useEveryQuest, useEverySession, useStandingsMark } from '../../data/queries';
 import { type HelpSettled, useHelpProposals, useHelpPublished, useSettleHelp } from '../../bridge/shell';
-import { draftDoor, placeDoor } from '../places';
-import { type HelpProposal, ProposalCard } from '../ProposalCard';
+import { placeDoor } from '../places';
+import { ProposalCard } from '../ProposalCard';
 import { publishedCounts, publishedItems } from '../published/published';
 import { PublishedList } from '../published/PublishedList';
 import { type StarterDoor } from '../starters';
@@ -24,12 +24,10 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   const settle = useSettleHelp();
   const cards = proposals.data ?? [];
   // What an Apply did beyond the driver's sentence: a go opens its place through the starters' door.
-  const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
+  const applied = (answer: HelpSettled) => {
     // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
-    // A draft card's go is the place's Workflow, which the page opens with its editor on the draft the card is against.
-    const draft = proposal?.kind === 'workflow' && proposal.workflow && answer.go ? draftDoor(proposal.workflow, answer.go) : null;
-    const door = draft ?? (answer.go ? placeDoor(answer.go) : null);
+    const door = answer.go ? placeDoor(answer.go) : null;
     if (door) onGo?.(door);
   };
   // A go card's sentence says where its quest, ask or session stands, so the plan its Apply judges
@@ -82,7 +80,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
           key={proposal.id}
           proposal={proposal}
           pending={settle.isPending}
-          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: (answer) => applied(answer, proposal), onError: (error) => setRefusal(sentence(error)) })}
+          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: applied, onError: (error) => setRefusal(sentence(error)) })}
           onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
         />
       ))}

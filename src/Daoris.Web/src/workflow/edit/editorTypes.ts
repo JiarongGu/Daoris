@@ -20,9 +20,6 @@ export const PICKABLE = ':pickable';
 /** The focus asked back for the control the picker is opened from. */
 export const RETURN = ':return';
 
-/** The settling press of a proposal: on its way, answered, or refused in the driver's words. */
-export type Settling = { state: 'pending' | 'told' } | { state: 'failed'; why: string };
-
 /** A way being chosen on the chart: the step and the row it leaves by. */
 export type Choosing = { from: string; row: WayRowKey };
 

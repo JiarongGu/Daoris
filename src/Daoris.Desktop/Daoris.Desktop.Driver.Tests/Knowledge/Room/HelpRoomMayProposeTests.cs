@@ -5,10 +5,7 @@ namespace Daoris.Driver.Tests;
 /// <summary>The room's <see cref="HelpRoomMayPropose"/>: each kind's tool with its route's rule, and each card's buttons.</summary>
 public sealed class HelpRoomMayProposeTests
 {
-    /// <summary>
-    /// The room gives each card's buttons as the card labels them, in both languages, so the helper never
-    /// tells the person to *press Apply* on a card whose button reads *go there*.
-    /// </summary>
+    /// <summary>The room gives each card's buttons as the card labels them, in both languages, so the helper never tells the person to *press Apply* on a card that reads *go there*.</summary>
     [Fact]
     public void The_room_names_each_cards_own_buttons()
     {

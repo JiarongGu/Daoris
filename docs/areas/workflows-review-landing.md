@@ -119,8 +119,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and no `claimed`, `opinion`, `look`, `go-ahead`, `land`, `review`, `integrate`, `work.requests` or `quest.close`. (from D192)
 12. A change that lowers the person's part applies only by the person's press; an agent's stays a proposal. Editing the home
     default's copy asks the consent of every place that follows it. (from D157, D192, D227)
-13. Ask Daoris proposes against the open draft's fingerprint (`workflow_propose`'s `draft`). Its proposal is drawn as a diff. It
-    never saves, chooses or runs a workflow. (from D223)
+13. Ask Daoris is told the draft open in the editor with the person's next words and writes its change as a graph in the room's
+    `drafts/` folder; it saves a version only by pressing `daoris workflow apply <id> drafts/<id>.json --base <version>`, a press the
+    person confirms on a card that shows the graph as the editor draws it and its changes. It proposes no workflow and never chooses
+    or runs one. (from D223, D261)
 14. The shipped defaults hold no `quest.close`: the agent's done closes the quest, and the flow's end is the work's. (from D190)
 
 **Runs**

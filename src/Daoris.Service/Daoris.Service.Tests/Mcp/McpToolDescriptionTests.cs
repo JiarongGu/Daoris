@@ -59,10 +59,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("at most 300", text);
     }
 
-    /// <summary>
-    /// A server over one checkout says what it reads and that it matches words, in the words a
-    /// session reads before it searches the files: the checkout's name, the folders it is given, the tier.
-    /// </summary>
+    /// <summary>A server over one checkout says what it reads and that it matches words, in the words a session reads before it searches the files.</summary>
     [Fact]
     public void A_server_over_one_checkout_says_what_it_reads_and_which_tier_answers()
     {
@@ -82,10 +79,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotMatch(DecisionNumber(), lexical);
     }
 
-    /// <summary>
-    /// Removing a record is a person's act, so no connector tool clears history, and none is handed the
-    /// desk that would. Ask Daoris presses the clear, as it presses a delete.
-    /// </summary>
+    /// <summary>Removing a record is a person's act, so no connector tool clears history, and none is handed the desk that would.</summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
     {
@@ -220,10 +214,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotContain("D199", answer);
     }
 
-    /// <summary>
-    /// What a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and
-    /// that it does not end the turn.
-    /// </summary>
+    /// <summary>What a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and that it does not end the turn.</summary>
     [Fact]
     public void The_hand_over_tool_says_its_note_is_a_claim_and_the_rule_is_the_persons()
     {

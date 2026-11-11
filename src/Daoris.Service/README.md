@@ -537,7 +537,7 @@ did not start*. A malformed rule, a scope with no name or an empty reason is ref
 written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers two tools. `go_propose` is a place to open, changing nothing: a view, a Settings domain, or a part
+offers one tool. `go_propose` is a place to open, changing nothing: a view, a Settings domain, or a part
 such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; the front door's
 way to take a person to the place (D161); one quest or ask on Quests as its `item`, which the driver judges
 against the machine's records, or one session on Sessions, judged against the machine's own;
@@ -547,7 +547,8 @@ other change is a press of Daoris's verb, never proposed (D261): a new ask with 
 --apply`, an agent's update or pin and an account's use, order and cool-off with `daoris agent`, a plugin's add, update, switch and approval with
 `daoris plugin` and `daoris plugins approve|withdraw`, bringing repositories up to date with `daoris tree sync --yes`, sessions archived,
 unarchived or deleted with `daoris sessions`, one ask's or quest's work paused or resumed with `daoris ask|quest`, and a clear of finished
-history with `daoris quest|ask clear` and `daoris history clear`. The other tool is WORKFLOW1h-a's `workflow_propose` (a whole version of a workflow for a repository or workspace, new or on a base, and optionally its choice; its `graph` is written as nested JSON (since WORKFLOWCLEAN1 1b a list of `steps` is refused, a development pipeline's graph is proposed, and a new workflow whose graph lands is one), and `changes`, `kind` and `import` are refused as not proposed yet; since WORKFLOW1h-name a new workflow carries an optional `name`, the person's words, at most 60 characters, and an edit's is refused because an edit keeps its name; since FABRIC-PIPELINE1i a `route` — `default`, `landed` or `kind:<id>` — which with neither chooses a saved workflow alone; since FLOWCHART2e a `draft`, the fingerprint of the draft open in the person's editor, with the whole changed `graph` of either pipeline, which saves and chooses nothing, so steps, a base, `choose`, a route and a name beside it are refused). Each writes
+history with `daoris quest|ask clear` and `daoris history clear`, and a workflow's version with `daoris workflow apply <id>
+drafts/<id>.json --base <version>` on a graph written in the room's `drafts/` folder. It writes
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before

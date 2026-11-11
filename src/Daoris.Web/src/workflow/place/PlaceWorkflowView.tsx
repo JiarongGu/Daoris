@@ -2,9 +2,8 @@ import { type ReactNode, useContext, useEffect, useLayoutEffect, useRef, useStat
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { PlaceAside } from '../../agents/setup/placeAside';
-import type { PlaceEdit, PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
+import type { PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
 import { fillAskDaoris, useCanFillAsk } from '../../help/askFill';
-import { toldGraph } from '../../help/openDraft';
 import { cn } from '../../lib/cn';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
@@ -130,12 +129,6 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   landing?: (hand: LandingHand) => ReactNode;
   /** Opens another section of the place page: a step's standing answer is Sessions'. */
   onOpenSection?: (section: 'sessions') => void;
-  /**
-   * The editor asked open on a draft: a conversation's draft card's *Open in the editor*. The draft the conversation is told
-   * is the editor's start, so the proposal's changes can be taken; the editor is the page's to open once, and `onOpened` says it has.
-   */
-  opens?: PlaceEdit | null;
-  onOpened?: () => void;
   /** The editor's draft the page kept when this section last unmounted, and where it keeps the draft as the editor reports it. */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
@@ -225,7 +218,7 @@ function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null })
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold, onConvert,
+  view, onView, onAcceptIntegration, landing, onOpenSection, held = null, onHold, onConvert,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
   const canAsk = useCanFillAsk();
@@ -265,24 +258,6 @@ export function PlaceWorkflowView({
   useEffect(() => {
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
   }, [asked]);
-
-  // A draft card's door: once the answer is read, the editor opens on the draft the conversation is told, or on the chart's
-  // graph where that draft is not held. Once per ask: the page lets it go when it has opened.
-  const opened = useRef<PlaceEdit | null>(null);
-  const ready = current !== undefined && current !== null && editor !== undefined;
-  useEffect(() => {
-    if (!opens || !ready || opened.current === opens) return;
-    opened.current = opens;
-    const told = opens.draft ? toldGraph(opens.draft) : null;
-    show({
-      is: 'edit',
-      route: shown.route,
-      ...(told ? { from: { graph: told, ...(opens.base != null && opens.workflow ? { id: opens.workflow, base: opens.base, told: true } : {}), ...(opens.name ? { name: opens.name } : {}) } } : {}),
-    });
-    onOpened?.();
-    // `show` reads this render's editor; the ask and the answer arriving are the reasons to open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opens, ready]);
 
   if (!current) {
     return (

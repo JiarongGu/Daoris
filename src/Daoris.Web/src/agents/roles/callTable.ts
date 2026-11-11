@@ -22,7 +22,6 @@ const READS = [
   'memory_search', 'quest_list', 'registry',
 ];
 const MEMORY_CHANGES = ['memory_end', 'memory_write'];
-// What every session working in a repository is served, less what its work is refused.
 const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];
