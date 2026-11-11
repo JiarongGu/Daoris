@@ -53,7 +53,7 @@ public static class LineRunReader
         var record = records.Record(RunUnits.IdOf(line.Run));
         var facts = new WorkflowRunFacts(line.Repository, current) { Process = process with { Graph = graph } };
         var run = WorkflowGraphRuns.Derive(
-            new WorkflowGraphRunFacts(facts, line.Run, graph, record) { Failures = CheckResults.Failures(home, line.Run, graph, record) }, workspace);
+            new WorkflowGraphRunFacts(facts, line.Run, graph, record) { Failures = CheckResults.Failures(home, line.Run, graph, record), Needs = RunNeeds.Of(home, record) }, workspace);
         var checks = run.Steps.Where(step => step.Node == NodeKinds.Check).ToList();
         var verdict = LineVerdicts.Of(run.Steps);
         return run with
