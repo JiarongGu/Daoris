@@ -83,7 +83,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // a parked or ended one keeps them on its record and goes on with them. A running session that takes no input is refused
     // in the driver's words, since `sent: false` would tell a stale page it ended. Every answer publishes the sessions and Ask
     // Daoris's history, since the route cannot tell a help conversation's words from another's.
-    [DriverRoute("SESSION_INPUT", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [DriverRoute("SESSION_INPUT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_INPUT", Session = "id")]
     [GroundSession("SESSION_INPUT", "id")]
     [GroundRead("SESSION_INPUT", nameof(PipeReads.QuestionOpen))]

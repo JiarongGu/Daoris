@@ -172,7 +172,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it.
     (from D139, D50)
 38. While it drains, the loop starts nothing new but still looks: endings are reported, plugins told, sync runs. A press that
-    would add work waits for the restart; a stop, a take-back or an answer goes on. Once applying, every press waits. (from D139)
+    starts a process or changes a repository through git waits for the restart; one that starts no process goes on: a stop, a
+    take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
+    every press waits. (from D139)
 39. Idle is no driven session running and no conversation's turn in flight. A conversation between turns, a parked session
     and the terminal are idle. (from D139)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
