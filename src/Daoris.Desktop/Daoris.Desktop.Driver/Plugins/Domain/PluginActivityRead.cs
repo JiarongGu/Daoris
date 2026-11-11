@@ -37,7 +37,14 @@ public sealed record ActivityEvent(DateTimeOffset At, string Event, string? Poin
 public sealed record PluginActivityRead(
     string Plugin, DateTimeOffset Since, bool Logged, IReadOnlyList<PointActivity> Points, ProcessActivity Process,
     IReadOnlyList<CountedName> Agents, IReadOnlyList<ServerActivity> Servers, TrialActivity Trials,
-    IReadOnlyList<PluginPush> Pushes, IReadOnlyList<ActivityEvent> Recent, int More, int Skipped);
+    IReadOnlyList<PluginPush> Pushes, IReadOnlyList<ActivityEvent> Recent, int More, int Skipped)
+{
+    /// <summary>The newest command rounds, at most <see cref="PluginActivitySummary.LastRuns"/>: *About*'s last runs.</summary>
+    public IReadOnlyList<CommandRun> Runs { get; init; } = [];
+}
+
+/// <summary>One round of a plugin's command as the log says it: who asked (<see cref="CommandWire"/>), where, its exit (none where it asked), and how long it took.</summary>
+public sealed record CommandRun(DateTimeOffset At, string Command, string From, string? Place, int? Exit, long? Ms);
 
 /// <summary>
 /// What a plugin did, summarised from what is read: the machine log's <c>plugin.*</c> lines
@@ -48,6 +55,9 @@ public static class PluginActivitySummary
 {
     /// <summary>How many recent events are answered.</summary>
     public const int RecentLines = 50;
+
+    /// <summary>How many of a plugin's command rounds *About* lists.</summary>
+    public const int LastRuns = 20;
 
     /// <param name="logged">Whether this machine has a machine log at all.</param>
     /// <param name="lines">The period's lines, oldest first.</param>
@@ -67,6 +77,7 @@ public static class PluginActivitySummary
         var served = new Dictionary<string, (int Handed, int Withheld)>(StringComparer.Ordinal);
         int starts = 0, exits = 0, failedStarts = 0, passed = 0, failedTrials = 0;
         var events = new List<ActivityEvent>();
+        var runs = new List<CommandRun>();
 
         void Point(string point)
         {
@@ -82,6 +93,13 @@ public static class PluginActivitySummary
                     sessions[agent] = sessions.GetValueOrDefault(agent) + 1;
                 }
 
+                continue;
+            }
+
+            if (line.Event == PluginEvents.Command && string.Equals(Text(line, "plugin"), plugin, StringComparison.OrdinalIgnoreCase))
+            {
+                if (Text(line, "command") is { } command && Text(line, "from") is { } from)
+                    runs.Add(new CommandRun(line.Time, command, from, Text(line, "place"), (int?)Number(line, "exit"), Number(line, "ms")));
                 continue;
             }
 
@@ -159,7 +177,10 @@ public static class PluginActivitySummary
             pushes,
             [.. events.Take(RecentLines)],
             Math.Max(0, events.Count - RecentLines),
-            skipped);
+            skipped)
+        {
+            Runs = [.. Enumerable.Reverse(runs).Take(LastRuns)],
+        };
     }
 
     /// <summary>The middle answer time, or the two middles' mean; null with none.</summary>

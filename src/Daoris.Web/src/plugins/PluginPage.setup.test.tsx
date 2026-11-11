@@ -45,14 +45,13 @@ describe("a plugin's page with interfaces", () => {
     expect(screen.getByRole('region', { name: 'a round card' })).toBeInTheDocument();
   });
 
-  it('offers at removal to sign it out first, ticked, and hands the person\'s choice on', async () => {
+  it('says at removal that it is asked to sign out first, with no choice to make', async () => {
     const { onRemove } = page({ asking: true, signOut: { command: 'logout', why: null } });
     const ask = screen.getByRole('group', { name: 'remove acme-boards' });
-    const tick = within(ask).getByRole('checkbox', { name: /Ask it to sign out at its service first/ });
-    expect(tick).toBeChecked();
-    await userEvent.click(tick);
+    expect(within(ask).queryByRole('checkbox')).toBeNull();
+    expect(ask).toHaveTextContent('It is asked to sign out at its service first, by logout');
     await userEvent.click(within(ask).getByRole('button', { name: 'Remove plugin' }));
-    expect(onRemove).toHaveBeenCalledWith('acme-boards', expect.anything(), false);
+    expect(onRemove).toHaveBeenCalledWith('acme-boards', expect.anything());
   });
 
   it('says why a removal asks no sign-out where its forget is disabled', () => {

@@ -54,6 +54,19 @@ public sealed class PluginCommandNoticesTests : IDisposable
     }
 
     [Fact]
+    public async Task About_lists_the_last_twenty_rounds_newest_first_with_who_asked_where_and_how_it_ended()
+    {
+        for (var each = 0; each < 22; each++) await Round(CommandWire.Window, """{ "said": ["ok"], "exit": 0 }""");
+        await Round(CommandWire.Agent, """{ "said": ["no"], "exit": 2 }""", new PluginPlace("engine"));
+
+        var runs = PluginActivity.Read(_home, "acme-tickets", DateTimeOffset.UtcNow.AddDays(-1)).Runs;
+
+        Assert.Equal(PluginActivitySummary.LastRuns, runs.Count);
+        Assert.Equal(("status", "agent", "repository:engine", 2), (runs[0].Command, runs[0].From, runs[0].Place, runs[0].Exit));
+        Assert.Equal(("window", "machine", 0), (runs[1].From, runs[1].Place, runs[1].Exit));
+    }
+
+    [Fact]
     public async Task A_round_from_any_door_is_a_line_with_its_place_and_the_notices_are_the_unwatched_and_the_failed()
     {
         await Round(CommandWire.Window, """{ "said": ["ok"], "exit": 0 }""", new PluginPlace("engine"));

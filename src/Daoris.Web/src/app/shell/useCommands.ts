@@ -12,7 +12,7 @@ import { focusRegion } from '../../work/frame/regions';
 import { type OpenPart, questsItem, workspaceItem } from '../opener';
 import { type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
 import { logEvent, usePlugins } from '../../bridge/shell';
-import { askCommand, pluginCommandRows } from '../../plugins/commandAsks';
+import { askCommand, pluginCommandRows, useAskedCommand } from '../../plugins/commandAsks';
 import { byTool } from '../../agents/tools';
 import { menuRows } from '../../work/strip/appMenus';
 import { offeredActs } from '../../work/acts';
@@ -96,6 +96,11 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   const copyText = useRef<(text: string) => void>(() => {});
   const offers = useMemo(() => offerStore((text) => copyText.current(text)), []);
   const offered = useMainOffer(offers);
+  // A plugin's command asked from any door (the palette, a record's menu) opens its plugin's page, where its round card is.
+  const askedCommand = useAskedCommand();
+  useEffect(() => {
+    if (askedCommand) open('plugins', askedCommand.plugin);
+  }, [askedCommand?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   // The field the person last had focus in, which Edit's acts go back to once a menu has taken the focus.
   const fields = useRef<ReturnType<typeof fieldTracker> | null>(null);
   useEffect(() => {
@@ -201,7 +206,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     go: (target) => open(target),
     knowledge: (mode) => open('knowledge', null, { knowledge: mode }),
     agent: (name) => open('agents', name),
-    pluginCommand: (plugin, command) => { askCommand(plugin, command); open('plugins', plugin); },
+    pluginCommand: (plugin, command) => askCommand(plugin, command),
     agentPart: (part) => open('agents', null, { agentPart: part }),
     region: (previous) => focusRegion(document, previous),
     // A record's act by its page's own press: the session's through `sessionActs.ts`, the quest's by its page.

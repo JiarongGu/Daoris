@@ -1,5 +1,7 @@
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
+import { usePlugins as usePluginCatalogue } from '../bridge/plugins';
+import { PluginRecordActs, type RecordKind, recordCommandActs } from '../plugins/recordActs';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useRefreshIndex, useRepositories, useStatus } from '../data/queries';
 import { NotificationsBell } from '../notifications/NotificationsBell';
@@ -102,6 +104,10 @@ export function App() {
   // zooms its page itself, so it is left its wheel and its keys.
   const zoom = useZoom();
   useZoomWheel(attached);
+  // The commands plugins add to a record's menu, read from the catalogue this machine's window asks for.
+  // Never asked for here: the Plugins view and the palette ask, and the menus read what they found.
+  const catalogue = usePluginCatalogue({ enabled: false });
+  const recordActs = useCallback((kind: RecordKind, id: string) => recordCommandActs(catalogue.data, kind, id, i18n.language), [catalogue.data, i18n.language]);
   const { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, focusAsk, changeFocus, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening } = useFrameDoors();
   const { attention, presses, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, roster, openWindow, openBrowser, messages, markNoticesRead, linkOpener, notices, setNotificationsToggle, showReviewAgain, reviewActs, update, sayUpdate, dismissUpdate, unkeyedHost, unkeyedSaid, setUnkeyedSaid, answerConfirmation, pressShown, notificationsAt, setNotificationsOpen, dismissNotice, markChannel, notificationsShow, notificationsToggle } = useShellFeeds({ notify });
 
@@ -187,6 +193,7 @@ export function App() {
     <LinkOpener.Provider value={linkOpener}>
     {/* What the main area's page offers, which the menu bar's record groups read. */}
     <MainOffer.Provider value={offers}>
+    <PluginRecordActs.Provider value={recordActs}>
     {/* A window, not a page: the viewport IS the frame, every region scrolls inside it, and
         the status bar is therefore always in the same place. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
@@ -590,6 +597,7 @@ export function App() {
       {/* The window's one right-click handler: each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
     </div>
+    </PluginRecordActs.Provider>
     </MainOffer.Provider>
     </LinkOpener.Provider>
     </HarnessRuns>

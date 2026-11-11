@@ -209,7 +209,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `{ name, title, about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each
     `{ id, title, icon, where, places, context, body }`), every word authored (D222). A command's `title` is its name where unwritten;
     `args` are `{ name, type: text | number | boolean | choice, title, required, choices }`, `choices` only and always for a `choice`;
-    `on` lists `session`, `quest`, `run`, `repository` or `workspace`; a `tool` never asks the person; one command at most adopts. A
+    `on` lists `session`, `quest`, `run`, `repository` or `workspace`, and a command listing a kind is added to the menus of those
+    records, headed by its plugin's name, opening the round card with the record's id in the argument named for the kind where it
+    declares one (`plugins/recordActs.ts`, the window's `PluginRecordActs`; built on session and quest rows, read from the catalogue
+    the Plugins view or the palette asked for); a `tool` never asks the person; one command at most adopts. A
     view's `where` is `side` and `page` (`page` unwritten), `places` `machine`, `workspace` and `repository` (`machine` unwritten),
     `context` `session` and `quest`, `icon` a path inside the folder, and `body` `drawn` alone. A problem refuses that entry alone,
     never the plugin, and is kept in `Refused` by interface and name; an interface this build does not know is kept in `Unknown` and
@@ -230,8 +233,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     place it names, an argument missing refused before any process starts, the answer handing back the run's id, and the plugins slice pushed after each round, since a command may move a plugin's health or state. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
     nothing in it. A removal first runs the command `forget` names, once, `from: removal` at the machine, bound to 10 seconds
-    (`PluginForget`, inside `PluginInstall.Remove`, so the terminal's and the window's removals both run it), its exit 0 said as signed
-    out and anything else, an ask or a timeout as not confirmed; the removal goes on whatever it says. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
+    (`PluginForget`, inside `PluginInstall.Remove`, so the terminal's and the window's removals both run it, the window's answer
+    carrying `forgot`), its exit 0 said as signed out and anything else, an ask or a timeout as not confirmed; the removal goes on
+    whatever it says, and the page's removal ask says the plugin is asked, with no choice. *About*'s last runs are the newest 20
+    `plugin.command` lines of the plugin (`PluginActivityRead.Runs`, over `PLUGIN_ACTIVITY`); the page does not draw them yet. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)

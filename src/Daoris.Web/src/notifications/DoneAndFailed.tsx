@@ -36,6 +36,12 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     const words = { step, run: notice.quest ?? '' };
     return notice.state === 'failed' ? t('notifications.done.outcome.failed', words) : t('notifications.done.outcome.reached', words);
   }
+  if (notice.kind === 'plugin-command') {
+    // A plugin's command round nobody watched, or one that failed: by the plugin's id and the command's name, never its words.
+    const words = { plugin: notice.code ?? '', command: notice.act ?? '' };
+    if (notice.state === 'failed') return t('notifications.done.pluginCommand.failed', words);
+    return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
+  }
   if (notice.kind === 'look') {
     // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');

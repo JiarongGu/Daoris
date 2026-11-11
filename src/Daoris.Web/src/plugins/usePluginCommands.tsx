@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type PluginCommandPress, type PluginCommandRound, usePluginCommand } from '../bridge/pluginCommand';
 import { usePluginSwitch } from '../bridge/pluginSwitch';
 import { useWorkspaceHoldings } from '../data/queries';
@@ -12,7 +11,7 @@ import { type PlaceShown, PluginSetup } from './PluginSetup';
 import { RoundCard } from './RoundCard';
 
 /** The command whose round card is open: its plugin, its name, and the ask that opened it, which keys the card. */
-type Running = { plugin: string; command: string; n: number };
+type Running = { plugin: string; command: string; n: number; given?: Record<string, string> };
 
 /**
  * **A plugin's commands and switches in the Plugins view**: the *Set up* tab's body, the round card of the command running, the
@@ -31,7 +30,6 @@ export function usePluginCommands({ plugins, answered, onChoose, refetch, notify
   refetch: () => void;
   notify: Notify;
 }) {
-  const { t, i18n } = useTranslation();
   const command = usePluginCommand();
   const switching = usePluginSwitch();
   const holdings = useWorkspaceHoldings();
@@ -45,7 +43,7 @@ export function usePluginCommands({ plugins, answered, onChoose, refetch, notify
     tookCommand(asked.n);
     if (!plugins.some((plugin) => plugin.id === asked.plugin)) return;
     onChoose(asked.plugin);
-    setRunning({ plugin: asked.plugin, command: asked.command, n: -asked.n });
+    setRunning({ plugin: asked.plugin, command: asked.command, n: -asked.n, ...(asked.given ? { given: asked.given } : {}) });
   }, [asked, answered, plugins, onChoose]);
 
   const place = workspace ? `workspace:${workspace}` : 'machine';
@@ -81,7 +79,7 @@ export function usePluginCommands({ plugins, answered, onChoose, refetch, notify
       setupFirst: declares,
       round: shown && running ? (
         <RoundCard
-          key={running.n} plugin={plugin.id} pluginName={plugin.name || plugin.id} command={shown} place={place} send={send}
+          key={running.n} plugin={plugin.id} pluginName={plugin.name || plugin.id} command={shown} given={running.given} place={place} send={send}
           onEnded={ended} onClose={() => setRunning(null)}
         />
       ) : undefined,
@@ -91,18 +89,5 @@ export function usePluginCommands({ plugins, answered, onChoose, refetch, notify
     };
   };
 
-  /** The declared sign-out, run before a removal where the person left it ticked; its end is said, and never stops the removal. */
-  const signOutFirst = async (plugin: PluginShown): Promise<void> => {
-    const forget = plugin.interfaces?.storage?.forget;
-    if (!forget || plugin.interfaces?.storage?.forgetDisabled) return;
-    const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
-    try {
-      const round = await send({ id: plugin.id, command: forget, args: {}, answers: {}, place: 'machine', language });
-      notify(t(round.exit === 0 && !round.ask ? 'plugin.signedOut' : 'plugin.notSignedOut', { id: plugin.id }));
-    } catch {
-      notify(t('plugin.notSignedOut', { id: plugin.id }), 'error');
-    }
-  };
-
-  return { pageParts, signOutFirst };
+  return { pageParts };
 }

@@ -37,7 +37,7 @@
   "plugin.update.interface.storage": "存储",
   "plugin.update.interface.views": "视图 {{name}}",
   "plugin.update.asksMore": "需要你更多授权",
-  "plugin.removeSignOut": "先请它用 `{{command}}` 在它的服务上退出登录；它在那里保留的登录，只有在它说已退出时才会被撤销。",
+  "plugin.removeSignOut": "会先请它用 `{{command}}` 在它的服务上退出登录；它在那里保留的登录，只有在它说已退出时才会被撤销。",
   "plugin.removeSignOutNot": "不会请它退出登录：{{why}}",
   "plugin.signedOut": "{{id}} 说它已在它的服务上退出登录。",
   "plugin.notSignedOut": "{{id}} 没有确认它已在它的服务上退出登录。",
