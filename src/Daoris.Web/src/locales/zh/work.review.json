@@ -62,6 +62,7 @@
   "work.review.uncommittedNoPatch": "这个文件尚未提交，它的补丁太大或不是文本，无法在此显示。它在工作树里。",
   "work.review.placeNoPatch": "这个文件不是文本，或超出了文件夹的存储所保留的范围，所以只按大小和哈希比较，没有 diff。它在文件夹里。",
   "work.review.place.note": "这个部门是一个文件夹：这里是本会话改动的文件，对照的是它开始时文件夹里的内容。历史、分支和落地属于 git，文件夹没有这些。",
+  "work.review.unattributed": "本会话运行期间有改动、但不是它的任何工具所写：{{paths}}。可能是你或别的程序在旁边改的；采纳它的工作之前先看一下这些文件。",
   "work.review.committedNothing": "这个会话还没有提交任何内容；它的工作在下面，尚未提交。",
   "work.review.pullRequest": "打开拉取请求",
   "work.review.chatPress.busy": "这段对话正在进行一轮；这一轮结束后再按采纳。",

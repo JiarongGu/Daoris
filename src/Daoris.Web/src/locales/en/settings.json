@@ -48,5 +48,16 @@
   "settings.quiet.body": "A session is never stopped for running long. One that says nothing and runs nothing for this long gets Daoris's help: a word, then your choice or a fresh start of the same work.",
   "settings.quiet.minutes": "minutes",
   "settings.quiet.set": "Daoris now looks in on a session quiet for {{count}} minute.",
-  "settings.quiet.set_other": "Daoris now looks in on a session quiet for {{count}} minutes."
+  "settings.quiet.set_other": "Daoris now looks in on a session quiet for {{count}} minutes.",
+  "settings.manifest.label": "A folder is too large to follow past",
+  "settings.manifest.terminal": "Also `daoris settings manifest files <n>` and `minutes <n>`, from 1,000 files and 1 to 60 minutes — one file, either door.",
+  "settings.manifest.body": "Before a session works in a folder, Daoris lists its files so it can say what changed meanwhile. A folder with more files than this, or one whose listing takes longer than this, is too large to follow: it still works in place, one session at a time, but its session is told nothing of what changed meanwhile and its changes are not listed. Raise either if a large folder should be followed; lower them to spend less time at each start.",
+  "settings.manifest.files": "Most files a folder's manifest lists",
+  "settings.manifest.filesUnit": "files",
+  "settings.manifest.minutes": "Most minutes a folder's manifest read takes",
+  "settings.manifest.minutesUnit": "minutes",
+  "settings.manifest.setFiles": "Daoris now follows a folder of up to {{count}} file.",
+  "settings.manifest.setFiles_other": "Daoris now follows a folder of up to {{count}} files.",
+  "settings.manifest.setMinutes": "Daoris now spends up to {{count}} minute listing a folder's files.",
+  "settings.manifest.setMinutes_other": "Daoris now spends up to {{count}} minutes listing a folder's files."
 }

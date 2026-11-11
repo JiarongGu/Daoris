@@ -311,6 +311,40 @@ describe('the driver domain', () => {
   });
 
   /**
+   * `manifest`, the bounds of a folder's manifest read, the `manifest` `daoris settings manifest` edits: each written alone, only when
+   * changed to a whole number (the minutes from 1 to 60); an answer with no such fields is offered no row.
+   */
+  it('sets each bound of a folder\'s manifest read alone, and offers nothing where the answer lacks them', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      return type === 'SET_MANIFEST' ? { ...DRIVER_STATE, manifestFiles: 40000, manifestMinutes: 5 } : { ...DRIVER_STATE, manifestFiles: 250000, manifestMinutes: 5 };
+    });
+    const { unmount } = show(<SettingsView notify={notify} section="driver" />);
+    const files = await screen.findByLabelText('Most files a folder\'s manifest lists');
+    const minutes = screen.getByLabelText('Most minutes a folder\'s manifest read takes');
+    expect([(files as HTMLInputElement).value, (minutes as HTMLInputElement).value]).toEqual(['250000', '5']);
+
+    await userEvent.clear(minutes);
+    await userEvent.type(minutes, '61');
+    await userEvent.tab();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SET_MANIFEST')).toBe(false);
+    expect((minutes as HTMLInputElement).value).toBe('5');
+
+    await userEvent.clear(files);
+    await userEvent.type(files, '40000');
+    await userEvent.tab();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_MANIFEST', { payload: { files: 40000 } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Daoris now follows a folder of up to 40000 files.'));
+    unmount();
+
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    await driverRead();
+    expect(screen.queryByLabelText('Most files a folder\'s manifest lists')).toBeNull();
+  });
+
+  /**
    * Notifications: the desktop's door onto the same `driver.json` field
    * `daoris settings notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
    * has to watch is the point of one — and the surface names the other door so a person on a

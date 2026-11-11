@@ -47,14 +47,40 @@ internal sealed class SessionPlaceLease(SessionStore store)
         await using var command = _db.Command();
         command.CommandText = "UPDATE sessions SET holds_place = $paths WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
-        command.Parameters.AddWithValue("$paths", paths is { Count: > 0 } kept ? JsonFields.Written(writer =>
+        command.Parameters.AddWithValue("$paths", Written(paths));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>
+    /// Take <paramref name="paths"/> out of the record's mark in one step, or the whole mark where none is named: a discard releases what
+    /// it discarded, and the place goes once nothing is left.
+    /// </summary>
+    /// <returns>Whether a record of this machine's had that id.</returns>
+    public Task<bool> ReleaseAsync(string id, IReadOnlyList<string>? paths, CancellationToken ct) => _db.RunAsync<bool>(async () =>
+    {
+        await using var read = _db.Command();
+        read.CommandText = "SELECT holds_place FROM sessions WHERE id = $id AND origin IS NULL";
+        read.Parameters.AddWithValue("$id", id);
+        var found = await read.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        if (found is null) return false;
+        var kept = paths is null || found is not string marked
+            ? []
+            : (ResolvedRead(marked) ?? []).Where(path => !paths.Contains(path, StringComparer.Ordinal)).ToList();
+        await using var write = _db.Command();
+        write.CommandText = "UPDATE sessions SET holds_place = $paths WHERE id = $id AND origin IS NULL";
+        write.Parameters.AddWithValue("$id", id);
+        write.Parameters.AddWithValue("$paths", Written(kept));
+        return await write.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    private static object Written(IReadOnlyList<string>? paths) => paths is { Count: > 0 } kept
+        ? JsonFields.Written(writer =>
         {
             writer.WriteStartArray();
             foreach (var path in kept) writer.WriteStringValue(path);
             writer.WriteEndArray();
-        }) : DBNull.Value);
-        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }, ct);
+        })
+        : DBNull.Value;
 
     /// <summary>
     /// The busy sentence of a place: whose it is and why, never its path (a refusal is rendered verbatim wherever it lands).

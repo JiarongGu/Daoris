@@ -50,6 +50,8 @@ internal sealed class RebaseNode : BuiltInNode, IObserves, IStarts, ITargets, IR
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     /// <summary>The target named by its <c>onto</c>: a branch by its name, else the line, which the run's branch grows from.</summary>
     public string? Target(NodeDeclaration node, string? line) => RebaseOnto.Of(node, line);
 

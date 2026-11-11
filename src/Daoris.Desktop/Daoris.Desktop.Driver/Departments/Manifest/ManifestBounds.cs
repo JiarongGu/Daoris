@@ -10,4 +10,7 @@ public sealed record ManifestBounds(int Files, TimeSpan Time)
 {
     /// <summary>250,000 files and five minutes, as the place-work design proposes them.</summary>
     public static ManifestBounds Default { get; } = new(250_000, TimeSpan.FromMinutes(5));
+
+    /// <summary>The bounds this machine's <c>driver.json</c> sets under <paramref name="home"/>, each the default where it sets none.</summary>
+    public static ManifestBounds Of(string home) => DriverConfig.Load(DriverConfig.ResolvePath(home)).Manifest.Bounds;
 }

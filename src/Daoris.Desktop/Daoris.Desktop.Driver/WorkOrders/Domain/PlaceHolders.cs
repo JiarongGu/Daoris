@@ -12,9 +12,12 @@ internal static class PlaceHolders
         snapshot.Active.FirstOrDefault(session =>
             string.Equals(session.Repository, repository, StringComparison.OrdinalIgnoreCase)
             && (session.Tree is null || root is null || Planner.SameTree(session.Tree, root))
-            && session is { Ask: null, Opinion: null, Serves: null, Decides: null }
-            && (!SessionStates.IsParked(session.State) || session.HoldsPlace is { Count: > 0 })
+            && Leases(session)
             && except?.Invoke(session) != true);
+
+    public static bool Leases(SessionView session) =>
+        session is { Ask: null, Opinion: null, Serves: null, Decides: null }
+        && (!SessionStates.IsParked(session.State) || session.HoldsPlace is { Count: > 0 });
 
     /// <summary>The planner's sentence for a start sitting behind <paramref name="holder"/>.</summary>
     public static string Said(SessionView holder, string repository) =>

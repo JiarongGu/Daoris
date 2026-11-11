@@ -24,6 +24,65 @@ public static class RepositoryPresses
             return ok ? 0 : 1;
         });
 
+    /// <summary>
+    /// Leave out each glob of <paramref name="add"/> and take back each of <paramref name="remove"/> in the folder department named
+    /// <paramref name="repository"/>, then read its manifest again with the new list where this machine's service holds its root: 0 set,
+    /// 1 refused.
+    /// </summary>
+    public static Task<int> ExcludesAsync(
+        string repository, IReadOnlyList<string> add, IReadOnlyList<string> remove, string home, ServiceClient service, TextWriter output, TextWriter error,
+        CancellationToken ct = default) =>
+        GuardedAsync(error, async () =>
+        {
+            var rows = await service.RegistryAsync(ct).ConfigureAwait(false);
+            if (rows.FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase)) is not { } found)
+            {
+                error.WriteLine($"daoris: `{repository}` is not registered on this machine — use a folder's name as Repositories lists it.");
+                return 1;
+            }
+
+            if (found.Kind != PlaceKind.Folder)
+            {
+                error.WriteLine($"daoris: `{found.Repository}` is not a folder: excludes are a folder department's, for the files its manifest passes by.");
+                return 1;
+            }
+
+            var excludes = ExcludesEdit.Apply(found.Excludes, add, remove);
+            var (ok, message) = await service.SetFolderExcludesAsync(found.Repository, excludes, ct).ConfigureAwait(false);
+            if (!ok)
+            {
+                error.WriteLine($"daoris: {message}");
+                return 1;
+            }
+
+            output.WriteLine($"daoris: {message}");
+            if (RegistryConnect.IsLocal(service.BaseUrl) && found.Root is { } root && Directory.Exists(root))
+            {
+                FolderFirstManifest.Keep(home, RemoteTarget.Workspace(found.Workspace), found.Repository, root, excludes);
+                output.WriteLine("  Its manifest was read again with them.");
+            }
+
+            return 0;
+        });
+
+    /// <summary>Say the excludes of the folder department named <paramref name="repository"/>, beside the defaults every folder has.</summary>
+    public static Task<int> ExcludesListAsync(string repository, ServiceClient service, TextWriter output, TextWriter error, CancellationToken ct = default) =>
+        GuardedAsync(error, async () =>
+        {
+            var rows = await service.RegistryAsync(ct).ConfigureAwait(false);
+            if (rows.FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase)) is not { Kind: PlaceKind.Folder } found)
+            {
+                error.WriteLine($"daoris: `{repository}` is not a folder registered on this machine.");
+                return 1;
+            }
+
+            output.WriteLine(found.Excludes.Count == 0
+                ? $"daoris: `{found.Repository}` leaves out nothing of its own."
+                : $"daoris: `{found.Repository}` leaves out {string.Join(", ", found.Excludes)}.");
+            output.WriteLine($"  Beside the defaults: {string.Join(", ", FolderExcludes.Default)}.");
+            return 0;
+        });
+
     /// <summary>Register what <paramref name="folder"/>'s subdirectories propose, or the service's own knowledge root where none is given.</summary>
     public static Task<int> ImportAsync(string? folder, string? workspace, ServiceClient service, TextWriter output, TextWriter error, CancellationToken ct = default) =>
         GuardedAsync(error, async () =>
@@ -41,6 +100,13 @@ public static class RepositoryPresses
     public static Task<int> PressWireAsync(string repository, string workspace, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
         InstanceDoor.ThroughAsync(instance, PersonPresses.RegistryRewire, InstanceDoor.Said(("repository", repository), ("workspace", workspace)),
             () => WireAsync(repository, workspace, service, output, Error(instance), ct), output, ct);
+
+    /// <summary>The person's excludes edit, pressed where Daoris runs and made here where none does.</summary>
+    public static Task<int> PressExcludesAsync(
+        string repository, IReadOnlyList<string> add, IReadOnlyList<string> remove, string home, ServiceClient service, TextWriter output, InstanceWorld? instance,
+        CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.RegistryExcludes, InstanceDoor.Said(("repository", repository), ("add", add.Count > 0 ? add : null), ("remove", remove.Count > 0 ? remove : null)),
+            () => ExcludesAsync(repository, add, remove, home, service, output, Error(instance), ct), output, ct);
 
     /// <summary>The person's import, pressed where Daoris runs and made here where none does; <paramref name="folder"/> is absolute.</summary>
     public static Task<int> PressImportAsync(string? folder, string? workspace, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>

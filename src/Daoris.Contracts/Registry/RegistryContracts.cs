@@ -38,6 +38,13 @@ public sealed record WireRepository(string Repository, string? Workspace) : IRou
     public static string Path => "/api/registry/{repository}/workspace";
 }
 
+/// <summary>A folder department's excludes rewritten whole: the globs its manifest passes by, empty to clear; nothing else of the row.</summary>
+public sealed record SetFolderExcludes(string Repository, IReadOnlyList<string> Excludes) : IRoute<RegisteredResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/registry/{repository}/excludes";
+}
+
 /// <summary>The bootstrap, as a verb a person runs: a folder's immediate subdirectories, registered into <c>Workspace</c> where one is named.</summary>
 public sealed record ImportRepositories(string? Folder, string? Workspace = null) : IRoute<ImportedResponse>
 {
@@ -87,6 +94,7 @@ public sealed record ClearRetired(string Repository, string? Workspace = null) :
 [JsonSerializable(typeof(RegisterRepository))]
 [JsonSerializable(typeof(RetireRepository))]
 [JsonSerializable(typeof(WireRepository))]
+[JsonSerializable(typeof(SetFolderExcludes))]
 [JsonSerializable(typeof(ImportRepositories))]
 [JsonSerializable(typeof(ListRegistry))]
 [JsonSerializable(typeof(ReadCodeMap))]

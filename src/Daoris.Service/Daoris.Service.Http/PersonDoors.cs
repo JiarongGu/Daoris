@@ -340,6 +340,7 @@ public static class PersonDoors
         new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },
+        new("POST", "/api/registry/{repository}/excludes", DoorClass.Person, "a folder's excludes rewritten") { Marks = OwnerMark.None("a folder's excludes, the registry's") },
         new("POST", "/api/registry/import", DoorClass.Person, "a folder's import") { Marks = OwnerMark.None("a folder's import, the registry's") },
         // The answers to a terminal's ask, never themselves asked for.
         Confirm,

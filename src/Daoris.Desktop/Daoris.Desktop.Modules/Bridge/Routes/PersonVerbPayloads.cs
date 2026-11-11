@@ -33,6 +33,9 @@ public sealed record RegistryRetirePress(string Repository, bool Said = false);
 /// <summary>A repository wired to the workspace named.</summary>
 public sealed record RegistryRewirePress(string Repository, string Workspace, bool Said = false);
 
+/// <summary>A folder department's excludes: the globs to leave out and the globs to take back.</summary>
+public sealed record RegistryExcludesPress(string Repository, IReadOnlyList<string>? Add = null, IReadOnlyList<string>? Remove = null, bool Said = false);
+
 /// <summary>What an absolute <c>Folder</c>'s subdirectories propose registered, or the service's own knowledge root where none is given.</summary>
 public sealed record RegistryImportPress(string? Folder = null, string? Workspace = null, bool Said = false);
 

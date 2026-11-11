@@ -21,7 +21,7 @@ internal static class DriveUsagePlace
               writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
               once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
               --resume (which judges the skipped again) and --stop steer a plan already made.
-          place list  ·  place drive|undrive|hold|resume <repository>
+          place list  ·  place drive|undrive|hold|resume <repository>  ·  place trees (gone: a workflow's isolate step)
           place line|landing|work-cycle|across|standing|language|review|opinion|helpers|commits <repository> …
               each place's standing choices: what is driven and held, its line and how work lands there, its
               work's cycle, what agents outside it read, its standing answer, its language, where its work is shown to you,
@@ -109,7 +109,7 @@ internal static class DriveUsagePlace
           repository register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `repository connect` would; a start and a line Daoris moves do the same on their own.
-          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]
+          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]  ·  repository excludes <folder> [--add <glob>]… [--remove <glob>]…
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.

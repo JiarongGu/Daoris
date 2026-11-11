@@ -78,7 +78,7 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
     }
 
     private async Task<Answer<SessionActionResponse>> ReleasePlaceAsync(ReleasePlace request, HttpContext http, CancellationToken ct) =>
-        await Service.Ledger.ReleasePlaceAsync(request.Id, ct) is { } released
+        await Service.Ledger.ReleasePlaceAsync(request.Id, request.Paths, ct) is { } released
             ? new SessionActionResponse(
                 await SessionAnswers.ToSessionAsync(Service, released, host.MachineLocal(http)), $"Others may work where `{request.Id}` worked.")
             : Refusal.NotFound($"no session of this machine's is `{request.Id}`");

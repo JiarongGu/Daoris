@@ -44,6 +44,7 @@
   "menu.terminal.new": "New terminal",
   "menu.terminal.show": "Show terminal",
   "menu.help.quickAsk": "Quick Ask",
+  "menu.help.changeFocus": "Change focus…",
   "menu.setup": "Get started",
   "menu.help.shortcuts": "Keyboard shortcuts",
   "menu.help.update": "Update",

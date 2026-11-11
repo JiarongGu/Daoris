@@ -17,14 +17,14 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "handover", "brainstorms")]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms")]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
         "brainstorms", "workflow", "keep", "role",
     ];
 
@@ -39,7 +39,7 @@ public static class DriverChoicesCommand
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
                daoris place notify on|off · trees (gone: a workflow's `isolate` step)
-               daoris settings cap <n> · cooloff <minutes> · quiet <minutes>
+               daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
@@ -312,6 +312,32 @@ public static class DriverChoicesCommand
                 {
                     Say($"daoris: a session that says nothing and runs nothing for {minutes} minutes is looked in on; none is ever stopped for running long.");
                     Say($"  Written to {path} — read at the next look, so nothing restarts.");
+                    return 0;
+                });
+            }
+
+            case "manifest":
+            {
+                var which = args.ElementAtOrDefault(1);
+                var value = args.Count == 3 ? Number(args[2]) : double.NaN;
+                var files = which == "files" && IsWhole(value) && ManifestSetting.TakesFiles((long)value) ? (int)value : (int?)null;
+                var minutes = which == "minutes" && IsWhole(value) && ManifestSetting.TakesMinutes((long)value) ? (int)value : (int?)null;
+                if (files is null && minutes is null)
+                {
+                    throw new ChoiceWords(which switch
+                    {
+                        "files" => ManifestSetting.FilesRefusal,
+                        "minutes" => ManifestSetting.MinutesRefusal,
+                        _ => ManifestSetting.OneRefusal,
+                    });
+                }
+
+                return Change(ChoiceRoutes.Manifest, new JsonObject { [which!] = files ?? minutes }, config => config.WithManifest(files, minutes), () =>
+                {
+                    Say(files is { } count
+                        ? $"daoris: a folder's manifest read stops at {count} files; a folder past it is too large to follow, and still works in place."
+                        : $"daoris: a folder's manifest read stops after {minutes} minutes; a folder past it is too large to follow, and still works in place.");
+                    Say($"  Written to {path} — read at the next manifest, so nothing restarts.");
                     return 0;
                 });
             }

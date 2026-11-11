@@ -222,7 +222,7 @@ internal sealed class TreeSync(
             {
                 // A pull that would move the checkout waits for a session the ledger holds in it, read inside the hold.
                 var waits = held is not null && pull.Moves && inRoot
-                    ? await CheckoutBeside.WaitsAsync(beside, root, repository, $"`{line}`'s pull", ct).ConfigureAwait(false)
+                    ? await CheckoutBeside.WaitsAsync(beside, root, repository, $"`{line}`'s pull", ct, place: true).ConfigureAwait(false)
                     : null;
                 pulls.Add(!pull.Moves
                     ? new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}")

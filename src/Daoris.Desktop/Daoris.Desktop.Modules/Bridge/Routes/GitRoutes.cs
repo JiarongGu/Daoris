@@ -259,7 +259,8 @@ public sealed class GitRoutes(DriverContext context)
         var (context, refused) = await WorkContextAsync("a commit", act.Repository, act.Workspace, cancellationToken).ConfigureAwait(false);
         if (context is null) return refused;
         var press = new CommitPress(verb, act.Message ?? "", act.Head, act.Tree ?? "");
-        return Acted(await new CommitActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+        return await ReleasingAsync(await new CommitActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     // What a switch to a branch would rest on, read fresh. Told by event: it starts git.
@@ -304,7 +305,8 @@ public sealed class GitRoutes(DriverContext context)
         var (context, refused) = await WorkContextAsync("an act", act.Repository, act.Workspace, cancellationToken).ConfigureAwait(false);
         if (context is null) return refused;
         var press = new StashPress(act.Untracked, act.Message, act.Head ?? "", act.Stash);
-        return Acted(await new StashActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
+        return await ReleasingAsync(await new StashActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     // Stash *Apply* by the stash commit's id, never its ordinal and never `pop`; a conflict stays for Resolve and the stash is kept.
@@ -355,6 +357,17 @@ public sealed class GitRoutes(DriverContext context)
         }
 
         return (new StageContext(repository, root, () => DriverConfig.Load(_loop.ConfigPath).MayChangeCheckout(repository), token => BranchTidying.BesideAsync(_loop.Home, service, token)), null);
+    }
+
+    /// <summary><see cref="Acted"/> for a commit or a stash, once done releasing the parked lines' marked paths it took out (<see cref="PlaceMarkDiscards"/>).</summary>
+    private async Task<object> ReleasingAsync(ActRun run, StageContext context, CancellationToken cancellationToken)
+    {
+        if (!run.Refused && run.Outcome == ActOutcomes.Done && _loop.Service is { } service)
+        {
+            await PlaceMarkDiscards.ReleaseAsync(service, context.Repository, context.Checkout, cancellationToken).ConfigureAwait(false);
+        }
+
+        return Acted(run, context);
     }
 
     /// <summary>An act's answer as the page reads it, with the sentence's notes and no machine path.</summary>
