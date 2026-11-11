@@ -135,7 +135,7 @@ public static class RunNodeWords
             };
             if (act == NodeWordActs.Accept && by is null && declared.Kind == NodeKinds.Review)
             {
-                // On the way to its review the press is kept for it, on the record named (D256); on an active one it is bound to the record
+                // On the way to its review the press is kept for it, on the record named; on an active one it is bound to the record
                 // the review stands on, the one named or, unnamed, the one standing as it is kept.
                 if (status.State is NodeStates.Blocked or NodeStates.Ready)
                 {

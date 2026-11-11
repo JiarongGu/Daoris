@@ -401,8 +401,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.NotNull(lease);
         var unworded = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes" });
         Assert.Equal((false, "no-words"), (unworded.GetProperty("done").GetBoolean(), unworded.GetProperty("refused").GetString()));
-        // An Accept names the record it read: another is refused `moved` with the revision standing, and one naming an unchecked done
-        // where none waits is refused.
         Assert.True(ReviewRecords.Keep(Home, new ReviewRecord("q1", "review", 1, ReviewKinds.Answer, "feedc0de0123456789", T)));
         var moved = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", attempt = 1, revision = "0badc0de" });
         Assert.Equal((false, "moved", "feedc0de0123456789"),

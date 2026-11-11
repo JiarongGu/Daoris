@@ -34,11 +34,7 @@ public sealed record WorkflowSavePress(
     string? Id, string? From, JsonElement? Steps, JsonElement? Graph, string? Name, long? Base, IReadOnlyList<string>? Authorize, string? Updates,
     bool WithOpinion = false, bool WithLook = false, bool Plan = false);
 
-/// <summary>
-/// The person's word on a run's node. An <c>accept</c> names the review record the page drew, by its <c>Attempt</c> and <c>Revision</c>, and
-/// <c>Unchecked</c> where it named the run's unchecked dones, which it passes in the same edit; a review's <c>changes</c> name the
-/// <c>Part</c> they go to, by its quest.
-/// </summary>
+/// <summary>A word on a run's node; an <c>accept</c> names the review record drawn and the unchecked dones it passes, <c>changes</c> their part.</summary>
 public sealed record WorkflowNodePress(
     string Run, string Node, string Act, string? Words, bool Said = false, long? Attempt = null, string? Revision = null, bool Unchecked = false,
     string? Part = null);

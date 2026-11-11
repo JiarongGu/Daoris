@@ -587,8 +587,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             return said;
         }
 
-        // An Accept that named the run's unchecked dones passes them in its own edit; a stop reads the integration record first, so one whose
-        // member promoted is refused here, as at the terminal.
+        // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
         var done = press is { Act: NodeWordActs.Accept, Unchecked: true, Revision: { } drawn }
             ? UncheckedAccepts.Keep(records, run, node, drawn)
             : await Task.Run(() => RunNodeWords.WordAsync(

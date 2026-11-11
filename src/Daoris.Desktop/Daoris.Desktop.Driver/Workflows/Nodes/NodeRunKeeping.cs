@@ -134,7 +134,6 @@ internal sealed class NodeRunKeeping(
                 ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
                 : null;
             var landed = landings();
-            // A word naming a review's record is judged on the work read afresh, never on a binding the runtime has not yet seen move.
             var present = await ReviewAccepts.PresentAsync(records.Home, each, pending,
                 run => tipOf is null ? Task.FromResult<string?>(null) : tipOf(each, run)).ConfigureAwait(false);
             var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed, present));

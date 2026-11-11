@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's Accept on a review whose run waits on an unchecked done (D255): the Accept named each unchecked handback, which the person
+/// The person's Accept on a review whose run waits on an unchecked done: the Accept named each unchecked handback, which the person
 /// read on the review, so it keeps two words in one edit of the run's record, the hold's pass with its provenance and the review's early
 /// Accept, both bound to the record drawn. Both are kept or neither; a replay finds them kept; a record moved before the pass drops both.
 /// </summary>

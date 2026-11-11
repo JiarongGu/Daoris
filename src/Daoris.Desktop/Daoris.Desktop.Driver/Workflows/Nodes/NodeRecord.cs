@@ -267,10 +267,7 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 
     public string? Tip { get; init; }
 
-    /// <summary>
-    /// The revision of the review record the word names (<see cref="ReviewAccepts"/>): the pass drops it <c>moved</c> where the work read afresh
-    /// holds another, so a page drawn before the work moved never accepts newer work.
-    /// </summary>
+    /// <summary>The revision of the review record the word names, which the pass drops <c>moved</c> where the work read afresh holds another (<see cref="ReviewAccepts"/>).</summary>
     public string? Revision { get; init; }
 
     /// <summary>The review whose record <see cref="Revision"/> is, where the word is on another node: a hold passed by that review's Accept.</summary>
