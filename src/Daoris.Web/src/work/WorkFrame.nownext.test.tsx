@@ -44,7 +44,7 @@ function driver(phase: 'review' | 'working') {
         }],
       };
     }
-    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'main', source: 'workspace' };
+    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'main', source: 'workspace', accept: { run: 'q1', node: 'review' } };
     return DRIVER_STATE;
   });
 }

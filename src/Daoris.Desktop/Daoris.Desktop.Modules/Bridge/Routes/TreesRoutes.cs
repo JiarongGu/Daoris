@@ -190,8 +190,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
     // Discarding a reviewed session's tree: the PERSON's act, since nothing
     // deletes itself, so its own route rather than anything the diff route could do as a side effect.
-    // Its sibling, the merge alone, is retired: the work lands through `LAND_SESSION_TREE`,
-    // which merges where the repository's rule says merge.
+    // The work lands through its run's review and `land`, which merges where the repository's rule says merge.
     /// <summary>
     /// Discard a session's tree.
     /// </summary>

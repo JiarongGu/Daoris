@@ -913,7 +913,7 @@ describe('acting on what a session landed', () => {
   /** Who pushes it is said before the press — and what would refuse the press, where something would. */
   it('says before the press which plugin pushes the branch, and what stands in its way', async () => {
     let plan: Record<string, unknown> = {
-      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request',
+      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request', accept: ACC,
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
@@ -1221,7 +1221,7 @@ describe('acting on what a session landed', () => {
    * offer *Accept* while it runs. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
    * waits, as it would for its own press, until the landing answers.
    */
-  it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
+  it('holds the review’s Accept as Awaiting its pass… while the head’s Accept is under way', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     let landed: (answer: unknown) => void = () => {};
     invoke.mockImplementation((_module: string, type: string) => {
@@ -1244,11 +1244,11 @@ describe('acting on what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
-    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(await review.findByRole('button', { name: 'Awaiting its pass…' })).toBeDisabled();
     expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
 
     await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
-    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Awaiting its pass…' })).toBeNull());
   });
 
   /**
@@ -1396,12 +1396,11 @@ describe('acting on what a session landed', () => {
       const base = answering(BEYOND);
       invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
         if (type === 'LANDING') {
-          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace',
+          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC,
             review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', lookNode: 'look',
               says: 'Waits for your look, and it cannot start.' } };
         }
         if (type === 'WORKFLOW_NODE') return { run: 'chat-c0ffee11', node: 'look', act: 'skip', done: true };
-        if (type === 'WORKFLOW_NODE') return { session: 'c0ffee11', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
         return base(module, type, ...(rest as []));
       });
       await i18n.changeLanguage(language);
@@ -1513,7 +1512,7 @@ describe('acting on what a session landed', () => {
         return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed, accept: ACC };
       if (type === 'OPINION_GATE') {
         return { session: 's1a2b3c4', done: true, message: '', opinion: disputed, detail: { tier: 'agent', first: {
           id: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI', label: 'another-maker', read: 'src/',

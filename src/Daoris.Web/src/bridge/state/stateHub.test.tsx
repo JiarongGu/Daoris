@@ -286,7 +286,7 @@ describe('the state hub (UNDER_WAY)', () => {
           <Under route="DISCARD_SESSION_TREE" session="s1" />
           {shown && <Under route="DISCARD_SESSION_TREE" session="s1" />}
           <Under route="DISCARD_SESSION_TREE" session="s2" />
-          <Under route="DISCARD_SESSION_TREE" session="s1" />
+          <Under route="SESSION_ARCHIVE" session="s1" />
           <Under route="DISCARD_SESSION_TREE" session={null} />
         </QueryClientProvider>
       );
@@ -308,7 +308,7 @@ describe('the state hub (UNDER_WAY)', () => {
 
     expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
     expect(read('DISCARD_SESSION_TREE', 's2')).toEqual(['still']);
-    expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['still']);
+    expect(read('SESSION_ARCHIVE', 's1')).toEqual(['still']);
     // A view attending no session reads nothing under way.
     expect(read('DISCARD_SESSION_TREE', null)).toEqual(['still']);
 
@@ -351,7 +351,7 @@ describe('the state hub (UNDER_WAY)', () => {
 
     await waitFor(() => expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['under way', 'under way']));
     expect(read('DISCARD_SESSION_TREE', 's2')).toEqual(['still']);
-    expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['still']);
+    expect(read('SESSION_ARCHIVE', 's1')).toEqual(['still']);
   });
 
   /** The read and the tellings race on the bus; the newest by its number is kept, whichever reached the window first. */
