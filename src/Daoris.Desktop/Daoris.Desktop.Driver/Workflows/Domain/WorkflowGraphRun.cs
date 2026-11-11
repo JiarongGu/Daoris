@@ -142,6 +142,9 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     /// <summary>The gate each failed check named, by node, read by the reader from the attempt's result; none where unread.</summary>
     public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>What each refused step's <c>needs</c> came to (<see cref="RunNeeds"/>), by node; none where unread.</summary>
+    public IReadOnlyDictionary<string, RunNeed> Needs { get; init; } = new Dictionary<string, RunNeed>(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -201,6 +204,7 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
+            var needs = facts.Needs.GetValueOrDefault(node.Id);
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             var step = new WorkflowRunStep(cell, state, detail)
@@ -208,7 +212,8 @@ public static class WorkflowGraphRuns
                 Node = node.Kind,
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
-                Words = cannot ?? WordsOf(node, status),
+                Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
+                Needs = needs?.Needs,
                 Acts = acts.Count > 0 ? acts : null,
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,

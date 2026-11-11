@@ -84,6 +84,9 @@ public sealed record WorkOutcome(
 
     /// <summary>The route a reached decision took, on the wire as <c>outcome</c>: one of its step's declared outcomes. Null on any other.</summary>
     public string? Decision { get; init; }
+
+    /// <summary>A failure's fix: one of its plugin's declared commands, which the person runs to put it right. Judged against the declaration where the run is read.</summary>
+    public string? Needs { get; init; }
 }
 
 /// <summary>
@@ -474,6 +477,7 @@ public static class WorkWire
     {
         into["state"] = outcome.State;
         if (outcome.Code is not null) into["code"] = outcome.Code;
+        if (outcome.Needs is not null) into["needs"] = outcome.Needs;
         if (outcome.Evidence is { } evidence)
         {
             var written = new JsonObject();
@@ -543,6 +547,9 @@ public static class WorkWire
         field = "code";
         if (!Optional(from, "code", 40, out var code) || (code is not null && !CodeShape.IsMatch(code))) return null;
 
+        field = "needs";
+        if (!Optional(from, "needs", 40, out var needs) || (needs is not null && (state != WorkStates.Failed || !CodeShape.IsMatch(needs)))) return null;
+
         field = "evidence";
         WorkEvidence? evidence = null;
         if (from.TryGetProperty("evidence", out var said) && said.ValueKind != JsonValueKind.Null)
@@ -589,7 +596,7 @@ public static class WorkWire
         field = "resources";
         if (ReadResources(from) is not { } resources) return null;
         field = null;
-        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision };
+        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision, Needs = needs };
     }
 
     /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind).</summary>

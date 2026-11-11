@@ -73,6 +73,7 @@ public sealed class PluginToolsServer(
             ["state"] = new { type = "string", @enum = new[] { WorkStates.Reached, WorkStates.Failed } },
             ["decision"] = new { type = "string", description = "the route it reached by, one the step declares" },
             ["code"] = new { type = "string", description = "why it failed, a short lowercase code" },
+            ["needs"] = new { type = "string", description = "on a failure, one of the plugin's commands the person runs to put it right, such as its sign-in" },
             ["url"] = new { type = "string", description = "the address of what it made, such as the pull request" },
             ["message"] = new { type = "string", description = "what happened, in a sentence" },
             ["outputs"] = new { type = "object", description = "each output the step declares, by name, with its id" },

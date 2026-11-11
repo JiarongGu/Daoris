@@ -307,6 +307,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, bound, graph, record)
             {
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+                Needs = RunNeeds.Of(sources.Home, record),
             },
             workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
@@ -349,7 +350,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, run, graph, record)
             {
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
-                Integration = IntegrationOf(reads.Sources.Home, graph, record),
+                Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
             },
             workspace, askId);
     }

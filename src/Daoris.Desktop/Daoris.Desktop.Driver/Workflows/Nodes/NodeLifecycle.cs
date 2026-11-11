@@ -47,6 +47,8 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
 
+    public string? Needs { get; init; }
+
     /// <summary>Whether that failure is declared transient: only such a failure retries without the person.</summary>
     public bool Transient { get; init; }
 
@@ -87,6 +89,8 @@ public sealed record NodeMove(string To, string By)
 
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
+
+    public string? Needs { get; init; }
 
     public bool Transient { get; init; }
 
@@ -364,7 +368,7 @@ public static class NodeLifecycle
                 if (move.To == NodeStates.Failed)
                 {
                     if (string.IsNullOrWhiteSpace(move.Code)) return Refuse(NodeRefusal.NoCode);
-                    return To(next with { By = NodeSource.Person, Code = move.Code, Transient = false, Unreconciled = null });
+                    return To(next with { By = NodeSource.Person, Code = move.Code, Needs = null, Transient = false, Unreconciled = null });
                 }
 
                 if (node.Outputs.Count > 0 || node.Evidence is not null) return Refuse(NodeRefusal.NotOnWord);
@@ -373,7 +377,7 @@ public static class NodeLifecycle
                 if (worded.Id != bound.Id) return Refuse(NodeRefusal.NotBound);
                 if (!NodeOutcomes.Fits(node, worded.Outcome)) return Refuse(NodeRefusal.NotOutcome);
                 if (worded.Evidence?.Schema != NodeSource.Person || worded.Outputs.Count > 0) return Refuse(NodeRefusal.NoEvidence);
-                return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Transient = false, Unreconciled = null });
+                return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Needs = null, Transient = false, Unreconciled = null });
 
             case NodeStates.Reached:
                 if (move.Source != authority.ReachBy && move.Source != authority.ObservedBy
@@ -391,7 +395,7 @@ public static class NodeLifecycle
                 if (Others(accepted.Evidence, accepted.Id) || accepted.Outputs.Values.Any(port => Others(port, accepted.Id))) return Refuse(NodeRefusal.OtherAcceptance);
                 return To(next with
                 {
-                    Acceptance = Owned(accepted), By = move.Source, Code = null, Transient = false, Unreconciled = null, Words = move.Words ?? next.Words,
+                    Acceptance = Owned(accepted), By = move.Source, Code = null, Needs = null, Transient = false, Unreconciled = null, Words = move.Words ?? next.Words,
                 });
 
             case NodeStates.Failed:
@@ -399,7 +403,7 @@ public static class NodeLifecycle
                 if (move.Source != authority.FailureBy) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } failAttempt) return Refuse(failAttempt);
                 if (string.IsNullOrWhiteSpace(move.Code)) return Refuse(NodeRefusal.NoCode);
-                return To(next with { By = move.Source, Code = move.Code, Transient = move.Transient, Unreconciled = null });
+                return To(next with { By = move.Source, Code = move.Code, Needs = move.Needs, Transient = move.Transient, Unreconciled = null });
 
             case NodeStates.Rejected:
                 // The person's word judges the attempt; it establishes no dispatched effect's outcome, so Unreconciled stays.
@@ -416,13 +420,13 @@ public static class NodeLifecycle
                 if (move.Scope is not { } skipScope) return Refuse(NodeRefusal.NoScope);
                 if (status.Binding is not { } judged) return Refuse(NodeRefusal.NoBinding);
                 if (skipScope.GraphDigest != judged.GraphDigest || (status.Scope is { } own && own != skipScope)) return Refuse(NodeRefusal.NotBound);
-                return To(next with { By = move.Source, Words = null, Code = null, Transient = false, Scope = skipScope });
+                return To(next with { By = move.Source, Words = null, Code = null, Needs = null, Transient = false, Scope = skipScope });
 
             case NodeStates.Skipped when move.By == NodeCause.Daoris:
                 if (move.Source != NodeSource.Path) return Refuse(NodeRefusal.NotAuthority);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
                 if (move.Scope is null) return Refuse(NodeRefusal.NoScope);
-                return To(next with { By = NodeSource.Path, Words = move.Words, Code = null, Transient = false, Scope = move.Scope });
+                return To(next with { By = NodeSource.Path, Words = move.Words, Code = null, Needs = null, Transient = false, Scope = move.Scope });
 
             case NodeStates.Skipped:
                 if (status.State == NodeStates.Failed ? node.Kind != NodeKinds.Request : !authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
@@ -513,7 +517,7 @@ public static class NodeLifecycle
 
     /// <summary>A status with nothing of an attempt's record left: what a reset to ready or blocked, and a start, begin from.</summary>
     private static NodeStatus Reset(NodeStatus status) =>
-        status with { Binding = null, Acceptance = null, By = null, Code = null, Transient = false, Words = null, Scope = null, Since = null };
+        status with { Binding = null, Acceptance = null, By = null, Code = null, Needs = null, Transient = false, Words = null, Scope = null, Since = null };
 
     /// <summary>Whether a move took away anything the status held, which the record writer keeps before it is gone.</summary>
     private static bool Clears(NodeStatus was, NodeStatus next)

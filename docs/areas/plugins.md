@@ -199,6 +199,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `said` in order, a page to open in the person's own browser with its host, a code with *Copy*, a field per ask (a password field
     where masked, its value sent with the answers so far and never drawn back), *Go on* and *Cancel*; its end says done or the exit,
     `data` as handed back, and `then` (`reload`, the default, asks `PLUGINS` again; `back` closes the card; `stay` does nothing).
+    A failed outcome on `work/perform`'s completion, a reconcile or a step agent's `step_answer` may carry `needs: "<command>"` (a
+    code-shaped name, on a failure alone, else the outcome is unreadable); it is kept on the step's record beside its code, cleared
+    when the node starts again, and judged where a run is read (`RunNeeds`): a command its plugin declares is the run step's `needs`
+    (plugin, command, title), drawn as a door titled by the command that asks the Plugins page for that command's round card, and any
+    other name is ignored and said in the step's words.
     The palette lists each command of a plugin on, sound and with commands on at the machine (`run.pluginCommand:<id>/<command>`,
     `PLUGINS` asked only while the palette is open), and a row opens the plugin's page at its card. *Remove…* where `storage.forget`
     names a command offers *Ask it to sign out … first*, ticked, which runs that command one round from the window before
