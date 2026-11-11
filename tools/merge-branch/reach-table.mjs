@@ -78,7 +78,11 @@ export const REACH = Object.freeze([
     why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, the family rehearsal runs usage-report, which imports it, and the publish's tool-tests call it (GATESLIM1)",
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
-  { paths: ['tools/family-rehearsal.mjs', 'tools/stub-two.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'], gates: ['rehearse-family'], why: 'the family rehearsal, its parts' },
+  {
+    paths: ['tools/family-rehearsal.mjs', 'tools/rehearsal-apart.mjs', 'tools/stub-two.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'],
+    gates: ['rehearse-family'],
+    why: 'the family rehearsal, its parts: among them the workflow verbs it sets a place\'s work apart with',
+  },
   // The stand-ins' reader, which its own tool test and the family rehearsal import.
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
   // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
@@ -123,18 +127,6 @@ export const REACH = Object.freeze([
     why: 'every desktop project builds with it: the suites, the headless host the family rehearsal drives, and the deployed shell',
   },
   { paths: ['src/Daoris.Desktop/README.md'], gates: ['modules', 'service'], why: "the modules' route test reads its table, and the service's suite reads this repository's documents" },
-  // Before the driver's tests, which would place it first: the service's tool test reads it too. No Process class reads it.
-  {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'],
-    gates: ['driver', 'service'],
-    why: "the driver's ReviewRulesTests and the service's HelpSettingProposalTests read the review rules' table (REVIEWENV1c4); the CLI's twin runs in verify",
-  },
-  // XAGENT1f4: the same for the second-opinion rules' table, whose `gate` rows the service's tool test reads too.
-  {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'],
-    gates: ['driver', 'service'],
-    why: "the driver's OpinionRulesTests and the service's HelpSettingProposalTests read the second-opinion rules' table (XAGENT1f4); the CLI's twin runs in verify",
-  },
   // BRAINSTORM1a2: the brainstorm answers' table sits among the driver's tests, and the service's twin validator reads it too.
   // BRAINSTORM1a3: so does the brainstorm files' table, which the service's brainstorm desk reads.
   {
@@ -173,6 +165,12 @@ export const REACH = Object.freeze([
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'],
     gates: ['driver', 'service', 'web-unit', 'tool-tests', 'censuses'],
     why: "the driver's ProviderCensusTests, the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts read the provider census's exceptions (AGENTPROVIDER1a)",
+  },
+  // Before the driver's tests, which would place it first: the modules' twin is its one reader.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/landing-says.json'],
+    gates: ['modules'],
+    why: "the modules' LandingSaysTwinTests read the landing sentences' table, the terminal's words and the card's",
   },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'censuses'], why: "the driver's tests, the fast half and the Process halves, and the censuses among them" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses'], why: "the modules' tests, both halves, and the censuses among them" },

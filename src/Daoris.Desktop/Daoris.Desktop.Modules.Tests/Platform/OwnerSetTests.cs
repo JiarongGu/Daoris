@@ -58,13 +58,13 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"atlas"}""").Covered);
     }
 
-    /// <summary>An Ask Daoris Apply of <i>Stop driving</i> marks by its plan, so the steward's drive after it is refused <c>owner-set</c>.</summary>
+    /// <summary>An Ask Daoris Apply marks by its plan, so the steward's drive after one naming the repository is refused <c>owner-set</c>.</summary>
     [Fact]
-    public async Task An_applied_stop_driving_then_the_steward_s_drive_is_refused_owner_set()
+    public async Task An_apply_naming_a_repository_then_the_steward_s_drive_is_refused_owner_set()
     {
         var judge = Judge();
         var (_, key) = Appointed(judge);
-        var plan = HelpProposals.Owned(new HelpProposal("p1", "setting", "undrive", "engine", null, null, null, "", "h1", "proposed"));
+        var plan = new HelpOwned(["engine"], [], []);
 
         await using (await OwnerMarks.EnterAsync(judge, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
         {
@@ -119,7 +119,7 @@ public sealed class OwnerSetTests : IDisposable
         Assert.False(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "ledger")));
 
         var applied = Judge();
-        var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "helpers", null, "games", "--mode on", null, "", "h1", "proposed"));
+        var plan = new HelpOwned([], ["games"], []);
         await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
         {
         }
