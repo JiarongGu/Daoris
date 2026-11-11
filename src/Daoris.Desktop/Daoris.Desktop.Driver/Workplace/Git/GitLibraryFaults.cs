@@ -14,6 +14,7 @@ internal static class GitLibraryFaults
     private static readonly Lock Gate = new();
     private static readonly HashSet<string> Settled = new(StringComparer.OrdinalIgnoreCase);
     private static (string Home, GitLibraryLeases Leases)? s_writer;
+    private static bool s_exitHooked;
 
     /// <summary>The library package the running driver carries; a test sets it to stand for an upgrade.</summary>
     internal static string Package { get; set; } = PackageOf();
@@ -35,13 +36,24 @@ internal static class GitLibraryFaults
         {
             if (s_writer is not { } held || !string.Equals(held.Home, home, StringComparison.OrdinalIgnoreCase))
             {
-                s_writer = (home, new GitLibraryLeases(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)));
+                s_writer = (home, new GitLibraryLeases(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases), Package));
+                if (!s_exitHooked)
+                {
+                    s_exitHooked = true;
+                    AppDomain.CurrentDomain.ProcessExit += (_, _) => Exit();
+                }
             }
 
             leases = s_writer.Value.Leases;
         }
 
         return (leases, leases.Open(folder));
+    }
+
+    /// <summary>Closes every lease still held: an orderly exit with a call on the pool is not a fault inside the library.</summary>
+    internal static void Exit()
+    {
+        lock (Gate) s_writer?.Leases.CloseAll();
     }
 
     /// <summary>Appends the close of a lease <see cref="Enter"/> gave.</summary>
@@ -52,9 +64,9 @@ internal static class GitLibraryFaults
         lock (Gate)
         {
             if (!Settled.Add(home)) return;
-            foreach (var repository in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
+            foreach (var (repository, package) in GitLibraryLeases.Left(DaorisHome.Entry(home, HomeEntry.GitLibraryLeases)))
             {
-                GitLibraryJournal.Faulted(repository, Package);
+                GitLibraryJournal.Faulted(repository, package);
             }
         }
     }

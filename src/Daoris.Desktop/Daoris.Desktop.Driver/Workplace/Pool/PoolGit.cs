@@ -51,7 +51,14 @@ internal sealed class PoolGit : IDisposable
         if (info is null) return (-1, "", $"git could not be started ({refusal})");
         // Placed as every git is; a claim's git runs to its bound once placed, whoever stops waiting.
         var ask = GitStartAsks.For(info, arguments, GitRunner.Held, Bound, shares: false);
-        return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info), ct).ConfigureAwait(false);
+        try
+        {
+            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info), ct).ConfigureAwait(false);
+        }
+        catch (GitUnplacedException unplaced)
+        {
+            return (-1, "", unplaced.Message);
+        }
     }
 
     private async Task<(int Code, string Stdout, string Stderr)> PlacedAsync(System.Diagnostics.ProcessStartInfo info)
@@ -73,8 +80,9 @@ internal sealed class PoolGit : IDisposable
             var (exit, stdout, stderr) = await child.ExitAsync(Bound).ConfigureAwait(false);
             if (exit is { } code) return (code, stdout, stderr);
             _job.Terminate();
-            await _job.WaitEmptyAsync(Bound).ConfigureAwait(false);
-            return (-1, "", "git did not answer within its bound, and its processes were ended");
+            return await _job.WaitEmptyAsync(Bound).ConfigureAwait(false)
+                ? (-1, "", "git did not answer within its bound, and its processes were ended")
+                : (-1, "", "git did not answer within its bound, and its processes did not end when stopped");
         }
     }
 

@@ -96,7 +96,7 @@ internal static class GitLibraryRefs
         foreach (var entry in configuration)
         {
             if (!entry.Key.StartsWith("branch.", StringComparison.OrdinalIgnoreCase) && !entry.Key.StartsWith("remote.", StringComparison.OrdinalIgnoreCase)) continue;
-            if (entry.Level != ConfigurationLevel.Local) return null;
+            if (entry.Level != ConfigurationLevel.Local || entry.Value is null) return null;
             if (!keys.TryGetValue(entry.Key, out var values)) keys[entry.Key] = values = [];
             values.Add(entry.Value);
         }

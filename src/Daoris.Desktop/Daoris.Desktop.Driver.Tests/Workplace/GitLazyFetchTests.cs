@@ -79,6 +79,44 @@ public sealed class GitLazyFetchTests : IDisposable
     }
 
     [Fact]
+    public async Task A_proof_whose_start_did_not_run_is_asked_again_by_the_next_read()
+    {
+        var folder = Repository(Partial);
+        var starts = 0;
+        GitRuns.Runs.Value = (_, _, _) =>
+        {
+            starts++;
+            return Task.FromResult(new ChildRun(false, null, "", "", false));
+        };
+        try
+        {
+            Assert.False(await GitLazyFetch.HonouredAsync("git", folder, CancellationToken.None));
+            var first = starts;
+
+            Assert.False(await GitLazyFetch.HonouredAsync("git", folder, CancellationToken.None));
+            Assert.True(starts > first, "the second read was answered by the first's failed proof");
+        }
+        finally
+        {
+            GitRuns.Runs.Value = null;
+        }
+    }
+
+    [Fact]
+    public void A_configuration_rewritten_to_its_length_and_write_time_is_read_again()
+    {
+        var folder = Repository(Partial);
+        var config = Path.Combine(folder, ".git", "config");
+        var written = File.GetLastWriteTimeUtc(config);
+        Assert.True(GitLazyFetch.Promisor(folder));
+
+        File.WriteAllText(config, Partial.Replace("promisor = true", "promisor = yeah").Replace("partialclone", "partialclonx"));
+        File.SetLastWriteTimeUtc(config, written);
+
+        Assert.False(GitLazyFetch.Promisor(folder));
+    }
+
+    [Fact]
     public async Task A_repository_with_no_promisor_asks_no_proof_and_its_reads_are_as_before()
     {
         var folder = Repository("[core]\n\trepositoryformatversion = 0\n");
