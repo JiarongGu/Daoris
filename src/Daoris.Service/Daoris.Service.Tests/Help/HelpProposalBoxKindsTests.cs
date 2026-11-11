@@ -12,7 +12,6 @@ public sealed class HelpProposalBoxKindsTests
     [
         ("ask", "ask_propose"),
         ("go", "go_propose"),
-        ("sync", "sync_propose"),
         ("workflow", "workflow_propose"),
         ("setup", "setup_propose"),
     ];
@@ -32,7 +31,6 @@ public sealed class HelpProposalBoxKindsTests
         Assert.Equal(Table, HelpProposalBox.Kinds);
     }
 
-    /// <summary>Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c>, holds that kind's writer alone, and no part of the box.</summary>
     [Fact]
     public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
     {

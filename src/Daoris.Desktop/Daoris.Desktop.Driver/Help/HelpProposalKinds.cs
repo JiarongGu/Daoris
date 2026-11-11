@@ -78,7 +78,6 @@ internal static class HelpProposalKinds
     [
         new HelpAskProposals(),
         new HelpGoProposals(),
-        new HelpSyncProposals(),
         new HelpWorkflowProposals(),
         new HelpSetupProposals(),
     ];

@@ -24,7 +24,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
         "review_ready", "review_serve", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify", "settings_quiet", "setup_propose", "sync_propose", "system_plan",
+        "settings_language", "settings_notify", "settings_quiet", "setup_propose", "system_plan",
         "workflow_propose",
     ];
 
@@ -81,7 +81,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
                 "HelpAskTool",
-                "HelpGoTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
+                "HelpGoTool", "HelpSetupTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",
             ],

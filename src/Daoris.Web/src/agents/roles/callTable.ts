@@ -11,7 +11,7 @@ export const REGISTERED_TOOLS: readonly string[] = [
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',
   'partner_answer', 'permission_propose', 'quest_list', 'quest_publish', 'quest_respond', 'question_ask',
   'registry', 'review_ready', 'review_serve', 'settings_cap',
-  'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'setup_propose', 'sync_propose', 'system_plan',
+  'settings_cooloff', 'settings_language', 'settings_notify', 'settings_quiet', 'setup_propose', 'system_plan',
   'workflow_propose',
 ];
 

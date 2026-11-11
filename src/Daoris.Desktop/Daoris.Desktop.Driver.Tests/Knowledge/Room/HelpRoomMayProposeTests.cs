@@ -20,10 +20,8 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
-        // A bring-up-to-date card's first press is the look; a delete has no card of its own, being pressed.
         Assert.DoesNotContain("a delete card", agents);
-        Assert.Contains("a bring-up-to-date card **look for updates** until the person has looked, then **apply**", agents);
-        Assert.Contains("**查看更新**", agents);
+        Assert.DoesNotContain("**查看更新**", agents);
     }
 
     /// <summary>
@@ -63,14 +61,14 @@ public sealed class HelpRoomMayProposeTests
     /// the person's and fetches, and the Apply, on the rows the look listed only.
     /// </summary>
     [Fact]
-    public void The_room_says_how_bringing_repositories_up_to_date_is_proposed()
+    public void The_room_says_how_bringing_repositories_up_to_date_is_pressed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `sync_propose`: bring repositories up to date after a pull request merged", proposes);
-        Assert.Contains("Name a repository, a workspace\n  to look within, or none for every one with a checkout here.", proposes);
-        Assert.Contains("Its card asks the person to look first, which fetches each line as them", proposes);
-        Assert.Contains("apply acts on those rows only. Daoris never pushes.", proposes);
+        Assert.Contains("- Repositories are brought up to date after a pull request merged by pressing, never proposed", proposes);
+        Assert.Contains("`daoris tree sync --yes`, with `--repository <name>` or `--workspace <name>`", proposes);
+        Assert.Contains("row that moves. Daoris never pushes.", proposes);
+        Assert.DoesNotContain("sync_propose", proposes);
     }
 
     /// <summary>

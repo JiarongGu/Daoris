@@ -10,10 +10,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
 {
     private static readonly DateTimeOffset At = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
 
-    /// <summary>
-    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. Each has a quest, an ask and a session, as each
-    /// kind's facts read them.
-    /// </summary>
+    /// <summary><c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s, each with a quest, an ask and a session.</summary>
     private static readonly HelpMachineFacts Two = Facts with
     {
         Workspaces = ["default", "alpha", "beta"],
@@ -87,10 +84,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Reaches(Of("sync", "sync", "game"));
     }
 
-    /// <summary>
-    /// A proposal naming a record of another workspace by its id is judged by its kind, which finds the record and plans it:
-    /// a go to <c>beta</c>'s quest, ask or session.
-    /// </summary>
+    /// <summary>A go to another workspace's quest, ask or session by its id is judged by its kind, which finds the record.</summary>
     [Fact]
     public void A_proposal_naming_another_workspace_s_record_by_id_is_judged_by_its_kind()
     {

@@ -54,10 +54,7 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static HelpProposal Setting(string door, string? target = null, string? workspace = null, string? value = null) =>
         new("p1", "setting", door, target, workspace, value, null, "why", "h1", "proposed");
 
-    /// <summary>
-    /// The machine as the Agents screen, the quest drawer and the ask's record read it: each door's roster
-    /// row, and each record with the service's own <c>deletable</c>.
-    /// </summary>
+    /// <summary>The machine as the Agents screen, the quest drawer and the ask's record read it, each record with its <c>deletable</c>.</summary>
     protected static readonly HelpMachineFacts Machine = Facts with
     {
         Quests =
@@ -156,31 +153,5 @@ public sealed class HelpStandInDoors : IHelpDoors
     {
         Config = ActorChoices.With(Config, actor, choices);
         Calls.Add("change");
-    }
-
-    /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
-    public SyncPlan Listed { get; init; } = new([], [], []);
-
-    /// <summary>What the look's door refuses with; null to list.</summary>
-    public string? SyncRefusal { get; init; }
-
-    /// <summary>A replay the press stops at a conflict, in the tree layer's words; null for none.</summary>
-    public string? Conflict { get; init; }
-
-    public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
-    {
-        if (SyncRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(Listed);
-    }
-
-    public Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
-    {
-        Calls.Add($"TREES_SYNC {repository} {string.Join(' ', only.Order(StringComparer.Ordinal))}" + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(new SyncDone(
-            [.. Listed.Lines.Where(pull => only.Contains($"{pull.Repository}:{pull.Line}")).Select(pull => new PullResult(pull, pull.Moves, "moved"))],
-            [.. Listed.Rebases.Where(item => only.Contains($"{item.Repository}:{item.Branch}"))
-                .Select(item => Conflict is { } conflict ? new RebaseResult(item, false, conflict) : new RebaseResult(item, item.Replays, "replayed"))],
-            [.. Listed.Deletes.Where(item => only.Contains($"{item.Repository}:{item.Branch}")).Select(item => new LandedResult(item, item.Removable, "removed"))]));
     }
 }

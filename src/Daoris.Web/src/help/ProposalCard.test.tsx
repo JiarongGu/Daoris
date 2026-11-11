@@ -140,8 +140,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 
-  // A change to the draft open in the editor saves and chooses nothing: its changes, what to put right before it
-  // saves, and one press, which opens the editor and settles nothing there.
+  // A change to the open draft saves and chooses nothing: its changes, what to put right, and one press opening the editor.
   const DRAFTED: HelpProposal = {
     ...RELEASE_CARD,
     workflow: {
@@ -183,9 +182,7 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  // A graph chosen for a repository whose landing rule declares no gates says so,
-  // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
-  // as sent, since it names the Setup row to run.
+  // A repository whose landing rule declares no gates is said in the page's words; a cannot is a need, the driver's sentence as sent.
   it('says, per repository it reaches, that the version integrates with no gates, in English and in 中文', async () => {
     const chosen = { ...WORKFLOW.workflow!, choose: true, noGates: ['engine', 'game'] };
     const { default: i18n } = await import('../locales/i18n');
@@ -286,125 +283,6 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  // Bringing up to date: the look, which fetches and so is the person's, then Apply on the rows it listed.
-  const SYNC: HelpProposal = {
-    id: 'p11', kind: 'sync',
-    describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you.',
-    terminal: 'daoris tree sync --repository engine',
-    why: 'the person\'s pull request merged',
-    sync: { looked: false, rows: [] },
-  };
-  const LOOKED: HelpProposal = {
-    ...SYNC,
-    describe: 'Bring `engine` up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts.',
-    terminal: 'daoris tree sync --repository engine --yes',
-    sync: {
-      looked: true,
-      rows: [
-        { key: 'engine:main', step: 'line', moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-        { key: 'engine:daoris/s-busy', step: 'replay', moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
-      ],
-    },
-  };
-
-  it('bringing up to date asks the person to look first, the press that fetches, and lists nothing yet', async () => {
-    await press(SYNC, 'Look for updates');
-
-    expect(screen.getByText('Ask Daoris proposes updates')).toBeInTheDocument();
-    expect(screen.getByText(/Looking fetches each line from origin, as you/)).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'what the press would do' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
-  });
-
-  it('once looked, it lists what the press would do in the terminal\'s words, and Apply does only what moves', async () => {
-    await press(LOOKED, 'Apply');
-
-    const rows = within(screen.getByRole('list', { name: 'what the press would do' }));
-    expect(rows.getByText('moves')).toBeInTheDocument();
-    expect(rows.getByText('stays')).toBeInTheDocument();
-    expect(rows.getByText(code('origin/main'))).toBeInTheDocument();
-    expect(screen.getByText(/Apply does only the rows that move/)).toBeInTheDocument();
-    expect(screen.getByText(code(LOOKED.terminal))).toBeInTheDocument();
-  });
-
-  // What the rows do not say, said on the card itself and not only in the look's message.
-  const unreadable = 'fatal: Could not read from remote repository.';
-  const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
-  const OFFLINE: HelpProposal = {
-    ...LOOKED,
-    sync: {
-      ...LOOKED.sync!,
-      rows: [
-        ...LOOKED.sync!.rows,
-        { key: 'game:main', step: 'line', moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
-        { key: 'tools:main', step: 'line', moves: false, says: 'tools  main  up to date with `origin/main` (not fetched)' },
-      ],
-      notFetched: [
-        { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh' },
-        { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh' },
-      ],
-      apart: ['docs', 'site'],
-    },
-  };
-
-  it('once looked, says on the card what was not fetched, by reason and since when, and what git needs to reach origin', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    const note = screen.getByRole('note', { name: 'Not fetched' });
-    const said = within(note);
-    expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
-    expect(said.getByText(unreadable)).toBeInTheDocument();
-    expect(said.getByText('game: last fetched 1d ago · tools: never fetched')).toBeInTheDocument();
-    expect(note.textContent).toMatch(/add a git identity for its host in Settings → Git/);
-    expect(note.textContent).not.toMatch(/credential helper/);
-  });
-
-  it('offers, for each host a fetch did not reach, the door to Add a git identity with that host filled, once', async () => {
-    const onGo = vi.fn();
-    const hosted: HelpProposal = {
-      ...OFFLINE,
-      sync: {
-        ...OFFLINE.sync!,
-        notFetched: [
-          { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh', host: 'git.example.com:2222' },
-          { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh', host: 'git.example.com:2222' },
-          { repository: 'site', fetch: unreadable, lastFetch: null, reach: 'https', host: 'github.com' },
-          { repository: 'docs', fetch: unreadable, lastFetch: null, reach: 'file', host: null },
-        ],
-      },
-    };
-    render(<ul><ProposalCard proposal={hosted} onApply={vi.fn()} onDismiss={vi.fn()} onGo={onGo} /></ul>);
-
-    const door = screen.getByRole('button', { name: 'Add a git identity for git.example.com:2222…' });
-    expect(screen.getAllByRole('button', { name: /^Add a git identity for / })).toHaveLength(2);
-    await userEvent.click(door);
-
-    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'git', gitHost: 'git.example.com:2222' });
-  });
-
-  it('has no such door where the window gives none, or where no host is known', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} onGo={vi.fn()} /><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.queryByRole('button', { name: /^Add a git identity for / })).not.toBeInTheDocument();
-  });
-
-  it('once looked, names on the card the repositories it left apart, and how a proposal includes one', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    const apart = within(screen.getByRole('group', { name: 'Repositories not looked at' }));
-    expect(apart.getByText('2 other repositories with a checkout here hold no branch of Daoris\'s')).toBeInTheDocument();
-    expect(apart.getByText(code('docs'))).toBeInTheDocument();
-    expect(apart.getByText(code('site'))).toBeInTheDocument();
-    expect(apart.getByText(/A proposal naming one looks at it/)).toBeInTheDocument();
-  });
-
-  it('says nothing besides its rows where every line was fetched and nothing was left apart, or before the look', () => {
-    render(<ul><ProposalCard proposal={LOOKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={{ ...SYNC, sync: { ...OFFLINE.sync!, looked: false } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.queryByRole('note', { name: 'Not fetched' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'Repositories not looked at' })).not.toBeInTheDocument();
-  });
-
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
@@ -417,16 +295,6 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(1);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
-      cleanup();
-      // Bringing up to date's chrome, the look's word the screen's own.
-      render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议更新到最新')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
-      cleanup();
-      // What the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
-      render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
-      expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

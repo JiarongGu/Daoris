@@ -227,7 +227,6 @@ public sealed class HelpRoutes(DriverContext context)
         new
         {
             proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-            Sync = SyncShown(plan.Sync),
             // A workflow's version, as the card shows it, never the steps or the choice Apply carries.
             Workflow = WorkflowShown(plan.Workflow),
             // A place's quick set-up: the ask, its workspace, each change once, and the plan's digest, so a plan that moved
@@ -243,20 +242,6 @@ public sealed class HelpRoutes(DriverContext context)
                 }
                 : null,
         };
-
-    /// <summary>
-    /// What a bring-up-to-date card shows, the page's <c>HelpSyncShown</c>: whether the person has looked, every
-    /// row the look listed in the terminal's words, and what the rows do not say — each repository not fetched,
-    /// with git's reason, when it last heard from origin and how origin is reached, and the repositories left apart.
-    /// Null for every other kind.
-    /// </summary>
-    public static object? SyncShown(HelpSyncPlan? sync) => sync is null ? null : new
-    {
-        sync.Looked,
-        Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray(),
-        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach, line.Host }).ToArray(),
-        Apart = sync.Besides.Apart.ToArray(),
-    };
 
     // The person's Apply: made through the door the screen's own route uses, judged again
     // first, since the machine may have moved after the card's drawing. The result goes back into
@@ -351,7 +336,7 @@ public sealed class HelpRoutes(DriverContext context)
         // the driver judged filled, or New conversation with the repository and words it judged, or an Agents
         // place's Setup with its set-up open on the ask; each null on any other go.
         Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
-        // The card stands for another press: a sync card's look settles nothing, so the page logs no settlement.
+        // The card stands for another press: a draft's change opened in the editor settles nothing, so the page logs no settlement.
         applied.Stands,
     };
 

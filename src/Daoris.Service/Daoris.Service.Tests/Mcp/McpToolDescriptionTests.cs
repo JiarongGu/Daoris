@@ -494,8 +494,7 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
     }
 
-    // Not after `#`: an entry id's anchor is in the reader's own
-    // repository, not a citation of this one's.
+    // Not after `#`: an entry id's anchor is in the reader's own repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]
     private static partial Regex DecisionNumber();
 }

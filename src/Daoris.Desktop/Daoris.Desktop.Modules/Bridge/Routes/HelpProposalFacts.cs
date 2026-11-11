@@ -13,16 +13,10 @@ public sealed class HelpProposalFacts(DriverContext context)
     /// <summary>Whether a pending proposal is a go naming a quest or an ask on Quests, judged against every one, so the service is asked for the records only then.</summary>
     public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "quests"));
 
-    /// <summary>
-    /// Whether a pending proposal is judged against this machine's session records, closed ones included: a go naming a
-    /// session on Sessions, so the service is asked for them only then.
-    /// </summary>
+    /// <summary>Whether a pending proposal is a go naming a session on Sessions, so the service is asked for its records only then.</summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "sessions"));
 
-    /// <summary>
-    /// Whether a pending proposal is a workflow, judged by the named workflows saved here and the runs bound to
-    /// them, so the home is read for those only then.
-    /// </summary>
+    /// <summary>Whether a pending proposal is a workflow, judged by the workflows saved here and their runs, read only then.</summary>
     public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
 
     /// <summary>

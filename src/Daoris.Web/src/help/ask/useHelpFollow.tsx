@@ -83,7 +83,6 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
           key={proposal.id}
           proposal={proposal}
           pending={settle.isPending}
-          onGo={onGo}
           onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: (answer) => applied(answer, proposal), onError: (error) => setRefusal(sentence(error)) })}
           onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
         />

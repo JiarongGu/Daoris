@@ -1,30 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
-import type { StarterDoor } from './starters';
 
 /** A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same; a go has none. */
 export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  kind: 'ask' | 'go' | 'sync' | 'workflow' | 'setup';
+  kind: 'ask' | 'go' | 'workflow' | 'setup';
   describe: string;
   terminal: string;
   why: string;
-  /** Bringing up to date: whether the person has looked, and every row the look listed. */
-  sync?: HelpSyncShown | null;
   /** A workflow version (`workflow`): drawn as the design's card. */
   workflow?: HelpWorkflowShown | null;
   /** A place's quick set-up (`setup`'s `place` door): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
   place?: HelpPlaceShown | null;
 };
 
-/**
- * What a place's set-up card shows: the ask, the workspace it is of, and each change the plan makes once with the repositories
- * it reaches. The page *Set up…* opens plans again; the digest only moves the card's revision when the plan moves.
- */
+/** A place's set-up card: the ask, its workspace and each change the plan makes; the digest moves the card's revision. */
 export type HelpPlaceShown = {
   workspace: string;
   digest: string;
@@ -115,26 +108,7 @@ export type WorkflowGraphChange = {
   said: string;
 };
 
-/**
- * What a bring-up-to-date card shows: whether the person has looked — the press that fetches —
- * and each row the look listed, in the terminal's words, and whether the press moves it. Also what the rows do
- * not say, kept by the look: each repository whose line is not fetched, and those left apart. An older
- * host answers neither.
- */
-export type HelpSyncShown = {
-  looked: boolean;
-  rows: { key: string; step: 'line' | 'replay' | 'delete'; moves: boolean; says: string }[];
-  /** Each repository whose line the look did not fetch: git's reason, when it last heard from origin (never, as none), and how origin is reached. */
-  notFetched?: { repository: string; fetch: string; lastFetch?: string | null; reach?: string | null; host?: string | null }[];
-  /** The repositories with a checkout here that the look left apart, holding no branch of Daoris's. */
-  apart?: string[];
-};
-
-/**
- * What a workflow proposal changes, in the design's order: the version it makes, *Your part* first, the
- * steps' diff, the acts that become standing, what is needed first, and who it applies to. Headings are the page's words;
- * every line is the driver's English sentence, shown as it came.
- */
+/** What a workflow proposal changes, in the design's order: the page's headings, each line the driver's English as it came. */
 function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
   const { t } = useTranslation();
   const section = (heading: string, lines: string[], key: string) => (
@@ -212,69 +186,6 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
 }
 
 /**
- * What a sync card's look did not fetch, said once, after the rows, as the screen's note says it: how
- * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
- * against — and the git identity an origin over SSH or HTTPS needs. Git's words are content.
- */
-function SyncNotFetched({ failed, lines, onGo }: {
-  failed: NonNullable<HelpSyncShown['notFetched']>;
-  lines: number;
-  onGo?: (door: StarterDoor) => void;
-}) {
-  const { t } = useTranslation();
-  // The screen door: each host a fetch over SSH or HTTPS did not reach, once, opening Add a git identity with the host filled.
-  const hosts = [...new Set(failed.filter((line) => line.reach === 'ssh' || line.reach === 'https').map((line) => line.host).filter((host): host is string => !!host))];
-  const reasons = [...new Set(failed.map((line) => line.fetch))];
-  const when = (line: (typeof failed)[number]) => (line.lastFetch
-    ? t('settings.sync.notFetched.when', { repository: line.repository, when: ago(line.lastFetch) })
-    : t('settings.sync.notFetched.never', { repository: line.repository }));
-  return (
-    <div role="note" aria-label={t('settings.sync.notFetched.label')} className="m-0 mt-1 text-meta text-ink-soft">
-      <p className="m-0">{t('settings.sync.notFetched.head', { count: failed.length, total: Math.max(lines, failed.length) })}</p>
-      <ul className="m-0 list-none p-0">
-        {reasons.map((reason) => (
-          <li key={reason} className="m-0 mt-0.5">
-            <span className="break-words"><Inline text={reason} /></span>
-            <span className="block">{failed.filter((line) => line.fetch === reason).map(when).join(' · ')}</span>
-          </li>
-        ))}
-      </ul>
-      {failed.some((line) => line.reach === 'ssh') && (
-        <p className="m-0 mt-0.5"><Inline text={t('settings.sync.notFetched.ssh')} /></p>
-      )}
-      {failed.some((line) => line.reach === 'https' || line.reach === 'http') && (
-        <p className="m-0 mt-0.5">{t('settings.sync.notFetched.https')}</p>
-      )}
-      {onGo && hosts.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {hosts.map((host) => (
-            <Button key={host} onClick={() => onGo({ view: 'settings', section: 'git', gitHost: host })}>
-              {t('help.proposal.syncAddIdentity', { host })}
-            </Button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * The repositories a sync card's look left apart, collapsed as the screen's list is: they hold no branch
- * of Daoris's, so nothing of theirs is fetched or moves, and a card cannot tick one, so it says how one is included.
- */
-function SyncApart({ apart }: { apart: string[] }) {
-  const { t } = useTranslation();
-  return (
-    <details role="group" aria-label={t('settings.sync.apart.label')} className="m-0 mt-1 text-meta text-ink-soft">
-      <summary className="cursor-pointer">{t('settings.sync.apart.summary', { count: apart.length })}</summary>
-      <p className="m-0 mt-0.5">
-        <Inline text={t('help.proposal.syncApart', { names: apart.map((name) => `\`${name}\``).join(', ') })} />
-      </p>
-    </details>
-  );
-}
-
-/**
  * One change Ask Daoris proposes: what it changes, the terminal command that does the same,
  * and why — with **apply** and **not now**, since every change is the person's press.
  *
@@ -287,29 +198,20 @@ function SyncApart({ apart }: { apart: string[] }) {
  * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody;
  * a go to a quest says, in the driver's sentence, whether it is taken.
  *
- * **Bringing up to date has the screen's two presses**: looking fetches as the person, so the
- * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
- * show those rows, each as the terminal says it, with Apply, which does only the rows that move. Beside them it says
- * what they do not: the lines the look could not fetch, and the repositories it left apart.
- *
  * **A workflow version reads in the design's order**: *Your part* first, then the steps' diff, the acts that
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
  * the editor lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
  *
  * **A set-up is a place's**: its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
-export function ProposalCard({ proposal, pending = false, onApply, onDismiss, onGo }: {
+export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
   pending?: boolean;
   onApply: (id: string) => void;
   onDismiss: (id: string) => void;
-  /** Where a sync card's screen door leads: the window opens the door, as it does a published item's. */
-  onGo?: (door: StarterDoor) => void;
 }) {
   const { t } = useTranslation();
   const going = proposal.kind === 'go';
-  const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
-  const looking = syncing !== null && !syncing.looked;
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   const draft = workflow !== null && workflow.needs.length > 0;
@@ -319,36 +221,13 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
     <li className="rounded-control border border-accent/50 bg-raised px-3 py-2.5">
       <p className="m-0 text-small font-semibold text-accent">
         {t(going ? 'help.proposal.titleGo'
-          : syncing ? 'help.proposal.titleSync'
-            : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-              : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
+          : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
+            : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {place && <PlaceChanges place={place} />}
-      {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
-      {syncing?.looked && (
-        <>
-          <ul aria-label={t('help.proposal.syncRows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
-            {syncing.rows.map((row) => (
-              <li key={`${row.step}:${row.key}`} className="m-0 text-meta text-ink-soft">
-                <span className={row.moves ? 'font-semibold text-accent' : 'text-ink-faint'}>
-                  {t(row.moves ? 'settings.sync.moves' : 'settings.sync.stays')}
-                </span>{' '}
-                {/* The driver's sentence, the terminal's, carried as it said it. */}
-                <Inline text={row.says} />
-              </li>
-            ))}
-          </ul>
-          {/* What the rows do not say, on the card itself, as the look's message says it too. */}
-          {(syncing.notFetched ?? []).length > 0 && (
-            <SyncNotFetched failed={syncing.notFetched!} lines={syncing.rows.filter((row) => row.step === 'line').length} onGo={onGo} />
-          )}
-          {(syncing.apart ?? []).length > 0 && <SyncApart apart={syncing.apart!} />}
-          <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncNote')}</p>
-        </>
-      )}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
       {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}
       {proposal.terminal && (
@@ -361,8 +240,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
           <Button variant="primary" disabled={pending} onClick={() => onApply(proposal.id)}>
             {t(going ? 'help.proposal.go'
               : place ? 'help.proposal.place.open'
-                : composing ? 'help.proposal.workflow.openEditor'
-                : looking ? 'help.proposal.look' : 'help.proposal.apply')}
+                : composing ? 'help.proposal.workflow.openEditor' : 'help.proposal.apply')}
           </Button>
         )}
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>

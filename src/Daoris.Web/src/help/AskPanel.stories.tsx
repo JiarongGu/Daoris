@@ -16,8 +16,7 @@ import { PublishedList } from './published/PublishedList';
 import { starters } from './starters';
 import { TAKEN, WORKING } from '../quests/fixtures';
 
-// Ask Daoris: its panel on a machine that lacks everything, on one that lacks nothing,
-// and in Chinese widths by the same props.
+// Ask Daoris: its panel on a machine that lacks everything, on one that lacks nothing, and in Chinese widths by the same props.
 
 const meta = {
   title: 'Help/AskPanel',
@@ -108,44 +107,6 @@ export const ProposingEveryKind: Story = {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',
             },
-            {
-              id: 'y1', kind: 'sync' as const,
-              describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you — only origin\'s own refs move — and this card then lists what the press would do.',
-              terminal: 'daoris tree sync --repository engine', why: 'your pull request merged',
-              sync: { looked: false, rows: [] },
-            },
-            {
-              id: 'y2', kind: 'sync' as const,
-              describe: 'Bring `engine` up to date: 3 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris tree sync --repository engine --yes', why: 'your pull request merged',
-              sync: {
-                looked: true,
-                rows: [
-                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-                  { key: 'engine:daoris/s-step', step: 'replay' as const, moves: true, says: 'engine  daoris/s-step  replays 2 commit(s) of its own onto `main`, after `feature/q2-first`\'s work, which reached the line' },
-                  { key: 'engine:daoris/s-busy', step: 'replay' as const, moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
-                  { key: 'engine:feature/q2-first', step: 'delete' as const, moves: true, says: 'engine  feature/q2-first  its work is on the line' },
-                ],
-              },
-            },
-            // A look where a line could not be fetched and other repositories are left apart, said on the card.
-            {
-              id: 'y3', kind: 'sync' as const,
-              describe: 'Bring every repository with a checkout here up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris tree sync --yes', why: 'your pull request merged',
-              sync: {
-                looked: true,
-                rows: [
-                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-                  { key: 'game:main', step: 'line' as const, moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
-                ],
-                notFetched: [{
-                  repository: 'game', fetch: 'fatal: Could not read from remote repository.',
-                  lastFetch: new Date(Date.now() - 2 * 86_400_000).toISOString(), reach: 'ssh',
-                }],
-                apart: ['docs', 'site', 'tools'],
-              },
-            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),
@@ -153,10 +114,7 @@ export const ProposingEveryKind: Story = {
   },
 };
 
-/**
- * The block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
- * sentence the driver's saying the quest is taken, *Go there* beside *Dismiss*, which only takes the card away.
- */
+/** A published quest a session has taken: a go card saying so, *Go there* beside *Dismiss*, which only takes the card away. */
 export const ProposingAGoToATakenQuest: Story = {
   args: {
     ...Talking.args,
