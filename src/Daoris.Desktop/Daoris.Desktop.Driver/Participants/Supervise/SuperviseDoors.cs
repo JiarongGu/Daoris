@@ -19,13 +19,15 @@ public sealed class SuperviseDoors
 
     /// <summary>
     /// Opens the record for <paramref name="attempt"/> of <paramref name="role"/>, at the subject's place, serving the session it waits on;
-    /// a refusal is the host's sentence, and so is a host older than the door.
+    /// a refusal is the host's sentence, and so is a host older than the door. A <paramref name="machine"/> subject's names no place.
     /// </summary>
     public async Task<HelperOpened> OpenAsync(
         SupervisorAttempt attempt, string role, string repository, string? workspace, string adapter, string tree, string? account,
-        string? doorVersion, CancellationToken ct = default)
+        string? doorVersion, CancellationToken ct = default, bool machine = false)
     {
-        var route = new OpenSupervise(attempt.Id, role, repository, workspace, attempt.Subject.Session, adapter, tree, account, doorVersion);
+        var route = new OpenSupervise(
+            attempt.Id, role, machine ? "" : repository, machine ? null : workspace, attempt.Subject.Session, adapter, tree, account, doorVersion,
+            machine ? true : null);
         var door = RouteRequest.Of(route).Path;
         var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");
