@@ -21,6 +21,10 @@ internal static class WorkflowUsing
         var given = new WorkflowUse(chosen, repository, workspace, kind) { Pipeline = pipeline };
         var reach = await ReachAsync(choices, home, registry, chosen, repository, workspace, ct).ConfigureAwait(false);
         if (reach.Refusal is not null) return new WorkflowUsed(null, false, [], reach.Rows, reach.Refusal);
+        if (await WorkflowPlaceKinds.RefusalAsync(choices, home, registry, chosen, repository, workspace, ct).ConfigureAwait(false) is { } unserved)
+        {
+            return new WorkflowUsed(null, false, [], reach.Rows, unserved);
+        }
 
         string? unchecked_ = null;
         WorkflowUse edit;
@@ -224,7 +228,7 @@ internal static class WorkflowUsing
     }
 
     // A repository whose own choice names a workflow replaces its workspace's whole, so the workspace's does not reach it.
-    private static List<(string Repository, string? Workspace, string? Root)> InWorkspace(
+    internal static List<(string Repository, string? Workspace, string? Root)> InWorkspace(
         DriverConfig choices, IReadOnlyList<(string Repository, string? Workspace, string? Root)> checkouts, string workspace, string? except) =>
     [
         .. checkouts

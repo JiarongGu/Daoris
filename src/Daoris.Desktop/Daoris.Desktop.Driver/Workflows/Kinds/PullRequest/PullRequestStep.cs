@@ -12,6 +12,9 @@ public sealed record PullRequestStep : PluginStep, IWatchable
 {
     public override NodePart Part(NodeDeclaration node) => base.Part(node) with { Lowered = WorkflowKinds.PullRequest };
 
+    /// <summary>A pull request opens on a branch the run's <c>push</c> pushed.</summary>
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public IReadOnlyList<string> States => PullRequestReading.States;
 
     public NodeWatched Read(NodeReading reading) => PullRequestReading.Read(reading);

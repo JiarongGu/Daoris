@@ -39,6 +39,9 @@ public record PluginStep : INodeKind, IStarts
 
     public NodeLook Look => NodeLook.Plugin;
 
+    /// <summary>Every kind of place: a plugin's declaration names none, so only a half Daoris has of its step name narrows it.</summary>
+    public virtual IReadOnlyList<string> Places => PlaceKind.Every;
+
     public bool ReadsTheLanding => false;
 
     public LandingGuard Guard => LandingGuard.None;

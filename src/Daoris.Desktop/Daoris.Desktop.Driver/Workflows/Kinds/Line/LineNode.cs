@@ -14,6 +14,9 @@ internal sealed class LineNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Line;
 
+    /// <summary>It observes git's line, so a folder's graph ends at its last node instead.</summary>
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public override bool EndsByTheLine => true;

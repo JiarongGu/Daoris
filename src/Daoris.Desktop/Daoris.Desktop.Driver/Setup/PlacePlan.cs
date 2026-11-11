@@ -355,8 +355,7 @@ public static class PlacePlans
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
         IReadOnlyList<QuestView> quests = ask.Drive || ask.Adoption ? await world.QuestsAsync(ct).ConfigureAwait(false) : [];
         var store = WorkflowPorts.Store(home);
-        WorkflowOperations.RegistryRead read = _ =>
-            Task.FromResult(new ChoicesRegistry([.. registry.Select(each => (each.Repository, (string?)each.Workspace, each.Root))], null));
+        WorkflowOperations.RegistryRead read = _ => Task.FromResult(ChoicesRegistry.Of(registry));
 
         var rows = new List<PlaceRepository>();
         var saves = new List<PlaceSave>();

@@ -10,6 +10,21 @@ public static class PlaceKind
     public const string Folder = "folder";
     public const string System = "system";
 
+    /// <summary>Every kind, in the order a step's places are said: what a node kind runs in where it declares nothing narrower.</summary>
+    public static IReadOnlyList<string> Every { get; } = [Git, Folder, System];
+
+    /// <summary>A git repository alone: the places git's own steps run in.</summary>
+    public static IReadOnlyList<string> GitAlone { get; } = [Git];
+
+    /// <summary>The kind in English, with its article: <i>a git repository</i>, <i>a folder</i>, <i>a system</i>.</summary>
+    public static string Said(string kind) => kind switch
+    {
+        Git => "a git repository",
+        Folder => "a folder",
+        System => "a system",
+        _ => $"a `{kind}`",
+    };
+
     /// <summary>The kind a registration's word names, where it names one this side reads; null otherwise.</summary>
     public static string? Of(string? word) => word?.Trim().ToLowerInvariant() switch
     {
