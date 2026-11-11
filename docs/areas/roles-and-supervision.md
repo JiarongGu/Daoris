@@ -440,8 +440,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
-    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules
-    (`settings notify|cap|cooloff|quiet|keep`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
+    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
+    (`settings notify|cap|cooloff|quiet|keep|terminal`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
     the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
     one view of `SET_ROLE`, judged by the role door's judges against the catalogue, staffing and rules held now; a supervisor's record
@@ -471,9 +471,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     with whether that was beyond its conversation's focus at the press, `HelpPressPlace`; a restricted press asked on a card is
     kept there too, marked asked, its outcome its card's state: waiting, allowed, refused, changed or unanswered; the newest 100, a
     restart empties it) and told to the windows, which list it in *Notifications* beside the steward's line, the asked apart
-    under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A proof that does not hold, a nonce used already or a session
+    under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A terminal's press under the
+    terminal's tier `act` (desktop-app 15) is kept and listed the same way, marked a terminal's, under its own line and with no
+    conversation to open. A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
-    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253)
+    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253, D271)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
     of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a

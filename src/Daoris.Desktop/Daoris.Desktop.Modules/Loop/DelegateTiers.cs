@@ -33,6 +33,19 @@ internal static class DelegateTiers
         return HelpPressPlace.Of(request.Payload, focus, registry, questTo);
     }
 
+    /// <summary>The machine's tier of a terminal's presses, read from its file now; null, which asks, where the file does not read.</summary>
+    public static string? Terminal(DriverLoop loop)
+    {
+        try
+        {
+            return DriverConfig.Load(loop.ConfigPath).Terminal;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The place's permission prompts as its access setup resolves now; null where it names none or the file does not read.</summary>
     private static string? Permissions(DriverLoop loop, SessionPlace? place)
     {
