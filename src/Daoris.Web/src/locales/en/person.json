@@ -62,6 +62,7 @@
   "person.view.account-settings": "Sets {{agent}} account {{account}}'s model to {{model}} and its effort to {{effort}}, in the tool's own settings file for that account; an empty value returns it to the tool's own default.",
   "person.view.account-settings-model": "Sets {{agent}} account {{account}}'s model to {{model}}, in the tool's own settings file for that account; an empty value returns it to the tool's own default.",
   "person.view.account-settings-effort": "Sets {{agent}} account {{account}}'s effort to {{effort}}, in the tool's own settings file for that account; an empty value returns it to the tool's own default.",
+  "person.view.account-settings-for": "Sets {{agent}} account {{account}}'s effort for the model {{model}} to {{effort}}, in the tool's own settings file for that account; an empty value returns it to the tool's own default.",
   "person.view.place-drive": "Drives {{repository}}: a quest for it starts a session on this machine.",
   "person.view.place-undrive": "Stops driving {{repository}}: no quest for it starts a session on this machine.",
   "person.view.place-hold": "Holds {{repository}}: nothing new starts there until it is resumed.",
