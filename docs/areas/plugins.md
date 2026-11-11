@@ -42,7 +42,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Switch | `Plugins/PluginState.cs`, `Plugins/PluginSwitches.cs`, `Plugins/Domain/PluginSwitchTable.cs`, `Plugins/Domain/PluginPlace.cs`, `Plugins/WorkSwitched.cs`, `Plugins/PluginSwitchVerb.cs`; `Modules/Bridge/Routes/PluginSwitchRoutes.cs` | `<home>/plugins.json`: the disabled rows, and `switches`, the person's word on each interface and point per place, read by one resolver at every door; `daoris plugin switch` and `PLUGIN_SWITCH` |
 | Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
 | Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs`, `Plugins/PluginsAtStart.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
-| Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
+| Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/Domain/CommandCall.cs`, `Plugins/Domain/CommandArgs.cs`, `Plugins/PluginCommandRun.cs`, `Modules/Bridge/Routes/PluginCommandRoutes.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 
@@ -192,12 +192,18 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     skipped; an interface needs `hooks`, else each is refused. `forget` names a declared command that runs alone, and one naming a
     refused, missing or asking command is kept and disabled with the reason. `daoris plugin list` says each (`PluginInterfaceLines`),
     and `PLUGINS` answers a plugin's `interfaces` whole.
-    A command runs one round per process at `hook/command/run` (`{ command, args, answers, from }`, never a point claimed at the
-    handshake), answered `{ said, ask: { name, prompt, masked }, open, code, exit }`, `said` at most 40 lines of 2,000 characters
-    and 8 KiB in all (`CommandWire.SaidBytes`, under the work wire's 64 KiB frame), at most 8 rounds, 60 s each, the answers so far
-    sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin running commands
-    (rule 30);
-    it asks each value at the terminal, hidden where `masked`, and refuses a session's terminal. `storage` is `profiles/plugins/<id>/`,
+    A command runs one round per process at `hook/command/run` (`CommandCall`: `{ command, run, args, answers, from, place, language,
+    session? }`, never a point claimed at the handshake): `run` 32 hex, one per run and the same across its rounds; `args` an object by
+    name, each value of its declared type (`CommandArgs`); `from` `terminal`, `window`, `adoption`, `agent` or `removal`, always
+    Daoris's word; `place` `machine` or `{ kind: repository | workspace, id }`; `language` the viewer's, `en` at the terminal;
+    `session` where an agent calls. It is answered `{ said, ask: { name, prompt, masked }, open, code, then, data, exit }`, `said` at
+    most 40 lines of 2,000 characters and 8 KiB in all (`CommandWire.SaidBytes`, under the work wire's 64 KiB frame), `then` `stay`,
+    `reload`, `back` or `{ go: { view, args } }`, `data` an object of at most 32 KiB for an agent, at most 8 rounds, 60 s each, the
+    answers so far sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin
+    running commands (rule 30); its words are the arguments as `--<name> <value>` (a boolean's flag alone true) or in declared order,
+    a required one not given asked by its title; it asks each value at the terminal, hidden where `masked`, and refuses a session's
+    terminal. The window's door is `PLUGIN_COMMAND` (`Window`, `PluginCommandRoutes`): one round per call, `from: window`, at the
+    place it names, an argument missing refused before any process starts, the answer handing back the run's id. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
     nothing in it. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then

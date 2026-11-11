@@ -14,11 +14,19 @@ public sealed record CommandAsk(string Name, string Prompt, bool Masked);
 /// <param name="Open">An address the person is to open, such as a sign-in page.</param>
 /// <param name="Code">A code the person is to enter there.</param>
 /// <param name="Exit">How it ended where it ended: 0 done, otherwise not.</param>
-public sealed record CommandRound(IReadOnlyList<string> Said, CommandAsk? Ask, string? Open, string? Code, int Exit);
+public sealed record CommandRound(IReadOnlyList<string> Said, CommandAsk? Ask, string? Open, string? Code, int Exit)
+{
+    /// <summary>What a view does once the command ends: <c>stay</c>, <c>reload</c>, <c>back</c> or <c>{ go: { view, args } }</c>; null for the default.</summary>
+    public JsonElement? Then { get; init; }
+
+    /// <summary>An object for an agent, never shown as words.</summary>
+    public JsonElement? Data { get; init; }
+}
 
 /// <summary>
-/// A declared command's wire: <c>hook/command/run</c> asks one round, <c>{ command, args, answers, from }</c>, of a process started for
-/// it; the answer says lines, may ask for one value, an address to open and a code, and ends with an <c>exit</c> where it asks nothing.
+/// A declared command's wire: <c>hook/command/run</c> asks one round of a process started for it (<see cref="CommandCall"/>); the answer
+/// says lines, may ask for one value, an address to open and a code, may say what a view does next and hand an agent data, and ends
+/// with an <c>exit</c> where it asks nothing.
 /// Each round is a process of its own, the answers given so far sent whole, so the plugin keeps nothing between rounds but what it
 /// writes to its own storage.
 /// </summary>
@@ -31,18 +39,39 @@ public static class CommandWire
 
     public const int SaidBytes = 8 * 1024;
 
+    public const int DataBytes = 32 * 1024;
+
     /// <summary>How long a round may take, a call to the plugin's platform among it.</summary>
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(60);
 
-    /// <summary>Who runs it, as the frame's <c>from</c> says: a terminal, the window, or an adoption of a git identity's token.</summary>
+    /// <summary>Who runs it, as the frame's <c>from</c> says: a terminal, the window, an adoption of a git identity's token, an agent, or a removal.</summary>
     public const string Terminal = "terminal";
 
     public const string Window = "window";
 
     public const string Adoption = "adoption";
 
-    public static object Frame(string command, IReadOnlyList<string> args, IReadOnlyDictionary<string, string> answers, string from) =>
-        new { command, args, answers, from };
+    public const string Agent = "agent";
+
+    public const string Removal = "removal";
+
+    public static object Frame(CommandCall call)
+    {
+        var frame = new Dictionary<string, object?>
+        {
+            ["command"] = call.Command,
+            ["run"] = call.Run,
+            ["args"] = call.Args,
+            ["answers"] = call.Answers,
+            ["from"] = call.From,
+            ["place"] = call.Place.Key == PluginPlace.MachineKey
+                ? PluginPlace.MachineKey
+                : new { kind = call.Place.Repository is { Length: > 0 } ? "repository" : "workspace", id = call.Place.Repository is { Length: > 0 } repository ? repository : call.Place.Workspace },
+            ["language"] = call.Language,
+        };
+        if (call.Session is { } session) frame["session"] = session;
+        return frame;
+    }
 
     /// <summary>A round's answer, read by its shape.</summary>
     /// <exception cref="DriverException">An answer of another shape: nothing of it is said.</exception>
@@ -77,8 +106,20 @@ public static class CommandWire
         var code = Text(answer, "code");
         if (code is { Length: > 64 }) throw Unread(plugin, "`code` is longer than 64");
         var exit = answer.TryGetProperty("exit", out var ended) && ended.ValueKind == JsonValueKind.Number && ended.TryGetInt32(out var number) ? number : 0;
-        return new(said, ask, open, code, ask is null ? exit : 0);
+        JsonElement? then = answer.TryGetProperty("then", out var next) && next.ValueKind != JsonValueKind.Null ? next.Clone() : null;
+        if (then is { } shown && !IsThen(shown)) throw Unread(plugin, "`then` is `stay`, `reload`, `back` or `{ go: { view, args } }`");
+        JsonElement? data = answer.TryGetProperty("data", out var given) && given.ValueKind != JsonValueKind.Null ? given.Clone() : null;
+        if (data is { ValueKind: not JsonValueKind.Object }) throw Unread(plugin, "`data` is not an object");
+        if (data is { } held && System.Text.Encoding.UTF8.GetByteCount(held.GetRawText()) > DataBytes) throw Unread(plugin, "`data` is longer than 32 KiB");
+        return new(said, ask, open, code, ask is null ? exit : 0) { Then = then, Data = data };
     }
+
+    private static bool IsThen(JsonElement then) =>
+        then.ValueKind == JsonValueKind.String
+            ? then.GetString() is "stay" or "reload" or "back"
+            : then.ValueKind == JsonValueKind.Object && then.TryGetProperty("go", out var go) && Text(go, "view") is { } view
+              && PluginIds.NameShape.IsMatch(view)
+              && (!go.TryGetProperty("args", out var args) || args.ValueKind is JsonValueKind.Object or JsonValueKind.Null);
 
     private static string? Text(JsonElement row, string name) =>
         row.ValueKind == JsonValueKind.Object && row.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

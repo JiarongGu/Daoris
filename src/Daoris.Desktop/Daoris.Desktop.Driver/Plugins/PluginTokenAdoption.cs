@@ -13,7 +13,7 @@ public static class PluginTokenAdoption
 
     public static async Task RunAsync(string home, MachineLog log, CancellationToken ct, Round? round = null)
     {
-        round ??= (plugin, command, answers, token) => PluginCommandRun.RoundAsync(home, plugin, command, [], answers, CommandWire.Adoption, token);
+        round ??= (plugin, command, answers, token) => PluginCommandRun.RoundAsync(home, plugin, CommandCall.Plain(command, answers, CommandWire.Adoption), token);
         var identities = GitIdentities.Read(home);
         foreach (var plugin in PluginCatalog.Load(home).Plugins.Where(each => each.Contributes))
         {

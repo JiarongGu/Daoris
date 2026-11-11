@@ -33,14 +33,12 @@ public static class PluginCommandRun
 
     /// <summary>One round: the plugin's process started for it, asked, and stopped.</summary>
     /// <exception cref="DriverException">The process did not start or answer, or answered in another shape.</exception>
-    public static async Task<CommandRound> RoundAsync(
-        string home, PluginEntry plugin, string command, IReadOnlyList<string> args, IReadOnlyDictionary<string, string> answers, string from,
-        CancellationToken ct, Starter? start = null)
+    public static async Task<CommandRound> RoundAsync(string home, PluginEntry plugin, CommandCall call, CancellationToken ct, Starter? start = null)
     {
         var channel = await (start ?? ((entry, token) => HookChannels.StartAsync(entry, home, _ => { }, token)))(plugin, ct).ConfigureAwait(false);
         await using (channel.ConfigureAwait(false))
         {
-            var answer = await channel.CommandAsync(CommandWire.Frame(command, args, answers, from), ct).ConfigureAwait(false);
+            var answer = await channel.CommandAsync(CommandWire.Frame(call), ct).ConfigureAwait(false);
             return CommandWire.Read(plugin.Manifest.Id, answer);
         }
     }
