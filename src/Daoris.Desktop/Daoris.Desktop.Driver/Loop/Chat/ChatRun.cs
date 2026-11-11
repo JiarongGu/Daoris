@@ -454,6 +454,7 @@ internal sealed class ChatRun(
             {
                 if (e.Kind == SessionEventKind.Turn) native.TurnEnded();
             },
+            Echoed = native is null ? null : native.Echoed,
             // Its harness opened the conversation its words went to, so they went: off the record by their ids.
             Named = goOn is null ? null : () =>
             {

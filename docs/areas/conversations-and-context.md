@@ -32,8 +32,9 @@ of everything it handed, section by section.
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
 | `ChatTurns` | `Loop/Chat/ChatTurns.cs` | A conversation's turn queue: holds, limit waits, edits, stops; the one door of its parts |
 | `TurnState` | `Loop/Chat/Turns/TurnState.cs` | The turns' state under its one gate: what it guards, the keep's lock before it, what a race would break |
-| `TurnPump`, `TurnTakes`, `TurnCutIn`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the person's *Send now* on a door that takes no word mid-turn but stops one keeping the conversation (the native wire's interrupt, `codex-acp`'s cancel): first among what waits, the turn stopped, the word the next turn's first, its ask recorded at level `now`; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
-| `ProtocolChat`, `NativeChat` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt |
+| `TurnPump`, `TurnTakes`, `TurnCutIn`, `TurnKeeps`, `KeepRetry`, `TurnHolds`, `TurnStops` | `Loop/Chat/Turns/` | The one pump; a word's take at its level; the person's *Send now* on a door that neither steers nor echoes but stops a turn keeping the conversation (a protocol agent offering no steering extension: its cancel): first among what waits, the turn stopped, the word the next turn's first, its ask recorded at level `now`; the keeps on the record, edits, press and send-back, each keep under a key and asked twice before it is held here alone (`KeepRetry`, so a word the record stored but never answered is held once); the holds; the stops |
+| `ProtocolChat`, `NativeChat`, `NativeSteers` | `Loop/Chat/` | A conversation's transport on each door: the protocol session's turns, steers, retries and stop; the native wire's stdin line per turn and its interrupt, and its *Send now*: one line with no priority under a uuid, written at once, that the harness echoes where it takes it (`--replay-user-messages`), read as in the running turn where the echo comes before the turn's result and as the next turn where it comes after, which the turn sent now waits out, each said by a note |
+| `AcpSteering`, `AcpStartedTurn` | `Agents/` | *Send now* on the protocol door, by `_session/steering` wherever the agent offers it: `injected` is the running turn's, said so; `startedNewTurn` (`codex-acp` reads no `idleBehavior`, so a steer that finds its turn just ended starts one no prompt owns) is the next turn's, said so, and the steer lasts until that turn ends as a woken turn does, by its quiet on Codex |
 | `ChatOptions` | `Loop/Chat/ChatOptions.cs` | A conversation's model and effort as its agent offers them, the person's change of either (never the mode), and the change as last kept |
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
 | `ChatTurnDoors` | `Loop/Chat/ChatTurnDoors.cs` | What is read of a live conversation's turns and done to them: where they stand, a word's reach, the press hold, waiting words edited, the turn stopped |
@@ -354,9 +355,9 @@ of everything it handed, section by section.
 
 - **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
   edit and retry, folded thinking and tools). Needs a design.
-- **ASKPUSH1:** a conversation's *Send now* cuts in on the native wire and `codex-acp` with fast tests only; the real-process proof
-  of the cut-in and of a steered turn on each harness is not written, and a driven session's *Send now* on a door that cannot steer
-  still waits for the turn's end.
+- **ASKPUSH1:** a driven session's *Send now* on a door that cannot steer (a driven native run, started with no stdin) still waits
+  for the turn's end; its stop-and-resume fallback is not built. The real-process proof of each harness against a stub model
+  (`tools/steer-proof.mjs`) drives the harness as Daoris frames it, not through the driver.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);
