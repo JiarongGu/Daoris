@@ -185,8 +185,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     its outcome, a press to open its conversation and a pause's *Resume*, and apart under *Asked you* the presses it put to the
     person on a card in restricted mode, each with its card's state; a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
-    holds a row for each session Sessions' list places to review, except one of a quest whose run the person stopped, its review
-    among its steps (`StoppedRuns`, read from the node records; `StoppedReviewAttentionTests`).
+    holds a review row for each session Sessions' list places in Needs you for a run's Accept (`reason` `review`), except one of a
+    quest whose run the person stopped, its review among its steps (`StoppedRuns`, read from the node records;
+    `StoppedReviewAttentionTests`).
     Overview keeps one summary line per group. (from D150, D181, D196)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)

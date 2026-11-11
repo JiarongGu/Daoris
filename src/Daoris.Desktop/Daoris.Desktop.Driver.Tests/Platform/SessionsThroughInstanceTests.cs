@@ -39,7 +39,7 @@ public sealed class SessionsThroughInstanceTests
         var output = new StringWriter();
 
         var exit = await SessionsCommand.RunAsync(
-            new SessionsAsk("list") { Group = SessionGroup.You, Repository = "engine", Json = false },
+            new SessionsAsk("list") { Group = SessionGroup.NeedsYou, Repository = "engine", Json = false },
             World(service, home.Home, home.World("sessions")), output);
 
         Assert.Equal(0, exit);
@@ -48,7 +48,7 @@ public sealed class SessionsThroughInstanceTests
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("SESSION_GROUPS", press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
-        Assert.Equal(SessionGroup.You, payload.GetProperty("group").GetString());
+        Assert.Equal(SessionGroup.NeedsYou, payload.GetProperty("group").GetString());
         Assert.Equal("engine", payload.GetProperty("repository").GetString());
         Assert.True(payload.GetProperty("said").GetBoolean());
     }

@@ -100,7 +100,7 @@ public sealed class HistoryClearingTests : IDisposable
         new LandedBranches(_home).Gone("engine", ["feature/q1-fix"]);
         new LandedBranches(_home).Record(new LandedBranch("engine", "default", "feature/q2-fix", "main", "def456", "o1", "q2", null, At));
         new LandedBranches(_home).Gone("engine", ["feature/q2-fix"]);
-        new SessionArchive(_home).Archive(["s2", "o1"], [new SessionGrouping("s2", SessionGroup.Ended, "failed"), new SessionGrouping("o1", SessionGroup.Ended, "completed")], ["s1", "s2", "o1"], At);
+        new SessionArchive(_home).Archive(["s2", "o1"], [new SessionGrouping("s2", SessionGroup.Done, "failed"), new SessionGrouping("o1", SessionGroup.Done, "completed")], ["s1", "s2", "o1"], At);
         File.WriteAllText(HeldWordsFile.PathOf(_home), """{ "held": [ { "session": "s1", "text": "words", "files": [], "door": "screen" } ] }""");
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q1", At, "screen", "not needed"));
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q2", At, "screen", "kept"));
@@ -167,7 +167,7 @@ public sealed class HistoryClearingTests : IDisposable
     [Fact]
     public async Task A_teammates_copy_goes_with_its_quest_and_takes_its_archive_mark()
     {
-        new SessionArchive(_home).Archive(["laptop/t1"], [new SessionGrouping("laptop/t1", SessionGroup.Ended, "completed")], ["laptop/t1"], At);
+        new SessionArchive(_home).Archive(["laptop/t1"], [new SessionGrouping("laptop/t1", SessionGroup.Done, "completed")], ["laptop/t1"], At);
         var service = new StandIn { Records = [Record("laptop/t1", "q1")], Quests = [Quest("q1")] };
         service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], teammates: ["laptop/t1"], forgotten: ["q1"])];
 

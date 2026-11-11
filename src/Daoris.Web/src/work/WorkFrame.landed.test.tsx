@@ -376,8 +376,8 @@ describe('a session’s page header and its acts', () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return { sessions: [
-          { session: 'c0ffee11', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: true },
-          { session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: false },
+          { session: 'c0ffee11', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false, deletable: true },
+          { session: 's1a2b3c4', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false, deletable: false },
         ] };
       }
       if (type === 'SESSION_DELETE') return { deleted: 'c0ffee11', removed: ['record'] };
@@ -425,7 +425,7 @@ describe('a session’s page header and its acts', () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'WORK_PLAN') return plan;
       if (type === 'WORK_PAUSE') return { scope: 'quest', id: 'abc123', did: 'paused', already: false, stopped: [{ session: 's1a2b3c4', quest: 'abc123' }], kept: [] };
-      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false }] };
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 's1a2b3c4', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false }] };
       return DRIVER_STATE;
     });
     const notify = vi.fn();
@@ -451,7 +451,7 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [{ ...DRIVEN, state: 'stopped' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'stopped', archived: false, teammate: false, pausedBy: { scope: 'quest', id: 'abc123' } }] };
+        return { sessions: [{ session: 's1a2b3c4', group: 'done', state: 'done', shown: 'stopped', archived: false, teammate: false, pausedBy: { scope: 'quest', id: 'abc123' } }] };
       }
       if (type === 'WORK_RESUME') return { scope: 'quest', id: 'abc123', did: 'resumed', released: [{ quest: 'abc123', session: 's1a2b3c4' }], holds: [] };
       return DRIVER_STATE;
@@ -469,7 +469,7 @@ describe('a session’s page header and its acts', () => {
   it('offers a driven session that served a quest no Delete… in its header', async () => {
     SESSIONS = [{ ...DRIVEN, state: 'completed' }];
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
-      ? { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: false }] }
+      ? { sessions: [{ session: 's1a2b3c4', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false, deletable: false }] }
       : DRIVER_STATE));
     show('s1a2b3c4');
 
@@ -610,7 +610,7 @@ describe('a session’s page header and its acts', () => {
     const { onSelect } = show('c0ffee11');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Chat' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · working · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
     fireEvent.click(within(within(head).getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement).getByRole('button'));
@@ -623,7 +623,7 @@ describe('a session’s page header and its acts', () => {
     show('h3lp3r00');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · working · helping Expose a streaming budget · /)).toBeInTheDocument();
+    expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
@@ -655,7 +655,7 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [{ ...DRIVEN, id: 'f41led00', state: 'failed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }] };
+        return { sessions: [{ session: 'f41led00', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3 }] };
       }
       if (type === 'RETRY_QUEST') return { ...DRIVER_STATE, strikes: 3, retried: { quest: 'abc123', did: 'marked', session: null } };
       return DRIVER_STATE;
@@ -697,7 +697,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
-    const waiting = within(list).getByRole('heading', { level: 3, name: 'Waiting on you (1)' }).closest('section')!;
+    const waiting = within(list).getByRole('heading', { level: 3, name: 'Needs you (1)' }).closest('section')!;
     within(waiting).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Answer…' }));
@@ -1045,7 +1045,7 @@ describe('acting on what a session landed', () => {
     let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'failed', archived: false, teammate: false,
+        return { sessions: [{ session: 's1a2b3c4', group: 'done', state: 'done', shown: 'failed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
       if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
@@ -1090,15 +1090,15 @@ describe('acting on what a session landed', () => {
       { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
     ];
     const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return {
           sessions: [
-            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
-            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
           ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         };
       }
@@ -1139,15 +1139,15 @@ describe('acting on what a session landed', () => {
       { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
     ];
     const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return {
           sessions: [
-            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
-            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
           ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         };
       }
@@ -1184,16 +1184,16 @@ describe('acting on what a session landed', () => {
       { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
       { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
     ];
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return {
           sessions: [
-            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false },
-            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false,
+            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false },
+            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
               lands: { branch: 'daoris/s-5e6f7a8', tree: 's-5e6f7a8', commits: 1, uncommitted: 0 } },
           ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         };
       }
@@ -1218,16 +1218,16 @@ describe('acting on what a session landed', () => {
       { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
     ];
     const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
     let landed: (answer: unknown) => void = () => {};
     invoke.mockImplementation((_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return Promise.resolve({
           sessions: [
-            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
-            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
           ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
             parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
         });
       }
@@ -1269,7 +1269,7 @@ describe('acting on what a session landed', () => {
     let landed: (answer: unknown) => void = () => {};
     invoke.mockImplementation((_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
       }
       if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' });
@@ -1302,7 +1302,7 @@ describe('acting on what a session landed', () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string, args?: { payload?: { branch?: string } }) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
       if (type === 'LANDING') {
@@ -1343,7 +1343,7 @@ describe('acting on what a session landed', () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
       if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
@@ -1386,7 +1386,7 @@ describe('acting on what a session landed', () => {
     const answering = (review: object | (() => unknown), taking = false) => async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
       if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking };
-      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', shown: 'working', archived: false, teammate: false }] };
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false }] };
       if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace' };
       if (type === 'SESSION_DIFF') return typeof review === 'function' ? review() : review;
       return DRIVER_STATE;
@@ -1553,7 +1553,7 @@ describe('acting on what a session landed', () => {
       SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
       invoke.mockImplementation(async (_module: string, type: string) => {
         if (type === 'SESSION_GROUPS') {
-          return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
             lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
         }
         if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
@@ -1594,7 +1594,7 @@ describe('acting on what a session landed', () => {
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
       if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed };
@@ -1642,7 +1642,7 @@ describe('acting on what a session landed', () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: null,
+        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: null,
           discards: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', says: 'Its work is on `main` by content (a squash merge).',
             keeps: kept, keptAt: `Its commits stay at \`${kept}\` until you delete that ref; \`git branch daoris/s-4e6837ed ${kept}\` brings the branch back.` } }] };
       }
@@ -1682,7 +1682,7 @@ describe('acting on what a session landed', () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: null,
+        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: null,
           discards: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', says: 'Its work is on `main` by content (a squash merge).',
             keeps: kept, keptAt: `Its commits stay at \`${kept}\` until you delete that ref; \`git branch daoris/s-4e6837ed ${kept}\` brings the branch back.` } }] };
       }

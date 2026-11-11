@@ -22,7 +22,7 @@ public sealed class KnowledgeWorkOrderPortsTests
             KnowledgeWorkOrders.Current.WaitsOnYou("s1234567", "awaiting-person", false));
         Assert.Equal("app/tree", KnowledgeWorkOrders.Current.Normal("app\\tree/"));
         var placed = KnowledgeWorkOrders.Current.Placed(look);
-        Assert.Equal((0, 0, 0, 0, 0), (placed.You, placed.Review, placed.Working, placed.Later, placed.Ended));
+        Assert.Equal((0, 0, 0, 0, 0), (placed.NeedsYou, placed.Working, placed.Pending, placed.Failed, placed.Done));
         Assert.Empty(placed.Listed);
     }
 

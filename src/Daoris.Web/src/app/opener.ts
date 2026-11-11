@@ -33,13 +33,13 @@ export function projectsItem(item: string): { workspace: string } | { repository
 
 /**
  * A group of a view's list that a door brings into view: what waits on the person there.
- * Sessions' *Waiting on you* and *To review*, by the driver's reader's names (`SessionGroupName`), and Quests' asks and
+ * Sessions' *Needs you* and *Failed*, by the driver's reader's names (`SessionGroupName`), and Quests' asks and
  * the quests held for the person (`questGroups`). A door naming a group names no item in it.
  */
-export type OpenGroup = 'you' | 'review' | 'asks' | 'held';
+export type OpenGroup = 'needs-you' | 'failed' | 'asks' | 'held';
 
 /** The view whose list holds each group: a group means nothing to another view. */
-const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review: 'sessions', asks: 'quests', held: 'quests' };
+const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { 'needs-you': 'sessions', failed: 'sessions', asks: 'quests', held: 'quests' };
 
 /**
  * The composer opened by a go to New conversation: the repository it chooses and the words it opens with,

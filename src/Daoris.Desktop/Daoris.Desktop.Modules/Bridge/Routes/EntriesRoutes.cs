@@ -47,7 +47,7 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var service = _loop.Service ?? throw NotReady();
         var (entries, rows) = await LookAsync(service, entry => entry.Key == key, cancellationToken).ConfigureAwait(false);
-        return (service, entries, rows, entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Ended, "", []));
+        return (service, entries, rows, entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Done, "", []));
     }
 
     [DriverRoute("LAND_ENTRY", PipeClass.Person, Drain = PipeDrain.Waits)]

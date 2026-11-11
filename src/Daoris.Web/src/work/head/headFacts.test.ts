@@ -77,26 +77,32 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'handed-back', line: 'main' } })[1]).toBe('已从 main 打回');
   });
 
-  /** *now* leads the facts after the repository, one word for the phase the driver's facts show. */
-  it('says where the work stands, once, by the phase the driver’s facts show', async () => {
-    const flow = { parts: 0, landing: false };
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow })).toEqual(['engine', 'working', '2m']);
-    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })).toEqual(['engine', 'waits on you 1m']);
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 parts to land');
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 1, landing: false } })[1]).toBe('1 part to land');
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('landing');
+  /** The state the reader placed it in leads the facts after the repository, and its finer reason follows on the row's own line. */
+  it('says the state the reader placed it in, once, and its reason, in both languages', async () => {
+    const placed = (state: NonNullable<SessionGrouping['state']>, reason?: string) =>
+      grouping({ group: state, state, ...(reason ? { reason } : {}) });
+    const first = (over: Partial<Session>, shown: string, group: SessionGrouping) => sessionFacts(t, { session: session(over), shown, grouping: group });
+
+    expect(first({}, 'working', placed('working'))).toEqual(['engine', 'working', '2m']);
+    expect(first({ state: 'queued' }, 'queued', placed('pending'))[1]).toBe('pending');
+    expect(first({ state: 'failed' }, 'failed', placed('failed', 'transient'))).toContain('ended past its retries');
+    expect(first({ state: 'failed' }, 'failed', placed('failed', 'transient'))[1]).toBe('failed');
+    expect(first({ state: 'completed' }, 'completed', placed('done'))[1]).toBe('done');
+    const needs = first({ state: 'awaiting-person' }, 'awaiting-person', placed('needs-you', 'policy-held'));
+    expect(needs.slice(0, 3)).toEqual(['engine', 'needs you', 'its role’s policy holds its next move for your yes']);
     // Integrating is the integration fact, read and not said twice; landed is the ended session's own landing fact.
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow, integration: { state: 'in-candidate', line: 'main' } }))
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: placed('working'), integration: { state: 'in-candidate', line: 'main' } }))
       .toEqual(['engine', 'being integrated into main', '2m']);
-    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', flow, branch: { kind: 'landed', where: 'main' } as never })
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: placed('done'), branch: { kind: 'landed', where: 'main' } as never })
       .filter((fact) => /land/.test(fact))).toEqual(['landed on main']);
-    // Without the flow the line says nothing of the phase.
+    // Before a reader has answered the line says no state, and nothing is said of parts to land.
     expect(sessionFacts(t, { session: session(), shown: 'working' })).toEqual(['engine', '2m']);
     await i18n.changeLanguage('zh');
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow })[1]).toBe('进行中');
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: false } })[1]).toBe('3 个部分待落地');
-    expect(sessionFacts(t, { session: session(), shown: 'working', flow: { parts: 3, landing: true } })[1]).toBe('落地中');
-    expect(sessionFacts(t, { session: session({ state: 'awaiting-person' }), shown: 'awaiting-person', flow })[1]).toBe('等你 1 分钟');
+    expect(first({}, 'working', placed('working'))[1]).toBe('工作中');
+    expect(first({ state: 'queued' }, 'queued', placed('pending'))[1]).toBe('待开始');
+    expect(first({ state: 'failed' }, 'failed', placed('failed'))[1]).toBe('失败');
+    expect(first({ state: 'completed' }, 'completed', placed('done'))[1]).toBe('已完成');
+    expect(first({ state: 'awaiting-person' }, 'awaiting-person', placed('needs-you', 'question'))[1]).toBe('等你处理');
   });
 
   it('names the press of the first wait, and none where there is none or it has no door', () => {
@@ -300,7 +306,7 @@ describe('a session’s facts line', () => {
   it('says a parked session’s failures and an ended one’s span, in the row’s words', () => {
     expect(sessionFacts(t, {
       session: session({ state: 'failed', created: '2026-10-05T09:40:00Z', updated: '2026-10-05T09:54:00Z' }),
-      shown: 'parked', grouping: grouping({ group: 'you', shown: 'parked', strikes: 3 }),
+      shown: 'parked', grouping: grouping({ group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }),
     })).toEqual(['engine', 'after 3 failed sessions', 'ran 14m']);
   });
 

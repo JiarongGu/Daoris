@@ -36,12 +36,19 @@ export function stepTrees({ end = endTree } = {}) {
  * On Windows a kill reaches the one process it names, and a shell's command outlives it, so `taskkill /T`
  * ends what the step started too. Elsewhere `ps` says what is under it, each then killed. What a process of the tree left
  * running after its own parent ended is in no tree, and no build server is shut down: the run's are its own
- * (`BESIDE_ENVIRONMENT`), and the owner's are not to be touched.
+ * (`BESIDE_ENVIRONMENT`), and the owner's are not to be touched. Answers whether the root is gone: taskkill's refusal is asked
+ * again, and a tree still standing after the last try is answered false so its caller names the leak rather than waiting on it.
  */
-export function endTree(pid, { platform = process.platform, run = spawnSync, kill = (each, signal) => process.kill(each, signal) } = {}) {
+export function endTree(pid, {
+  platform = process.platform, run = spawnSync, kill = (each, signal) => process.kill(each, signal), pause = pauseFor, tries = END_TRIES,
+} = {}) {
   if (platform === 'win32') {
-    run('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-    return;
+    for (let attempt = 1; ; attempt += 1) {
+      const { status } = run('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+      if (status === 0 || status === TASKKILL_NO_PROCESS) return true;
+      if (attempt >= tries) return false;
+      pause(1000);
+    }
   }
   const listed = run('ps', ['-A', '-o', 'pid=', '-o', 'ppid='], { encoding: 'utf8' });
   for (const each of [pid, ...descendants(listed.stdout ?? '', pid)]) {
@@ -51,6 +58,16 @@ export function endTree(pid, { platform = process.platform, run = spawnSync, kil
       // Already ended.
     }
   }
+  return true;
+}
+
+const END_TRIES = 3;
+
+const TASKKILL_NO_PROCESS = 128;
+
+/** On the caller's thread: the callers end trees from synchronous paths. */
+function pauseFor(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 /** The pids under `pid` in a `ps -o pid= -o ppid=` listing, at any depth. */

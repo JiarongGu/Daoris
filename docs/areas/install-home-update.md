@@ -99,8 +99,10 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 22. The move renames on one volume and deletes nothing but an empty new folder. Each rename is journalled in
     `run/home-move.json` first, and a stopped move is put back at the next start. The machine log says `home.moved`,
     `home.move-recovered`, `home.move-failed`, `home.move-held`. (from D172)
-23. Never moved: agents' account homes, session trees, rooms, kept files and `bin/`. A tree is one under either place of
-    `trees`; new trees open at the new place. (from D172)
+23. Never moved: agents' account homes, session trees, rooms and kept files; an older account's home stays at
+    `data/harnesses/<agent>/<account>`, which is where `data/` holds a sign-in (rule 16's exception until HOMELAYOUT5 moves them).
+    `bin/` is not moved either, and its old place, `data/bin`, is removed by the migration's `old-bin` step once `app/` carries both
+    service hosts. A tree is one under either place of `trees`; new trees open at the new place. (from D172)
 
 **Tools and pins**
 
@@ -216,7 +218,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     a stored standing confirmation grant, removed; configured access's old lists as families of acts; the supervisors' records with
     their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; *Second
     check*'s first staffing; and a closed quest's runs whose standing steps cannot move ended by the runtime's own
-    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`. The
+    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`; the records nothing reads
+    removed uncopied: a tree's files record and install logs whose tree no longer stands (`tree-records`), a run's node record whose
+    binding is gone (`unbound-records`), and the `bin` entry's old place (`old-bin`, rule 23). The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 
@@ -272,6 +276,9 @@ drains, swaps, rolls back and refuses.
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
 - **HISTCLEAR1**: a workspace's history clear stops at the client's read bound on a long history and needs several presses.
-- **KEEPDATA1**: tree file records, salvage, the knowledge store's WAL, the old `bin` place, sign-ins under `data/`, leftover account folders,
-  plugin data and pid markers are each kept with no rule that ends them.
+- **KEEPDATA1**: salvage and plugin data (the in-app browser's output) are each kept with no rule that ends them, and a stray agent folder
+  under the account homes (`<agent>$a`) has no verb that removes it. A tree's files record and install logs go with the tree (the
+  tidy's set-aside, a removal, the press, a failed open); a session's `.pid` marker whose process is gone is removed by the orphan sweep
+  (`DeadMarkers`); `agent account list` names a folder beside an agent's accounts that is no account, and `account remove` takes it; the
+  knowledge store truncates its log and returns its free pages at open (`StoreCompaction`), and each store limits its log to 32 MB.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

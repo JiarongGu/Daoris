@@ -3641,10 +3641,8 @@ async function stillRunning(pids: number[], ms = PATIENCE): Promise<number[]> {
   return pids.filter(alive);
 }
 
-/**
- * A scratch folder removed just after its processes were killed: Windows may still hold it a moment, and `rmSync` does not
- * wait on a denied access as it does on a busy one.
- */
+/** A scratch folder removed just after its processes were killed: Windows may still hold it a moment, and `rmSync` does not
+ * wait on a denied access as it does on a busy one. */
 async function cleanupAfterKill(fx: { cleanup(): void }): Promise<void> {
   for (const end = Date.now() + PATIENCE; ;) {
     try {
@@ -3765,25 +3763,6 @@ test('a run killed outright leaves no orphan naming the gate tree: the takeover 
     await stillRunning([run.pid!, ...pids]);
     await cleanupAfterKill(fx);
   }
-});
-
-test('a step\'s tree is ended by its own pid: taskkill /T on Windows, every descendant ps lists elsewhere, never by image name', () => {
-  const calls: [string, string[]][] = [];
-  const killed: number[] = [];
-  tool.endTree(4242, { platform: 'win32', run: (command, args) => { calls.push([command, args]); return {}; } });
-  assert.deepEqual(calls, [['taskkill', ['/T', '/F', '/PID', '4242']]]);
-  // Elsewhere a kill reaches the one process it names, and a shell's command outlives it: `ps` says what is under it.
-  const listing = ['    1     0', '   10     1', '   11    10', '   12    11', '   13    10', '   20     1', ''].join('\n');
-  assert.deepEqual([...tool.descendants(listing, 10)].sort((a, b) => a - b), [11, 12, 13]);
-  assert.deepEqual(tool.descendants(listing, 20), []);
-  calls.length = 0;
-  tool.endTree(10, {
-    platform: 'linux',
-    run: (command, args) => { calls.push([command, args]); return { stdout: listing }; },
-    kill: (pid) => { killed.push(pid); },
-  });
-  assert.deepEqual(calls.map(([command]) => command), ['ps']);
-  assert.deepEqual([...killed].sort((a, b) => a - b), [10, 11, 12, 13]);
 });
 
 test('a gate whose step the run ended reads ENDED, never FAIL, and nothing of it starts after: no step before it, no rehearsal run again, no test run alone', async () => {

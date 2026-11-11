@@ -82,8 +82,8 @@ const WORKSPACE_PARTS: Readonly<Record<string, Pick<StarterDoor, 'workspaceTab' 
  * list it brings into view: Sessions' by the driver's reader's names, Quests' asks and held quests by its own.
  */
 const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
-  'sessions/waiting': 'you',
-  'sessions/review': 'review',
+  'sessions/needs-you': 'needs-you',
+  'sessions/failed': 'failed',
   'quests/asks': 'asks',
   'quests/held': 'held',
 };
@@ -95,7 +95,7 @@ const same = (one: HelpPlace, other: HelpPlace) =>
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   // What waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
   // Overview has no part, since what waits on the person leads it.
-  { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' }, { within: 'sessions', part: 'new' },
+  { within: 'sessions', part: 'needs-you' }, { within: 'sessions', part: 'failed' }, { within: 'sessions', part: 'new' },
   { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
   // A repository's Setup, where its own values are set; a go names no repository.
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },

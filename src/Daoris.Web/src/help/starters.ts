@@ -73,9 +73,9 @@ export function starters(
 ): Starter[] {
   const found: Starter[] = [];
 
-  // The sessions waiting on the person are Sessions' *Waiting on you*, which the door brings into view.
+  // The sessions waiting on the person are Sessions' *Needs you*, which the door brings into view.
   if (machine.waiting > 0) {
-    found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions', group: 'you' } });
+    found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions', group: 'needs-you' } });
   }
 
   if (machine.repositories.length === 0) {

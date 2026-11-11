@@ -15,6 +15,9 @@ public static class ChildMarks
     /// <summary>The variable a session's shell carries its delegate key in (<see cref="DelegateKey.Variable"/>, which reads it from here).</summary>
     public const string DelegateKeyVariable = "DAORIS_DELEGATE_KEY";
 
+    /// <summary>The variable a plugin's own process carries its private storage in (<see cref="PluginPrivate.Variable"/>, which reads it from here).</summary>
+    public const string PluginPrivateVariable = "DAORIS_PLUGIN_PRIVATE";
+
     /// <summary>
     /// The two variables a Claude Code session's shell carries for its inbox: its socket and its token.
     /// No Daoris executable or start passes them on, so an agent Daoris starts never holds the steward's inbox.

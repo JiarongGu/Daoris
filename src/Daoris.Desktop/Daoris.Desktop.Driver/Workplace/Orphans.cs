@@ -63,7 +63,11 @@ public static class Orphans
         ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default)
     {
         var ended = new List<OrphanEnded>();
-        foreach (var session in await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
+        var listed = await service.ActiveSessionsAsync(ct).ConfigureAwait(false);
+
+        // The markers of processes that ended with no one removing theirs, once the service has listed every session still active.
+        if (only is null) processes.SweepDeadMarkers(listed.Select(session => session.Id).ToHashSet(StringComparer.Ordinal));
+        foreach (var session in listed)
         {
             if (only is not null && !string.Equals(session.Id, only, StringComparison.OrdinalIgnoreCase)) continue;
             // The person's stop takes a start that never spawned, `starting` or still `queued` (an Ask Daoris start left

@@ -227,7 +227,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `daoris/s-<8 hex>`. It grows from the repository's line, or from the branch a chain's step before landed on. A root
     that is not the top of its own repository is refused. (from D51, D82, D86)
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`), its
-    `post-checkout` hook owed, copying nothing; a failed open removes its tree and branch. The `files` run stage, after
+    `post-checkout` hook owed, copying nothing; a failed open removes its tree, its branch and its record, and so does every other end of a tree (the pool's
+    retire, the tidy's move aside, the press, a removal): the record and the install logs written under its id go with it. The `files` run stage, after
     `open` and before `hand` (and the same step in a conversation's open and a go-on), is the one way a tree gets its
     dependencies: in an unworked tree it writes back what a cut-off start left, then keeps, places from the store
     (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in rule order, the install under
@@ -463,8 +464,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
     landing of it stays offered; the home migration's `abandoned-runs` step does the same once for the runs of a declined quest or a
     closed ask that an older build left live. A run with a step waiting on the person (an Accept, a task or approval, a
-    go-ahead, a held attempt) lists its newest session here in To review for an Accept and in Waiting on you otherwise, whatever
-    that session's own ending or archive mark, in the window and in `daoris session list` alike. (from D132)
+    go-ahead, a held attempt) lists its newest session here in Needs you, its reason the first wait that is not an Accept, else
+    the review, whatever that session's own ending or archive mark, in the window and in `daoris session list` alike. A session
+    is in one of five states, read once by `SessionStateReader` (`WorkOrders/Sessions/`) in this order: needs you
+    (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in), failed (a failure
+    nothing carries on, a parked quest's last session, an end past its transient bound), working (live, an answered park,
+    words going on, an awaiting reply or helper, a failure the planner carries on, a second opinion, work taken elsewhere),
+    pending (queued, or its next start held: the cap, a session in the way, the person's hold, a pause, a cooling account) and
+    done (completed, stopped, declined, stood down). Each row carries `state` and the finer `reason`; *Archived* is a mark that
+    folds a done or failed session alone. A line of work is in the first of needs you, working and pending any part is in,
+    else as its newest part ended. A tree holding commits no run waits on is offered on its session, whatever its state, bar
+    one that runs or goes on with words. `daoris session list --group` takes the five and `archived`, and refuses the former
+    names, naming them. (from D132, D273)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
     forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
 

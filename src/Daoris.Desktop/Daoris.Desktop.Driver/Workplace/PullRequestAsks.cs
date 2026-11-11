@@ -108,7 +108,7 @@ internal sealed class PullRequestAsks(TreeContext context)
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
             if (PullRequestAsking.PluginFor(entry) is not { } recorded) continue;
             // A pull request opened by a plugin since renamed is asked of it by the id it has now.
-            formerly ??= PluginFormerly.Of(context.Home);
+            formerly ??= context.Plugins.Formerly();
             var plugin = formerly.GetValueOrDefault(recorded) ?? recorded;
             // A due moment's own entries alone, its answer now feeding the end as well as a removal.
             if (moment is not null && !moment.Any(each => SameLanding(each, entry))) continue;

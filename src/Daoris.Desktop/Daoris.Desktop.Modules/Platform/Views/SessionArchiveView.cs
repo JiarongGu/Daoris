@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <c>daoris sessions archive|unarchive &lt;id&gt;…</c> as the card shows it: marks of this machine's list, no record changed. An archive
-/// is refused before any card for a session still running, waiting on the person or with work to review, and for an id no record here
-/// has, as the list places each; an unarchive of what is not archived changes nothing and is shown as it is.
+/// <c>daoris sessions archive|unarchive &lt;id&gt;…</c> as the card shows it: marks of this machine's list, no record changed, refused
+/// before any card for a session working, pending or needing you, or an id no record has; an unarchive of none archived changes nothing.
 /// </summary>
 public sealed class SessionArchiveView : IPressView
 {
@@ -27,9 +26,8 @@ public sealed class SessionArchiveView : IPressView
         foreach (var id in ids)
         {
             if (!placed.TryGetValue(id, out var group)) kept.Add($"there is no session `{id}` on this machine");
-            else if (archive && group == SessionGroup.Working) kept.Add($"`{id}` is still running: stop it first");
-            else if (archive && group == SessionGroup.You) kept.Add($"`{id}` is waiting on you, and archive never hides what needs you");
-            else if (archive && group == SessionGroup.Review) kept.Add($"`{id}` has work to review, and archive never hides what needs you");
+            else if (archive && group is SessionGroup.Working or SessionGroup.Pending) kept.Add($"`{id}` is still running: stop it first");
+            else if (archive && group == SessionGroup.NeedsYou) kept.Add($"`{id}` needs you, and archive never hides what needs you");
         }
 
         if (kept.Count > 0) return PressViewed.Refused($"{string.Join("; ", kept)}.");

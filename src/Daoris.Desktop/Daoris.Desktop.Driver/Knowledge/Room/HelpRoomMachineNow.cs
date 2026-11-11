@@ -50,10 +50,10 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         if (machine.Sessions is { } sessions)
         {
             text.Append($"- {Whose(machine)} sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
-                + $"{sessions.You} waiting on you, {sessions.Review} to review, {sessions.Working} working, "
-                + $"{sessions.Later} resuming later, {sessions.Ended} ended.\n");
-            var more = sessions.Ended - sessions.Listed.Count;
-            text.Append("- Ended sessions, newest first: "
+                + $"{sessions.NeedsYou} needing you, {sessions.Working} working, {sessions.Pending} pending, "
+                + $"{sessions.Failed} failed, {sessions.Done} done.\n");
+            var more = sessions.Failed + sessions.Done - sessions.Listed.Count;
+            text.Append("- Failed and done sessions, newest first: "
                 + (sessions.Listed.Count > 0
                     ? string.Join(", ", sessions.Listed.Select(ended => $"`{ended.Id}` (in `{ended.Repository}`)")) + (more > 0 ? $", and {more} more" : "")
                     : "none")
@@ -227,7 +227,7 @@ public sealed record HelpWaitingSession(string Id, string Repository)
 /// <summary>This machine's sessions counted by the Sessions list's groups, archived ones and Ask Daoris's own aside.</summary>
 /// <param name="Ended">Every ended session counted, listed or not.</param>
 /// <param name="Listed">The newest ended ones, at most <see cref="HelpRoomMachineNow.EndedListed"/>, by id and where each ran.</param>
-public sealed record HelpSessions(int You, int Review, int Working, int Later, int Ended, IReadOnlyList<HelpEndedSession> Listed);
+public sealed record HelpSessions(int NeedsYou, int Working, int Pending, int Failed, int Done, IReadOnlyList<HelpEndedSession> Listed);
 
 /// <summary>An ended session, as the room lists it: by id and repository, so an archive or a delete names one it is shown.</summary>
 public sealed record HelpEndedSession(string Id, string Repository);

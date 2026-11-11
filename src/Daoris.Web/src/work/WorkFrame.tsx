@@ -346,7 +346,7 @@ export function WorkFrame({
     t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { entryAt, workAskAt, entryOffered, landsNow } = work;
+  const { entryAt, workAskAt } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
@@ -359,7 +359,7 @@ export function WorkFrame({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
+    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 

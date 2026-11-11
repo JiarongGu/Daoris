@@ -183,7 +183,7 @@ describe('a quest’s session', () => {
   it('reads awaiting reply, and what it waits on, where the reader derived it', () => {
     page({
       quest: { ...OPEN, status: 'Taken', awaits: 'b2c3d4' }, session: ended,
-      grouping: { session: ended.id, group: 'later', shown: 'awaiting-reply', archived: false, teammate: false, awaits: 'b2c3d4', awaitsOf: 'billing' },
+      grouping: { session: ended.id, group: 'working', state: 'working', shown: 'awaiting-reply', archived: false, teammate: false, awaits: 'b2c3d4', awaitsOf: 'billing' },
     });
     const section = screen.getByRole('region', { name: 'Session' });
     expect(within(section).getByText('awaiting reply')).toBeInTheDocument();

@@ -10,14 +10,14 @@ import { EVIDENCE_ASKS, EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from './entries.fi
 // A row opens on the driver's `opens`: the head, or the part that waits on the person or works.
 describe('where a row opens', () => {
   const [APP] = EVIDENCE_ENTRIES as [SessionEntry];
-  const ended = { ...APP, group: 'ended' as const, head: 'ap000002', opens: 'ap000002' };
+  const ended = { ...APP, group: 'done' as const, head: 'ap000002', opens: 'ap000002' };
 
   it('opens on the head of an ended session, not its newest part', () => {
     expect(opensOf([ended], 'ap000003')).toBe('ap000002');
   });
 
   it('opens on a part that waits on the person', () => {
-    const waiting = { ...APP, group: 'you' as const, head: 'ap000002', opens: 'ap000001' };
+    const waiting = { ...APP, group: 'needs-you' as const, head: 'ap000002', opens: 'ap000001' };
     expect(opensOf([waiting], 'ap000003')).toBe('ap000001');
   });
 
@@ -81,8 +81,8 @@ describe('the session list by entry', () => {
   describe('by ask', () => {
     it('groups each ask its entries in the reader\'s order, what no ask began last', () => {
       const chat: SessionEntry = {
-        entry: 'session:ch000001/app', origin: 'session:ch000001', repository: 'app', group: 'ended', leading: 'ch000001',
-        parts: [{ session: 'ch000001', quest: null, shown: 'completed', group: 'ended', began: 'opened', after: null, askedBy: null }],
+        entry: 'session:ch000001/app', origin: 'session:ch000001', repository: 'app', group: 'done', leading: 'ch000001',
+        parts: [{ session: 'ch000001', quest: null, shown: 'completed', group: 'done', began: 'opened', after: null, askedBy: null }],
       };
       const sessions = [...EVIDENCE_SESSIONS, { ...EVIDENCE_SESSIONS[0]!, id: 'ch000001' }];
       const groups = sessionsByAsk(sessions, [chat, ...EVIDENCE_ENTRIES], { selected: null, archived: false });
@@ -120,9 +120,9 @@ describe('the session list by entry', () => {
 // Where a part stands against its line's head, for the box's first line.
 describe('where a part stands by the head', () => {
   const part = (session: string, began: string) =>
-    ({ session, quest: 'q', shown: 'completed', group: 'review', began, after: null, askedBy: null }) as SessionEntry['parts'][number];
+    ({ session, quest: 'q', shown: 'completed', group: 'needs-you', began, after: null, askedBy: null }) as SessionEntry['parts'][number];
   const entry = (head: string | null | undefined): SessionEntry => ({
-    entry: 'e', origin: 'quest:q', repository: 'engine', group: 'review', leading: 'p3', head,
+    entry: 'e', origin: 'quest:q', repository: 'engine', group: 'needs-you', leading: 'p3', head,
     parts: [part('p1', 'opened'), part('p2', 'resumed'), part('p3', 'asked')],
   });
 

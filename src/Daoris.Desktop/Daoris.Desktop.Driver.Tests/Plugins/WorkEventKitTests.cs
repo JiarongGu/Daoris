@@ -16,10 +16,12 @@ public sealed class WorkEventKitTests : IDisposable
     public void Dispose() => GitSeed.Discard(_scratch);
 
     [Fact]
-    public void The_kit_lists_the_kinds_of_its_points_in_the_drivers_order_the_events_last()
+    public void The_kit_lists_the_kinds_of_its_points_in_the_drivers_order_the_events_before_the_systems_two()
     {
-        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act", "observation"], PluginKit.Points.Select(point => point.Kind));
-        Assert.Equal(HookPoints.Event, PluginKit.Points[^1].Name);
+        Assert.Equal(
+            ["decision", "observation", "query", "observation", "observation", "event", "act", "observation", "query", "act"],
+            PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal([HookPoints.Event, .. HookPoints.System], PluginKit.Points.TakeLast(HookPoints.System.Count + 1).Select(point => point.Name));
     }
 
     [Fact]

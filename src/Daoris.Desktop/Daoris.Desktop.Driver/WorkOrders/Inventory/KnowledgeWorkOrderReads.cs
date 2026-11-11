@@ -36,9 +36,9 @@ internal sealed class KnowledgeWorkOrderReads : IKnowledgeWorkOrders
             .Where(row => !row.Teammate && records.TryGetValue(row.Session, out var record) && record.Repository != KnowledgeRoomIdentity.Repository)
             .ToList();
         int In(string group) => rows.Count(row => row.Group == group);
-        var ended = rows.Where(row => row.Group == SessionGroup.Ended).ToList();
+        var ended = rows.Where(row => row.Group is SessionGroup.Failed or SessionGroup.Done).OrderByDescending(row => records[row.Session].Updated).ToList();
         return new HelpSessions(
-            In(SessionGroup.You), In(SessionGroup.Review), In(SessionGroup.Working), In(SessionGroup.Later), ended.Count,
+            In(SessionGroup.NeedsYou), In(SessionGroup.Working), In(SessionGroup.Pending), In(SessionGroup.Failed), In(SessionGroup.Done),
             [.. ended.Take(HelpRoomMachineNow.EndedListed).Select(row => new HelpEndedSession(row.Session, records[row.Session].Repository))]);
     }
 }

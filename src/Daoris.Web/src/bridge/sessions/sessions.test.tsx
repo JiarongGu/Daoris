@@ -25,7 +25,7 @@ const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode })
 );
 
 const parked: SessionGrouping = {
-  session: 's3', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3, awaits: null, awaitsOf: null, work: null,
+  session: 's3', group: 'failed', state: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3, awaits: null, awaitsOf: null, work: null,
 };
 
 describe('the sessions domain', () => {
@@ -85,12 +85,10 @@ describe('the sessions domain', () => {
       await i18n.changeLanguage('en');
       expect(sentence(refusal('SESSION_LIVE', { session: 's2' }))).toMatch(/^s2 is still running/);
       expect(sentence(refusal('SESSION_UNKNOWN', { session: 's9' }))).toMatch(/no session s9/);
-      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's3', group: 'you', context: 'you' }))).toMatch(/s3 is waiting on you/);
-      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's4', group: 'review', context: 'review' }))).toMatch(/s4 has work to review/);
+      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's3', group: 'needs-you', context: 'needs-you' }))).toMatch(/s3 needs you/);
 
       await i18n.changeLanguage('zh');
-      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's3', group: 'you', context: 'you' }))).toMatch(/s3 正在等你处理/);
-      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's4', group: 'review', context: 'review' }))).toMatch(/s4 有待审阅的工作/);
+      expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's3', group: 'needs-you', context: 'needs-you' }))).toMatch(/s3 正在等你处理/);
     } finally {
       await i18n.changeLanguage('en');
     }

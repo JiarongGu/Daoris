@@ -94,6 +94,11 @@ internal static class AgentAccountsCommand
                 {
                     var existing = HarnessSettings.Profiles(home, name);
                     world.Instance.Out.WriteLine($"  {name,-14} {(existing.Count > 0 ? string.Join(", ", existing) : "(none)")}");
+                    foreach (var stray in HarnessSettings.Strays(home, name))
+                    {
+                        world.Instance.Out.WriteLine($"    left over: {stray} — no account; `daoris agent account remove {name} {ShellWord.Of(stray, ShellWord.Account)}` "
+                            + "takes it, a sign-in in it included.");
+                    }
                 }
 
                 return null;

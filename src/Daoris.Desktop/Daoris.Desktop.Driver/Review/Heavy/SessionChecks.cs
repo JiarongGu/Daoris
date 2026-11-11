@@ -116,8 +116,8 @@ public static class SessionChecks
 
     /// <summary>The refusal for a place on a saved workflow: its checks are its workflow's work step's, edited there.</summary>
     public static string OnGraph(string repository) =>
-        $"`{repository}` follows a saved workflow, whose work step carries its sessions' checks (`checks` on `claimed`): edit the workflow in the workflow editor. "
-        + "The rule is Current's, and a conversion moves it there (`daoris convert --plan`).";
+        $"`{repository}` follows a saved workflow, whose work step carries its sessions' checks (`checks` on `claimed`): "
+        + "edit the workflow in the workflow editor.";
 
     /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id.</summary>
     public const string Suffix = SessionHomeFiles.ChecksSuffix;

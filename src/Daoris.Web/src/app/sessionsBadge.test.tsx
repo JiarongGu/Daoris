@@ -437,7 +437,7 @@ describe("The taskbar's count", () => {
   it('counts an agent’s ask for a helper and a second opinion that wait on the person, as the band lists them', async () => {
     start([
       ...PARKS,
-      { kind: 'review', id: 'r3v13w00', since: null, where: '', placed: { session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false } },
+      { kind: 'review', id: 'r3v13w00', since: null, where: '', placed: { session: 'r3v13w00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false } },
       { kind: 'helper', id: 'a1b2c3d4', since: '2026-10-01T11:00:00Z', where: 'engine', session: 'c4a7c4a7', title: 'Which test covers the loader?' },
       {
         kind: 'opinion', id: 'r3v13w00', since: '2026-10-01T10:00:00Z', where: 'engine', opinion: {
@@ -592,7 +592,7 @@ describe('A window on one workspace', () => {
     ...PARKS,
     {
       kind: 'review', id: 'r3v13w00', since: null, workspace: 'other', where: 'engine',
-      placed: { session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false },
+      placed: { session: 'r3v13w00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false },
     },
     { kind: 'parked-quest', id: 'q9', since: elsewhere.since!, workspace: 'other', where: 'engine', sitting: elsewhere },
     { kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal },

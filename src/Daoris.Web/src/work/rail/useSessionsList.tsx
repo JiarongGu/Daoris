@@ -44,7 +44,7 @@ export function useSessionsList({
   // for the go only and never remembered, it lasts until the person chooses an arrangement in the ⋯, which says what is
   // shown, or leaves Sessions. Set as the go arrives, not after, so the rail draws the group the render it looks for it.
   const [goByState, setGoByState] = useState(false);
-  if (!elsewhere && (group === 'you' || group === 'review') && sessionsFilters.group === 'repository' && !goByState) {
+  if (!elsewhere && (group === 'needs-you' || group === 'failed') && sessionsFilters.group === 'repository' && !goByState) {
     setGoByState(true);
   }
   if (elsewhere && goByState) setGoByState(false);

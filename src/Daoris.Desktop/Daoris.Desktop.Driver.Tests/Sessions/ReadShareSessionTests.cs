@@ -106,7 +106,7 @@ public sealed class ReadShareSessionTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         var at = new DateTimeOffset(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
         var archive = new SessionArchive(_home);
-        archive.Archive(["done"], [new SessionGrouping("done", SessionGroup.Ended, "completed")], ["done"], at);
+        archive.Archive(["done"], [new SessionGrouping("done", SessionGroup.Done, "completed")], ["done"], at);
 
         IReadOnlyDictionary<string, DateTimeOffset> marks;
         using (MoveHold.Take(archive.FilePath))
