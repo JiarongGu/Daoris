@@ -17,7 +17,6 @@ internal static class AccountOrderJudge
         var clear = PressPayload.Flag(payload is { } sent ? sent : default, "clear");
         if (named.Count > 0 && clear) return PressViewed.Refused("`order` puts accounts first or returns to the ids' order, never both.");
 
-        // The route clears the order for an empty list, as `--clear` sends it; the flag alone says the same.
         clear |= named.Count == 0;
 
         var facts = new Dictionary<string, string>(StringComparer.Ordinal) { ["agent"] = owner };
@@ -30,7 +29,6 @@ internal static class AccountOrderJudge
 
         if (HarnessSettings.OrderProblem(accounts, named) is { } problem) return PressViewed.Refused(problem.Sentence(owner, accounts));
 
-        // The named first, then the rest in the set's order, then any account it does not hold yet, by id.
         var inSet = PressPayload.Rows(set, "scopes").FirstOrDefault() is { ValueKind: JsonValueKind.Object } scope
             ? PressPayload.Rows(scope, "list").Select(each => each.GetString() ?? "")
             : [];

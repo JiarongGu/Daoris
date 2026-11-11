@@ -43,7 +43,6 @@ public sealed class PlaceApplyView : IPressView
 
         IReadOnlyList<PlaceAccept> accepted = [.. PressPayload.Rows(payload ?? default, "accept")
             .Select(row => new PlaceAccept(PressPayload.Field(row, "repository"), PressPayload.Field(row, "purpose")))];
-        // Each acceptance must be one the plan offers for that repository's declaration, as the apply judges them before it writes.
         foreach (var accept in accepted)
         {
             var row = PressPayload.Rows(plan, "repositories").FirstOrDefault(each => string.Equals(PressPayload.Field(each, "repository"), accept.Repository, StringComparison.OrdinalIgnoreCase));

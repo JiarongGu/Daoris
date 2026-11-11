@@ -40,7 +40,6 @@ public sealed class AskNewView : IPressView
         var registry = (await world.RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(row => (row.Repository, row.Workspace));
         if (AskNewCommand.Unfit(ask, machine.Config, machine.Facts.Home ?? "", registry, out _) is { } unfit) return PressViewed.Refused(unfit);
 
-        // Read on this machine and sent whole, as the verb reads them: one it cannot read ends the ask before anything is made.
         foreach (var path in ask.Files ?? [])
         {
             if (!File.Exists(path)) return PressViewed.Refused($"`{path}` is not a file on this machine. Nothing was asked.");

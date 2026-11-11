@@ -95,10 +95,8 @@ public interface IPipeGroundWorld
     /// <summary>Whether the service would delete the quest now, by its own judgement of what stands on it; null where it has none.</summary>
     Task<bool?> QuestDeletableAsync(string id, CancellationToken cancellationToken);
 
-    /// <summary>Whether the service would delete the ask with every quest it became; null where it has none.</summary>
     Task<bool?> AskDeletableAsync(string id, CancellationToken cancellationToken);
 
-    /// <summary>Each remote of <paramref name="repository"/>'s checkout and its effective address, as <c>git use</c> reads them; null where it has no checkout here.</summary>
     Task<IReadOnlyDictionary<string, string?>?> RemotesAsync(string repository, CancellationToken cancellationToken);
 
     /// <summary>The commit <paramref name="branch"/> points at in <paramref name="repository"/>'s checkout; null where there is no such ref.</summary>

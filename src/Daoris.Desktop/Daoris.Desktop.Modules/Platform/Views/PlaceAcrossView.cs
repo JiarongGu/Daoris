@@ -56,7 +56,6 @@ public sealed class PlaceAcrossView : IPressView
             return PressViewed.Refused($"`{other}` is not registered on this machine — use a repository's name as Repositories lists it.");
         }
 
-        // Taking a declaration back never asks the target to be registered, so one whose repository has left the registry can still go.
         var target = found?.Repository ?? other;
         try
         {

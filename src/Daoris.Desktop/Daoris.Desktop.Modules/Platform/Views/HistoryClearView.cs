@@ -69,7 +69,6 @@ public sealed class HistoryClearView : IPressView
         var units = PressPayload.Rows(plan, "units").ToList();
         var facts = Facts(("workspace", name), ("quests", Number(Number(takes, "quests"))), ("asks", Number(Number(takes, "asks"))),
             ("sessions", Number(Number(takes, "sessions"))), ("copies", Number(Number(takes, "teammates"))), ("size", HistoryCommand.Size(Long(takes, "bytes"))));
-        // What is left of its takes once the clearable units and the left-over files go is the intake's room, as the verb counts it.
         var room = Long(reading, "intake") is > 0 and var intake
             && Long(takes, "bytes") - Long(Object(reading, "leftOver"), "bytes") - units.Where(unit => unit.TryGetProperty("clearable", out var may) && may.ValueKind == JsonValueKind.True).Sum(Bytes) >= intake;
         if (!room && Number(takes, "quests") + Number(takes, "asks") + Number(takes, "sessions") + Number(takes, "teammates") + leftOver == 0)

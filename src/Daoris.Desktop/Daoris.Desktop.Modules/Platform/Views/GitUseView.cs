@@ -91,7 +91,6 @@ public sealed class GitUseView : IPressView
         return Shown("git-use", facts, $"daoris git use {words} {ShellWord.Of(identity.Label, ShellWord.Workspace)}");
     }
 
-    /// <summary>The identity or <c>own</c> as sent, never trimmed or cased: an empty text is a value, as the route takes it, and only a missing or null one clears.</summary>
     private static string? Value(JsonElement? payload) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("value", out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 

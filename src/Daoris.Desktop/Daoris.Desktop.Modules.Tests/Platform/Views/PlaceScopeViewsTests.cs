@@ -118,7 +118,6 @@ public sealed class PlaceScopeViewsTests
         Assert.Equal("engine", shown.View.Facts["other"]);
         Assert.Contains("`ghost` is not registered", (await View(PlaceAcrossView.WriteTo(), """{"repository":"plugins","to":"ghost","allow":true}""")).Refusal);
         Assert.Contains("write-to", (await View(PlaceAcrossView.WriteTo(), """{"workspace":"work","to":"engine","allow":true}""")).Refusal);
-        // A declaration whose target left the registry is taken back by its name as written: the route takes it, and nothing else removes it.
         var stale = await View(PlaceAcrossView.WriteTo(), """{"repository":"plugins","to":"ghost","allow":false}""");
         Assert.Equal(("across-write-clear", "daoris place across plugins write-to ghost --clear"), (stale.View!.Kind, stale.View.Command));
         Assert.NotNull((await View(PlaceAcrossView.WriteTo(), """{"repository":"engine","to":"engine","allow":true}""")).Refusal);
