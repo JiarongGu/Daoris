@@ -15,6 +15,8 @@
   "workflow.shipped.integrated-no-press.for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
   "workflow.shipped.release.name": "Release workflow",
   "workflow.shipped.release.for": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
+  "workflow.shipped.in-place.name": "In-place workflow",
+  "workflow.shipped.in-place.for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
 
   "workflow.shipped.delivery.merge-after-accept.name": "Merge after you accept",
   "workflow.shipped.delivery.merge-after-accept.for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
@@ -27,5 +29,7 @@
   "workflow.shipped.delivery.integrated.name": "Integrated into the line",
   "workflow.shipped.delivery.integrated.for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
   "workflow.shipped.delivery.integrated-no-press.name": "Integrated with no press",
-  "workflow.shipped.delivery.integrated-no-press.for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done."
+  "workflow.shipped.delivery.integrated-no-press.for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
+  "workflow.shipped.delivery.in-place.name": "Work in place",
+  "workflow.shipped.delivery.in-place.for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands."
 }

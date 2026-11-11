@@ -67,6 +67,22 @@ public sealed class NodePlacesTests
     public void Steps_every_place_runs_bind_anywhere(string place) =>
         Assert.Null(PlaceKindUnserved.Of(Graph(NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.QuestHolds, NodeKinds.Review, "acme.deploy/deploy"), place, "flow", 1));
 
+    /// <summary>The shipped *Work in place* sets nothing apart and lands nothing, so every kind of department can follow it; no other shipped default can a folder.</summary>
+    [Theory]
+    [InlineData(PlaceKind.Git)]
+    [InlineData(PlaceKind.Folder)]
+    [InlineData(PlaceKind.System)]
+    public void Work_in_place_binds_every_kind_of_department(string place)
+    {
+        static NodeGraph Read(WorkflowDefault shipped) => NodeGraphs.Read(shipped.GraphJson).Graph!;
+        Assert.Null(PlaceKindUnserved.Of(Read(WorkflowDefaults.Of("in-place")!), place, "in-place", 1));
+        if (place != PlaceKind.Git)
+        {
+            Assert.All(WorkflowDefaults.All.Where(each => each.Id != "in-place"),
+                shipped => Assert.NotNull(PlaceKindUnserved.Of(Read(shipped), place, shipped.Id, 1)));
+        }
+    }
+
     [Fact]
     public void A_place_whose_kind_is_not_known_binds_anything() =>
         Assert.Null(PlaceKindUnserved.Of(Graph(NodeKinds.Claimed, NodeKinds.Land), place: null, "flow", 1));

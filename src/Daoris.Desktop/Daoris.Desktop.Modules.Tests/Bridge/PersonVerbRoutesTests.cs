@@ -28,6 +28,7 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         { "QUEST_DONE", new { quest = "q1", note = "by hand", said = true }, 0 },
         { "QUEST_DELETE", new { quest = "q1", said = true }, 0 },
         { "ASK_DELETE", new { ask = "a1", said = true }, 0 },
+        { "ASK_NEW", new { workspace = "default", sentence = "fix the stall", to = "engine", said = true }, 0 },
         { "QUEST_GO_ON", new { quest = "q1", said = true }, 0 },
         // The submission a reopen names is read first, and no quest is held here.
         { "QUEST_REOPEN", new { quest = "q1", said = true }, 1 },
