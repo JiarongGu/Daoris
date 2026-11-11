@@ -74,20 +74,18 @@ function useRepositoryPlace({ place, notify, onOpenGit }: {
  * **A place's Workflow section**: a repository's or a workspace's, from its Workflow answer for the route the person chose, read only
  * while the section is open. The route and the step are the shell's, held above the mounts.
  */
-export function PlaceWorkflow({ place, notify, onConvert, landingAsked = false }: {
+export function PlaceWorkflow({ place, notify, landingAsked = false }: {
   place: PlaceHold;
   notify: Notify;
   /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): the Landing fold opens and takes the focus. */
   landingAsked?: boolean;
-  /** Opens the home's conversion review. */
-  onConvert?: () => void;
 }) {
-  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onConvert={onConvert} />;
-  return <RepositoryWorkflow place={place} notify={notify} onConvert={onConvert} landingAsked={landingAsked} />;
+  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} />;
+  return <RepositoryWorkflow place={place} notify={notify} landingAsked={landingAsked} />;
 }
 
-function RepositoryWorkflow({ place, notify, onConvert, landingAsked }: {
-  place: PlaceHold; notify: Notify; onConvert?: () => void; landingAsked: boolean;
+function RepositoryWorkflow({ place, landingAsked, notify }: {
+  place: PlaceHold; notify: Notify; landingAsked: boolean;
 }) {
   const { registration, setup } = useRepositoryPlace({ place: place.row, notify });
   const workflowOf = useWorkflowTab({
@@ -108,7 +106,6 @@ function RepositoryWorkflow({ place, notify, onConvert, landingAsked }: {
         onOpenSection: place.onOpenSection,
         held: place.held,
         onHold: place.onHold,
-        onConvert,
       }}
       landingAsked={landingAsked}
     />
@@ -142,7 +139,7 @@ export function WorkspaceLandingFolds({ workspace, hand }: { workspace: string; 
  * A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own, its Landing row, then the line's
  * defaults it gives each repository that sets none: its line, commits, review and second opinion.
  */
-function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; notify: Notify; onConvert?: () => void }) {
+function WorkspaceWorkflow({ place, notify }: { place: PlaceHold; notify: Notify }) {
   const workspace = place.row.workspace ?? '';
   const answer = useWorkflowCurrent({ workspace }, { route: place.view.route });
   const editor = useWorkflowEditor({ workspace });
@@ -162,7 +159,6 @@ function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; not
         onView={place.onView}
         held={place.held}
         onHold={place.onHold}
-        onConvert={onConvert}
         landing={(hand) => <WorkspaceLandingFolds workspace={workspace} hand={hand} />}
       />
       <div className="mt-3">

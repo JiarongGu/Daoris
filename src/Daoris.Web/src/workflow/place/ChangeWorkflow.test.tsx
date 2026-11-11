@@ -176,14 +176,10 @@ describe('Change…: selecting a candidate against a driver that announces no pl
     expect(screen.queryByRole('button', { name: 'Use Verify the docs first here' })).toBeDisabled();
   });
 
-  // Current is no candidate; its tab is the conversion's door.
-  it('offers Current only as the conversion, with no choice and no copy of it', async () => {
-    const onConvert = vi.fn();
-    const { onUse, onSave } = draw({ onConvert });
+  it('offers Current with no choice, no copy of it and no conversion', () => {
+    const { onUse, onSave } = draw();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
-
-    expect(onConvert).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Convert…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
     expect(onUse).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();

@@ -587,7 +587,7 @@ describe('Settings → Disk space: the downloads and the kinds', () => {
     invoke.mockImplementation(shell(WIRED, SPACE_UNCOUNTED));
     open();
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
-    expect(card.getAllByText('not counted yet')).toHaveLength(10);
+    expect(card.getAllByText('not counted yet')).toHaveLength(11);
 
     await userEvent.click(card.getAllByRole('button', { name: 'Count' })[0]!);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_SPACE', { payload: { measure: ['set-aside'] } }));

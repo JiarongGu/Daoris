@@ -608,7 +608,5 @@
   "agents.setup.reconcile.open": "与典章对齐…",
   "agents.setup.reconcile.confirmLabel": "将 {{repository}} 与典章对齐",
   "agents.setup.reconcile.confirmSays": "请 {{repository}} 自己的会话在它自己的分支上决定每一处差异：采用典章的文本，带理由保留自己的文本，或向上游提议。这里不会向该仓库写入任何内容。",
-  "agents.setup.reconcile.confirm": "请它的会话处理",
-  "agents.convert.follows": "沿用旧的落地规则",
-  "agents.convert.open": "转换…"
+  "agents.setup.reconcile.confirm": "请它的会话处理"
 }

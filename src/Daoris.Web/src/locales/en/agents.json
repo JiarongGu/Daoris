@@ -608,7 +608,5 @@
   "agents.setup.reconcile.open": "Reconcile…",
   "agents.setup.reconcile.confirmLabel": "reconcile {{repository}} with the canon",
   "agents.setup.reconcile.confirmSays": "Asks {{repository}}'s own session to decide each difference on its own branch: adopt the canon's text, keep its own with a reason, or propose it upstream. Nothing is written into the repository from here.",
-  "agents.setup.reconcile.confirm": "Ask its session",
-  "agents.convert.follows": "Follows its old landing rule",
-  "agents.convert.open": "Convert…"
+  "agents.setup.reconcile.confirm": "Ask its session"
 }
