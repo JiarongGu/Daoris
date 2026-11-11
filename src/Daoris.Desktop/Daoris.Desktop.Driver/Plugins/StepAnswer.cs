@@ -53,7 +53,7 @@ public static class StepAnswer
         var state = Text("state");
         if (state is not (WorkStates.Reached or WorkStates.Failed)) return "`state` is `reached` or `failed`.";
         var outcome = new JsonObject { ["state"] = state };
-        if (state == WorkStates.Failed) outcome["code"] = Text("code") ?? WorkPerformer.NoCode;
+        if (state == WorkStates.Failed && Text("code") is { } code) outcome["code"] = code;
         if (Text("decision") is { } decision)
         {
             if (!ask.Outcomes.Contains(decision, StringComparer.Ordinal)) return $"`decision` is one of the step's routes: {string.Join(", ", ask.Outcomes)}.";

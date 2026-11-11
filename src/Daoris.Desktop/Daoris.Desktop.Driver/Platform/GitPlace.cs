@@ -89,7 +89,24 @@ internal sealed class GitPlace
                 own.Dispose();
             }
         });
-        Bind(() => exited.IsCompleted, () => exited);
+        // The wait completes on the pool after the exit, so a run returning at its git's exit reads the handle itself.
+        Bind(() => exited.IsCompleted || HasExited(own), () => exited);
+    }
+
+    private static bool HasExited(Process process)
+    {
+        try
+        {
+            return process.HasExited;
+        }
+        catch (InvalidOperationException)
+        {
+            return true; // disposed by its wait, which ends only at the exit
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return true;
+        }
     }
 
     private readonly List<int> _pids = [];

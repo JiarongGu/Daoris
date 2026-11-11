@@ -138,7 +138,7 @@ public sealed class HelpCircleTests : IDisposable
 
         Before(restricted, "`daoris-knowledge` answers for `alpha` unless a call names another workspace, or `all`");
         Before(restricted, "The checkouts you may read are every workspace's, `alpha`'s");
-        Before(restricted, "a proposal may name another workspace or one of its repositories");
+        Before(restricted, "a press may name another workspace or one of its repositories");
         Assert.DoesNotContain("not confined", restricted);
 
         Before(full, "Full access is not confined to `alpha`: your shell and file edits reach this whole machine");

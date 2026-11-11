@@ -49,6 +49,8 @@ public sealed class BranchTidying(string home)
     /// <summary>The tidy of a folder department's copies, after the repositories; none, and no copy is judged.</summary>
     public ICopyTidying? Copies { get; init; }
 
+    public IOutputKeeping? PluginOutput { get; init; }
+
     /// <summary>
     /// The look's classing, by which each line is classed as it is made: what the tidy removed or kept, which the session's
     /// page, its branch's line and This Daoris's cards say, is what moved; what it could not do now, a later look's. None by default.

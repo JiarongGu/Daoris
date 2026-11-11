@@ -392,7 +392,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `return`'s per-file choice offers a supervisor no act. A person's word on the node replaces a supervisor's pending one and the
     decision moves `superseded`. A restart empties memory, so the first pass drops a word it left, and the start's sweep records a
     decision whose word the record shows applied as made and closes the rest stale. The head's card says an Accept by the kind of
-    work its attempt's record holds (`work`: *The supervisor accepted the files changed in this folder, which are there already; it goes on
+    work its attempt's record holds (`work`, read in the workflows' `LandingWork`, since the roles name no review record: *The supervisor accepted the files changed in this folder, which are there already; it goes on
     at 14:10.*), and only when it goes on, never what follows, since a `go-ahead` after the review still holds the write for the person;
     with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`); the run's review carries the same
     decision on the attempt it reads (`RUN_REVIEW`'s `supervisor`).

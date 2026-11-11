@@ -14,13 +14,15 @@ public sealed class OldBinStepTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
+    private string OldBin => DaorisHome.Places(Home, HomeEntry.Bin)[^1];
+
     private void Install(bool http, bool connector)
     {
         Directory.CreateDirectory(Home);
         File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
         if (http) Put(Path.Combine(_root, "app", "daoris-knowledge-http", ServiceHostLocator.ExecutableName));
         if (connector) Put(Path.Combine(_root, "app", KnowledgeConnector.Folder, KnowledgeConnector.ExecutableName));
-        Put(Path.Combine(Home, "bin", "daoris-knowledge-http", ServiceHostLocator.ExecutableName));
+        Put(Path.Combine(OldBin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName));
     }
 
     private static void Put(string file)
@@ -37,7 +39,7 @@ public sealed class OldBinStepTests : IDisposable
 
         new OldBinStep().Run(run);
 
-        Assert.False(Directory.Exists(Path.Combine(Home, "bin")));
+        Assert.False(Directory.Exists(OldBin));
         Assert.Equal(1, run.Counts["old-bin.removed"]);
         var again = new HomeMigrationRun(Home, HomeMigration.Name);
         new OldBinStep().Run(again);
@@ -51,6 +53,6 @@ public sealed class OldBinStepTests : IDisposable
 
         new OldBinStep().Run(new HomeMigrationRun(Home, HomeMigration.Name));
 
-        Assert.True(Directory.Exists(Path.Combine(Home, "bin")));
+        Assert.True(Directory.Exists(OldBin));
     }
 }

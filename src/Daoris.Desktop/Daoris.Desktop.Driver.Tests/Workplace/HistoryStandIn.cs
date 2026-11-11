@@ -143,7 +143,7 @@ internal sealed class HistoryStandIn : HttpMessageHandler
             Quests.RemoveAll(quest => In("quests", quest));
             Asks.RemoveAll(ask => In("asks", ask));
             var failed = new JsonObject { ["quests"] = new JsonArray(), ["asks"] = new JsonArray() };
-            foreach (var (field, folder) in new[] { ("quests", "quests"), ("asks", "asks") })
+            foreach (var (field, entry) in new[] { ("quests", HomeEntry.QuestFiles), ("asks", HomeEntry.AskFiles) })
             {
                 foreach (var id in unit[field]!.AsArray().Select(id => (string?)id).OfType<string>())
                 {
@@ -153,8 +153,9 @@ internal sealed class HistoryStandIn : HttpMessageHandler
                         continue;
                     }
 
-                    var kept = Path.Combine(Home ?? "", folder, id);
-                    if (Home is not null && Directory.Exists(kept)) Directory.Delete(kept, recursive: true);
+                    if (Home is null) continue;
+                    var kept = DaorisHome.Entry(Home, entry, id);
+                    if (Directory.Exists(kept)) Directory.Delete(kept, recursive: true);
                 }
             }
 

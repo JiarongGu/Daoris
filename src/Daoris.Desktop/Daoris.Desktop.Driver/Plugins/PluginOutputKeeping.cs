@@ -5,10 +5,12 @@ namespace Daoris.Driver;
 /// screenshots, say): once a day in the tidy's Keeping pass, each file not written for <see cref="Days"/> days goes, then a folder
 /// it leaves empty. The plugin's other data stays: only <c>output</c> is read. It is no kind of the Disk space card.
 /// </summary>
-internal sealed class PluginOutputKeeping(Func<DateTimeOffset> clock)
+internal sealed class PluginOutputKeeping(Func<DateTimeOffset> clock) : IOutputKeeping
 {
     /// <summary>How long a file is kept after its last write.</summary>
     internal const int Days = 14;
+
+    int IOutputKeeping.Days => Days;
 
     /// <summary>The folder under a plugin's data folder that holds what it writes for the person to see.</summary>
     internal const string Folder = "output";
@@ -17,7 +19,7 @@ internal sealed class PluginOutputKeeping(Func<DateTimeOffset> clock)
     private DateTimeOffset? _daily;
 
     /// <summary>Whether the day's prune is due: a day since the last, and a file past its days.</summary>
-    internal bool Due(string home)
+    public bool Due(string home)
     {
         lock (_gate)
         {
@@ -30,7 +32,7 @@ internal sealed class PluginOutputKeeping(Func<DateTimeOffset> clock)
     }
 
     /// <summary>The day's prune: how many files went, and their bytes. A file held open stays for the next day.</summary>
-    internal (int Removed, long Bytes) Keep(string home)
+    public (int Removed, long Bytes) Keep(string home)
     {
         var now = clock();
         var removed = 0;

@@ -76,8 +76,8 @@ public sealed class RunReviewSupervisorTests : IDisposable
 
         var landings = decisions.LandingsOf("s2");
 
-        Assert.Equal(kind, Assert.Single(landings, view => view.Node == "review").Work);
-        Assert.Null(Assert.Single(landings, view => view.Node == "approval").Work);
+        Assert.Equal(kind, LandingWork.Of(_home, Assert.Single(landings, view => view.Node == "review")));
+        Assert.Null(LandingWork.Of(_home, Assert.Single(landings, view => view.Node == "approval")));
     }
 
     [Fact]

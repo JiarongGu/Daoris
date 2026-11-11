@@ -93,7 +93,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the `salvage` kind (a migration's folder under
     `data/salvage` whose newest file is 30 days old goes, `SalvageKeeping`; a row of Disk space, a `space free` group the person
     may take earlier, a rule no one sets) and the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
-    days, then an emptied folder, `PluginOutputKeeping`; no card row, the plugin's other data stays). `agent account list` names a
+    days, then an emptied folder, `PluginOutputKeeping`, handed to the tidy as its `IOutputKeeping` port by the loop's watch; no card
+    row, the plugin's other data stays). `agent account list` names a
     folder beside an agent's accounts that is no account (a lock's) and a folder under the account homes that no agent names
     (`<agent>$a`, `StrayAgentFolders`), and `agent account remove <agent> <account>` or `remove <folder>` takes each.
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the

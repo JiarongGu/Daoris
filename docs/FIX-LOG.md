@@ -5,6 +5,42 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - A goal step's record failed the role census, and the seeded role table had no `step`
+
+- **Symptom:** `RoleCensusTests` and `StartPlanTests` threw on `StartPlan.RoleOf("step")`: no work of that name.
+- **Root cause:** the step's session became a work code (f6db00195c) and then a session held as the build role (c7f08b01be); neither the
+  seeded role table nor the census learned it, so the census would refuse every step's record as a build role not taking `step`.
+- **Fix:** `step` walks Build's seeded role, and the census admits a role taking `build` on a record whose marks read `step`, as it
+  admits design on build.
+- **Verification:** both classes pass; `step` is in the start plan's mapping assertion.
+
+## 2026-11-12 - A git that had exited held its repository stalled, so a tree's next background git was refused
+
+- **Symptom:** `TreeSharesTests` and `TreePoolSharesGitTests` failed alone, each on "git is stalled in .git: a git there outlived its
+  kill" from a status, `ls-files`, `ls-tree` or `worktree` asked just after another git in the same repository.
+- **Root cause:** since a place opens its process handle at bind (GITREV3f, c16690d256), it read its process as exited only once its own
+  `WaitForExitAsync` task had completed on the pool; a run returning at its git's exit found the task still pending, counted the git
+  apart and marked the repository stalled until the continuation ran. GITREV3i (f88e58efa6) made that refusal git's failure, so the
+  window became a red instead of a quiet retry.
+- **Fix:** `GitPlace` reads the handle's `HasExited` beside the wait's completion; the wait still disposes the handle at the exit.
+- **Verification:** `GitPlaceExitTests` (red first: round 0 read an exited process as running), the two tree-share classes alone, the
+  scheduler's and the lifetimes census pass.
+
+## 2026-11-12 - Structure and census gates red on main: upward names, a kind chosen by name, a wait no reader answers
+
+- **Symptom:** the driver's structure gate found `Events/RunOutcomeNotices.cs` and `RunOutcomesLook.cs` naming Workflows and Work orders
+  types, `Plugins/PluginToolsServer.cs` naming `StepAnswer`, `Workplace/TidyKeeping.cs` naming `PluginOutputKeeping` and
+  `Roles/SupervisorLandingView.cs` naming `ReviewRecords`; the dispatch census found `RunNodeWords` choosing by `NodeKinds.Review`;
+  `LoopGroundsTests` asked the `help` wait the grounds no longer read.
+- **Root cause:** the run outcomes (4b18416098) were placed under Events; the agent-performed step (201d532cb6) kept its answer file under
+  Workflows; the plugin output prune (115a84e827) was built by the tidy itself; the supervisor card's work kind (b0955d4903) was read in
+  the roles; the Accept bound to its review (d1a92856c9) checked the kind the kit had already matched; the proposal box's removal
+  (b1b82c4583) dropped the `help` wait's reader and left it in `LoopGround.Waits`.
+- **Fix:** the outcomes live in `Workflows/Kinds/Review/`; `StepAnswer` and `StepAgentAsk` are the plugin wire's, under `Plugins/`, a
+  codeless failure settling at the performer's default; the prune is the tidy's `IOutputKeeping` port, handed by the loop's watch;
+  `LandingWork` reads an Accept's kind in the workflows; `RunNodeWords` trusts the kit's match; the `help` wait leaves the list.
+- **Verification:** the structure tests, the dispatch census, the supervisor and tools server classes, and `LoopGroundsTests` pass.
+
 ## 2026-11-12 - Three gates red on main: an upward edge, an unclassed route, and two pipe tests whose card was refused at the ask
 
 - **Symptom:** the driver's structure gate found `Agents/SessionServers.cs` naming two Plugins types; `WindowCensusTests` found `PLUGIN_COMMAND`

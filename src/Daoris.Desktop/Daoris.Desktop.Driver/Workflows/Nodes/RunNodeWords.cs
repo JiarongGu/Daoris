@@ -134,7 +134,7 @@ public static class RunNodeWords
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
                 Revision = by is null ? null : revision?.Trim(),
             };
-            if (act == NodeWordActs.Accept && by is null && declared.Kind == NodeKinds.Review)
+            if (act == NodeWordActs.Accept && by is null)
             {
                 // On the way to its review the press is kept for it, on the record named; on an active one it is bound to the record
                 // the review stands on, the one named or, unnamed, the one standing as it is kept.
