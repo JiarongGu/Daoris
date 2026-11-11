@@ -27,8 +27,6 @@ public sealed class AskNewView : IPressView
 
         var machine = await world.MachineAsync(cancellationToken).ConfigureAwait(false);
         var registry = (await world.RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(row => (row.Repository, row.Workspace)).ToList();
-        // The service holds the workspaces its registered repositories are in and files an ask under that spelling, so the card says
-        // the same: a workspace none is in is refused here, the default's name included, rather than asked and refused after the Confirm.
         var held = registry.Select(row => string.IsNullOrWhiteSpace(row.Workspace) ? "default" : row.Workspace.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal).ToList();
         if (held.FirstOrDefault(name => string.Equals(name, asked.Workspace, StringComparison.OrdinalIgnoreCase)) is not { } workspace)

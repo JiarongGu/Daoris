@@ -14,7 +14,6 @@ public sealed class AskNewViewTests
         var grounds = new StubGrounds { Facts = new HelpMachineFacts(["engine"], ["default", "games"], []) };
         grounds.Placed["engine"] = "games";
         grounds.Registered.Add("engine");
-        // A repository placed nowhere is in the default workspace.
         grounds.Registered.Add("docs");
         return grounds;
     }
@@ -79,7 +78,6 @@ public sealed class AskNewViewTests
         Assert.Contains("--review-words go with a review choice", (await View(new { workspace = "games", sentence = "x", reviewWords = "why" })).Refusal);
     }
 
-    /// <summary>The service holds the workspaces its registered repositories are in, so one none is in is no workspace to ask at, the default's name included.</summary>
     [Fact]
     public async Task A_workspace_no_registered_repository_is_in_is_refused_at_the_ask_the_default_included()
     {

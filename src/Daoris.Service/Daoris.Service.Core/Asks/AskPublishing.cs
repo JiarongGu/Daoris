@@ -20,8 +20,6 @@ internal sealed class AskPublishing(
         var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
         var named = Workspaces.Normalize(request.Workspace);
         var held = registered.Select(r => r.InWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).Order().ToList();
-        // The registry matches a workspace ignoring case, so the ask is kept under the workspace's own spelling: its id hashes the
-        // spelling, and the same words at `Work` and at `work` would otherwise be two asks in one workspace.
         if (held.FirstOrDefault(circle => Workspaces.Same(circle, named)) is not { } workspace)
         {
             return new(

@@ -95,7 +95,6 @@ public sealed class PipeTerminalTierTests : Bridge
         Assert.NotNull(kept.Ended);
     }
 
-    /// <summary>A route answers a refusal as data (<c>done: false</c>), or a verb it ran said it with a code beside its lines: the press did not happen, and the record says so.</summary>
     [Theory]
     [InlineData(StandIn.Declines)]
     [InlineData(StandIn.Exits)]
@@ -206,10 +205,8 @@ public sealed class PipeTerminalTierTests : Bridge
         /// <summary>The quest whose pause the stand-in refuses, as a route's judge refuses.</summary>
         public const string Refuses = "q-refused";
 
-        /// <summary>The quest whose pause the stand-in answers <c>done: false</c>, a refusal as data.</summary>
         public const string Declines = "q-declined";
 
-        /// <summary>The quest whose pause the stand-in answers as a verb's lines and a non-zero exit code.</summary>
         public const string Exits = "q-exits";
 
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
