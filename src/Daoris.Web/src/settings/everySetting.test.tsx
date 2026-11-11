@@ -27,7 +27,7 @@ describe('every machine setting', () => {
   });
 
   it('the Driver domain draws is worded under its key in every catalogue', () => {
-    expect(driver.map((setting) => setting.key)).toEqual(expect.arrayContaining(['notify', 'cooloff', 'quiet', 'cap']));
+    expect(driver.map((setting) => setting.key)).toEqual(expect.arrayContaining(['notify', 'cooloff', 'quiet', 'cap', 'terminal']));
     for (const [language, catalogue] of Object.entries(catalogues)) {
       for (const setting of driver) {
         for (const part of ['label', 'terminal', 'body']) {
@@ -41,7 +41,7 @@ describe('every machine setting', () => {
     render(
       <Tooltip.Provider>
         <DriverCards
-          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, cap: 2 }}
+          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, cap: 2, terminal: 'ask' }}
           minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet') }}
           busy={{ access: false }}
           onGo={vi.fn()}
@@ -49,6 +49,7 @@ describe('every machine setting', () => {
           onCoolOff={vi.fn()}
           onQuiet={vi.fn()}
           onCap={vi.fn()}
+          onTerminal={vi.fn()}
           onAccess={vi.fn()}
         />
       </Tooltip.Provider>,

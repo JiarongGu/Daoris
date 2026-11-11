@@ -22,6 +22,7 @@ internal static class DriverConfigWriter
             ActorKey.Write(writer, asFile?.Actors ?? config.Actors);
             // Written only while full: absent is restricted, and the CLI twin writes it the same way.
             if (config.HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", config.HelpMode);
+            if (config.Terminal == TerminalTiers.Act) writer.WriteString(TerminalTiers.File, TerminalTiers.Act);
             writer.WriteBoolean("notify", config.Notify);
             writer.WriteNumber("pollSeconds", config.PollSeconds);
             // Written only when set: absent is the default, and an edit elsewhere must not pin today's default.

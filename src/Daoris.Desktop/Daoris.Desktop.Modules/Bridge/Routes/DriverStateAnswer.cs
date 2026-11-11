@@ -70,6 +70,7 @@ internal static class DriverStateAnswer
             // Ask Daoris's access mode as the person chose it: `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
+            config.Terminal,
             // Restricted mode's access as the person chose it: each grant by its id, with the operations chosen and those it acts on,
             // so the page offers no other, and whether a running conversation is handed another choice its next turn takes. The
             // browser's is read only from its plugin's approval, with no `built`, so the page offers nothing to choose.

@@ -41,6 +41,7 @@ public static class MachineSettings
         new("cap", "cap", Card: Driver, Least: 1),
         // Its kinds are the Disk space card's, worded there.
         new("keep", "keep", Card: null),
+        new("terminal", "terminal", Card: Driver),
     ];
 
     /// <summary>The setting of a key, or null where none is.</summary>

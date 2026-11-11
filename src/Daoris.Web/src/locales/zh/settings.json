@@ -48,5 +48,13 @@
   "settings.quiet.body": "会话不会因为运行时间长而被停止。如果它这么久既没有输出、也没有在运行任何程序，Daoris 会协助它：先提醒它，再由你决定，或让同一项工作重新开始。",
   "settings.quiet.minutes": "分钟",
   "settings.quiet.set": "会话无动静 {{count}} 分钟后，Daoris 现在会去查看。",
-  "settings.quiet.set_other": "会话无动静 {{count}} 分钟后，Daoris 现在会去查看。"
+  "settings.quiet.set_other": "会话无动静 {{count}} 分钟后，Daoris 现在会去查看。",
+  "settings.terminal.label": "终端的操作",
+  "settings.terminal.terminal": "也可用 `daoris settings terminal ask|act`——同一个文件，任一入口；从终端设置时，会先在这里请你确认。",
+  "settings.terminal.body": "本机上的任何程序都能以你的名义向 Daoris 发来操作，所以默认每一个都在这个窗口等你确认。当你自己在 Daoris 之外运行的智能体从它的终端开发 Daoris 时，可以打开这一项：它发来的每个操作会直接以你的名义执行，并列在通知中。Daoris 启动的会话保持它自己的权限，在 Daoris 的智能体里运行的程序仍会询问。",
+  "settings.terminal.act": "直接以你的名义执行",
+  "settings.terminal.state.ask": "询问：本机终端发来的每个操作都在这里等你确认。",
+  "settings.terminal.state.act": "执行：本机上不属于任何 Daoris 会话的终端发来的操作会直接以你的名义执行，并列在通知中。",
+  "settings.terminal.set.ask": "终端发来的操作现在会等你确认。",
+  "settings.terminal.set.act": "终端发来的操作现在会直接以你的名义执行。"
 }

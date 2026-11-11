@@ -37,6 +37,7 @@ internal static class DriverChoicesList
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
               + "`daoris settings cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
+        Section(TerminalTiers.File);
 
         if (choices.Drivable.Count == 0)
         {
