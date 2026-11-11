@@ -28,6 +28,7 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   'words-and-helper': { key: 'note.resumed.why.words-and-helper', values: [] },
   // Daoris's own words alone: a reopen told, a step's go-on.
   daoris: { key: 'note.resumed.why.daoris', values: [] },
+  restart: { key: 'note.resumed.why.restart', values: [] },
   // The supervisor's answer, on the owner's behalf, with none of the owner's words.
   supervisor: { key: 'note.resumed.why.supervisor', values: [] },
 };

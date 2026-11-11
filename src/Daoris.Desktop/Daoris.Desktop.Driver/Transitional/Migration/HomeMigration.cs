@@ -53,6 +53,7 @@ public static class HomeMigration
         new AbandonedRunsStep(),
         new PlaceWorkStep(),
         new SecondCheckStep(),
+        new HelpProposalsStep(),
     ];
 
 

@@ -123,7 +123,7 @@ public sealed class HelpRoomMayDoTests
             + "a write the person accepted", agents);
         Assert.Contains("- `docs` (plugin `acme.docs`): none of its tools", agents);
         Assert.Contains("the plugin's own act", agents);
-        Assert.Contains("a change to Daoris itself is still a proposal", agents);
+        Assert.Contains("a change to Daoris itself is still a press of Daoris's verb", agents);
         Assert.Contains("you are handed none of them until the person approves", agents);
         Assert.Contains("- `wiki` (plugin `acme.wiki`): would read with `lookup`", agents);
     }
@@ -309,7 +309,7 @@ public sealed class HelpRoomMayDoTests
 
         Assert.Contains("This is restricted mode", room);
         Assert.Contains("`daoris ask-daoris mode full`", room);
-        Assert.Contains("never yours to propose", room);
+        Assert.Contains("never yours to press", room);
         Assert.Contains("You change nothing yourself", room);
         // It runs Daoris's own verb, and each change that verb presses waits on the person's card.
         Assert.Contains("Daoris's own (`daoris`)", room);
@@ -335,7 +335,7 @@ public sealed class HelpRoomMayDoTests
 
         Assert.Contains("You act on this machine as the person, as they chose", room);
         Assert.Contains("each press runs at once as the person's own, said on this conversation", room);
-        Assert.Contains("only what the person asks to see first", room);
+        Assert.DoesNotContain("only what the person asks to see first", room);
         Assert.Contains("say what you will do before you do it", room);
         Assert.Contains("ask for it with `daoris ask --workspace <name> \"…\"`", room);
         Assert.Contains("Daoris's own housekeeping is yours to do", room);

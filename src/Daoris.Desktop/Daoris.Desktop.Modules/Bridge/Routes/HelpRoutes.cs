@@ -6,26 +6,16 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Ask Daoris, the page's `bridge/help.ts`: its conversation in its room, its proposals
-/// and the person's Apply or Not now, and the doors an Apply goes through, each a screen's own route.
+/// Ask Daoris, the page's `bridge/help.ts`: its conversation in its room, its history, and what its presses published.
 /// </summary>
 public sealed class HelpRoutes(DriverContext context)
 {
     /// <summary>What a history act changes: Ask Daoris's history, and the conversations the panel shows.</summary>
     private const StateScopes Kept = StateScopes.Sessions | StateScopes.Help;
 
-    /// <summary>
-    /// What an Apply may change, every door it holds: the page's hook asked each of these again by hand before.
-    /// </summary>
-    private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
-        | StateScopes.Rules | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses
-        | StateScopes.Help | StateScopes.Browser;
-
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
     private readonly IEventBus _events = context.Events;
-
-    private readonly HelpProposalFacts _facts = new(context);
 
     // Ask Daoris's conversation, one per workspace, carried on or new in its room; answered once placed, with `starting`, its agent spawned
     // off the request, since the room's look alone can near the page's 30 s wait. A workspace this machine lacks is refused.
@@ -174,185 +164,6 @@ public sealed class HelpRoutes(DriverContext context)
             return false;
         }
     }
-
-    // Ask Daoris's proposals: what one conversation proposed that waits for the
-    // person, each judged with the route's own code first. One the route would refuse is never
-    // shown: it is settled refused, and the agent hears why in the route's words. Told by event: its pending list and
-    // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
-    [DriverRoute("HELP_PROPOSALS", PipeClass.Open)]
-    [ByEvent("HELP_PROPOSALS", Untold = "each proposal judged against the checkouts' git and the service's records, which no scope tells")]
-    private async Task<object?> HelpProposalsAsync(HelpProposalsRead press, CancellationToken cancellationToken)
-    {
-        var session = press.Session;
-        var service = _loop.Service ?? throw NotReady();
-        var pending = HelpProposals.Pending(_loop.Home, session);
-        var (config, facts) = await _facts.FactsAsync(service, pending, cancellationToken).ConfigureAwait(false);
-        var shown = new List<object>();
-        foreach (var proposal in pending)
-        {
-            var plan = HelpProposals.Plan(proposal, config, facts);
-            if (plan.Refusal is { } refused)
-            {
-                HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
-                // Daoris's own word, never the person's.
-                _loop.Chat?.Tell(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"),
-                    DaorisWordKey("help-refused", proposal.Id));
-                continue;
-            }
-
-            shown.Add(Card(proposal, plan).Card);
-        }
-
-        return new { Session = session, Proposals = shown.ToArray() };
-    }
-
-    /// <summary>
-    /// A proposal's card as the page draws it, and the revision of the plan it shows: a digest of everything the card
-    /// says, so an Apply carrying it runs only what the person saw, and a machine that moved since asks again. The card's own
-    /// <c>revision</c> is that digest.
-    /// </summary>
-    internal static (string Revision, Dictionary<string, object?> Card) Card(HelpProposal proposal, HelpPlan plan)
-    {
-        var body = CardBody(proposal, plan);
-        var fields = System.Text.Json.JsonSerializer.SerializeToElement(
-            body, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
-        var revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(fields.GetRawText())))[..16].ToLowerInvariant();
-        var card = new Dictionary<string, object?>(StringComparer.Ordinal) { ["revision"] = revision };
-        foreach (var field in fields.EnumerateObject()) card[field.Name] = field.Value;
-        return (revision, card);
-    }
-
-    private static object CardBody(HelpProposal proposal, HelpPlan plan) =>
-        new
-        {
-            proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-        };
-
-    // The person's Apply: made through the door the screen's own route uses, judged again
-    // first, since the machine may have moved after the card's drawing. The result goes back into
-    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's.
-    // It acts through the doors directly, not through
-    // their routes, so it declares every family a door it holds may move: the driver's file and what reads
-    // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
-    // a repository moved, finished history cleared, and the proposal itself.
-    [DriverRoute("HELP_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("HELP_APPLY", ByPlan = true)]
-    [GroundWait("HELP_APPLY", "help", "id", "revision")]
-    [Publishes("HELP_APPLY", Applies)]
-    private async Task<object?> HelpApplyAsync(HelpApply press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var service = _loop.Service ?? throw NotReady();
-        var proposal = HelpProposals.Find(_loop.Home, id)
-            ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
-        if (proposal.State != "proposed") return AppliedAgain(proposal);
-        // The card's revision: without one there is no card this Apply stands for.
-        var shown = press.Revision;
-        if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
-
-        // One Apply at a time: a second window's press of the same card waits for nothing and runs nothing.
-        using var claim = HelpProposals.Claim(_loop.Home, id)
-            ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
-        // The winner may have settled it between the read above and the claim.
-        proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
-        if (proposal.State != "proposed") return AppliedAgain(proposal);
-
-        var (config, facts) = await _facts.FactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
-        var plan = HelpProposals.Plan(proposal, config, facts);
-        // The plan is judged again, and a refusal settles as before; but an allowed plan other than the one the card showed is not
-        // applied: the person is told what it is now and asks again from the card drawn anew.
-        if (plan.Refusal is null && Card(proposal, plan).Revision != shown)
-        {
-            var changed = $"The plan for `#{id}` changed since this card was drawn, so nothing was applied. It now reads: {plan.Describe}. Look at the new card and press Apply on it.";
-            return new { Message = changed, Applied = false, Go = (object?)null, Stands = true, Changed = true };
-        }
-
-        // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word.
-        var told = 0;
-        void Say(string text)
-        {
-            if (proposal.Session is { } session)
-            {
-                _loop.Chat?.Tell(session, $"Daoris: {InPersonsWords(text)}", DaorisWordKey("help-apply", $"{proposal.Id}/{Interlocked.Increment(ref told)}"));
-            }
-        }
-
-        // an Apply marks by the plan it applies, not its route: the target its door declares, its gates
-        // taken and marked the owner's before the edit, the edit inside them.
-        await using var owned = await OwnerMarks.EnterAsync(
-            _loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), plan.Refusal is null ? Owned(HelpProposals.Owned(proposal)) : [],
-            cancellationToken).ConfigureAwait(false);
-        var applied = await HelpProposals.ApplyAsync(
-            _loop.Home, proposal, plan, new HelpScreenDoors(_context), Say, cancellationToken).ConfigureAwait(false);
-        return ApplyAnswer(proposal, applied);
-    }
-
-    /// <summary>A press on a card already settled: answered with what its first press came to, and logged with its reason.</summary>
-    private object AppliedAgain(HelpProposal proposal)
-    {
-        _loop.Log?.Write("info", HelpAppliedAgain.Event, HelpAppliedAgain.Line(proposal));
-        return ApplyAnswer(proposal, HelpAppliedAgain.Answer(_loop.Home, proposal));
-    }
-
-    /// <summary>What an Apply's plan acts on (<see cref="HelpProposals.Owned"/>), as the owner's mark names it.</summary>
-    public static IReadOnlyList<OwnerNamed> Owned(HelpOwned owned) =>
-    [
-        .. owned.Repositories.Select(each => new OwnerNamed(OwnerKinds.Repository, each)),
-        .. owned.Workspaces.Select(each => new OwnerNamed(OwnerKinds.Workspace, each)),
-        .. owned.Quests.Select(each => new OwnerNamed(OwnerKinds.Quest, each)),
-    ];
-
-    /// <summary>
-    /// What an Apply answers the page, the page's <c>HelpSettled</c>: the driver's sentence, whether it is
-    /// applied, where a go takes the person, and the agent action the Agents screen follows. Public so the fast half holds
-    /// the answer without a service, as it holds a conversation's options.
-    /// </summary>
-    public static object ApplyAnswer(HelpProposal proposal, HelpApplied applied) => new
-    {
-        Message = applied.Told,
-        applied.Applied,
-        // Where a go takes the person: the page navigates, as its starters' doors do, to the one quest or ask a go
-        // names in it, the driver's judged spelling, and opens Add repository or Import a folder with the workspace
-        // the driver judged filled, or New conversation with the repository and words it judged; each null on any other go.
-        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence } : null,
-    };
-
-    // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss takes its card
-    // away and is told to nobody: a go changes nothing, so its dismiss is no word on the quest or ask it names.
-    [DriverRoute("HELP_DISMISS", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("HELP_DISMISS", None = OwnerNone.ActsOnNothing)]
-    [GroundWait("HELP_DISMISS", "help", "id")]
-    [Publishes("HELP_DISMISS", StateScopes.Help)]
-    private async Task<object?> HelpDismissAsync(HelpDismiss press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var proposal = HelpProposals.Find(_loop.Home, id)
-            ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
-
-        // The Apply's claim: a Not now settling a card whose Apply is running would be overwritten by it, or overwrite it.
-        using var claim = HelpProposals.Claim(_loop.Home, id)
-            ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
-        proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
-        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
-
-        var told = HelpProposals.Dismiss(_loop.Home, proposal);
-        if (told is not null && proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
-        await Task.CompletedTask.ConfigureAwait(false);
-        return new { Message = told ?? $"Dismissed `#{id}`: its card left the conversation, nothing was said to Ask Daoris, and nothing else changed." };
-    }
-
-    /// <summary>
-    /// A sentence said into Ask Daoris's conversation: plain words, since a turn's words render verbatim and a sentence full
-    /// of backticks read as noise on the window. The person's Not now, and Daoris's word of what an Apply did.
-    /// </summary>
-    private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
-
-    /// <summary>
-    /// The key a word of Daoris's to Ask Daoris's conversation carries: its kind and the proposal
-    /// it is about. No fact of Daoris's is judged by it (<see cref="DaorisKeys.Read"/> names none), so the word always goes.
-    /// </summary>
-    private static string DaorisWordKey(string kind, string about) => $"{kind}/{about}";
 
     // what one conversation's presses published, the newest first, each by the ids the
     // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,

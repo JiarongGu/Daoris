@@ -486,7 +486,7 @@ describe('the real glossary and catalogues', () => {
  */
   it('hold the role to 角色: its labels say it and no sentence about a role says 职责', () => {
     const labels = ['work.role.title', 'settings.ai.roles.title', 'settings.daoris.label.roles'];
-    const sentence = 'projects.supervisor.refused.window-only';
+    const sentence = 'settings.daoris.roles.hint';
     const wrong = { ...zh, ...Object.fromEntries(labels.map((key) => [key, '职责'])), [sentence]: '只有 Daoris 的窗口可以任命或停用一个职责。' };
     const found = check(glossary, en, wrong, { all: true })
       .filter((finding) => finding.rule === 'glossary' && finding.language === 'zh')

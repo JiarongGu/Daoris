@@ -27,6 +27,12 @@ public sealed record RunManifest(string Kind, string? Head, string? Branch, Date
     /// <summary>A folder past the manifest's bounds: it lists nothing, and what changed there is not followed.</summary>
     public bool TooLarge { get; init; }
 
+    /// <summary>At a start, the graph run its turn serves, whose turn log its end appends to (<see cref="RunTurns"/>); null outside a run.</summary>
+    public string? Run { get; init; }
+
+    /// <summary>At a start, the paths changed since the place's last manifest, which the session is told are not its own.</summary>
+    public IReadOnlyList<string>? Outside { get; init; }
+
     /// <summary>The entry listed for <paramref name="path"/>, or null where the path is <c>HEAD</c>'s.</summary>
     public ManifestEntry? Listed(string path) => Entries.FirstOrDefault(entry => string.Equals(entry.Path, path, StringComparison.Ordinal));
 }

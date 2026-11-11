@@ -439,7 +439,6 @@ public sealed class ChatGoesOnProcessTests : IDisposable
             () => Seen(ledger, events, id));
         var lost = events.After(id, 0).Events.Single(e => e.Text?.Contains("may have read") == true);
         Assert.Equal([word], lost.Words!);
-        // Its code, which the page words in the reader's language (MSG1c3).
         Assert.Equal(SessionEventCodes.Lost, lost.Code);
         Assert.True(runner.Finish(id));
     }
@@ -583,12 +582,11 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     [Theory]
-    [InlineData("running", true)]
-    [InlineData("held", true)]
-    [InlineData("idle", true)]
-    [InlineData("never", true)]
-    [InlineData("running", false)]
-    public async Task An_update_keeps_one_unsent_restart_word_only_for_work_it_cuts(string state, bool update)
+    [InlineData("running")]
+    [InlineData("held")]
+    [InlineData("idle")]
+    [InlineData("never")]
+    public async Task An_update_keeps_one_unsent_restart_word_only_for_work_it_cuts(string state)
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = Config("acp-stub", "node", Agent(), Heard);
@@ -606,17 +604,17 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 if (state == "idle") await Poll.Until(() => !runner.Taking(id));
                 if (state == "held") await runner.SayKeptAsync(id, "held words", [], null, MessageLevel.Ordinary, null);
             }
-            if (update) processes.Close = ShellClose.Update("build-1");
+            processes.Close = ShellClose.Update("build-1");
             runner.StopAll(Poll.Patience);
             runner.StopAll(Poll.Patience);
             Assert.Equal("stopped", ledger.State(id));
             var words = ledger.Record(id)["said"]!.AsArray();
             var restart = words.Where(word => word?["key"]?.GetValue<string>() == DaorisKeys.Restart(id, "build-1")).ToArray();
-            Assert.Equal(update && state is "running" or "held" ? 1 : 0, restart.Length);
+            Assert.Equal(state is "running" or "held" ? 1 : 0, restart.Length);
             Assert.DoesNotContain(HeardLines(), line => line.Contains(ShellClose.Words, StringComparison.Ordinal));
             if (restart.Length == 1) Assert.Null(restart[0]?["attempted"]);
-            if (update && state == "idle") Assert.Contains("chat.restarted", ledger.Record(id).ToJsonString());
-            if (update && state == "running")
+            if (state == "idle") Assert.Contains("chat.restarted", ledger.Record(id).ToJsonString());
+            if (state == "running")
             {
                 using var next = Runner(client, events);
                 await next.TakeUpAsync();

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c>'s or a <c>review</c>'s reading: the work handed on, reached by the source the kind names (a land's reach is the
-/// landing record's, a review's the person's). A review is read as a land is, since the doors that accept the work land it in one press.
+/// A <c>land</c>'s reading, and a <c>review</c>'s on a branch through <see cref="ReviewReading"/>: the work handed on, reached by the source
+/// the kind names, since the doors that accept a branch's work land it in one press.
 /// </summary>
 internal static class LandReading
 {

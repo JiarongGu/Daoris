@@ -28,13 +28,6 @@ vi.mock('@shenora/react', async () => {
 import i18n from '../locales/i18n';
 import { keys } from '../data/queries';
 import { useStateHub } from '../bridge/state/stateHub';
-import { pushedOf, useStateSlices } from '../bridge/state/slices';
-import { asksSlice, questsSlice } from '../bridge/sessions/quests';
-import { sessionsSlice } from '../bridge/sessions/sessions';
-
-/** The slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
-const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
-import { code } from '../test/code';
 import { moved } from '../test/sliceShell';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
@@ -48,19 +41,10 @@ const HELP = {
 
 let SESSIONS: unknown[] = [];
 let HELPER: string | null = 'claude-code-acp';
-let PROPOSALS: unknown[] = [];
 /** What the conversation published, by id, and the quests and asks the service lists. */
 let PUBLISHED_HERE: unknown[] = [];
 let QUESTS: unknown[] = [];
 let ASKS: unknown[] = [];
-const APPLIED_SETTING = { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
-let APPLIED: unknown = APPLIED_SETTING;
-/** What the page asked the service, from the window's `fetch`: the shell's own reads of the lists are its owner's and are not here. */
-const asked = {
-  urls: () => vi.mocked(globalThis.fetch).mock.calls.map(([input]) => String(input)),
-  clear: () => { vi.mocked(globalThis.fetch).mockClear(); },
-};
-
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) {
     return Response.json(url.includes('includeClosed=true') ? SESSIONS
@@ -83,9 +67,6 @@ function bridge(start: { sessionId: string | null; message: string } = { session
       case 'SESSION_HISTORY': return { session: HELP.id, events: [], earlier: false, latest: 0 };
       case 'SESSION_QUEUE': return { session: HELP.id, queued: [], taking: false };
       case 'END_CHAT': return { ended: true };
-      case 'HELP_PROPOSALS': return { session: HELP.id, proposals: PROPOSALS };
-      case 'HELP_APPLY': return APPLIED;
-      case 'HELP_DISMISS': return { message: 'Not now: the person did not apply `#p1a2b3c4`.' };
       case 'HELP_PUBLISHED': return { session: HELP.id, published: PUBLISHED_HERE };
       default: return {};
     }
@@ -915,25 +896,25 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(starts()).toBe(2));
   });
 
-  /** What it proposes is a card under the conversation, applied or not by the person's press. */
-  it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
+  /** A go changes nothing, so its link sends the driver nothing. */
+  it('takes the person to the place a go link in its words names, and sends nothing', async () => {
     SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'p1a2b3c4', kind: 'go', describe: 'Open Repositories → `engine`, its Setup.',
-      terminal: '', why: 'the person asked where engine is driven',
-    }];
     bridge();
-    show();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => (type === 'SESSION_HISTORY'
+      ? {
+        session: HELP.id, earlier: false, latest: 1,
+        events: [{ seq: 1, at: new Date().toISOString(), kind: 'message', text: 'Its agent is named at [step 2](daoris:go?view=settings&domain=start&part=helper).' }],
+      }
+      : answered(module, type, ...rest)));
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
 
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(code('engine'))).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id, held: expect.any(String) } });
+    await userEvent.click(await screen.findByRole('button', { name: 'step 2' }));
 
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
-    PROPOSALS = [];
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start', anchor: 'step-helper' });
+    expect(screen.queryByRole('link', { name: 'step 2' })).toBeNull();
+    expect(invoke.mock.calls.map(([, type]) => type).filter((type) => /APPLY|DISMISS|PROPOSALS/.test(String(type)))).toEqual([]);
   });
 
   /**
@@ -975,63 +956,6 @@ describe('Ask Daoris, with an agent named', () => {
     ASKS = [];
   });
 
-  /**
-   * A go card's sentence says where its quest stands, so the plan its Apply judges moves with a take.
-   * Where the shell pushes the quests, the asks and the sessions, the card is drawn again at the push that moves a standing, never on
-   * a clock and never by a pull, so its Apply finds the plan it shows rather than answering that it changed.
-   */
-  it('draws a go card again when a push moves where a quest stands', async () => {
-    const at = '2026-10-22T09:00:00Z';
-    const quest = {
-      id: 'q1a2b3c4', from: 'daoris', to: 'engine', status: 'Open', title: 'Cap the chunk budget', body: 'Cap it.', filed: at,
-      updated: at, workspace: 'default',
-    };
-    const part = (data: Record<string, unknown>) => [{ partition: 'default', seq: 1, status: 'ready', data }];
-    const snapshots: Record<string, unknown> = {
-      quests: { slice: 'quests', epoch: 'q1', status: 'ready', partitions: part({ [quest.id]: quest }) },
-      asks: { slice: 'asks', epoch: 'k1', status: 'ready', partitions: part({}) },
-      sessions: { slice: 'sessions', epoch: 's1', status: 'ready', partitions: part({ [HELP.id]: HELP }) },
-    };
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g6o7t8o9', kind: 'go', describe: 'Open Quests → quest `#q1a2b3c4` “Cap the chunk budget”.', terminal: '', why: 'where it went',
-    }];
-    bridge();
-    const base = invoke.getMockImplementation()!;
-    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) =>
-      (type === 'STATE_SLICE' ? snapshots[options?.payload?.slice ?? ''] : base(module, type, options)));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    function Pushes() {
-      useStateHub();
-      useStateSlices(PUSHED_HERE);
-      return null;
-    }
-    render(
-      <QueryClientProvider client={client}>
-        <Pushes />
-        <Tooltip.Provider>
-          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-    await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    const drawn = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS').length;
-    await waitFor(() => expect(pushedOf(client).live('quests')).toBe(true));
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
-    const before = drawn();
-
-    act(() => {
-      heard.get('STATE_PUSH')?.({
-        slice: 'quests', epoch: 'q1', partition: 'default', seq: 2, status: 'ready', baseSeq: 1, removed: [],
-        data: { [quest.id]: { ...quest, status: 'Taken' } },
-      });
-    });
-
-    await waitFor(() => expect(drawn()).toBeGreaterThan(before));
-    expect(asked.urls().some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
-    PROPOSALS = [];
-  });
-
   /** A conversation that published nothing shows no strip, and asks no list of quests or asks for one. */
   it('shows no strip where the conversation published nothing', async () => {
     SESSIONS = [HELP];
@@ -1045,191 +969,6 @@ describe('Ask Daoris, with an agent named', () => {
       .toBe(false);
   });
 
-  /**
-   * A go is applied by navigating, through the starters' own door, and nothing else changes. The
-   * driver settles it and names the place; the page opens it — here the setup guide at its second step.
-   */
-  it('takes the person to the place a go names once they press go there', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
-      why: 'the person asked where to name its agent',
-    }];
-    APPLIED = {
-      message: 'Applied: `#g1o2t3o4` — Open Settings → Get started at step 2, Ask Daoris\'s agent. Nothing else changed.',
-      applied: true, go: { view: 'settings', domain: 'start', part: 'helper' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'g1o2t3o4' } });
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start', anchor: 'step-helper' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /**
-   * A go may name the one ask that waits, judged by the driver against the machine's
-   * records; the page opens Quests with it chosen, named as Quests' list names an ask.
-   */
-  it('takes the person to the one ask a go names', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g2o3t4o5', kind: 'go', describe: 'Open Quests → ask `#a2none00` “a test ask”.', terminal: '',
-      why: 'the person asked where their ask went',
-    }];
-    APPLIED = {
-      message: 'Applied: `#g2o3t4o5` — Open Quests → ask `#a2none00` “a test ask”. Nothing else changed.',
-      applied: true, go: { view: 'quests', domain: null, part: null, item: 'ask:a2none00' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /**
-   * The block a published quest leaves in the conversation is a go card, and its dismiss only takes it away. The
-   * driver settles the card and says nothing into the conversation; the page presses nothing about the quest: no Apply, no
-   * words, no quest's or ask's route. A taken quest's card says it is taken, in the driver's sentence.
-   */
-  it('takes a go card about a quest away on its dismiss, and sends nothing about the quest', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
-      why: 'the person asked where their quest went',
-    }];
-    bridge();
-    const answers = invoke.getMockImplementation()!;
-    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
-      // As the driver settles it: a dismissed card is pending no longer.
-      if (type === 'HELP_DISMISS') PROPOSALS = [];
-      return answers(module, type, request);
-    });
-    show();
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(/, taken\.$/)).toBeInTheDocument();
-    invoke.mockClear();
-    asked.clear();
-    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
-
-    await waitFor(() => expect(screen.queryByRole('list', { name: 'what Ask Daoris proposes' })).not.toBeInTheDocument());
-    const sent = invoke.mock.calls.map(([, type]) => type as string);
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'g6t7k8n9' } });
-    expect(sent.filter((type) => type === 'HELP_DISMISS')).toHaveLength(1);
-    expect(sent.filter((type) => type !== 'HELP_DISMISS' && /APPLY|INPUT|QUEST|ASK|WORK|DELETE|DECLINE|PAUSE|CLEAR/.test(type))).toEqual([]);
-    expect(asked.urls().filter((url) => /\/api\/(quests|asks)/.test(url))).toEqual([]);
-    PROPOSALS = [];
-  });
-
-  /**
-   * A go may name the one session that waits, judged by the driver against the machine's
-   * own records; the page opens Sessions with it chosen, by its id.
-   */
-  it('takes the person to the one session a go names', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g3o4t5o6', kind: 'go', describe: 'Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you.', terminal: '',
-      why: 'the person asked which session waits on them',
-    }];
-    APPLIED = {
-      message: 'Applied: `#g3o4t5o6` — Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you. Nothing else changed.',
-      applied: true, go: { view: 'sessions', domain: null, part: null, item: 's1a2b3c4' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', item: 's1a2b3c4' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /** A go may name an offer, as `offer:<id>`; the page opens Plugins with it chosen. */
-  it('takes the person to the one offer a go names', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g4o5t6o7', kind: 'go', describe: 'Open Plugins → Daoris\'s own plugin `github-pull-request`, not installed.', terminal: '',
-      why: 'the person asked about pull requests',
-    }];
-    APPLIED = {
-      message: 'Applied: `#g4o5t6o7` — Open Plugins. Nothing else changed.',
-      applied: true, go: { view: 'plugins', domain: null, part: null, item: 'offer:github-pull-request' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'offer:github-pull-request' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /**
-   * A go to Add repository or Import a folder may carry the workspace the driver judged; the
-   * page opens the drawer with it filled, and the folder stays the person's pick, so no path is in the go.
-   */
-  it('takes the person to Add repository with the workspace a go names filled', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'g5a6d7d8', kind: 'go', describe: 'Open Repositories → Add repository, its workspace `work` filled.', terminal: '',
-      why: 'the person asked to add a repository to work',
-    }];
-    APPLIED = {
-      message: 'Applied: `#g5a6d7d8` — Open Repositories → Add repository, its workspace `work` filled. Nothing else changed.',
-      applied: true, go: { view: 'projects', domain: null, part: 'add', item: null, workspace: 'work' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /** A go to New conversation names the repository and the words, and the door carries both to the composer. */
-  it('takes the person to the composer with the repository and words a go names', async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{
-      id: 'n5e6w7c8', kind: 'go', describe: 'Open Sessions → New conversation in `engine`: fix the build.', terminal: '',
-      why: 'the person asked to start a conversation',
-    }];
-    APPLIED = {
-      message: 'Applied: `#n5e6w7c8` — Open New conversation. Nothing else changed.',
-      applied: true, go: { view: 'sessions', domain: null, part: 'new', item: null, workspace: null, repository: 'engine', sentence: 'fix the build' },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
-
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
 
   /** The next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
   it('says a conversation that ended has, and that a message starts the next', async () => {

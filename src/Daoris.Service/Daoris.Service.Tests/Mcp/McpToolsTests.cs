@@ -699,7 +699,6 @@ public sealed class McpToolsTests : McpToolsFixture
         var tree = Path.Combine(_root, "trees", "setup");
         Directory.CreateDirectory(Path.Combine(tree, "dist"));
         var session = (await ledger.OpenAsync(setUp.Id, "stub", DateTimeOffset.UtcNow, tree: tree)).Session!;
-        // The set-up step's session holds both classes on its one connector: its quest's and the review's.
         ReviewTools Connector(string? id) => new(new IntakeScope(null, id), ledger);
         var quests = new QuestTools(
             _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger);
@@ -729,30 +728,6 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("missing.png", answer);
         Assert.Contains("Nothing was published", answer);
         Assert.Empty(await _quests.ListAsync());
-    }
-
-    /// <summary>Ask Daoris's further tools each write one proposal under the home, naming the conversation its connector is handed.</summary>
-    [Fact]
-    public void Ask_Daoris_proposes_a_screen()
-    {
-        var home = Path.Combine(_root, "help-home");
-        var intake = new IntakeScope(null, "h1e1p000");
-        var box = new HelpProposalBox(home);
-        var go = new HelpGoTool(intake, box);
-
-        Assert.Contains("Proposed", go.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
-        // ENTRY1f1: the tool hands the box the item it names.
-        Assert.Contains("Proposed", go.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
-        // ENTRY1d2a: and the workspace Add repository opens with.
-        Assert.Contains("Proposed", go.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
-
-        var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
-            .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
-            .ToList();
-        Assert.Equal(["go", "go", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
-        Assert.Contains(written, file => file.GetProperty("kind").GetString() == "go"
-            && file.GetProperty("workspace").ValueKind == JsonValueKind.String && file.GetProperty("workspace").GetString() == "work");
-        Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
     }
 
     /// <summary>What an agent reading the list is told: what each quest carries, what follows it, what it follows.</summary>

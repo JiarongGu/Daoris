@@ -141,7 +141,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 ? null
                 : await PlaceTurns.StartAsync(
                     home, RemoteTarget.Workspace(start.Workspace), quest.To, folder, sessionId, continues?.Session ?? prior?.Session, ct,
-                    PlaceExcludes.Of(registry.FirstOrDefault(view => string.Equals(view.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Excludes)).ConfigureAwait(false);
+                    PlaceExcludes.Of(registry.FirstOrDefault(view => string.Equals(view.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Excludes),
+                    run: runBound.Run).ConfigureAwait(false);
             var target = StartTargets.WithAccess(StartTargets.WithLanguage(asking, config, start.Workspace), access) with
             {
                 Place = place,

@@ -50,7 +50,7 @@ internal static class LandingSayings
 
     /// <summary>What a branch name git would not take is refused with: the name the person entered, or the one the rule makes.</summary>
     internal static string Untaken(string name, bool entered) => entered ? EnteredInvalid(name)
-        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris place landing`.";
+        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the `pattern` of its workflow's `land` step.";
 
     /// <summary>An entered name that is already a branch Daoris did not make: the press's refusal, which the plan says first.</summary>
     internal static string EnteredStands(string name, string repository) =>
@@ -63,7 +63,7 @@ internal static class LandingSayings
         + "to enter. Leave it blank.";
 
     internal const string EnteredMerge = "the rule for this repository merges the work into its line and makes no branch, so there is no "
-        + "branch name to enter. Leave it blank, or change the rule with `daoris place landing`.";
+        + "branch name to enter. Leave it blank, or change its workflow's `land` step.";
 
     /// <summary>
     /// What names the branch: the person's entered name where there is one, else the bound <c>land</c>'s pattern expanded, its

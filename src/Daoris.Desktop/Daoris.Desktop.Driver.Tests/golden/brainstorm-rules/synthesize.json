@@ -15,7 +15,6 @@
     "mcp__daoris-knowledge__channel_read",
     "mcp__daoris-knowledge__checkout_read",
     "mcp__daoris-knowledge__go_ahead_ask",
-    "mcp__daoris-knowledge__go_propose",
     "mcp__daoris-knowledge__handback_read",
     "mcp__daoris-knowledge__handover_propose",
     "mcp__daoris-knowledge__helper_answer",

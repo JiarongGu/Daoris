@@ -42,7 +42,7 @@ of everything it handed, section by section.
 | `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
 | `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
 | `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process; a failure between its open and its run concludes the record `failed` |
-| `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps the update's restart word; a person finishing one |
+| `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps Daoris's restart word on each it cut mid-turn; a person finishing one |
 | `RepositoryPlacement` | `Loop/Chat/RepositoryPlacement.cs` | Where a conversation in a repository runs and what its agent may do there: its tree, its rules, what it may reach across |
 | `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
 | `ChatServers` | `Loop/Chat/ChatServers.cs` | The servers a conversation is handed at its open: the knowledge connector carrying who it is, and the plugins' servers with the browser brought up for one that drives it |
@@ -65,7 +65,7 @@ of everything it handed, section by section.
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
-| `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
+| `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
@@ -113,6 +113,11 @@ of everything it handed, section by section.
     the wire. A word a gone shell attempted is settled and never sent twice. (from D137, D188)
 13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`. Then its
     own conversation resumes, every waiting word in its first turn. A go-on gets no block and no brief. (from D137, D230)
+    The shell's close, whoever closes it, keeps Daoris's restart word on each conversation it cut (a turn running, a start or go-on
+    pending, words held), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
+    (`stopped-daoris`). The next start takes it up as words kept: its own conversation resumes with the word, or a lost one goes on
+    briefed (rule 14), its line saying *Daoris restarted* (`resumed.opening`, why `restart`). One between turns ends `chat.closed`,
+    or `chat.restarted` at an update, and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
 14. A conversation whose own conversation is lost (`gone`, `unkept`, `unable`, `offered`) goes on by itself in a new part
     handed the brief, why `resume`. Refused as `elsewhere`, or for a reason that is not loss: it waits for the person.
     (from D189)
@@ -234,15 +239,16 @@ of everything it handed, section by section.
 
 **Ask Daoris**
 
-42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
-    change. A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
+42. Ask Daoris is a conversation in its own room, one at a time per workspace. It presses Daoris's verbs, and the person
+    says yes on the card to every change (roles-and-supervision 56); a place it names is a go link in its answer, which the
+    window opens (roles-and-supervision 55). A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
     its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository
     (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its name and pin with the one
     waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for the focus
     (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
     repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
     the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
-    workspace by naming it, or every workspace with `all`, and proposes, reads checkouts and presses the families of acts the
+    workspace by naming it, or every workspace with `all`, and presses, reads checkouts and presses with no card the families of acts the
     person granted (pauses, clean-up, discarding a session branch, the chosen settings: verbs of the `daoris` command, with
     no `housekeeping_*` or `settings_*` tool) in any workspace's repositories, each judged by its own judge and none refused
     for the workspace it names. What a turn looked at

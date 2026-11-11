@@ -155,6 +155,7 @@ public static class NoteCodes
         new(ResumedWhy.Helper, [], "note.resumed.why.helper"),
         new(ResumedWhy.WordsAndHelper, [], "note.resumed.why.words-and-helper"),
         new(ResumedWhy.Daoris, [], "note.resumed.why.daoris"),
+        new(ResumedWhy.Restart, [], "note.resumed.why.restart"),
         new(ResumedWhy.Supervisor, [], "note.resumed.why.supervisor"),
     ]);
 

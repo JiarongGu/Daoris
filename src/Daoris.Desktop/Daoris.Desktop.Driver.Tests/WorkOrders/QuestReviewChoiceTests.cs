@@ -177,7 +177,7 @@ public sealed class QuestReviewChoiceTests
     public void The_host_fallback_usage_names_the_choice()
     {
         var program = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         // The usage string is built from joined literals, so each form is read where it ends its literal.
         Assert.Contains("quest review <id> reviewed|not-yet|skip [\\\"…\\\"]  ·  \"", program);
         Assert.Contains("+ \"quest review <id> off [\\\"…\\\"]  ·  quest review <id> on|<environment>  ·  \"", program);
@@ -188,7 +188,7 @@ public sealed class QuestReviewChoiceTests
     public void The_console_hands_the_rule_to_the_door()
     {
         var console = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "QuestReviewConsole.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "QuestReviewConsole.cs"));
         Assert.Contains("Config = config,", console);
     }
 

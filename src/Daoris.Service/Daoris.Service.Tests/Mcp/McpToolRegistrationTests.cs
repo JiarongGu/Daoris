@@ -13,7 +13,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     private static readonly string[] Advertised =
     [
         "brainstorm_give", "brainstorm_synthesize", "channel_post",
-        "channel_read", "checkout_read", "go_ahead_ask", "go_propose", "handback_read", "handover_propose",
+        "channel_read", "checkout_read", "go_ahead_ask", "handback_read", "handover_propose",
         "helper_answer", "helper_ask",
         "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
@@ -73,7 +73,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpGoTool", "HelperTools", "KnowledgeSearchTools",
+                "HelperTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",
             ],

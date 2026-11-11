@@ -14,7 +14,7 @@ public sealed class CallActTests
     {
         Assert.Equal("search", CallPlace.ActOf("knowledge_search"));
         Assert.Equal("read", CallPlace.ActOf("checkout_read"));
-        Assert.Equal("propose", CallPlace.ActOf("go_propose"));
+        Assert.Equal("propose", CallPlace.ActOf("handover_propose"));
         Assert.Equal("press", CallPlace.ActOf("quest_publish"));
         Assert.Null(CallPlace.ActOf("no_such_tool"));
         Assert.Null(CallPlace.ActOf(null));

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -15,7 +15,6 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { useHelpProposals } from '../help';
 import { pollUnlessTold, usePollUnlessTold } from './published';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
@@ -41,26 +40,5 @@ describe('reading what the driver publishes', () => {
 
     shell.available = false;
     expect(renderHook(() => usePollUnlessTold(4_000), { wrapper: wrapper(fresh()) }).result.current).toBe(4_000);
-  });
-
-  /** Ask Daoris's proposals (row 24): a live conversation no longer reads its folder every 4 s in a window that is told, only every 30 s. */
-  it('reads a live conversation’s proposals only slowly by the clock in a desktop window', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    invoke.mockImplementation(async () => ({ proposals: [] }));
-
-    const { result } = renderHook(() => useHelpProposals('s1', true), { wrapper: wrapper(fresh()) });
-    await waitFor(() => expect(result.current.data).toEqual([]));
-    expect(invoke).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(9_000);
-    });
-
-    expect(invoke).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(22_000);
-    });
-    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
   });
 });

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -7,8 +8,15 @@ namespace Daoris.Driver.Tests;
 /// What an Ask Daoris conversation's presses published, kept with it by the ids the service answered: a file beside the
 /// conversation's others, which survives a restart and goes with them at a delete.
 /// </summary>
-public sealed class HelpPublishedTests : HelpProposalsFixture
+public sealed class HelpPublishedTests : IDisposable
 {
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-published-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+    }
+
     /// <summary>One answer settles a press, so a second entry for it is never kept.</summary>
     [Fact]
     public void A_press_kept_already_keeps_its_first_entry()

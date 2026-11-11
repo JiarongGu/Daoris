@@ -3,18 +3,23 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where the helper may take the person: the places a go may name, listed from the table the driver
-/// judges one by (<see cref="HelpPlaces"/>), so the room and the judge cannot disagree.
+/// Where the helper may take the person: the places a go link may name, listed from the driver's twin of the page's table
+/// (<see cref="HelpPlaces"/>), so the room and the window that opens the link cannot disagree.
 /// </summary>
 internal sealed class HelpRoomPlaces : IHelpRoomSection
 {
+    /// <summary>A go link's address before its fields, as the page's <c>help/goLink.ts</c> reads it.</summary>
+    public const string Link = "daoris:go";
+
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
-        // The places a go may name, from the table the driver judges one by, so the two cannot disagree.
         text.Append("## Where you may take the person\n\n");
-        text.Append("`go_propose` opens one of these places and changes nothing; the person does the rest there. Name the\n");
-        text.Append("view, for Settings its domain, and a part where the place has one.\n\n");
+        // A link the window opens, never a card: it asks no yes and changes nothing.
+        text.Append($"Take the person to one of these places with a link in your answer, `[the words they read]({Link}?view=<view>&…)`:\n");
+        text.Append("pressing it opens the place in Daoris's window and changes nothing; the person does the rest there. Name the\n");
+        text.Append("`view`, for Settings its `domain`, and a `part` where the place has one, each as a field of the link, a value's\n");
+        text.Append($"space written `%20`: `[Settings → Git]({Link}?view=settings&domain=git)`. A link no place answers opens nothing.\n\n");
         static string Listed(IEnumerable<(string Id, string Name)> places) =>
             string.Join(", ", places.Select(place => $"`{place.Id}` ({place.Name})"));
         text.Append($"- Views: {Listed(KnowledgeHelp.Current.Views)}.\n");

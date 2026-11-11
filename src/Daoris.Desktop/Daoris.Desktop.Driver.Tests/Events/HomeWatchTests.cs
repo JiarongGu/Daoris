@@ -36,17 +36,13 @@ public sealed class HomeWatchTests : IDisposable
 
     private string Words => HeldWordsFile.PathOf(_home);
 
-    private HomeWatch Watching(TimeSpan every, bool proposals = false)
+    private HomeWatch Watching(TimeSpan every)
     {
         void Wake(string topic, string subject) => _woken.Enqueue((topic, subject));
-        var watch = proposals
-            ? HomeWatch.ForProposals(_home, Wake, every, _source)
-            : HomeWatch.ForDriver(_home, Config, Wake, every, _source);
+        var watch = HomeWatch.ForDriver(_home, Config, Wake, every, _source);
         watch.Start();
         return watch;
     }
-
-    private string Proposals => HelpProposals.FolderOf(_home);
 
     /// <summary>What a source says of a name, said on every handle open on its folder, as the system tells each watcher of it.</summary>
     private void Say(string folder, string name, ChangeKind kind = ChangeKind.Changed)
@@ -183,61 +179,6 @@ public sealed class HomeWatchTests : IDisposable
     }
 
     /// <summary>
-    /// A proposal written to Ask Daoris's folder by another process is heard as the <c>help</c> topic, found by the
-    /// deadline where the source is silent, and a proposal rewritten with its state kept (a card's units kept) or a claim is no new proposal.
-    /// </summary>
-    [Fact]
-    public async Task A_proposal_written_is_heard_and_found_by_its_deadline_and_a_rewrite_wakes_nothing()
-    {
-        Directory.CreateDirectory(Proposals);
-        await using (var heard = Watching(TimeSpan.FromHours(1), proposals: true))
-        {
-            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"proposed\"}");
-            Say(Proposals, "p1.json", ChangeKind.Created);
-            await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never heard");
-
-            // A card's units kept: the same file again, its state kept, which is no proposal arriving. A claim is no proposal either.
-            _woken.Clear();
-            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"proposed\",\"units\":[\"a\"]}");
-            File.WriteAllText(Path.Combine(Proposals, "p1.claim"), "");
-            Say(Proposals, "p1.json");
-            Say(Proposals, "p1.claim", ChangeKind.Created);
-            await Settle(heard, 2);
-            await Task.Delay(500);
-            Assert.Empty(_woken);
-        }
-
-        _woken.Clear();
-        await using var silent = Watching(TimeSpan.FromMilliseconds(300), proposals: true);
-        File.WriteAllText(Path.Combine(Proposals, "p2.json"), "{}");
-        await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never found at its deadline");
-    }
-
-    /// <summary>
-    /// A proposal settled by another process (a terminal's Apply, through <see cref="HelpProposals.Settle"/>)
-    /// rewrites the file under its name, and is heard within the debounce, with the deadline an hour away, so an open window's card
-    /// goes; and found by the deadline where the source is silent.
-    /// </summary>
-    [Fact]
-    public async Task A_proposal_settled_from_another_process_is_heard()
-    {
-        Directory.CreateDirectory(Proposals);
-        File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"id\":\"p1\",\"state\":\"proposed\"}");
-        File.WriteAllText(Path.Combine(Proposals, "p2.json"), "{\"id\":\"p2\",\"state\":\"proposed\"}");
-        await using (var heard = Watching(TimeSpan.FromHours(1), proposals: true))
-        {
-            HelpProposals.Settle(_home, "p1", "applied", "done from a terminal");
-            Say(Proposals, "p1.json", ChangeKind.Renamed);
-            await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the settle was never heard");
-        }
-
-        _woken.Clear();
-        await using var silent = Watching(TimeSpan.FromMilliseconds(300), proposals: true);
-        HelpProposals.Settle(_home, "p2", "dismissed", null);
-        await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the settle was never found at its deadline");
-    }
-
-    /// <summary>
     /// <c>notices.json</c> written by another process is heard as the <c>notices</c> topic, and
     /// found by the deadline where the source is silent; this process's own write through <see cref="Notices"/> wakes nothing, its writer
     /// pushing it.
@@ -268,16 +209,6 @@ public sealed class HomeWatchTests : IDisposable
         silent.Start();
         File.WriteAllText(path, File.ReadAllText(path) + "\n");
         await Poll.Until(() => _woken.Contains((ChangeTopics.Notices, "notices.json")), () => "the write was never found at its deadline");
-    }
-
-    /// <summary>The driving loop's watch hears no proposals folder: the window's own process watches it, whoever holds the lease.</summary>
-    [Fact]
-    public async Task The_proposals_folder_is_watched_only_where_asked()
-    {
-        Directory.CreateDirectory(Proposals);
-        await using var watch = Watching(TimeSpan.FromHours(1));
-
-        Assert.DoesNotContain(_source.Opened, handle => handle.Folder == Proposals);
     }
 
     /// <summary>A watcher lost its handle: what it missed is unknown, so the topic is judged at once and finds what moved.</summary>

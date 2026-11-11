@@ -82,6 +82,24 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-ix — the proposal box gone, `go` a link of its own (2026-11-11, D261)
+
+> **ASKFULL1g-ix** (service, driver, modules, web): Outcome: the last proposal kind, `go`, is a link in Ask Daoris's words (`daoris:go?view=…`) that its panel draws as a press opening the place (`help/goLink.tsx`), plain words anywhere else; the box is removed whole — `go_propose`, its writer, `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `Help/Proposals/`, `HELP_PROPOSALS`, `HELP_APPLY`, `HELP_DISMISS`, `HelpScreenDoors`, `ProposalCard`, their words — and the room's *What you may do* names the verbs alone (`HelpRoomVerbs`); a run-once home step salvages and clears the proposals folder. Every way Ask Daoris asks the person is now a press viewed on the Confirm card (D261). Proof: the service registration, call-table and brainstorm tests, the web call-table twin and `goLink.test` (seen failing first), `HelpProposalsStepTests`, the room goldens.
+
+---
+
+## REVIEWUX1a — one immutable review record per run attempt, for every kind of work (2026-11-11, D273)
+
+> **REVIEWUX1a** (driver): Outcome: a review binds a record written once per run, review node and attempt (`Workflows/Kinds/Review/ReviewRecord*`): its kind (a branch at its tip; a checkout's turns by start and end `HEAD` with the run's own uncommitted paths; a folder's files from the run's baseline to its newest turn, a path changed between turns marked; a copy's files against its base; a system's plan record, number and digest; an answer's handbacks), a revision hashing the reference and each handback, what is incomplete and how far it reaches; the run's turns are kept under its place (`RunTurns`) and the baseline is a named manifest record the tidy keeps; a branchless run's review binds to the run at the record's revision, never withheld `no-subject`, and an empty branch waits for the person. Proof: `ReviewRecordRunTests` — seven full graph runs (the folder review and the empty branch seen failing first; an Accept keeping the revision, a moved revision and a same-content corrected answer each making a new record, a folder's whole interval, the baseline surviving the tidy).
+
+---
+
+## The cleanup census — the superseded ways' remnants removed (2026-11-11)
+
+> **Cleanup census** (driver, web, docs; D228): Outcome: a census of what the day's changes superseded (`docs/2026-11-11-cleanup-census.md`), and the remnants nothing reads removed by family: the trees switch's verb, `TreesMoved` and its help words (`place trees` is now an unknown word); the landing door's room row, the refusals pointing at `daoris place landing` and its route words (the refusals now name the workflow's `land` step); the workflow-draft prompt's call to the removed `workflow_propose`; 53 dead supervisor keys in both catalogues; a stray merge file; install rule 54 listing all 28 migration steps. Kept with their end condition and row: the migration steps, the `--kind api` token setter (PLUGINEXT1), the current landing read, the older build's move boxes, and the review groups and nine session states for REVIEWUX1. Proof: `npm run quick`, `test-map --check`, `i18n:check`, the filtered driver and web suites.
+
+---
+
 ## Daoris's own plugins renamed by a generic `formerly`, and their own commands reaching their process (2026-11-11)
 
 > **The plugin family's names** (driver, examples; D274's note): Outcome: a manifest may declare `formerly: [<old id>]`, and at the loop's start and after any install door the old id's installed copy, switches, data folder, private storage and approvals move to the new id once, never overwriting what the new id has, logged by ids only; a saved workflow's `<old>/<step>` kinds are read as the new id's (no version rewritten, pinned runs keep their records); Daoris's own plugins are the `daoris-` family — `daoris-azure-devops` (the whole Azure DevOps integration, 3.0.0), `daoris-github`, `daoris-in-app-browser`; Daoris names none of them. Also: the real plugin channel forwards a declared command to its process, so `daoris <plugin> login|status|logout` reaches the plugin on the installed copy (FIX-LOG). Proof: `PluginRenamesTests`, `PluginFormerKindsTests` (seen failing first), the examples' own tests, `PluginCommandProcessTests` (a real process).

@@ -147,9 +147,6 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
                     && loop.Trust.Holding(folder, file) is not null
                     ? "held"
                     : null;
-            case "help":
-                // An Ask Daoris proposal (HELP_APPLY, HELP_DISMISS), read from its record: its list's read settles and draws what it lists.
-                return PipeGround.Text(payload, "id") is { } id ? HelpProposals.Find(loop.Home, PipeGround.Id(id) ?? id)?.State : null;
             case "hand-over":
             {
                 // SESSION_HAND_OVER names an agent for a quest's own session: the refusal the route's judge would give, or empty.

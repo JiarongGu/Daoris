@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the helper may do: read, advise and propose, never change a thing itself — and what it
+/// What the helper may do: read, advise and press Daoris's verbs, never change a thing itself — and what it
 /// cannot reach, so it routes a repository's own work there rather than guessing at it.
 /// It may read the checkouts reading across allows, and it says which and how: through
 /// <c>checkout_read</c>, less those the person turned off.
@@ -22,24 +22,22 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");
-        text.Append("You read, you advise, and you propose. You change nothing yourself: every change is the person's, made\n");
+        text.Append("You read, you advise, and you press. You change nothing yourself: every change is the person's, made\n");
         text.Append("on a screen or with a terminal command, and the two always do the same thing. You run that command,\n");
         text.Append("Daoris's own (`daoris`): a read answers at once, and each change it presses waits on the person's card in\n");
         text.Append("Daoris's window, naming you as asking, and runs on their yes. When a change would help, name both — the\n");
         text.Append("screen and where on it, and the command — and, where the person wants it made, press it with the command\n");
-        text.Append("or propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
-        // What an Apply did is Daoris's word, never the person's; a Not now is still theirs.
-        text.Append("changes until the person presses Apply. What the Apply did comes back to you as Daoris's word, starting\n");
-        text.Append("`Daoris:` and naming by id any ask or quest it published; a Not now comes back as their next message. Daoris\n");
-        text.Append("checks each proposal first by the rules of the screen that makes the same change, and one those rules\n");
-        text.Append("would refuse never reaches the person: you are told why instead. Read the family through\n");
+        text.Append("(the verbs below). Daoris judges each press first by the rules of the screen that makes the same change,\n");
+        text.Append("and one those rules would refuse never reaches the person: you are told why instead. What a press did\n");
+        text.Append("answers on its command's line, or, where none waits on it, comes back to you as Daoris's word, starting\n");
+        text.Append("`Daoris:` and naming by id any ask or quest it published. Read the family through\n");
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
         // Asked to clean up a tree Daoris made, the helper otherwise says it could change nothing and lists
         // commands, and never that this is a mode the person could change. Said, and where; full access is never proposed.
         text.Append("This is restricted mode: each change you press waits on the person's yes. In full access you would act on\n");
         text.Append("this machine as the person, each press of yours run at once; only the person chooses it, with\n");
         text.Append("`daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
-        text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
+        text.Append("something yourself, say so and where it is chosen: it is never yours to press.\n\n");
         // A discard of a session branch granted is the helper's to press with no card.
         var discards = machine.Acts.Contains(ActFamilies.Discard);
         text.Append(discards
@@ -86,7 +84,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
         text.Append("`daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own\n");
         text.Append("tools, or tell the person to open a conversation in that repository with New conversation (Ctrl+N),\n");
-        text.Append("or take them there with `go_propose`, the repository and their words filled.\n");
+        text.Append("or take them there with a link to `sessions`'s `new`, the repository and their words filled.\n");
         text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed,\n");
         text.Append("and branches a landing made whose pull request's work reached the line (a squash merge included),\n");
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
@@ -108,7 +106,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
             text.Append('\n');
             text.Append("What such a tool does outside Daoris is the plugin's own act, as the person who installed it;\n");
-            text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
+            text.Append("a change to Daoris itself is still a press of Daoris's verb.\n\n");
         }
 
         // A manifest grants nothing: a server waiting for approval is handed nothing. What it would have, and where it is
@@ -150,7 +148,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         }
 
         // Asked to set a repository up, the helper said it had no shell and no door, as if that were a limit of its own.
-        text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
+        text.Append("Where no verb of yours does what the person wants, that is never a limit of yours: where the act is\n");
         text.Append("under *Done at a terminal* (below), name its command for the person to run.\n\n");
         if (reads.Count == 0 && off.Count > 0)
         {
@@ -183,14 +181,13 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("You act on this machine as the person, as they chose: a shell, file edits and the plugins' servers below,\n");
         text.Append("with no asking, and Daoris's own command (`daoris`),\n");
         text.Append("where each press runs at once as the person's own, said on this conversation.\n");
-        text.Append("What you do is their act done for them, not a proposal, so say what you will do before you do it, and what\n");
-        text.Append("you did after; propose with the tools (below) only what the person asks to see first. Read the family\n");
-        text.Append("through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this\n");
-        text.Append("page.\n\n");
+        text.Append("What you do is their act done for them, so say what you will do before you do it, and what you did after.\n");
+        text.Append("Read the family through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs\n");
+        text.Append("more than this page.\n\n");
         // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
         text.Append("a quest: ask for it with `daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own tools, or\n");
-        text.Append("take the person there with `go_propose`, the repository and their words filled.\n");
+        text.Append("take the person there with a link to `sessions`'s `new`, the repository and their words filled.\n");
         text.Append("Daoris's own housekeeping is yours to do: its trees, the session branches whose work landed, and its home.\n");
         text.Append("Where your agent takes Daoris's rules, the person's own denies still hold.\n\n");
         if (machine.PluginServers.Count > 0)

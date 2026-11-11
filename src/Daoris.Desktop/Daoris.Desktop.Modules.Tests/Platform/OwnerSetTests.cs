@@ -39,7 +39,6 @@ public sealed class OwnerSetTests : IDisposable
     // A log still held by a pipe that closes after us is waited for, then left: the scratch is the checkout's, and its parent is ignored.
     public void Dispose() => GitSeed.Discard(_home);
 
-    // ——— What the owner's doors name and mark.
 
     [Fact]
     public async Task A_mark_by_repository_and_by_quest_holds_the_steward_back_from_each()
@@ -58,21 +57,6 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"atlas"}""").Covered);
     }
 
-    /// <summary>An Ask Daoris Apply marks by its plan, so the steward's drive after one naming the repository is refused <c>owner-set</c>.</summary>
-    [Fact]
-    public async Task An_apply_naming_a_repository_then_the_steward_s_drive_is_refused_owner_set()
-    {
-        var judge = Judge();
-        var (_, key) = Appointed(judge);
-        var plan = new HelpOwned(["engine"], [], []);
-
-        await using (await OwnerMarks.EnterAsync(judge, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
-        {
-        }
-
-        Assert.Equal(RoleWhy.OwnerSet, Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Why);
-    }
-
     [Theory]
     [InlineData("SESSION_QUEUE_EDIT", """{"session":"s1","id":"w1","text":"later"}""")]
     [InlineData("SESSION_HAND_OVER", """{"id":"s1"}""")]
@@ -83,7 +67,6 @@ public sealed class OwnerSetTests : IDisposable
         var judge = Judge();
         var (_, key) = Appointed(judge);
 
-        // s2 is s1's successor (a retry, a hand-over, a carry-on, a new part): the same quest.
         await MarkAsync(judge, route, JsonDocument.Parse(payload).RootElement);
 
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Quest, "q1")));
@@ -108,24 +91,15 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Covered);
     }
 
-    /// <summary>A workspace-scoped <c>SET_LINE</c> and a workspace's Ask Daoris Apply each mark every repository of the workspace.</summary>
+    /// <summary>A workspace-scoped <c>SET_LINE</c> marks every repository of the workspace.</summary>
     [Fact]
-    public async Task A_workspace_s_line_and_its_apply_each_mark_every_repository_of_it()
+    public async Task A_workspace_s_line_marks_every_repository_of_it()
     {
         var judge = Judge();
         await MarkAsync(judge, "SET_LINE", new { workspace = "games", branch = "develop" });
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "engine")));
         Assert.True(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "atlas")));
         Assert.False(judge.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "ledger")));
-
-        var applied = Judge();
-        var plan = new HelpOwned([], ["games"], []);
-        await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
-        {
-        }
-
-        Assert.True(applied.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "engine")));
-        Assert.True(applied.IsOwnerSet(new RoleScope(OwnerKinds.Repository, "atlas")));
     }
 
     /// <summary>A target the owner's press names that cannot be resolved holds every quest for the run: the owner is never held up, the steward is.</summary>
