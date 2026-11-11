@@ -118,6 +118,24 @@ public sealed class BranchTidying(string home)
                 lines.AddRange(Say([pass with { Strays = strays }], log, met));
             }
 
+            // A folder department's copies after the repositories: one a session holds is no orphan, so none is judged unasked.
+            IReadOnlySet<string>? held = null;
+            try
+            {
+                held = await InUseAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
+            {
+                // The sessions could not be read: no copy is judged this look, as no branch is.
+            }
+
+            foreach (var copy in held is null ? [] : CopyTidy.Tidy(home, held, Clock()))
+            {
+                if (copy.Kept is not null && !First(met, copy.Copy.Department, copy.Copy.Id, TidyKept.Busy)) continue;
+                lines.Add(Look.Progress("tidy", CopyTidy.Said(copy, Policy(home).SetAside.Days.TotalDays)));
+                log?.Info("copy.tidied", ("workspace", copy.Copy.Workspace), ("department", copy.Copy.Department), ("copy", copy.Copy.Id), ("moved", copy.MovedTo is not null));
+            }
+
             lines.AddRange(await Keeping.KeepAsync(trees, service, log, met, ct).ConfigureAwait(false));
             whole = true;
             return lines;

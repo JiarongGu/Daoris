@@ -48,11 +48,15 @@ public sealed class ReturnDoor(
                 return;
             }
 
-            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home));
-            if (returned.Waiting.Count > 0)
+            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home), start.Unit.Id);
+            if (returned.Waiting.Count > 0 || returned.Refused.Count > 0)
             {
-                log?.Invoke($"return  {start.Unit.Id}: {returned.Waiting.Count} file(s) changed in both the folder and copy `{copy.Id}` wait for your choice: {string.Join(", ", returned.Waiting)}.");
-                Settle(start, ReturnNode.BothChanged, string.Join("\n", returned.Waiting));
+                if (returned.Waiting.Count > 0)
+                    log?.Invoke($"return  {start.Unit.Id}: {returned.Waiting.Count} file(s) changed in both the folder and copy `{copy.Id}` wait for your choice: {string.Join(", ", returned.Waiting)}.");
+                if (returned.Refused.Count > 0)
+                    log?.Invoke($"return  {start.Unit.Id}: {returned.Refused.Count} file(s) of copy `{copy.Id}` are not brought back, as found: "
+                        + string.Join(", ", returned.Refused.Select(each => $"{each.Key} ({each.Value})")) + "; each waits for your Keep yours.");
+                Settle(start, ReturnNode.BothChanged, ReturnNode.HoldsOf(returned));
                 return;
             }
 
