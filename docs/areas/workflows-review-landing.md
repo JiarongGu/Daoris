@@ -33,8 +33,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 1. A place follows a saved graph workflow. A fresh home saves a copy of `merge-after-accept` as `defaultWorkflow`, once; a home
    that has a `driver.json` is never seeded and converts on the person's press. (D227)
-2. A chain's work follows the first of: the task's choice, the repository's for the kind, its default, the workspace's for the
-   kind, its default, the home default. With none, its run is bound to no workflow (`current`) and held. (D157, D227, D232)
+2. The workflow a chain's work follows is the first of: the task's choice, the repository's for the kind, its default, the
+   workspace's for the kind, its default, the home default. With none, its run is bound to no workflow (`current`) and held.
+   (D157, D227, D232)
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
