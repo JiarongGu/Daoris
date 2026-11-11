@@ -103,6 +103,8 @@ internal static class ChatRecorded
         Origin = "person",
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(file => file.Name)] : null,
+        // Words the person's *Send now* stopped the turn before for: the page says they began this turn.
+        Level = message.StoppedFor ? MessageLevels.Now : null,
     };
 
     /// <summary>

@@ -85,7 +85,8 @@ internal sealed class NativeChat : ITurnedChat
             {
                 if (agent.FrameInterrupt() is { } stop) await input.ControlAsync(stop, CancellationToken.None).ConfigureAwait(false);
             },
-            changed);
+            changed,
+            cutsIn: Interrupts);
     }
 
     public ChatTurns Turns { get; }
