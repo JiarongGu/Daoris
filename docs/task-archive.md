@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The Azure DevOps plugin carries a change through merge and release (2026-11-11)
+
+> **The Azure DevOps example plugin, 2.1.0** (examples, docs): Outcome: the `pull-request` step sets auto-complete when its options say `autoComplete: true` (the token's identity from `connectionData`, `completionOptions` with the merge strategy, source-branch deletion, work items and a message), off by default, its evidence saying set, not set with Azure DevOps's words, or off; a refusal by policy or permission never fails the step; a new `release` step finds the build of the merged commit on the target branch, then the classic release made from it or the YAML run's stages, and watches each to its end (`stage-failed`, `no-release`, `timeout`), with `deploy: <stage>` starting a classic stage where no trigger does, approvals deciding; the REST client in `azure.mjs` and the stand-in shared (`stand-in.mjs`); the README names the token's scopes (plugins rule 17a). Found because the installed copy's workflow asked for auto-complete this plugin ignored. Proof: 28 plugin tests against the loopback stand-in (auto-complete set, off, refused by policy and permission; release watched, failed, pending approval, deploy, no build, no release, YAML stages, timeout), the C# offer and manifest tests.
+
+---
+
 ## ASKSUPERVISE1's rows a and b as units, and a landing that reaches the line as the same changes (2026-11-11)
 
 > **ASKSUPERVISE1 a and b** (driver, modules, service, web; D272): Outcome: the `ask-daoris` supervisor kind with its one act `report`, refused below the machine (`AskDaorisKind`); the seeded `second-check` role (复核), held by rules and so off, with a run-once step writing its choices (Codex, then Claude Code · opus · high, 40 starts a day each) only where no staffing, record or person's own supervisor of the kind exists (`SecondCheckStep`); its card's provider and spend lines; `AskDaorisSelection` over the design's §2 table with each lineage line's act, and `AskDaorisRanges` with the 40,000-character bound, *disabled*, the 24-hour unread close and catch-up. Not yet called from a live conversation. Proof: `AskDaorisKindTests`, `SecondCheckStepTests`, `AskDaorisSelectionTests`, `AskDaorisRangesTests`, `AskDaorisSecondCheckTests`, `CallActTests`, `RoleChangeViewTests`, `SecondCheckOn.test`, each seen failing first.
