@@ -25,6 +25,12 @@ internal sealed class NodeRunKeeping(
         }
     }
 
+    /// <summary>A run's reviews begun on an attempt with no record yet, each given its review record (<see cref="ReviewRecords.KeepActive"/>).</summary>
+    public void KeepReviews(GovernedUnit governed, RunScope scope)
+    {
+        if (holdsLease() && records.Read(governed.Unit.Id) is { } record) ReviewRecords.KeepActive(records.Home, governed, scope, record, clock());
+    }
+
     /// <summary>A run's pull-request steps that reached, kept on the landing record by the step's own unit (<see cref="PullRequestStep.Keep"/>).</summary>
     public void KeepPullRequests(GovernedUnit governed)
     {

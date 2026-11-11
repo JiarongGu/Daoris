@@ -20,7 +20,12 @@ public sealed class ManifestStore
         var place = DaorisHome.Entry(home, HomeEntry.Places, workspace, department);
         _manifests = Path.Combine(place, "manifests");
         Content = new ContentStore(Path.Combine(place, "blobs"));
+        (Workspace, Department) = (workspace, department);
     }
+
+    public string Workspace { get; }
+
+    public string Department { get; }
 
     /// <summary>The place's text content, by hash.</summary>
     public ContentStore Content { get; }

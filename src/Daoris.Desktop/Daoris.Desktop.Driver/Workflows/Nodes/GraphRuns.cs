@@ -212,11 +212,11 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
-    /// <summary>
-    /// The quests a session serving one of the run's work quests published (<see cref="WorkRequestsReading.Published"/>): what its
-    /// <c>work.requests</c> observes. Every quest the runtime read is in view, so an empty list is none published.
-    /// </summary>
+    /// <summary>The quests a session serving one of the run's work quests published (<see cref="WorkRequestsReading.Published"/>): what its
+    /// <c>work.requests</c> observes. Every quest the runtime read is in view, so an empty list is none published.</summary>
     public IReadOnlyList<QuestView> Requests { get; init; } = [];
+
+    public IReadOnlyList<string> Sessions { get; init; } = [];
 
     /// <summary>The repository's checkout here, and its identity: where its branches are told and read.</summary>
     public string Root { get; init; } = "";
@@ -247,6 +247,9 @@ public enum RunSubject
 
     /// <summary>A go-ahead, a person's task, a wait, a stop and a join: the run itself, with no revision.</summary>
     Run,
+
+    /// <summary>A review: the run's branch at its tip where it has one, else the run itself at its review record's revision (<see cref="ReviewWork"/>).</summary>
+    Record,
     Input,
 }
 
