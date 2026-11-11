@@ -223,6 +223,12 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
             return $"said:{plugin}";
         }
 
+        public IReadOnlyDictionary<string, string> Formerly()
+        {
+            Calls.Add("formerly");
+            return new Dictionary<string, string>();
+        }
+
         public Task<IReadOnlyList<StateAnswer>> AskStatesAsync(IReadOnlyList<StateAsk> asks, CancellationToken ct = default)
         {
             Calls.Add($"ask:{asks.Count}");

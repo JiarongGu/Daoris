@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public static class PluginPrivate
 {
     /// <summary>The variable the folder travels under.</summary>
-    public const string Variable = "DAORIS_PLUGIN_PRIVATE";
+    public const string Variable = ChildMarks.PluginPrivateVariable;
 
     /// <summary>The folder of a plugin's storage, by its id.</summary>
     public static string Folder(string home, string id) => Path.Combine(DaorisHome.Entry(home, HomeEntry.PluginPrivate), id);
