@@ -43,8 +43,12 @@ internal sealed class QuestPublishing(
                 Quest: null, Addressable: []);
         }
         // A registered sender's row decides its circle. A sender with none — an ask — names
-        // its own, and silence places it where an unregistered sender always is.
-        var home = sender?.InWorkspace ?? Workspaces.Normalize(ask.Workspace);
+        // its own, and silence places it where an unregistered sender always is. Ask Daoris has none and reaches every
+        // workspace, so its quest is filed in the workspace of the repository it names.
+        var home = sender?.InWorkspace
+            ?? (string.Equals(from, SessionLedger.HelpRepository, StringComparison.OrdinalIgnoreCase) && registered.Named(to) is { } reached
+                ? reached.InWorkspace
+                : Workspaces.Normalize(ask.Workspace));
 
         // Who can be asked is who shares the asker's circle. A refusal that listed the whole machine
         // would be offering repositories this one may not address.
@@ -64,7 +68,7 @@ internal sealed class QuestPublishing(
                     ? $"`{to}` is not registered here, so nothing could see a quest to it."
                     : $"`{to}` has not adopted Daoris and has no root on this machine, so it has no client "
                       + "to see a quest and no tree a session could be started in.")
-                + $" Addressable: {string.Join(", ", addressable)}.",
+                + (addressable.Count == 0 ? " Nothing here is addressable." : $" Addressable: {string.Join(", ", addressable)}."),
                 Quest: null, addressable);
         }
 
@@ -81,7 +85,8 @@ internal sealed class QuestPublishing(
                 $"`{from}` is in workspace `{home}` and `{target.Repository}` is in `{target.InWorkspace}` — "
                 + "a quest does not cross workspaces, because the workspace is the unit of sharing. "
                 + $"Either wire one of them to the other's workspace on this machine, or carry the request "
-                + $"across yourself. Addressable from `{home}`: {string.Join(", ", addressable)}.",
+                + "across yourself. "
+                + (addressable.Count == 0 ? $"Nothing in `{home}` is addressable." : $"Addressable from `{home}`: {string.Join(", ", addressable)}."),
                 Quest: null, addressable);
         }
 

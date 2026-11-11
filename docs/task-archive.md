@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vi's ask route and the setup view, and the ask defects Ask Daoris met in the install (2026-11-11)
+
+> **ASKFULL1g-vi, routes** (driver, modules, service, web): Outcome: `daoris ask "…"` is a person's press `ASK_NEW` (`AskArguments` reads the words before anything is sent, `AskNewCommand` makes the ask, `AskNewRoutes`, `AskNewView` on the card), so Ask Daoris in full access starts an ask with no card and in restricted on a card naming it; `PLACE_APPLY`'s card lists each change the plan makes (`PlaceApplyView`); a quest Ask Daoris publishes is filed in the named repository's workspace and a refusal with nothing addressable says so in words (`QuestPublishing`); `--help` prints the usage and an unknown flag is refused. Found by Ask Daoris in the installed copy, refused at each. Proof: `PipeDelegateTests`' new-ask case and `QuestExchangeTests`' cross-workspace case (seen failing first), `AskArgumentsTests`, the two view tests in both languages.
+
+---
+
 ## A terminal's presses at a tier the person sets (2026-11-11, D271)
 
 > **TERMTIER1** (driver, modules, web): Outcome: a machine setting decides whether a person's press from a terminal no Daoris session owns waits on the Confirm card (`ask`, the default) or runs at once as the person's (`act`): `daoris settings terminal ask|act`, itself pressed so turning on `act` is confirmed once (`Settings/TerminalTiers.cs`, `TerminalVerb.cs`, `TerminalTierRoutes`, the Settings row); under `act` such a press goes through the delegate's no-card path (`PipeTerminalTier`), logged `terminal.pressed` and listed in Notifications as a terminal's; a process inside an agent's job, or one the pipe cannot place, still gets a card, and a session's own press keeps its tier. Left: a `hold: true` start and `HOLD` still ask under `act`. Proof: `PipeTerminalTierTests` (seen failing first), `TerminalTiersTests`, the route, view and census tests, the text fixtures, the web tests in both languages.
