@@ -245,7 +245,12 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     opened on the person's press; one naming no place this window has, or outside Ask Daoris's panel, is its words alone. A quest
     it publishes (`daoris:help`) is filed in the workspace of the repository it names. A quest's or session's own acts stay in its
     own conversation: accepting a departure, handing a landed branch to a plugin and a run's Accept (`daoris workflow accept`,
-    refused `moved` on another record) are the person's presses. (D161, D193, D233, D253, D261, D273)
+    refused `moved` on another record) are the person's presses. Where the person asks for work to be delivered without their
+    press, Ask Daoris puts their requirements and through words on the ask when it makes it (`--require`, `--through`, `ask
+    through`), each verified verbatim against their messages in its conversation. In restricted mode it never presses a run's step;
+    in full access it presses an Accept or the pass of an unchecked done only where the person asked for the delivery in words and
+    the run still waits on it, said once. The room says this one rule in its section and its doors table. (D161, D193, D233, D253,
+    D261, D273, D277)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash by session, stripped from every other start and forgotten at its end and an access swap;
     the verb proves a press with it over the hello's nonce. In restricted mode, the default, a proved press waits on a card naming

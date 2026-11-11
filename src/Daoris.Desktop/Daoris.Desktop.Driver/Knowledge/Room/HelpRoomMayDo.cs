@@ -44,6 +44,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
             : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
+        text.Append(HelpDoorThrough.Carded);
         if (machine.Acts.Count > 0) text.Append(HelpRoomFamilies.Granted(machine.Acts));
         // A repository question otherwise meets a shell refused before it ran, then a guess at the repository's branches
         // presented as its tree, or a turn spent on a ticket's URL. Said plainly, so none happens. The checkouts reading across
@@ -184,6 +185,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("What you do is their act done for them, so say what you will do before you do it, and what you did after.\n");
         text.Append("Read the family through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs\n");
         text.Append("more than this page.\n\n");
+        text.Append(HelpDoorThrough.AsThePerson);
         // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
         text.Append("a quest: ask for it with `daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own tools, or\n");
