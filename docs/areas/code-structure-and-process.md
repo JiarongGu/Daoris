@@ -195,8 +195,8 @@ finishes first and the whole set runs once.
 
 ## Open
 
-- DOCDIET1 (D278, `docs/2026-11-12-long-lived-repository-design.md` §6, §8): the finished designs filed, each area cut to 4,500
-  words, the backlog to open rows, the examples; the change-cost run against a fresh copy; the history bench; a present scope in search.
+- DOCDIET1 (D278, `docs/2026-11-12-long-lived-repository-design.md` §6, §8): each area cut to 4,500 words, the backlog to open
+  rows, the ten designs left at `docs/`'s top, the examples; the change-cost run against a fresh copy; the bench's memory half.
 - TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
