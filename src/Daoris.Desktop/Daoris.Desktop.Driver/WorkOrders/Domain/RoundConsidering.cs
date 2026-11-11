@@ -155,7 +155,7 @@ internal sealed class RoundConsidering(PlanRound round)
         if (apart is not null)
         {
             // A first start, not one going back into its own tree, waits while the place's sessions apart fill the step's count.
-            if (into is not { Tree.Length: > 0 } && PlaceCount.Full(round, apart, quest.To, Itself) is { } atOnce)
+            if (into is not { Tree.Length: > 0 } && PlaceCount.Full(round, apart, quest.To, repo.Root, Itself) is { } atOnce)
             {
                 return new(quest, StartVerdict.RepositoryBusy, $"{atOnce} work apart in `{quest.To}` at once — it starts when one of them ends.")
                 {

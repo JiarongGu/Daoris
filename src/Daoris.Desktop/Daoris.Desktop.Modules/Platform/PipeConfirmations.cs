@@ -72,7 +72,7 @@ public enum PipeConfirmationEnd
 /// </summary>
 public sealed record PipeAsAsked(
     string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true,
-    bool Hold = false, PressView? View = null, HelpPressPlace? Placed = null);
+    bool Hold = false, PressView? View = null, HelpCardPlace? HelpPlace = null);
 
 /// <summary>How a confirmation ended, and where a ground moved, which one and how (<see cref="PipeConfirmationEnd.Changed"/> alone).</summary>
 public sealed record PipeEnding(PipeConfirmationEnd End, PipeGroundChange? Change = null);
@@ -370,7 +370,7 @@ public sealed class PipeConfirmations : IDisposable
                 Hold: @as?.Hold ?? false,
                 Standing: standing,
                 View: @as?.View,
-                HelpPlace: HelpCardPlace.Of(@as?.Placed)), judge);
+                HelpPlace: @as?.HelpPlace), judge);
             // Its ask's line and its place are made together under the lock, so its end can be said only after its ask.
             Write("asked", held.Shown, standing);
             _waiting.Add(held);

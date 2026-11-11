@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>One group of the tree: its sub-verbs, what it reads where none is named, and the sub-verbs a sub-verb has.</summary>
 /// <param name="Takes">What the group reads where its first word is no sub-verb (a new ask's words, a role's id); null where it needs one.</param>
 /// <param name="Whole">Whether the group's own command judges every word after it, its sub-verbs listed for the usage only.</param>
-public sealed record TreeGroup(string Name, IReadOnlyList<string> Verbs, string? Takes = null, bool Whole = false)
+public sealed record TreeGroup(string Name, IReadOnlyList<string> Verbs, string? Takes = null, bool Whole = false, bool Bare = false)
 {
     /// <summary>A sub-verb's own sub-verbs (<c>agent account …</c>), by the sub-verb.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Nested { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
@@ -38,7 +38,7 @@ public static class CommandWords
                 $"the command group `{twice.Key}` is declared twice, by {string.Join(" and ", twice.Select(each => each.type.Name))}: a group has one owner");
         }
 
-        return [.. marks.Select(each => new TreeGroup(each.mark.Name, each.mark.Verbs, each.mark.Takes, each.mark.Whole)
+        return [.. marks.Select(each => new TreeGroup(each.mark.Name, each.mark.Verbs, each.mark.Takes, each.mark.Whole, each.mark.Bare)
             {
                 Nested = each.mark.Nested.Select(line => line.Split(':', 2)).ToDictionary(
                     pair => pair[0].Trim(), pair => (IReadOnlyList<string>)pair[1].Split(' ', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal),

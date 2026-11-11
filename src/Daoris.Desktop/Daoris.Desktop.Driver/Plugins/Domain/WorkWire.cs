@@ -567,7 +567,7 @@ public static class WorkWire
             outputs = new Dictionary<string, WorkOutput>(StringComparer.Ordinal);
             foreach (var output in named.EnumerateObject())
             {
-                if (outputs.Count == OutputsAtMost || !PluginSteps.NameShape.IsMatch(output.Name) || output.Value.ValueKind != JsonValueKind.Object
+                if (outputs.Count == OutputsAtMost || !PluginIds.NameShape.IsMatch(output.Name) || output.Value.ValueKind != JsonValueKind.Object
                     || Name(output.Value, "ref", RefChars) is not { } reference || !IsReference(reference)
                     || !Optional(output.Value, "revision", NameChars, out var revision))
                 {
@@ -597,8 +597,8 @@ public static class WorkWire
     {
         var slash = step.LastIndexOf('/');
         return slash < 0
-            ? PluginSteps.NameShape.IsMatch(step)
-            : PluginCatalog.IsId(step[..slash]) && PluginSteps.NameShape.IsMatch(step[(slash + 1)..]);
+            ? PluginIds.NameShape.IsMatch(step)
+            : PluginCatalog.IsId(step[..slash]) && PluginIds.NameShape.IsMatch(step[(slash + 1)..]);
     }
 
     /// <summary>A reference, <c>&lt;schema&gt;:&lt;opaque id&gt;</c>: a declared schema and an id that is not empty.</summary>

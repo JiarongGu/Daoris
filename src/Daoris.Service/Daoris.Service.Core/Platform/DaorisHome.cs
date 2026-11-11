@@ -381,6 +381,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // The desktop's migration record and its copies; named here, never read by the service.
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
+    public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json", "data/terminal-acts.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -449,7 +450,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
-        LastBuild, Migration, Salvage,
+        LastBuild, Migration, Salvage, TerminalActs,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,

@@ -86,7 +86,7 @@ function PartRefusals({ refusals, doorFor }: { refusals: readonly PlaceRefusal[]
 
 /**
  * **Set up…**: a place's quick set-up as two pages over one draft and one plan,
- * the choices and the review. The draft says which is in front, so a door out and back, or a seed from Ask Daoris, finds the page as
+ * the choices and the review. The draft says which is in front, so a door out and back finds the page as
  * left; moving between them writes nothing, and a refusal's link on the review returns to its part on the choices.
  *
  * @remarks

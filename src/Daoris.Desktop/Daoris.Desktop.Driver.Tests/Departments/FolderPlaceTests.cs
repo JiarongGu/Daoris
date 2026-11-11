@@ -130,4 +130,45 @@ public sealed class FolderPlaceTests : IDisposable
         Assert.DoesNotContain("commit", told);
         Assert.Contains("not a git repository", PlacePrompt.Told(new PlaceTold([], []) { Kind = PlaceKind.Folder }));
     }
+
+    [Fact]
+    public async Task A_folder_that_became_a_checkout_is_not_all_changed_outside_at_its_first_git_start()
+    {
+        Write("notes.md", "first\n");
+        Write("plans/old.md", "old\n");
+        await StartAsync("s-aaaaaaaa");
+        await EndAsync("s-aaaaaaaa");
+        await GitFixture.RunAsync(Place, "init", "-q", "-b", "main");
+        await GitFixture.RunAsync(Place, "add", "-A");
+        await GitFixture.RunAsync(Place, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one");
+
+        var told = await StartAsync("s-bbbbbbbb");
+
+        Assert.Equal(PlaceKind.Git, told!.Kind);
+        Assert.Empty(told.Outside);
+    }
+
+    [Fact]
+    public async Task A_file_that_could_not_be_read_is_hashed_again_at_the_next_manifest()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Write("held.md", "text\n");
+        var held = Path.Combine(Place, "held.md");
+        var lease = new FileStream(held, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        RunManifest first;
+        try
+        {
+            first = FolderManifestReader.Read(Place, Store.Content, null, ManifestBounds.Default);
+        }
+        finally
+        {
+            lease.Dispose();
+        }
+
+        Assert.Null(first.Entries.Single().Sha256);
+        var later = first with { At = DateTimeOffset.UtcNow.AddHours(1) };
+        var second = FolderManifestReader.Read(Place, Store.Content, later, ManifestBounds.Default);
+
+        Assert.NotNull(second.Entries.Single().Sha256);
+    }
 }

@@ -113,6 +113,31 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
         Assert.Equal(9, found.Split('\n').Count(line => line.StartsWith("- `Asker:", StringComparison.Ordinal)));
     }
 
+    [Theory]
+    [InlineData("map", 2)]
+    [InlineData("absent", 0)]
+    public async Task A_memory_search_says_how_many_entries_it_answers(string query, int expected)
+    {
+        var tools = await AsAsync("chat");
+        var found = CallFound.Listen();
+        await tools.SearchAsync(query);
+        Assert.Equal(expected, found.Count);
+    }
+
+    [Fact]
+    public async Task A_memory_search_counts_its_bounded_hits_and_staged_additions()
+    {
+        var tools = await AsAsync("chat");
+        for (var i = 0; i < 12; i++) _memory.Engine("Asker").Keep($"Map {i}.");
+        for (var i = 0; i < 12; i++) await tools.WriteAsync($"Map addition {i}.");
+
+        var found = CallFound.Listen();
+        var answer = await tools.SearchAsync("map");
+
+        Assert.Equal(20, answer.Split('\n').Count(line => line.StartsWith("- ", StringComparison.Ordinal)));
+        Assert.Equal(20, found.Count);
+    }
+
     /// <summary>🔴 An unnamed caller running in no registered repository has no workspace, so every door refuses, its own reads too.</summary>
     [Fact]
     public async Task With_no_ambient_workspace_every_door_refuses()

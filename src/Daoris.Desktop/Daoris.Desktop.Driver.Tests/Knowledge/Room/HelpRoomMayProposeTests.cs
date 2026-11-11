@@ -24,36 +24,48 @@ public sealed class HelpRoomMayProposeTests
         Assert.DoesNotContain("**查看更新**", agents);
     }
 
-    /// <summary>
-    /// A repository is set up by the press's own door, proposed by name: one quest to its own session and
-    /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository.
-    /// </summary>
     /// <summary>A repository with no rooms is offered them through its own session; the room drafts nothing itself.</summary>
     [Fact]
-    public void The_room_proposes_rooms_and_classes_for_a_repository_with_none()
+    public void The_room_asks_for_rooms_and_classes_for_a_repository_with_none()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("declares no rooms (no lane with `builds`) is offered them", proposes);
-        Assert.Contains("is offered them by `ask_propose` at its workspace", proposes);
+        Assert.Contains("is offered them by `daoris ask` at its workspace", proposes);
         Assert.Contains("by the doctrine's `rooms-and-classes` knowledge, on its own branch", proposes);
         Assert.Contains("a set-up's adoption asks the same", proposes);
     }
 
+    /// <summary>Something to start is pressed with the verb, as the page's composer asks it, never proposed: the ask kind is gone.</summary>
     [Fact]
-    public void The_room_says_how_a_set_up_is_proposed_and_what_it_never_does()
+    public void The_room_says_an_ask_is_pressed_never_proposed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `setup_propose`: set one or several repositories registered here up", proposes);
-        Assert.Contains("as `daoris place <repository>…", proposes);
-        Assert.Contains("--preset keep --adoption` does", proposes);
+        Assert.Contains("- Something to start is asked by pressing, never proposed", proposes);
+        Assert.Contains("`daoris ask --workspace <name> \"…\"`", proposes);
+        Assert.Contains("`--short \"…\"`", proposes);
+        Assert.Contains("`--review rule|on|<environment>|off`", proposes);
+        Assert.DoesNotContain("ask_propose", proposes);
+    }
+
+    /// <summary>
+    /// A place is set up by pressing its apply, its card the plan's changes: one quest to each repository's own session and the rule
+    /// its session needs, a plan its rules refuse answered at once, and never a write into the repository. The setup kind is gone.
+    /// </summary>
+    [Fact]
+    public void The_room_says_a_set_up_is_pressed_and_what_it_never_does()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- A place's set-up is applied by pressing, never proposed", proposes);
+        Assert.Contains("`daoris place <repository>… --preset <id> --apply`", proposes);
         Assert.Contains("asks each repository's own session for one", proposes);
         Assert.Contains("a rule letting its sessions run the doctrine tool", proposes);
-        Assert.Contains("the only door is\n  `place`", proposes);
+        Assert.Contains("answered to you at once and never shown", proposes);
+        Assert.DoesNotContain("setup_propose", proposes);
         Assert.DoesNotContain("daoris-driver setup", proposes);
         Assert.Contains("Daoris never writes into a repository", proposes);
-        Assert.Contains("never run it yourself", proposes);
     }
 
     /// <summary>

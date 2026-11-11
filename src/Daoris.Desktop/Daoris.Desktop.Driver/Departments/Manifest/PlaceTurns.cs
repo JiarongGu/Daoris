@@ -26,7 +26,7 @@ public static class PlaceTurns
     {
         if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes);
         var store = new ManifestStore(home, workspace, department);
-        var last = store.Last();
+        var last = store.Last() is { Kind: PlaceKind.Git } git ? git : null;
         RunManifest start;
         try
         {

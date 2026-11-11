@@ -8,6 +8,7 @@ import { PluginSettings } from './plugins/PluginSettings';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type TerminalTier, TerminalTierSetting } from './machine/TerminalTierSetting';
+import type { TerminalTierChange } from '../person/terminalActs';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
 
@@ -25,6 +26,7 @@ export type DriverFacts = {
   /** How many sessions Daoris starts at once here, and the tier of a terminal's presses; absent where the answer lacks it. */
   cap?: number | null;
   terminal?: TerminalTier | null;
+  terminalChanges?: TerminalTierChange[];
   /** The most files, and the most minutes, a folder's manifest read spends; absent where the answer lacks them. */
   manifestFiles?: number | null;
   manifestMinutes?: number | null;
@@ -138,7 +140,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             />
           )}
 
-          {facts.terminal && onTerminal && <TerminalTierSetting held={facts.terminal} onSet={onTerminal} />}
+          {facts.terminal && onTerminal && <TerminalTierSetting held={facts.terminal} changes={facts.terminalChanges} onSet={onTerminal} />}
 
           {facts.pluginsFolder && (
             <SettingRow

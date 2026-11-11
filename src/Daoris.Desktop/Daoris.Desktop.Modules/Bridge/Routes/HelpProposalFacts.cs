@@ -2,10 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>
-/// What a proposal of Ask Daoris's is judged against: the driver's file, and the names the machine holds, with each kind's extra
-/// reading made only when a pending proposal needs it. The <c>JudgedAgainst</c> gates are public so the fast half holds each without a service.
-/// </summary>
+/// <summary>What a proposal of Ask Daoris's is judged against: the driver's file and the machine's names, each kind's extra reading made only when needed.</summary>
 public sealed class HelpProposalFacts(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
@@ -25,9 +22,6 @@ public sealed class HelpProposalFacts(DriverContext context)
     /// </summary>
     public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
-
-    public static bool JudgedAgainstPlaces(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => proposal.Kind == "setup" && proposal.Door == "place" && proposal.Place is not null);
 
     /// <summary>
     /// The runs bound on this machine, each as its file under the bindings folder reads: a card says how many keep the
@@ -106,21 +100,6 @@ public sealed class HelpProposalFacts(DriverContext context)
         if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
         {
             facts = facts with { Drafts = WorkflowDraftTold.ToldAcross(conversation, id => _loop.Events.After(id, 0).Events) };
-        }
-
-        // A place proposal is judged by its quick set-up's plan, as `daoris place … --plan` and PLACE_PLAN read it: the
-        // registry, the quests and each line's tip as git objects; written and probed nowhere.
-        if (JudgedAgainstPlaces(proposals))
-        {
-            var world = new PlaceWorld(service);
-            var plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names);
-            var places = new Dictionary<string, PlacePlanned>(StringComparer.Ordinal);
-            foreach (var proposal in proposals.Where(each => each.Kind == "setup" && each.Door == "place" && each.Place is not null))
-            {
-                places[proposal.Id] = await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, context.Unadopted(config), proposal.Place!, ct).ConfigureAwait(false);
-            }
-
-            facts = facts with { Places = places };
         }
 
         return (config, facts);

@@ -52,7 +52,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 2. `INSTALLED.md`, headed `# Daoris — installed desktop`, is the marker. It alone makes a folder an install, for the publish, the
    home and every program. (from D60, D93)
 3. `app/` holds everything a build ships: `Daoris.Desktop.exe` beside its Chromium, both service hosts, the driver's program
-   (`daoris-driver/`), the CLI (`cli/`), the launchers and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
+   (`daoris-driver/`), the CLI (`cli/`, its package stamped with the build's id and commit in `build.json`, which `daoris --version`
+   says beside the package's version), the launchers and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
    An update replaces it whole. (from D93, D99, D103, D121, D124, D172)
 4. The launcher starts `app/Daoris.Desktop.exe` with its own arguments and environment, through the shell, standing in the
    install's root, then exits. It drops the role key and the inbox's two messaging variables from its environment, then names Daoris's taskbar id. (from D93, D108, D139)

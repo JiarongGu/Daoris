@@ -52,4 +52,26 @@ public sealed class PlaceCountTests
         Assert.Equal(2, plan.Count(each => each.Verdict == StartVerdict.Start));
         Assert.All(plan.Where(each => each.Verdict != StartVerdict.Start), each => Assert.Equal(StartVerdict.AtCapacity, each.Verdict));
     }
+
+    [Fact]
+    public void A_session_in_the_checkout_itself_is_not_one_working_apart()
+    {
+        var step = IsolateStep.Trees with { AtOnce = 2 };
+        QuestView[] one = [Quest("q1")];
+        SessionView[] active =
+        [
+            new("c1", "Game", "working") { Tree = "D:/fam/Game", Kind = "chat" },
+            new("s2", "Game", "working") { Tree = "D:/fam/trees/Game/s-2", Quest = "q0" },
+        ];
+
+        var plan = Planner.Plan(
+            new Snapshot(one, [new RepoView("Game", true, "D:/fam/Game")], active)
+            {
+                Isolations = new Dictionary<string, IsolateStep>(StringComparer.OrdinalIgnoreCase) { ["game"] = step },
+            },
+            DriverConfig.Empty with { Drivable = ["Game"], Cap = 5 });
+
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
+    }
 }
+

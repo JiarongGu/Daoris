@@ -88,6 +88,7 @@ public sealed class MemoryTools(
                 .Where(op => op.Change is { Kind: MemoryOpKind.Write or MemoryOpKind.Supersede, Text: { } written } && Matches(written, query))
                 .ToList()
             : [];
+        CallFound.Say(found.Count + Math.Min(staged.Count, Limit));
         if (found.Count == 0 && staged.Count == 0) return await ToldAsync(caller, $"{told}No memory entry in workspace `{caller.Workspace}` matches `{query}`.", ct).ConfigureAwait(false);
         var awaiting = await AwaitingEndsAsync(ct).ConfigureAwait(false);
         var text = new StringBuilder(told).Append($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();

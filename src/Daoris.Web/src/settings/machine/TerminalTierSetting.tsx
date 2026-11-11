@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CheckField, SettingRow } from '../../design/ui';
+import { type TerminalTierChange, tierSetWords } from '../../person/terminalActs';
 
 /** The tier of a terminal's presses as the shell answers it: `ask`, the default, or `act`. */
 export type TerminalTier = 'ask' | 'act';
@@ -11,10 +12,16 @@ export const terminalTierOf = (raw: unknown): TerminalTier | null =>
 /**
  * Whether a press from a terminal on this machine that no Daoris session owns runs at once as the person's, drawn in its key's words
  * (`settings.terminal.*`): the same `terminal` `daoris settings terminal ask|act` sets. The box says what checking it does, the line
- * under it the tier held. A molecule: the tier by props, the change out.
+ * under it the tier held and who set it and when, as *Notifications* says it. A molecule: the tier and its changes by props, the change out.
  */
-export function TerminalTierSetting({ held, onSet }: { held: TerminalTier; onSet: (tier: TerminalTier) => void }) {
-  const { t } = useTranslation();
+export function TerminalTierSetting({ held, changes = [], onSet }: {
+  held: TerminalTier;
+  /** Who changed the tier, newest first. */
+  changes?: TerminalTierChange[];
+  onSet: (tier: TerminalTier) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const set = tierSetWords(t, i18n.language, held === 'act', changes);
   return (
     <SettingRow
       label={t('settings.terminal.label')}
@@ -23,6 +30,7 @@ export function TerminalTierSetting({ held, onSet }: { held: TerminalTier; onSet
       control={<CheckField checked={held === 'act'} onChange={(on) => onSet(on ? 'act' : 'ask')} label={t('settings.terminal.act')} />}
     >
       <p className="m-0 text-small text-ink-soft">{t(held === 'act' ? 'settings.terminal.state.act' : 'settings.terminal.state.ask')}</p>
+      {set && <p className="m-0 text-small text-ink-faint">{set}</p>}
     </SettingRow>
   );
 }

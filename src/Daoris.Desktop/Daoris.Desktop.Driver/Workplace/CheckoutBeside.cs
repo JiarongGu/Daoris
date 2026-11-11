@@ -9,7 +9,7 @@ public sealed record TreeHolder(string Tree, string Session)
     /// <summary>The step whose hand-off reserves the tree, as its words name it (run <c>r-12</c>'s <c>resolve</c>); null for a session's hold.</summary>
     public string? Step { get; init; }
 
-    /// <summary>That the session holds the writer's lease where its tree is a place itself (<see cref="PlaceHolders.Leases"/>).</summary>
+    /// <summary>That the session holds the writer's lease where its tree is a place itself (<see cref="PlaceLeases.Holds"/>).</summary>
     public bool Leases { get; init; }
 
     /// <summary>That the session's turn runs there now, which alone refuses the person's act in a place.</summary>

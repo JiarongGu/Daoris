@@ -1,5 +1,6 @@
 // The pull-request step and the state query against a stand-in of GitHub's REST API on this machine's loopback: open, reuse, state, a
-// refused token, no token, and that the plugin runs no git, gh or az. `node --test` runs it; nothing of GitHub's or Daoris's is reached.
+// refused token, no token, an earlier attempt asked of a platform that is down, and that the plugin runs no git, gh or az. `node --test`
+// runs it; nothing of GitHub's or Daoris's is reached.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -15,10 +16,10 @@ const TOKEN = 'throwaway-token-for-the-stand-in';
 const scratch = mkdtempSync(join(tmpdir(), 'github-pr-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
-/** GitHub's pull-request calls as the REST API answers them, admitting one token and counting what it is asked. */
+/** GitHub's pull-request calls as the REST API answers them, admitting one token and counting what it is asked; else `status`, while set. */
 async function standIn() {
-  const pulls = [];
-  const calls = [];
+  const api = { pulls: [], calls: [], address: '', status: null };
+  const { pulls, calls } = api;
   const server = createServer((request, response) => {
     let text = '';
     request.on('data', (chunk) => (text += chunk));
@@ -28,6 +29,7 @@ async function standIn() {
       calls.push({ method: request.method, path: url.pathname, query: url.search, bearer, body: text ? JSON.parse(text) : null });
       const say = (status, json) => { response.writeHead(status, { 'content-type': 'application/json' }); response.end(JSON.stringify(json)); };
       if (!bearer) return say(401, { message: 'Bad credentials' });
+      if (api.status) return say(api.status, { message: 'the stand-in is not answering' });
       if (request.method === 'GET' && url.pathname === '/repos/acme/app') return say(200, { default_branch: 'main' });
       if (url.pathname === '/repos/acme/app/pulls' && request.method === 'GET') {
         const head = url.searchParams.get('head')?.split(':')[1];
@@ -48,7 +50,8 @@ async function standIn() {
   });
   await new Promise((done) => server.listen(0, '127.0.0.1', done));
   after(() => server.close());
-  return { pulls, calls, address: `http://127.0.0.1:${server.address().port}` };
+  api.address = `http://127.0.0.1:${server.address().port}`;
+  return api;
 }
 
 /** A checkout whose configuration names origin, so the plugin reads where to ask with no git. */
@@ -59,15 +62,23 @@ function checkout(origin) {
   return root;
 }
 
-/** The plugin started as the driver starts it, with the frames it is sent and the lines it says. */
-function start(env) {
+/** The plugin started as the driver starts it over `journal`, the kit's, and killed when the test ends, so a failure holds no run open. */
+function start(t, env, journal = null) {
   const data = mkdtempSync(join(scratch, 'data-'));
+  if (journal) writeFileSync(join(data, 'work-journal.json'), `${JSON.stringify(journal)}\n`);
   const child = spawn(process.execPath, [join(folder, 'plugin.mjs')], {
     cwd: folder,
     windowsHide: true,
     env: { PATH: process.env.PATH, DAORIS_PLUGIN_DATA: data, ...env },
-    stdio: ['pipe', 'pipe', 'inherit'],
+    stdio: ['pipe', 'pipe', 'pipe'],
   });
+  const closed = new Promise((done) => child.on('close', done));
+  t.after(() => {
+    child.kill();
+    return closed;
+  });
+  let said = '';
+  child.stderr.on('data', (chunk) => (said += chunk));
   const heard = [];
   const waiting = [];
   createInterface({ input: child.stdout }).on('line', (line) => {
@@ -85,29 +96,35 @@ function start(env) {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: mine, method, params })}\n`);
     return next((frame) => frame.id === mine);
   };
-  return { ask, next, heard, stop: () => child.kill(), data };
+  const stop = async () => {
+    child.kill();
+    await closed;
+    return said;
+  };
+  return { ask, next, heard, stop, data };
 }
 
 const POINTS = ['work/watch', 'work/step', 'work/perform', 'work/state'];
+const STEP = 'github-pull-request/pull-request';
 const tip = 'b'.repeat(40);
+const unitAt = (root) => ({ repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null, pullRequest: null, awaiting: [STEP] });
 
-async function opened(env, root, key = 'k-1') {
-  const plugin = start(env);
+async function opened(t, env, root, key = 'k-1') {
+  const plugin = start(t, env);
   await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
-  await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [
-    { repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null, pullRequest: null, awaiting: ['github-pull-request/pull-request'] }] });
+  await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [unitAt(root)] });
   const perform = (invocation, idempotencyKey) => plugin.ask('hook/work/perform', {
-    unit: 'app:daoris/work', step: 'github-pull-request/pull-request', stepVersion: 1, invocation, idempotencyKey, subjectRevision: tip, inputs: [],
+    unit: 'app:daoris/work', step: STEP, stepVersion: 1, invocation, idempotencyKey, subjectRevision: tip, inputs: [],
     deadlineAt: new Date(Date.now() + 60000).toISOString() });
   await perform('i-1', key);
   const step = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1');
   return { plugin, perform, step };
 }
 
-test('it opens the pull request through the REST API with the handed token, from the origin its checkout names', async () => {
+test('it opens the pull request through the REST API with the handed token, from the origin its checkout names', async (t) => {
   const api = await standIn();
   const root = checkout('daoris::https://github.com/acme/app.git');
-  const { plugin, step } = await opened({ DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { step } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
 
   assert.equal(step.params.state, 'reached');
   assert.equal(step.params.evidence.url, 'https://github.com/acme/app/pull/1');
@@ -115,13 +132,12 @@ test('it opens the pull request through the REST API with the handed token, from
   const post = api.calls.find((call) => call.method === 'POST');
   assert.deepEqual([post.body.head, post.body.base, post.bearer], ['daoris/work', 'main', true]);
   assert.equal(JSON.stringify(step).includes(TOKEN), false);
-  plugin.stop();
 });
 
-test('a key delivered again makes no second pull request, and one already open for the branch is found, not made again', async () => {
+test('a key delivered again makes no second pull request, and one already open for the branch is found, not made again', async (t) => {
   const api = await standIn();
   const root = checkout('git@github.com:acme/app.git');
-  const { plugin, perform } = await opened({ DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { plugin, perform } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
 
   await perform('i-1', 'k-1');
   await perform('i-2', 'k-2');
@@ -129,13 +145,12 @@ test('a key delivered again makes no second pull request, and one already open f
 
   assert.equal(api.calls.filter((call) => call.method === 'POST').length, 1);
   assert.equal(second.params.evidence.url, 'https://github.com/acme/app/pull/1');
-  plugin.stop();
 });
 
-test('its state is open, then completed with the merge commit once GitHub merges it', async () => {
+test('its state is open, then completed with the merge commit once GitHub merges it', async (t) => {
   const api = await standIn();
   const root = checkout('https://github.com/acme/app.git');
-  const { plugin } = await opened({ DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { plugin } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
   const frame = { root, branch: 'daoris/work', pullRequest: 'https://github.com/acme/app/pull/1', origin: null };
 
   const open = (await plugin.ask('hook/work/state', frame)).result;
@@ -144,21 +159,43 @@ test('its state is open, then completed with the merge commit once GitHub merges
 
   assert.equal(open.state, 'open');
   assert.deepEqual([merged.state, merged.mergeCommit, merged.sourceCommit, merged.target], ['completed', 'c'.repeat(40), 'a'.repeat(40), 'main']);
-  plugin.stop();
 });
 
-test('a refused token fails the step as unauthorized, and no token at all fails it as no-token', async () => {
+test('a refused token fails the step as unauthorized, and no token at all fails it as no-token', async (t) => {
   const api = await standIn();
   const root = checkout('https://github.com/acme/app.git');
 
-  const refused = await opened({ DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: 'not-the-token' }, root);
-  const absent = await opened({ DAORIS_HOST_API: api.address }, root, 'k-2');
+  const refused = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: 'not-the-token' }, root);
+  const absent = await opened(t, { DAORIS_HOST_API: api.address }, root, 'k-2');
 
   assert.deepEqual([refused.step.params.state, refused.step.params.code], ['failed', 'unauthorized']);
   assert.deepEqual([absent.step.params.state, absent.step.params.code], ['failed', 'no-token']);
   assert.equal(api.pulls.length, 0);
-  refused.plugin.stop();
-  absent.plugin.stop();
+});
+
+test('an attempt an earlier process began is running while GitHub is down or limiting, saying why, and unknown once the token is refused', async (t) => {
+  const api = await standIn();
+  const root = checkout('https://github.com/acme/app.git');
+  const begun = { attempts: { 'k-1': { idempotencyKey: 'k-1', invocation: 'i-1', unit: 'app:daoris/work', step: STEP, stepVersion: 1,
+    subjectRevision: tip, inputs: [], options: {}, state: 'begun', life: 'an earlier process' } } };
+  const reconciled = async (token) => {
+    const plugin = start(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: token }, begun);
+    await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
+    await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [unitAt(root)] });
+    const answer = (await plugin.ask('hook/work/reconcile', { unit: 'app:daoris/work', step: STEP, invocation: 'i-1', idempotencyKey: 'k-1', subjectRevision: tip })).result;
+    return { answer, said: await plugin.stop() };
+  };
+
+  api.status = 503;
+  const down = await reconciled(TOKEN);
+  api.status = 429;
+  const limited = await reconciled(TOKEN);
+  api.status = null;
+  const refused = await reconciled('not-the-token');
+
+  assert.deepEqual([down.answer, limited.answer, refused.answer], [{ state: 'running' }, { state: 'running' }, { state: 'unknown' }]);
+  assert.match(down.said, /GitHub answered 503/);
+  assert.match(limited.said, /limiting this token/);
 });
 
 test('it runs no git, gh or az, and declares no tool for them', () => {

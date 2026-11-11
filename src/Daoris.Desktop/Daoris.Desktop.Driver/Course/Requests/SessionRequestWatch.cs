@@ -160,7 +160,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Housekeep = CourseHelp.Current.Housekeeping(home, service);
         Set = CourseHelp.Current.Settings(home, service);
         Checkout = new HelpCheckouts(home, service).AnswerAsync;
-        Plan = new SystemPlanning(home, service).AnswerAsync;
+        Plan = CourseSystems.Current.Plan(home, service);
         // Made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);

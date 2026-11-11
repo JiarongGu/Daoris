@@ -3,9 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One thing an Ask Daoris conversation's Apply published: when, the proposal applied,
-/// its kind (<c>ask</c> or <c>setup</c>), the workspace it asked in, and the ask and the quest by the ids the service answered. Ids
-/// and when only: their state is the service's, read live.
+/// One thing an Ask Daoris conversation's press published: when, the press by its id, its kind, the workspace it asked in where one is
+/// kept, and the ask and the quest by the ids the service answered. Ids and when only: their state is the service's, read live.
 /// </summary>
 public sealed record HelpPublishedEntry(DateTimeOffset At, string Proposal, string Kind, string? Workspace)
 {
@@ -17,29 +16,18 @@ public sealed record HelpPublishedEntry(DateTimeOffset At, string Proposal, stri
 }
 
 /// <summary>
-/// What an Apply published, as its kind hands it to <see cref="HelpProposals.ApplyAsync"/>: the ask and the quest the
-/// service's answer named, and the workspace they were asked at.
-/// </summary>
-public sealed record HelpPublishing(string? Workspace, string? Ask, string? Quest)
-{
-    /// <summary>Whether the answer named anything to keep: an answer with neither id leaves nothing to open.</summary>
-    public bool Names => Ask is not null || Quest is not null;
-}
-
-/// <summary>
 /// The asks and quests one Ask Daoris conversation published, kept in <c>&lt;home&gt;/sessions/&lt;id&gt;.published.json</c>
 /// beside its other files, oldest first, and answered newest first; a delete or a history clear takes the file with the rest
-/// (<see cref="SessionHomeFiles"/>, under Ask Daoris's own name). A conversation with no Apply has none.
+/// (<see cref="SessionHomeFiles"/>, under Ask Daoris's own name). A conversation whose presses published nothing has none.
 /// </summary>
 /// <remarks>
 /// <para><b>A file of its own, not a field of <see cref="HelpConversations"/>' file.</b> A build before this one rewrites that file whole
 /// at a rename or a pin, with the four fields it knows, and would drop a fifth (<c>compatible-builds</c>); no such build knows this one.
 /// What is left: such a build's delete or history clear leaves this file behind, since its inventory does not name it.</para>
 ///
-/// <para><b>Written where the Apply runs, and read there.</b> The desktop host's Apply keeps an entry as the service answers, before the
-/// card settles (<see cref="HelpProposals.KeepPublished"/>), and its <c>HELP_PUBLISHED</c> reads them; no terminal door applies a
-/// proposal, and neither the service nor a terminal reads it. A crash between the service's answer and the keep loses the entry,
-/// never the ask or the quest.</para>
+/// <para><b>Written where the press settles, and read there.</b> The desktop host keeps an entry as a confirmed press's verb answers,
+/// and its <c>HELP_PUBLISHED</c> reads them; neither the service nor a terminal reads it. A crash between the answer and the keep loses
+/// the entry, never the ask or the quest.</para>
 ///
 /// <para><b>A file that does not read is nothing kept</b>, as Ask Daoris's other files are: it lists nothing, and the next keep starts it
 /// again. An entry is read back field by field.</para>
@@ -48,13 +36,13 @@ public sealed class HelpPublished(string home)
 {
     public const string Suffix = SessionHomeFiles.HelpPublishedSuffix;
 
-    // One writer at a time in this process: two Applies of one conversation's cards would otherwise each drop the other's entry.
+    // One writer at a time in this process: two presses of one conversation settling at once would otherwise each drop the other's entry.
     private static readonly object Gate = new();
 
     /// <summary>Where a conversation's list is kept, beside its transcript and Ask Daoris's other files for it.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, Checked(session) + Suffix);
 
-    /// <summary>Add what an Apply published after what is kept; a proposal kept already keeps its first entry (one Apply settles it).</summary>
+    /// <summary>Add what a press published after what is kept; a press kept already keeps its first entry (one answer settles it).</summary>
     /// <exception cref="DriverException">An id that names no session.</exception>
     public void Keep(string session, HelpPublishedEntry entry)
     {

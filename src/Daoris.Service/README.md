@@ -537,19 +537,17 @@ did not start*. A malformed rule, a scope with no name or an empty reason is ref
 written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers `ask_propose` (something to start, as
-an ask at a workspace; since ENTRY1c with the review choice the person said and their words, as the
-composer sends them, and never a kind or a workflow, which are the person's), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
-version; an account's use, order and cool-off are pressed with `daoris agent account`, never proposed) and `go_propose` (a place to open, changing nothing: a view, a Settings domain, or a part
-such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; since D161 the front door's
-way to take a person to the place, and since ENTRY1f1 one quest or ask on Quests as its `item`, which the driver judges
-against the machine's records, and since ENTRY1f2 one session on Sessions, judged against the machine's own; since ENTRY1d2a
-Repositories' Add repository or Import a folder may carry the `workspace` the drawer opens with, a name and never a folder; since NEW1d-a Sessions' New conversation, the part `new`,
-may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder); a
-plugin's add, update, switch and approval are pressed with `daoris plugin` and `daoris plugins approve|withdraw`, never proposed; bringing
-repositories up to date is pressed with `daoris tree sync --yes`, never proposed), and since SESSUX1h2a `session_propose` (sessions archived or unarchived by id, or every
-ended one archived; and `delete_propose` takes a `session`, one bare id), and since PAUSE1f-a `pause_propose` (one ask's or quest's work paused or resumed, by id; abandon is
-never proposed; a clear of finished history is pressed with `daoris quest|ask clear` and `daoris history clear`, never proposed), and since WORKFLOW1h-a `workflow_propose` (a whole version of a workflow for a repository or workspace, new or on a base, and optionally its choice; its `graph` is written as nested JSON (since WORKFLOWCLEAN1 1b a list of `steps` is refused, a development pipeline's graph is proposed, and a new workflow whose graph lands is one), and `changes`, `kind` and `import` are refused as not proposed yet; since WORKFLOW1h-name a new workflow carries an optional `name`, the person's words, at most 60 characters, and an edit's is refused because an edit keeps its name; since FABRIC-PIPELINE1i a `route` — `default`, `landed` or `kind:<id>` — which with neither chooses a saved workflow alone; since FLOWCHART2e a `draft`, the fingerprint of the draft open in the person's editor, with the whole changed `graph` of either pipeline, which saves and chooses nothing, so steps, a base, `choose`, a route and a name beside it are refused), and since LAYOUT8 `setup_propose` (a registered repository set up for every agent by name, as its page's Set up for agents presses it: one quest to its own session and the rule its session needs; never a path, and its `door` is `setup`, beside which WSSETUP7's `register` and workspace doors go). Each writes
+offers two tools. `go_propose` is a place to open, changing nothing: a view, a Settings domain, or a part
+such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; the front door's
+way to take a person to the place (D161); one quest or ask on Quests as its `item`, which the driver judges
+against the machine's records, or one session on Sessions, judged against the machine's own;
+Repositories' Add repository or Import a folder may carry the `workspace` the drawer opens with, a name and never a folder; Sessions' New conversation, the part `new`,
+may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder. Every
+other change is a press of Daoris's verb, never proposed (D261): a new ask with `daoris ask`, a place's set-up with `daoris place …
+--apply`, an agent's update or pin and an account's use, order and cool-off with `daoris agent`, a plugin's add, update, switch and approval with
+`daoris plugin` and `daoris plugins approve|withdraw`, bringing repositories up to date with `daoris tree sync --yes`, sessions archived,
+unarchived or deleted with `daoris sessions`, one ask's or quest's work paused or resumed with `daoris ask|quest`, and a clear of finished
+history with `daoris quest|ask clear` and `daoris history clear`. The other tool is WORKFLOW1h-a's `workflow_propose` (a whole version of a workflow for a repository or workspace, new or on a base, and optionally its choice; its `graph` is written as nested JSON (since WORKFLOWCLEAN1 1b a list of `steps` is refused, a development pipeline's graph is proposed, and a new workflow whose graph lands is one), and `changes`, `kind` and `import` are refused as not proposed yet; since WORKFLOW1h-name a new workflow carries an optional `name`, the person's words, at most 60 characters, and an edit's is refused because an edit keeps its name; since FABRIC-PIPELINE1i a `route` — `default`, `landed` or `kind:<id>` — which with neither chooses a saved workflow alone; since FLOWCHART2e a `draft`, the fingerprint of the draft open in the person's editor, with the whole changed `graph` of either pipeline, which saves and chooses nothing, so steps, a base, `choose`, a route and a name beside it are refused). Each writes
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before

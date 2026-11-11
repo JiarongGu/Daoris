@@ -42,6 +42,19 @@ public sealed class SystemAddTests : IDisposable
         Assert.Equal("stand-in", SystemAdd.Plan(_home, "stand-in-system/stand-in", null, null, "http://127.0.0.1:5000").Repository);
     }
 
+    /// <summary>A system's name is typed, not read off a folder, and a repository's name is joined to the home's disks.</summary>
+    [Theory]
+    [InlineData("../elsewhere")]
+    [InlineData("a/b")]
+    [InlineData("a\b")]
+    [InlineData("CON")]
+    [InlineData("store.")]
+    public void A_name_that_cannot_be_a_folder_s_name_is_refused(string name)
+    {
+        var refused = Assert.Throws<RegistryRefusal>(() => SystemAdd.Plan(_home, "stand-in-system/stand-in", name, null, "http://127.0.0.1:5000"));
+        Assert.Contains("is no name", refused.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("stand-in-system", "names no system")]
     [InlineData("stand-in-system/elsewhere", "no plugin installed and on adapts")]

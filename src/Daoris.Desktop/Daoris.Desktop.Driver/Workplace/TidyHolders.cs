@@ -78,7 +78,7 @@ internal static class TidyHolders
             .Where(session => session.Tree is { Length: > 0 })
             .Select(session => new TreeHolder(session.Tree!, session.Id)
             {
-                Leases = PlaceHolders.Leases(session), Runs = PlaceHolders.Leases(session) && !SessionStates.IsParked(session.State),
+                Leases = PlaceLeases.Holds(session), Runs = PlaceLeases.Holds(session) && !SessionStates.IsParked(session.State),
             }).ToList();
         var records = await recordsRead.ConfigureAwait(false);
         held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })

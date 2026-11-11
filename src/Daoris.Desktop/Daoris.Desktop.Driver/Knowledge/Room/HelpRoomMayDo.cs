@@ -78,17 +78,17 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             }
 
             text.Append("What you read is how a tree stands now. Changing it (its branches, its uncommitted work, what is\n");
-            text.Append("ready to push) is still a repository's own work, so route it there. Propose an ask for it with\n");
+            text.Append("ready to push) is still a repository's own work, so route it there. Ask for it with\n");
         }
         else
         {
             text.Append("You have no shell, no web fetch or search, and you read no checkout: a command, a web page, or a\n");
             text.Append("file outside this room, is refused before it runs, so never try one. What a repository's tree holds\n");
             text.Append("(its branches, its uncommitted work, what is ready to push) is a repository's own work, so route it\n");
-            text.Append("there. Propose an ask for it with ");
+            text.Append("there. Ask for it with ");
         }
 
-        text.Append("`ask_propose`, so that repository's agent does it with its own\n");
+        text.Append("`daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own\n");
         text.Append("tools, or tell the person to open a conversation in that repository with New conversation (Ctrl+N),\n");
         text.Append("or take them there with `go_propose`, the repository and their words filled.\n");
         text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed,\n");
@@ -258,7 +258,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("page.\n\n");
         // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
-        text.Append("a quest: propose an ask for it with `ask_propose`, so that repository's agent does it with its own tools, or\n");
+        text.Append("a quest: ask for it with `daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own tools, or\n");
         text.Append("take the person there with `go_propose`, the repository and their words filled.\n");
         text.Append("Daoris's own housekeeping is yours to do: its trees, the session branches whose work landed, and its home.\n");
         text.Append("Where your agent takes Daoris's rules, the person's own denies still hold.\n\n");

@@ -112,7 +112,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         };
     }
 
-    /// <summary>A press run with no card, in the machine log: Ask Daoris's and a terminal's as the person's, kept for the window's list, a working session's as its own.</summary>
+    /// <summary>A press run with no card, in the machine log: Ask Daoris's as the person's, kept for the window's list; a terminal's as the person's, kept in the terminal tier's record (<see cref="PipeTerminalTier.Kept"/>); a working session's as its own.</summary>
     internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request, Task<string> answer)
     {
         var route = $"{request.Module}.{request.Type}";
@@ -122,12 +122,18 @@ public sealed class PipeDelegate(InstancePipe pipe)
             return;
         }
 
-        if (judgement.Terminal) pipe.Log.Info(TerminalPressedEvent, ("route", route), ("by", "terminal"), ("door", PipeDoor.Terminal));
-        else pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
+        if (judgement.Terminal)
+        {
+            pipe.Log.Info(TerminalPressedEvent, ("route", route), ("by", "terminal"), ("door", PipeDoor.Terminal));
+            PipeTerminalTier.Kept(pipe, request, answer);
+            return;
+        }
+
+        pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
         judgement.Say?.Invoke(route);
         // Kept for the window's list, which is told at the press and again at its answer.
         var presses = pipe.StandingConfirmation.HelpPresses;
-        var kept = presses.Began(request, judgement.Session ?? "", judgement.Terminal);
+        var kept = presses.Began(request, judgement.Session ?? "");
         pipe.TellDriverState();
         if (judgement.PlaceOf is { } placeOf) _ = PlaceAsync(placeOf, request, kept);
         _ = answer.ContinueWith(done =>

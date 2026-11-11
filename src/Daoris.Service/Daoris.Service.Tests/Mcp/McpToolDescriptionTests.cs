@@ -47,45 +47,6 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("quest_publish", tool == "quest_publish" ? "quest_publish " + text : text);
     }
 
-    /// <summary>
-    /// The set-up tool says it only proposes the press, which publishes one quest to the repository's own session and
-    /// adds the rule its session needs, and that Daoris never writes into the repository; a repository is named, never a folder.
-    /// </summary>
-    [Fact]
-    public void The_setup_tool_says_it_proposes_the_press_and_never_writes_into_the_repository()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
-
-        Assert.Contains("Ask Daoris only", text);
-        Assert.Contains("one quest", text);
-        Assert.Contains("its own session", text);
-        Assert.Contains("rule", text);
-        Assert.Contains("never writes into the repository", text);
-        Assert.Contains("never its folder", text);
-    }
-
-    /// <summary>The set-up tool's place ask says the card opens the page and the person presses Apply there.</summary>
-    [Fact]
-    public void The_setup_tool_says_its_place_ask_opens_the_page_for_the_person_to_apply()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
-
-        Assert.Contains("`preset`", text);
-        Assert.Contains("*Set up…*", text);
-        Assert.Contains("presses Apply there", text);
-    }
-
-    /// <summary>The set-up tool's preset ask names `keep`, which writes no landing and no workflow choice, beside the deliveries.</summary>
-    [Fact]
-    public void The_setup_tool_names_keep_how_it_lands_beside_the_deliveries()
-    {
-        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
-
-        Assert.Contains("`keep`", text);
-        Assert.Contains("no landing and no workflow choice", text);
-        Assert.Contains("`merge-after-accept`", text);
-    }
-
     /// <summary>The workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()
@@ -134,10 +95,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("keeps its name", text);
     }
 
-    /// <summary>
-    /// quest_publish's kind proposal says it quotes the person's own words, is at most 300 characters, is a kind and
-    /// not a workflow, and that only the person's press applies it.
-    /// </summary>
+    /// <summary>quest_publish's kind proposal quotes the person's words, at most 300 characters, a kind applied only by their press.</summary>
     [Fact]
     public void The_publish_tool_describes_the_kind_proposal_as_a_quote_only_the_person_applies()
     {

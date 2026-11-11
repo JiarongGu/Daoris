@@ -2,8 +2,8 @@
   "id": "azure-devops-pull-request",
   "apiVersion": 1,
   "name": "Azure DevOps pull request",
-  "version": "2.0.0",
-  "changes": "Opens and reads the pull request through Azure DevOps' REST API with the token of the git identity serving origin. It runs no git and no az: Daoris's push node pushes the branch first.",
+  "version": "2.0.1",
+  "changes": "Answers each request as it settles, so a slow Azure DevOps read holds back no other; an attempt asked after a restart while Azure DevOps is down or limiting the token is running, and says why, where it stopped the step.",
   "description": "A performed step, pull-request: opens an Azure DevOps pull request from the branch Daoris pushed, through Azure DevOps' REST API with the API token of the identity serving origin, and reads its state and merge commit.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

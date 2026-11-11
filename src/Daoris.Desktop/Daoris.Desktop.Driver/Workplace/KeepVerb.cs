@@ -60,8 +60,14 @@ public sealed class KeepVerb : ChoiceVerb
     /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default.</summary>
     public override int? Said(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)
     {
+        world.Instance.Out.WriteLine($"daoris: {world.ConfigPath}");
+        Listed(choices, world);
+        return 0;
+    }
+
+    public override void Listed(DriverConfig choices, DriverChoicesWorld world)
+    {
         var write = world.Instance.Out;
-        write.WriteLine($"daoris: {world.ConfigPath}");
         foreach (var kind in KeepRules.Settable)
         {
             var said = KeepRules.Said(kind.Id, choices.Keep);
@@ -80,7 +86,6 @@ public sealed class KeepVerb : ChoiceVerb
         write.WriteLine(choices.Keep.IsDefault(KeepRules.Floor)
             ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris settings keep floor …` changes it)"
             : $"  {KeepRules.Floor,-10} {floor}  (set — `daoris settings keep floor default` takes the default again)");
-        return 0;
     }
 
     /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set; anything else is its usage.</summary>

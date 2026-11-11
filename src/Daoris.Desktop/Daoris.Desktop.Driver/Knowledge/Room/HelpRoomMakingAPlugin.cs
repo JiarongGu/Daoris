@@ -30,9 +30,9 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         // and only its installing is a card here. The points come from the wire's own list.
         text.Append("## Making a plugin\n\n");
         text.Append("A plugin runs on this machine as the person (one that opens a pull request does so with their sign-in), so making\n");
-        text.Append("one is work, not a setting: never write one yourself. Propose it\n");
-        text.Append("as an ask (`ask_propose`) at the workspace of the repository that holds plugins, naming it as the receiver:\n");
-        text.Append("what the plugin should do, and the point it speaks on ("
+        text.Append("one is work, not a setting: never write one yourself. Ask for it\n");
+        text.Append("as an ask (`daoris ask --workspace <name> --to <repository> \"…\"`) at the workspace of the repository that holds plugins,\n");
+        text.Append("naming it as the receiver: what the plugin should do, and the point it speaks on ("
             + string.Join("; ", HookPoints.All.Select(point => PointSaid.TryGetValue(point, out var said) ? $"`{point}`, {said}" : $"`{point}`"))
             + ").\n");
         text.Append("The session there makes it with its tests, and the person reviews and lands it. Find that repository\n");
