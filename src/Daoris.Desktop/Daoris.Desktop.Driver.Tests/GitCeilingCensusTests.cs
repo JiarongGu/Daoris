@@ -37,6 +37,7 @@ public sealed class GitCeilingCensusTests
         ["Workplace/GitLaunchTests.cs"] = "its own census's pattern names a git start in a string and starts nothing",
         ["Platform/GitSchedulerTests.cs"] = "the gate's starts go to a stand-in starter that starts nothing",
         ["Workplace/GitLazyFetchTests.cs"] = "builds a start info to read the variable and the place it is asked in, and starts nothing",
+        ["Workplace/GitStartAsksTests.cs"] = "builds a start info to read the key a queued start is shared by, and starts nothing",
     };
 
     private static SortedDictionary<string, int> Scan()

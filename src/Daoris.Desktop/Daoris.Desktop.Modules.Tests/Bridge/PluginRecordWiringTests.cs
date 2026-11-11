@@ -41,7 +41,12 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
         // An entry's or an ask's Accept, and the clean-up's list a terminal asks for, which says a plugin's own lines into
         // its answer. A landing is a run's land, which builds no plugin wire here; Ask Daoris hands no branch on.
         Assert.Equal(2, built.Count(call => call.Kind == "LandingPlugins"));
-        Assert.Contains(built, call => call is { Kind: "HookSet", File: "LoopRun.cs" });
+        Assert.DoesNotContain(built, call => call.Kind == "HookSet");
+        // Each loop's hook set is built at its start (PluginsAtStart), which the desktop's run hands its log and its record.
+        var start = File.ReadAllText(SourceFiles.Driver("PluginsAtStart.cs"));
+        Assert.Matches(@"new HookSet\([^;]*\blog:\s[^;]*\bhealth:\s", start);
+        var run = File.ReadAllText(SourceFiles.Module("LoopRun.cs"));
+        Assert.Matches(@"PluginsAtStart\.Set\([^;]*\blog,\s*loop\.Health\)", run);
         Assert.All(built, call => Assert.True(
             Regex.IsMatch(call.Call, @"\blog:\s") && Regex.IsMatch(call.Call, @"\bhealth:\s"),
             $"{call.File} builds a {call.Kind} without the loop's log and health: {call.Call}"));

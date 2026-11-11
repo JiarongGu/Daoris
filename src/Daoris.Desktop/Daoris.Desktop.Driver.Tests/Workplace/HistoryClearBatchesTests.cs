@@ -38,8 +38,8 @@ public sealed class HistoryClearBatchesTests : IDisposable
         foreach (var id in ids)
         {
             File.WriteAllText(Path.Combine(sessions, $"s{id}.log"), "the transcript\n");
-            Directory.CreateDirectory(Path.Combine(_home, "quests", id, "attachments"));
-            File.WriteAllText(Path.Combine(_home, "quests", id, "attachments", "abc123-spec.md"), "a spec");
+            Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.QuestFiles, id, "attachments"));
+            File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.QuestFiles, id, "attachments", "abc123-spec.md"), "a spec");
         }
 
         var world = new HistoryWorld(service.Client(), _home, DaorisHome.Entry(_home, HomeEntry.DriverConfig), new SessionProcesses(sessions));
@@ -57,6 +57,6 @@ public sealed class HistoryClearBatchesTests : IDisposable
         Assert.Equal(ids.Length, service.Pressed.Count);
         Assert.All(service.Presses, size => Assert.True(size <= Bound, $"a press named {size} units"));
         Assert.All(ids, id => Assert.False(File.Exists(Path.Combine(sessions, $"s{id}.log"))));
-        Assert.All(ids, id => Assert.False(Directory.Exists(Path.Combine(_home, "quests", id))));
+        Assert.All(ids, id => Assert.All(DaorisHome.Places(_home, HomeEntry.QuestFiles, id), place => Assert.False(Directory.Exists(place))));
     }
 }
