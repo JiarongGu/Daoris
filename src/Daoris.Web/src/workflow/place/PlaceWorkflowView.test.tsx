@@ -283,7 +283,7 @@ describe("a place's Workflow, its folds and Gates", () => {
 
   it('hands the Landing row how the route lands: the conversion under Current, the version\'s own options under a saved workflow', () => {
     const landing = vi.fn((hand: LandingHand) => <div data-testid="landing">{hand.lands?.is ?? 'none'}{hand.lands?.is === 'version' && hand.lands.editor}</div>);
-    const current = draw({ landing, onConvert: vi.fn() });
+    const current = draw({ landing });
     expect(screen.getByTestId('landing')).toHaveTextContent('current');
     current.unmount();
 
@@ -443,19 +443,14 @@ describe('Change… and Edit steps…', () => {
     expect(openDraftNow()!.graph.nodes).toHaveLength(0);
   });
 
-  // Current goes only to the conversion, from Edit steps… and from Change…'s Current tab.
-  it('send a place that follows Current to the conversion, from Edit steps… and from the Current tab, and open no editor', async () => {
-    const onConvert = vi.fn();
-    const bridge = editor();
-    draw({ editor: bridge, onConvert });
+  it('offer a place that follows Current no Edit steps… and no Convert…, on the page or in the Current tab', async () => {
+    draw({ editor: editor() });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
-    expect(onConvert).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit steps…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Convert…' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
-    expect(onConvert).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('button', { name: 'Convert…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
   });
 
@@ -482,13 +477,11 @@ describe('Change… and Edit steps…', () => {
     expect(screen.queryByRole('button', { name: 'Update…' })).toBeNull();
   });
 
-  it('say Current follows its old landing rule, with the conversion beside it', async () => {
-    const onConvert = vi.fn();
-    draw({ editor: editor(), onConvert });
+  it('say Current follows its old landing rule, with no conversion beside it', () => {
+    draw({ editor: editor() });
 
     expect(screen.getByText('Follows its old landing rule')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
-    expect(onConvert).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Convert…' })).toBeNull();
   });
 
   it("starts the step editor from a preset's steps, from Change…", async () => {
@@ -541,7 +534,7 @@ describe("a workspace's own Workflow", () => {
 
   it('hands the Landing row how the route lands, as a repository\'s is handed: no line from the repository\'s tip', () => {
     const landing = vi.fn((hand: LandingHand) => <div data-testid="landing">{hand.lands?.is ?? 'none'}{hand.lands?.is === 'version' && hand.lands.editor}</div>);
-    const current = draw({ page: 'workspace', name: 'aurora', current: workspace(), landing, onConvert: vi.fn() });
+    const current = draw({ page: 'workspace', name: 'aurora', current: workspace(), landing });
     expect(screen.getByTestId('landing')).toHaveTextContent('current');
     current.unmount();
 

@@ -132,8 +132,6 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   /** The editor's draft the page kept when this section last unmounted, and where it keeps the draft as the editor reports it. */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
-  /** Opens the home's conversion review: the one door from a route, a Landing row or a tab that follows Current. */
-  onConvert?: () => void;
 };
 
 type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
@@ -218,7 +216,7 @@ function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null })
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection, held = null, onHold, onConvert,
+  view, onView, onAcceptIntegration, landing, onOpenSection, held = null, onHold,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
   const canAsk = useCanFillAsk();
@@ -303,7 +301,7 @@ export function PlaceWorkflowView({
   // How the route lands: under a saved version it is the version's `land` options; under Current, only the conversion.
   const land = answered === null || !answered.graph || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
   const lands: LandsHere | null = answered === null || landed ? null
-    : answered.workflow === 'current' ? { is: 'current', onConvert }
+    : answered.workflow === 'current' ? { is: 'current' }
       : editor && land && answered.schema === 2 && answered.version !== null
         ? {
           is: 'version',
@@ -385,7 +383,6 @@ export function PlaceWorkflowView({
           onPlan={editor.onPlan}
           onSave={editor.onSave}
           onStartFrom={(from) => show({ is: 'edit', route: open.route, from })}
-          onConvert={onConvert}
           onClose={() => show(null)}
         />
       )
@@ -425,13 +422,12 @@ export function PlaceWorkflowView({
     : [];
 
   const canChange = editor !== undefined && !landed;
-  // A route that follows Current has no steps to edit: its door is the conversion.
+  // A route that follows Current has no steps to edit.
   const onCurrent = !landed && answered?.workflow === 'current';
   // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words,
   // and puts the start of a request in its box. The editor, once open, is not opened again.
   const openEdit = () => {
-    if (onCurrent) onConvert?.();
-    else if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) });
+    if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) });
   };
   // Change… replaces the editor, so a draft with changes in it is asked about first.
   const openChange = () => {
@@ -466,7 +462,7 @@ export function PlaceWorkflowView({
             {canChange && (
               <>
                 <Button variant="ghost" className={buttons} onClick={openChange}>{t('workflow.place.change.open')}</Button>
-                {(!onCurrent || onConvert) && <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>}
+                {!onCurrent && <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>}
                 {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
@@ -477,8 +473,7 @@ export function PlaceWorkflowView({
         )}
         {onCurrent && !open && (
           <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
-            {t('agents.convert.follows')}
-            {onConvert && <Button variant="ghost" className={buttons} onClick={onConvert}>{t('agents.convert.open')}</Button>}
+            {t('workflow.place.current.follows')}
           </p>
         )}
         {discarding && (

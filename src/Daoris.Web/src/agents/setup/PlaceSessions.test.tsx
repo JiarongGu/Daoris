@@ -123,8 +123,8 @@ describe("a workspace place's Landing row", () => {
       </Tooltip.Provider>,
     );
 
-  it('draws no Landing fold under Current, whose conversion the routes offer', () => {
-    drawWorkspace({ onConvert: vi.fn() });
+  it('draws no Landing fold under Current', () => {
+    drawWorkspace({});
 
     expect(screen.queryByRole('button', { name: 'Landing' })).toBeNull();
   });

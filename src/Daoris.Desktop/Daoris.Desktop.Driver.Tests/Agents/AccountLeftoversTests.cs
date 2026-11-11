@@ -54,6 +54,51 @@ public sealed class AccountLeftoversTests : IDisposable
         Assert.Contains("daoris agent account remove claude-code account-3.lock", _out.ToString(), StringComparison.Ordinal);
     }
 
+    private const string StrayAgent = "claude-code$a";
+
+    private void StrayAgentFolder()
+    {
+        Folders();
+        var account = HarnessSettings.ProfileHome(Home, StrayAgent, "work");
+        Directory.CreateDirectory(account);
+        File.WriteAllText(Path.Combine(account, ".credentials.json"), "{}");
+    }
+
+    [Fact]
+    public async Task The_list_names_a_stray_agent_folder_and_the_verb_that_removes_it()
+    {
+        StrayAgentFolder();
+
+        var exit = await AgentsCommand.RunAsync(["profile", "list"], World(), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Contains($"left over: {StrayAgent} — no agent", _out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("daoris agent account remove", _out.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_remove_verb_takes_a_stray_agent_folder_whole_and_leaves_the_agents_accounts()
+    {
+        StrayAgentFolder();
+
+        var exit = await AgentsCommand.RunAsync(["profile", "remove", StrayAgent], World(), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.False(Directory.Exists(Path.GetDirectoryName(HarnessSettings.ProfileHome(Home, StrayAgent, "work"))));
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")));
+    }
+
+    [Fact]
+    public async Task The_remove_verb_takes_no_known_agents_folder_by_its_name_alone()
+    {
+        Folders();
+
+        var exit = await AgentsCommand.RunAsync(["profile", "remove", "claude-code"], World(), CancellationToken.None);
+
+        Assert.NotEqual(0, exit);
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")));
+    }
+
     [Fact]
     public async Task The_remove_verb_takes_a_lock_folder_and_leaves_the_account()
     {
