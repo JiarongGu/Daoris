@@ -130,10 +130,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotMatch(DecisionNumber(), lexical);
     }
 
-    /// <summary>
-    /// Removing a record is a person's act, so no connector tool clears history, and none is handed the
-    /// desk that would. Ask Daoris presses the clear, as it presses a delete.
-    /// </summary>
+    /// <summary>Removing a record is a person's act, so no connector tool clears history; Ask Daoris presses the clear, as it presses a delete.</summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
     {

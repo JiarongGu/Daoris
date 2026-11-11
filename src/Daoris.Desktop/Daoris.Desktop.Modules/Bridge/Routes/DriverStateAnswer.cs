@@ -12,8 +12,7 @@ internal static class DriverStateAnswer
     /// <param name="shownAgain">What *Show it again* said, on the answer to <c>SHOW_REVIEW_AGAIN</c> alone.</param>
     /// <param name="parksAt">On a *Try again*'s mark, the failed sessions the quest's line's failures rule parks it at again; else the machine's rule is said.</param>
     /// <remarks>
-    /// A read of the loop alone, so the domains whose standing choices answer with it (Across, Lines) reach it by name over
-    /// their loop, holding no other domain's class.
+    /// A read of the loop alone, so the domains whose standing choices answer with it reach it over their loop.
     /// </remarks>
     public static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null, int? parksAt = null)
     {

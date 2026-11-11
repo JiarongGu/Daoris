@@ -364,10 +364,7 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(("h1", true), (Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Session, Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Help));
     }
 
-    /// <summary>
-    /// The chosen settings are a family like the pauses: granted, Ask Daoris's restricted press of one runs with no card; a grant of
-    /// another family leaves it on a card naming Ask Daoris; full access presses it with no card, whatever is granted.
-    /// </summary>
+    /// <summary>The settings are a family like the pauses: granted, a restricted press runs with no card; another family's grant leaves it on a card.</summary>
     [Theory]
     [InlineData(HelpModes.Restricted, ActFamilies.Settings, false)]
     [InlineData(HelpModes.Restricted, ActFamilies.CleanUp, true)]
@@ -449,10 +446,7 @@ public sealed class PipeDelegateTests : Bridge
         return (pipe, client, hello.GetProperty("data").GetProperty("nonce").GetString()!, driver, provider, log);
     }
 
-    /// <summary>
-    /// A driver press sent as the verb sends a session's: its payload's text on the line as the proof is made over it (or over
-    /// <paramref name="proofOver"/>), and beside it <c>delegate: { session, proof }</c>.
-    /// </summary>
+    /// <summary>A driver press as the verb sends a session's: its text proved (or <paramref name="proofOver"/>), beside <c>delegate: { session, proof }</c>.</summary>
     private static async Task<string> SendProvedAsync(
         PipeClient client, string route, object payload, string session, string key, string nonce, string? proofOver = null)
     {

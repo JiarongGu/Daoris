@@ -38,10 +38,7 @@ public sealed class HelpAccessTests : IDisposable
         Assert.Contains($"`{name}`", access.Said);
     }
 
-    /// <summary>
-    /// Full runs each harness in its mode that asks nothing: Claude Code's flag on the native door, a mode the protocol door must set
-    /// or fail on the others. What its conversation is told names the mode and the harness's own word for it.
-    /// </summary>
+    /// <summary>Full runs each harness in its mode that asks nothing: a flag on the native door, a mode the protocol door must set or fail on.</summary>
     [Theory]
     [InlineData("claude-code", null, "bypassPermissions")]
     [InlineData("claude-code-acp", "!bypassPermissions", null)]
@@ -84,8 +81,7 @@ public sealed class HelpAccessTests : IDisposable
 
     /// <summary>
     /// Its place under full access: no allow-list and nothing asked, its harness's mode that asks nothing, every plugin server and no
-    /// tree guard, since its tree is the room and its housekeeping is outside it; the person's own denies still go, the shipped
-    /// no-push among them. Restricted leaves the place unchanged.
+    /// tree guard; the person's own denies still go. Restricted leaves the place unchanged.
     /// </summary>
     [Fact]
     public void Its_place_under_full_access_asks_nothing_and_keeps_the_persons_denies()

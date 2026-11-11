@@ -47,9 +47,8 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     }
 
     /// <summary>
-    /// A brainstorm's pass is denied every tool of the connector but its result, by name, from the
-    /// driver's <c>BrainstormPermissions.ConnectorTools</c>. A tool the connector gains is denied there in the same change, or a pass
-    /// could be offered it. The merge tool's rule for the driver's file runs this suite when it changes.
+    /// A brainstorm's pass is denied every tool of the connector but its result, by name, from the driver's
+    /// <c>BrainstormPermissions.ConnectorTools</c>: a tool the connector gains is denied there in the same change.
     /// </summary>
     [Fact]
     public void The_driver_denies_a_brainstorm_pass_every_tool_this_host_advertises()

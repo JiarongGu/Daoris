@@ -48,10 +48,7 @@ export const TierNotYetKnown: Story = {
   args: { search: undefined },
 };
 
-/**
- * Ask Daoris on Claude Code, restricted, with its configured access under the access
- * row, the clean-up family chosen and the browser waiting for approval.
- */
+/** Ask Daoris on Claude Code, restricted, its configured access under the access row, the clean-up family chosen. */
 export const RestrictedWithConfiguredAccess: Story = {
   args: {
     access: { mode: 'restricted', confirming: false, adds: [], onPick: () => {}, onEnable: () => {}, onCancel: () => {} },

@@ -13,8 +13,7 @@ public sealed record CallRefusal(string Code, string Text);
 /// work alone keeps its check as its store's guard, and the table refuses the same cells first in its words: the channel's, Ask Daoris's
 /// checkouts and a brainstorm's turn. A named session the connector cannot place is served the reads alone
 /// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11). A session
-/// working in a repository is served <see cref="CoreServed"/> and its own work's tools, since its harness loads every tool it is listed at
-/// its start; Ask Daoris is served every tool but the turns and the memory changes.
+/// working in a repository is served <see cref="CoreServed"/> and its own work's tools; Ask Daoris every tool but the turns and the memory changes.
 /// </remarks>
 public static class CallTable
 {

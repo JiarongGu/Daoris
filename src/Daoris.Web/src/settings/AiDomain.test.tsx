@@ -320,8 +320,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.revoked', { operation: 'engine' })));
   });
 
-  // The browser's row is its plugin's approval, read only, and its door the
-  // plugin's own tab, the one place it is changed; nothing is chosen for it here.
+  // The browser's row is its plugin's approval, read only, its door the plugin's own tab.
   it('draws the browser from its plugin’s approval, and its door opens the plugin’s tab', async () => {
     const onGo = vi.fn();
     show(<SettingsView notify={() => {}} section="ai" onGo={onGo} />);

@@ -1,6 +1,5 @@
-// Ask Daoris's mode and its receipts as shapes: the bridge answers them, and the
-// panel's molecules draw them. Types alone, so a molecule takes them here and never from a bridge domain (the presentational
-// boundary, `design/presentational.test.ts`).
+// Ask Daoris's mode and its receipts as shapes: the bridge answers them, the panel's molecules draw them. Types alone, so a molecule
+// never takes them from a bridge domain (`design/presentational.test.ts`).
 
 /** Ask Daoris's access modes: restricted, which reads and proposes, or full, which acts itself. */
 export type HelpMode = 'restricted' | 'full';

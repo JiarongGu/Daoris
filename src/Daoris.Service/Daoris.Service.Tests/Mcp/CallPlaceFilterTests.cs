@@ -11,9 +11,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An Ask Daoris connector bound to a workspace notes each call that named a workspace or a repository, after its tool answered,
-/// in the session's place file the driver composes the turn's receipt from: what the call did, the place as named, what it
-/// named of it, and how many a search's answer found where its tool said so. A call that names no place, one its tool refused, and a connector bound to none note nothing.
+/// An Ask Daoris connector bound to a workspace notes each call that named a workspace or a repository in the session's place file the
+/// turn's receipt is composed from: what it did, the place as named, and how many a search found. A call naming no place, one refused, and a connector bound to none note nothing.
 /// </summary>
 public sealed class CallPlaceFilterTests : IDisposable
 {

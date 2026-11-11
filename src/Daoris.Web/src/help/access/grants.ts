@@ -1,8 +1,6 @@
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpGrantState } from './wired';
 
-// Restricted mode's configured access, read from the code: each
-// grant's operations, how each is chosen, its default, and where an agent cannot be held to it. `ConfiguredAccess` draws from
-// it, and the driver answers what is held.
+// Restricted mode's configured access: each grant's operations, default, and where an agent cannot be held to it.
 
 /** One grant of the table. */
 export type GrantSpec = {
@@ -11,22 +9,13 @@ export type GrantSpec = {
   operations: readonly string[];
   /** What it starts as: off, waiting for approval (the browser), or on, inherited (the checkouts). */
   byDefault: 'off' | 'approval' | 'inherited';
-  /**
-   * Held only by an agent that takes Claude's permission rules: the browser's chosen writes are exact MCP rules. On another agent it
-   * is unavailable until Daoris mediates the tools. The checkouts are held on any agent: Daoris serves their read and judges it.
-   */
+  /** Held only by an agent that takes Claude's permission rules (the browser's chosen writes); Daoris judges the rest itself. */
   needsRules: boolean;
-  /**
-   * Its operations are the driver's to name, as `built`: the checkouts, one box a readable checkout by its repository's
-   * name as written, never translated; none where the driver serves none.
-   */
+  /** Its operations are the driver's to name, as `built`: a box per readable checkout, by its repository's name as written. */
   served?: boolean;
   /** Not built yet: nothing to choose (the confined shell). */
   later: boolean;
-  /**
-   * Set on a plugin's own tab, the one place its record is changed: drawn here
-   * read only from that record, its door leading to the tab, never a second set of boxes. The browser's.
-   */
+  /** Set on a plugin's own tab, drawn here read only from that record, its door leading there (the browser's). */
   onPlugin: boolean;
   /** Its door's words, or none. */
   door: 'operations' | 'manage' | null;
@@ -36,14 +25,12 @@ export const GRANTS: readonly GrantSpec[] = [
   // The server approval takes its reads together and each write on its own, on the plugin's page: nothing is
   // chosen here. No page code, ever.
   { id: 'browser', operations: [], byDefault: 'approval', needsRules: true, later: false, onPlugin: true, door: 'manage' },
-  // The workspace's checkouts within the readable set, each on until turned off here, read through one tool Daoris judges at each
-  // call, so held on every agent: a file, a folder, `git status` and `git branch --list`.
+  // The workspace's readable checkouts, each on until turned off here, read through one tool Daoris judges at each call.
   {
     id: 'checkouts', operations: [], byDefault: 'inherited', needsRules: false, served: true, later: false, onPlugin: false,
     door: 'manage',
   },
-  // The acts Ask Daoris presses itself, granted by family: each runs with no card, judged as the person's own press is, so held on
-  // every agent. A family names the driver's routes it covers (`ActFamilies`).
+  // The acts Ask Daoris presses with no card, granted by family; a family names the driver's routes it covers (`ActFamilies`).
   {
     id: 'acts', operations: ['pause', 'clean-up', 'discard', 'settings'], byDefault: 'off', needsRules: false, later: false,
     onPlugin: false, door: 'operations',

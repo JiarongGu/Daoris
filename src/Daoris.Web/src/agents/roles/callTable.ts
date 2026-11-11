@@ -1,6 +1,5 @@
-// What each work may call: the service's call table, which is code with no machine
-// state, shown read-only. `callTable.test.ts` holds this file cell for cell to the service's `fixtures/call-table.json`, which the
-// service's `McpRoleFilterTests` holds to `CallTable` over the host's registration; a tool added there fails one until placed here.
+// What each work may call: the service's call table, shown read-only. `callTable.test.ts` holds this file cell for cell to the
+// service's `fixtures/call-table.json`, which `McpRoleFilterTests` holds to `CallTable`; a tool added there fails one until placed here.
 
 /** Every tool the connector registers. */
 export const REGISTERED_TOOLS: readonly string[] = [

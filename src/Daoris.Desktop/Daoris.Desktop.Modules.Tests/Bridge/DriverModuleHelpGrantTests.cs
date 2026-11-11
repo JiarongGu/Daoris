@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Restricted mode's configured access over the bridge: <c>SET_HELP_GRANT</c>, the person's press of one
-/// housekeeping operation on Ask Daoris's screen, written to the home's <c>configured-access.json</c>, which each start and each tool
-/// call read; the state answering it as <c>helpGrants</c>, pushed with the choices. Edits to the home only, so no service and no process.
+/// Restricted mode's configured access over the bridge: <c>SET_HELP_GRANT</c>, the person's press of one family of acts on Ask
+/// Daoris's screen, written to the home's <c>configured-access.json</c>; the state answering it as <c>helpGrants</c>. Edits the home only.
 /// </summary>
 public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
 {

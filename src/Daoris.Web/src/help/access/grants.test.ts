@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GRANTS, grantState } from './grants';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
 
-// Restricted mode's configured access, read from the code. Each grant's
-// operations and how each is chosen, its default, and where an agent cannot be held to it, so the screen never shows a grant
-// in force that the agent would not keep.
+// Restricted mode's configured access: the screen never shows a grant in force that the agent would not keep.
 
 const CLAUDE: HelpGrantAgent = { name: 'Claude Code', rules: true };
 const CODEX: HelpGrantAgent = { name: 'Codex', rules: false };
@@ -15,7 +13,6 @@ const choice = (id: HelpGrantId, chosen: string[], extra: Partial<HelpGrantChoic
 describe('the grants', () => {
   it('are the table’s four, in its order, the acts granted by family and the checkouts the driver’s to name', () => {
     expect(GRANTS.map((grant) => grant.id)).toEqual(['browser', 'checkouts', 'acts', 'shell']);
-    // Housekeeping and the chosen settings are families of acts, never grants of their own.
     expect(spec('acts').operations).toEqual(['pause', 'clean-up', 'discard', 'settings']);
     // One box a checkout, by its repository's name, as the driver serves them.
     expect(spec('checkouts').operations).toEqual([]);

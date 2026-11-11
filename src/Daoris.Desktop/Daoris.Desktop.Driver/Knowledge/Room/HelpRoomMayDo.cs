@@ -47,11 +47,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
         if (machine.Acts.Count > 0) text.Append(HelpRoomFamilies.Granted(machine.Acts));
-        // A repository question otherwise meets a shell refused before it ran, then a guess at the
-        // repository's branches presented as its tree, or a turn spent on a ticket's URL,
-        // refused the same way. Said plainly, so none of them happens. The checkouts reading
-        // across allows are read through one typed tool Daoris judges at each call, on
-        // every agent, which is still no shell; so the room names no path, which no tool of its takes.
+        // A repository question otherwise meets a shell refused before it ran, then a guess at the repository's branches
+        // presented as its tree, or a turn spent on a ticket's URL. Said plainly, so none happens. The checkouts reading across
+        // allows are read through one typed tool Daoris judges at each call, still no shell; so the room names no path.
         var reads = machine.Reads.Where(read => !machine.CheckoutsOff.Contains(read.Name, StringComparer.OrdinalIgnoreCase)).ToList();
         var off = machine.Reads.Where(read => !reads.Contains(read)).Select(read => $"`{read.Name}`").ToList();
         if (reads.Count > 0)
@@ -94,8 +92,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
-        // A plugin's server reaches it only where declared for it, and only its declared tools are
-        // allowed; what such a tool does outside Daoris is the plugin's, and Daoris itself still changes only by a proposal.
+        // A plugin's server reaches it only where declared for it, and only its declared tools are allowed.
         if (machine.PluginServers.Count > 0)
         {
             text.Append("Plugins installed here hand you these servers, as the person approved them. Call only the tools listed for\n");
@@ -114,9 +111,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
         }
 
-        // A manifest describes and grants nothing: a server waiting for the person's approval is handed nothing.
-        // A server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
-        // once at the start, and the helper proposes the approval rather than only opening the page.
+        // A manifest grants nothing: a server waiting for approval is handed nothing. What it would have, and where it is
+        // approved, is said once at the start, and the helper proposes the approval rather than only opening the page.
         if (machine.PluginServersWaiting.Count > 0 || machine.PluginServersOffered.Count > 0)
         {
             static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));

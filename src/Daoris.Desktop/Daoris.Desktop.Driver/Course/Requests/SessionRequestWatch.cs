@@ -17,9 +17,8 @@ namespace Daoris.Driver;
 /// for whatever the watcher missed. The folder hears a request or a press arriving, never what a look writes there itself (a
 /// take, an answer, a removal: <see cref="Hears"/>), so a look never wakes the next.</para>
 ///
-/// <para>The shell's loop and the headless host's run one each, with the registry their conversations and driven sessions
-/// share. A terminal's <c>daoris chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
-/// it stops with its own Ctrl+C.</para>
+/// <para>The shell's loop and the headless host's run one each. A terminal's <c>daoris chat</c> runs none: a stop asked of its
+/// session is withdrawn after the wait, and it stops with its own Ctrl+C.</para>
 ///
 /// <para><b>A terminal's words</b> are a say, handed to <see cref="Say"/> and answered beside the request. A
 /// say for a session this registry runs is this loop's; one for a session nothing on this machine runs is any loop's whose
@@ -44,13 +43,11 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private readonly Func<ServiceClient?> _service;
     private readonly Func<DateTimeOffset> _clock;
 
-    // A say's two questions: whether this registry hears the session's words, a driven session's inbox among them,
-    // and whether a process for it lives anywhere on this machine. The seams answer both by what runs here.
+    // A say's two questions: whether this registry hears the session's words, and whether a process for it lives on this machine.
     private readonly Func<string, bool> _hears;
     private readonly Func<string, bool> _aliveHere;
 
-    // The sessions being honoured now, each its claim's end, and those a look found more for while claimed. Held only to
-    // read and change these, never across a say, a stop or the ledger.
+    // The sessions being honoured now, each its claim's end, and those a look found more for while claimed; never held across a say.
     private readonly object _gate = new();
     private readonly Dictionary<string, Task> _claimed = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _again = new(StringComparer.OrdinalIgnoreCase);
@@ -75,7 +72,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
     /// <summary>
     /// Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's
-    /// (<c>chain.fired</c>); and each chosen setting's outcome (<c>help.setting</c>); none by default.
+    /// (<c>chain.fired</c>); none by default.
     /// </summary>
     public MachineLog? Log
     {

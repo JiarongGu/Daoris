@@ -14,9 +14,7 @@ public enum ToolClass
 }
 
 /// <summary>
-/// Every tool the connector registers, and its class. A census
-/// (<c>ToolClassesTests</c>) holds it to the registration, so a tool added later has no class, and is refused to a child, until
-/// it is given one here.
+/// Every tool the connector registers, and its class; <c>ToolClassesTests</c> holds it to the registration.
 /// </summary>
 /// <remarks>
 /// The reads, including <c>line_read</c> and <c>handback_read</c>, which read records and move nothing, and

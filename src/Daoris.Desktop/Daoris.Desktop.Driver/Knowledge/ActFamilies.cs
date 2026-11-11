@@ -1,10 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The families of Daoris's acts a person may grant Ask Daoris in restricted mode (<see cref="ConfiguredAccess.Acts"/>), the one shape
-/// configured access grants: each names the driver's routes it covers, and a proved press of one of them runs with no card, as the
-/// person's own, where its family is granted. A route in no family is asked, as every press is by default; a look is a read and
-/// asks no grant.
+/// The families of acts a person may grant Ask Daoris in restricted mode (<see cref="ConfiguredAccess.Acts"/>): each names the routes
+/// it covers, and a proved press of one runs with no card, as the person's own. A route in no family is asked; a look asks no grant.
 /// </summary>
 public static class ActFamilies
 {
@@ -17,10 +15,7 @@ public static class ActFamilies
     /// <summary>One session branch discarded, <c>daoris tree remove &lt;session|branch&gt;</c>: kept where its judge keeps it.</summary>
     public const string Discard = "discard";
 
-    /// <summary>
-    /// The chosen settings: <c>daoris settings notify|cap|cooloff|quiet</c> and a session language, <c>daoris place language</c>;
-    /// never the mode, the grants, an account or a safeguard.
-    /// </summary>
+    /// <summary>The chosen settings, <c>daoris settings notify|cap|cooloff|quiet</c> and <c>daoris place language</c>; never the mode, grants or accounts.</summary>
     public const string Settings = "settings";
 
     /// <summary>The families this build grants, in the page's order.</summary>
