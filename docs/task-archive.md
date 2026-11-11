@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The fast halves' reds after the day's merges (2026-11-11)
+
+> **CI reds, fast halves** (tools, driver, modules, web): Outcome: the lane table reaches the rehearsal's `rehearsal-apart.mjs` and the moved landing-says fixture from the suites that read them; the review and second-opinion rules' rows no longer name the service; `helpBeyond` is served through `shell.ts`; the place usage names the gone trees verb again while it still answers; the Help menu says *Change focus…*; the plan step's Chinese words carry 计划; the trees cases are gone or moved to the hold; the steward allow tests' stand-in registers the repository its hold names; the glossary drops the plugin kind's title and says 采纳 for accept (FIX-LOG, one entry per cause). Proof: each class filtered, `npm run quick`, `i18n:check`, `names:check --strict`, `test-map --check`, the web typecheck and the reach tool-tests.
+
+---
+
 ## PLACEWORK1c whole, and 1e's unattributed paths (2026-11-11)
 
 > **PLACEWORK1c's rest and 1e's part** (driver, service, web): Outcome: in a repository's own checkout a pull or promotion waits only for the lease's holder — a turn running, or a parked line with uncommitted paths of its own — and in a session's own tree for any session there, as before (`CheckoutBeside`; driving rule 12 rewritten to the design); a person's commit or stash releases a parked line's marked paths that no longer differ from HEAD and the place once none is left, and the person's acts in the checkout are refused only while a turn runs (git rule 39); a path the turn changed that none of its tools named is listed above the session's review and told to the line at its next turn. Proof: real-git tests for the pull and promotion wait (two seen failing first), the service lease tests and a real-git release test, the review's web test (seen failing first).

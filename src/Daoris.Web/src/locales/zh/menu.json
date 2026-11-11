@@ -44,6 +44,7 @@
   "menu.terminal.new": "新建终端",
   "menu.terminal.show": "显示终端",
   "menu.help.quickAsk": "快速提问",
+  "menu.help.changeFocus": "更改聚焦…",
   "menu.setup": "开始使用",
   "menu.help.shortcuts": "键盘快捷键",
   "menu.help.update": "更新",
