@@ -135,7 +135,7 @@ sentences (and each row's exit and the files it wrote). The recorded implementat
 The rows carry a `changed` field where the C# verb deliberately says something else than the TypeScript one (76 of the agents' rows,
 21 of the workflows', 19 of the choices', 14 of the plugins', 7, 5, 1): a recording whose expected words were hand-edited is no longer
 a recording. Whether each `*CommandTests` already holds the exit and the files-after is not checked (§7); `DriverChoicesTextTests` is
-red on main (`docs/2026-11-11-cleanup-census.md` §6). Also 19 shared-table fixtures say in `about` that "the CLI's X.ts and the
+red on main (`docs/archive/2026-11-11-cleanup-census.md` §6). Also 19 shared-table fixtures say in `about` that "the CLI's X.ts and the
 driver's Y both read it" where the CLI side is gone: only the wording is stale.
 
 ### 2c. Other spelling pins
@@ -152,7 +152,7 @@ Each stands on a condition not met, so none is a cut now: the migration steps' t
 the older build's move boxes) names no ending row, which is a gap to close in the cut, not a deletion; the service's store-migration
 cases (`SessionDoorColumnTests`, `MemoryAuthorColumnTests`, four `*_migrated_in_place`) cover stores still in the wild.
 
-**Correction to `docs/2026-11-11-cleanup-census.md` §1:** it says the text fixtures hold the `trees` refusal. They do not: `trees`
+**Correction to `docs/archive/2026-11-11-cleanup-census.md` §1:** it says the text fixtures hold the `trees` refusal. They do not: `trees`
 occurs twice in `driver-choices-text.json` (as a kind name, `keep trees`) and never in `driver-workflows-text.json`; the proof is
 `DriverChoicesCommandTests.Trees_is_no_verb_and_writes_nothing`.
 

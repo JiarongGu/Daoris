@@ -107,6 +107,25 @@ after:
 The present search gained a first hit; over the whole floor a shorter area loses one place within three to the history around
 it, which the present-first search (M2) answers and a cut cannot. The largest area is now another, still uncut.
 
+**The next three areas cut (2026-11-12).** Workflows, review and landing went from 15,216 words (99 KB) to 5,421, roles and
+supervision from 12,670 (84 KB) to 5,558 and plugins from 7,361 (51 KB) to 4,303, each rule kept under its number. The first two
+stay above 4,500: sixty and sixty-two rules, eleven of the first's lifted out of its parts table, where they had been told as
+files. The mechanisms the designs already hold (the arriving git kinds, an agent supervisor's attempt, the second check's
+packet, the events relay) are named there; the packet-only reader's measurements went to D272's note. A rule cut to fewer words
+lost the words its question is asked in (*which workflow does a chain's work follow*), and its first hit with them, until its own
+phrasing came back. `tools/read-path-bench.mjs`, before and after:
+
+| | Before | After |
+|---|---|---|
+| Floor over the repository as it is: first, within three, hits from history | 1/12, 4/12, 25/36 | 1/12, 5/12, 24/36 |
+| Floor less history: first, within three | 5/12, 10/12 | 5/12, 10/12 |
+| Floor over the present alone: first, within three | 10/12, 11/12 | 10/12, 11/12 |
+| An area, median and largest | 29.8 KB, 96.9 KB | 29.3 KB, 53.3 KB |
+| The bytes at a change's start, at the median area and the largest | 56.5 KB, 132.0 KB | 55.9 KB, 88.2 KB |
+
+The largest area, and with it the largest change's start, fell by 44 KB; the median moved little, since the median area was
+already cut.
+
 ## 4. The candidates
 
 1. **A present search** (adopted). A question about how something works now is searched in what is true now (the brief, the area
