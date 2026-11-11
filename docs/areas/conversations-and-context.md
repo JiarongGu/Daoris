@@ -346,9 +346,11 @@ of everything it handed, section by section.
 
 ## Open
 
-- **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
-  edit and retry, folded thinking and tools). Needs a design.
-- **ASKPUSH1:** a word typed mid-turn waits for the turn's end; nothing delivers it now, into the turn or by stopping it.
+- **CHATUX1:** the conversation surfaces lack a reading column, a composer that is one box with one primary press, per-message
+  handles (copy, retry, edit), in-field keys, a run that says what it did, and a session conversation's list by date, rename and pin.
+  Designed and proposed (`docs/2026-11-12-chat-ux-design.md`, D279 reserved); nothing built.
+- **ASKPUSH1:** *Send now* steers only on Claude Code over ACP and is absent from Ask Daoris's composer; elsewhere a separate keeping stop
+  does it. Designed with CHATUX1 (§5): one press on every door, the keeping stop with the word where a door takes nothing mid-turn.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);
