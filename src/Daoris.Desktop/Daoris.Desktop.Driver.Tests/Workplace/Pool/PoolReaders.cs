@@ -50,7 +50,6 @@ internal static class PoolReaders
         new(Driver + "Departments/Isolation/CopyTidy.cs", InUse, "c", "the copies' tidy's test of a copy's folder against the set"),
         new(Driver + "Loop/Watch/WatchRun.cs", InUse, "c", "the headless look's set"),
         new(Driver + "Loop/Watch/WatchNodes.cs", InUse, "c", "the rebase door's test of a run's tree against the set"),
-        new(Driver + "Help/HelpHousekeeping.cs", InUse, "c", "Ask Daoris's housekeeping set"),
         new(Driver + "Knowledge/HelpWorkFacts.cs", @"var inUse", "c", "the knowledge room's set from the active sessions"),
         new(Driver + "WorkOrders/Inventory/WorkInventories.cs", InUse, "c", "the inventory's set"),
         new(Driver + "WorkOrders/Inventory/WorkUnits.cs", InUse, "c", "the inventory's test of a tree against the set"),
