@@ -271,6 +271,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-11-agent-free-session-evidence.md`|Evidence: AGENTFREE1, a real session's abilities checked from inside
 |`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
 |`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
+|`2026-11-11-ask-daoris-second-check-design.md`|Accepted design: ASKSUPERVISE1, Ask Daoris's acts read by a second model (D272)
 
 ## UI, browser, tools and plugin contracts
 

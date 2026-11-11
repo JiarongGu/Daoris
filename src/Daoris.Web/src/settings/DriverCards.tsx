@@ -5,6 +5,7 @@ import type { StarterDoor } from '../help/starters';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
+import { CopyBoundSetting } from './machine/CopyBoundSetting';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type TerminalTier, TerminalTierSetting } from './machine/TerminalTierSetting';
@@ -30,6 +31,8 @@ export type DriverFacts = {
   /** The most files, and the most minutes, a folder's manifest read spends; absent where the answer lacks them. */
   manifestFiles?: number | null;
   manifestMinutes?: number | null;
+  /** The most megabytes a folder may hold to be copied for a session working apart; absent where the answer lacks it. */
+  manifestCopy?: number | null;
   /** This machine's sessions' access; absent where the answer lacks it. */
   machineAccess?: AccessLevel | null;
   /** This machine's git access as set; absent where the answer lacks it. */
@@ -53,8 +56,8 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onCoolOff: (minutes: number) => void;
   /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
   onQuiet?: (minutes: number) => void;
-  /** One bound of a folder's manifest read the person typed and left: whole, and not the one held. */
-  onManifest?: (bound: { files: number } | { minutes: number }) => void;
+  /** One bound of the manifest setting the person typed and left, the copy's in megabytes: whole, and not the one held. */
+  onManifest?: (bound: { files: number } | { minutes: number } | { copy: number }) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held. */
   onCap: (cap: number) => void;
   onTerminal?: (tier: TerminalTier) => void;
@@ -110,6 +113,11 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
               onFiles={(files) => onManifest({ files })}
               onMinutes={(value) => onManifest({ minutes: value })}
             />
+          )}
+
+          {/* The manifest setting's third bound beside its first two: how large a folder may be to be copied for a session set apart. */}
+          {typeof facts.manifestCopy === 'number' && onManifest && (
+            <CopyBoundSetting megabytes={facts.manifestCopy} onCopy={(copy) => onManifest({ copy })} />
           )}
 
           {/* How many sessions Daoris starts at once: the person's one dial for the machine,

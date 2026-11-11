@@ -43,7 +43,7 @@ public sealed class FolderCopyProcessTests : IDisposable
     private FolderCopy Copy(string record)
     {
         var copy = FolderCopies.Make(Home, "default", "reports", Place, ManifestBounds.Default).Copy!;
-        FolderCopies.Owned(Home, copy.Folder, record);
+        FolderCopies.Owned(Home, copy.Folder, record, null);
         return copy;
     }
 

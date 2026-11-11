@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1f's return made safe: refusals, the write window, a journal, the tidy (2026-11-11, D265's note)
+
+> **PLACEWORK1f, the return hardened** (driver, web): Outcome: a return refuses rather than guesses — a path outside the folder, a link or junction on either side, a file turned folder, a case-only rename — showing the path and what was found with *Keep yours* only; the folder's file is set aside and checked under an exclusive handle, so a write landing in the window, or a file another program holds open, is left and put to the person; each file's decision and effect is journaled with the bytes it replaces kept beside it, so a return stopped at any boundary ends right when run again; the copy bound has its Settings row and the look tidies an orphan copy (`ICopyTidying`, `OrphanCopies`), said in its report; the three choices live in `ReturnChoices`, within the structure rule. Proof: `FolderReturnRefusalTests`, `FolderReturnProcessTests` (a real process holding a file open, junctions), the journal's stop at every boundary, `CopyTidyTests`, the web tests in both languages, each seen failing first.
+
+---
+
 ## ASKSCOPE2's last counts and a restored card's place line, built by Codex (2026-11-11)
 
 > **ASKSCOPE2, the rest of its code** (service, modules): Outcome: the registry, a knowledge get, the summary and the memory search say how many they found through `CallFound`, one way; a waiting press's record keeps the card's place and focus, so a card brought back after a restart draws the same *outside this conversation's focus* line (`PipeWaiting`, `PipeRestore`). Built by Codex (gpt-6.1-sol) in its sandbox, which could not write git's metadata; reviewed and committed by the steward. Proof: 50 service tests (`McpHelpCircleTests`, `McpMemoryToolsTests`) and 86 modules tests (`PipeDelegateTests`' restored card), the new ones seen failing first; `npm run quick`.

@@ -71,10 +71,16 @@ public static class FolderCopies
         return new(copy, null);
     }
 
-    /// <summary>Record <paramref name="record"/> as working in the copy at <paramref name="folder"/>; nothing where it is no copy.</summary>
-    public static void Owned(string home, string folder, string record)
+    /// <summary>Record <paramref name="record"/> as working in the copy at <paramref name="folder"/> for <paramref name="run"/>, if it is one.</summary>
+    public static void Owned(string home, string folder, string record, string? run)
     {
-        if (At(home, folder) is { } copy && !copy.Records.Contains(record, StringComparer.Ordinal)) Save(copy with { Records = [.. copy.Records, record] });
+        if (At(home, folder) is not { } copy) return;
+        var owned = copy with
+        {
+            Records = copy.Records.Contains(record, StringComparer.Ordinal) ? copy.Records : [.. copy.Records, record],
+            Runs = run is null || copy.Runs.Contains(run, StringComparer.Ordinal) ? copy.Runs : [.. copy.Runs, run],
+        };
+        if (owned.Records.Count != copy.Records.Count || owned.Runs.Count != copy.Runs.Count) Save(owned);
     }
 
     /// <summary>The copy whose folder <paramref name="folder"/> is, or null for any other folder.</summary>
@@ -91,15 +97,16 @@ public static class FolderCopies
     /// <summary>The newest copy one of <paramref name="records"/> worked in, or null.</summary>
     public static FolderCopy? Of(string home, IEnumerable<string> records)
     {
-        var places = DaorisHome.Entry(home, HomeEntry.Places);
-        if (!Directory.Exists(places)) return null;
         var asked = records.ToHashSet(StringComparer.Ordinal);
-        return Directory.EnumerateFiles(places, "c-*.json", SearchOption.AllDirectories)
-            .Select(file => (File: file, Copy: Read(file)))
-            .Where(each => each.Copy is { } copy && copy.Records.Any(asked.Contains))
-            .OrderByDescending(each => File.GetLastWriteTimeUtc(each.File))
-            .Select(each => each.Copy)
-            .FirstOrDefault();
+        return All(home).Where(copy => copy.Records.Any(asked.Contains)).OrderByDescending(copy => File.GetLastWriteTimeUtc(copy.Folder + ".json")).FirstOrDefault();
+    }
+
+    /// <summary>Every copy of every place in the home, by its sidecar.</summary>
+    public static IEnumerable<FolderCopy> All(string home)
+    {
+        var places = DaorisHome.Entry(home, HomeEntry.Places);
+        if (!Directory.Exists(places)) return [];
+        return Directory.EnumerateFiles(places, "c-*.json", SearchOption.AllDirectories).Select(Read).OfType<FolderCopy>();
     }
 
     /// <summary>The manifest of the folder read at <paramref name="copy"/>'s making: its return's base.</summary>
@@ -154,12 +161,14 @@ public static class FolderCopies
 
 /// <summary>A copy of a folder department, made for its sessions working apart.</summary>
 /// <param name="Id">Its name, <c>c-&lt;8 hex&gt;</c>: its folder's, and its base manifest's record in the place's store.</param>
-/// <param name="Folder">Where the copy is.</param>
 /// <param name="Root">The folder it is a copy of, which its return writes into.</param>
 public sealed record FolderCopy(string Id, string Folder, string Root, string Workspace, string Department)
 {
     /// <summary>The records that worked in it.</summary>
     public IReadOnlyList<string> Records { get; init; } = [];
+
+    /// <summary>The runs those records worked for, whose end and return the tidy reads (<see cref="CopyTidy"/>).</summary>
+    public IReadOnlyList<string> Runs { get; init; } = [];
 }
 
 /// <summary>A copy made, or the words that refuse it.</summary>

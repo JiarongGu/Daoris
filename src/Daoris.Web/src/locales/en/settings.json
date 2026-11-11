@@ -67,5 +67,12 @@
   "settings.manifest.setFiles": "Daoris now follows a folder of up to {{count}} file.",
   "settings.manifest.setFiles_other": "Daoris now follows a folder of up to {{count}} files.",
   "settings.manifest.setMinutes": "Daoris now spends up to {{count}} minute listing a folder's files.",
-  "settings.manifest.setMinutes_other": "Daoris now spends up to {{count}} minutes listing a folder's files."
+  "settings.manifest.setMinutes_other": "Daoris now spends up to {{count}} minutes listing a folder's files.",
+  "settings.manifest.copyLabel": "A folder is copied for a session working apart up to",
+  "settings.manifest.copyTerminal": "Also `daoris settings manifest copy <megabytes>`, from 1 MB — the same file, either door.",
+  "settings.manifest.copyBody": "A department whose workflow sets its sessions apart gives each a copy of its folder, brought back file by file after your review. A folder past this size, past 20,000 files, or with less than twice its size free on the disk is not copied: its session waits and says how to go on, and never works in your folder in the copy's place. Raise it to copy larger folders.",
+  "settings.manifest.copy": "Most megabytes a folder may hold to be copied",
+  "settings.manifest.copyUnit": "MB",
+  "settings.manifest.setCopy": "Daoris now copies a folder of up to {{count}} MB for a session working apart.",
+  "settings.manifest.setCopy_other": "Daoris now copies a folder of up to {{count}} MB for a session working apart."
 }

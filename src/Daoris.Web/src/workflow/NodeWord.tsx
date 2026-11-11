@@ -4,7 +4,7 @@ import { sentence } from '../locales/format';
 import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
-import { isReturnAct, RETURN_ACTS, ReturnChoice, waitingPaths } from './return/ReturnChoice';
+import { isReturnAct, RETURN_ACTS, ReturnChoice, returnWaits } from './return/ReturnChoice';
 import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
@@ -60,7 +60,7 @@ export function NodeWord({ run, step, onWord }: {
   }
 
   const acts = (step.acts ?? []).filter((act): act is NodeAct => ACTS.includes(act as NodeAct));
-  const choosing = acts.some(isReturnAct) && waitingPaths(step).length > 0;
+  const choosing = acts.some(isReturnAct) && returnWaits(step);
   if (!onWord || acts.length === 0) return null;
 
   const close = () => { setAsking(null); setWords(''); };

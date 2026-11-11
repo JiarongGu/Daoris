@@ -25,6 +25,10 @@ public sealed class ReturnDoor(
         return true;
     });
 
+    /// <summary>The folder of a run's return of a copy, beside the run's record: its journal, and what it replaced under <c>kept/</c>.</summary>
+    public static string JournalOf(string home, string unit, string copy) =>
+        Path.Combine(NodeRecordFiles.FolderOf(home), NodeRecordFiles.KeyOf(unit) + ".return", copy);
+
     /// <summary>Completes once every return started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 
@@ -48,11 +52,15 @@ public sealed class ReturnDoor(
                 return;
             }
 
-            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home));
-            if (returned.Waiting.Count > 0)
+            var returned = FolderReturn.Run(home, copy, start.Choices, ManifestBounds.Of(home), JournalOf(home, start.Unit.Id, copy.Id));
+            if (returned.Waiting.Count > 0 || returned.Refused.Count > 0)
             {
-                log?.Invoke($"return  {start.Unit.Id}: {returned.Waiting.Count} file(s) changed in both the folder and copy `{copy.Id}` wait for your choice: {string.Join(", ", returned.Waiting)}.");
-                Settle(start, ReturnNode.BothChanged, string.Join("\n", returned.Waiting));
+                if (returned.Waiting.Count > 0)
+                    log?.Invoke($"return  {start.Unit.Id}: {returned.Waiting.Count} file(s) changed in both the folder and copy `{copy.Id}` wait for your choice: {string.Join(", ", returned.Waiting)}.");
+                if (returned.Refused.Count > 0)
+                    log?.Invoke($"return  {start.Unit.Id}: {returned.Refused.Count} file(s) of copy `{copy.Id}` are not brought back, as found: "
+                        + string.Join(", ", returned.Refused.Select(each => $"{each.Key} ({each.Value})")) + "; each waits for your Keep yours.");
+                Settle(start, ReturnNode.BothChanged, ReturnNode.HoldsOf(returned));
                 return;
             }
 
