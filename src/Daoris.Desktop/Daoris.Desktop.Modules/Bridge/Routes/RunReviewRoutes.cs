@@ -14,14 +14,16 @@ public sealed class RunReviewRoutes(DriverLoop loop)
 
     /// <summary>The review of <c>run</c>, or of the run <c>session</c>'s quest is; <c>not-run</c> where none is bound here with a review.</summary>
     [DriverRoute("RUN_REVIEW", PipeClass.Open)]
-    [ByEvent("RUN_REVIEW", Untold = "a run's review records and node record, which the runtime's pass writes, and the service's quests a session's run is read by")]
+    [ByEvent("RUN_REVIEW", Untold = "a run's review records and node record, which the runtime's pass writes, the supervisor's decisions in memory, and the service's quests a session's run is read by")]
     private async Task<object?> RunReviewAsync(RunReviewRead press, CancellationToken cancellationToken)
     {
         var run = string.IsNullOrWhiteSpace(press.Run) ? null : press.Run.Trim().TrimStart('#');
         if (run is null && !string.IsNullOrWhiteSpace(press.Session)) run = await RunOfAsync(press.Session.Trim(), cancellationToken).ConfigureAwait(false);
         if (run is null && string.IsNullOrWhiteSpace(press.Session)) throw new DriverException("a run's review is read for a `run` or a `session` — name one of them.");
         var review = run is null ? null : await Task.Run(() => RunReviews.Read(_loop.Home, run, press.Attempt > 0 ? press.Attempt : null), cancellationToken).ConfigureAwait(false);
-        return review is null ? new { Run = run, Refused = RunNodeWords.NotRun } : review;
+        if (review is null) return new { Run = run, Refused = RunNodeWords.NotRun };
+        var decided = _loop.Supervisor.LandingOn(review.Run, review.Node, review.Record?.Attempt ?? review.Standing);
+        return review with { Supervisor = RunReviewSupervisor.Of(decided, review.Record) };
     }
 
     /// <summary>The text of <c>path</c> on <c>side</c> of the run's record at <c>attempt</c>, or why it is not drawn (<see cref="ReviewContent"/>).</summary>

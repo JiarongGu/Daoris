@@ -14,9 +14,12 @@ public static class SupervisorReviewBinding
     public static string? RevisionOf(string home, string run, string node, int attempt) => ReviewRecords.Read(home, run, node, attempt)?.Revision;
 
     /// <summary>Why a decision naming <paramref name="revision"/> no longer decides the attempt's review (<see cref="Moved"/>); null where it may go on.</summary>
-    public static string? Refused(string home, string run, string node, int attempt, string? revision)
+    public static string? Refused(string home, string run, string node, int attempt, string? revision) =>
+        ReviewRecords.Read(home, run, node, attempt) is { } record ? Refused(record, revision) : null;
+
+    /// <summary>Why a decision naming <paramref name="revision"/> does not decide <paramref name="record"/> (<see cref="Moved"/>); null where it does.</summary>
+    public static string? Refused(ReviewRecord record, string? revision)
     {
-        if (ReviewRecords.Read(home, run, node, attempt) is not { } record) return null;
         if (revision is null) return record.Kind == ReviewKinds.Branch ? null : Moved;
         return ReviewAccepts.Names(revision, record.Revision) ? null : Moved;
     }
