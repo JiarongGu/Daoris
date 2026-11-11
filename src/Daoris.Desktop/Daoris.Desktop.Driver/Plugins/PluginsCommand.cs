@@ -29,6 +29,7 @@ public static class PluginsCommand
         + "       daoris plugin activity <id> [--since <30m|2h|3d>] [--json]\n"
         + "       daoris plugin approve <id> <server> [--reads-only | --writes <tool,…>]\n"
         + "       daoris plugin withdraw <id> <server>\n"
+        + "       daoris plugin tools --session <id> [--repository <id>] [--workspace <name>] [--language en|zh]\n"
         + InstanceDoor.WaitUsage;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)

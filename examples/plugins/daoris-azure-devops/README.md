@@ -141,6 +141,15 @@ API. A refused one is noted for `status`. The plugin is not started where `origi
 denies Write. `DAORIS_HOST_API` names another base address in place of `https://dev.azure.com` and release management's, as the
 test's stand-in does.
 
+## Tools for an agent
+
+Four commands are marked `tool`, so a session at a place where the plugin's tools are on calls them through its `daoris-plugins`
+server: `status`, and the three an agent working a pull-request step needs, each naming the repository by its origin's address:
+`create-pull-request` (a pushed branch, its target, a title and a description; the active one found again), `pull-request-status` (by
+its address or id, or from its branch) and `complete-pull-request` (by `merge`, `squash`, `rebase` or `rebase-merge`, the source
+branch deleted where asked, the repository's policies still deciding). Each answers its pull request's id, address, state, branches
+and merge commit as `data` (`pull-request-commands.mjs`).
+
 ## What it needs
 
 - **Node.js**, as `plugin.json` declares under `tools`: the process, and its calls to the API.
