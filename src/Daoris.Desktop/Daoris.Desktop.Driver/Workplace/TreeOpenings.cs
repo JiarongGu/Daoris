@@ -82,7 +82,6 @@ internal static class TreeOpenings
     /// <param name="unused">Whether the open made the tree a moment ago and nothing is recorded, copied or told of it: the opening's own
     /// refusal of a tree git binds elsewhere lets go of it so, since git's own removal names a tree by its record and deletes that
     /// folder alone, where the look would leave it for the person to meet.</param>
-    /// <param name="home">The home whose files record for the tree goes with it, once its folder is gone.</param>
     internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false, string? home = null)
     {
         var done = CancellationToken.None;

@@ -1,6 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>The usage's groups from <c>brainstorm</c> to <c>notices</c>.</summary>
 internal static class DriveUsageRecords
 {
     public const string Text =

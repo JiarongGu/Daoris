@@ -135,11 +135,7 @@ public sealed class HelpRoomDoorsTests
         Assert.Null(chosen.Ask);
     }
 
-    /// <summary>
-    /// The room teaches one way. No door names a conversion, which no verb performs; no door sets a landing rule, since a place lands as
-    /// its workflow's <c>land</c> step says; a workflow is made from a default or another saved one, never edited, and `current` is chosen
-    /// for no development route.
-    /// </summary>
+    /// <summary>The room teaches one way: no conversion, no landing rule set, no edited workflow, and `current` is no development route.</summary>
     [Fact]
     public void The_room_teaches_the_converted_way_and_names_no_conversion()
     {

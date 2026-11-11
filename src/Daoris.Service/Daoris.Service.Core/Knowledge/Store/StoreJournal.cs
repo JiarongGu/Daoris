@@ -12,7 +12,6 @@ namespace Daoris.Knowledge;
 /// </remarks>
 internal static class StoreJournal
 {
-    /// <summary>The bytes the log is cut back to once a checkpoint has emptied it, so one big commit does not keep its size for good.</summary>
     internal const long LogLimit = 32L * 1024 * 1024;
 
     /// <summary>

@@ -172,7 +172,8 @@ public static class WorkflowOperations
 
     /// <summary>What <c>new --from current:&lt;repository&gt;</c> is told: the conversion is the one door for what a place follows under Current.</summary>
     public const string CurrentRetired =
-        "retired: a workflow is no longer copied from a repository's Current by hand. Nothing was written.";
+        "retired: a workflow is no longer copied from a repository's Current by hand. "
+        + "Nothing was written.";
 
     /// <summary><c>&lt;id&gt;</c> or <c>&lt;id&gt;@&lt;version&gt;</c>.</summary>
     public static (string Id, int? Version) Named(string? token)

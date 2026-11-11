@@ -22,7 +22,6 @@ internal static class HelpDoorRowsSetup
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
             "Agents → Setup → *Set up…* (adoption ticked)",
             "`daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`"),
-        // The workspace plan's terminal door; its screen and Ask Daoris's doors are owed.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",
             "(no screen yet)",

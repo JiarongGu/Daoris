@@ -59,7 +59,6 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
         var found = run.Required(id);
         var (version, _) = BaseOf(found);
         var held = WorkflowTerminal.Parsed(run.FileOperand(run.Argv[3]));
-        // A graph: the file's own, a version's of schema 2, or a workflow's newest version's.
         var versions = held is JsonObject record && record["versions"] is JsonArray listed ? listed : null;
         if (GraphIn(versions is null ? held : versions.Count > 0 ? versions[^1] : null, out var graph)) return ChangeGraph(found, version, graph);
         if (held is JsonArray || (held is JsonObject holder && holder["steps"] is JsonArray)

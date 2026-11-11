@@ -212,7 +212,6 @@ internal static class TreeFilesRecord
         return true;
     }
 
-    /// <summary>The record of a tree that is gone, and the install logs written under its id (<see cref="DependencyCommands"/>).</summary>
     internal static void Forget(string home, string tree)
     {
         try
