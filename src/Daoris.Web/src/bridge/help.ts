@@ -1,11 +1,7 @@
-import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { useSyncExternalStore } from 'react';
-import { byTool, type ToolDoor } from '../agents/tools';
-import type { Session } from '../data/api';
-import { keys, useHelpSessions } from '../data/queries';
+import { keys } from '../data/queries';
 import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
-import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { type Place, placeSaid } from '../help/focus';
@@ -14,24 +10,17 @@ import { call } from './call';
 import { logEvent } from './log';
 import { usePollUnlessTold } from './state/published';
 import { askHeld } from './state/held';
-import { useHarnesses } from './agents/agents';
-
-// Ask Daoris: its conversation, the one readied ahead, and what it proposes.
 
 /**
  * Ask Daoris's conversation: the one this machine is running, carried on, or a new one in
  * its room. Refused in the driver's words while no agent is named for it (off until named).
- *
  * @remarks
  * The driver answers once the conversation is placed, `starting`: its room is read and its agent spawned
  * after, and the words said to it meanwhile wait as its queue, opening. A driver without this answers once it runs.
- *
  * Its route publishes the sessions it opened one among, and the state hub asks them again in every window.
- *
  * The press names the workspace its conversation is in: the caller reads the
  * window's at the press and hands it here, so a window that changes workspace while the start is under way moves nothing. None
  * is today's start, `default`'s, which the panel sends only where the machine holds no other workspace to choose.
- *
  * `finishing`: the one running is one the person finished, still winding up past the driver's wait; it is no
  * conversation to carry on, and a start asks again once it has ended.
  */
@@ -54,7 +43,6 @@ const NOTHING_READIED: HelpReadied = { readied: null, spoken: [] };
  * null. Kept by the page and never fetched, like `useConsidered`, so the panel's two hosts (the side bar
  * and Quick Ask) read one answer, and a host drawn again finds it still there. A refetch answers what is
  * already kept, so a refresh of every query does not forget it.
- *
  * @remarks
  * A conversation spoken in is never readied again: an opening that answers late, from the other host,
  * must not hide the conversation the person is talking in.
@@ -97,7 +85,6 @@ export const useHelpReadied = () => {
   };
 };
 
-/** Every conversation's proposals: what the state hub asks again when an Apply or a Not now publishes. */
 export const HELP_PROPOSALS = ['help-proposals'] as const;
 
 /**
@@ -125,53 +112,6 @@ const readProposals = (client: QueryClient, session: string) =>
     return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
   });
 
-/** A proposal against a draft, as the editor reads it: the card, its conversation, the draft it is told and who made it. */
-export type DraftCard = {
-  proposal: HelpProposal;
-  session: string;
-  /** The graph the conversation is told under the card's fingerprint; null where this window keeps none. */
-  base: Record<string, unknown> | null;
-  maker: { agent: string; models: string[] } | null;
-};
-
-/** Who made a proposal: the conversation's agent as a person calls it, its product else its tool's else its id, and the models it reported. */
-export function makerOf(session: Pick<Session, 'door' | 'ran'> | undefined, doors: readonly ToolDoor[]): DraftCard['maker'] {
-  if (!session) return null;
-  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.door === session.door);
-  return { agent: found?.door.product || found?.tool.product || session.door, models: [...(session.ran?.models ?? [])] };
-}
-
-/**
- * Ask Daoris's proposals against a draft of `place`: each conversation of this window that is told a draft asked
- * for its proposals, under the key Ask Daoris's own list reads, and the `draft` door's cards kept, the newest last, each with the graph it
- * is told and the agent and models of its conversation. Asked only while `enabled`, the editor showing.
- */
-export const useDraftProposals = (place: string, enabled: boolean): DraftCard[] => {
-  const { isAvailable } = useShenora();
-  const every = usePollUnlessTold(4000);
-  const client = useQueryClient();
-  const sessions = useSyncExternalStore(onTold, toldSessions);
-  const lists = useQueries({
-    queries: sessions.map((session) => ({
-      queryKey: [...HELP_PROPOSALS, session],
-      queryFn: () => readProposals(client, session),
-      enabled: isAvailable && enabled,
-      refetchInterval: enabled ? every : false as const,
-    })),
-  });
-  const found = sessions.flatMap((session, at) => (lists[at]?.data ?? [])
-    .filter((proposal) => proposal.kind === 'workflow' && proposal.workflow?.draft && proposal.workflow.scope === place)
-    .map((proposal) => ({ proposal, session })));
-  // The roster only names the agent that made a proposal, so it is read once the editor shows and a proposal is there.
-  const roster = useHarnesses({ enabled: enabled && found.length > 0 });
-  const records = useHelpSessions(false, enabled && found.length > 0);
-  const doors = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  return found.map(({ proposal, session }) => ({
-    proposal, session, base: toldGraph(proposal.workflow!.draft!),
-    maker: makerOf((records.data ?? []).find((record) => record.id === session), doors),
-  }));
-};
-
 /**
  * What the person's Apply did: the driver's sentence, whether it is applied, where a go
  * takes the person, and the agent action an update or a pin started.
@@ -184,8 +124,6 @@ export type HelpSettled = {
    * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
    */
   go?: HelpPlace | null;
-  /** The card still stands for another press: a draft's change opened in the editor, which settles nothing. A host without it answers none. */
-  stands?: boolean;
   /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */
   changed?: boolean;
 };
@@ -199,18 +137,15 @@ export const shownRevision = (client: QueryClient, id: string): string | undefin
     .flatMap(([, list]) => (Array.isArray(list) ? list : []))
     .find((each) => each.id === id)?.revision;
 
-/** The history's key: every listing under it, so a change asks each again, a delete through Sessions' own hook among them. */
 export const HELP_HISTORY = ['help-conversations'] as const;
 const HISTORY = HELP_HISTORY;
 
-/** A history's pages as the one list the page shows: stable, so its answer is read again only when a page changes. */
 const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPages(data.pages);
 
 /**
  * Ask Daoris's conversations, pinned first and then the newest, or those whose name or words hold `search`, a page
  * at a time: `fetchNextPage` asks for the one at the driver's `next`, and `data` is every page read, joined, each
  * conversation once. Asked only while `enabled`, and again whenever a change to one is made here.
- *
  * @remarks
  * An offset points into one order, which a change moves. Asked again, an infinite query asks from
  * offset 0 and takes each next offset from the page it just read, as many pages as it held, so the rows after a change are read
@@ -239,7 +174,6 @@ export const useHelpConversations = (search: string, enabled = true, workspace: 
   });
 };
 
-// The mode's and the receipts' shapes live in `help/access/wired`, where the panel's molecules take them (the presentational boundary).
 import type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill } from '../help/access/wired';
 export type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill };
 
@@ -297,7 +231,6 @@ export function wiredAnswer(answer: unknown, session: string): HelpWired {
   return { session: textOf(held.session) ?? session, recorded: held.recorded === true && receipts.length > 0, receipts };
 }
 
-/** The receipts' key: a conversation's under it. */
 export const HELP_WIRED = ['help-wired'] as const;
 
 /**
@@ -390,7 +323,6 @@ export const useHelpStartFrom = () =>
 
 /**
  * The person's Apply and Not now on a proposal: the result goes back into the conversation.
- *
  * What it changed is published by its route, and the state hub asks it again in every window: a Not now the
  * proposals; an Apply every family a door it holds may move, the driver's file and what reads it (the workflow tabs' Current
  * and runs among them), an ask, a quest or a session it made or deleted, an account's settings or an agent's pin, a plugin, the
@@ -399,21 +331,12 @@ export const useHelpStartFrom = () =>
 export const useSettleHelp = () => {
   const client = useQueryClient();
   return useMutation({
-    // A draft card's Apply from its editor names each change taken into the draft and each left: that settles it.
-    mutationFn: (settle: { id: string; apply: boolean; taken?: readonly string[]; left?: readonly string[] }) =>
+    mutationFn: (settle: { id: string; apply: boolean }) =>
       (settle.apply
-        ? call(
-          'HELP_APPLY',
-          {
-            id: settle.id, revision: shownRevision(client, settle.id),
-            ...(settle.taken ? { taken: [...settle.taken], left: [...(settle.left ?? [])] } : {}),
-          })
+        ? call('HELP_APPLY', { id: settle.id, revision: shownRevision(client, settle.id) })
         : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
-    onSuccess: (answer, settle) => {
-      // Whether Ask Daoris's proposals help: the person's Apply or Not now, once it settles the proposal; a standing card has not.
-      if (!answer?.stands) logEvent('proposal.settled', { applied: settle.apply });
-    },
+    onSuccess: (_answer, settle) => logEvent('proposal.settled', { applied: settle.apply }),
   });
 };

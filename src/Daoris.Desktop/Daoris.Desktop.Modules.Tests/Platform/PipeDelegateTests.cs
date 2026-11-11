@@ -89,6 +89,42 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(0, driver.Ran("ASK_NEW"));
     }
 
+    [Theory]
+    [InlineData(HelpModes.Full)]
+    [InlineData(HelpModes.Restricted)]
+    public async Task Ask_Daoris_s_workflow_draft_is_saved_in_full_access_and_asks_on_the_design_s_card_in_restricted(string mode)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var graph = new { schemaVersion = 2, entries = new[] { "landing" }, end = "landing", nodes = new[] { new { id = "landing", kind = "land", version = 1, reach = "performed" } }, wires = Array.Empty<object>() };
+        var grounds = new StubGrounds();
+        grounds.Reads["WORKFLOW_SAVE"] = _ => new { id = "docs", done = true, version = 2, appended = true };
+        grounds.Reads["WORKFLOW_SHOW"] = _ => new { id = "docs", name = "Docs", version = 1, body = graph };
+        pipe.Grounds = grounds;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = mode;
+
+        var id = await SendProvedAsync(client, "WORKFLOW_SAVE", new { id = "docs", graph, @base = 1, authorize = Array.Empty<string>() }, "h1", key, nonce);
+
+        if (mode == HelpModes.Full)
+        {
+            Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+            Assert.Equal(1, driver.Ran("WORKFLOW_SAVE"));
+            Assert.Empty(pipe.Confirmations.Now().Waiting);
+            return;
+        }
+
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(("h1", true, "workflow-save-edit"), (card.Asker.Session, card.Asker.Help, card.View?.Kind));
+        Assert.NotNull(card.View!.Workflow);
+        Assert.Equal(0, driver.Ran("WORKFLOW_SAVE"));
+    }
+
     [Fact]
     public async Task A_restricted_Ask_Daoris_press_asks_on_one_card_naming_Ask_Daoris_and_runs_on_the_person_s_yes()
     {

@@ -42,8 +42,7 @@
     "mcp__daoris-knowledge__registry",
     "mcp__daoris-knowledge__review_ready",
     "mcp__daoris-knowledge__review_serve",
-    "mcp__daoris-knowledge__system_plan",
-    "mcp__daoris-knowledge__workflow_propose"
+    "mcp__daoris-knowledge__system_plan"
   ],
   "hardDeny": "Doing anything but reading this folder and giving one answer while taking part in a brainstorm: editing, writing, moving or deleting a file in any form; running any command or program; reading a file outside this folder; reaching the web or any network; calling any tool but the one result tool; committing, pushing, deploying or publishing; and asking another agent anything. A brainstorm's pass reads its packet and gives its answer, and changes nothing."
 }

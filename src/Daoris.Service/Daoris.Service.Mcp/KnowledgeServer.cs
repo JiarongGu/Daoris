@@ -36,7 +36,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         typeof(BrainstormTools),
         typeof(HelpGoTool),
-        typeof(HelpWorkflowTool),
         typeof(CheckoutTools),
         typeof(SystemPlanTools),
     ];

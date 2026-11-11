@@ -106,8 +106,6 @@ function RepositoryWorkflow({ place, notify, onConvert, landingAsked }: {
         view: place.view,
         onView: place.onView,
         onOpenSection: place.onOpenSection,
-        opens: place.edit,
-        onOpened: place.onEdited,
         held: place.held,
         onHold: place.onHold,
         onConvert,
@@ -162,8 +160,6 @@ function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; not
         editor={editor}
         view={place.view}
         onView={place.onView}
-        opens={place.edit}
-        onOpened={place.onEdited}
         held={place.held}
         onHold={place.onHold}
         onConvert={onConvert}
@@ -183,7 +179,6 @@ function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; not
 
 /**
  * **A place's Sessions section**: how its sessions run. *This machine* holds none.
- *
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
 export function PlaceSessions({ place, notify, onOpenGit }: {

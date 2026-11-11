@@ -68,7 +68,6 @@ of everything it handed, section by section.
 | `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
-| `HelpWorkflowProposals` | `Help/Proposals/HelpWorkflowProposals.cs`, `HelpWorkflowDrafts.cs`, `HelpWorkflowRoutes.cs`, `HelpWorkflowCard.cs` | The `workflow` proposal: the hub, the draft door, the routes and the card each apart |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
 
 ## Its rules
@@ -263,9 +262,10 @@ of everything it handed, section by section.
     now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
     in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
     which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
-    another home goes on where it is shown, the window unmoved. Each of its turns' ends queues, on a task of its own that no turn,
-    press or start waits for (`AskDaorisTurnEnds`), the second check's selection of what the turn did that no card or hold put to
-    the person (`AskDaorisSelection`, roles rule 58): a turn runs from the person's words where the session took them to its
+    another home goes on where it is shown, the window unmoved. Each of its turns' ends, heard as its log's `turn` event in a
+    conversation whose start kept a receipt (`AskDaorisWatch`, begun with the window's loop), queues, on a task of its own that no
+    turn, press or start waits for (`AskDaorisTurnEnds`, the start's catch-up first), the second check's selection of what the turn
+    did that no card or hold put to the person (`AskDaorisSelection`, roles rule 58): a turn runs from the person's words where the session took them to its
     `turn` event, or to the log's last event, interrupted; a word shown waiting is no turn, and one taken while a turn runs joins
     it; a call's updates merge by its id; its known reads are counted, never quoted. (from D89, D170, D183, D158, D253, D272)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,

@@ -311,12 +311,12 @@ public sealed class DriverWatch(
     internal void WakeNodes(ChainEvent wake) => _doors.Wake(wake);
 
     /// <summary>
-    /// Ask link 8 for a pass that reads the units afresh and judges every governed run: what a landing
-    /// door held by a run's graph for a judgement not made yet asks, and a press waits for within <paramref name="bound"/>. True where a pass that
-    /// took the ask ended in time; false past the bound, where it failed, and where this loop runs no runtime.
+    /// Ask link 8 for a pass that reads the units afresh and judges <paramref name="unit"/> first: what a landing door held by a run's graph
+    /// for a judgement not made yet asks, and a press waits for within <paramref name="bound"/>. True where the pass that took the ask judged the
+    /// unit, or ended, in time; false past the bound, where it failed, and where this loop runs no runtime.
     /// </summary>
-    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) =>
-        _doors.Asks is { } asks ? asks.WaitAsync(bound, ct) : Task.FromResult(false);
+    public Task<bool> PassWholeAsync(string unit, TimeSpan bound, CancellationToken ct) =>
+        _doors.Asks is { } asks ? asks.WaitAsync(unit, bound, ct) : Task.FromResult(false);
 
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake,

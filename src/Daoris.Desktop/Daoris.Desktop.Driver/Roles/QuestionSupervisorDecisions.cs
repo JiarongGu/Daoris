@@ -54,6 +54,8 @@ public sealed class QuestionSupervisorDecisions
     private readonly SupervisorCourses _courses;
     private readonly SupervisorLandings _landings;
     private readonly SupervisorAllows _allows;
+    private readonly AskDaorisReports _readings;
+    private readonly MachineLog? _log;
     private readonly IDecisionAdmission _admission;
 
     public QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
@@ -67,6 +69,8 @@ public sealed class QuestionSupervisorDecisions
         _reads = new SupervisorReads(_book);
         _courses = new SupervisorCourses(_book, admission, log);
         _allows = new SupervisorAllows(_book.Files, log);
+        _readings = new AskDaorisReports(home);
+        _log = log;
         _admission = admission;
     }
 
@@ -170,6 +174,7 @@ public sealed class QuestionSupervisorDecisions
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
     {
         _allows.SweepAtStart(now);
+        _readings.SweepAtStart(now, _log);
         return _sweeps.SweepAtStart(now);
     }
 

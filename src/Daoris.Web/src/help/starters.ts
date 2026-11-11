@@ -1,7 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { AgentsMode } from '../agents/modes';
 import type { RoleDoor } from '../app/opener';
-import type { PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
+import type { PlaceSection } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../app/opener';
@@ -44,8 +44,6 @@ export type StarterDoor = {
   knowledge?: KnowledgeMode;
   /** A group of Sessions' or Quests' list that waits on the person, brought into view; no item in it. */
   group?: OpenGroup;
-  /** A conversation's draft card: the place's Workflow, its editor opened on the draft the card is against. */
-  placeEdit?: PlaceEdit;
 };
 
 /**

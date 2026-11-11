@@ -5,6 +5,7 @@ import { SelectField } from '../../design/ui';
 import { newSupervisorDraft } from '../roles/appointedHold';
 import { type Editing, newRoleEditing, roleName, RolesCard } from '../roles/Roles';
 import type { PlaceRoleEditor } from './PlaceRoles';
+import { SECOND_CHECK, SecondCheckTurnOn } from './SecondCheckTurnOn';
 import { decidersAt, deciderText, offeredKinds, scopeOf } from './whoDecides';
 
 /**
@@ -34,7 +35,10 @@ export function WhoDecidesHere({ place, editor }: { place: StructurePlaceAsk; ed
       <p className="m-0 text-small font-medium text-ink-soft">{title}</p>
       <ul className="m-0 grid list-none gap-0.5 p-0">
         {decidersAt(catalogue.deciders, place).map((line) => (
-          <li key={line.kind} className="text-small text-ink wrap-anywhere">{deciderText(t, line, nameOf)}</li>
+          <li key={line.kind} className="text-small text-ink wrap-anywhere">
+            {deciderText(t, line, nameOf)}
+            {line.kind === 'ask-daoris' && line.role === SECOND_CHECK && <SecondCheckTurnOn editor={editor} />}
+          </li>
         ))}
       </ul>
       {offered.length > 0 && !open && (

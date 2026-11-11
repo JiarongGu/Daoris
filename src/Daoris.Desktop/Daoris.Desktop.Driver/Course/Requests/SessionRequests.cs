@@ -120,6 +120,9 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// <summary>A checkout read's operation, one of <see cref="HelpCheckouts.Operations"/>; null for any other move.</summary>
     public string? Operation { get; init; }
 
+    /// <summary>A native permit's call by the harness's id of it, where the hook's input carried one; null otherwise.</summary>
+    public string? Call { get; init; }
+
     /// <summary>The checkout's repository, for a checkout read; null for any other move.</summary>
     public string? Repository { get; init; }
 
@@ -590,6 +593,7 @@ public sealed partial class SessionRequests(string home)
                 Level = Text("level"),
                 Word = Text("takeBackWord"),
                 Operation = Text("operation"),
+                Call = Text("call"),
                 Repository = Text("repository"),
                 Path = Text("path"),
             };

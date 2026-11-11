@@ -34,7 +34,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `NodeTelling` | `Workflows/Nodes/NodeTelling.cs` | The awaited set the plugins are told: each unit's frame, the tips last told, the next timer the records persist |
 | `NodeRunKeeping` | `Workflows/Nodes/NodeRunKeeping.cs` | What a run bound to a graph version has kept around its rounds: the person's skips and stops, what a review sent back told to the work (a failure that carries its own words on its status, as a stale `apply` does, told in them), each active node of a starting kind handed to its door, the run's end and reopening |
 | Integrate and request | `Workflows/Kinds/Integrate/`, `Workflows/Kinds/Request/` | A unit's `integrate` (`NodeIntegrating`: started through the integration door, its card waits, `work.integrated`) and a run's `request` (`NodeRequesting`: published through the request port) |
-| `NodeOwing` | `Workflows/Nodes/NodeOwing.cs` | Which units a pass judges: those owing a start or a rebinding, and the turn they are taken in past a pass's bound |
+| `NodeOwing` | `Workflows/Nodes/NodeOwing.cs` | Which units a pass judges: those owing a start or a rebinding, and the turn they are taken in past 32 units a pass: the run a door asked for, a held event's unit and a record the pass's answers moved first, then a rotation of the units owing a start or a rebinding, then of the unchanged ones, which keep a quarter of the turn |
+| `PassAsks`, `PassTaken` | `Loop/` | A door's ask for a whole pass, naming the run it waits on: the pass that takes it judges that run first (`NodeRuntimeLook.Asked`) and answers the press as soon as the run's judgement is kept (`Judged`), else at its end; a run asked for while a pass runs is the next pass's |
 | Performing | `Workflows/Nodes/WorkPerformer.cs`, `WorkKeeping.cs`, `WorkHearing.cs`, `WorkReceipting.cs`, `WorkOutcomes.cs`, `WorkPersonWord.cs`, `NodeRecordEdits.cs` | The performer sends, reconciles and retries; keeping an evaluation's moves and a no-dispatch start, hearing a completion, taking its receipts, applying an outcome, and the person's word on a held attempt are each their own type. A unit's resource record keeps 32 receipts, the oldest settled ones going past it, and each one dropped leaves its key (`plugin`, `schema`, `resource`) in the record's guard of at most 256 keys, the oldest forgotten first (`ResourceRecord.Dropped`, `GuardKept`), so a replayed completion makes no new owing receipt for a resource that was given |
 | Evaluating | `Workflows/Nodes/WireEvaluation.cs`, `WireReceipts.cs`, `WireLapsing.cs`, `WireEligible.cs` | The evaluation's pass and firing keys; the receipts it judges on, why a bound node lapses, one node's eligibility; the wire records in files of their own |
 | Graph reading | `Workflows/Nodes/NodeGraphs.cs`, `NodeGraphStarts.cs`, `NodeGraphPlaces.cs`, `NodeGraphReading.cs` | The save's rules; which nodes can start before a gate; the digest and each node's place; a graph's JSON read into its parts |
@@ -119,8 +120,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and no `claimed`, `opinion`, `look`, `go-ahead`, `land`, `review`, `integrate`, `work.requests` or `quest.close`. (from D192)
 12. A change that lowers the person's part applies only by the person's press; an agent's stays a proposal. Editing the home
     default's copy asks the consent of every place that follows it. (from D157, D192, D227)
-13. Ask Daoris proposes against the open draft's fingerprint (`workflow_propose`'s `draft`). Its proposal is drawn as a diff. It
-    never saves, chooses or runs a workflow. (from D223)
+13. Ask Daoris is told the draft open in the editor with the person's next words and writes its change as a graph in the room's
+    `drafts/` folder; it saves a version only by pressing `daoris workflow apply <id> drafts/<id>.json --base <version>`, a press the
+    person confirms on a card that shows the graph as the editor draws it and its changes. It proposes no workflow and never chooses
+    or runs one. (from D223, D261)
 14. The shipped defaults hold no `quest.close`: the agent's done closes the quest, and the flow's end is the work's. (from D190)
 
 **Runs**
@@ -150,7 +153,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     decision and the attempt it was released on (`NodeWordBy`), a node taking it as `supervisor` where the person's is `person`. A
     second word on a node is refused `worded`, but the person's replaces a supervisor's pending one, which the pass settles
     `superseded`; the pass drops a supervisor's word whose attempt has lapsed or whose decision is not live in this run (`stale`). An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
-    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. A quest bound to a closure graph is closed by that graph. (from D190)
+    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. That pass judges the pressed run first, however many
+    runs the home holds, and so does a whole pass for a run whose word it applied. A press its pass left short of the commit says what the
+    judgement found (`handed`'s state and the commit it is bound to), and one whose pass did not come within the bound says so. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
 20. A conversation's run binds its graph. Its subject is the candidate the person submits, numbered past every one the run has had,
     whatever branch it was on; a newer submission lapses it. A graph

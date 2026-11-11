@@ -142,7 +142,6 @@ describe('the opener', () => {
     expect(opening('projects', workspaceItem('aurora'), { workspaceTab: 'branches' })).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'workspace:aurora' }, workspaceTab: 'branches',
     });
-    // A section names the workspace in view too.
     expect(opening('projects', null, { workspaceSection: 'remote' }, 'forge')).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'workspace:forge' }, workspaceSection: 'remote',
     });
@@ -173,7 +172,6 @@ describe('the opener', () => {
   it('opens Knowledge in the mode a door names, or as it was left where it names none', () => {
     expect(opening('knowledge', null, { knowledge: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(opening('knowledge')).toEqual({ view: 'knowledge' });
-    // An item with no mode could be either list's, so nothing is chosen rather than a guess.
     expect(opening('knowledge', 'engine:a.md')).toEqual({ view: 'knowledge' });
     // A mode means nothing to another view.
     expect(opening('quests', null, { knowledge: 'search' })).toEqual({ view: 'quests' });
@@ -270,19 +268,6 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     expect(placeOpening(door('supervisor'), where)).toEqual(place('roles', 'supervisor'));
     expect(placeOpening(door('remote'), where)).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'workspace:studio' }, workspaceTab: 'details', workspaceSection: 'remote',
-    });
-  });
-
-  // A conversation's draft card opens the place's Workflow with its editor on the draft the conversation names.
-  it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
-    const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
-    const repository = doorOpening({ view: 'agents', placeOf: 'engine', placeEdit: edit });
-    expect(placeOpening(repository, where)).toEqual({
-      view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow', edit },
-    });
-    const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'workflow', placeEdit: edit });
-    expect(placeOpening(workspace, where)).toEqual({
-      view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section: 'workflow', edit },
     });
   });
 

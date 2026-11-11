@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
@@ -80,10 +79,10 @@ export const Proposing: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           <ProposalCard
             proposal={{
-              id: 'p1a2b3c4', kind: 'workflow',
-              describe: 'Choose workflow `docs-to-pr` for `web-app`: new work only.',
-              terminal: 'daoris workflow use docs-to-pr --scope web-app',
-              why: 'you asked for a pull request per change',
+              id: 'p1a2b3c4', kind: 'go',
+              describe: 'Open Repositories → `web-app`, its Workflow.',
+              terminal: '',
+              why: 'you asked where its pull request flow is set',
             }}
             onApply={() => {}}
             onDismiss={() => {}}
@@ -137,67 +136,6 @@ export const ProposingAGoToATakenQuest: Story = {
 };
 
 export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
-
-// A workflow version's card: a new one, an edit, and a draft that offers only Not now.
-const WORKFLOW_SHOWN = {
-  id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
-  diff: ['− Your look in local', '~ Landing on a branch: accept=automatic'],
-  yourPart: ['− Your look: Documentation work lands without you seeing it run', '= You still merge its pull request'],
-  outward: ['azure-devops-pull-request pushes the branch and opens a pull request.'], needs: [] as string[],
-  appliesTo: 'New work only; 2 runs keep the version they started on.', choose: true,
-};
-const workflowCards = (): ReactNode => (
-  <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
-    {[
-      {
-        id: 'w1', kind: 'workflow' as const, describe: 'Save version 1 of workflow `docs-to-pr`.', why: 'you asked for a docs flow',
-        terminal: 'daoris workflow import docs-to-pr.json',
-        workflow: { ...WORKFLOW_SHOWN, base: null, version: 1, diff: ['+ The work', '+ Landing on a branch'], yourPart: ['= You merge its pull request'], outward: [] },
-      },
-      {
-        id: 'w2', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
-        terminal: 'daoris workflow apply docs-to-pr plan.json --base 1', workflow: WORKFLOW_SHOWN,
-      },
-      {
-        id: 'w3', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
-        terminal: 'daoris workflow apply docs-to-pr plan.json --base 1',
-        workflow: { ...WORKFLOW_SHOWN, choose: false, needs: ['The plugin `azure-devops-pull-request` is not installed: add it on Plugins.'] },
-      },
-      // A verification pipeline's graph for the landed route, lowering the person's part; a kind's route alone.
-      {
-        id: 'w4', kind: 'workflow' as const, describe: 'Save `line-verify` v1 → v2 (Verify the line).', why: 'you asked failures to ask for their fix',
-        terminal: 'daoris workflow apply line-verify <file> --base 1',
-        workflow: {
-          ...WORKFLOW_SHOWN, id: 'line-verify', name: 'Verify the line', route: 'landed', saves: true, verifies: true,
-          diff: ['~ gates · check'], yourPart: [], outward: ['`gates` asks for a fix of each failed gate with no press of yours.'],
-          lowers: ['it moves the check `gates`\'s failure off your press, to `ask`'], appliesTo: 'New work only, in `web-app`.',
-        },
-      },
-      {
-        id: 'w5', kind: 'workflow' as const, describe: 'Choose `docs-to-pr` for the workspace `work`\'s kind `docs`.', why: 'you asked docs work to follow it',
-        terminal: 'daoris workflow use docs-to-pr --workspace work --kind docs',
-        workflow: { ...WORKFLOW_SHOWN, base: null, scope: 'work', route: 'kind:docs', saves: false, diff: [], yourPart: [], outward: [] },
-      },
-    ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
-  </ul>
-);
-
-/** The three workflow cards in a conversation, as the panel draws them. */
-export const ProposingWorkflows: Story = {
-  args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, proposals: workflowCards() } },
-};
-
-export const ProposingWorkflowsDark: Story = {
-  args: ProposingWorkflows.args,
-  decorators: [(Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>],
-};
-
-export const ProposingWorkflowsChinese: Story = { args: ProposingWorkflows.args, decorators: [chinese] };
-
-export const ProposingWorkflowsChineseDark: Story = {
-  args: ProposingWorkflows.args,
-  decorators: [(Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>, chinese],
-};
 
 export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
@@ -275,7 +213,6 @@ export const OpenPublishedChinese: Story = {
   ...docked, args: { ...docked.args, conversation: conversation({ published: publishedStrip(true) }) }, decorators: [inTheDock, chinese],
 };
 
-/** Its long title, a pasted URL, read whole in the head. */
 export const OpenPastedTitle: Story = {
   ...docked, args: { ...docked.args, conversation: conversation({ title: PASTED, body: record(PASTED) }) },
 };
@@ -344,7 +281,6 @@ export const ReadOnlyChinese: Story = {
   decorators: [inTheDock, chinese],
 };
 
-/** Whether it can go on is not known yet: said, and no box until it is. */
 export const Checking: Story = {
   ...docked,
   args: {

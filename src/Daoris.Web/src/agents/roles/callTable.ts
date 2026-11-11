@@ -10,7 +10,6 @@ export const REGISTERED_TOOLS: readonly string[] = [
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',
   'partner_answer', 'permission_propose', 'quest_list', 'quest_publish', 'quest_respond', 'question_ask',
   'registry', 'review_ready', 'review_serve', 'system_plan',
-  'workflow_propose',
 ];
 
 type Column = { only: readonly string[] } | { allBut: readonly string[] };
@@ -21,7 +20,6 @@ const READS = [
   'memory_search', 'quest_list', 'registry',
 ];
 const MEMORY_CHANGES = ['memory_end', 'memory_write'];
-// What every session working in a repository is served, less what its work is refused.
 const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];

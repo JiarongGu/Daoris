@@ -487,6 +487,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
             onConversation: named => sink.Read(new WireReading.ConversationNamed(named)))
         {
             Children = sink,
+            ChildCalls = (stream, e) => global::Daoris.Driver.ChildCalls.Keep(host.Home, id, stream, e),
             TypedFailures = protocol.TypedFailures,
         };
         // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.
