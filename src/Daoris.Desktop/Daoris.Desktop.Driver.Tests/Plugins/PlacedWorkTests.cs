@@ -50,13 +50,7 @@ public sealed class PlacedWorkTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public List<string?> TokenWhenListened { get; } = [];
-
-        public void Listen(Action<JsonElement?>? steps)
-        {
-            Steps = steps;
-            TokenWhenListened.Add(HookProcess.HostToken.Value);
-        }
+        public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
         public bool Fails { get; set; }
 
@@ -80,20 +74,24 @@ public sealed class PlacedWorkTests : IDisposable
         }
     }
 
-    private HookSet Set(Func<PluginEntry, WorkPlace, CancellationToken, Task<HostTokenHand>>? hand)
+    private string? _handed;
+
+    private HookSet Set(Func<PluginEntry, WorkPlace, CancellationToken, Task<PlaceHand>>? hand)
     {
-        return new HookSet(_home, say: (_, line) => _said.Add(line), holdsHome: () => true, clock: () => _now, hostToken: hand, log: _log, start: (_, _, _) =>
-        {
-            var channel = new WorkChannel();
-            _started.Add((channel, HookProcess.HostToken.Value));
-            return Task.FromResult<IHookChannel>(channel);
-        });
+        return new HookSet(_home, say: (_, line) => _said.Add(line), holdsHome: () => true, clock: () => _now, log: _log,
+            hand: hand is null ? null : (plugin, place, ct) => { _handed = place.Repository; return hand(plugin, place, ct); },
+            start: (_, _, _) =>
+            {
+                var channel = new WorkChannel();
+                _started.Add((channel, _handed is null ? null : "token-of-" + _handed));
+                return Task.FromResult<IHookChannel>(channel);
+            });
     }
 
-    private static Func<PluginEntry, WorkPlace, CancellationToken, Task<HostTokenHand>> Tokens(params string[] refused) =>
+    private static Func<PluginEntry, WorkPlace, CancellationToken, Task<PlaceHand>> Tokens(params string[] refused) =>
         (_, place, _) => Task.FromResult(refused.Contains(place.Repository)
-            ? new HostTokenHand(null, $"no git identity serves {place.Repository}, so the plugin was not started")
-            : new HostTokenHand("token-of-" + place.Repository, null));
+            ? new PlaceHand($"this repository's git access denies writes to origin at {place.Repository}, so the plugin was not started")
+            : new PlaceHand(null));
 
     private PluginCatalog Catalog(string step = "pull-request")
     {
@@ -128,8 +126,6 @@ public sealed class PlacedWorkTests : IDisposable
         Assert.Equal([Pr], set.Running);
         foreach (var (channel, token) in _started)
         {
-            // What the caller sees is no test of it (a value set in an async method never flows back): the flow after the start does.
-            Assert.Equal([null], channel.TokenWhenListened);
             var told = Assert.Single(Assert.Single(channel.Told).Units);
             Assert.Equal("token-of-" + told.Repository, token);
         }
@@ -225,7 +221,7 @@ public sealed class PlacedWorkTests : IDisposable
 
         var served = Assert.Single(_started);
         Assert.Equal("token-of-engine", served.Token);
-        Assert.Contains(_said, line => line.Contains("no git identity serves tools", StringComparison.Ordinal));
+        Assert.Contains(_said, line => line.Contains("denies writes to origin at tools", StringComparison.Ordinal));
         Assert.DoesNotContain(_said, line => line.Contains("token-of-", StringComparison.Ordinal));
         await Assert.ThrowsAsync<DriverException>(() => set.PerformAsync(Pr, Call("u2"), CancellationToken.None));
     }

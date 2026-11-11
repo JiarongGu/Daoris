@@ -2,7 +2,7 @@
 // end, a failed stage, a pending approval waited on and said, a stage started by `deploy`, nothing found, and a watch that runs out of time.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RELEASE, TOKEN, WEB, checkout, performed, standIn, tip, unitAt } from './stand-in.mjs';
+import { RELEASE, TOKEN, WEB, checkout, performed, signedIn, standIn, tip, unitAt } from './stand-in.mjs';
 
 const MERGED = 'c'.repeat(40);
 const FAST = { everySeconds: 0.02, findSeconds: 0.4 };
@@ -33,7 +33,7 @@ async function merged({ classic = true, environments = [stage(11, 'Dev', 'succee
 async function released(t, api, options, more = {}) {
   const root = checkout('https://dev.azure.com/acme/Proj/_git/app');
   const unit = unitAt(root, ['release'], { line: 'main', pullRequest: `${WEB}/pullrequest/1` });
-  return performed(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, unit, { step: RELEASE, options: { ...FAST, ...options }, ...more });
+  return performed(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) }, unit, { step: RELEASE, options: { ...FAST, ...options }, ...more });
 }
 
 /** Moves a stage on once its release has been read `after` times. */

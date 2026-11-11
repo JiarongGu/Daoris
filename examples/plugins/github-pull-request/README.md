@@ -37,16 +37,17 @@ unmerged). **Daoris removes nothing on this word alone**: a branch goes only whe
 
 ## The token
 
-The API call carries `DAORIS_HOST_TOKEN`: the API token of the git identity serving `origin`, handed to this one process by the
-driver and to no other. The plugin is not started where no identity serves `origin`, the identity is read only on its host, git
-access denies Write, or the identity has no API token (set one in the identity's page, or `daoris git identity token <identity> --kind api --token-stdin`). The token is
-never logged or written, and is sent only to the API. Where the host is a GitHub Enterprise one, the API is `https://<host>/api/v3`;
-`DAORIS_HOST_API` names another base address, as the test's stand-in does.
+The plugin signs in itself: `daoris github-pull-request login` asks for a token, hidden as you type it (or `--stdin`), and keeps it in
+the plugin's own private storage (`DAORIS_PLUGIN_PRIVATE`), handed to this plugin's processes alone; `status` says whether one is kept
+and whether GitHub last refused it; `logout` forgets it. A git identity serving github.com that already held an API token hands it to
+`login` once. The token is never logged, said back or put in evidence, and is sent only to the API. The plugin is not started where
+`origin` is served by a read-only identity or git access denies Write. Where the host is a GitHub Enterprise one, the API is
+`https://<host>/api/v3`; `DAORIS_HOST_API` names another base address, as the test's stand-in does.
 
 ## What it needs
 
 - **Node.js**, as `plugin.json` declares under `tools`: the process, and its calls to the API.
-- **An API token on the git identity serving `origin`**, with the scope to open pull requests in the repository.
+- **A token kept by `login`**, with the scope to open pull requests in the repository.
 - **`origin`** naming the GitHub repository.
 
 ## Why each version

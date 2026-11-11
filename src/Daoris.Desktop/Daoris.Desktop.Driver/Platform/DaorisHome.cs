@@ -415,6 +415,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry EdgeCookies = new("edge-cookies", HomeCategory.Profiles, "profiles/browser/edge-session-cookies.bin", "browser/edge-session-cookies.bin");
     public static readonly HomeEntry GitKeys = new("git-keys", HomeCategory.Profiles, "profiles/git/keys", "profiles/git/keys");
     public static readonly HomeEntry GitTokens = new("git-tokens", HomeCategory.Profiles, "profiles/git/tokens", "profiles/git/tokens");
+    public static readonly HomeEntry PluginPrivate = new("plugin-private", HomeCategory.Profiles, "profiles/plugins", "profiles/plugins");
     public static readonly HomeEntry GitSshConfig = new("git-ssh-config", HomeCategory.Profiles, "profiles/git/ssh_config", "profiles/git/ssh_config");
     public static readonly HomeEntry GitKnownHosts = new("git-known-hosts", HomeCategory.Profiles, "profiles/git/known_hosts", "profiles/git/known_hosts");
     public static readonly HomeEntry GitConfig = new("git-config", HomeCategory.Profiles, "profiles/git/global.gitconfig", "profiles/git/global.gitconfig");
@@ -479,7 +480,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
         LastBuild, Migration, Salvage, TerminalActs,
-        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
+        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Deps, TreeFiles, Places, Plans,

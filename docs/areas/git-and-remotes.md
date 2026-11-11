@@ -174,9 +174,10 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
     A delivery or note recorded before that is read and said, never sent again (G8-CONVERT1 deletes the reading). (from D87, D100, D241)
 31. A plugin process holds no git grant and runs no git: only the push act writes a grant, and `DAORIS_GIT_GRANT` is dropped
     from every start (`GitWiring.Hand`). A plugin's `pull-request` step opens the request through its service's REST API. (from D241)
-32. That step's process is handed the API token of the identity serving the place's origin as `DAORIS_HOST_TOKEN`, one process per
-    place (`PlaceHostTokens`, `PluginHostToken`, `HookSet`); one the desktop inherited never reaches it. No plugin is started where
-    origin is served by `own`, no identity serves it, Write is denied or the identity is read only, or no API token is set. (from D241, D242)
+32. That step's process starts one per place (`PlaceHands`, `HookSet`) and carries the plugin's own credential from its own storage,
+    never an identity's token. No plugin is started where the place has no origin, the identity serving it is read only, or Write is
+    denied. An identity's API token is read only once more, by the command that adopts it (`PluginTokenAdoption`), which clears it.
+    (from D241, D242, D274)
 33. A pull request's state is asked only of the plugin that opened it, at occasions that may remove, never on a timer. A
     `completed` answer clears a branch only where git holds its merge commit on the line. (from D148)
 
@@ -576,8 +577,9 @@ catalogues (`i18n:check`).
   set for the repository or its workspace, else `main`, else `master`, never a remote's `HEAD`; where none exists every ref is kept and the
   plan says so. `--unheld` drops only the refs whose work the line holds, each as before, and lists the rest as kept with why; a ref named by
   hand drops whatever the line holds of it.
-- **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
-  starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
+- **G9:** the pull-request plugins open and read through their services' REST APIs with the token their own `login` keeps and run no
+  git; the loop starts each one per place (D242, D274). The identity's `api` token kind is still set by `git identity token --kind api`
+  and the identity's page, though nothing reads it but the adoption: its setter is the next removal. `gh` and `az` are no declared tool (`Tools.Declared`,
   `resources.json`), and no web fixture, story, test or sample plugin-tool message names either as a sample tool.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.

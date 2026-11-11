@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The places whose hand is refused at their start (<see cref="PluginHostToken"/>): no identity serves origin, it is read only, Write
-/// is denied, or it holds no API token. No process starts, so this is no start that failed: it is said as
+/// The places whose hand is refused at their start (<see cref="PlaceHands"/>): no origin, the identity serving it is read only, or Write
+/// is denied. No process starts, so this is no start that failed: it is said as
 /// <see cref="PluginEvents.Refused"/>, never counted as an exit (so never unsound), and asked again once <see cref="Again"/> has passed,
-/// so a token the person sets starts the process at a later look with no press, and a refused place runs no git at every look.
+/// so access the person allows starts the process at a later look with no press, and a refused place runs no git at every look.
 /// </summary>
 internal sealed class HandRefusals
 {

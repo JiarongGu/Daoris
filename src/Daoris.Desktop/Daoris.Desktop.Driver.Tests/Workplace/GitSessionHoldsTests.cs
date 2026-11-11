@@ -20,7 +20,7 @@ public sealed class GitSessionHoldsTests : IDisposable
 
     /// <summary>Every name a credential of git's or a hosted service's travels under, which no session's start may carry.</summary>
     private static readonly string[] Credentials =
-        [.. GitWiring.SessionTokens, GitRouting.GrantVariable, "DAORIS_HOST_TOKEN"];
+        [.. GitWiring.SessionTokens, GitRouting.GrantVariable, "DAORIS_PLUGIN_PRIVATE"];
 
     [Fact]
     public void A_sessions_start_carries_no_key_path_token_or_grant_whatever_the_desktop_inherited()

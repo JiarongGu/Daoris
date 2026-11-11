@@ -294,7 +294,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             // sentence is about, never something the plugin contributes.
             if (problem is not null)
             {
-                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Systems = [], Tools = [], ToolsProblem = null };
+                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Systems = [], Tools = [], ToolsProblem = null, Interfaces = PluginInterfacesDeclared.None };
             }
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
@@ -554,6 +554,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             if (declaredSteps.Problem is not null) return (PluginManifest.Empty(id), declaredSteps.Problem);
             var declaredSystems = PluginSystems.Read(root);
             if (declaredSystems.Problem is not null) return (PluginManifest.Empty(id), declaredSystems.Problem);
+            var declaredInterfaces = PluginInterfaces.Read(root, hooks is not null);
+            if (declaredInterfaces.Problem is not null) return (PluginManifest.Empty(id), declaredInterfaces.Problem);
 
             // Its icon, last: an icon's problem is said and never refuses the plugin.
             var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
@@ -581,6 +583,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 Steps = declaredSteps.Steps,
                 Resources = declaredSteps.Resources,
                 Systems = declaredSystems.Systems,
+                Interfaces = declaredInterfaces.Interfaces,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);

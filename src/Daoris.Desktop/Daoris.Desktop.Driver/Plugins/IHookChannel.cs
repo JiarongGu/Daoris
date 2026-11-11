@@ -36,6 +36,10 @@ public interface IHookChannel : IAsyncDisposable
             new DriverException($"this channel does not answer `{point}`."),
             PluginEvents.Errored));
 
+    /// <summary>One round of a declared command (<see cref="CommandWire"/>); a channel with no answer fails as the plugin's error.</summary>
+    Task<JsonElement> CommandAsync(object frame, CancellationToken ct) =>
+        Task.FromException<JsonElement>(PluginFailures.Mark(new DriverException("this channel runs no commands."), PluginEvents.Errored));
+
     /// <summary>
     /// What moved of what the driver holds, its answer not read. A channel that has no such answer fails
     /// as the plugin's error, which an observation contains.

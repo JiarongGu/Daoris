@@ -2,7 +2,7 @@
 // and a refusal by policy or by permission said in the evidence without failing the step.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TOKEN, WEB, checkout, performed, standIn, unitAt } from './stand-in.mjs';
+import { TOKEN, WEB, checkout, performed, signedIn, standIn, unitAt } from './stand-in.mjs';
 
 const ORIGIN = 'https://dev.azure.com/acme/Proj/_git/app';
 const ASKED = { autoComplete: true, mergeStrategy: 'squash', deleteSourceBranch: true, transitionWorkItems: true, mergeCommitMessage: 'Ship the work' };
@@ -11,7 +11,7 @@ async function opened(t, options, more = {}) {
   const api = await standIn();
   Object.assign(api, more);
   const root = checkout(ORIGIN);
-  const env = { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN };
+  const env = { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) };
   return { api, root, ...(await performed(t, env, unitAt(root), { options })) };
 }
 
