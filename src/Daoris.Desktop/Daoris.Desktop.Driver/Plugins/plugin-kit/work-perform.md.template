@@ -11,7 +11,9 @@ promises of it:
   is `{}`; a plugin reads an option where it is present and keeps its default where it is not.
 - **`reconcile`**: asked `work/reconcile` about an attempt, it answers what became of it: `done` with its outcome,
   `not-started`, `running`, `failed` with its outcome, or `unknown`. `work.mjs` answers from its journal, and asks `check()`
-  only about an attempt a process before this one began, which only the platform can tell.
+  only about an attempt a process before this one began, which only the platform can tell. A platform that cannot be asked
+  now (down, rate-limited) is `running`, said why on stderr, and Daoris asks again; `unknown` (a `check()` of `null`, as a
+  refused credential's) stops the step for the person.
 - **`transient`**: the failure codes worth trying again, under the step's `retry`. Any other code stops the step for the
   person. An attempt whose outcome is unknown is never tried again by itself.
 - **`resources`**: what `act()` makes, by schema, `{{resource}}` here, `temporary`: Daoris asks `work/cleanup` to remove
@@ -42,6 +44,7 @@ and nothing is sent to a plugin that does not take it. `work.mjs` says what the 
 
 - one external effect under duplicate delivery, before and after a restart;
 - each `work/reconcile` answer;
+- a slow answer holding back no other: each frame answered as its own handler settles;
 - `already-gone` on a repeated cleanup;
 - an event sent again keeping its id, so Daoris takes it once;
 - no frame claiming what a plugin may not, and nothing written to the Daoris home it is told.

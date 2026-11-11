@@ -255,6 +255,22 @@ test('each work/reconcile answer', async (t) => {
   await restarted.stop();
 });
 
+test('a slow answer holds back no other: the frames after it are answered while it waits', async (t) => {
+  const place = scratch(t, { acts: { 'i-4': { exit: true } }, checks: { 'i-4': { hold: true } } });
+  const first = await start(t, place);
+  await first.ask('hook/work/perform', attempt(4));
+  await first.gone;
+
+  const plugin = await start(t, place);
+  let reconciledYet = false;
+  plugin.ask('hook/work/reconcile', { unit: 'u-contract', step: STEP, invocation: 'i-4', idempotencyKey: 'k-4', subjectRevision: 'r1' })
+    .then(() => { reconciledYet = true; }, () => {});
+  assert.deepEqual(await plugin.ask('hook/work/watch', { units: [] }), {});
+  assert.deepEqual(await plugin.ask('hook/work/perform', attempt(5)), { invocation: 'i-5' });
+  assert.equal(reconciledYet, false, 'the held `check` answered, so nothing here was held');
+  await plugin.stop();
+});
+
 test('already-gone on a repeated cleanup', async (t) => {
   const place = scratch(t);
   const plugin = await start(t, place);
