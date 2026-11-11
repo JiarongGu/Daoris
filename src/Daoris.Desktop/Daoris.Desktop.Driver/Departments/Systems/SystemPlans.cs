@@ -11,7 +11,7 @@ public sealed class SystemPlans(string home)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    private string FolderOf(string record) => Path.Combine(home, "work", "plans", record);
+    private string FolderOf(string record) => DaorisHome.Entry(home, HomeEntry.Plans, record);
 
     /// <summary>Keep <paramref name="operations"/> as <paramref name="record"/>'s next plan for <paramref name="place"/>, and answer it.</summary>
     public SystemChangeSet Keep(string record, string place, IReadOnlyList<SystemOperation> operations, DateTimeOffset at)

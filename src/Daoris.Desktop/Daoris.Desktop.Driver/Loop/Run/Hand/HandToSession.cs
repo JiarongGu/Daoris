@@ -42,7 +42,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             }
 
             if (context.Trees.Holds(workTree)) TreeFilesStep.Hand(home, workTree);
-            FolderCopies.Owned(home, workTree, sessionId);
+            FolderCopies.Owned(home, workTree, sessionId, runBound.Run);
 
             // The words a session could not go on with went to this one: off that record by their ids, kept on the ask by the service, so
             // this start's instruction reads them among the person's words; and said in that session's conversation, where the person

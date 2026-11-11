@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A molecule pressing the bridge, a home path joined by hand and words off the glossary turned the fast halves red
+
+- **Symptom:** on main's tip the web's presentational test named `projects/inPlace.ts` reaching a bridge domain; the CLI's
+  `home-census.test.ts` named `SystemPlans.cs` joining `work/plans` under the home by hand; `names.test.ts` found three Chinese
+  sentences saying another term's avoided word: 结束 beside *done* in `work.sitting.Unclosed_unclosed`, 开启 for *turn on* in
+  `notifications.terminalTier.setAct` and `unrecorded`.
+- **Root cause:** each change wrote its unit where it first needed it and merged without the gate that holds the rule. b839677497
+  put the add's plan-and-apply of *Work in place* in the projects folder, which no bridge call may sit in; bad0b3f765 kept a system's
+  change sets under a path it built itself, with no row in the home's three tables; 336d8d1a18 said a finished session's quest in 结束,
+  and 187e9ff9f6 the terminal tier's switch in 开启, each the word the glossary names to avoid.
+- **Fix:** `chooseInPlace` in the bridge's set-up domain beside the routes it presses, the projects' `inPlace.ts` keeping the choice's
+  rule alone; a `plans` row in the three home tables (`work/plans/*`), `SystemPlans` asking `DaorisHome.Entry` for it; the sentences
+  say 已停下 and 启用.
+- **Verify:** `presentational.test.ts`, `names.test.ts`, `setup.test.tsx`, `inPlace.test.ts`, `home-census.test.ts`, `home.test.ts`
+  and the driver's `SystemPlan*`, `ApplyDoorTests` and `DaorisHomeTests` green.
+
 ## 2026-11-11 - Units placed above what they serve turned the structure, the choices table and the presentational boundary red
 
 - **Symptom:** on main's tip the driver's three `StructureTests` named 16 tuples that name a type above their own subdomain
