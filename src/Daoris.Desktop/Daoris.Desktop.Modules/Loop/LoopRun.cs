@@ -85,10 +85,16 @@ internal sealed class LoopRun(
 
         // A plugin's word goes to the console under `plugin:<id>`; what the set does, without its words, to the log and the health record.
         shared.Hooks = PluginsAtStart.Set(homeDirectory, say: null, loop.Output, log, loop.Health);
-        _ = Task.Run(() => PluginTokenAdoption.RunAsync(homeDirectory, log, CancellationToken.None));
+        var adoptions = new PluginTokenAdoptions(homeDirectory, log);
+        _ = adoptions.Ask();
         // Each change the publisher tells the windows reaches the plugins at `state/changed` too, queued by the set, so no press's answer
-        // waits on a plugin; while another loop drives the home this set runs no plugin, and a change is told to nobody.
-        using var observing = StatePublisher.Observe(eventBus, change => shared.Hooks?.Tell(change));
+        // waits on a plugin; while another loop drives the home this set runs no plugin, and a change is told to nobody. A change to the
+        // plugins asks the token's adoption again.
+        using var observing = StatePublisher.Observe(eventBus, change =>
+        {
+            shared.Hooks?.Tell(change);
+            adoptions.Told(change);
+        });
 
         // One live driver per home: everything above carries on while another holds it.
         using var held = await loop.HoldHomeAsync(ct).ConfigureAwait(false);

@@ -166,9 +166,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     call, a missing argument refused before any process starts, the plugins pushed again after each round. *About*'s last runs are
     the newest 20 `plugin.command` lines, not drawn yet. `storage` is `profiles/plugins/<id>/`, limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's
     processes alone and removed with it; Daoris reads nothing in it. A removal first runs the `forget` command once, bound to 10
-    seconds, saying whether the plugin confirmed, and goes on whatever it says. A command declaring `adopts` is sent once, at the
-    loop's start, the API token of the first identity serving one of its hosts, which then keeps none (`plugin.token.adopted`
-    naming ids alone). Each interface is on until
+    seconds, saying whether the plugin confirmed, and goes on whatever it says. A command declaring `adopts` is sent, at the
+    loop's start and again whenever the plugins change (installed, updated, added or switched), the API token of the first identity
+    serving one of its hosts, which then keeps none (`plugin.token.adopted` naming ids alone). Each interface is on until
     switched off per place (rule 5a). Daoris names no plugin in any of it: every word comes from the manifest and the answers.
     (D274)
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`, handed a quest's session at its
