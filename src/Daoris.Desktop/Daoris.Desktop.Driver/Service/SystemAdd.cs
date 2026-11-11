@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public static class SystemAdd
 {
     /// <summary>What the add would send for <paramref name="system"/> to <paramref name="service"/>, named <paramref name="name"/> or the system's id.</summary>
-    /// <exception cref="RegistryRefusal">The word names no system, or no plugin installed in <paramref name="home"/> and on adapts it.</exception>
+    /// <exception cref="RegistryRefusal">The word names no system, no plugin installed in <paramref name="home"/> and on adapts it, or the name is not one a home keeps records under.</exception>
     public static ConnectPlan Plan(string home, string system, string? name, string? workspace, string service)
     {
         if (SystemPlace.Of(system?.Trim()) is not { } place)
@@ -23,6 +23,11 @@ public static class SystemAdd
         }
 
         var repository = string.IsNullOrWhiteSpace(name) ? place.System : name.Trim();
+        if (!SafeNames.IsFolderId(repository))
+        {
+            throw new RegistryRefusal(RegistryRefusal.NotDeclared, $"`{repository}` is no name for a department: it is one word, which the home also keeps its records under, so no `/`, backslash or `:`, no `..`, and no trailing dot.", 1);
+        }
+
         var body = new JsonObject
         {
             ["repository"] = repository,
