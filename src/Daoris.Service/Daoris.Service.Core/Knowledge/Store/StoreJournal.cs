@@ -12,6 +12,9 @@ namespace Daoris.Knowledge;
 /// </remarks>
 internal static class StoreJournal
 {
+    /// <summary>The bytes the log is cut back to once a checkpoint has emptied it, so one big commit does not keep its size for good.</summary>
+    internal const long LogLimit = 32L * 1024 * 1024;
+
     /// <summary>
     /// Set the mode and the sync on <paramref name="connection"/>, open: a store in memory keeps its own journal. Through the
     /// connection's gate, as every command is, and outside a transaction, where alone SQLite changes the mode.
@@ -22,7 +25,7 @@ internal static class StoreJournal
         return gate.RunAsync(async () =>
         {
             await using var command = gate.Command();
-            command.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;";
+            command.CommandText = $"PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL; PRAGMA journal_size_limit = {LogLimit};";
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }, ct);
     }
