@@ -1,10 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's accept, approve or reject of a run's step, released after the plan as the node's word on the run's record, through
-/// the node's own press door: its window past, the step read again as still waiting on the attempt the decision names, and the person's
-/// stop or pause of the line read from the planner's verdicts. The next node pass applies the word, or drops it where its decision is no
-/// longer live.
+/// The supervisor's landing decisions released after the plan (<see cref="LandingReleaseLine"/>), the person's holds read from its verdicts.
 /// </summary>
 [LookPass("landing-release", LookPhase.Planned, "course-release")]
 internal sealed class LandingReleaseLook(ILookWiring wiring) : ILookPass

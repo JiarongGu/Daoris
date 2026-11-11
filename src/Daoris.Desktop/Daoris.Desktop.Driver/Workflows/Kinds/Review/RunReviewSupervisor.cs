@@ -23,7 +23,7 @@ public sealed record RunReviewSupervisor(string Id, string Session, string Do, s
 
     public string? Why { get; init; }
 
-    /// <summary><paramref name="view"/> drawn on <paramref name="record"/>; null where no decision was kept.</summary>
+    /// <summary><paramref name="view"/> drawn on <paramref name="record"/>; null where none is kept.</summary>
     public static RunReviewSupervisor? Of(SupervisorLandingView? view, ReviewRecord? record)
     {
         if (view is null) return null;

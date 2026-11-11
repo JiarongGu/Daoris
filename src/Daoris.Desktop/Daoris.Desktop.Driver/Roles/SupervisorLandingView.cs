@@ -13,13 +13,11 @@ public sealed record SupervisorLandingView(
 {
     public SupervisorSubject Subject => SupervisorSubject.Landing(Session, Run, Node, Attempt);
 
-    /// <summary>The revision of the review record the decision read (<see cref="SupervisorReviewBinding"/>); null on a step that keeps none.</summary>
     public string? Revision { get; init; }
 
     /// <summary>An Accept's kind of work (<see cref="ReviewKinds"/>), as its attempt's review record holds it, which the card's sentence is worded by.</summary>
     public string? Work { get; init; }
 
-    /// <summary>The view with memory's state over the file's: memory alone decides where a live decision stands.</summary>
     internal SupervisorLandingView Over(SupervisorLandingDecision live) => this with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false };
 
     /// <summary>A landing decision read from its file and state lines (<see cref="SupervisorLandings"/> writes both), or null where the file is not one.</summary>

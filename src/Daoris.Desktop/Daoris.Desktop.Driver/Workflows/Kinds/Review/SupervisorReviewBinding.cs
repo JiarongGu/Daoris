@@ -17,7 +17,6 @@ public static class SupervisorReviewBinding
     public static string? Refused(string home, string run, string node, int attempt, string? revision) =>
         ReviewRecords.Read(home, run, node, attempt) is { } record ? Refused(record, revision) : null;
 
-    /// <summary>Why a decision naming <paramref name="revision"/> does not decide <paramref name="record"/> (<see cref="Moved"/>); null where it does.</summary>
     public static string? Refused(ReviewRecord record, string? revision)
     {
         if (revision is null) return record.Kind == ReviewKinds.Branch ? null : Moved;

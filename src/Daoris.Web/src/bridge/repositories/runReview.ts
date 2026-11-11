@@ -36,10 +36,7 @@ export type RunReviewSays = {
   plan?: number | null; system?: string | null; incomplete: number; coverage?: string | null;
 };
 
-/**
- * The supervisor's newest decision on the attempt read: its act, where it stands (`held` until `goesOnAt`, then `released`, `went-on` or
- * closed), the session *Overrule* names, the record's kind its sentence is worded by, and whether it names the record read.
- */
+/** The supervisor's newest decision on the attempt read, as `SESSION_SUPERVISOR`'s landings say it, and whether it names the record read. */
 export type RunReviewSupervisor = {
   id: string; session: string; do: string; state: string; attempt: number; work?: string | null; revision?: string | null; onRecord: boolean;
   holder?: string | null; keptAt: string; goesOnAt: string; stateAt: string; why?: string | null;

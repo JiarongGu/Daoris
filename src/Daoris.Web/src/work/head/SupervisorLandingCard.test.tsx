@@ -32,7 +32,6 @@ describe('the supervisor’s landing card', () => {
     expect(screen.getByRole('button', { name: overrule })).toBeInTheDocument();
   });
 
-  // What an Accept took is the review's kind of work; when it goes on is all the card promises, since a go-ahead may still hold what follows.
   it.each([
     ['en', 'branch', /^The supervisor accepted the commits on this branch; it goes on at .+\.$/],
     ['en', 'checkout', /^The supervisor accepted the commits made in this checkout, which are there already; it goes on at .+\.$/],

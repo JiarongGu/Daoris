@@ -53,7 +53,6 @@ export type LandingRead = {
   node: string;
   attempt: number;
   do: string;
-  /** An Accept's kind of work, as its attempt's review record holds it (`branch`, `checkout`, `folder`, `copy`, `plan`, `answer`). */
   work?: string | null;
   state: string;
   why?: string | null;
