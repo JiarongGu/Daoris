@@ -83,7 +83,7 @@ public static class SetupPresets
 
     /// <summary>
     /// The land a workflow's steps say, Current's drawn or a version's: <c>integrate</c> where an integrate step follows the landing, a pull
-    /// request where one does, else the landing's method or form. Current never says <c>push</c>.
+    /// request where one does, else the landing's method or form, or <see cref="SetupLand.InPlace"/> where no step lands. Current never says <c>push</c>.
     /// </summary>
     public static SetupLand LandOf(IReadOnlyList<NamedStep> steps)
     {
@@ -101,8 +101,8 @@ public static class SetupPresets
         }
 
         if (landing?.Field("method") is string method) return new(method, accept);
-        if (landing is null && steps.Any(step => step.Kind == NodeKinds.Review)) return new(SetupLand.InPlace, SetupLand.You);
-        return landing?.Field("form") as string == LandingForm.Branch
+        if (landing is null) return new(SetupLand.InPlace, SetupLand.You);
+        return landing.Field("form") as string == LandingForm.Branch
             ? new(LandNodes.Branch, accept)
             : new(LandNodes.Merge, accept);
     }

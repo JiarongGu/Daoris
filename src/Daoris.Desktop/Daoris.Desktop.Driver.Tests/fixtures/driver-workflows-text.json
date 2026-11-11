@@ -271,7 +271,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`."
+        "daoris: `nothing-like-it` is no preset, no saved workflow and no `current:<repository>` — the presets are `merge-after-accept`, `merge-automatic`, `documents`, `branch-to-push`, `pull-request`, `integrated`, `integrated-no-press`, `release`, `in-place`."
       ],
       "after": null
     },
@@ -1611,7 +1611,7 @@
       "exit": 1,
       "out": [],
       "err": [
-        "daoris: v4: its graph holds no landing (`land`), and a named workflow's graph lands its work once."
+        "daoris: v4: its graph holds no landing (`land`) and ends at `a`, a `human`: a named workflow's graph lands its work once, or lands nothing and ends at your review (`review`)."
       ],
       "after": null
     },
@@ -2155,6 +2155,7 @@
         "  `integrated` — Integration workflow, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `integrated-no-press` — No-press integration workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
         "  `release` — Release workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -2178,6 +2179,7 @@
         "  `integrated` — Integration workflow. For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
         "  `integrated-no-press` — No-press integration workflow. For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
         "  `release` — Release workflow. For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
+        "  `in-place` — In-place workflow. For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
         "  `daoris workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file."
       ],
       "err": [],
@@ -2297,6 +2299,7 @@
         "  `integrated` — Integration workflow, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `integrated-no-press` — No-press integration workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
         "  `release` — Release workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -4148,6 +4151,7 @@
         "  `integrated` — Integration workflow, a graph. You accept each piece of work onto a branch, and you ask for it to be integrated into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `integrated-no-press` — No-press integration workflow, a graph. Each piece of work is integrated into the line once its agent is done, on gates the repository accepted. Its agent's done closes the quest; the flow's end is the work's.",
         "  `release` — Release workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
+        "  `in-place` — In-place workflow, a graph. Each piece of work is done in its department's own place, and you accept it there: nothing lands. Its agent's done closes the quest; the flow's end is the work's.",
         "  A choice names a workflow (`daoris workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
       "err": [],
@@ -4204,7 +4208,7 @@
         "usage: daoris place list",
         "       daoris place drive|undrive|hold|resume <repository>",
         "       daoris place notify on|off · trees (gone: a workflow's `isolate` step)",
-        "       daoris settings cap <n> · cooloff <minutes> · quiet <minutes>",
+        "       daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>",
         "       daoris quest retry <quest> [--at <n> | --session <id>]",
         "       daoris place line <repository>|--workspace <name> <branch>|--clear",
         "       daoris place across <repository>|--workspace <name> read on|off|--clear",

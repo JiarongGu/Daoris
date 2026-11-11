@@ -1,11 +1,11 @@
 {
   "id": "in-place",
   "order": 9,
-  "name": "Work in place",
-  "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you accept it there; nothing lands.",
+  "name": "In-place workflow",
+  "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
   "delivery": {
     "name": "Work in place",
-    "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you accept it there; nothing lands."
+    "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands."
   },
   "setUp": true,
   "graph": {

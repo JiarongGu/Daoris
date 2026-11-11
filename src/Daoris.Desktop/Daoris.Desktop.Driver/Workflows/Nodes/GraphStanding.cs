@@ -17,7 +17,13 @@ internal sealed record GraphStanding(
                 && wire.To.Unit is null && byId.ContainsKey(wire.To.Node))
             .ToList();
         var starts = graph.Entries.Where(byId.ContainsKey).Distinct(StringComparer.Ordinal).ToList();
-        return new(byId, starts, local, [.. local.Where(wire => WireKinds.Ordered.Contains(wire.Kind))],
-            [.. byId.Values.Where(node => node.Kind == NodeKinds.Land)]);
+        IReadOnlyList<NodeDeclaration> landings = [.. byId.Values.Where(node => node.Kind == NodeKinds.Land)];
+        // A graph that lands nothing ends at the person's review, which a hold judges the work before, as it would a landing.
+        IReadOnlyList<NodeDeclaration> judged = landings.Count > 0 ? landings
+            : graph.End is { } end && byId.TryGetValue(end, out var ending) && ending.Kind == NodeKinds.Review ? [ending] : [];
+        return new(byId, starts, local, [.. local.Where(wire => WireKinds.Ordered.Contains(wire.Kind))], landings) { Judged = judged };
     }
+
+    /// <summary>What a hold judges the work before: its landings, or the review a graph that lands nothing ends at; none where neither.</summary>
+    public IReadOnlyList<NodeDeclaration> Judged { get; init; } = [];
 }

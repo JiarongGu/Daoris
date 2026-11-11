@@ -47,7 +47,9 @@ public static class WorkflowPresets
         var nodes = next["nodes"]!.AsArray();
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
-        var landing = (string)nodes.First(node => (string)node!["kind"]! == NodeKinds.Land)!["id"]!;
+        // The gates guard a landing: a graph that lands nothing has none to add, and its review is the person's look.
+        if (nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Land)?["id"] is not JsonValue landed) return next;
+        var landing = (string)landed!;
         // The gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
         var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
         var into = review ?? landing;

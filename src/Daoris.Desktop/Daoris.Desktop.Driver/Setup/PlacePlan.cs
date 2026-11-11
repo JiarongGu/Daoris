@@ -123,6 +123,9 @@ public static class PlacePlans
 
     public const string NoLandingPlugin = "no-landing-plugin";
 
+    /// <summary>A second opinion or a look ticked on <i>Work in place</i>, which has no landing for them to come before.</summary>
+    public const string InPlaceGates = "in-place-gates";
+
     /// <summary>What an adoption part says where general driving stays off: the set-up quest is admitted alone.</summary>
     public const string AloneSaid = "what starts here while general driving stays off";
 
@@ -244,7 +247,7 @@ public static class PlacePlans
         {
             // The press's own rules over the configuration the plan would leave, so the two refuse alike.
             // A landing preset's shipped workflow sets its sessions apart; otherwise the workflow the repository follows says.
-            var apart = preset?.Land is not null || (home is not null && PlaceIsolates.Of(home, after, name, workspace) is not null);
+            var apart = preset?.Land is { Method: not SetupLand.InPlace } || (home is not null && PlaceIsolates.Of(home, after, name, workspace) is not null);
             foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row, apart)) Refuse(Adoption, refusal.Code, refusal.Sentence);
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
@@ -274,6 +277,13 @@ public static class PlacePlans
                 ? $"`{name}`'s remote is on `{host}`, and no landing plugin here opens a pull request there: a pull request is its platform's "
                   + "plugin's to open. Add one on Plugins, or choose *A branch to push*."
                 : $"`{name}` names no remote here, so there is no platform to open a pull request on: add its `origin`, or choose *A branch to push*.");
+            return config;
+        }
+
+        if (land.Method == SetupLand.InPlace && (ask.Opinion || ask.Look))
+        {
+            refuse(Delivery, InPlaceGates,
+                "a second opinion and your look come before a landing, and *Work in place* lands nothing: your review in its place is your look.");
             return config;
         }
 

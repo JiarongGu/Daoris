@@ -95,8 +95,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`
    with no method (`land-method`), an `accept` option (`accept`), a kind marked arriving, declared before the palette offers it, and a wire
    naming a port or an outcome its kind declares arriving (`arriving-kind`, `ArrivingKinds`, `NodeArrivals`). Only a graph version binds and runs. (from D227, D232)
-8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land`. There is no `handed` kind.
-   (from D190, D227, D232)
+8. A graph holds at most 24 authored nodes and 96 wires. A graph that lands holds one `land` and ends after it; a graph that lands
+   nothing (a folder's, a system's, or a git department's worked in place, its session committing as it goes) holds no `land` and ends
+   at the person's `review`, which ends no graph that lands, its holds judging the work before that review (`GraphStanding.Judged`).
+   There is no `handed` kind. (from D190, D227, D232, D264)
 9. The opinion, the look and the `review` each come before every landing and are wired straight into it, and no landing may start
    before a look has passed. The opinion need not come before the look. These gates are the kinds that declare a guard, and their
    order is one rule the kit runs at the save beside each kind's own (`ProtectedOrder`). The holds (`quest.holds`, `content.holds`,
@@ -155,8 +157,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 **Review and Accept**
 
-22. The person's Accept is a `review` step before `land`. A flow with no `review` lands with no press, and the standing authority
-    is judged again before the first effect. (from D145, D227)
+22. The person's Accept is a `review` step before `land`, or the end of a graph that lands nothing, where it ends the run and a
+    landing's press is refused, saying nothing lands it (`WorkflowProcess.InPlace`). A flow with no `review` lands with no press, and
+    the standing authority is judged again before the first effect. (from D145, D227, D264)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
     came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as
     the try said it, and a carry-on as *accepted; its session was carried on* (`PerformedAnswers`). Only where no try ended within the
