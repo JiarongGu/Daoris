@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>A command's arguments by name, typed, and the required ones no value was given for, which the door asks.</summary>
+/// <summary>A command's arguments by name, typed, and the required ones given no value, which the door asks.</summary>
 public sealed record CommandArgs(IReadOnlyDictionary<string, object?> Values, IReadOnlyList<PluginCommandArg> Missing)
 {
     /// <summary>

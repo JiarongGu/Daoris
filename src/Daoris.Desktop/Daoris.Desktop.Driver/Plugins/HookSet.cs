@@ -735,7 +735,6 @@ public sealed class HookSet(
         }
     }
 
-    // A point switched off at the place is neither told nor asked there (PluginSwitches).
     private List<(string Id, IHookChannel Channel)> Listening(string point, PluginPlace? place = null)
     {
         var switches = PluginSwitches.Read(home);
