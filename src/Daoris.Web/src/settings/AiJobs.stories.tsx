@@ -50,7 +50,7 @@ export const TierNotYetKnown: Story = {
 
 /**
  * Ask Daoris on Claude Code, restricted, with its configured access under the access
- * row, housekeeping's inspection chosen and the browser waiting for approval.
+ * row, the clean-up family chosen and the browser waiting for approval.
  */
 export const RestrictedWithConfiguredAccess: Story = {
   args: {
@@ -58,15 +58,11 @@ export const RestrictedWithConfiguredAccess: Story = {
     grants: {
       agent: { name: 'Claude Code', rules: true },
       grants: [
-        { id: 'housekeeping', chosen: ['inspect'] },
         { id: 'browser', chosen: [], plugin: 'in-app-browser' },
         { id: 'checkouts', chosen: ['engine'] },
-        { id: 'settings', chosen: ['notify'] },
+        { id: 'acts', chosen: ['clean-up'] },
       ],
-      built: {
-        housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'cap', 'cooloff', 'quiet'],
-        checkouts: ['engine', 'reports-db'],
-      },
+      built: { acts: ['pause', 'clean-up', 'discard', 'settings'], checkouts: ['engine', 'reports-db'] },
       onChoose: () => {},
       onManage: () => {},
     },

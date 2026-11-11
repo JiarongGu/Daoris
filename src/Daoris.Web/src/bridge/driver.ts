@@ -98,8 +98,8 @@ export type DriverState = {
   helpMode?: string;
   /**
    * Restricted mode's configured access as this machine chose it: each grant the driver serves, by its id, with the
-   * operations chosen and those it acts on (`built`); housekeeping's, and the chosen settings'. What each start of Ask
-   * Daoris and every call of its tools read; `pending` while a conversation running here is handed another choice, which its next
+   * operations chosen and those it acts on (`built`); the families of acts' (`acts`), and the checkouts'. What each start of Ask
+   * Daoris and every press of its acts read; `pending` while a conversation running here is handed another choice, which its next
    * turn takes. And the browser's, read only from its plugin's approval: no `built`, `changed` since approval, and
    * the `plugin` whose tab changes it, absent where none here offers it. Left out where none is set: the pagedraws no configured
    * access.
@@ -407,8 +407,8 @@ export const retryNotice = (quest: string, state: DriverState): [string, Record<
 export const useSetHelpMode = () => useDriverChange('SET_HELP_MODE');
 
 /**
- * One operation of restricted mode's configured access chosen or taken back: housekeeping's, the
- * person's press alone. A revoke refuses Ask Daoris's next call of that tool; either takes each conversation's next turn.
+ * One operation of restricted mode's configured access chosen or taken back: a family of acts, or a checkout, the
+ * person's press alone. A revoke puts Ask Daoris's next press of that family on a card; either takes each conversation's next turn.
  * No proposal names it.
  */
 export const useSetHelpGrant = () => useDriverChange('SET_HELP_GRANT');

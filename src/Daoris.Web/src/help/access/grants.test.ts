@@ -13,14 +13,13 @@ const spec = (id: HelpGrantId) => GRANTS.find((grant) => grant.id === id)!;
 const choice = (id: HelpGrantId, chosen: string[], extra: Partial<HelpGrantChoice> = {}): HelpGrantChoice => ({ id, chosen, ...extra });
 
 describe('the grants', () => {
-  it('are the table’s six, in its order, each operation chosen on its own and the checkouts the driver’s to name', () => {
-    expect(GRANTS.map((grant) => grant.id)).toEqual(['housekeeping', 'browser', 'checkouts', 'settings', 'acts', 'shell']);
-    expect(spec('acts').operations).toEqual(['pause']);
-    expect(spec('housekeeping').operations).toEqual(['inspect', 'clean-up', 'discard-branch', 'drop-recovery']);
+  it('are the table’s four, in its order, the acts granted by family and the checkouts the driver’s to name', () => {
+    expect(GRANTS.map((grant) => grant.id)).toEqual(['browser', 'checkouts', 'acts', 'shell']);
+    // Housekeeping and the chosen settings are families of acts, never grants of their own.
+    expect(spec('acts').operations).toEqual(['pause', 'clean-up', 'discard', 'settings']);
     // One box a checkout, by its repository's name, as the driver serves them.
     expect(spec('checkouts').operations).toEqual([]);
     expect(GRANTS.filter((grant) => grant.served).map((grant) => grant.id)).toEqual(['checkouts']);
-    expect(spec('settings').operations).toEqual(['notify', 'language', 'cap', 'cooloff', 'quiet']);
     expect(spec('shell').operations).toEqual([]);
   });
 
@@ -34,16 +33,16 @@ describe('the grants', () => {
 
   it('start off, the browser waiting for approval and the checkouts on, inherited', () => {
     expect(GRANTS.map((grant) => [grant.id, grant.byDefault])).toEqual([
-      ['housekeeping', 'off'], ['browser', 'approval'], ['checkouts', 'inherited'], ['settings', 'off'], ['acts', 'off'], ['shell', 'off'],
+      ['browser', 'approval'], ['checkouts', 'inherited'], ['acts', 'off'], ['shell', 'off'],
     ]);
   });
 });
 
 describe('a grant’s state', () => {
   it('is on with any operation chosen, and off with none', () => {
-    expect(grantState(spec('housekeeping'), choice('housekeeping', ['inspect']), CLAUDE)).toBe('on');
-    expect(grantState(spec('housekeeping'), choice('housekeeping', []), CLAUDE)).toBe('off');
-    expect(grantState(spec('settings'), undefined, CLAUDE)).toBe('off');
+    expect(grantState(spec('acts'), choice('acts', ['clean-up']), CLAUDE)).toBe('on');
+    expect(grantState(spec('acts'), choice('acts', []), CLAUDE)).toBe('off');
+    expect(grantState(spec('acts'), undefined, CLAUDE)).toBe('off');
     expect(grantState(spec('checkouts'), choice('checkouts', ['engine']), CLAUDE)).toBe('on');
     expect(grantState(spec('checkouts'), choice('checkouts', []), CLAUDE)).toBe('off');
   });
@@ -60,8 +59,7 @@ describe('a grant’s state', () => {
     expect(grantState(spec('browser'), choice('browser', ['reads', 'click']), CODEX)).toBe('unavailable');
     // Daoris holds the typed tools itself, so they hold on every agent: the checkouts' read too.
     expect(grantState(spec('checkouts'), choice('checkouts', ['engine']), CODEX)).toBe('on');
-    expect(grantState(spec('housekeeping'), choice('housekeeping', ['inspect']), CODEX)).toBe('on');
-    expect(grantState(spec('settings'), choice('settings', ['notify']), CODEX)).toBe('on');
+    expect(grantState(spec('acts'), choice('acts', ['settings']), CODEX)).toBe('on');
   });
 
   it('is not available yet for the confined shell, on every agent', () => {

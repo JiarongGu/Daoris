@@ -29,15 +29,10 @@ export type GrantSpec = {
    */
   onPlugin: boolean;
   /** Its door's words, or none. */
-  door: 'operations' | 'manage' | 'settings' | null;
+  door: 'operations' | 'manage' | null;
 };
 
 export const GRANTS: readonly GrantSpec[] = [
-  // Typed tools Daoris serves and enforces, so they hold on every agent. Inspection is one group; each removal its own.
-  {
-    id: 'housekeeping', operations: ['inspect', 'clean-up', 'discard-branch', 'drop-recovery'],
-    byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'operations',
-  },
   // The server approval takes its reads together and each write on its own, on the plugin's page: nothing is
   // chosen here. No page code, ever.
   { id: 'browser', operations: [], byDefault: 'approval', needsRules: true, later: false, onPlugin: true, door: 'manage' },
@@ -47,12 +42,12 @@ export const GRANTS: readonly GrantSpec[] = [
     id: 'checkouts', operations: [], byDefault: 'inherited', needsRules: false, served: true, later: false, onPlugin: false,
     door: 'manage',
   },
-  // The ordinary settings, each through the existing validation and writer.
+  // The acts Ask Daoris presses itself, granted by family: each runs with no card, judged as the person's own press is, so held on
+  // every agent. A family names the driver's routes it covers (`ActFamilies`).
   {
-    id: 'settings', operations: ['notify', 'language', 'cap', 'cooloff', 'quiet'],
-    byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'settings',
+    id: 'acts', operations: ['pause', 'clean-up', 'discard', 'settings'], byDefault: 'off', needsRules: false, later: false,
+    onPlugin: false, door: 'operations',
   },
-  { id: 'acts', operations: ['pause'], byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'operations' },
   { id: 'shell', operations: [], byDefault: 'off', needsRules: false, later: true, onPlugin: false, door: null },
 ];
 

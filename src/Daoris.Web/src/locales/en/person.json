@@ -395,7 +395,7 @@
   "person.route.SET_HAND_OVER": "change when a session may be handed over",
   "person.route.SET_HELPERS": "change which helpers sessions may ask",
   "person.route.SET_HELP_MODE": "change Ask Daoris's access",
-  "person.route.SET_HELP_GRANT": "change what Ask Daoris's housekeeping may do",
+  "person.route.SET_HELP_GRANT": "change what Ask Daoris may do without asking",
   "person.route.WORKFLOW_LANDED": "change a repository's landed route and its gates",
   "person.route.INTEGRATION_GATES": "accept a repository's integration declaration",
   "person.route.WORKFLOW_SAVE": "save a version of a workflow",

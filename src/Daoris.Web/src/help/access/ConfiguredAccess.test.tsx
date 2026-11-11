@@ -15,16 +15,15 @@ const CLAUDE: HelpGrantAgent = { name: 'Claude Code', rules: true };
 const CODEX: HelpGrantAgent = { name: 'Codex', rules: false };
 
 const CHOSEN: HelpGrantChoice[] = [
-  { id: 'housekeeping', chosen: ['inspect', 'clean-up'] },
   { id: 'browser', chosen: ['reads', 'click', 'type'] },
   { id: 'checkouts', chosen: ['engine'] },
-  { id: 'settings', chosen: [] },
+  { id: 'acts', chosen: ['clean-up', 'settings'] },
 ];
 
 /** The checkouts the driver serves, each by its repository's name; `game` turned off. */
-const SERVED = { checkouts: ['engine', 'game'] };
+const SERVED = { checkouts: ['engine', 'game'], acts: ['pause', 'clean-up', 'discard', 'settings'] };
 
-const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'acts', 'shell'];
+const ALL: HelpGrantId[] = ['browser', 'checkouts', 'acts', 'shell'];
 
 function show({ agent = CLAUDE, grants = CHOSEN, opened, built = SERVED, onChoose = vi.fn(), onManage = vi.fn() }: {
   agent?: HelpGrantAgent; grants?: HelpGrantChoice[]; opened?: HelpGrantId[]; built?: Partial<Record<HelpGrantId, readonly string[]>>;
@@ -48,7 +47,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     await i18n.changeLanguage('en');
   });
 
-  it('draws the six grants in the table’s order under its title, each with its reach, its default and its state', async () => {
+  it('draws the four grants in the table’s order under its title, each with its reach, its default and its state', async () => {
     await i18n.changeLanguage(language);
     show();
 
@@ -57,11 +56,10 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(names).toEqual(ALL.map((id) => i18n.t(`help.grants.name.${id}`)));
     for (const id of ALL) expect(within(row(id)).getByText(i18n.t(`help.grants.reach.${id}`))).toBeInTheDocument();
 
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.default.off'))).toBeInTheDocument();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.default.off'))).toBeInTheDocument();
     expect(within(row('browser')).getByText(i18n.t('help.grants.default.approval'))).toBeInTheDocument();
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.default.inherited'))).toBeInTheDocument();
-    expect(within(row('settings')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
     expect(within(row('shell')).getByText(i18n.t('help.grants.state.later'))).toBeInTheDocument();
     // A sentence's backticks are code, never shown as backticks.
     expect(within(row('shell')).getByText('cd', { selector: 'code' })).toBeInTheDocument();
@@ -74,38 +72,48 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     show({ onChoose });
 
     // Closed, the row shows no box; its door says what it opens and whether it is open.
-    expect(within(row('housekeeping')).queryAllByRole('checkbox')).toEqual([]);
-    const door = within(row('housekeeping')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.operations')) });
+    expect(within(row('acts')).queryAllByRole('checkbox')).toEqual([]);
+    const door = within(row('acts')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.operations')) });
     expect(door).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(door);
     expect(door).toHaveAttribute('aria-expanded', 'true');
 
-    expect(box('housekeeping', 'inspect')).toBeChecked();
-    expect(box('housekeeping', 'clean-up')).toBeChecked();
-    expect(box('housekeeping', 'discard-branch')).not.toBeChecked();
-    expect(box('housekeeping', 'drop-recovery')).not.toBeChecked();
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.never.housekeeping'))).toBeInTheDocument();
-
-    await userEvent.click(box('housekeeping', 'discard-branch'));
-    expect(onChoose).toHaveBeenCalledWith('housekeeping', 'discard-branch', true);
-    await userEvent.click(box('housekeeping', 'inspect'));
-    expect(onChoose).toHaveBeenCalledWith('housekeeping', 'inspect', false);
-  });
-
-  // A family of acts granted runs Ask Daoris's press of it with no card, as the person's own, read at each press.
-  it('offers the families of acts as operations, off by default, each chosen on its own', async () => {
-    await i18n.changeLanguage(language);
-    const onChoose = vi.fn();
-    show({ onChoose, grants: [...CHOSEN, { id: 'acts', chosen: ['pause'] }] });
-
-    expect(within(row('acts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
-    expect(within(row('acts')).getByText(i18n.t('help.grants.default.off'))).toBeInTheDocument();
-    await userEvent.click(within(row('acts')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.operations')) }));
-    expect(box('acts', 'pause')).toBeChecked();
+    expect(within(row('acts')).getAllByRole('checkbox')).toEqual(
+      ['pause', 'clean-up', 'discard', 'settings'].map((family) => box('acts', family)),
+    );
+    expect(box('acts', 'clean-up')).toBeChecked();
+    expect(box('acts', 'settings')).toBeChecked();
+    expect(box('acts', 'pause')).not.toBeChecked();
+    expect(box('acts', 'discard')).not.toBeChecked();
     expect(within(row('acts')).getByText(i18n.t('help.grants.never.acts'))).toBeInTheDocument();
 
-    await userEvent.click(box('acts', 'pause'));
-    expect(onChoose).toHaveBeenCalledWith('acts', 'pause', false);
+    await userEvent.click(box('acts', 'discard'));
+    expect(onChoose).toHaveBeenCalledWith('acts', 'discard', true);
+    await userEvent.click(box('acts', 'clean-up'));
+    expect(onChoose).toHaveBeenCalledWith('acts', 'clean-up', false);
+  });
+
+  // A family of acts granted runs Ask Daoris's press of it with no card, as the person's own, read at each press; the person sees
+  // under each box what the family covers.
+  it('says what each family of acts covers, off by default', async () => {
+    await i18n.changeLanguage(language);
+    show({ grants: [{ id: 'acts', chosen: [] }], opened: ['acts'] });
+
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.default.off'))).toBeInTheDocument();
+    for (const family of ['pause', 'clean-up', 'discard', 'settings']) {
+      expect(within(row('acts')).getByText(i18n.t(`help.grants.cover.acts.${family}`))).toBeInTheDocument();
+    }
+  });
+
+  it('draws a family the driver does not act on as not available yet, never chosen', async () => {
+    await i18n.changeLanguage(language);
+    const onChoose = vi.fn();
+    show({ grants: [{ id: 'acts', chosen: [] }], opened: ['acts'], built: { acts: ['pause'] }, onChoose });
+
+    expect(box('acts', 'discard')).toBeDisabled();
+    expect(box('acts', 'pause')).not.toBeDisabled();
+    expect(within(row('acts')).getAllByText(i18n.t('help.grants.notBuilt'))).toHaveLength(3);
   });
 
   // The browser's grant is its plugin's approval, made on that plugin's tab, the
@@ -149,10 +157,10 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
 
   // The checkouts the driver serves, one box each by its repository's name as written, those not turned off checked; a
   // press hands the repository up. With none served, it says why and draws no box.
-  it('draws a box for each checkout the driver serves, by its repository’s name, and lists the five ordinary settings', async () => {
+  it('draws a box for each checkout the driver serves, by its repository’s name', async () => {
     await i18n.changeLanguage(language);
     const onChoose = vi.fn();
-    show({ opened: ['checkouts', 'settings'], onChoose });
+    show({ opened: ['checkouts'], onChoose });
 
     expect(within(row('checkouts')).getAllByRole('checkbox')).toEqual([box('checkouts', 'engine'), box('checkouts', 'game')]);
     expect(box('checkouts', 'engine')).toBeChecked();
@@ -163,10 +171,6 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     // Its git commands are code, never shown as backticks.
     expect(row('checkouts').querySelectorAll('code').length).toBeGreaterThan(0);
     expect(row('checkouts').textContent).not.toContain('`');
-    expect(within(row('settings')).getAllByRole('checkbox')).toEqual(
-      ['notify', 'language', 'cap', 'cooloff', 'quiet'].map((setting) => box('settings', setting)),
-    );
-    expect(within(row('settings')).getByText(i18n.t('help.grants.never.settings'))).toBeInTheDocument();
   });
 
   it('says no checkout here may be read where the driver serves none, with no box', async () => {
@@ -194,14 +198,12 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(within(row('browser')).queryByText(i18n.t('help.grants.state.on'))).toBeNull();
     expect(within(row('browser')).getByText(i18n.t('help.grants.why.browser', { agent: 'Codex' }))).toBeInTheDocument();
 
-    // Daoris holds its typed tools itself, so they hold on Codex too: housekeeping, the chosen settings, and the
-    // checkouts' read, which does not wait on a rule Codex does not take.
+    // Daoris judges the acts and the checkouts' read itself, so they hold on Codex too, waiting on no rule Codex does not take.
     expect(within(row('checkouts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
     expect(within(row('checkouts')).queryByText(i18n.t('help.grants.state.unavailable'))).toBeNull();
     for (const each of within(row('checkouts')).getAllByRole('checkbox')) expect(each).not.toBeDisabled();
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
-    expect(box('housekeeping', 'drop-recovery')).not.toBeDisabled();
-    expect(box('settings', 'notify')).not.toBeDisabled();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(box('acts', 'discard')).not.toBeDisabled();
   });
 
   it('holds both on Claude, saying no grant unavailable', async () => {
@@ -214,9 +216,9 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
 
   it('marks a choice a running conversation did not start with as taking its next turn, and only that one', async () => {
     await i18n.changeLanguage(language);
-    show({ grants: [{ id: 'housekeeping', chosen: ['inspect'], pending: true }, { id: 'settings', chosen: ['notify'] }] });
+    show({ grants: [{ id: 'acts', chosen: ['clean-up'], pending: true }, { id: 'checkouts', chosen: ['engine'] }] });
 
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.pending'))).toBeInTheDocument();
-    expect(within(row('settings')).queryByText(i18n.t('help.grants.pending'))).toBeNull();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.pending'))).toBeInTheDocument();
+    expect(within(row('checkouts')).queryByText(i18n.t('help.grants.pending'))).toBeNull();
   });
 });

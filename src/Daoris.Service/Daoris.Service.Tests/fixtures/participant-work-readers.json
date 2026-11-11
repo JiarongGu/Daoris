@@ -552,6 +552,10 @@
       "reads": "tells",
       "note": "names a memory proposal's proposer: Ask Daoris proposes as its own sender (KNOWCENTRAL2e2, D220's note), the quest's words saying which"
     },
+    "Core/Quests/QuestPublishing.cs": {
+      "reads": "tells",
+      "note": "files Ask Daoris's quest in the workspace of the repository it names, Ask Daoris having no registered row; no row of this design moves it"
+    },
     "Core/Remote/SessionSync.cs": {
       "reads": "tells",
       "note": "keeps Ask Daoris's record off every feed; no row of this design moves it"

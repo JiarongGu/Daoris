@@ -200,20 +200,18 @@ describe('Ask Daoris’s access on Settings', () => {
 
 /**
  * Restricted mode's configured access under Ask Daoris's access, its
- * housekeeping row live: what the driver's state says is chosen, each operation pressed over `SET_HELP_GRANT` one at a time, and
- * one the driver does not act on yet never sent. The chosen settings live the same way, and the browser's row read
+ * acts row live: what the driver's state says is chosen, each family pressed over `SET_HELP_GRANT` one at a time, and
+ * one the driver does not act on yet never sent; the browser's row read
  * only from its plugin's approval, its door leading to the plugin's tab. The checkouts live too, each readable checkout
  * the driver serves a box by its repository's name, on until the person turns it off.
  */
 describe('Ask Daoris’s configured access on Settings', () => {
   let chosen: string[] = [];
-  let settings: string[] = [];
   let checkouts: string[] = [];
   let grants = true;
   let pending = false;
   beforeEach(() => {
     chosen = [];
-    settings = [];
     checkouts = ['engine', 'game'];
     grants = true;
     pending = false;
@@ -225,10 +223,9 @@ describe('Ask Daoris’s configured access on Settings', () => {
       if (type === 'SET_HELP_GRANT') {
         const operation = request?.payload?.operation ?? '';
         const grant = request?.payload?.grant;
-        const was = grant === 'settings' ? settings : grant === 'checkouts' ? checkouts : chosen;
+        const was = grant === 'checkouts' ? checkouts : chosen;
         const now = request?.payload?.chosen ? [...was, operation] : was.filter((each) => each !== operation);
-        if (grant === 'settings') settings = now;
-        else if (grant === 'checkouts') checkouts = now;
+        if (grant === 'checkouts') checkouts = now;
         else chosen = now;
       }
       if (type === 'STATE' || type === 'SET_HELP_GRANT') {
@@ -237,8 +234,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
           ...(grants
             ? {
               helpGrants: [
-                { id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending },
-                { id: 'settings', chosen: settings, built: ['notify', 'language', 'cap', 'cooloff'], pending: false },
+                { id: 'acts', chosen, built: ['pause', 'clean-up', 'discard'], pending },
                 { id: 'checkouts', chosen: checkouts, built: ['engine', 'game'], pending: false },
                 { id: 'browser', chosen: ['reads', 'browser_click'], pending: false, changed: false, plugin: 'in-app-browser' },
               ],
@@ -268,39 +264,39 @@ describe('Ask Daoris’s configured access on Settings', () => {
   const box = (id: string, operation: string) =>
     within(row(id)).getByRole('checkbox', { name: id === 'checkouts' ? operation : i18n.t(`help.grants.op.${id}.${operation}`) });
 
-  it.each(['en', 'zh'])('draws housekeeping as the driver holds it, and a press chooses one operation, in %s', async (language) => {
+  it.each(['en', 'zh'])('draws the families of acts as the driver holds them, and a press chooses one family, in %s', async (language) => {
     await i18n.changeLanguage(language);
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="ai" />);
 
-    await open('housekeeping', 'operations');
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
-    expect(box('housekeeping', 'inspect')).not.toBeChecked();
+    await open('acts', 'operations');
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
+    expect(box('acts', 'clean-up')).not.toBeChecked();
 
-    await userEvent.click(box('housekeeping', 'inspect'));
+    await userEvent.click(box('acts', 'clean-up'));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
-      payload: { grant: 'housekeeping', operation: 'inspect', chosen: true },
+      payload: { grant: 'acts', operation: 'clean-up', chosen: true },
     });
-    await waitFor(() => expect(box('housekeeping', 'inspect')).toBeChecked());
-    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    await waitFor(() => expect(box('acts', 'clean-up')).toBeChecked());
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.housekeeping.inspect') })));
+      i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.acts.clean-up') })));
 
-    await userEvent.click(box('housekeeping', 'inspect'));
+    await userEvent.click(box('acts', 'clean-up'));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
-      payload: { grant: 'housekeeping', operation: 'inspect', chosen: false },
+      payload: { grant: 'acts', operation: 'clean-up', chosen: false },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      i18n.t('settings.ai.grants.revoked', { operation: i18n.t('help.grants.op.housekeeping.inspect') })));
+      i18n.t('settings.ai.grants.revoked', { operation: i18n.t('help.grants.op.acts.clean-up') })));
   });
 
-  it('never sends what the driver does not act on yet: dropping recovery refs', async () => {
+  it('never sends what the driver does not act on yet: the settings family', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="ai" />);
 
-    await open('housekeeping', 'operations');
-    expect(box('housekeeping', 'drop-recovery')).toBeDisabled();
+    await open('acts', 'operations');
+    expect(box('acts', 'settings')).toBeDisabled();
 
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
   });
@@ -324,25 +320,6 @@ describe('Ask Daoris’s configured access on Settings', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.revoked', { operation: 'engine' })));
   });
 
-  // The chosen settings, the five ordinary ones, each granted one at a time as housekeeping's operations are.
-  it.each(['en', 'zh'])('draws the chosen settings as the driver holds them, and a press grants one setting, in %s', async (language) => {
-    await i18n.changeLanguage(language);
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="ai" />);
-
-    await open('settings', 'settings');
-    expect(within(row('settings')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
-    await userEvent.click(box('settings', 'cooloff'));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
-      payload: { grant: 'settings', operation: 'cooloff', chosen: true },
-    });
-    await waitFor(() => expect(box('settings', 'cooloff')).toBeChecked());
-    expect(within(row('settings')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.settings.cooloff') })));
-  });
-
   // The browser's row is its plugin's approval, read only, and its door the
   // plugin's own tab, the one place it is changed; nothing is chosen for it here.
   it('draws the browser from its plugin’s approval, and its door opens the plugin’s tab', async () => {
@@ -362,19 +339,19 @@ describe('Ask Daoris’s configured access on Settings', () => {
 
   // The driver says the grant is pending while a conversation running started with another choice; its
   // next turn takes it, and the mark clears once that conversation's agent has ended.
-  it.each(['en', 'zh'])('marks housekeeping pending while the driver says a running conversation has another choice, in %s', async (language) => {
+  it.each(['en', 'zh'])('marks the acts pending while the driver says a running conversation has another choice, in %s', async (language) => {
     await i18n.changeLanguage(language);
     pending = true;
     show(<SettingsView notify={() => {}} section="ai" />);
 
-    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.housekeeping') });
+    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.acts') });
     expect(within(grant).getByText(i18n.t('help.grants.pending'))).toHaveAttribute('title', i18n.t('help.grants.pendingWhy'));
   });
 
   it('draws no pending mark where the driver says none', async () => {
     show(<SettingsView notify={() => {}} section="ai" />);
 
-    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.housekeeping') });
+    const grant = await screen.findByRole('listitem', { name: i18n.t('help.grants.name.acts') });
     expect(within(grant).queryByText(i18n.t('help.grants.pending'))).toBeNull();
   });
 
