@@ -211,7 +211,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`: `SessionServers` hands a quest's
-    session, at its start and its going on, the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
+    session, at its start and its going on, the entry its caller built (`PluginToolsHand.OfQuest`, which `Agents` cannot name): the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
     [--workspace <name>] --language en|zh`, the home in the entry's own variables, only where its place lists a tool and the program is
     found (the install's `app/daoris-driver/`, else the running program where it is that one; `PluginToolsHand`). It lists
     (`PluginToolList`) each command marked `tool` and not `interactive` of each installed plugin that is on, not refused and speaks,
