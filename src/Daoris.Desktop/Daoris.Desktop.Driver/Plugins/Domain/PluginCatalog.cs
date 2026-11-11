@@ -556,6 +556,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             if (declaredSystems.Problem is not null) return (PluginManifest.Empty(id), declaredSystems.Problem);
             var declaredInterfaces = PluginInterfaces.Read(root, hooks is not null);
             if (declaredInterfaces.Problem is not null) return (PluginManifest.Empty(id), declaredInterfaces.Problem);
+            var (formerly, formerlyProblem) = PluginFormerly.Read(id, root);
+            if (formerlyProblem is not null) return (PluginManifest.Empty(id), formerlyProblem);
 
             // Its icon, last: an icon's problem is said and never refuses the plugin.
             var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
@@ -584,6 +586,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 Resources = declaredSteps.Resources,
                 Systems = declaredSystems.Systems,
                 Interfaces = declaredInterfaces.Interfaces,
+                Formerly = formerly,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);

@@ -1,8 +1,10 @@
 {
-  "id": "in-app-browser",
+  "id": "daoris-in-app-browser",
+  "formerly": ["in-app-browser"],
   "apiVersion": 1,
   "name": "In-app browser",
-  "version": "1.1.0",
+  "version": "2.0.0",
+  "changes": "It is `daoris-in-app-browser` now, in Daoris's own family of plugins: its switch, its data and Ask Daoris's approval of its tools move over from `in-app-browser` once.",
   "description": "Hands every session Daoris's own browser: the Playwright MCP server, attached over CDP to the window the person signs in to and watches. Offers it to Ask Daoris too, once the person approves its tools.",
   "servers": [
     {

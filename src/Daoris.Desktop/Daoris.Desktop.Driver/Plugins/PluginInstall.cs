@@ -123,6 +123,7 @@ public static class PluginInstall
             throw new DriverException($"`{manifest.Id}` was not added: {error.Message} Nothing was installed.");
         }
 
+        if (manifest.Formerly.Count > 0) PluginRenames.Move(home);
         return manifest;
     }
 
@@ -151,7 +152,7 @@ public static class PluginInstall
         if (shipped)
         {
             var folder = offers ?? PluginOffers.BesideHome(home);
-            var offer = PluginOffers.Load(folder, home, reserved).FirstOrDefault(each => string.Equals(each.Id, installed, StringComparison.OrdinalIgnoreCase));
+            var offer = PluginOffers.For(PluginOffers.Load(folder, home, reserved), installed);
             if (offer is not { Problem: null })
             {
                 return Refuse($"Daoris's own `{installed}` is not offered by this install, so there is no shipped copy to take. "
@@ -174,7 +175,7 @@ public static class PluginInstall
             }
 
             (source, problem) = PluginSource.Read(entry.Folder);
-            if (source?.Package is null) (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
+            if (source?.Package is null) (source, problem, shippedFrom) = (PluginSource.FromOffer(offer.Id), null, offer.Folder);
         }
         else
         {
@@ -214,6 +215,13 @@ public static class PluginInstall
         else if (source.Offer is { } offer)
         {
             from = Path.Combine(offers ?? PluginOffers.BesideHome(home), offer);
+            // A renamed offer is found by the old id it declares, and recorded under its new id.
+            if (!PluginFolders.HasFile(Path.Combine(from, PluginCatalog.ManifestName))
+                && PluginOffers.For(PluginOffers.Load(offers ?? PluginOffers.BesideHome(home), home, reserved), offer) is { Problem: null } renamed)
+            {
+                (from, source) = (renamed.Folder, PluginSource.FromOffer(renamed.Id));
+            }
+
             if (!PluginFolders.HasFile(Path.Combine(from, PluginCatalog.ManifestName)))
             {
                 return Refuse($"Daoris's own `{offer}` is not offered by this install any more, so there is nothing to "
@@ -238,16 +246,23 @@ public static class PluginInstall
         // Read as the catalogue would, named by its own id, which is then held to the installed one.
         var (next, unsound) = PluginCatalog.ReadAsWritten(IdOf(path), path);
         if (unsound is not null) return Refuse($"`{PluginCatalog.ManifestName}` in {from}: {unsound}");
-        if (!string.Equals(next.Id, installed, StringComparison.OrdinalIgnoreCase))
+        var renames = next.Formerly.Contains(installed, StringComparer.OrdinalIgnoreCase);
+        if (!string.Equals(next.Id, installed, StringComparison.OrdinalIgnoreCase) && !renames)
         {
             return Refuse($"{from} now holds plugin `{next.Id}`, not `{installed}` — an update replaces a plugin "
                 + "with its own next version, never with another plugin.");
         }
 
+        if (renames && PluginFolders.There(DaorisHome.Entry(home, HomeEntry.Plugins, next.Id)))
+        {
+            return Refuse($"plugin `{next.Id}`, which `{installed}` is now called, is installed already; Daoris's next start takes "
+                + $"`{installed}` out and moves what it kept to `{next.Id}`.");
+        }
+
         if (PluginCatalog.RefusedByThisBuild(next, reserved) is { } refused) return Refuse($"plugin `{installed}` {refused}");
 
         var (current, _) = PluginCatalog.ReadAsWritten(installed, Path.Combine(entry.Folder, PluginCatalog.ManifestName));
-        return (new PluginUpdatePlan(installed, source, from, Changes(current, next)), null);
+        return (new PluginUpdatePlan(installed, source, from, Changes(current, next)) { Next = renames ? next.Id : installed }, null);
     }
 
     /// <summary>
@@ -263,9 +278,10 @@ public static class PluginInstall
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
 
         var root = DaorisHome.Entry(home, HomeEntry.Plugins);
-        var target = Path.Combine(root, plan.Id);
+        var installed = Path.Combine(root, plan.Id);
+        var target = Path.Combine(root, plan.Next);
         var stamp = Guid.NewGuid().ToString("N");
-        var staging = Path.Combine(root, $".updating-{plan.Id}-{stamp}");
+        var staging = Path.Combine(root, $".updating-{plan.Next}-{stamp}");
         var aside = Path.Combine(root, $".removing-{plan.Id}-{stamp}");
         try
         {
@@ -280,7 +296,7 @@ public static class PluginInstall
 
         try
         {
-            PluginFolders.Move(target, aside, move);
+            PluginFolders.Move(installed, aside, move);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -291,16 +307,21 @@ public static class PluginInstall
                 + "update it again. The installed version is untouched.");
         }
 
-        SwapIn(staging, target, aside, plan.Id, "updated", move);
+        SwapIn(staging, target, aside, plan.Id, "updated", move, installed);
 
         // A dot-folder is never read as a plugin, so one that cannot be deleted now is nobody's.
         PluginFolders.Forget(aside);
+        if (plan.Next != plan.Id) PluginRenames.Move(home);
         return plan;
     }
 
-    /// <summary>The copy renamed into place; a rename that fails puts <paramref name="aside"/> back, and a rollback that fails too names it as where the plugin lies.</summary>
-    private static void SwapIn(string staging, string target, string aside, string id, string verb, Action<string, string>? move)
+    /// <summary>
+    /// The copy renamed into place; a rename that fails puts <paramref name="aside"/> back at <paramref name="back"/>, else at
+    /// <paramref name="target"/>, and a rollback that fails too names it as where the plugin lies.
+    /// </summary>
+    private static void SwapIn(string staging, string target, string aside, string id, string verb, Action<string, string>? move, string? back = null)
     {
+        back ??= target;
         try
         {
             PluginFolders.MoveInto(staging, target, move);
@@ -310,13 +331,13 @@ public static class PluginInstall
             PluginFolders.Forget(staging);
             try
             {
-                PluginFolders.Move(aside, target, move);
+                PluginFolders.Move(aside, back, move);
             }
             catch (Exception rollback) when (rollback is IOException or UnauthorizedAccessException)
             {
                 throw new DriverException(
                     $"`{id}` was not {verb}: {error.Message} Putting the installed version back failed too ({rollback.Message}): it lies in "
-                    + $"{aside}, and moving that folder to {target} restores it.");
+                    + $"{aside}, and moving that folder to {back} restores it.");
             }
 
             throw new DriverException($"`{id}` was not {verb}: {error.Message} The installed version is untouched.");
@@ -369,6 +390,7 @@ public static class PluginInstall
 
         SwapIn(staging, target, aside, manifest.Id, "replaced", move);
         PluginFolders.Forget(aside);
+        if (manifest.Formerly.Count > 0) PluginRenames.Move(home);
         return manifest;
     }
 

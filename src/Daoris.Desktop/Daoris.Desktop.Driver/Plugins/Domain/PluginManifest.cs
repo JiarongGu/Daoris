@@ -151,6 +151,9 @@ public sealed record PluginManifest(
     /// <summary>The interfaces it implements, each reached only as declared (<see cref="PluginInterfaces"/>); none for a refused plugin.</summary>
     public PluginInterfacesDeclared Interfaces { get; init; } = PluginInterfacesDeclared.None;
 
+    /// <summary>The old ids it declares, whose records Daoris moves to it once (<see cref="PluginRenames"/>); none for a refused plugin.</summary>
+    public IReadOnlyList<string> Formerly { get; init; } = [];
+
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
 }

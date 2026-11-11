@@ -54,8 +54,8 @@ public sealed class PluginInterfacesTests : IDisposable
     }
 
     [Theory]
-    [InlineData("azure-devops-pull-request")]
-    [InlineData("github-pull-request")]
+    [InlineData("daoris-azure-devops")]
+    [InlineData("daoris-github")]
     public void Each_pull_request_example_signs_in_through_its_own_commands_and_storage(string example)
     {
         var (manifest, problem) = PluginCatalog.ReadFolder(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", example));

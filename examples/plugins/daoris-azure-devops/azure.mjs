@@ -60,7 +60,7 @@ export const TRANSIENT = ['unavailable', 'rate-limited'];
 
 async function ask(method, url, body, version) {
   const token = kept()?.token;
-  if (!token) throw new Refusal('no-token', 'no personal access token is kept: run `daoris azure-devops-pull-request login`');
+  if (!token) throw new Refusal('no-token', 'no personal access token is kept: run `daoris daoris-azure-devops login`');
   let response;
   try {
     response = await fetch(`${url}${url.includes('?') ? '&' : '?'}${version}`, {

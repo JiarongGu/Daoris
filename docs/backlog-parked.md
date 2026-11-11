@@ -1,62 +1,18 @@
 # Daoris (道衍) — parked work
 
-Open rows set aside on 2026-10-30 and triaged on 2026-11-02 against D228 (`docs/2026-11-02-parked-triage.md`): the rows that build the structure or remove a second way went back into `TASKS.md` (inside the chunks that carry them, or as defects), the superseded ones to the archive, and the rest stay here, grouped by the condition that brings each back. To take a row up, move it to `TASKS.md`; a parked row finished meanwhile moves to the archive.
+Open rows set aside on 2026-10-30 and triaged on 2026-11-02 against D228 (`docs/2026-11-02-parked-triage.md`): the rows that build the structure or remove a second way went back into `TASKS.md` (inside the chunks that carry them, or as defects), the superseded ones to the archive, and the rest stay here, grouped by the condition that brings each back. To take a row up, move it to `TASKS.md`; a parked row finished meanwhile moves to the archive. Triaged again on 2026-11-11 against the code and the decisions as they stood: the closed rows are in the archive under *Parked rows closed in the triage of 2026-11-11*, eight went back to `TASKS.md`, and a condition that had gone stale is corrected in place.
 
-## The next installed sitting, once WORKFLOWCLEAN1's waves reach the install
+## The next installed sitting, on the build staged from SCOPEVERIFY1's green run
 
-The looks of ASKQUESTS1, ZOOM1, STARTFAST1, WAITPANEL1 and NOTIFY1 come with that sitting; those of PARKVIEW1, PARKWORDS1 and PARKANSWER1 after ONEWAY1k.
-
-- [ ] **HELPPLUGPROOF1 — plugin servers and skills proven on the install** (parent; after republish). Ask Daoris calls an approved read and is refused an unaccepted write; a session on each door invokes a plugin skill (the protocol door's `plugins` option was read from source only). D170's HELPPLUG1 notes.
-
-- [ ] **INSTALLPROOF1 — one installed regression pass over this week's changes** (parent; after republish). Against one staged build: an *Accept* across a tab switch and from a second window opened by a second launch; a `daoris-driver` press from the owner's own terminal reaching the open windows; Ask Daoris's setup card and Apply; a park answered in one box (no duplicated options or boxes); the taskbar count with a helper waiting. Dated shots, en and zh, both themes. Proof: the shots and the machine log's lines, in the archive entry.
-
-- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
-
-- [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
-
-- [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
-
-- [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-
-- [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
+Looks that no later design, and not the devtools' review of every screen (UIREVIEW1), has replaced.
 
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 
 - [ ] **OWNSPACE1e — on the install, no new session in the person's home** (parent; after the stage carrying OWNSPACE1a). A new conversation's and a driven session's transcript land under Daoris's profiles, and none new in the person's own tool home. Proof: the folders before and after, counted.
 
-- [ ] **WIRING1f — This Daoris on the installed window** (parent; after the stage carrying WIRING1c-i and 1c-ii). Settings → This Daoris at 1546 and 680 px, light and dark, English and 中文: every card, the folds open, a development run, an adopted service, paths breaking at separators, each door landing where it says, Driver's *Open This Daoris* row. Proof: the window, seen.
-
-- [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
-
-- [ ] **ASKHIST1di — installed history paging** (parent). Seen 2026-10-11 in 中文: a search's count and coverage, no match, a hit cut around its words, one Han character. Remaining: over 200 conversations (*Show more* and its focus; this machine has 7), English, the dock at 300 and 430 px. D158's ASKHIST1d2 note.
-
-- [ ] **HIST1h — installed clear** (parent; republish a–f first). Verify counts/bytes, terminal/page agreement at 1280/888/680 px, themes/languages. D153 §12.
-
-- [ ] **THEMESTART1w — the first frame and the splash on the install** (parent; after republish). With the OS light and Dark chosen, restart: the frame, border, caption and splash dark from the first frame, and Monitor's caption with it; the opposite way too; System follows the OS. During the start the marquee stays until Overview has its data, and Settings → Logs says `splash.lifted` `by:page` (a `by:bound` warning is a finding). Read `matchMedia('(prefers-color-scheme: dark)')` then for THEMESCHEME1b. D22's THEMESTART1 note, D56's SPLASHDATA1 note.
+- [ ] **THEMESTART1w — the first frame on the install** (parent; after republish). With the OS light and Dark chosen, restart: the frame, border, caption and splash dark from the first frame, and Monitor's caption with it; the opposite way too; System follows the OS. Read `matchMedia('(prefers-color-scheme: dark)')` then for THEMESCHEME1b. The splash's lift moved with STARTPERF1 (What needs you loads after the first screen) and is seen in its after-measurement. D22's THEMESTART1 note, D56's SPLASHDATA1 note.
 
 - [ ] **STEER2e — *Send now* on the installed window** (parent; after the stage carrying STEER2a/b). A conversation on Claude Code: words typed while it works, *Send now*, the step cut and the words taken at once; a queued word then *Send now* past it; a Codex conversation's *Send now* stopping and keeping; en and zh. Proof: the window, seen.
-
-- [ ] **PAUSE1g — installed pause/abandon** (parent; after a–f). Pause/resume same tree; abandon preserves landed work. D132 §12.
-
-- [ ] **SESSUX1l — installed management** (parent; republish a–i). States, carry-on, stop/try-again/archive across widths/themes/languages. D126 §9.
-
-- [ ] **GITAPP1i — the install, seen** (the owner; after 1a-ii and 1a-iii, again after 1d-iii; design §10.3). Review timed press to paint, three opens before and after, under the owner's load; the screens in both languages.
-
-- **ASKQUESTS1**: the quests an Ask Daoris conversation publishes are managed from it: each with its live state, opened in one press, followed to its end (the owner's direction, 2026-10-22). Built (the Ask Daoris design §9 item 12, D89's ASKQUESTS1 note): a strip under the conversation's head lists what it published with each one's live state, a row opens its record on Quests, and an Apply's result is Daoris's word; looked at on the installed window after the republish.
-
-- **ZOOM1**: the window's zoom works as an editor's does: its level shown as it changes, the window's frame kept at its size (the owner's report, 2026-10-22). Built (the UI/UX design §3.11, D185's ZOOM1 note): 50% to 200%, the bars held at their size, the level on the status bar; looked at on the installed window after the republish.
-
-- **STARTFAST1**: the window is usable a few seconds after Daoris starts (the owner's report, 2026-10-23): each start writes `start.stages` (STARTFAST1), and the first page's critical path is cut (STARTFAST1b, built: the host begun beside Chromium, the splash lifted on the first screen's queries, the first look's follow, tidy and facts after the page's word); `start.stages` on the install after the republish says what it saved.
-
-- **WAITPANEL1**: the session's waiting panel is too tall and cannot be resized, and the scroll buttons sit under it (the owner's report, 2026-10-23). Built (D185's WAITPANEL1 note): its top edge sizes it, kept per viewer, and *To the top* and *Back to bottom* sit above it; looked at on the installed window in both themes after the republish.
-
-- **NOTIFY1**: a notification center for everything that comes to the person, so a terminal's press never blocks the page and Overview stops listing every message (the owner's direction, 2026-10-21). The design is accepted (D196, 2026-10-21, after Codex's and Fable's reads); its build rows follow in order: NOTIFY2a (the pipe's half), NOTIFY2b (the view, which with 2a fixes the owner's three reports), NOTIFY2c (a count per window), NOTIFY2d (the balloons in the person's language), NOTIFY2e (the hand-over ask as a row), NOTIFY2f (Done and failed kept), NOTIFY2g (messages by their urgency), NOTIFY2j (the service's presses told to the windows), NOTIFY2h (the look's lines logged, not toasted), NOTIFY2i (the terminal's read) and NOTIFY2h2 (the look's deeper producers classed line by line) are built: every build row is, and what is left is the parent's look at the installed window and design §10's week on the install.
-
-- **PARKVIEW1**: what a session waiting on the person (等你处理) asks is shown clearly at its conversation's end, and the chat box offers its answers as presses (the owner's report, 2026-10-22): today its question is hard to find and to read, and the box gives no fitting response or option. Built (the park's ask design, D185's PARKVIEW1 notes); looked at on the installed window after the republish.
-
-- **PARKWORDS1**: the card of a session waiting on the person says in one line where its question is and how long it has waited; what stays held meanwhile and how the answer travels are there on demand (the owner's report, 2026-10-23). Built (D185's PARKVIEW1 notes); looked at on the installed window after the republish.
-
-- **PARKANSWER1**: a session waiting on the person offered only *Finish* and the decline, so its question could not be answered (the owner's report, 2026-10-23). Built: every session the person can answer offers the answer, one that cannot says why; looked at on the installed window after the republish. Built (FIX-LOG 2026-10-23): a line moved outside Daoris is followed, and a registration the follow sends is told to the windows; looked at on the installed window after the republish.
 
 ## A release of the LLM library, or the owner's key for a first provider
 
@@ -70,7 +26,7 @@ Owner direction, 2026-10-27: an agent-related feature built here (providers, ada
 
 ## The owner: a decision, a grant, a spend, a sign-in or a publication
 
-The last five (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1, EVENTHOOK1f) wait on other owners than this repository's.
+The last four (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1) wait on another owner than this repository's, the UI kit's. PLUGDIST1b and f are frozen with the plugin workshop and NuGet source (D233 point 3). A spend on a proof is granted once and small (D240 point 7), so a row here waits on the owner's act, not the spend.
 
 - [ ] **PROOFSCRATCH1 — remove the generated startup-proof binaries** (cleanup held, 2026-10-26; owner-authorized retry rejected again 2026-10-27). The native cleanup command for two ignored fixture apps was rejected before execution as `blocked by policy`. Preserve reports and logs; remove only after the controlling permission changes and the guide's boundary, reparse and process checks pass. Exact targets remain in local recovery notes.
 
@@ -82,19 +38,13 @@ The last five (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1, EVENTHOOK1f) wait
 
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 
-- [ ] **USAGECAP1a1b — recorded frames for the readings the history parses from the evidence alone** (driver tests; D179 point 2, the usage-read evidence's field table). A `get_usage` answer holding `limits[]` rows and a scoped week, and a Codex answer with a second limit (`rateLimitsByLimitId`), recorded from real answers on the owner's accounts (the parent's to record, with the owner's yes) so each parse grows only with a recorded frame, as the table's rule asks. Proof: `ClaudeUsage.Question.Recorded` and `CodexUsage.Question.Recorded` gain the answers, and the history's `Seen` tests run on them.
-
-- [ ] **USAGECAP1a3 — the doors' model frames recorded** (driver tests; D179 points 2 and 8, its USAGECAP1a2 note). The model split rests on fixtures built from the evidence, and Codex's report's meaning is unknown: record on this machine a native two-turn session with a model switch and a helper call (`message.model`, `modelUsage`), claude-code-acp turns (`_claude/model`, `_meta.quota`), and a codex-acp turn's usage (the parent's to record, with the owner's yes for the accounts spent). Proof: recorded fixtures replace the built ones in `ClaudeStreamJsonTests` and `AcpTests`, settle whether `modelUsage` is per turn or running, and codex-acp declares its `TurnReport`.
+- [ ] **USAGECAP1a1b — recorded frames for the readings the history parses from the evidence alone** (driver tests; D179 point 2, the usage-read evidence's field table; the spend is granted, D240 point 7, so it waits on an account that answers such a frame). A `get_usage` answer holding `limits[]` rows and a scoped week, and a Codex answer with a second limit (`rateLimitsByLimitId`), recorded from real answers on the owner's accounts so each parse grows only with a recorded frame, as the table's rule asks. Proof: `ClaudeUsage.Question.Recorded` and `CodexUsage.Question.Recorded` gain the answers, and the history's `Seen` tests run on them.
 
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 
-- [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
+- [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key; APIKEYACCT1 built the key accounts for dsh). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
 
-- [ ] **AGT2c — vendor pins** (owner; two downloads). Verify update controls and native layout. D67/channel evidence; observed pins.
-
-- [ ] **QUESTBACK1 — hand back without a session** (owner's decision first; then service → driver + web). No hand back exists from anywhere: `QuestTransitions.Allows` lets nothing move back to open (D46 §3), and D126 ~:570-573 parks it. A new operation kind (quest-operations.md's eleven places), so a decision amending D46 §3 and D68 must say which taker facts survive (the claim, `Awaits`, set-ups, the ledger's carry-on, a remote's held claim). The label cannot be *Send back…* (DiffPane's); *Hand back…*/交还… to check against D116. After QUESTCLOSE1b1 (same files).
-
-- [ ] **XAGENT1j — measured reviewer posture** (driver; owner authorizes account spending). Try writing through each door; declare only observed refusal. §5.2/D53.
+- [ ] **QUESTBACK1 — hand back without a session** (owner's decision first; then service → driver + web). No hand back exists from anywhere: `QuestTransitions.Allows` lets nothing move back to open (D46 §3), and D126 ~:570-573 parks it. A new operation kind (quest-operations.md's eleven places), so a decision amending D46 §3 and D68 must say which taker facts survive (the claim, `Awaits`, set-ups, the ledger's carry-on, a remote's held claim). The label cannot be *Send back…* (DiffPane's); *Hand back…*/交还… to check against D116. QUESTCLOSE1b1, which shares its files, is built.
 
 - [ ] **XAGENT1k — canon second reader** (canon/examples; parent's decision). §10 doctrine, resync and canon changelog. Verify/example rehearsal.
 
@@ -114,37 +64,21 @@ The last five (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1, EVENTHOOK1f) wait
 
 - [ ] **WSSETUP14f — complete pilot** (owner; after republish). Two repositories, green checks, knowledge declaration, 32768-byte root and restored budget. Pilot §4.
 
-- [ ] **AGENTDEFS1 — three proposed changes to the parent's own agent instructions await the owner** (the owner; found 2026-10-20, 2026-10-21 and 2026-10-22). CI1's builder rewrote the dispatch skill's step 6 to leave the CI watch running (`--ci --watch`) and stage a CI-green commit; the parent kept main's copy out of the merge, and the change stands on branch `worktree-agent-a89b93a7b719b96d3` (`f22bb0ad4`) for the owner to apply or decline. The parent's change to `.claude/skills/dispatch-subagent/SKILL.md` (2026-10-20) and a line a session of the install proposed for `.claude/agents/branch-worker.md` (STOREBOUND1, 2026-10-21: rows a shipped build cannot reach go to a new table, never under a mark it never reads; see `.claude/knowledge/compatible-builds.md`) both change the instructions the parent's own agents run under; the parent's tool refused the first as self-modification, so neither is committed by the parent, and each waits for the owner to apply or decline it. Proof: the owner's choice, recorded.
-
-- [ ] **LAYOUT2 — canary turns** (owner grant). Harness predictions/account flag from evidence §6; keyless half archived. D117.
+- [ ] **LAYOUT2 — canary turns** (owner grant; frozen with the agents-layout migration, D233 point 3). Harness predictions/account flag from evidence §6; keyless half archived. D117.
 
 - [ ] **BUDGET1 — budget scope** (owner decides). Align region-only behavior, README/design and analyze after decision. D59/REV3 F10.
 
 - [ ] **TRUST2 — measured trust** (owner grant). Written-key honoring and parent/child trust. D73/evidence; exact-folder hold remains. Seen 2026-10-12 on the install: a driven session's transcript opened with *Ignoring 7 permissions.allow entries from .claude/settings.json: this workspace has not been trusted*.
 
-- [ ] **AGENTS2a — DeepSeek key probe** (driver/CLI). No-key/invalid-key dsh measurement before twin declaration. D57/D67; ACP3 evidence.
-
-- [ ] **TOOLS10 — managed-Git probe** (owner permits one start per agent). D121 §7.
-
-- [ ] **TOOLS11 — real installs** (owner). Managed SSH Git, plugin Node, terminal PowerShell, gh/az landing. D121 §7.
+- [ ] **TOOLS10 — managed-Git probe** (owner permits one start per agent; with the owner's answer to GITLIB1 §7, Daoris's own managed git as the default). D121 §7.
 
 - [ ] **DEVDRIVE1 — the machine's cost of starting a program** (the owner's settings; never changed from here). Measured 2026-10-19 with no CI running: starting any program took 170-470 ms from PowerShell (`cmd /c exit`; `git --version` 550-720 ms) and 1.3-1.5 s through Git Bash, against about 10-30 ms normally; Windows Defender is not running, and two security products hook every program start (Tencent PC Manager's real-time protection `QQPCRTP`, and `AlibabaProtect`); a Microsoft Teams renderer used about three cores. Tests and builds start git and other programs thousands of times, so each start's cost multiplies. The owner's choices: an exclusion in Tencent PC Manager for this checkout and its tools (`git.exe`, `dotnet.exe`, `node.exe`), whether `AlibabaProtect` is needed, and Teams while working; the parent then measures a program's start and the git half before and after. On this repository's side: fewer program starts (PROCSPEED1b), and heavy loops started from PowerShell or Node rather than through Git Bash.
 
-- [ ] **REALCASE1 — complete installed real case** (parent/owner). Remaining Codex device sign-in belongs to owner; preserve prior seven-step outcomes in frozen row. D62.
-
-- [ ] **AUTONOMY1b3d — a real adapter's held request measured** (driver; D184's AUTONOMY1b3a note, "unmeasured"; after AUTONOMY1b3c). Under `asking`, hold a real `claude-code-acp` and `codex-acp` request for several minutes, then answer it each way; hold what they do (a timeout of their own, a cancel) to the note. Spends a real sign-in: the owner's go-ahead first. Proof: an evidence note with the wire frames and timings.
-
 - [ ] **ONEINSTANCE2b — the installed proof of a second window** (the parent with the owner; after the next install; D171's ONEINSTANCE2 note). The parent's own repro launched the second copy from an agent's shell, whose token may not open the per-user mutex or pipe, which alone produces the symptom: the owner clicks `Daoris.exe` a second time, and the log is read (`window.launch` then `window.launched` `main:2`; or the guard's or the engine's line naming the path it took). Then MAINWINDOWS3's look: one window on the work workspace, `main:2` on `games`, each keeping its own; closing the first keeps the second.
-
-- [ ] **PROC1d-v — the judgement again reuses the list's answers about commits** (driver; the owner's call on D88). The clean-up's and the sweep's judgement again before each removal asks every question about commits afresh (D88, LANDGIT1: "never what the planning was told"), so each removal proves its branch twice. A pair of commits by id cannot go stale while the objects exist: handing the list's answers on would about halve those proofs' starts, refs still read fresh. Proof: a CleanAsync count in `TreeSyncStartsTests` before and after; D88's removal tests unchanged.
-
-- [ ] **TREELOOK1b — CLEANUP1's retention keeps fewer trees** (driver; TREELOOK1's remainder). TREELOOK1 made an unchanged tree one `git status`, but a first read, and a tree with commits after the line moves, is still a whole walk (about nineteen starts), so 145 kept trees still cost minutes then. Decide with the person whether retention keeps fewer ended trees. D181's TREELOOK1 note. Proof: the kept count on the install after a retention pass.
 
 - [ ] **PLUGDIST1b — pack/release workflow** (request to plugin owner). §7.
 
 - [ ] **PLUGDIST1f — first publish** (owner). Account, trusted publishing and prefix. §7.
-
-- [ ] **UNBLOCK8 — first declaration** (owner). Week before/after asks. D122 §6.
 
 - [ ] **KITREQ1 — four requests to the UI kit's owner (Shenora, from v0.21.1; 0.22.0 and 0.24.0 answered none)** (the parent sends; the owner decides; never written into the kit from here). (1) `ChromiumEngine.Start` answers CEF's relaunch hand-over with a log line only: send it to the app's `OnActivated`, or expose a callback, so a launch the WinForms guard let through still reaches the app. (2) `ListenForLaterLaunches` ignores `ui.Post`'s result: a launch dropped while the form is not ready should be said. (3) `BringForward` and `OnActivated` share one posted body: run the app's callback on its own guard, so a failed bring-forward does not skip it. (4) `ChromiumView` raises no title event (`ChromiumChildBrowser.TitleChanged` is empty): expose the page's title so the frame can read it and Daoris's `SET_TITLE` route can go (MAINWINDOWS3b). Evidence: D171's ONEINSTANCE2 and MAINWINDOWS3 notes. Then ONEINSTANCE3: route the engine's relaunch to `LaterLaunch` once (1) ships.
 
@@ -156,19 +90,13 @@ The last five (KITREQ1, FRAME2b, THEMESCHEME1b, THEMEBROWSER1, EVENTHOOK1f) wait
 
 ## Another row first
 
-The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the new structure when they come back.
+Several are re-cut onto the new structure when they come back. The review environment's rows (REVIEWENV1d2, e, g2) wait on REVIEWUX1's build: its settled design (D273, one review record per attempt) names no environment, so they are re-cut onto that record when they come back. The plugin distribution rows are frozen with the plugin workshop and NuGet source (D233 point 3), and the co-agent rows with partners' remaining rows.
 
 - [ ] **FABRIC-COLLAB1 — the first cross-harness round trip** (service, driver; after FABRIC-C2b; the fabric events design's rows table (§E10), §D10). One message and one artifact by reference between a Claude Code and a Codex session.
 
-- [ ] **FABRIC-DELEGATE1 — a delegated node** (service, driver; the fabric events design's rows table (§E10), §D10). A node delegated as a quest commitment another repository accepts and executes locally. Re-pointed (D215; integration design §18.3): driver-originated requests build on INTEGRATE1n's waited start as INTEGRATE1p; a child's or another harness's delegation, and artifacts by reference, keep FABRIC-ACP1, C2a and C2b, after COLLAB1.
+- [ ] **FABRIC-DELEGATE1 — a delegated node** (service, driver; the fabric events design's rows table (§E10), §D10). A node delegated as a quest commitment another repository accepts and executes locally. Re-pointed (D215; integration design §18.3): the driver-originated request is built as INTEGRATE1p's `request` node (2026-10-31); a child's or another harness's delegation, and artifacts by reference, keep FABRIC-C2b (FABRIC-ACP1 and C2a are built), after COLLAB1.
 
-- [ ] **FABRIC-WAITUNIT1 — waiting on other work as a node** (service, driver; after WIRE1b; the fabric events design's rows table (§E10), §E6). `wait.unit` through a commitment only, a distributed wait shown honestly. Re-pointed (D215): its adapter builds on INTEGRATE1n's waited start for driver-originated requests; §E6's full commitments stay after COLLAB1.
-
-- [ ] **FABRIC-VERIFY1a — one declared check as a lane beside a two-step chain** (driver, service; a design's first slice: `docs/2026-10-19-verification-lanes-design.md` §8; D173's FABRIC-VERIFY1 note). One declared deterministic check, one repository, two chained steps: the check is a durable obligation on the step's exact candidate (repository, take, submission, commit, graph and policy versions, attempt), run in an isolated checkout of that commit, reporting pending, passed, failed or unknown; the chain's next step and an authorized landing go on while it is pending; the step's close waits for it; on failure an unsent push is withheld and the person is asked to reopen (§E5). Proof (real processes and git, the parent's to run): the chain advances while the check runs; a restart keeps the obligation; the check fails; the push is withheld; the person reopens; the go-on brings the branch up to date; the step submits anew; and the design's §9 traps each a test.
-
-- [ ] **FABRIC-HUMAN1 — human tasks** (driver, modules; after NODE1 and GRAPH1, and RPC1d with D156 §4.2; the fabric events design's rows table (§E10), §D5). A brief, attachments as evidence, approve or reject with a reason, the person's doors only, a terminal twin.
-
-- [ ] **FABRIC-CHAIN3 — the chain's bounded menu** (driver, cli; after CHAIN2; §C6; the owner chose it). A workspace picks, for typed events (a step reached, failed, ended, held), effects from a fixed list that never remove or write anything; no expressions; both twins. Proof: canary 12 over every value; no chosen effect wakes a link.
+- [ ] **FABRIC-WAITUNIT1 — waiting on other work as a node** (service, driver; the fabric events design's rows table (§E10), §E6). `wait.unit` through a commitment only, a distributed wait shown honestly. Re-pointed (D215): its adapter for driver-originated requests has INTEGRATE1n's waited start and INTEGRATE1p's `request` node to build on, both built; §E6's full commitments stay after COLLAB1.
 
 - [ ] **WORKFLOW1i2 — the intake sets a kind that lowers nothing** (driver/service; design first). §4.3 lets an agent set a kind on quoted words where `Involvement.Lowers` is empty in every repository the work reaches; the service cannot judge that, so it needs an agent-facing driver door. D157's WORKFLOW1i-a note.
 
@@ -182,39 +110,13 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 
 - [ ] **REVIEWENV1g2 — Stop showing** (modules/web; after d2). Route ends tab serving; press beside Show again. D154 point 8; route/gate tests.
 
-- [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
-
-- [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
-
-- [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
-
-- [ ] **REVIEWBASE2-ii — Review's *Bring up to date*** (modules/web; after 2-i, REVIEWBASE4). A route beside `SESSION_DIFF` (`SESSION_UPDATE`, a refusal as an answer, as `DiscardTreeAsync` is) reading the conversation's turn from the chat runner; the review head's behind line gains the press, its words no longer sending the person to Branches; both languages, stories. D164's REVIEWBASE2 note.
-
-- [ ] **PROCESS1f — Ask Daoris proposes a repository's process from its own instructions** (driver/service). Reading the repository's instruction files through its knowledge, a setting proposal for the commit rule and the landing (pattern, key, squash), which the person applies; never taken as the process itself. D164's amendment point 5; D110.
-
-- [ ] **PROCESS1g — Review's press says the yes under `ask`** (web/modules; after REVIEWDIRTY1, 1a). Where the commit rule is `ask` and the tree holds uncommitted work, Review offers *Commit*, which says the person's yes in the conversation as their words; the agent commits by its repository's conventions. D164's amendment point 1.
-
-- [ ] **PLUGHOOK1b — GitHub work/state** (examples). Query head/PR status for squash cleanup. Hooks §2.7; fake-gh tests.
-
-- [ ] **GIT1j — offer managed Git** (web/driver; after GITAUTH1c, which took in TOOLS6, and TOOLS10). Setup step, identity and explicit switch. §5; setup/coverage tests.
-
-- [ ] **GIT1k — Git proposals** (service/driver/web; after h). Confirm fetch/branch/push/delete. §3.3/D110; kinds/coverage.
+- [ ] **GIT1j — offer managed Git** (web/driver; after GITAUTH1c, which took in TOOLS6, and TOOLS10; and the owner's answer to GITLIB1 §7, Daoris's own managed git as the default). Setup step, identity and explicit switch. §5; setup/coverage tests.
 
 - [ ] **GITSTART6 — the built-in MinGit's `ucrt64` git past its launcher** (driver, service, devkit, cli; after TOOLS10; D121's GITSTART5 note). MinGit 2.56.0 holds its git under `ucrt64/`, which `GitForWindows.Prefixes` and its three twins do not name, so the managed git still starts through its launcher. Measure what that launcher hands its child first (GITSTART1's FIX-LOG method). Proof: a `ucrt64` row in `GitForWindowsTests` and each twin's table.
 
-- [ ] **EVID1c — quest proof and holds** (web/driver; after b/DRIFT1d2). Results versus assertions, Check again and check proposal. §5–§6.
-
-- [ ] **EVID2a — capture requirement** (service; after EVID1a). Screenshot/answer kinds and verdicts; machine-private bytes/paths never sync. §9–§10/§12.
-
-- [ ] **EVID2b — keep captures** (driver/examples; after EVID1b/EVID2a). Proof variable, validation/redaction/copy, manifest, prompts/intake. §9–§11.
-
-- [ ] **EVID2c — capture pages/terminal** (web/modules/driver; after EVID1c/EVID2b). Proof sections, reopen capture/remove and save/remove verbs. §11–§12.
-
-- [ ] **COAGENT1d — the lead asks for a piece** (service, driver, modules, web-settings, web-shell; after 1b and 1g; design §9 row 4). `partner_ask` under the `partners` rule, its wait row, the Setup rows, `daoris driver partners`, Ask Daoris's doors, the canon skill's paragraph. Proof: as row 4 names it; then the owner's `on` for this repository and the dogfood.
+- [ ] **COAGENT1d — the lead asks for a piece** (service, driver, modules, web-settings, web-shell; 1b and 1g are built; frozen with partners' remaining rows, D233 point 3; design §9 row 4). `partner_ask` under the `partners` rule, its wait row, the Setup rows, `daoris driver partners`, Ask Daoris's doors, the canon skill's paragraph. Proof: as row 4 names it; then the owner's `on` for this repository and the dogfood.
 
 - [ ] **COAGENT1f — measured both ways on the install** (the parent with the owner; after 1d; design §8.5, §9 row 6). Codex leading, Codex's resume and steering where ready, the first values read again in a D199 note.
-
-- [ ] **SWITCHCTX1 — a move keeps the agent's own context, and a session goes on as one conversation whatever runs it** (design under D191, then driver, modules, web; the owner's direction, 2026-10-24: an account switch, and a switch to another agent, continue the session rather than start a new one). Today a move over the curve opens a new conversation handed Daoris's brief, read on the install as a new session, though D167 keeps every record on the line's one entry as its parts. The same agent on another of Daoris's accounts: its own conversation's files carried to the next account's home, never over a name that stands, loaded there and read back against Daoris's record before anything is prompted, today's briefed move the fallback; measured on the install's next real move, never by spending turns. Another agent: the brief, as today. On the page either half reads as one conversation. Designed in `docs/2026-10-24-switch-context-design.md` (proposed, round 5 with the Opus reader's named changes of its round-5 read taken in its §12, the curve's move first; the carry not accepted, and none of it built, until Codex's owed read of round 5 lands, D191; the line view accepted); rows SWITCHCTX1a, b, c-ii, d, e and f in its §6, the line view SWITCHCTX1c-i is built (the archive, 2026-10-25); Codex's read of round 5 (21 findings, 10 blocking) asks for protocol changes that are FOUNDATION1's move record, so the carry waits on that design. Proof: its §6.
 
 - [ ] **USAGECAP1b — the capacity estimate, fitted and checking itself** (driver; after USAGECAP1a has three reset cycles of history; D179 points 1, 3, 4, 5 and 8). The versioned table of ratios (dated, sourced, never prices); intervals of five points or more inside one reset and one epoch; a 0.1-quantile fit through the origin, pooled per plan variant, with its sensitivity refit and its display gate; each new reading predicted first and its error kept; Codex's windows by duration and scope. Proof: tests on synthetic histories (a known capacity recovered within the range; a burst of unseen use; flat readings under rounding; a late reading; a reset inside an interval; a model switch; a cumulative report; a plan rebound starting an epoch; too little history saying *insufficient evidence*).
 
@@ -232,8 +134,6 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact follow-up merge rule. Pilot §4.2; composer/rehearsal tests.
 
-- [ ] **ORIENT2d — prompts use index ranges** (driver). Declared index preferred, fallback retained. D151 §3.3/§6; goldens.
-
 - [ ] **ORIENT2f — standalone clone index** (examples/tools). Move/fail/regenerate/pass without Daoris. D151 §4; family proof.
 
 - [ ] **ORIENT2g — post-adoption measurement** (owner install; read-only). ORIENT1e targets unchanged: halve calls/characters/searches, quarter whole reads, 80% uptake, no extra parks. D151 §5.3–§5.4.
@@ -246,53 +146,31 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 
 - [ ] **PLUGDIST1d — package host answers**. Records say package, not folder. §7.
 
-- [ ] **PLUGDIST1e — Available catalogue** (after PLUGUI1f). §6/§7, amended by D140.
+- [ ] **PLUGDIST1e — Available catalogue** (after PLUGINEXT1's plugin UI design, `docs/2026-11-11-plugin-ui-design.md`, which replaced PLUGUI1f). §6/§7, amended by D140.
 
 - [ ] **PLUGDIST1g — package offers** (after f). §7.
 
-- [ ] **UNBLOCK2 — declaration judge** (after DEV5). Safe commands beside gates, read from line. §3.1–§3.3/§6.
-
-- [ ] **UNBLOCK3 — person's acceptance** (after UNBLOCK2/week of UNBLOCK5). Exact rules on both doors. §3.4–§3.5/§6.
-
-- [ ] **UNBLOCK6 — declaration UI/proposal**. Bilingual. D122 §6.
-
-- [ ] **UNBLOCK7 — measure Codex/dsh**. No grant before measurement. D122 §6.
-
 - [ ] **DOC6 — example document standard**. D122 §6; DOC7 is D127.
-
-- [ ] **TOOLS8 — tool proposals**. D121 §4.3/§7.
 
 - [ ] **TOOLS9 — managed-tool rehearsals**. Loopback lists, stubs and tamper refusals. D121 §6/§7.
 
 - [ ] **TOOL4h — account rehearsal/report** (tools; after TOOL4j). Stub window limits labelled Daoris-only; parallel account run. Rotation §8/D130 §5.4.
 
-- [ ] **SWEEPCARRIED1b — carried branch wording** (web/driver). Exhaustive session head, terminal reasons and registered twin. D148/D102; bilingual/golden tests.
-
-- [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
-
-- [ ] **QUIETWINDOW1 — another project on this machine can ask Daoris's heavy runs to pause** (tools; found 2026-10-23: three times in a day, another session publishing a different project asked the steward for a 15-40 minute quiet window because Daoris's test hosts made process starts on the machine take 190-850 ms and its spawn-heavy tests time out, and each time the steward stopped runs by hand). A machine-wide quiet request (a small file under the user's local application data, naming who asks, why and until when, bounded to an hour) that the CI watch, `--full`, `--rerun` and the merge tool's gates read before each heavy gate and wait on, saying so; a heavy gate already running finishes; the request ends by itself at its bound; a `node tools/merge-branch.mjs --quiet <minutes> --by <name>` and `--quiet-end` write and end it. Proof: a request holds the next heavy gate and lets a light one run; it lapses at its bound; the watch resumes by itself.
+- [ ] **QUIETWINDOW1 — another project on this machine can ask Daoris's heavy runs to pause** (tools; with MERGETOOL1, whose runner and gates it holds; found 2026-10-23: three times in a day, another session publishing a different project asked the steward for a 15-40 minute quiet window because Daoris's test hosts made process starts on the machine take 190-850 ms and its spawn-heavy tests time out, and each time the steward stopped runs by hand). A machine-wide quiet request (a small file under the user's local application data, naming who asks, why and until when, bounded to an hour) that the CI watch, `--full`, `--rerun` and the merge tool's gates read before each heavy gate and wait on, saying so; a heavy gate already running finishes; the request ends by itself at its bound; a `node tools/merge-branch.mjs --quiet <minutes> --by <name>` and `--quiet-end` write and end it. Proof: a request holds the next heavy gate and lets a light one run; it lapses at its bound; the watch resumes by itself.
 
 ## A measurement or a sighting
 
-- [ ] **GITOLD1 — absence on a git before 2.43** (driver; after RECORDUNREAD1; TOOLS5). Without `show-ref --exists` (exit 129) no gone branch's record is ever forgotten. Detect it and say the git is too old where git is chosen, or read the ref store. Proof: a fast test answering 129 says why.
+- [ ] **GITOLD1 — absence on a git before 2.43** (driver; RECORDUNREAD1 is built; on a machine whose chosen git is older, the managed MinGit being 2.56; TOOLS5). Without `show-ref --exists` (exit 129) no gone branch's record is ever forgotten. Detect it and say the git is too old where git is chosen, or read the ref store. Proof: a fast test answering 129 says why.
 
-- [ ] **FABRIC-TRYAGAIN1 — *Try again* for an unsound plugin** (driver, modules, web-shell; after PERFORM1a; §C4, D119 §2). Only `HookSet.TryAgain` clears unsound, and no door reaches it. Proof: the plugin page offers *Try again* (重试) while failing `unsound`; `daoris-driver plugins try-again <id>`; a `HelpCoverageTests` door.
-
-- [ ] **WIRING-SIZES-LIVE1 — Settings fills in as a size walk counts** (modules, driver; after EVENT5b). Keep a partial `SizeReading` while a walk runs and publish `wiring` at each entry; only if a walk is long enough to watch. Proof: a driver test reading mid-walk; a modules test publishing per entry.
-
-- [ ] **FABRIC-UNITDOOR1 — every kind of unit at a door** (driver, modules; after UNIT1a; §D0, §D2). `daoris-driver work units [--kind]` and a `WORK_UNITS` read classed open in `PipeCensus`, through `WorkUnits.ReadAsync`, `WORK_STATE` unchanged. Proof: words tests, `DriverModuleLinesTests`, `PipeCensusTests`.
+- [ ] **WIRING-SIZES-LIVE1 — Settings fills in as a size walk counts** (modules, driver; EVENT5b is built). Keep a partial `SizeReading` while a walk runs and publish `wiring` at each entry; only if a walk is long enough to watch. Proof: a driver test reading mid-walk; a modules test publishing per entry.
 
 - [ ] **OWNSPACE2e — moving Daoris's leftovers aside, bound to their identity** (driver, modules, web; D175's OWNSPACE2 note). The press back, safely: an identity-bound rename (`SetFileInformationByHandle`/`FileRenameInfoEx` on the opened handle), ancestors held without `FILE_SHARE_DELETE`, a second walk compared with the first, origins re-read after it, coordination with session starts. Proof: the review's three scenarios as tests.
 
-- [ ] **OWNSPACE2c — the leftovers list from a terminal** (driver host; D50, D175). `daoris-driver` lists the same folders with the window's records. Proof: a command test over scratch homes.
-
 - [ ] **CURVEROOM1 — "both are over their curves; it is the least over"** (driver/web; if the window shows it unclear). `WalkStep.Room` is said today by the other account's own reason; a coded reason of its own, en/zh. D165's SWITCH1b-ii note.
-
-- [ ] **SWITCHMODEL1 — a model family's week** (driver; measure first). The per-model weeks (`seven_day_opus`, `seven_day_sonnet`) take the weekly curve where the agent reports them; `get_usage` answered them null on every account read (`docs/2026-10-12-usage-read-evidence.md`). Read them when one is reported. Design §2.
 
 - [ ] **BRW14 — downloads as attachments** (design first). Define session download destination and quest transfer. D78/CHR3 §3.2.
 
-- [ ] **SESSWATCH1f — the passes' own minutes, asked** (consider; design §9 row 6).
+- [ ] **SESSWATCH1f — the passes' own minutes, asked** (consider, after `TASKS.md`'s SESSWATCH1e; design §9 row 6).
 
 - [ ] **DRIFT1e — follow-ups preserve requirements** (design first). Reopen parent corrections; closing notes are not requirements. D133 §5.
 
@@ -304,27 +182,21 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 
 - [ ] **STRAY1b — strays said on the Accounts screen and the terminal, and a repair door** (modules, web, cli; D125's HELPSTUCK1 note). A sign-in in a lock's folder is said only by Ask Daoris: the Accounts view and `daoris agent list` say it, and a door renames a stray to a fresh account id carrying its readings. Proof: a modules route test, the page's line in en and 中文, the CLI's list row.
 
-- [ ] **HEAVYRUN1b3 — the holder's session told who waits behind its heavy run** (driver; D180's HEAVYRUN1a note, "saying the wait to the holder's session too"; after HEAVYRUN1b1). Today only the waiter's output says it. A note on the holder's session (or its running call) names the waiting session and how long it has waited. Proof: two runs; the holder's session reads the wait.
-
 - [ ] **QUESTCLOSE1b4 — a lost move's note keeps its parts** (service; consider). A quest's `conflicts` (`QuestConflict`) carry a lost move's note but not its parts, so a lost person's done reads in English. If the page should word it, `QuestConflict` and the answer gain parts. D142 point 2; a sync test.
 
 - [ ] **FREEZE1b — capture next stalled bar** (modules/driver; trigger: ui.stalled). Move measured cause off UI thread; request runtime-owned changes. D56/log §4.
 
-- [ ] **ASKNAME1c — named-proposal twin** (service/driver/web). One case-sensitive fixture across tier/intake/page; register twin. D77; three-suite proof.
-
 - [ ] **GOAHEAD2c — rehearsal go-aheads** (tools). Stub asks twice; first answer stays parked, second resumes once naming both. D135/phase 17a.
 
-- [ ] **SQUASHTIDY1g — ancestry on another branch** (driver; decide). Carried versus landed-elsewhere; offer/refuse consistently. D88/D102; content-offer/landing Process rows.
+- [ ] **SQUASHTIDY1g — ancestry on another branch** (driver; decide, with PROCSTEPS1f's generic `tidy` and branch removals). Carried versus landed-elsewhere; offer/refuse consistently. D88/D102; content-offer/landing Process rows.
 
-- [ ] **MCPSDK2 — protocol revision** (service; decide before SDK upgrade). Choose negotiation semantics before taking 2.x. MCPDISCOVER1; end-to-end probe.
+- [ ] **MCPSDK2 — protocol revision** (service; decide before SDK upgrade; the service is on `ModelContextProtocol` 1.4.1). Choose negotiation semantics before taking 2.x. MCPDISCOVER1; end-to-end probe.
 
 - [ ] **SWAP2b — swap evidence** (tools). Marker distinguishes same-commit builds; retain longest holds from five loaded runs. D139/D60; failing marker proof.
 
 - [ ] **SWAP2d — rollback by phase** (web/driver). Busy/move/start sentences and shared code table. D139/D41; bilingual twin cases.
 
 - [ ] **FLAKE4b — read the stub's next refused fetch** (CLI tests; trigger: a stub turn failing on its quest door). FLAKE4 made the stub say what refused its fetch, and found no cause: keep-alive, a held loop and load did not reproduce it. Read the next sighting's cause and fix that. FIX-LOG's 2026-10-21 FLAKE4 note.
-
-- [ ] **FLAKE1 — diagnostic waits** (driver/modules tests). Instrument repeating failures; three loaded serial greens, named slow step. MOD8/PROC1/FIX-LOG. Seen 2026-10-17 (full run, green alone): `RefWatchProcessTests.Each_ref_write_is_judged_once_within_a_second…`, `TreeSyncReplayTests.A_tree_folder_held_open…`; beside four workers: `DriverWatchTopicsTests.A_thousand_wakes_run_no_remote_sync`, `RunningServiceTests.A_redirect_is_no_answer`. Beside a merge and three builders, 2026-10-18 (full set 6cbbde2, green alone): `StopHoldTickTests.An_open_quest_whose_session_the_person_stopped_is_held_rather_than_started_again_until_Try_again`, `AnswerContinuesTickTests.An_answer_on_another_account_never_resumes_and_is_carried_on_saying_why`; web-unit's `WorkFrame.test.tsx` timeout (WEBSPEED1). The family rehearsal once in WEBSPEED1's merge: port 28772 (its second host) held for a moment by a process the system did not name (REHEARSEPORT1 refused; outside the dynamic range; free a minute later). Service Http under heavy load in FABRIC-CLOSE1h10's merge (green on rerun): `ChangeStreamProcessTests.A_write_from_another_process_wakes_the_wait` (55 s), `InputEndStopTests.The_real_host_not_asked_keeps_serving_when_its_input_closes` (30 s); a worker's fast half once: `DriverWatchTopicsTests.The_whole_look_still_runs_at_its_deadline_under_a_stream_of_wakes`; web-unit in CLOSECAP1's merge: `SearchView.test.tsx` *answers nothing as an empty state…* 25 s over its 20 s. A worker's fast half, 2026-10-19: `LedgerChangesTests.A_refusing_door_is_backed_off` (4 tries, expected 1-3; green alone). BRAINSTORM1b's worker, 2026-10-19: `test/service/running.test.ts` "a redirect is no answer" and two `test/service/brainstorm.test.ts` tests each failed once under the full CLI run and passed alone; GATESLIM1's worker: `setup-kit` "a set-up quest is done…" EPERM in its fixture's cleanup beside other node tests, green alone. PROCSPEED1's four-thread git half, 2026-10-19: `LandedBranchTests.A_branch_that_changed_since_the_list_keeps_no_recovery_ref`, a `worktree add` that failed with no output 1 s in (green alone in 2 m 12 s). The BRAINSTORM1b batch's in-checkout family rehearsal, 2026-10-19, failed five checks (the first a command killed at its timeout, the rest one stub session failing nine times) while five workers and the CI beside ran and SYNCMERGE1a was merged into the same tree under it; the CI beside's family rehearsal on b7043d982 is the verdict. The CI beside on b7043d982 passed the family rehearsal (26 min) and the driver's process half (35 min): this morning's in-checkout failures were load and a tree changed under the run. The CI beside on 0a5c608 (2026-10-19, five workers beside it, below normal): `SessionRail.test.tsx`'s *finds sessions by name at once, and by what was said* timed out at 6.5 s finding its region, and passed alone (52 of 52). The CI beside on b0a786d (2026-10-19, four workers beside it, below normal): `setup-kit.test.ts`'s STUB3 case (a stub that exits without answering fails its row in seconds) saw its node stub answer nothing within 10 s of its start, and passed alone three times in three. Fixed the same day: the row's start bound is its own, 60 s, and the exit's message is its proof (FIX-LOG). The CI beside on 32889e2 (2026-10-20, five workers beside it): `OrphanedSessionTests.The_loop_ends_what_the_last_run_left_working_before_its_first_tick` (246 ms) met its stand-in service's `HttpListenerException` from a response the dispose's stop cut short, and passed alone; fixed the same day, the dispose takes the serve loop's stop exceptions as the stop's (FIX-LOG). Seen 2026-10-21 and 2026-10-22, each green alone: `TurnStopTests.A_message_sent_mid_…` (full set 0ded8cf), `BranchTidyingProcessTests` and `TreeSyncReplayTests.A_tree_folder_held_open…` again (full sets 0ded8cf and 9bcbc34), and `SessionMessagesTickTests.A_native_resume_that_ends_before_naming_its_conversation_is_tried_once_more` (beside the full set); `WorkflowRunBindingTests.Two_starts_of_one_run_at_once…` was a product race, fixed by BINDRACE1. Seen 2026-10-22 beside four builders: `AnswerContinuesTickTests.An_answer_on_another_account_never_resumes_and_is_carried_on_saying_why` (78 Process tests took 10 m 54 s; its class passed 7 of 7 alone in 2 m 24 s). Seen 2026-10-23 in REVIEWLOCK1's land test (the driver's fast half, 13,726 tests): `BrainstormBoundsTests.A_full_cap_waits_and_the_next_pass_runs_when_a_slot_is_free` (its pass waits 150 ms on a cap of one), 3 of 3 alone (fixed 2026-10-25 after a third sighting in the stage on db883b1: the default rule left the generators one second at the test's minute, so a loaded first pass used it up and the second read `cap-full`; the case's window is widened, its claim being the cap's). In SETUPSTATE1's land test, 2026-10-23 (the driver's fast half, 14,118 tests): `HelpRoomScopeTests.The_catch_up_writes_again_only_its_own_workspace_s_room`, 3 of 3 alone; again in STEWARDROLE1c's, 2026-10-25, and fixed that day: it read the room plainly beside its rename (FIX-LOG). In LIMITGOON1's land test, 2026-10-23, the whole driver fast half hung with no verdict until its 40-minute bound; rerun at once with `--blame-hang`, all 14,123 passed in 2 m 35 s, so no test was named. In MAKERTRAIL1's land test, 2026-10-24 (the driver's fast half, 14,137 tests): two of `ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today` (`grown-held` with a dangling or no line), 189 of 189 twice alone; a census whose completions are held should not depend on load, so its timing is a test defect to find. The CI on 78cc5b5, 2026-10-24 (web-unit beside the service and modules gates): two of `notifications.test.tsx`'s window tests (*gives its region back from the bell…* 21 s, *wears the dot for an unread message…* 23 s) over their bound, 10 of 10 alone. The CI on 7ce833d, 2026-10-24 (modules beside the service gate and five install sessions): `SweepStateSliceTests.A_ref_moved_in_one_repository_pushes_that_partition_alone` at 2 minutes, 11 of 11 alone in 1 s. In LIMITRESUME1d's land test, 2026-10-24, the driver's whole fast half hung a second time (23 minutes, no verdict, beside the CI's git half and five install sessions); rerun at once with `--blame-hang-timeout 4m`, all 14,171 passed in 2 m 1 s, so again no test was named. Twice now: the next hang should be dumped while it hangs (`dotnet-dump` on the testhost) rather than rerun. The CI on b61325e, 2026-10-24: `TurnStopTests.A_message_sent_mid_turn_on_the_native_door_waits_for_the_turn_to_end` again, passed alone. Later on 2026-10-24, under five install sessions and four design reads: `StandingConfirmationTests.The_real_revoke_raced_against_a_keeping_a_release_and_an_admission_hands_nothing_under_a_dead_generation` (modules, 3 of 3 alone), `BrainstormBoundsTests.A_full_cap_waits…` again, and the tool-test *--ci --watch gates main's tip as it moves* (its scratch repository's first watch still held the gate tree when the second asked). The CIs on d879097, a293792, 5e36d25 and a5cac09, 2026-10-24, each green alone: `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front…`, `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names…`, `LimitResumeTickTests` twice, `HeavyRunProcessTests.A_wrapper_killed_outright_admits_no_second_run…`, and in the driver's fast half (never re-run there, so it failed the gate) `ReviewGraphCensusTests`' `none`/`no-id`/`here` case again, 189 of 189 alone: its timing is the test defect named above (found and fixed 2026-10-25 after the stage on e8f1aed: the census ended a round after 40 ms of quiet, a fixed guess at the thread pool's lag, so a node its flow made from a continuation under load started a round past its depth; the quiet window now follows the pool's measured lag). In `npm run verify`, 2026-10-24: `rehearsal-kit.test.mjs`'s *a set-up step's stub says what it showed through its connector and closes done*, its stand-in door handed port 2049, which fetch refuses (twice green alone); fixed the same day, test servers listen through `tools/listen-port.mjs` (FIX-LOG). The CI on deb766f, 2026-10-25, beside a landing's tests, two install sessions and three design readers (the modules gate 21 minutes against its usual 5): `InstancePipeTests.An_id_sent_twice_runs_once_and_is_answered_the_first_answer_even_by_the_next_instance` (the pipe closed before it answered, 10 s), `WorkFrame.conversation.test.tsx`'s *sends typed words to a working driven session now* (20 s), and three merge-tool tests (*the backlog's line conflict…*, a `git checkout` killed at its bound; *--ci --watch gates main's tip…* again; *the tool, end to end…*); each green alone (20 of 20, 47 of 47, 29 of 29). In SUPERVISORRACE1's land test the same day (the driver's fast half beside the stage's rehearsals): `HelpFactsTests.A_part_of_the_work_reads_the_trees_its_sessions_recorded_and_is_judged_again_as_they_move`, 3 of 3 alone. In FOUNDATION1 mod-i's land test, 2026-10-25, the driver's fast half beside an install chat and a design reader, two runs failing different sets: `HandOverAskLookTests.Under_on_a_quest_session_that_ended_its_turn_is_handed_over_with_its_note`, `HeldPermissionsTests.A_hold_nobody_answers_is_released_at_its_bound`, then `StagedBuildTests.A_journal_a_reader_holds_for_a_moment_is_still_written` (access denied at the journal's rename), `SessionsCommandTests.A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part` (2 notes where 0), `BrainstormBoundsTests.The_generators_run_side_by_side_within_one_deadline` (*failed* where *answered*), and `ReviewGraphCensusTests` in both (the graph never quiet); each green alone (207 of 207, 314 of 314). In FOUNDATION1 z-iii's land test, 2026-10-26, the driver's fast half beside two install sessions and three design readers: `HeldFilesTests.A_file_held_open_within_a_folder_is_named_with_the_process_holding_it` and `StagedBuildTests.A_journal_a_reader_holds_for_a_moment_is_still_written` again, 49 of 49 alone. In FOUNDATION1 a-iii's land test, 2026-10-26, beside the full CI, an install session and two design readers: `MachineFactsTests.A_subject_is_judged_again_at_its_deadline_and_not_before` and `ReviewGraphCensusTests` again, 202 of 202 alone. In SESSPROC1's land test and its rerun, 2026-10-26, beside three install sessions and three design readers, four different cases each once: `AutoLandingLookTests.A_look_while_a_landing_runs_judges_nothing_and_leaves_its_wakes_unspent` and `AccountLimitHoldTests.A_carry_on_on_a_cooling_account_is_held_with_no_record_and_waits_unparked` (31 of 31 alone), then `SessionsSayCommandTests.Held_words_name_what_holds_them` (TESTWAIT5b's fallback cause) and `BrainstormBoundsTests.The_person_s_stop_ends_every_pass_and_keeps_what_answered`, whose deadline the FIX-LOG's entry of that date widens. In LIMITSWITCH3's land test, 2026-10-26, beside an install session and a design writer: `ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today` (one case), 189 of 189 alone on the merged tree. In FOUNDATION1 mod-vii's land test, 2026-10-26, beside two install sessions and two design readers: `SessionsSayCommandTests.A_running_session_on_a_next_step_door_reads_it_at_its_next_step`, 71 of 71 alone twice on the merged tree.
 
 - [ ] **READSHARE1b — the shared read beyond the driver** (desktop modules, service; READSHARE1's remainder). READSHARE1 held the driver's readers of the files `AtomicFile` moves into place; still plain: the desktop modules' and app's readers of theirs (`KeptScheme`, `HomePlacing`, `BrowserSessionCookies`, `EngineBrowserHost`, `BrowserProcess`), the service's readers of its own `AtomicFile`'s files, and the driver's three reads of a repository's `daoris.json` and indexes the CLI writes by rename (`RepositoryIndexes`, `OpinionPackets`, `DriverBrainstorms`). FIX-LOG 2026-10-23. Proof: the census reaches those projects; each moved reader meets `MoveHold`.
 
@@ -343,6 +215,8 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 - [ ] **TRYTOOLS1 — trial tools** (driver). Folder trial uses configured machine tools. D101/D121 §3; named-Node Process case.
 
 ## A real need shows
+
+The workshop rows are frozen with the plugin workshop (D233 point 3).
 
 - [ ] **CANON9 — WinForms pack** (held until second repository). Preserve two-repository bar. Original candidate.
 
@@ -372,31 +246,17 @@ The UNBLOCK rows depend on INTEGRATE1 now, not DEV5. Several are re-cut onto the
 
 ## OPTIMIZE1: after the foundation, the structure and the agents
 
-GITAPP1 part two and its rows come back with OPTIMIZE1 part a.
+What is left of GITAPP1 (1d-iii and 1h) comes back with OPTIMIZE1; its part two, the reader and the held object reader went with GITLIB1.
 
 - [ ] **KEEP1a2 — `obj/` joins the slim, on evidence** (driver; after KEEP1a and a week of its measurement; D195, the cleanup design §9). `obj/` is measured apart from `bin/` over KEEP1a's first week; a second producer rule joins only where that bears it out, `bin/` never. Proof: as §9 names it, the measurement first.
 
 - [ ] **FABRIC-END3b — the ref watcher's first day measured** (driver; after END3 is installed; §B4, canary 10). Read a day of the installed build's `work.held` and tidy lines: the delay from a merge to *held*, the keeper's git starts per judgement, any repository the watch missed. Proof: the numbers in D173's note; a row for any miss.
 
-- [ ] **FABRIC-EVENT7 — the clocks as deadlines, raised on measurement** (driver, cli; after END3, EVENT3b, EVENT4 and END7; §C5). `pollSeconds` and the tidy's pace become topic deadlines, raised only after canary 10 shows the wakes carry the work, with the CLI twin and the rehearsals that read it. Proof: canary 10 before and after; the twins' tests.
+- [ ] **FABRIC-EVENT7 — the clocks as deadlines, raised on measurement** (driver, cli; after END3, EVENT3b, EVENT4 and END7, all built; §C5). `pollSeconds` and the tidy's pace become topic deadlines, raised only after canary 10 shows the wakes carry the work, with the CLI twin and the rehearsals that read it. Proof: canary 10 before and after; the twins' tests.
 
-- [ ] **TREEPOOL1 — a repository's session trees kept and reused, each session's work a branch** (design under D191, then driver rows; the owner's direction, 2026-10-25; after FOUNDATION1's build, its trees being Workplace's). Today each session opens a fresh tree, pays the repository's setup in it (dependencies, builds), and the tree is moved aside at the end and deleted fourteen days later (KEEPSIZE1, CLEANUP1), so a busy repository writes and removes whole working copies all day. Instead each repository keeps a small pool of trees: a session takes a free one and holds it while it works, the tree is first brought to the line (reset to the line's head, its untracked work cleared, its ignored dependency and build folders kept), the session works on a branch of its own, and at its end the tree is let go back to the pool with the work on that branch, ready to land, or with no branch where it was done with no output. Decided with the direction: the pool is a managed number of slots, set by the repository's configuration or Daoris's (a slot per session the repository may run at once, at most); a slot's tree is made lazily, the first time a session needs that slot; and trees are removed only when the configured number of slots is lowered or the repository leaves, never by age. The design settles: where the slots' number is declared and its default; what a session's end must leave committed before its tree is let go; a go-on or a review that needs the work again (the branch checked out in any free tree); the trees a landing, a review environment and a chain step's kept tree (D178) hold today; and what *done without output* shows the person. Proof: the design, then a driver test that a second session takes the first one's tree at the line with its dependencies kept and none of its work, and the install's disk measured before and after. *Phase 1 (2026-10-26):* the survey, `docs/2026-10-26-tree-pool-survey.md` (read at `6b999d6b1`; its §8 names fourteen tangles, D51 rule 2's *never reused* and the path as a line's identity first); the brief, `docs/2026-10-26-tree-pool-brief.md` (nineteen questions; no work lost; agents keep conversations by working directory); both makers' sealed proposals, `docs/2026-10-26-tree-pool-proposal-codex.md` and `-opus.md` (2026-10-26); *round 1 (2026-10-26):* the synthesis, `docs/2026-10-26-tree-pool-design.md`, D214 proposed: a slot moved to the path of the line that takes it, neither proposal's choice and the first both makers weigh; rows a to j after mod-x; five questions for the owner in its §18. Both makers read round 1 (`docs/2026-10-26-tree-pool-reads.md`): each another round, both keeping the slot moved to its line's path and blocking on its mechanics (a return's destination, the move before the switch, absolute paths crossing a move, no re-read after the switch, the takeover's intent, the finished record's inputs); *Round 2 (2026-10-26):* every finding of both taken in its §22 (a claim's destination exclusive, the switch before the line's name, folders that name their path never carried across a move, the slot read again after the switch, the takeover's intent and the finished record in the store); both makers read round 2 (Codex another round, 7 blocking: links across a crash, the open identified before it opens, quiet git children, the finish's facts, a link's owner, row i's snapshot, the served build; the Opus reader accept after named changes, 1 blocking: only proven kinds cross a move). *Round 3 (2026-10-26):* every finding of both taken in its §23; a live line's build folders set aside to hand its tree on are put to the owner (§18 item 4, row j), the first build carrying `node_modules` alone; both makers' reads of round 3 owed.
+- [ ] **GITAPP1d-iii — the Branches tab's reads and the conflict preview** (1d-i is built; design §7.1). Stashes, tags, remotes, worktrees, reflog; the conflict preview under the session tree's own merge semantics, not previewed where a merge driver is defined. Proof: as 1d-i; the stash list moving on an older drop; the preview's merge-driver cases.
 
-- [ ] **GITAPP1 part two — what keeps or reuses Review's answer across opens** (design; after part one is accepted; D202's round-4 note; design P2 and round 3's §0-§17). The reader and its registry, the refs observation and its validation (packed refs), one head id and the barrier, the cache key and context (its construction barrier, the binary's replacement), invalidation by Daoris's own inputs, the frontend fallback, the effect policy, the untracked display addition, the tree watch, the run places, the offer and HANDOFF_PLAN read after the diff and the page's *Read at*: Codex R3-3 to R3-7 and R3-11 and the open round-1 rows as its open questions. Revised and read under D191. Proof: the part accepted, its rows filed in place of round 3's 1a-ii to 1a-v.
-
-- [ ] **GITAPP1b — Review follows the tree** (part two's; after its rows; design §5.4, §6.3). Every review invalidated on a line move; a tree watch for every attended tree, live or ended, installed before the answer, its index file watched, its exclusions proved and revoked on an index move; pre-read joining the refetch. Proof: an idle reopen starts nothing; a lost watch pays 2-3 starts, A included where a new untracked file appeared; force-add-then-edit and an index-only change each heard; a commit shown ≤ 3 s after its ref write.
-
-- [ ] **GITAPP1c — the judgements through the reader** (part two's; after its reader; design §12 row 8). `help.*`, the tidy, the landing's plan, the branch list and the offer take layout and ids from the reader; the offer's count bounded per eligible branch. Proof: PROC1a's per-judgement start counts before and after.
-
-- [ ] **GITAPP1d-i — the commit page and diff views** (part two's; after its page row; takes GIT1i's commit page; design §7.1). A commit, side by side, word diff, whitespace, LFS pointers. Proof: `GitReadsTests` holding each view's own start graph (the commit page two dependent starts) and its key with the context; stories and counters in both languages.
-
-- [ ] **GITAPP1d-ii — blame, a file's history, compare, search** (after 1d-i; takes GIT1f; design §7.1). File history paged as today. Proof: as 1d-i; blame unchanged by a configured `blame.ignoreRevsFile`.
-
-- [ ] **GITAPP1d-iii — the Branches tab's reads and the conflict preview** (after 1d-i; design §7.1). Stashes, tags, remotes, worktrees, reflog; the conflict preview under the session tree's own merge semantics, not previewed where a merge driver is defined. Proof: as 1d-i; the stash list moving on an older drop; the preview's merge-driver cases.
-
-- [ ] **GITAPP1d-iv — a held object reader, deferred** (design §4.3; D202 round 3). Not part of D202: no screen in the read half needs one. A design of its own when a screen's measured burst does, starting from the protocol facts round 3 recorded from `git-cat-file` (Codex R2-8) and round 2's repack hazard.
-
-- [ ] **GITAPP1h — history at scale** (after 1d-ii; design §9). The file history's kept id list, the pickaxe as a long read, submodules, the commands to copy. Proof: a third page walks nothing; a cancelled pickaxe ends its git.
+- [ ] **GITAPP1h — history at scale** (1d-ii is built; design §9). The file history's kept id list, the pickaxe as a long read, submodules, the commands to copy. Proof: a third page walks nothing; a cancelled pickaxe ends its git.
 
 - [ ] **DOC7 — reading measurements**. session.read/session.skill by role and whole/partial. D127 §6.1.
 
@@ -416,13 +276,11 @@ GITAPP1 part two and its rows come back with OPTIMIZE1 part a.
 
 - [ ] **CIPRIO1b — a CI run's I/O at background priority, measured first** (tools; D180's CIPRIO1 line). Its CPU class is below normal; its disk and memory priority are not, since node has no API for background mode and whether children inherit it is unsettled. Measure a lowered run's children's I/O priority on this machine, then lower it the cheapest way that holds. Proof: a child's I/O priority read at the lowered level.
 
-- [ ] **PUSH1d2b — the sessions slice's reconciliation measured on the install** (modules; D182 points 5 and 8; PUSH1d2's hand-back). With no window open the slice still reads `/api/sessions?includeClosed=true` every 15 s, and that door judges every record's `deletable` (`DeletableAsync`). Measure `/api/sessions` reads and the service's time per minute idle, with no window and with two, before and after PUSH1d2; lengthen the slice's `ManifestEvery`, or read without `deletable`, if it shows. Proof: the numbers under D182.
-
 - [ ] **TESTGIT1b — shared GitFixture** (driver tests). Landing plugin/tidy/fixture/landing/auto classes; eliminate independent git runners. Serial Process proof.
 
 ## Notes the old sections carried
 
-Contracts, orders and the owner's reports that the rows above were filed under, kept whole.
+Contracts, orders and the owner's reports that the rows above were filed under, kept whole where a row still stands under them.
 
 **This Daoris: its folders, its wiring and its settings**
 
@@ -443,8 +301,8 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 
 **Consistent screens**
 
-Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → f → g;
-FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
+Contracts: plugin-screen design (D119), frame model (D118). PLUGUI1f and g went into PLUGINEXT1's plugin UI design
+(`docs/2026-11-11-plugin-ui-design.md`). Installed looks cover both themes/languages.
 
 **Workflows**
 
@@ -469,11 +327,6 @@ Contract: `docs/2026-10-08-review-environment-design.md` (D154), section proofs.
 Landing in sync with the line (the owner, 2026-10-15: *"the merge fix needs a rebase (I think we kind of do need this logic when checking for branch)"*, *"we just have too many work branches … verify why we have this in-sync issue"*, *"I cannot accept for 2 sessions/quests at the same time"*). The install's case: a pull request squash-merged a session's first commit; the session went on in its tree on the old base; Accept landed all three commits, so the next pull request carried a duplicate of merged work and conflicted. Older parts of the same ask kept trees offering Accept, and each press made another branch. Designed in D87's and D167's amendments of 2026-10-15 (LANDSYNC0), with D109's note of the same day.
 Contracts: D143/D145/D148/D149; plugin-hooks design;
 
-**Evidence**
-
-Contracts: evidence design (EVID1/D144), landing-and-proof design (EVID2/D146).
-EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7.
-
 **Sessions**
 
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
@@ -489,8 +342,8 @@ Contract: plugin-distribution design (D120), §7 proofs. Plugin-repository work 
 
 **Declarations and managed tools**
 
-Contracts: development-documents (D122 §6), tools (D121 §7). DEV5 → UNBLOCK2 → UNBLOCK3 →
-UNBLOCK6–8; TOOLS6 (now in GITAUTH1c) and TOOLS8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last.
+Contracts: development-documents (D122 §6), tools (D121 §7). TOOLS6 is in GITAUTH1c; TOOLS10 precedes managed-Git sessions (GIT1j,
+GITSTART6), and TOOLS9 rehearses what they build.
 
 **Code structure**
 
@@ -508,8 +361,6 @@ Contracts: self-development (D115), agent-layout (D117 §7), entry-point evidenc
 **Remaining regressions, evidence and held work**
 
 Contracts and complete reproductions: original backlog, FIX-LOG entries, named decisions.
-FLAKE1, 2026-10-27: the driver fast half timed out at ten-second waits in `QueuedStartCloseTests`, `AccountWalkGateTests` and `MachineFactsTests` (14,925 pass, three fail). All three classes passed the focused rerun, 25 cases including the credit-refusal fixture. The pending credit patch is preserved separately; these timing causes remain unproved.
-FLAKE1, 2026-10-28, beside the merge queue's loaded candidates: `ReadShareAccountTests`' three held-file cases, their holds let go late by a starved pool (fixed: a thread of their own), and `rehearsal-kit`'s port-holder lookup past its 30 s (given two minutes), both in FIX-LOG's 2026-10-28 entries; `BrainstormBoundsTests.A_crash_fails_its_pass_alone_and_the_rest_is_ranked` on its default window in candidate `48d4522` (given its siblings' wide window, `00324f8e1`); and the `--full --beside` start, whose wait TESTPATIENCE3's sweep had shortened to 120 s, outlasting it in candidate `6a03b3b` (five times the patience, as `waitFor` waits, `6c6f91368`). In the batch `66f23e8`'s Process half `LimitWaitsProcessTests.A_move_opened_and_not_delivered_is_delivered_to_its_new_part_at_the_come_up` and `SessionWatchProcessTests.A_run_that_streams_is_left_alone_across_three_hours_of_its_clock` failed and passed alone: a sighting, no fix.
 
 ## Frozen until the daily loop is solid (2026-11-04, D233 point 3)
 
@@ -518,18 +369,16 @@ FLAKE1, 2026-10-28, beside the merge queue's loaded candidates: `ReadShareAccoun
 - [ ] **LAYOUT6 — the brief and the rooms on that layout** (cli; D117; after LAYOUT5): the brief and rooms follow the move. → `docs/2026-10-01-agent-layout-design.md`
 - [ ] **KNOWCENTRAL1 — the memory design a centralized, model-driven knowledge system rests on, made with Lyntai** (design across two repositories; D220): rounds 1 and 2 are built; the next round settles retirement through decay, which upkeep a model takes alone, and a memory shared across repositories. → `docs/2026-10-31-memory-coordinator-design.md`; `docs/areas/knowledge-memory-records.md`, Open
 - [ ] **KNOWFRESH1 — a fresh fact replaces the one it updates, and a stale one is found and retired** (D220): a is built; **b** waits on a Lyntai release carrying MC7, MC11 and MC12 (a local build today, the release the owner's); **c**, the machine's memory server's half, is the owner's to route. → `docs/2026-10-30-knowledge-freshness-design.md`; `docs/areas/knowledge-memory-records.md`, Open
-- [ ] **STEWARDROLE1 — the steward a role the owner appoints, so development's management needs no click** (modules, driver, service, web; D209): 1a to 1c are built dark; **STEWARDROLE1d** the activation, after TERMTRUST1a's §8 case 4 on every door; then **STEWARDROLE1e** the hand-over, **STEWARDROLE1f** the go-on (after D210 answers the design's §4.3a), **STEWARDROLE1g** the set-up after f. → `docs/2026-10-24-steward-role-design.md` §10
-- [ ] **SUPERVISOR1 — the appointed supervisor's word on the record, then active** (driver, service, modules, web; D208): **SUPERVISOR1a-i**'s rest (the author sweep test, the page's decision mark with *Overrule*, the go-on's Process cases, the release's event, the glossary's words) and **SUPERVISOR1a-iii** the activation, both with STEWARDROLE1d after TERMTRUST1a's case 4; then **SUPERVISOR1c** the actor, **SUPERVISOR1d** measured, **SUPERVISOR1f** the words. → `docs/2026-10-24-supervisor-design.md` §11
+- [ ] **STEWARDROLE1 — the steward a role the owner appoints, so development's management needs no click** (modules, driver, service, web; D209, D233 point 2): 1a to 1d are built (the seventeen acts, roles area rule 51), and 1d's installed look is `TASKS.md`'s STEWARDROLE1d, which waits on the owner appointing the steward's holder; after it, **STEWARDROLE1e** the steward's answer to an agent's hand-over ask, **STEWARDROLE1f** the go-on (after D210 answers the design's §4.3a), **STEWARDROLE1g** the set-up after f, and **1h** free words. → `docs/2026-10-24-steward-role-design.md` §10
 - [ ] **BRAINSTORM1 — the brainstorm's remaining rows** (service, driver, cli, web; D176): **BRAINSTORM1c** the measured run on real makers (the owner's yes; it spends accounts), then **BRAINSTORM1d** a caller from another repository (its page is MEETUX1's); **BRAINSTORM1b2** the stop and `--id` through the one verb (ONEWAY1t); with the meetings **BRAINSTORM1b3** a limit on a real door, **BRAINSTORM1a2b** a no-connector pass test, **BRAINSTORM1a4** a pass's traces, **BRAINSTORM1e** the skeptical pass; **BRAINSTORM1f** a workflow node. → `docs/2026-10-19-cross-agent-brainstorming-design.md`
 - [ ] **AGENTROOM1 — meetings of agents of different makers** (service, driver; D177): **AGENTROOM1b** `meeting_say`, so a real agent takes a meeting turn (COWORKVIEW1f waits on it); **AGENTROOM1c** re-cut as a kind of the one brainstorm verb, no `daoris meeting` (ONEWAY1t); **AGENTROOM1d** one account's turns one at a time across meetings. → `docs/areas/co-working-and-messages.md`, Open
 - [ ] **MEETUX1 — meetings and brainstorms in Sessions** (web; D185): **MEETUX1a** started from the window, **MEETUX1b** rounds followed, **MEETUX1c** a brainstorm's document read, **MEETUX1d** a meeting waiting on the person in *What needs you* (with COMMS1j). → `docs/areas/desktop-app.md`, Open
 
-## Waiting on the frozen STEWARDROLE1 and SUPERVISOR1, a sighting, a measurement or a release (2026-11-05, backlog plan §1)
+## Waiting on STEWARDROLE1d's installed look, a sighting, a measurement or a release (2026-11-05, backlog plan §1; corrected 2026-11-11)
 
-- [ ] **Rows that wait on STEWARDROLE1d or SUPERVISOR1a-iii** (each is a part of the appointed role's boundary; the triage read them so): **ROLEPERM1** permission answers through appointed actors (→ `docs/areas/roles-and-supervision.md`, Open); **XAGENT1f2** the person's opinion presses (→ `docs/2026-11-02-parked-triage.md`, STEWARDROLE1); **PERSONDOOR1c** publish attribution, **d** driver, **e** CLI and **g** shell authorization, **h** gates carry it, **i** every host enforces (PERSONDOOR1j goes to ONEWAY1n; → `docs/2026-10-09-person-door-design.md` §10); **TERMTRUST1b** closing a quest as done under a terminal's standing confirmation (→ `docs/2026-10-23-terminal-trust-design.md` §8, §9); **QUESTIONUI1b** the supervisor's pick on the card (web; with SUPERVISOR1a-iii); **COMPANYVIEW1h** the steward's marks on the company view (→ `docs/2026-10-31-company-view-design.md` §7); **LINESTOGETHER1e** the steward's fixed forms (→ `docs/2026-10-31-review-flow-design.md` §2–§5); **INTEGRATE1i** the steward's acts (→ `docs/2026-10-28-integration-design.md` §11); **CONTEXTDRIVE1j** the supervisor's activation (→ `docs/2026-11-03-context-counters-design.md` §9).
+- [ ] **Rows that wait on STEWARDROLE1d's installed look** (the steward's and the supervisor's activations are built, roles area rule 51 and Open; each row extends an appointed role's acts, so it waits for the owner to appoint the steward's holder and see its acts): **XAGENT1f2** the person's opinion presses (→ `docs/2026-11-02-parked-triage.md`, STEWARDROLE1); **PERSONDOOR1c** publish attribution, **d** driver, **e** CLI and **g** shell authorization, **h** gates carry it, **i** every host enforces, each read against the code first, since the window's confirmations (`Service.Http/PersonConfirmations.cs`) and a person key per host start (`Modules/Loop/HostSupervisor.cs`) stand (PERSONDOOR1j goes to ONEWAY1n; → `docs/2026-10-09-person-door-design.md` §10); **COMPANYVIEW1h** the steward's marks on the company view (→ `docs/2026-10-31-company-view-design.md` §7); **LINESTOGETHER1e** the steward's fixed forms (→ `docs/2026-10-31-review-flow-design.md` §2–§5); **INTEGRATE1i** the steward's acts (→ `docs/2026-10-28-integration-design.md` §11).
 - [ ] **COWORKVIEW1f — the co-working view's meeting rows** (driver, service, web; D173; after BRAINSTORM1d and AGENTROOM1b). → `docs/2026-10-24-cowork-view-design.md`
 - [ ] **TREEOPENERR1 — the next fresh-tree opening that fails with no stderr, read** (driver): the open's git reads now say what git did (`TreeGit.GitSaid`), but no failing run was kept; on a sighting, fix what it names at the open/undo boundary, with no weaker locks, retries, sleeps or forced cleanup. → `docs/FIX-LOG.md`, 2026-10-30; `docs/areas/driving.md`, Open
 - [ ] **AUTOTIDY1b — the strict cleanup guards measured** (driver; a measurement, with WORKFLOWCLEAN1's §11). → `docs/2026-11-02-parked-triage.md`
 - [ ] **STAFFPOLICY1h — the staffing policy's measurements** (driver, modules; behind its measurements). → `docs/2026-11-02-staff-policy-design.md` §9, §11
-- [ ] **DEVKITAUDIT1 — the devkit builds with NuGet's audit on** (devkit): the AOT compiler the SDK brings (`Microsoft.DotNet.ILCompiler` 10.0.13, advisory GHSA-p3jp-9v83-76w9) raises NU1903, which no package pin here moves; the devkit CLI keeps NU1903 a warning (`9759d6db8`) so the code map builds. Remove that exemption when the machine's SDK carries a fixed runtime (SDK 10.0.402 still carries the 10.0.13 runtime). → `docs/areas/doctrine-and-cli.md`
-- [ ] **OPTIMIZE1 b and d — one management of the processes Daoris starts; the tests' and CI's wall time** (driver, modules, tools; held behind the foundation, the structure and the agents; a and c are TASKS.md's under OPTIMIZE1 a and PERF1). → `ROADMAP.md`, priority 12
+- [ ] **DEVKITAUDIT1 — the devkit builds with NuGet's audit on** (devkit): the AOT compiler the SDK brings (`Microsoft.DotNet.ILCompiler` 10.0.13, advisory GHSA-p3jp-9v83-76w9) raises NU1903, which no package pin here moves; the devkit CLI keeps NU1903 a warning (`9759d6db8`) so the code map builds. Remove that exemption when the machine's SDK carries a fixed runtime (SDK 10.0.402 still carries the 10.0.13 runtime, read again 2026-11-11). → `docs/areas/doctrine-and-cli.md`

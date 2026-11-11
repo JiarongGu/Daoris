@@ -187,6 +187,8 @@ public sealed class HookProcess : IHookChannel
 
     public Task EventAsync(object frame, CancellationToken ct) => _peer.EventAsync(frame, ct);
 
+    public Task<System.Text.Json.JsonElement> CommandAsync(object frame, CancellationToken ct) => _peer.CommandAsync(frame, ct);
+
     public IReadOnlyList<string> Capabilities => _peer.Capabilities;
 
     public void Listen(Action<System.Text.Json.JsonElement?>? steps) => _peer.Listen(steps);

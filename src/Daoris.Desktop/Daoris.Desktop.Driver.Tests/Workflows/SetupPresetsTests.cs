@@ -20,7 +20,7 @@ public sealed class SetupPresetsTests
                 ("not-driven", "Not driven", (SetupLand?)null),
                 ("merge-after-accept", "Merge after you accept", new SetupLand("merge", "you")),
                 ("branch-to-push", "A branch to push", new SetupLand("branch", "you")),
-                ("pull-request", "A pull request", new SetupLand("pull-request", "you", "github-pull-request")),
+                ("pull-request", "A pull request", new SetupLand("pull-request", "you", "daoris-github")),
                 ("integrated", "Integrated into the line", new SetupLand("integrate", "you", null, "owner")),
                 ("in-place", "Work in place", new SetupLand("in-place", "you")),
             ],
@@ -57,7 +57,7 @@ public sealed class SetupPresetsTests
     [InlineData("documents", "merge", "automatic", null, null)]
     [InlineData("release", "merge", "you", null, null)]
     [InlineData("branch-to-push", "branch", "you", null, null)]
-    [InlineData("pull-request", "pull-request", "you", "github-pull-request", null)]
+    [InlineData("pull-request", "pull-request", "you", "daoris-github", null)]
     [InlineData("integrated", "integrate", "you", null, "owner")]
     [InlineData("integrated-no-press", "integrate", "automatic", null, "done")]
     [InlineData("in-place", "in-place", "you", null, null)]
