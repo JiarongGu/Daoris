@@ -5,6 +5,89 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Parked rows closed in the triage of 2026-11-11
+
+> **The parked backlog triaged** (records): Outcome: each row of `docs/backlog-parked.md` read against the code, the decisions and this archive; 70 closed below, 8 moved back to `TASKS.md` (FABRIC-TRYAGAIN1, PUSH1d2b, SWITCHCTX1, HEAVYRUN1b3, AUTONOMY1b3d, USAGECAP1a3, SUPERVISOR1 with QUESTIONUI1b), the rest kept with their stale conditions corrected. A closed row's full text stands in git at this triage's parent commit.
+
+- **HELPPLUGPROOF1** — obsolete: an unaccepted write is no longer refused: below full access a call is held and asked (D253; ASKFULL1f, 2026-11-11); a plugin's skills and servers reach a session through AGENTFREE1b's `own` plugin, and Ask Daoris's acts on the install are ASKFULL1e's proof.
+- **INSTALLPROOF1** — obsolete: the screens it checked were replaced: the setup card and its Apply are gone (ASKFULL1g-vi, 2026-11-11), Accept's review and a park's box are REVIEWUX1's redesign, a second launch's window is ONEINSTANCE2b's.
+- **UXFIX2bi** — obsolete: each confirmation is a pressed route whose view the Confirm card draws (D261; ASKFULL1g, 2026-11-11).
+- **UX7b** — obsolete: the account rows and the add flow were redesigned (UIFIND4, 2026-11-09); the Agents place's installed window is AGENTSPLACE1l's.
+- **ACCTEDIT1b** — obsolete: as UX7b; the account edits' installed look is AGENTSPLACE1l's.
+- **UX7e** — obsolete: the menus and heads were reviewed with every screen through the devtools (UIREVIEW1, the UIFIND rows of 2026-11-09), the session head re-measured (2026-11-11).
+- **ENTRY1bi** — obsolete: the waiting groups it opened are re-cut into REVIEWUX1's five session states.
+- **WIRING1f** — obsolete: Settings was regrouped by what a person comes to set (SETTINGSUX1, 2026-11-09); This Daoris's wiring on the installed window is WIRING1e's.
+- **ACCTUX4i** — obsolete: as UX7b (UIFIND4, AGENTSPLACE1l); D152's row budget went with the agent page's redesign.
+- **ASKHIST1di** — obsolete: Ask Daoris's history was rebuilt by home workspace with an *About a place* filter (ASKSCOPE2, 2026-11-11), its installed proof ASKSCOPE2's.
+- **HIST1h** — obsolete: a clear is `HISTORY_CLEAR` pressed, its card the route's own list (`HistoryClearView`; ASKFULL1g-vi, 2026-11-11), so terminal and page agree by construction.
+- **PAUSE1g** — obsolete: a pause is a pressed act (ASKFULL1g-iii), an abandon ends its runs' waits (APPROVE1h, 2026-11-10), "the same tree" ended with D254 (work in place, a tree only under an isolate step), and a paused session is REVIEWUX1's *pending*.
+- **SESSUX1l** — obsolete: the session states it would look at are REVIEWUX1's five.
+- **GITAPP1i** — obsolete: Review's timings on the install are GITLIB1's measures (`review.read`'s `ms` and `createdMs`).
+- **ASKQUESTS1** — obsolete: built 2026-10-22 and in the installed window daily since; a pressed verb's ask or quest is kept with its conversation (ASKFULL1g-ii, `PressedEnds`); every screen was reviewed through the devtools (UIREVIEW1).
+- **ZOOM1** — obsolete: built 2026-10-22, in daily use since; the screens reviewed through the devtools (UIREVIEW1).
+- **STARTFAST1** — obsolete: superseded by STARTPERF1, which measured the installed starts and removed the first screen's self-wait (2026-11-11).
+- **WAITPANEL1** — obsolete: built 2026-10-23; what a session waiting on the person shows is REVIEWUX1's *needs you*.
+- **NOTIFY1** — obsolete: every build row built, and Notifications in daily use and extended since (ASKFULL1d's presses, TERMTIER1's tier line, ASKSCOPE2's *Asked you* rows).
+- **PARKVIEW1** — obsolete: a parked session's question and its answers are REVIEWUX1's *needs you* state.
+- **PARKWORDS1** — obsolete: as PARKVIEW1.
+- **PARKANSWER1** — obsolete: as PARKVIEW1; its follow of a line moved outside Daoris is built (FIX-LOG, 2026-10-23).
+- **AGT2c** — obsolete: an agent's update and pin are pressed through `HARNESS_ACTION` with `AgentUpdateView` (ASKFULL1g's agent kind, 2026-11-11); the Agents place's installed window is AGENTSPLACE1l's.
+- **XAGENT1j** — obsolete: whether a reader's tools are enforced off on each door is measured first by ASKSUPERVISE1c's real-process proof (D272), *not enforced* said where a harness does not.
+- **AGENTDEFS1** — obsolete: the dispatch skill and the branch-worker definition were rewritten since (no CI watch left running; a watch is a command that exits on its outcome), and D232 retired the older-build table STOREBOUND1's line asked for.
+- **AGENTS2a** — obsolete: dsh's key words at a running session are APIKEYACCT1's (`TASKS.md`).
+- **TOOLS11** — obsolete: git is managed by design, not by installing tools to measure (D240 point 4, D241), and `gh` and `az` are no tool of the product (D242): a plugin reaches its platform itself, as the Azure DevOps example's REST client does.
+- **REALCASE1** — obsolete: the real case is DOGFOOD1's (Daoris's rows built by the install's driven sessions) and the work workspace's end-to-end runs APPROVE1 read (2026-11-08 to 11-10).
+- **PROC1d-v** — obsolete: a commit's questions are read through the managed library (GITLIB1, D147's note of 2026-11-09), whose ends and per-read times GITLIB1g measures, so halving their git starts is no longer the lever.
+- **TREELOOK1b** — obsolete: a session works in its place by default, a tree only under a workflow's isolate step (D254; PLACEWORK1d, 2026-11-11), so the kept trees no longer grow per session.
+- **UNBLOCK8** — obsolete: with UNBLOCK2, 3, 6 and 7 below.
+- **FABRIC-VERIFY1a** — obsolete: verification as a pipeline is FABRIC-PIPELINE1 (D192) and a check fed a commit is PROCSTEPS1e's `check` kind, both in `TASKS.md`.
+- **FABRIC-HUMAN1** — obsolete: built as the `human` node kind (`Workflows/Kinds/Human/HumanNode.cs`), its Approve and Reject read as a landing (SUPERVISOR2f) and its wait placed in the person's groups (APPROVE1o, `PersonWaits`).
+- **FABRIC-CHAIN3** — obsolete: a place composes the steps it wants as a workflow graph (D190, D247; D245's prebuilt actions), so a menu of effects beside it would be a second way (D228); `Events/Chain.cs` names it only "if it comes".
+- **PLUGTOOL1c** — obsolete: a plugin's tools and commands on its own page are PLUGINEXT1's window (D274; `docs/2026-11-11-plugin-ui-design.md`).
+- **PLUGUI1f** — obsolete: the plugin page is redesigned by PLUGINEXT1's plugin UI design, contribution points rendered generically (`docs/2026-11-11-plugin-ui-design.md`).
+- **PLUGUI1g** — obsolete: with PLUGUI1f; a plugin's checks are the kit's `daoris plugin try`, whose scaffold for the new parts is PLUGINEXT1's.
+- **REVIEWBASE2-ii** — obsolete: a branch brought up to date is PROCSTEPS1's `rebase` kind (built, `RebaseDoor`), *Bring up to date* asking it is PROCSTEPS1f's, and the review head is REVIEWUX1's redesign.
+- **PROCESS1f** — obsolete: the setting proposal it would write is gone (D261), and a repository's process is its workflow, which Ask Daoris drafts and presses (ASKFULL1g-vii, 2026-11-11).
+- **PROCESS1g** — obsolete: what the review offers over uncommitted work, in a tree or in place, is REVIEWUX1's design for every kind of work.
+- **PLUGHOOK1b** — obsolete: `gh` is no tool of the product (D242), a merged pull request is read by the monitor step (D245, `PullRequestReading`), and a pull request's state refreshed is PLUGHOOK1d in WORKSETUP1's tail.
+- **GIT1k** — obsolete: no proposal kinds remain (D261); the person's git acts are pressed routes (D204).
+- **EVID1c** — obsolete: *Check again* is built (`WorkOrders/QuestCheckCommand.cs`), the check proposal went with D261, and a done that carries no requirement waits unchecked (D255).
+- **EVID2a** — obsolete: D146's captured proof stands as history that no area carries (`docs/decisions/README.md`); a done is judged by its requirements (D255) and what the person reads is REVIEWUX1's.
+- **EVID2b** — obsolete: as EVID2a.
+- **EVID2c** — obsolete: as EVID2a.
+- **ORIENT2d** — obsolete: every session reads the index's ranges through the doctrine (`change`: `docs/index/README.md` before searching) and the knowledge server's index rows, so a driver prompt of its own would be a second way (D228).
+- **UNBLOCK2** — obsolete: fewer asks come from the access setup (D184), the tiers (D253) and the `allow` supervisor deciding a held permission request at its repository (roles area rule 7); a declaration judge beside them would be a second way (D228).
+- **UNBLOCK3** — obsolete: as UNBLOCK2.
+- **UNBLOCK6** — obsolete: as UNBLOCK2; its proposal went with D261.
+- **UNBLOCK7** — obsolete: as UNBLOCK2.
+- **TOOLS8** — obsolete: no proposal kinds remain (D261).
+- **SWEEPCARRIED1b** — obsolete: the session head's states and reasons are REVIEWUX1's five.
+- **NAME2b** — obsolete: the screens were reviewed through the devtools (UIREVIEW1) and every label is held by the glossary gate (`names:check --strict`).
+- **FABRIC-UNITDOOR1** — obsolete: a door only where one is wanted (D233 point 1); nobody asked for `WORK_UNITS`, which was never built.
+- **OWNSPACE2c** — obsolete: a terminal twin only where one is wanted (D233 point 1), and `daoris-driver` went into `daoris` (D194).
+- **SWITCHMODEL1** — obsolete: a model family's week and limit words are MODELROLE1k3's (`TASKS.md`).
+- **ASKNAME1c** — obsolete: the named proposal went with every proposal kind but the go (D261; ASKFULL1g-vii, 2026-11-11).
+- **FLAKE1** — obsolete: its sightings end 2026-10-28; today's failing classes are SCOPEVERIFY1's (run 12) and CIEND1's, each fixed cause is in `docs/FIX-LOG.md`, and the merge tool reruns a failing class alone (D180). Its two notes under the parked file's regressions went with it.
+- **TREEPOOL1** (the parked design row) — obsolete: its rounds are the open TREEPOOL1 row in `TASKS.md` (round 5, rooms first; D214), and D254 made isolation a workflow's step.
+- **GITAPP1 part two** — obsolete: an answer kept across opens is GITLIB1's stamp (`GitReadCache` under `GitStamp`, git area), every read through one managed library (GITLIB1); Review's own figures across opens are GITLIB1's install measures.
+- **GITAPP1b** — obsolete: with part two, whose reader and tree watch D202 never accepted.
+- **GITAPP1c** — obsolete: with part two; the judgements' reads go through GITLIB1's one service.
+- **GITAPP1d-i** — obsolete: built: a commit and a compare, counted by `ViewGitCountTests` (git area, the views' table).
+- **GITAPP1d-ii** — obsolete: built: a file's history and blame, asked at every ask in the asking tree (git area; `ViewGitCountTests`).
+- **GITAPP1d-iv** — obsolete: an object is read by one `cat-file --batch` question (`GitObjectReads`) or in process by the managed library (GITLIB1), and the git area's table counts what a held reader could answer.
+- **OPTIMIZE1 b and d** — obsolete: b is built as one management of every process Daoris starts (D249), and d is `TASKS.md`'s OPTIMIZE1.
+- **ROLEPERM1** — obsolete: a held permission request is decided by the `allow` supervisor at its session's repository (roles area rule 7, agents area rule 23; SUPERVISOR2e).
+- **TERMTRUST1b** — obsolete: closing a quest as done is the steward's `done` act (roles area rule 51; `TASKS.md`'s TERMTRUST1).
+- **CONTEXTDRIVE1j** — obsolete: its rest, the installed proof of a parked quest gone on, is `TASKS.md`'s CONTEXTDRIVE1.
+
+---
+
+## STARTPERF1 (part) — the window's first screen no longer waits on itself (2026-11-11)
+
+> **STARTPERF1, measured and the self-wait removed** (web, driver, docs): Outcome: measured from the installed copy's starts (`docs/2026-11-11-start-load-measurements.md`): the page's first-screen signal waited on *What needs you*, which waits on the machine facts that start only on that signal or a 30 s timeout, costing 45–65 s every start — now *What needs you* and the repositories load after the first screen, each shown loading until it arrives (`app/splash.ts`); the Sessions list's trees are walked four at once; `SESSION_SPENT` reads only the lines a log gained since its last read and the next event number from the file's end (`SessionSpentKept`), ending a 775 ms stall on the window's thread. Left: the service's knowledge index at first use (22–29 s), the process-start queue, every reader fetching all quests (needs a change marker), and the proposed per-session summary index (`docs/2026-11-11-start-load-database-design.md`, D275 reserved, a database narrowly called for: records and quests are already in SQLite). Proof: `splash` test, `HelpTreeWalkTests`, `SessionSpentKeptTests`, each seen failing first.
+
+---
+
 ## PLUGINEXT1's first slice — a plugin's own commands, private storage and sign-in (2026-11-11, D274)
 
 > **PLUGINEXT1, first slice** (driver, examples): Outcome: a plugin declares `interfaces` in its manifest — commands (name, words, interactive, tool, `adopts`) run inside its own process over `hook/command/run`, round by round with masked prompts, from `daoris <plugin> <command>`; a private storage folder under the profile handed only to that plugin's processes and removed with it; `plugins.json`'s `off` list per plugin — and Daoris names no plugin; the Azure DevOps (2.2.0) and GitHub (2.1.0) examples sign in through their own `login`, `status` and `logout`, keeping their token in their storage; `DAORIS_HOST_TOKEN` is gone, and an identity's API token is handed once to a command that adopts it, then cleared, logged by ids only. The owner's direction: a plugin's credential is the plugin's, it manages its own tasks, Daoris extends the framework. Proof: `PluginInterfacesTests`, the examples' command tests (seen failing first), `PluginCommandRunTests`, `PlaceHandTests`.

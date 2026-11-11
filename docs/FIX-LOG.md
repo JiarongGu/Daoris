@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A plugin's own command answered "this channel runs no commands" on the installed copy
+
+- **Symptom:** after the Azure DevOps plugin's update to its own `login`, `status` and `logout`, `daoris <plugin> status` on the
+  installed copy answered *this channel runs no commands.*, so no plugin could sign in by its own command.
+- **Root cause:** the command round (`PluginCommandRun.RoundAsync`) starts the plugin through `HookChannels.StartAsync`, which hands
+  back a `HookProcess`; `HookPeer` implements `CommandAsync`, but `HookProcess`, the real channel over it, forwarded every other point
+  and not this one, so the interface's default refusal answered. The slice's tests ran the round against a stand-in channel that
+  implements `CommandAsync` itself, so the real channel's gap never showed. Introduced by 62aafd16ba (PLUGINEXT1's first slice).
+- **Fix:** `HookProcess.CommandAsync` forwards to its peer, as `SystemAsync` and `EventAsync` do.
+- **Verification:** `PluginCommandProcessTests` runs a declared command against a real plugin process started as the terminal starts
+  it and reads its answer; before the fix the same path answered the refusal on the installed copy.
+
 ## 2026-11-11 - An accepted run's landing waited twenty minutes for its turn, and its press was refused for a judgement not made
 
 - **Symptom:** on an install whose work workspace holds about six hundred open runs, a run's review was accepted and its landing

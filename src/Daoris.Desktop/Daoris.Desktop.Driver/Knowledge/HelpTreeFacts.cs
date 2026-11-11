@@ -109,8 +109,8 @@ internal static class HelpTreeFacts
     /// <remarks>
     /// <para><b>Waited for once.</b> Before the parts' first judgement every tree is one no part asked: the door waits for it, at most
     /// <paramref name="first"/>, once in the facts' life, each door then asking awaiting the one wait, so the windows opening with the
-    /// shell do not each walk every tree beside the parts. Past it, what is still not judged is walked; a repository registered later,
-    /// whose part is judged as the answers name it, is walked until it is, with no wait.</para>
+    /// shell do not each walk every tree beside the parts. Past it, what is still not judged is walked, <see cref="AtOnce"/> at once; a
+    /// repository registered later, whose part is judged as the answers name it, is walked until it is, with no wait.</para>
     ///
     /// <para><b>As fresh as the parts.</b> A part is judged on its repository's <c>refs</c> wake, its rest holding a burst to one judgement
     /// each half minute (<see cref="HelpFacts.TreesRules"/>); at once as the look lands with its trees moved; on the configuration; and at its
@@ -137,9 +137,15 @@ internal static class HelpTreeFacts
 
         var trees = new Dictionary<string, TreeWork>(look.Trees, StringComparer.OrdinalIgnoreCase);
         foreach (var (tree, work) in read.Trees) trees[tree] = work;
-        foreach (var tree in read.NotJudged)
+        // A few at once, as a part reads its own: one after another, each walk's git queued behind the first look's held a
+        // start's Sessions list for the sum of them.
+        var walked = new TreeWork?[read.NotJudged.Count];
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, read.NotJudged.Count), new ParallelOptions { MaxDegreeOfParallelism = AtOnce, CancellationToken = ct },
+            async (at, token) => walked[at] = await walk(read.NotJudged[at], token).ConfigureAwait(false)).ConfigureAwait(false);
+        for (var at = 0; at < walked.Length; at++)
         {
-            if (await walk(tree, ct).ConfigureAwait(false) is { } work) trees[KnowledgeWorkOrders.Current.Normal(tree)] = work;
+            if (walked[at] is { } work) trees[KnowledgeWorkOrders.Current.Normal(read.NotJudged[at])] = work;
         }
 
         return look.WithTrees(trees);
