@@ -84,14 +84,16 @@ public static class FolderCopies
     }
 
     /// <summary>The copy whose folder <paramref name="folder"/> is, or null for any other folder.</summary>
-    public static FolderCopy? At(string home, string? folder)
+    public static FolderCopy? At(string home, string? folder) => IdAt(home, folder) is null ? null : Read(Path.GetFullPath(Path.TrimEndingDirectorySeparator(folder!)) + ".json");
+
+    public static string? IdAt(string home, string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder)) return null;
         var full = Path.GetFullPath(Path.TrimEndingDirectorySeparator(folder));
         var copies = Path.GetDirectoryName(full);
         if (copies is null || !string.Equals(Path.GetFileName(copies), "copies", StringComparison.OrdinalIgnoreCase)) return null;
         var places = Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Places));
-        return full.StartsWith(places + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? Read(full + ".json") : null;
+        return full.StartsWith(places + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? Path.GetFileName(full) : null;
     }
 
     /// <summary>The newest copy one of <paramref name="records"/> worked in, or null.</summary>

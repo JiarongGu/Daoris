@@ -16,6 +16,9 @@ public sealed class PlanReviewApplyRunTests : NodeRunFixture
     {
         public List<string> Wrote { get; } = [];
 
+        /// <summary>The answer to give instead of applying, where the test has the system move first.</summary>
+        public object? Instead { get; set; }
+
         public IReadOnlyList<string> Points => HookPoints.System;
 
         public bool Alive => true;
@@ -26,6 +29,7 @@ public sealed class PlanReviewApplyRunTests : NodeRunFixture
 
         public Task<JsonElement> SystemAsync(string point, object payload, CancellationToken ct)
         {
+            if (Instead is { } answer) return Task.FromResult(JsonSerializer.SerializeToElement(answer));
             var operations = JsonSerializer.SerializeToElement(payload).GetProperty("operations").EnumerateArray().ToList();
             Wrote.AddRange(operations.Select(operation => operation.GetProperty("after").GetString()!));
             return Task.FromResult(JsonSerializer.SerializeToElement(new { state = "applied", applied = operations.Select(operation => operation.GetProperty("resource").GetString()).ToList() }));
@@ -41,7 +45,7 @@ public sealed class PlanReviewApplyRunTests : NodeRunFixture
 
         bool IApplyDoor.Start(ApplyStart start)
         {
-            Start ??= start;
+            Start = start;
             return true;
         }
     }
@@ -79,5 +83,44 @@ public sealed class PlanReviewApplyRunTests : NodeRunFixture
         await RunPassAsync(runtime);
         var again = RunStatus("review");
         Assert.Equal((NodeStates.Active, 2), (again.State, ReviewRecords.Read(_home, RunId, "review", again.Attempt)?.Reference.Plan));
+    }
+
+    [Fact]
+    public async Task A_plan_gone_stale_after_part_of_it_applied_is_planned_again_and_the_work_is_told_what_was_applied()
+    {
+        BoundTo(WorkflowDefaults.Of("plan-review-apply")!.GraphJson);
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")) with { Executors = ["rec-1"] }];
+        var plans = new SystemPlans(_home);
+        plans.Keep("rec-1", System,
+            [new SystemOperation("a", "update", "1", "A", new SystemPrecondition("etag", "e1")), new SystemOperation("b", "update", "1", "B", new SystemPrecondition("etag", "e1"))], _now);
+        var runtime = Applying();
+        await RunPassAsync(runtime);
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Accept, null, () => _now).Done);
+        await RunPassAsync(runtime);
+
+        var recorder = new Recorder
+        {
+            Instead = new { state = "stale", applied = new[] { "a" }, refused = "b", present = new[] { new { resource = "b", exists = true, value = "by hand", version = "e9" } } },
+        };
+        await new ApplyDoor(_home, (_, _) => Task.FromResult<IHookChannel>(recorder), holdsLease: () => true).PerformAsync(_held.Start!, CancellationToken.None);
+
+        var failed = RunStatus("apply");
+        Assert.Equal((NodeStates.Failed, ApplyDoor.Stale), (failed.State, failed.Code));
+        Assert.Contains("Applied before the refusal: `a`.", failed.Words);
+        Assert.Equal(["a"], plans.AppliedOf("rec-1", 1)!.Applied);
+
+        plans.Keep("rec-1", System, [new SystemOperation("b", "update", "e9", "B", new SystemPrecondition("etag", "e9"))], _now);
+        await RunPassAsync(runtime);
+
+        var replanned = RunStatus("review");
+        Assert.Equal((NodeStates.Active, 2), (replanned.State, ReviewRecords.Read(_home, RunId, "review", replanned.Attempt)?.Reference.Plan));
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Accept, null, () => _now).Done);
+        await RunPassAsync(runtime);
+        recorder.Instead = null;
+        await new ApplyDoor(_home, (_, _) => Task.FromResult<IHookChannel>(recorder), holdsLease: () => true).PerformAsync(_held.Start!, CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, RunStatus("apply").State);
+        Assert.Equal(["B"], recorder.Wrote);
     }
 }

@@ -51,6 +51,32 @@ public sealed class RunCompletionTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_plugin_step_performed_after_the_landing_runs_to_its_answer_before_the_run_ends()
+    {
+        BoundTo("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"},
+                      {"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"}],
+             "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>d","kind":"after","from":"handed","to":"deploy"}]}
+            """);
+        Landed();
+        var runtime = Runtime();
+
+        await RunPassAsync(runtime);
+
+        var sent = Assert.Single(_port.Sent);
+        Assert.Equal((NodeStates.Reached, Plugin + "/deploy"), (RunStatus("handed").State, sent.Step));
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+
+        _port.Heard.Enqueue(new(Plugin, 1, new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Reached), _now, "e1", null, null, Tip1, Invocation: sent.Invocation)));
+        await RunPassAsync(runtime, whole: false);
+        await RunPassAsync(runtime);
+
+        Assert.Equal(NodeStates.Reached, RunStatus("deploy").State);
+        Assert.Equal((RunId, RunOutcomes.Completed), (Files.Read(RunUnit)!.Ended?.Quest, Files.Read(RunUnit)!.Ended?.Outcome));
+    }
+
+    [Fact]
     public async Task A_failure_nothing_goes_on_from_ends_the_run_failed_naming_its_step()
     {
         BoundTo(DeployThenLand);

@@ -16,9 +16,9 @@ internal static class FolderReview
         };
     }
 
-    public static ReviewReference CopyReference(FolderCopy copy, RunTurn newest) => new()
+    public static ReviewReference CopyReference(string copy, RunTurn newest) => new()
     {
-        Workspace = copy.Workspace, Department = copy.Department, Copy = copy.Id, Baseline = copy.Id, End = newest.Record, EndDigest = newest.Digest,
+        Workspace = newest.Workspace, Department = newest.Department, Copy = copy, Baseline = copy, End = newest.Record, EndDigest = newest.Digest,
     };
 
     /// <summary>The rows from the baseline to the newest end; where the baseline is gone, from the earliest start still kept, said as such.</summary>
