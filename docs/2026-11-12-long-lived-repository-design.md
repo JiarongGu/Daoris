@@ -91,6 +91,22 @@ The filing moved 242 designs with `tools/file-designs.mjs --unclaimed --skip-ref
 242 router rows moved to the archive's router. Ten unclaimed designs stay at the top: two `daoris.lanes.json` cites, six whose
 respelling would grow a file past the size ratchet, one a test writes as its fixture and one whose name a fixture path shares.
 
+**The first three areas cut (2026-11-12).** Agents and harnesses went from 15,387 words (99 KB) to 4,499, git and remotes from
+11,035 (69 KB) to 4,491 and driving from 14,923 (94 KB) to 4,738, each rule kept under its number; per-file tables became tables by
+job, Open one row a line, and the measurements the git area carried went to D147's note. `tools/read-path-bench.mjs`, before and
+after:
+
+| | Before | After |
+|---|---|---|
+| Floor over the repository as it is: first, within three, hits from history | 1/12, 5/12, 24/36 | 1/12, 4/12, 25/36 |
+| Floor less history: first, within three | 5/12, 10/12 | 5/12, 10/12 |
+| Floor over the present alone: first, within three | 9/12, 11/12 | 10/12, 11/12 |
+| An area, median and largest | 47.7 KB, 99.0 KB | 29.7 KB, 95.3 KB |
+| The bytes at a change's start, at the median area and the largest | 74.5 KB, 133.3 KB | 56.4 KB, 129.4 KB |
+
+The present search gained a first hit; over the whole floor a shorter area loses one place within three to the history around
+it, which the present-first search (M2) answers and a cut cannot. The largest area is now another, still uncut.
+
 ## 4. The candidates
 
 1. **A present search** (adopted). A question about how something works now is searched in what is true now (the brief, the area
