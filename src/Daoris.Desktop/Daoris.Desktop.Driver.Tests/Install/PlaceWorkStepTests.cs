@@ -106,4 +106,19 @@ public sealed class PlaceWorkStepTests : IDisposable
         Assert.Null(Newest("flow"));
         Assert.Null(JsonNode.Parse(File.ReadAllText(DriverFile))!["trees"]);
     }
+
+    [Fact]
+    public void A_repository_s_own_line_policy_replaces_its_workspace_s_so_its_overlap_is_not_borrowed()
+    {
+        Home(["engine"], null, "engine");
+        var root = JsonNode.Parse(File.ReadAllText(DriverFile))!.AsObject();
+        root["workspaceLinePolicies"] = new JsonObject { ["default"] = new JsonObject { ["integrate"] = new JsonObject { ["overlap"] = "wait" } } };
+        root["linePolicies"] = new JsonObject { ["engine"] = new JsonObject { ["integrate"] = new JsonObject { ["commit"] = "merge" } } };
+        File.WriteAllText(DriverFile, root.ToJsonString());
+
+        Run();
+
+        Assert.Equal(IsolateStep.Trees, Newest("flow"));
+    }
 }
+
