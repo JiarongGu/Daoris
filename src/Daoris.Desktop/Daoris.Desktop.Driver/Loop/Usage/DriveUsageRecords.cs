@@ -1,6 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>The usage's groups from <c>brainstorm</c> to <c>notices</c>.</summary>
 internal static class DriveUsageRecords
 {
     public const string Text =
@@ -24,10 +23,6 @@ internal static class DriveUsageRecords
               a conversation of the running Daoris, started in a repository or already open, which this terminal
               holds once you confirm it in Daoris's window: stdin is you, stdout the session. Ctrl+C at rest lets
               go, and the conversation goes on in Daoris. Needs the running Daoris.
-          convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
-              convert this home's old records, every area's part in one plan: the plan reads and writes nothing,
-              `--apply` is your press, confirmed in Daoris's window, a failed part is pressed again or left with
-              `--leave`, and `--undo` takes the latest back. Needs the running Daoris.
           drive [--once | --until-idle] [--quiet-end <minutes>] [--share]
               drive this home: start a session for each quest a repository opted in here can take, and
               watch until Ctrl+C. --once ticks once; --until-idle ticks until nothing starts. A home

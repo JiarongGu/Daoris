@@ -63,7 +63,7 @@ public sealed class SavesRefusedTests : IDisposable
         var refused = WorkflowNamed.ReadVersion(element, 1, [], onSave: true, id: "docs");
         Assert.Equal((null, WorkflowNamed.StepsRefused("docs")), (refused.Steps, refused.Problem));
         Assert.StartsWith("`docs` is not saved: a workflow is saved as a graph of steps now, and a list of steps (schema 1) is no longer saved.", refused.Problem, StringComparison.Ordinal);
-        Assert.Contains("`daoris convert --plan`", refused.Problem);
+        Assert.DoesNotContain("convert", refused.Problem);
 
         var stored = WorkflowNamed.ReadVersion(element, 1, []);
         Assert.Null(stored.Problem);

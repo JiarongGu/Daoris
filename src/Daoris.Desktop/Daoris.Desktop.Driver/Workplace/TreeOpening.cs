@@ -183,7 +183,7 @@ internal sealed class TreeOpening(TreeContext context)
             // leaving a half-checked-out tree, locked, and its branch. Whatever cut it off, the branch
             // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
             // go, and the repository is left as found. A kill leaves them for the look (TreeStrays).
-            await TreeOpenings.UndoAsync(root, path, branch, ours, unused: refusedBound).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(root, path, branch, ours, unused: refusedBound, home: context.Home).ConfigureAwait(false);
             throw;
         }
 

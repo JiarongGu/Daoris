@@ -291,6 +291,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 writer.WriteString("tip", repair.Tip);
                 writer.WriteString("turn", repair.Turn);
                 writer.WriteNumber("carries", repair.Carries);
+                if (repair.Attempt is { } attempt) writer.WriteNumber("attempt", attempt);
                 writer.WriteString("at", Moments.Write(repair.At));
                 writer.WriteEndObject();
             }
@@ -566,7 +567,10 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                         return null;
                     }
 
-                    repairs.Add(new NodeRepair(node, tip, turn, count, at));
+                    repairs.Add(new NodeRepair(node, tip, turn, count, at)
+                    {
+                        Attempt = each.TryGetProperty("attempt", out var attempt) && attempt.TryGetInt32(out var named) ? named : null,
+                    });
                 }
             }
 

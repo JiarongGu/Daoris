@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The terminal's doors that saved a list of steps refuse alike, in the one judge's words,
-/// and write nothing: <c>apply</c> holding steps, <c>apply --as-graph</c> (folded into <c>workflow convert</c>), <c>edit</c>, <c>new --from</c> a
+/// and write nothing: <c>apply</c> holding steps, <c>edit</c>, <c>new --from</c> a
 /// version of steps or a step preset, and <c>import</c> of a file holding steps or a <c>handed</c>. A workflow saved as steps earlier is still read.
 /// </summary>
 public sealed class WorkflowAsGraphCommandTests : IDisposable
@@ -73,14 +73,15 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Apply_as_graph_is_folded_into_convert_and_refused_naming_it()
+    public async Task Apply_as_graph_is_no_flag_and_names_no_conversion()
     {
         Stored(Steps);
         var before = File.ReadAllBytes(FileOf("careful"));
 
-        Assert.Equal(1, await Run("workflow apply careful --as-graph"));
+        Assert.NotEqual(0, await Run("workflow apply careful --as-graph"));
 
-        Assert.Contains("`daoris convert`", Said);
+        Assert.Contains("`--as-graph` is not a flag", Said);
+        Assert.DoesNotContain("convert", Said);
         Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
     }
 

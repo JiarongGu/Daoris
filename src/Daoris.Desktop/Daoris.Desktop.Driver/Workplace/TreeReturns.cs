@@ -117,13 +117,13 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
             var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", full], ct).ConfigureAwait(false);
             if (unlocked != 0)
             {
-                await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true).ConfigureAwait(false);
+                await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true, home: context.Home).ConfigureAwait(false);
                 return Unmade(branch, $"its tree at {full} was made again on `{branch}`, but git would not let go of the lock it was made under: {Failure(unlockErr)}");
             }
         }
         catch
         {
-            await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true, home: context.Home).ConfigureAwait(false);
             throw;
         }
 
