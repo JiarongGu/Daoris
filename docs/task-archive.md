@@ -5,6 +5,34 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITREV3a to GITREV3m — thirteen fixes in the driver's git layer (2026-11-11)
+
+> **GITREV3a** (driver): Outcome: a lease file's first line names its package, `GitLibraryLeases.Left` returns each repository with it, and a fault found after an update is journalled under the package that faulted.
+>
+> **GITREV3b** (driver): Outcome: `GitLibrary.AskAsync` reads the fault guard and the admission once it holds a call slot, so a `gc` begun while it queued sends it to git.
+>
+> **GITREV3c** (driver): Outcome: `GitLibraryFaults.Exit` (on `ProcessExit`) closes every open lease, so an orderly exit with a call on the pool is no `native-fault`.
+>
+> **GITREV3d** (driver): Outcome: any exception a library call throws is a failed call and git's; a valueless `branch.*`/`remote.*` key is git's to read; a configuration held open is refused as `configuration`, not `no-repository`.
+>
+> **GITREV3e** (driver): Outcome: only a read shares an identical queued start; a write asked twice runs twice.
+>
+> **GITREV3f** (driver): Outcome: `GitPlace.Bind(pid)` opens the process handle at bind and disposes it at the exit, so a reused pid cannot make an ended git look unended (by reading .NET's lazy open; no test can force a reuse).
+>
+> **GITREV3g** (driver): Outcome: `PipeGrace` gives a pipe two seconds past its child's exit in `ChildProcess` and the two `GitRuns` stderr reads, and `HeldChild` shares its value; a child whose descendant holds the pipe answers at its exit.
+>
+> **GITREV3h** (driver): Outcome: `ActJournal.Launched` re-takes the step's deadline from the moment its git is placed, and `ActSteps` runs the bound from there.
+>
+> **GITREV3i** (driver): Outcome: `GitUnplacedException` is git's failure (exit -1 with its reason) in `PoolGit`, `ActSteps.HeldGitAsync`, `ChildProcess` and `GitIdentityActs`.
+>
+> **GITREV3j** (driver): Outcome: `PoolGit` says its processes did not end when `WaitEmptyAsync` answers no (by reading; the bound is ten minutes, so no test waits it).
+>
+> **GITREV3k** (driver): Outcome: `GitSystemFiles` keeps the system file only from an exit that answers; a start that did not run is asked again.
+>
+> **GITREV3l** (driver): Outcome: a lazy-fetch proof is kept only where both starts ran and the plain one fetched, else the next read asks again; the repository's `promisor` and object format are read through `FileStamp.Parsed`, no write-time cache beside it.
+>
+> **GITREV3m** (driver): Outcome: `GitEndable` is false for a read told `--output`, and `GitObjectReads.Text` takes a UTF-8 mark only, no UTF-16 or UTF-32 one.
+
 ## Parked rows closed in the triage of 2026-11-11
 
 > **The parked backlog triaged** (records): Outcome: each row of `docs/backlog-parked.md` read against the code, the decisions and this archive; 70 closed below, 8 moved back to `TASKS.md` (FABRIC-TRYAGAIN1, PUSH1d2b, SWITCHCTX1, HEAVYRUN1b3, AUTONOMY1b3d, USAGECAP1a3, SUPERVISOR1 with QUESTIONUI1b), the rest kept with their stale conditions corrected. A closed row's full text stands in git at this triage's parent commit.
