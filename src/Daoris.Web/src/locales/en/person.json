@@ -262,7 +262,7 @@
   "person.view.place-look": "With your look before its work lands.",
   "person.view.place-adoption": "Asks each repository's own session, as a quest, to set it up for agents.",
   "person.view.place-adoption-builds": "Asks each repository's own session, as a quest, to set it up for agents ({{builds}}).",
-  "person.view.place-drive": "Daoris drives all its work.",
+  "person.view.place-apply-drive": "Daoris drives all its work.",
   "person.view.place-accept": "Accepts the declaration of {{repository}} for {{purpose}}.",
   "person.view.history-clear-workspace-remote": "The remote for {{workspace}} keeps the team's copy of {{count}} of these quests; this machine will not fetch them again.",
   "person.cannotTell": "Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.",

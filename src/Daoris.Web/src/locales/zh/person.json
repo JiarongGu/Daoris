@@ -262,7 +262,7 @@
   "person.view.place-look": "落地前由你查看。",
   "person.view.place-adoption": "以委托的形式，请每个仓库自己的会话为智能体做好配置。",
   "person.view.place-adoption-builds": "以委托的形式，请每个仓库自己的会话为智能体做好配置（{{builds}}）。",
-  "person.view.place-drive": "道衍驱动它的全部工作。",
+  "person.view.place-apply-drive": "道衍驱动它的全部工作。",
   "person.view.place-accept": "采纳 {{repository}} 的声明，用于 {{purpose}}。",
   "person.view.history-clear-workspace-remote": "{{workspace}} 的远端保留其中 {{count}} 个委托的团队副本；本机不会再取回它们。",
   "person.cannotTell": "Daoris 无法分辨这是你运行的还是智能体运行的。只确认你自己运行的。",

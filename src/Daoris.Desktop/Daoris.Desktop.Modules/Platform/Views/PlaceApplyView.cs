@@ -71,7 +71,7 @@ public sealed class PlaceApplyView : IPressView
         if (ask.Opinion) yield return new PressSaid("place-opinion");
         if (ask.Look) yield return new PressSaid("place-look");
         if (ask.Adoption) yield return ask.Builds is { } builds ? new PressSaid("place-adoption-builds", ("builds", builds)) : new PressSaid("place-adoption");
-        if (ask.Drive) yield return new PressSaid("place-drive");
+        if (ask.Drive) yield return new PressSaid("place-apply-drive");
     }
 
     private static PressSaid Accepted(PlaceAccept accept) => new("place-accept", ("repository", accept.Repository), ("purpose", accept.Purpose));
