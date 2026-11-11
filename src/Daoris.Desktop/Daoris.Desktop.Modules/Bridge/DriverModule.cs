@@ -144,13 +144,6 @@ public sealed class DriverModule : ModuleBase
         init => _held = Registering(new HeldAnswers(_context.Events) { Patience = value });
     }
 
-    /// <summary>How long a landing's press is waited for before it is held in words (<see cref="LandPresses.Within"/>): a test names its own.</summary>
-    public TimeSpan PressBound
-    {
-        get => _context.Presses.Within;
-        init => _context.Presses.Within = value;
-    }
-
     /// <summary>Each landed composition of who is at work registered with its judge, which wakes it once it moved.</summary>
     private HeldAnswers Registering(HeldAnswers held)
     {
@@ -459,7 +452,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new TogetherRoutes(context)),
         Domain.Of(context => new ToolsRoutes(context)),
         Domain.Of(context => new TraceRoutes(context.Loop)),
-        Domain.Of(context => new TreesRoutes(context.Loop, context.Reads, context.Presses)),
+        Domain.Of(context => new TreesRoutes(context.Loop, context.Reads)),
         Domain.Of(context => new WorkRoutes(context)),
         Domain.Of(context => new QuestEndRoutes(context)),
         Domain.Of(context => new AskEndRoutes(context)),

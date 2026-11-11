@@ -445,7 +445,6 @@ describe("the door to a press's plan", () => {
   });
 
   it.each<[string, Confirmation, PlanDoor]>([
-    ['a land, its session', press('LAND_SESSION_TREE', { id: '3f2a91c4', branch: 'main' }), { plan: 'land', session: '3f2a91c4' }],
     ['a sweep, its workspace', press('SWEEP', { workspace: 'studio' }), { plan: 'sweep', workspace: 'studio' }],
     ['a sweep of no workspace named', press('SWEEP', {}), { plan: 'sweep', workspace: null }],
     ['a sync, its workspace', press('TREES_SYNC', { workspace: 'studio' }), { plan: 'sync', workspace: 'studio', repository: null }],
@@ -467,7 +466,7 @@ describe("the door to a press's plan", () => {
     const onOpenPlan = vi.fn();
     render(
       <Confirmations
-        waiting={[STOP, SAY, UNKNOWN, SERVICE, press('LAND_SESSION_TREE', {}), press('HISTORY_CLEAR', {})]}
+        waiting={[STOP, SAY, UNKNOWN, SERVICE, press('LAND_ENTRY', { entry: 'e1' }), press('HISTORY_CLEAR', {})]}
         onAnswer={vi.fn()}
         names={NAMES}
         onOpenPlan={onOpenPlan}

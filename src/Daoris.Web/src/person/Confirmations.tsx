@@ -92,11 +92,10 @@ export function routeKey(module: string | undefined, route: string): string {
 
 /**
  * The page a terminal's press's plan is shown on, scoped as the press is:
- * a land's session, whose review shows it; a sweep's or a sync's workspace, or a sync's repository; a clear's
+ * a sweep's or a sync's workspace, or a sync's repository; a clear's
  * workspace, quest or ask. A workspace a sweep or a sync names none of is null, the one in view.
  */
 export type PlanDoor =
-  | { plan: 'land'; session: string }
   | { plan: 'sweep'; workspace: string | null }
   | { plan: 'sync'; workspace: string | null; repository: string | null }
   | { plan: 'clear'; scope: 'workspace' | 'quest' | 'ask'; id: string };
@@ -113,10 +112,6 @@ export function planDoor(waiting: Confirmation): PlanDoor | null {
     return value ? value : null;
   };
   switch (waiting.route) {
-    case 'LAND_SESSION_TREE': {
-      const session = field('id');
-      return session ? { plan: 'land', session } : null;
-    }
     case 'SWEEP':
       return { plan: 'sweep', workspace: field('workspace') };
     case 'TREES_SYNC':

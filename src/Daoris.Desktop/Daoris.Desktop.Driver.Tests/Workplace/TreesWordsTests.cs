@@ -320,8 +320,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesPlanWords.LandPlanAsync(")]
     [InlineData("TreesPlanWords.LandedPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
-    // The press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
-    [InlineData("TreesWords.AcceptedForPass(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));

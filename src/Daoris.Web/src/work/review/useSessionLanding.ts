@@ -1,9 +1,10 @@
 import { type ComponentProps, useEffect, useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
-  drawnRevisions, type useChatTurns, useDiscardSessionTree, useDriver, useEntryLanding, useLandEntry, useLanding, useLandSessionTree, useOpinionGate,
+  drawnRevisions, useAcceptUnderWay, type useChatTurns, useDiscardSessionTree, useDriver, useEntryLanding, useLandEntry, useLanding, useOpinionGate,
   type useRunNodeWord, useSessionDiff, type useSessionGroups, useUnderWay, useUnderWaySubject, type withCall,
 } from '../../bridge/shell';
+import type { NodeWordAnswer } from '../../workflow/run';
 import type { Quest, Session } from '../../data/api';
 import type { useRegistry } from '../../data/queries';
 import { type Notify, SESSION_ACTIVE } from '../../design/ui';
@@ -79,23 +80,29 @@ export function useSessionLanding({
   const landing = useLanding(lands ? attended!.id : null, landName);
   // Another session's page is another ask: a name typed for one is not carried to the next.
   useEffect(() => setLandName(''), [attended?.id]);
-  const land = useLandSessionTree();
   // A chat run's press refused for what the page can word says it in the reader's language; any
   // other refusal is the driver's sentence.
-  const pressRefusal = (result: { message: string; press?: string | null }) =>
-    result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message;
-  // A landing's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
+  const pressRefusal = (result: NodeWordAnswer) =>
+    result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message ?? '';
+  // An Accept's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
   const landed = (answered: Answered) => ({
-    onSuccess: (result: { done: boolean; message: string; press?: string | null }) => {
+    onSuccess: (result: NodeWordAnswer) => {
       if (!result.done) {
         answered.refused(pressRefusal(result));
         return;
       }
-      notify(result.message);
+      notify(result.message ?? '');
       answered.done();
     },
     onError: (error: unknown) => answered.refused(sentence(error)),
   });
+  // The Accept is the review record's word on the record the plan drew (`WORKFLOW_NODE`'s `accept`), carrying the second opinion's
+  // token it answers; none where the run holds no review.
+  const drawn = landing.data?.accept ?? null;
+  const acceptsNow = useAcceptUnderWay(drawn?.run ?? null);
+  const accept = drawn ? (answered: Answered, answers?: string | null) => runNodeWord.mutate({
+    run: drawn.run, node: drawn.node, act: 'accept', words: null, attempt: drawn.attempt, revision: drawn.revision, answers,
+  }, landed(answered)) : undefined;
   // The review's gate where it holds that work: the set-up step's record, whether Daoris still serves
   // its tab here, and the verdict's presses, each by the one owner; *Set it up* follows the session's own quest.
   const reviewActs = useReviewActs({ notify });
@@ -121,7 +128,8 @@ export function useSessionLanding({
           {
             onSuccess: (skipped) => {
               if (!skipped.done) { answered.refused(skipped.message ?? skipped.refused ?? ''); return; }
-              land.mutate({ id: attended.id }, landed(answered));
+              if (accept) accept(answered);
+              else answered.done();
             },
             onError: (error: unknown) => answered.refused(sentence(error)),
           }),
@@ -145,7 +153,7 @@ export function useSessionLanding({
   // Its line of work's one Accept, or its ask's, lands it too: the head's own press waits while either is under way.
   const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
   const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
-  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || lineLandsNow || askLandsNow;
+  const landsNow = acceptsNow || lineLandsNow || askLandsNow;
   const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
   // Its one press, for the head and, in Accept's place, the review: never forced from here, a refusal the
   // driver's sentence inside the ask, and the review's Discard the door that asks twice.
@@ -219,7 +227,7 @@ export function useSessionLanding({
   const entryAccept = entryAt('head');
 
   return {
-    lands, behind, ownBranch, setLandName, landing, land, landed, gateHolds, headReview, headOpinion, discards, discardHeld, landsNow,
+    lands, behind, ownBranch, setLandName, landing, accept, gateHolds, headReview, headOpinion, discards, discardHeld, landsNow,
     discardsNow, workAskAt, entryOffered, landEntry, entryAt, entryAccept,
   };
 }

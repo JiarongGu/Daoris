@@ -42,16 +42,4 @@ public sealed class RunLandHoldsTests
         Assert.False(held.Landed);
         Assert.Equal("No workflow's run governs this work, so nothing lands it: Set up… chooses one. Nothing was landed.", held.Message);
     }
-
-    [Fact]
-    public void The_terminals_press_on_work_no_run_lands_says_the_hold_and_exits_1()
-    {
-        var process = WorkflowProcess.Declared(DriverConfig.Empty, "engine", null) with { Problem = WorkflowProcess.NoWorkflow("engine") };
-        var gate = LandingGate.Open("engine") with { Workflow = WorkflowGate.Judge(process) };
-
-        var said = TreesWords.AcceptedForPass(Path.Combine(AppContext.BaseDirectory, "no-home"), gate);
-
-        Assert.Equal(1, said.Code);
-        Assert.Equal([$"trees: {RunLandHolds.Of(gate).Message}"], said.Out);
-    }
 }

@@ -95,11 +95,11 @@ export const NoLongerWaiting: Story = {
   args: { waiting: [STOP], onAnswer: async () => ({ answered: false, why: 'gone', message: '' }) },
 };
 
-/** A land asked hours ago, its card's door to the session's review beside its buttons. */
+/** A sweep asked hours ago, its card's door to the workspace's Branches beside its buttons. */
 const LAND: Confirmation = {
-  source: 'pipe', id: 'c6', module: 'DAORIS.DRIVER', route: 'LAND_SESSION_TREE',
-  fields: [{ name: '/id', type: 'string', value: '3f2a91c4' }, { name: '/branch', type: 'string', value: 'main' }],
-  named: [{ role: 'session', name: '/id', value: '3f2a91c4' }],
+  source: 'pipe', id: 'c6', module: 'DAORIS.DRIVER', route: 'SWEEP',
+  fields: [{ name: '/workspace', type: 'string', value: 'studio' }],
+  named: [{ role: 'workspace', name: '/workspace', value: 'studio' }],
   asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 3 * 3_600_000).toISOString(), waitedOn: false,
 };
 

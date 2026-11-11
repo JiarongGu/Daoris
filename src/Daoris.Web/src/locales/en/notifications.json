@@ -218,7 +218,6 @@
   "notifications.steward.desk.act.delete": "Delete",
   "notifications.steward.desk.act.updatenow": "Install the update",
   "notifications.steward.desk.act.updatecancel": "Put the update away",
-  "notifications.steward.desk.act.land": "Land the tree",
   "notifications.steward.desk.act.clean": "Clean the tree",
   "notifications.steward.desk.act.handover": "Hand over"
 }

@@ -6,9 +6,6 @@ namespace Daoris.Desktop;
 /// <summary>A reviewed session's landing plan; <c>Branch</c> is the name the person entered in place of the rule's, blank keeping the rule's.</summary>
 public sealed record LandingRead(string Id, string? Branch, bool Said = false);
 
-/// <summary>The landing's press. <c>Answers</c> is the gate's token for what the press showed; <c>Follow</c> registers the lines it moved.</summary>
-public sealed record LandSessionTree(string Id, string? Branch, string? Answers, bool Follow = false);
-
 public sealed record OpinionGateRead(string Id, bool Said = false);
 
 /// <summary><c>SameAgent</c> asks the same agent fresh; an <c>Occasion</c> of <c>failure</c> asks for help with a struck quest.</summary>

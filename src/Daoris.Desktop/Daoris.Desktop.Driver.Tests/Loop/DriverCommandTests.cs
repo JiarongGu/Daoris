@@ -215,8 +215,8 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
             File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
-        // The terminal lands nothing itself: it keeps the person's word for the running Daoris's next pass.
-        Assert.Contains("TreesWords.AcceptedForPass(home, gate)", program);
+        // The terminal lands nothing and presses nothing: the work is accepted on its review.
+        Assert.Contains("daoris workflow accept <run>", program);
         Assert.DoesNotContain("landing.LandAsync(", program);
         Assert.DoesNotContain("WorkAsync(", program);
         Assert.DoesNotContain("ContentHold", program);
@@ -233,8 +233,8 @@ public sealed class DriverCommandTests
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
 
-        Assert.Contains("land <session> [--plan] [--branch <name>]", console);
-        Assert.Contains("tree land <session> [--plan] [--branch <name>]", DriverCommand.Usage);
+        Assert.Contains("land <session> --plan [--branch <name>]", console);
+        Assert.Contains("tree land <session> --plan [--branch <name>]", DriverCommand.Usage);
         Assert.Contains("TreesConsole.RunAsync(treesArgs, log)", program);
         Assert.Contains("Option(args, \"--branch\")", console);
         Assert.Contains("{ Entered = entered }", console);

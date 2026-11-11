@@ -396,13 +396,9 @@ export function App() {
                   update={attached ? update.data : undefined}
                   onSayUpdate={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
                   names={pressNames}
-                  // A press's door to its plan: the plan's own page, scoped as the press is; a land's at its review.
-                  onOpenPlan={(door) => {
-                    const plan = planOpening(door, circle, (repository) =>
-                      holdings.data?.find((each) => each.members.includes(repository))?.name ?? null);
-                    apply(plan.opening);
-                    if (plan.review) setWorkIntent('review');
-                  }}
+                  // A press's door to its plan: the plan's own page, scoped as the press is.
+                  onOpenPlan={(door) => apply(planOpening(door, circle, (repository) =>
+                    holdings.data?.find((each) => each.members.includes(repository))?.name ?? null).opening)}
                   at={notificationsAt}
                   onVisible={setNotificationsOpen}
                   notices={notices}

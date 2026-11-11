@@ -9,7 +9,7 @@ internal static class TreesUsage
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris tree [list | remove <path|session|branch> [--repository <name>] [--force]");
         Console.Error.WriteLine("                           | remove <landing branch> [--repository <name>] --why \"…\" [--plan]");
-        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
+        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> --plan [--branch <name>]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state [--entries]");

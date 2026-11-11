@@ -341,7 +341,6 @@
   "person.route.TOGETHER_LET_GO": "在落地之前，放开正被并入一个会话的那些会话",
   "person.route.SESSION_PARTNER_ASK": "请另一个智能体为一个会话做一个分项",
   "person.route.SESSION_PARTNER_ACT": "丢弃一个分项，或交付搭档留下的工作",
-  "person.route.LAND_SESSION_TREE": "采纳一个会话的工作并将其落地",
   "person.route.DISCARD_SESSION_TREE": "丢弃一个会话的工作树",
   "person.route.SWEEP": "清理会话分支",
   "person.route.TREES_SYNC": "将仓库的分支更新到最新",

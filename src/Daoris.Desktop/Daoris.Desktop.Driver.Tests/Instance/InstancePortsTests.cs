@@ -129,7 +129,6 @@ public sealed class InstancePortsTests
     {
         (string Mark, string Told, string Text)[] each =
         [
-            (TreesMarks.Land, PressesTold.Land, "LAND_SESSION_TREE"),
             (TreesMarks.DiscardTree, PressesTold.DiscardTree, "DISCARD_SESSION_TREE"),
             (TreesMarks.DiscardBranch, PressesTold.DiscardBranch, "DISCARD_SESSION_BRANCH"),
             (TreesMarks.WithdrawLanding, PressesTold.WithdrawLanding, "WITHDRAW_LANDING_BRANCH"),

@@ -8,7 +8,7 @@ import { call, pressBound } from '../call';
 export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
 
 // A line of work as one: its one Accept and its ask's, over the driver's
-// `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what `LAND_SESSION_TREE` answers.
+// `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what its run's landing came to.
 
 /** One part's outcome at an entry's Accept: `landed`, `refused`, `left-out`, `same-tree` or `not-tried`, with its landing's words. */
 export type EntryPartLanded = {

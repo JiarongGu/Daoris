@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Every door that lands one session names it as the review's Accept does, by one call
-/// (<see cref="SessionTrees.OwnSubjectAsync"/>): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the
-/// terminal's <c>trees land</c> and the look's landing at done. A part of an entry with others of its run is named for the run's first part
+/// (<see cref="SessionTrees.OwnSubjectAsync"/>): the review's <c>LANDING</c>, the
+/// terminal's <c>trees land --plan</c> and the look's landing at done. A part of an entry with others of its run is named for the run's first part
 /// and joins the entry's branch; a session alone in its run, a merge rule and a name the person entered land as before. The tree here is one no git
 /// holds, so the entry's branch is the rule's name for the first part, read with no git; <c>EntryLandingTests</c> holds the door
 /// over real git.

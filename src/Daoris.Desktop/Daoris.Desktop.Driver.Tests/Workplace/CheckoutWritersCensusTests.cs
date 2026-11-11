@@ -128,7 +128,7 @@ public sealed partial class CheckoutWritersCensusTests
     };
 
     /// <summary>The Accept doors, which land nothing themselves: no checkout's writer starts from them.</summary>
-    private static readonly string[] AcceptDoors = ["TreesLandDesk.cs", "ChatLandCommand.cs", "EntriesRoutes.cs"];
+    private static readonly string[] AcceptDoors = ["TreesLandDesk.cs", "ChatAccepts.cs", "EntriesRoutes.cs"];
 
     /// <summary>
     /// Writers of a checkout outside Daoris's desktop, which no lock of its reaches, by the source that writes where Daoris has one: what

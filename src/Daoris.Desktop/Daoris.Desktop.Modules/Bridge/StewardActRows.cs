@@ -200,7 +200,6 @@ public static class StewardActRows
         new StewardPauseAct(pause: false),
         StewardRouteAct.Done,
         StewardRouteAct.Delete,
-        StewardRouteAct.Land,
         StewardRouteAct.Clean,
         new StewardUpdateAct(StewardActNames.UpdateNow, UpdateMode.Now),
         new StewardUpdateAct(StewardActNames.UpdateCancel, UpdateMode.NotNow),

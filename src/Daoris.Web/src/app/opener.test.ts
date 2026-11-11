@@ -215,11 +215,6 @@ describe('the opener', () => {
 describe("a press's plan door", () => {
   const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
 
-  it("opens a land's session at its review", () => {
-    expect(planOpening({ plan: 'land', session: '3f2a91c4' }, 'forge', holding))
-      .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
-  });
-
   it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {
     expect(planOpening({ plan: 'sweep', workspace: 'studio' }, 'forge', holding))
       .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' }) });

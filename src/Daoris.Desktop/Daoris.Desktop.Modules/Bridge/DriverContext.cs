@@ -50,9 +50,6 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// </summary>
     public ReadLeaves Reads { get; } = new();
 
-    /// <summary>The window's landing presses, each run once per session under the loop's lifetime and always answered.</summary>
-    public LandPresses Presses { get; } = new(loop, events);
-
     /// <summary>The acts the git domains run, journaled in the home's store; one object, so a run's reconciler knows its own acts.</summary>
     public ActRuns GitActs { get; } = new(new ActJournal(loop.Home));
 

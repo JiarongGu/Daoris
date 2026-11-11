@@ -70,7 +70,6 @@
   "work.review.chatPress.moved": "评判期间工作有了变化；请再按一次采纳。",
   "work.review.chatPress.asked": "已为这些工作请求第二意见；它有定论后再按一次采纳。",
   "work.review.accepting": "落地中…",
-  "work.review.acceptingGate": "检查中…",
   "work.review.acceptingPass": "等待落地…",
   "work.review.acceptingPassNote": "已采纳。Daoris 会在它的下一轮检查时落地它；这里最多等待 {{seconds}} 秒，超过后会说明它已采纳，并在那一轮到时落地。",
   "work.review.sendBack": "退回…",

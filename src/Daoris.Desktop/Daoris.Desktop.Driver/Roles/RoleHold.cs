@@ -23,7 +23,7 @@ public static class AppointedRoles
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Hold, StewardActNames.Resume,
         StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
         StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
-        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.HandOver,
+        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Clean, StewardActNames.HandOver,
         StewardActNames.Setup,
     ];
 
