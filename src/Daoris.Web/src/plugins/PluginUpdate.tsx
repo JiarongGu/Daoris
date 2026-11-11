@@ -1,5 +1,6 @@
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, PathText } from '../design/ui';
+import { Button, Inline, PathText, Pill } from '../design/ui';
 
 /** Where an installed plugin came from: a folder, the install's offer, a package, no record, or one that does not read. */
 export type PluginSourceShown = {
@@ -10,8 +11,15 @@ export type PluginSourceShown = {
   problem?: string | null;
 };
 
-/** One thing an update changes, each side as the manifests write it; empty is none. */
-export type PluginChangeShown = { what: 'version' | 'command' | 'points' | 'harnesses' | 'servers'; was: string; now: string };
+/** One thing an update changes, each side as the manifests write it (empty is none); an `interfaces` row names its entry. */
+export type PluginChangeShown = {
+  what: string; was: string; now: string; interface?: string | null; name?: string | null; asksMore?: boolean;
+};
+
+const rowLabel = (t: TFunction, change: PluginChangeShown): string =>
+  change.what === 'interfaces' && change.interface
+    ? t(`plugin.update.interface.${change.interface}`, { name: change.name ?? '', defaultValue: change.interface })
+    : t(`plugin.update.what.${change.what}`, { defaultValue: change.what });
 
 /** What `PLUGIN_UPDATE` answers: without `apply`, what an update would change or why it cannot; with it, what it did. */
 export type PluginUpdatePlanShown = {
@@ -73,9 +81,12 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
       ) : (
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
           {plan.changes.map((change) => (
-            <li key={change.what} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 text-small">
-              <span className="text-ink-faint">{t(`plugin.update.what.${change.what}`, { defaultValue: change.what })}</span>
-              <span className="min-w-0 break-words text-ink-soft">{side(change.was)} → {side(change.now)}</span>
+            <li key={`${change.what}:${change.interface ?? ''}:${change.name ?? ''}`} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-2 text-small">
+              <span className="break-words text-ink-faint">{rowLabel(t, change)}</span>
+              <span className="min-w-0 break-words text-ink-soft">
+                {side(change.was)} → {side(change.now)}
+                {change.asksMore && <> <Pill tone="open">{t('plugin.update.asksMore')}</Pill></>}
+              </span>
             </li>
           ))}
         </ul>
