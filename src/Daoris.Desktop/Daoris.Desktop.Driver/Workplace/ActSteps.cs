@@ -400,7 +400,14 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
             }
 
             var ask = GitStartAsks.For(info, arguments, GitRunner.Held, TimeSpan.Zero, shares: false, input);
-            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, ordinal, arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (GitUnplacedException unplaced)
+            {
+                return new Ran(null, "", "", false, $"{unplaced.Message}, so the step did not run");
+            }
         });
 
     private async Task<Ran> PlacedAsync(System.Diagnostics.ProcessStartInfo info, int ordinal, IReadOnlyList<string> arguments, string? input)
@@ -418,12 +425,15 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
         try
         {
             if (limits.Seam is { } beforePid) await beforePid(ActSeams.BeforePid, ordinal).ConfigureAwait(false);
-            journal.Launched(claim, ordinal, child.Pid, child.Started);
+            // The bound journalled at Begin counts from the git's placing, not from the queue it waited in.
+            var begun = journal.Steps(claim.Act).Single(each => each.Ordinal == ordinal);
+            var bound = begun.Deadline - begun.BeganAt ?? TimeSpan.Zero;
+            var deadline = journal.Clock.GetUtcNow() + bound;
+            journal.Launched(claim, ordinal, child.Pid, child.Started, deadline);
             child.Resume();
             var writing = child.WriteAsync(input);
             if (limits.Seam is { } afterLaunch) await afterLaunch(ActSeams.AfterLaunch, ordinal).ConfigureAwait(false);
-            var step = journal.Steps(claim.Act).Single(each => each.Ordinal == ordinal);
-            var left = (step.Deadline ?? DateTimeOffset.UtcNow) - journal.Clock.GetUtcNow();
+            var left = deadline - journal.Clock.GetUtcNow();
             var (exit, stdout, stderr) = await child.ExitAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero).ConfigureAwait(false);
             if (exit is not null)
             {

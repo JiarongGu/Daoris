@@ -33,4 +33,30 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.True(RunNodeWords.Word(Files, RunId, "look", NodeWordActs.Stop, "not wanted", () => _now).Done);
         Assert.Empty(PersonWaitReader.Read(_home));
     }
+
+    private const string CopyGraph = """
+        {"schemaVersion":2,"entries":["apart"],"end":"return",
+         "nodes":[{"id":"apart","kind":"isolate","version":1,"reach":"observed","options":{"kind":"copy"}},{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"review","kind":"review","version":1,"reach":"pressed"},{"id":"return","kind":"return","version":1,"reach":"performed"}],
+         "wires":[{"id":"a","kind":"after","from":"apart","to":"work"},{"id":"b","kind":"after","from":"work","to":"review"},
+                  {"id":"c","kind":"after","from":"review","to":"return"},{"id":"d","kind":"back","from":"review","on":"rejected","to":"work"}]}
+        """;
+
+    [Theory]
+    [InlineData(ReturnNode.BothChanged, PersonWaits.Choose)]
+    [InlineData(ReturnNode.PlaceBusy, null)]
+    public void A_return_waiting_on_files_changed_on_both_sides_waits_on_the_persons_choice_and_a_busy_one_on_no_one(string code, string? why)
+    {
+        BoundTo(CopyGraph);
+        var unit = RunUnits.IdOf(RunId);
+        Files.Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["return"] = new(unit, "return", NodeStates.Active) { Attempt = 1, Code = code, Since = _now },
+            },
+        });
+
+        Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
+    }
 }

@@ -17,7 +17,7 @@ public static class PersonWaitReader
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);
-                if (WhyOf(node, status.State) is not { } why || kept.Pending.Any(word => word.Node == node.Id)) continue;
+                if (WhyOf(node, status) is not { } why || kept.Pending.Any(word => word.Node == node.Id)) continue;
                 waits.Add(new PersonWait(run.Run, node.Id, why, run.Binding.Repository, status.Since));
             }
         }
@@ -32,7 +32,7 @@ public static class PersonWaitReader
         return Of(new GraphRuns(files).Read(), files.Read);
     }
 
-    private static string? WhyOf(NodeDeclaration node, string state) => state switch
+    private static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
     {
         NodeStates.Unknown => PersonWaits.Held,
         NodeStates.Active => NodeKit.Of(node.Kind) switch
@@ -40,6 +40,7 @@ public static class PersonWaitReader
             ReviewNode => PersonWaits.Accept,
             HumanNode => HumanNode.Presses(node).Contains(NodeWordActs.Approve, StringComparer.Ordinal) ? PersonWaits.Approval : PersonWaits.Task,
             GoAheadNode => PersonWaits.GoAhead,
+            ReturnNode when status.Code == ReturnNode.BothChanged => PersonWaits.Choose,
             _ => null,
         },
         _ => null,

@@ -310,7 +310,7 @@ internal static class GitRuns
             }
 
             await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
-            await stderr.ConfigureAwait(false);
+            await PipeGrace.ReadAsync(stderr).ConfigureAwait(false);
             // A read the kill below ended answers as git's end would: past the bound, it is none.
             within.Token.ThrowIfCancellationRequested();
             return bounded || process.ExitCode == 0 ? (buffer, count) : null;
@@ -452,7 +452,7 @@ internal static class GitRuns
             }
 
             await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
-            await stderr.ConfigureAwait(false);
+            await PipeGrace.ReadAsync(stderr).ConfigureAwait(false);
             // A read the kill ended answers as git's end would: past the bound, it is a read that failed.
             within.Token.ThrowIfCancellationRequested();
             return stopped ? 0 : process.ExitCode;

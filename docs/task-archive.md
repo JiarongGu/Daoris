@@ -5,6 +5,34 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITREV3a to GITREV3m — thirteen fixes in the driver's git layer (2026-11-11)
+
+> **GITREV3a** (driver): Outcome: a lease file's first line names its package, `GitLibraryLeases.Left` returns each repository with it, and a fault found after an update is journalled under the package that faulted.
+>
+> **GITREV3b** (driver): Outcome: `GitLibrary.AskAsync` reads the fault guard and the admission once it holds a call slot, so a `gc` begun while it queued sends it to git.
+>
+> **GITREV3c** (driver): Outcome: `GitLibraryFaults.Exit` (on `ProcessExit`) closes every open lease, so an orderly exit with a call on the pool is no `native-fault`.
+>
+> **GITREV3d** (driver): Outcome: any exception a library call throws is a failed call and git's; a valueless `branch.*`/`remote.*` key is git's to read; a configuration held open is refused as `configuration`, not `no-repository`.
+>
+> **GITREV3e** (driver): Outcome: only a read shares an identical queued start; a write asked twice runs twice.
+>
+> **GITREV3f** (driver): Outcome: `GitPlace.Bind(pid)` opens the process handle at bind and disposes it at the exit, so a reused pid cannot make an ended git look unended (by reading .NET's lazy open; no test can force a reuse).
+>
+> **GITREV3g** (driver): Outcome: `PipeGrace` gives a pipe two seconds past its child's exit in `ChildProcess` and the two `GitRuns` stderr reads, and `HeldChild` shares its value; a child whose descendant holds the pipe answers at its exit.
+>
+> **GITREV3h** (driver): Outcome: `ActJournal.Launched` re-takes the step's deadline from the moment its git is placed, and `ActSteps` runs the bound from there.
+>
+> **GITREV3i** (driver): Outcome: `GitUnplacedException` is git's failure (exit -1 with its reason) in `PoolGit`, `ActSteps.HeldGitAsync`, `ChildProcess` and `GitIdentityActs`.
+>
+> **GITREV3j** (driver): Outcome: `PoolGit` says its processes did not end when `WaitEmptyAsync` answers no (by reading; the bound is ten minutes, so no test waits it).
+>
+> **GITREV3k** (driver): Outcome: `GitSystemFiles` keeps the system file only from an exit that answers; a start that did not run is asked again.
+>
+> **GITREV3l** (driver): Outcome: a lazy-fetch proof is kept only where both starts ran and the plain one fetched, else the next read asks again; the repository's `promisor` and object format are read through `FileStamp.Parsed`, no write-time cache beside it.
+>
+> **GITREV3m** (driver): Outcome: `GitEndable` is false for a read told `--output`, and `GitObjectReads.Text` takes a UTF-8 mark only, no UTF-16 or UTF-32 one.
+
 ## Parked rows closed in the triage of 2026-11-11
 
 > **The parked backlog triaged** (records): Outcome: each row of `docs/backlog-parked.md` read against the code, the decisions and this archive; 70 closed below, 8 moved back to `TASKS.md` (FABRIC-TRYAGAIN1, PUSH1d2b, SWITCHCTX1, HEAVYRUN1b3, AUTONOMY1b3d, USAGECAP1a3, SUPERVISOR1 with QUESTIONUI1b), the rest kept with their stale conditions corrected. A closed row's full text stands in git at this triage's parent commit.
@@ -82,6 +110,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1e's first part and REVIEWUX1h's `choose` — a run's review read by run; a return's choice a person wait (2026-11-12, D273)
+
+> **REVIEWUX1e, first part** (driver, modules): Outcome: `RUN_REVIEW { run | session, attempt }` (modules `RunReviewRoutes`, told by event) answers a run's review read by `RunReviews` from the run's binding, node record and review records alone, so it opens after its trees and sessions are gone: the newest record or an attempt named, where the review stands, the presses only on the attempt it stands on, a newer record with the paths whose content it changed, the steps an Accept may start with their states, the run's end; a session opens its run's review by the run its quest is (`QuestRuns.Of`), an earlier part's included; `RUN_REVIEW_FILE` draws a folder's or a copy's file at the record's hash from the content store, or from the place only while it still hashes so, else refused `moved` (`ReviewContent`). Proof: `RunReviewsTests` (driver), `DriverModuleRunReviewTests` seen failing first (the route refused unknown), the held reads' payloads.
+>
+> **REVIEWUX1h, first part** (driver, web): Outcome: a `return` active on `both-changed` is the person wait `choose`, said in the terminal's and the list's words in both languages. Proof: `PersonWaitsTests` (seen failing first), `i18n:check`.
+
+---
+
+## REVIEWUX1d — runs in flight: a review's words that name no record (2026-11-12, D273)
+
+> **REVIEWUX1d** (driver): Outcome: the `review-records` home step (`ReviewRecordsStep`, `ReviewLegacy`) converts the words an older build kept on a branchless review: a person's Accept given with no commit is kept as legacy only where the run's pinned graph ends at its review with nothing after it, its receipt carried to the review's Accept (*accepted as it stood at …, before Daoris drew a revision*), and is otherwise dropped and said on the run's history; a supervisor's such word is dropped stale; a branch run's words stand; no pinned graph is edited, and the pass gives each standing review its record. Proof: `ReviewRecordsStepTests` (seen failing first), the step run twice changing nothing.
 ## HISTCLEAR1 — a workspace's history clear finishes in one press (2026-11-11)
 
 > **HISTCLEAR1** (driver): Outcome: the history clear sends its units to the service in presses of at most five (`HistoryDoors.PressUnits`), one after another within one call, so each answer comes well within the client's 30-second bound and a history of any length is cleared by one `daoris history clear --workspace <w> --yes`, which says what it removed as before; the service judged each unit against every record, so one press naming a long history ran past the bound and stopped `SERVICE_BUSY`, part cleared. Proof: `HistoryClearBatchesTests` (`A_workspaces_clear_of_a_history_longer_than_the_clients_bound_finishes_in_one_press`) (60 units against a service that stalls past 20), seen failing first with the stall.

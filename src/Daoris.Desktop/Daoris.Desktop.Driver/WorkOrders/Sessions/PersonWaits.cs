@@ -29,4 +29,7 @@ public static class PersonWaits
 
     /// <summary>A step whose attempt is held unknown for the person's word.</summary>
     public const string Held = "held";
+
+    /// <summary>A <c>return</c> holding files changed on both sides for the person's choice of each.</summary>
+    public const string Choose = "choose";
 }
