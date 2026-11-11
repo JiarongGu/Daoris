@@ -72,6 +72,9 @@ public sealed class AcpSession(
     /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
     public IReadingSink? Children { get; init; }
 
+    /// <summary>Where a subagent's tool calls are kept by its stream, beside the session (<see cref="Driver.ChildCalls"/>); null keeps none.</summary>
+    public Action<string, SessionEvent>? ChildCalls { get; init; }
+
     /// <summary>
     /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
     /// <see cref="PostureAsked.PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
@@ -389,7 +392,7 @@ public sealed class AcpSession(
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
-        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children);
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children, calls: ChildCalls);
         _pump = Reader.PumpAsync(incoming, _pumpStop.Token);
 
         var initialized = await RequestAsync(

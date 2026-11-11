@@ -224,7 +224,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     its rules do not allow, is handed a `PreToolUse` hook last beside the tree guard and the lineage hook (`permission-ask.mjs`,
     `ClaudeAskHook`, `HandedRules.Asked`) on a working session's or a conversation's file: for a call its mode and rules would
     ask about (a rule allows a call by its tool, a Bash command, a fetch's domain or an `Edit(/path/**)`-style pattern read as the
-    harness reads it), it writes a `permit` request to the session requests box, the loop holds it in the same registry
+    harness reads it), it writes a `permit` request naming the call by the harness's id to the session requests box, the loop holds it in the same registry
     (`NativePermits`), and the hook answers the harness allow or deny from the answer beside it. A session shaped for one job
     (review, helper, intake, brainstorm, partner, supervise) is handed none. (from D81, D184, D253)
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's own file. With no account

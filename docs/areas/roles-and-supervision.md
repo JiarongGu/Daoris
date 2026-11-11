@@ -247,7 +247,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     names, and a repository no place names, a line per kind naming the supervisor, its place, its holder and the kind's granted acts,
     or the resolver's sentence; a kind of the machine's alone has its line at the machine and nowhere below it. A place's Roles words them as *Who decides here* (`WhoDecidesHere`): the supervisor and where it is
     set, *your rules, then you* where the person's rules hold it, *you (… may not …)* where it is granted none of the kind's acts, or
-    *you* with the sentence, and *Ask Daoris's acts* as *read by Second check* or *not read (Second check off)*; *Add a supervisor for…* offers the kinds no supervisor placed there decides, none of the machine's alone below it, and opens the role editor
+    *you* with the sentence, and *Ask Daoris's acts* as *read by Second check* or *not read (Second check off)*, the latter with
+    *Turn on…*, as the role's row at the machine has it (`SecondCheckTurnOn`): a card in the role door's card's words naming its
+    readers in the order they are tried and their start budget, whose *Turn on* sets the role held by an agent over `SET_ROLE`, its
+    choices and policy as they are; *Add a supervisor for…* offers the kinds no supervisor placed there decides, none of the machine's alone below it, and opens the role editor
     with that kind, the place and nothing ticked. The editor shows the machine's generic supervisor's *Decides* fixed, said. An
     appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
     overrule it. The seed holds *Second check* (`second-check`, 复核): the machine's supervisor deciding `ask-daoris`, *Ask
@@ -497,9 +500,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (edit, delete, move, execute), a press of Daoris's connector as its door words the call's act on its line of the session's
     `lineage.jsonl` (`CallPlace.ActOf`: a search, a read under the person's grant or a proposal is not selected), matched to its
     card by the harness's id of the call (Claude Code's) or else by count, every card no line accounts for, unknown, and a
-    delegation, its child read by the same table where its stream is kept and said *delegated, not read* where not; a press that
+    delegation, its child read by the same table where its calls are kept (a protocol door's subagent's, by its stream in the
+    session's folder, `ChildCalls`) and said *delegated, not read* where not (the native door's); a press that
     ran with no card (full access, or a granted family's) is selected, while one asked on the person's card and allowed, and a call
-    held for them and answered, are their yes, kept as such and never selected; known reads are counted. A cut input or output, a
+    held for them and answered (the native door's permit naming its call by the harness's id), are their yes, kept as such and never
+    selected; known reads are counted. Each press as it moves and each answered hold of an Ask Daoris conversation are kept beside
+    its reports on a task of their own (`AskDaorisKept`, `SecondCheckHookUp`), a press read as its settled outcome, so the selection
+    reads them past the press record's 100 and after a restart, the record's live presses folded in. A cut input or output, a
     child not kept, a match by count, a turn with no end and a turn over the bound are limits of its reading, which is then
     partial, never clean. A selected turn joins its conversation's queued range (`AskDaorisRanges`, one report per range in its
     decisions folder, `AskDaorisReports`), whose packet is bounded at 40,000 characters: past it, or once a reader took the range,
