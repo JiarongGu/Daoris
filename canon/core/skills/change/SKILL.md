@@ -12,7 +12,8 @@ One way to make a change, in five steps. Nothing else is asked of a change unles
 1. **Read the area.** Open the area document for the part you change; the brief names the area
    documents. Read the lines of code it points at: ranges, not whole files. With no area document,
    read that part's own instructions or README. A knowledge document whose *applies when* matches the
-   task is read too; the generated index lists them.
+   task is read too; the generated index lists them. Search what is true now (the area documents, the
+   index, the code) before the records, and look history up by its identifier.
 2. **Mirror one exemplar.** Search for one unit that already has the shape you are adding, read it end
    to end (its wiring, its error path, its test) and mirror it. New behaviour goes in a unit of its own,
    a named type or module in the folder that owns its job: never a partial piece of a large file, never
