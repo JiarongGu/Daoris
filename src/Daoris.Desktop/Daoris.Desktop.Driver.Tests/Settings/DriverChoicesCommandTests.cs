@@ -70,13 +70,13 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task The_gone_trees_verb_answers_where_a_places_sessions_are_set_apart_now_and_writes_nothing()
+    public async Task Trees_is_no_verb_and_writes_nothing()
     {
         var exit = await DriverChoicesCommand.RunAsync(["trees", "engine", "on"], World(), CancellationToken.None);
 
-        Assert.Equal(1, exit);
-        Assert.Contains("`isolate` step", _error.ToString(), StringComparison.Ordinal);
-        Assert.Contains("Work apart", _error.ToString(), StringComparison.Ordinal);
+        Assert.Equal(2, exit);
+        Assert.Contains("`trees` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("trees", DriverChoicesCommand.Verbs);
         Assert.False(File.Exists(Config));
     }
 
@@ -175,7 +175,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
         Assert.Equal(
-            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+            ["list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
                 "brainstorms", "workflow", "keep",
                 // The role catalogue's door.
                 "role", "terminal", "settings"],

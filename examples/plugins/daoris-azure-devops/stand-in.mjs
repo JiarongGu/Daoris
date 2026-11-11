@@ -13,8 +13,8 @@ export const folder = dirname(fileURLToPath(import.meta.url));
 export const TOKEN = 'throwaway-token-for-the-stand-in';
 export const WEB = 'https://dev.azure.com/acme/Proj/_git/app';
 export const POINTS = ['work/watch', 'work/step', 'work/perform', 'work/state'];
-export const STEP = 'azure-devops-pull-request/pull-request';
-export const RELEASE = 'azure-devops-pull-request/release';
+export const STEP = 'daoris-azure-devops/pull-request';
+export const RELEASE = 'daoris-azure-devops/release';
 export const tip = 'b'.repeat(40);
 
 const scratch = mkdtempSync(join(tmpdir(), 'azure-pr-'));

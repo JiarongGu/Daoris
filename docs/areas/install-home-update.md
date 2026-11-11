@@ -213,7 +213,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     handed sections; the session records' `answer` column; finished records' English-only notes; closed quests with a
     six-character id; terminals' `*.turn` marks; the desktop store's names (store step 22: a binding's `door`, the staffing's
     projection tables dropped); the binding files into the store; the wired, usage, lineage and brainstorm files' door names;
-    and a stored standing confirmation grant, removed. The
+    a stored standing confirmation grant, removed; configured access's old lists as families of acts; the supervisors' records with
+    their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; and *Second
+    check*'s first staffing. The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 

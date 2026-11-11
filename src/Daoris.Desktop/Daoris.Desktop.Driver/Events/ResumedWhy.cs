@@ -27,6 +27,8 @@ public static class ResumedWhy
     /// <summary>Daoris's own words alone: a reopen told, a step's go-on.</summary>
     public const string Daoris = "daoris";
 
+    public const string Restart = "restart";
+
     /// <summary>The supervisor's answer, on the owner's behalf, with none of the owner's words.</summary>
     public const string Supervisor = "supervisor";
 }

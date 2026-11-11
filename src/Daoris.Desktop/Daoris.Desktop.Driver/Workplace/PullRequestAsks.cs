@@ -102,10 +102,14 @@ internal sealed class PullRequestAsks(TreeContext context)
         string? origin = null;
 
         var asks = new List<StateAsk>();
+        IReadOnlyDictionary<string, string>? formerly = null;
         foreach (var entry in context.Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
         {
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
-            if (PullRequestAsking.PluginFor(entry) is not { } plugin) continue;
+            if (PullRequestAsking.PluginFor(entry) is not { } recorded) continue;
+            // A pull request opened by a plugin since renamed is asked of it by the id it has now.
+            formerly ??= PluginFormerly.Of(context.Home);
+            var plugin = formerly.GetValueOrDefault(recorded) ?? recorded;
             // A due moment's own entries alone, its answer now feeding the end as well as a removal.
             if (moment is not null && !moment.Any(each => SameLanding(each, entry))) continue;
             if (again is null && moment is null)

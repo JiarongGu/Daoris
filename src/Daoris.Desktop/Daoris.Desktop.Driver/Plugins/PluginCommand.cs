@@ -186,8 +186,10 @@ public static class PluginCommand
                 var plan = Planned(home, RequireId(args, "update"), world);
                 int Said()
                 {
-                    Say(world, $"{Prefix}: updated plugin `{plan.Id}` from {plan.From}.");
-                    var data = DaorisHome.Entry(home, HomeEntry.Plugins, PluginCatalog.DataFolder, plan.Id);
+                    Say(world, plan.Next == plan.Id
+                        ? $"{Prefix}: updated plugin `{plan.Id}` from {plan.From}."
+                        : $"{Prefix}: updated plugin `{plan.Id}` from {plan.From}; it is `{plan.Next}` now, and what it kept moved with it.");
+                    var data = DaorisHome.Entry(home, HomeEntry.Plugins, PluginCatalog.DataFolder, plan.Next);
                     if (PluginFolders.There(data)) Say(world, $"  {data} kept, untouched.");
                     Say(world, "  It takes effect at the driver's next look — its hook, if it speaks, restarted at the next tick.");
                     return 0;

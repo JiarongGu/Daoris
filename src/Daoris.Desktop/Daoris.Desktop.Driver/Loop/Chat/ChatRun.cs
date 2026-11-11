@@ -222,8 +222,8 @@ internal sealed class ChatRun(
                 SpawnFiles.Remove(rules);
                 SpawnFiles.Remove(servers);
                 SpawnFiles.RemoveFolder(skills);
-                await conclusion.ConcludeAsync(sessionId, "stopped", ChatRunner.ClosedNoted, onEnded).ConfigureAwait(false);
-                if (processes.Close.Build is { } build) closing.KeepRestart(sessionId, build);
+                await conclusion.ConcludeAsync(sessionId, "stopped", ChatClosing.CutNoted, onEnded).ConfigureAwait(false);
+                closing.KeepRestart(sessionId);
                 return new(sessionId, message);
             }
 
@@ -400,7 +400,7 @@ internal sealed class ChatRun(
         if (Context.Closing)
         {
             (chat?.Turns ?? native?.Turns)?.HoldForClose();
-            if (processes.Close.Build is not null) closing.UpdateCuts.TryAdd(sessionId, 0);
+            closing.Cuts.TryAdd(sessionId, 0);
         }
 
         // The person's words a conversation goes on with are its first turn, queued before any word said to it once it runs. Marked attempted

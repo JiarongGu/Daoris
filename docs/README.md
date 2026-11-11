@@ -33,9 +33,9 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/hold-by-title/README.md`|Rehearsal plugin fixture
 |`../examples/plugins/stand-in-system/README.md`|Stand-in system adapter
 |`../examples/plugins/browser/README.md`|Browser plugin
-|`../examples/plugins/in-app-browser/README.md`|Browser connection plugin
-|`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin
-|`../examples/plugins/azure-devops-pull-request/README.md`|Azure DevOps landing plugin
+|`../examples/plugins/daoris-in-app-browser/README.md`|Browser connection plugin
+|`../examples/plugins/daoris-github/README.md`|Daoris's GitHub plugin
+|`../examples/plugins/daoris-azure-devops/README.md`|Daoris's Azure DevOps plugin
 |`../examples/plugins/local-preview/README.md`|Performed step plugin
 |`../tools/dsh-probes/README.md`|Protocol probes
 

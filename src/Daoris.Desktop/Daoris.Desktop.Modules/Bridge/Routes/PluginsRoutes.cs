@@ -492,7 +492,7 @@ public sealed class PluginsRoutes(DriverContext context)
     /// </summary>
     private static object? ShippedOf(PluginEntry plugin, IReadOnlyList<PluginOffer> offers)
     {
-        var offer = offers.FirstOrDefault(each => string.Equals(each.Id, plugin.Manifest.Id, StringComparison.OrdinalIgnoreCase));
+        var offer = PluginOffers.For(offers, plugin.Manifest.Id);
         if (offer is null) return null;
         var (written, _) = PluginCatalog.ReadAsWritten(plugin.Manifest.Id, Path.Combine(plugin.Folder, PluginCatalog.ManifestName));
         // A manifest that does not read has no version to be older with: its own sentence is already said.

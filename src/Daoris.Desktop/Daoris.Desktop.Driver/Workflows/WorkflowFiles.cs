@@ -11,6 +11,8 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class WorkflowFiles(string home) : IWorkflowStore
 {
+    private IReadOnlyDictionary<string, string>? _formerly;
+
     /// <summary>A workflow's file under the home, as found: null where there is none; its problem where it is not JSON.</summary>
     public WorkflowFileFound? Load(string id)
     {
@@ -32,7 +34,7 @@ public sealed class WorkflowFiles(string home) : IWorkflowStore
             read = read with { Problem = $"`{id}.json` holds the workflow `{read.Id}`; a workflow's file is named by its id." };
         }
 
-        return new WorkflowFileFound(id, file, read);
+        return new WorkflowFileFound(id, file, PluginFormerKinds.Read(read, () => _formerly ??= PluginFormerly.Of(home)));
     }
 
     /// <summary>Every workflow under the home, by its file's name in ordinal order: each file named as an id, read or not.</summary>

@@ -82,6 +82,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The cleanup census — the superseded ways' remnants removed (2026-11-11)
+
+> **Cleanup census** (driver, web, docs; D228): Outcome: a census of what the day's changes superseded (`docs/2026-11-11-cleanup-census.md`), and the remnants nothing reads removed by family: the trees switch's verb, `TreesMoved` and its help words (`place trees` is now an unknown word); the landing door's room row, the refusals pointing at `daoris place landing` and its route words (the refusals now name the workflow's `land` step); the workflow-draft prompt's call to the removed `workflow_propose`; 53 dead supervisor keys in both catalogues; a stray merge file; install rule 54 listing all 28 migration steps. Kept with their end condition and row: the migration steps, the `--kind api` token setter (PLUGINEXT1), the current landing read, the older build's move boxes, and the review groups and nine session states for REVIEWUX1. Proof: `npm run quick`, `test-map --check`, `i18n:check`, the filtered driver and web suites.
+
+---
+
+## Daoris's own plugins renamed by a generic `formerly`, and their own commands reaching their process (2026-11-11)
+
+> **The plugin family's names** (driver, examples; D274's note): Outcome: a manifest may declare `formerly: [<old id>]`, and at the loop's start and after any install door the old id's installed copy, switches, data folder, private storage and approvals move to the new id once, never overwriting what the new id has, logged by ids only; a saved workflow's `<old>/<step>` kinds are read as the new id's (no version rewritten, pinned runs keep their records); Daoris's own plugins are the `daoris-` family — `daoris-azure-devops` (the whole Azure DevOps integration, 3.0.0), `daoris-github`, `daoris-in-app-browser`; Daoris names none of them. Also: the real plugin channel forwards a declared command to its process, so `daoris <plugin> login|status|logout` reaches the plugin on the installed copy (FIX-LOG). Proof: `PluginRenamesTests`, `PluginFormerKindsTests` (seen failing first), the examples' own tests, `PluginCommandProcessTests` (a real process).
+
+---
+
 ## STARTPERF1 (part) — the window's first screen no longer waits on itself (2026-11-11)
 
 > **STARTPERF1, measured and the self-wait removed** (web, driver, docs): Outcome: measured from the installed copy's starts (`docs/2026-11-11-start-load-measurements.md`): the page's first-screen signal waited on *What needs you*, which waits on the machine facts that start only on that signal or a 30 s timeout, costing 45–65 s every start — now *What needs you* and the repositories load after the first screen, each shown loading until it arrives (`app/splash.ts`); the Sessions list's trees are walked four at once; `SESSION_SPENT` reads only the lines a log gained since its last read and the next event number from the file's end (`SessionSpentKept`), ending a 775 ms stall on the window's thread. Left: the service's knowledge index at first use (22–29 s), the process-start queue, every reader fetching all quests (needs a change marker), and the proposed per-session summary index (`docs/2026-11-11-start-load-database-design.md`, D275 reserved, a database narrowly called for: records and quests are already in SQLite). Proof: `splash` test, `HelpTreeWalkTests`, `SessionSpentKeptTests`, each seen failing first.

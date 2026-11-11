@@ -891,7 +891,7 @@ test('the locales an install keeps are the kit’s fallback and the ones the app
  * the browser a machine without the shell launches, which claims the same server name.
  */
 test('the offers are the examples meant for people, never a rehearsal fixture', () => {
-  assert.deepEqual([...OFFERED_PLUGINS], ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
+  assert.deepEqual([...OFFERED_PLUGINS], ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser']);
   assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
   assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
   // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`'.
@@ -912,7 +912,7 @@ test('the offers folder is where the driver looks for it', () => {
 
 test('laying out the offers copies each one whole into app/plugin-offers, and nothing into the home', () => {
   const examples = folder();
-  for (const id of ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser', 'hold-by-title']) {
+  for (const id of ['daoris-github', 'daoris-azure-devops', 'daoris-in-app-browser', 'hold-by-title']) {
     mkdirSync(join(examples, id, 'lib'), { recursive: true });
     writeFileSync(join(examples, id, 'plugin.json'), `{ "id": "${id}" }\n`);
     writeFileSync(join(examples, id, 'lib', 'part.mjs'), `// ${id}\n`);
@@ -925,7 +925,7 @@ test('laying out the offers copies each one whole into app/plugin-offers, and no
   const offers = join(install, ...PLUGIN_OFFERS);
   assert.deepEqual(laid, [...OFFERED_PLUGINS]);
   assert.deepEqual(readdirSync(offers).sort(), [...OFFERED_PLUGINS].sort());
-  assert.equal(readFileSync(join(offers, 'github-pull-request', 'lib', 'part.mjs'), 'utf8'), '// github-pull-request\n');
+  assert.equal(readFileSync(join(offers, 'daoris-github', 'lib', 'part.mjs'), 'utf8'), '// daoris-github\n');
   assert.equal(existsSync(join(install, 'data', 'plugins')), false, '🔴 an offer is never installed by the publish');
 });
 
@@ -937,15 +937,15 @@ test('a republish replaces the offers whole: a stale file and an offer dropped s
   }
   const install = folder();
   const offers = join(install, ...PLUGIN_OFFERS);
-  mkdirSync(join(offers, 'github-pull-request'), { recursive: true });
-  writeFileSync(join(offers, 'github-pull-request', 'stale.mjs'), '// from the publish before\n');
+  mkdirSync(join(offers, 'daoris-github'), { recursive: true });
+  writeFileSync(join(offers, 'daoris-github', 'stale.mjs'), '// from the publish before\n');
   mkdirSync(join(offers, 'retired-offer'), { recursive: true });
 
   layOffers(examples, install);
 
-  assert.equal(existsSync(join(offers, 'github-pull-request', 'stale.mjs')), false);
+  assert.equal(existsSync(join(offers, 'daoris-github', 'stale.mjs')), false);
   assert.equal(existsSync(join(offers, 'retired-offer')), false);
-  assert.match(readFileSync(join(offers, 'github-pull-request', 'plugin.json'), 'utf8'), /1\.1\.0/);
+  assert.match(readFileSync(join(offers, 'daoris-github', 'plugin.json'), 'utf8'), /1\.1\.0/);
   assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [PLUGIN_OFFERS[1]], 'nothing left staged beside it');
 });
 
@@ -975,14 +975,14 @@ test('laying out the offers waits for a held staging folder, as the other publis
 
 test('an offer missing from the examples stops the publish, naming it, and the offers stand as they were', () => {
   const examples = folder();
-  mkdirSync(join(examples, 'github-pull-request'), { recursive: true });
-  writeFileSync(join(examples, 'github-pull-request', 'plugin.json'), '{ "id": "github-pull-request" }\n');
+  mkdirSync(join(examples, 'daoris-github'), { recursive: true });
+  writeFileSync(join(examples, 'daoris-github', 'plugin.json'), '{ "id": "daoris-github" }\n');
   const install = folder();
   const offers = join(install, ...PLUGIN_OFFERS);
-  mkdirSync(join(offers, 'in-app-browser'), { recursive: true });
+  mkdirSync(join(offers, 'daoris-in-app-browser'), { recursive: true });
 
-  assert.throws(() => layOffers(examples, install), /azure-devops-pull-request/);
-  assert.ok(existsSync(join(offers, 'in-app-browser')), 'the last publish’s offers are untouched');
+  assert.throws(() => layOffers(examples, install), /daoris-azure-devops/);
+  assert.ok(existsSync(join(offers, 'daoris-in-app-browser')), 'the last publish’s offers are untouched');
 });
 
 /**

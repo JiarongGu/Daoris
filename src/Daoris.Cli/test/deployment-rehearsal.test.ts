@@ -55,7 +55,7 @@ test('the offers check names an offer not carried and one installed, and passes 
 
   const bare = join(fx.root, 'bare');
   assert.equal(offerProblems(bare, []).length, OFFERED_PLUGINS.length);
-  assert.match(offerProblems(bare, [])[0], /plugin-offers\/github-pull-request is not carried/);
+  assert.match(offerProblems(bare, [])[0], /plugin-offers\/daoris-github is not carried/);
   fx.cleanup();
 });
 
