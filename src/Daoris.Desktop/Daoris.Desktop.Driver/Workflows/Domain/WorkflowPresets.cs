@@ -101,6 +101,10 @@ public static class WorkflowPresets
                     : "Each piece of work lands on a branch once its agent is done, and you push it yourself.",
             });
         }
+        else if (Of(NodeKinds.Land) is null && you)
+        {
+            said.Add("Each piece of work is done in its department's own place, and you accept it there: nothing lands.");
+        }
 
         said.Add("Its agent's done closes the quest; the flow's end is the work's.");
         return string.Join(' ', said);

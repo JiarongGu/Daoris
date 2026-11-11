@@ -225,6 +225,11 @@ public static class PlacePlans
             after = after.WithDrivable(name, false);
             changes.Add(new("SET_DRIVABLE", Delivery, "driven here", "on", "off"));
         }
+        else if (preset?.Land is { } && WorkflowDefaults.Of(preset.Id) is { } offered
+                 && PlaceKindUnserved.Of(NodeGraphs.Read(offered.GraphJson).Graph!, row.Kind, offered.Id, 1) is { } unserved)
+        {
+            Refuse(Delivery, BindingProblem.PlaceKindUnserved, $"`{name}` cannot follow it: {unserved.Said} *Work in place* runs in any department.");
+        }
         else if (preset?.Land is { } land)
         {
             after = Workflow(after, name, workspace, ask, land, tip, plugins, planned, saves, changes, Refuse);

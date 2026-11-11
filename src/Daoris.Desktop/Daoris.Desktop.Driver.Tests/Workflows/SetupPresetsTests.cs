@@ -59,6 +59,7 @@ public sealed class SetupPresetsTests
     [InlineData("pull-request", "pull-request", "you", "github-pull-request", null)]
     [InlineData("integrated", "integrate", "you", null, "owner")]
     [InlineData("integrated-no-press", "integrate", "automatic", null, "done")]
+    [InlineData("in-place", "in-place", "you", null, null)]
     public void A_shipped_default_s_delivery_is_derived_from_its_graph(string id, string method, string accept, string? plugin, string? request)
     {
         var shipped = WorkflowDefaults.Of(id)!;

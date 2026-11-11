@@ -171,8 +171,8 @@ public static class WorkflowNamed
             : null;
 
     /// <summary>
-    /// Why a named version's graph is not one landing, or null: it holds one
-    /// <c>land</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
+    /// Why a named version's graph lands more than once, or null: it holds at most one <c>land</c> (none where its work is done in place
+    /// and lands nothing), and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
     /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
     /// <c>workflow-graph-versions.json</c>.
     /// </summary>
@@ -180,7 +180,6 @@ public static class WorkflowNamed
     {
         string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
         var landings = graph.Nodes.Count(node => node.Kind == NodeKinds.Land);
-        if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Land}`), and a named workflow's graph lands its work once.";
         if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Land)}, and a named workflow's graph lands its work once.";
         foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })
         {

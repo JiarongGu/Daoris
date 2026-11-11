@@ -13,6 +13,9 @@ public sealed record SetupLand(string Method, string Accept, string? Plugin = nu
 
     /// <summary>The delivery of a branch pushed, with a plugin's step that opens a pull request: not a <c>land</c> method.</summary>
     public const string PullRequest = "pull-request";
+
+    /// <summary>The delivery of a graph with no <c>land</c>: the work stays in the department's place, where the person accepts it.</summary>
+    public const string InPlace = "in-place";
 }
 
 /// <summary>One delivery preset: its id, the name the page shows, and its land; <i>Not driven</i> has none.</summary>
@@ -98,6 +101,7 @@ public static class SetupPresets
         }
 
         if (landing?.Field("method") is string method) return new(method, accept);
+        if (landing is null && steps.Any(step => step.Kind == NodeKinds.Review)) return new(SetupLand.InPlace, SetupLand.You);
         return landing?.Field("form") as string == LandingForm.Branch
             ? new(LandNodes.Branch, accept)
             : new(LandNodes.Merge, accept);
