@@ -40,6 +40,19 @@ public sealed class PlaceScopeViewsTests
         Assert.Contains("not a branch name", (await View(new PlaceLineView(), """{"repository":"engine","branch":"a b"}""")).Refusal);
     }
 
+    [Theory]
+    [InlineData("""{"repository":"engine","branch":" develop"}""")]
+    [InlineData("""{"repository":"engine","branch":"   "}""")]
+    [InlineData("""{"repository":"engine","language":""}""")]
+    [InlineData("""{"repository":"engine","says":"   "}""")]
+    public async Task A_blank_or_padded_text_is_read_as_the_route_reads_it_and_refused_with_no_card(string json)
+    {
+        var viewed = await View(json.Contains("branch") ? new PlaceLineView() : json.Contains("language") ? new PlaceLanguageView() : new PlaceStandingView(), json);
+
+        Assert.Null(viewed.View);
+        Assert.NotEmpty(viewed.Refusal!);
+    }
+
     [Fact]
     public async Task A_policy_press_with_no_branch_is_shown_by_its_values_alone()
     {
