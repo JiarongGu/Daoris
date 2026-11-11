@@ -254,6 +254,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
 |`2026-11-07-dogfood-measurements.md`|Evidence: DOGFOOD1 rows measured
+|`2026-11-11-placework1g-clone-measurements.md`|Evidence: PLACEWORK1g, block clones on a Dev Drive measured
 |`2026-11-06-node-kit-design.md`|Proposed design: NODEKIT1 (D247)
 |`2026-11-06-lyntai-requests.md`|Quest text: needs of Lyntai's agent layer (D248)
 |`2026-11-07-backlog-plan-3.md`|Plan: backlog chunks BL70-BL82
