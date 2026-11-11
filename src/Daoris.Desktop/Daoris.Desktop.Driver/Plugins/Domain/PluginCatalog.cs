@@ -555,7 +555,6 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             var declaredSystems = PluginSystems.Read(root);
             if (declaredSystems.Problem is not null) return (PluginManifest.Empty(id), declaredSystems.Problem);
             var declaredInterfaces = PluginInterfaces.Read(root, hooks is not null);
-            if (declaredInterfaces.Problem is not null) return (PluginManifest.Empty(id), declaredInterfaces.Problem);
             var (formerly, formerlyProblem) = PluginFormerly.Read(id, root);
             if (formerlyProblem is not null) return (PluginManifest.Empty(id), formerlyProblem);
 
@@ -585,7 +584,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 Steps = declaredSteps.Steps,
                 Resources = declaredSteps.Resources,
                 Systems = declaredSystems.Systems,
-                Interfaces = declaredInterfaces.Interfaces,
+                Interfaces = declaredInterfaces,
                 Formerly = formerly,
                 Tools = tools,
                 ToolsProblem = toolsProblem,

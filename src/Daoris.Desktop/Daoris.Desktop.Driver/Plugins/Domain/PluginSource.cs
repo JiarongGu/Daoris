@@ -163,9 +163,17 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
     });
 }
 
-/// <summary>One thing an update changes: `version`, `command`, `points`, `harnesses`, `servers`, `skills`, `steps` or `resources`, each side as its manifest writes it; empty is none.</summary>
+/// <summary>One thing an update changes: `version`, `command`, `points`, `harnesses`, `servers`, `skills`, `steps`, `resources` or one `interfaces` entry, each side as its manifest writes it; empty is none.</summary>
 public sealed record PluginChange(string What, string Was, string Now)
 {
+    /// <summary>An <c>interfaces</c> row's interface, and its entry's name or id (none for storage).</summary>
+    public string? Interface { get; init; }
+
+    public string? Name { get; init; }
+
+    /// <summary>Whether the entry asks more of the person than the installed one did (<see cref="PluginInterfaceChanges"/>).</summary>
+    public bool AsksMore { get; init; }
+
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written.</summary>
     public static IReadOnlyList<PluginChange> Between(PluginManifest was, PluginManifest now)
     {
@@ -187,7 +195,7 @@ public sealed record PluginChange(string What, string Was, string Now)
         var after = Said(now);
         return [.. new[] { "id", "version", "command", "points", "harnesses", "servers", "skills", "steps", "resources" }
             .Where(what => before[what] != after[what])
-            .Select(what => new PluginChange(what, before[what], after[what]))];
+            .Select(what => new PluginChange(what, before[what], after[what])), .. PluginInterfaceChanges.Between(was.Interfaces, now.Interfaces)];
     }
 
     /// <summary>

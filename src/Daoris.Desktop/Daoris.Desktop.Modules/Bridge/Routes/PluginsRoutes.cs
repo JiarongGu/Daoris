@@ -78,6 +78,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     // The steps it declares and what they create, which its page lists.
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
+                    // What it implements that Daoris reaches it through, each entry refused alone and named with its problem.
+                    plugin.Manifest.Interfaces,
                     // Its tools as written; nothing is found or run by this read, the person's Check does.
                     Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),
@@ -508,7 +510,7 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     internal static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
-        [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
+        [.. changes.Select(change => (object)new { change.What, change.Was, change.Now, change.Interface, change.Name, change.AsksMore })];
 
     /// <summary>
     /// The servers a plugin hands Ask Daoris, each with the tools it may call there, as the manifest

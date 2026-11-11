@@ -32,7 +32,7 @@ public sealed class PlaceHandTests : IDisposable
     private PluginEntry Plugin(string id = "pr", bool storage = true) => new(
         new PluginManifest(id, 1, id, "1.0.0", "", [], new PluginHooks(["node", "plugin.mjs"], ["quest/consider"]), [])
         {
-            Interfaces = new([], storage ? new PluginStorageDeclared("its token") : null),
+            Interfaces = new([], storage ? new PluginStorageDeclared(AuthoredText.Of("its token")) : null),
         },
         _root, Path.Combine(_root, ".data"), Enabled: true, Problem: null);
 
