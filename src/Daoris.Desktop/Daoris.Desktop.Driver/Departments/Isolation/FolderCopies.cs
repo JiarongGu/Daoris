@@ -71,10 +71,7 @@ public static class FolderCopies
         return new(copy, null);
     }
 
-    /// <summary>
-    /// Record <paramref name="record"/> as working in the copy at <paramref name="folder"/> for <paramref name="run"/>; nothing where it is
-    /// no copy.
-    /// </summary>
+    /// <summary>Record <paramref name="record"/> as working in the copy at <paramref name="folder"/> for <paramref name="run"/>, if it is one.</summary>
     public static void Owned(string home, string folder, string record, string? run)
     {
         if (At(home, folder) is not { } copy) return;
@@ -164,7 +161,6 @@ public static class FolderCopies
 
 /// <summary>A copy of a folder department, made for its sessions working apart.</summary>
 /// <param name="Id">Its name, <c>c-&lt;8 hex&gt;</c>: its folder's, and its base manifest's record in the place's store.</param>
-/// <param name="Folder">Where the copy is.</param>
 /// <param name="Root">The folder it is a copy of, which its return writes into.</param>
 public sealed record FolderCopy(string Id, string Folder, string Root, string Workspace, string Department)
 {

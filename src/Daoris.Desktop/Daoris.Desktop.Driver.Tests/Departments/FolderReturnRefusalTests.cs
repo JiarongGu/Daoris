@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A folder's return refuses rather than guesses: a rename that changes only a name's case, a file the session replaced with a folder
-/// and a folder the person replaced with a file are each held for the person with the path and what was found, and nothing of the
+/// and a folder the person replaced with a file are each held for the person with the path and what it found, and nothing of the
 /// folder is removed for them; a path that leads outside the folder is never one to write.
 /// </summary>
 public sealed class FolderReturnRefusalTests : IDisposable

@@ -78,7 +78,7 @@ public sealed class ReturnJournal(string folder)
     }
 }
 
-/// <summary>One file of a return: what the folder held when it was read, what the copy holds, and the copy's file it comes from.</summary>
+/// <summary>One file of a return: what the folder held at the read, what the copy holds, and the copy's file it comes from.</summary>
 /// <param name="Expected">The folder's hash the write is conditioned on; null where the path is absent.</param>
 /// <param name="Session">The copy's hash; null for a removal.</param>
 /// <param name="From">The copy's path where it differs from <paramref name="Path"/>: a <i>Keep both</i>'s written beside.</param>

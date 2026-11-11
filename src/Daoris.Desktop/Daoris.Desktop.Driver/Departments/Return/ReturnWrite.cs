@@ -67,7 +67,7 @@ internal sealed class ReturnWrite(FolderCopy copy, ReturnJournal journal, Action
 
     /// <summary>
     /// Take up every file a return cut off left begun: finished where the folder's file is already the session's or the bytes set aside
-    /// still hold what was read, put back where they do not, and left to a fresh decision where nothing of the folder moved.
+    /// still hold the read's bytes, put back where they do not, and left to a fresh decision where nothing of the folder moved.
     /// </summary>
     /// <returns>The paths it finished.</returns>
     public IReadOnlyList<string> Resume()

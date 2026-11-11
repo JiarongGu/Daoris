@@ -41,10 +41,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
             $"node `{node.Id}`: a `{NodeKinds.Return}` brings back the copy an `{NodeKinds.Isolate}` made, and this graph sets no work apart.");
     }
 
-    /// <summary>
-    /// The wait an active node's status names, with the paths it waits on: those changed on both sides as <c>paths</c>, and those refused
-    /// as <c>refused</c>, each line a path, a tab and what was found (<see cref="ReturnRefusal"/>).
-    /// </summary>
+    /// <summary>The wait an active node's status names: its paths changed on both sides as <c>paths</c>, those refused as <c>refused</c>.</summary>
     public override WorkflowRunWait? WaitOf(NodeStatus status)
     {
         if (status.State != NodeStates.Active || status.Code is not (PlaceBusy or BothChanged)) return null;
@@ -54,7 +51,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
         return new WorkflowRunWait(status.Code, values, status.Since);
     }
 
-    /// <summary>The words a return waiting on the person holds: a line for each path, a refused one followed by a tab and what was found.</summary>
+    /// <summary>The words a return waiting on the person holds: a line for each path, a refused one followed by a tab and its <see cref="ReturnRefusal"/> code.</summary>
     public static string HoldsOf(FolderReturned returned) =>
         string.Join("\n", returned.Waiting.Concat(returned.Refused.Select(each => $"{each.Key}\t{each.Value}")));
 

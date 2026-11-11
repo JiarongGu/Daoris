@@ -180,10 +180,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `copies/c-<8 hex>` under the place's folder in the home, the copy's own bytes hashed afresh as its return's base (a file that
     cannot be read refuses the copy) and the records that work there named in its sidecar, so a carry-on goes back into it; its turns
     are compared with the copy's own last manifest, never the folder's, and its review is the copy against that base. A folder past
-    the copy bound (`daoris settings manifest copy <megabytes>`, 2 GB by default; 20,000 files), too large to follow, or more than half
+    the copy bound (`daoris settings manifest copy <megabytes>`, or its Settings row beside the manifest's bounds, `CopyBoundSetting`;
+    2 GB by default; 20,000 files), too large to follow, or more than half
     the home's free disk is not copied, and the start is held with words naming the bound and the size and how to go on (raise the
     bound, or choose a workflow with no isolate step); it never works in the folder itself in a copy's place. The workflow's `return`
-    brings the copy back (the workflows area's return kind).
+    brings the copy back (the workflows area's return kind). A copy names the runs its records worked for (`FolderCopies.Owned`), and
+    the look's tidy moves one aside into the trees' `.tidied` once every run it names has ended with no return of it waiting and no
+    session holds it, said in the tidy's words and gone with the keeping pass as a tree is (`ICopyTidying`, `OrphanCopies`, `CopyTidy`);
+    a copy that names no run is never judged.
     In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
     ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
     A git place's first in-place start marks its common git directory with its home, and another home on

@@ -30,8 +30,8 @@ public static class ReturnRefusal
     /// <summary>Names differing only in case are one file on Windows and macOS.</summary>
     private static StringComparer Folding => OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
-    /// <summary>The paths of <paramref name="inCopy"/> refused, by what was found at each.</summary>
-    /// <param name="based">The folder as the copy was made from it.</param>
+    /// <summary>The paths of <paramref name="inCopy"/> refused, by what the disk holds at each.</summary>
+    /// <param name="based">The folder at the copy's making.</param>
     /// <param name="copied">The copy now.</param>
     /// <param name="place">The folder now.</param>
     public static IReadOnlyDictionary<string, string> Of(

@@ -33,10 +33,9 @@ export const refusedPaths = (step: RunStep): { path: string; found: ReturnRefusa
 export const returnWaits = (step: RunStep): boolean => waitingPaths(step).length + refusedPaths(step).length > 0;
 
 /**
- * **The person's choice for each file changed on both sides**: under a folder's return waiting on them, each path with *Keep yours*,
- * *Take the session's* and *Keep both*, each pressed as the run's node word naming that path. A path the return refused says what it
- * found there and offers *Keep yours* alone, which leaves the folder's as it is. Nothing is chosen for the person: a path pressed says
- * the choice made, and a refusal is said on its row, in the reader's words where the page has them.
+ * **The person's choice for each file changed on both sides**: each path with *Keep yours*, *Take the session's* and *Keep both*, each
+ * pressed as the run's node word naming that path; a path the return refused says what it found there and offers *Keep yours* alone.
+ * Nothing is chosen for the person: a path pressed says the choice made, and a refusal is said on its row, in the reader's words.
  *
  * A molecule: the step, the press and the refusal's words arrive as props.
  */
