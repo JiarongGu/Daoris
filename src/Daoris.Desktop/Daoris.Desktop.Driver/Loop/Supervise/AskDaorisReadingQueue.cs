@@ -71,7 +71,7 @@ internal sealed class AskDaorisReadingQueue(LoopContext context, Driver driver)
                 PacketOnly = true,
                 Writers = record?.Adapter is { Length: > 0 } writer ? [writer] : [],
             };
-            redaction ??= await PacketRedaction.OfAsync(context.Home, context.Service, ct).ConfigureAwait(false);
+            redaction ??= await PacketRedactions.OfAsync(context.Home, context.Service, ct).ConfigureAwait(false);
             var life = new AskDaorisReadingLife(reports, (taken, fence, _) => Task.FromResult(Packet(taken, record, fence, redaction)), Holds, context.Log);
             if (!await ReadAsync(reports, waiting, life, ct).ConfigureAwait(false)) return;
         }
