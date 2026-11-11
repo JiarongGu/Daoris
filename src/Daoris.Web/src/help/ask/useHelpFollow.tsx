@@ -23,8 +23,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   const proposals = useHelpProposals(shown?.id ?? null, live);
   const settle = useSettleHelp();
   const cards = proposals.data ?? [];
-  // What an Apply did beyond the driver's sentence: a go opens its place through the starters'
-  // door.
+  // What an Apply did beyond the driver's sentence: a go opens its place through the starters' door.
   const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
     // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
