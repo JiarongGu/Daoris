@@ -41,13 +41,14 @@ internal static class RepositoryConsole
                 {
                     var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
                     var name = operands.Count == 1 ? operands[0] : null;
+                    var plan = SystemAdd.Plan(home, system, name, workspace, service.BaseUrl);
                     if (dry)
                     {
-                        Console.WriteLine(RegistryWords.SystemAddDry(SystemAdd.Plan(home, system, name, workspace, service.BaseUrl), workspace));
+                        Console.WriteLine(RegistryWords.SystemAddDry(plan, workspace));
                         return 0;
                     }
 
-                    foreach (var line in RegistryWords.SystemAdded(await service.AddSystemAsync(home, system, name, workspace).ConfigureAwait(false))) Console.WriteLine(line);
+                    foreach (var line in RegistryWords.SystemAdded(await service.AddSystemAsync(plan).ConfigureAwait(false))) Console.WriteLine(line);
                     return 0;
                 }
 

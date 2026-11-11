@@ -536,6 +536,70 @@
       "after": null
     },
     {
+      "name": "manifest files",
+      "argv": [
+        "manifest",
+        "files",
+        "100000"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a folder's manifest read stops at 100000 files; a folder past it is too large to follow, and still works in place.",
+        "  Written to <config> — read at the next manifest, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"manifest\": {\n    \"files\": 100000\n  }\n}\n",
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest minutes, beside a cap",
+      "argv": [
+        "manifest",
+        "minutes",
+        "3"
+      ],
+      "before": "{\n  \"cap\": 3\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a folder's manifest read stops after 3 minutes; a folder past it is too large to follow, and still works in place.",
+        "  Written to <config> — read at the next manifest, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"cap\": 3,\n  \"manifest\": {\n    \"minutes\": 3\n  }\n}\n",
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest files, too few",
+      "argv": [
+        "manifest",
+        "files",
+        "10"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a folder's manifest is bounded by a whole number of files from 1000 to 10000000 — e.g. `daoris settings manifest files 100000`."
+      ],
+      "after": null,
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
+      "name": "manifest, no bound",
+      "argv": [
+        "manifest"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a folder's manifest takes one bound at a time: `daoris settings manifest files <n>` or `daoris settings manifest minutes <n>`."
+      ],
+      "after": null,
+      "changed": "A folder's manifest bounds are a machine setting of their own, new with this verb."
+    },
+    {
       "name": "terminal act, alone",
       "argv": [
         "terminal",

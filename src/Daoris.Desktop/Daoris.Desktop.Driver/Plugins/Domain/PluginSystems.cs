@@ -49,7 +49,7 @@ public static class PluginSystems
             var id = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("id", out var named) && named.ValueKind == JsonValueKind.String
                 ? named.GetString()!
                 : null;
-            if (id is null || !PluginSteps.NameShape.IsMatch(id)) return Refused("a declared system needs an `id` — lowercase letters, digits and dashes, at most 40.");
+            if (id is null || !PluginIds.NameShape.IsMatch(id)) return Refused("a declared system needs an `id` — lowercase letters, digits and dashes, at most 40.");
             if (systems.Any(system => system.Id == id)) return Refused($"system `{id}` is declared twice.");
             var preconditions = SystemPreconditions.Etag;
             if (row.TryGetProperty("preconditions", out var guarded))

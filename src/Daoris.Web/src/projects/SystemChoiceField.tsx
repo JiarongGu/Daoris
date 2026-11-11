@@ -1,17 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import type { PluginEntry } from '../bridge/plugins';
 
 /** One system an installed plugin adapts, as a department's registration names it: `<plugin>/<system>`. */
 export type SystemOffered = { system: string; name: string; plugin: string };
-
-/** The systems the plugins switched on and sound declare, in their order. */
-export const systemsOffered = (plugins: readonly PluginEntry[]): SystemOffered[] =>
-  plugins
-    .filter((plugin) => plugin.enabled && !plugin.problem)
-    .flatMap((plugin) => (plugin.systems ?? []).map((each) => ({ system: `${plugin.id}/${each.id}`, name: each.name, plugin: plugin.name })));
-
-export const unguardedSystems = (plugins: readonly PluginEntry[]): ReadonlySet<string> =>
-  new Set(plugins.flatMap((plugin) => (plugin.systems ?? []).filter((each) => each.preconditions === 'none').map((each) => `${plugin.id}/${each.id}`)));
 
 /**
  * Adding a system reached only through its console: which installed adapter's system it is, and the department's name, the

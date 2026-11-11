@@ -75,7 +75,7 @@ public static class PluginCycles
         var fixture = CycleFixture.Default;
         if (root.TryGetProperty("step", out var step))
         {
-            if (step.ValueKind != JsonValueKind.String || !PluginSteps.NameShape.IsMatch(step.GetString()!)) throw Wrong("step", "a step's id, as its manifest writes it");
+            if (step.ValueKind != JsonValueKind.String || !PluginIds.NameShape.IsMatch(step.GetString()!)) throw Wrong("step", "a step's id, as its manifest writes it");
             fixture = fixture with { Step = step.GetString() };
         }
 

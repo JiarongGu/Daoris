@@ -81,10 +81,7 @@ public sealed class RegistryDoors
         ];
     }
 
-    /// <summary>
-    /// Register a repository through the registry door, with the body <c>connect</c> would send: taken, or refused in
-    /// the service's own words.
-    /// </summary>
+    /// <summary>Register a repository through the registry door, with the body <c>connect</c> would send: taken, or refused in the service's words.</summary>
     public async Task<(bool Ok, string Message)> RegisterAsync(System.Text.Json.Nodes.JsonObject body, CancellationToken ct = default)
     {
         var sent = await _service.SendAsync(RegistrationOf(body), ct).ConfigureAwait(false);
@@ -146,10 +143,9 @@ public sealed class RegistryDoors
         return new ConnectDone(plan, sent.Answer?.Workspace);
     }
 
-    /// <summary>A system reached only through its console, registered as <see cref="SystemAdd.Plan"/> composes it from the plugins in <paramref name="home"/>.</summary>
-    public async Task<ConnectDone> AddSystemAsync(string home, string system, string? name, string? workspace, CancellationToken ct = default)
+    /// <summary>A system reached only through its console, registered as <paramref name="plan"/> says, which <see cref="SystemAdd.Plan"/> composes from the plugins.</summary>
+    public async Task<ConnectDone> AddSystemAsync(ConnectPlan plan, CancellationToken ct = default)
     {
-        var plan = SystemAdd.Plan(home, system, name, workspace, _service.BaseUrl);
         var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
         if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
         return new ConnectDone(plan, sent.Answer?.Workspace);

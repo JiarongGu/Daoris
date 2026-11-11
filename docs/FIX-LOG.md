@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - Units placed above what they serve turned the structure, the choices table and the presentational boundary red
+
+- **Symptom:** on main's tip the driver's three `StructureTests` named 16 tuples that name a type above their own subdomain
+  (`SystemPlanning`, `SystemAdd`, `RepoView`, `RegistryDoors`, `RepositoryPresses`, `ChoicesRegistry`, `ManifestSetting`,
+  `TidyHolders`); `DriverChoicesTextTests` found no row for the `settings manifest` verb; the web's presentational test named
+  `FolderExcludesSection.tsx` and `SystemChoiceField.tsx` reaching a bridge domain.
+- **Root cause:** each change put a unit beside the first thing that used it rather than at the lowest subdomain the types it names
+  allow, and merged without the structure class or the boundary test. 3db7a046c2 (`system_plan`) put `SystemPlanning` in
+  Departments and `SystemAdd` in Service, and gave Service's `RepoView` and `RegistryDoors` Plugins' `SystemPlace`; 035e34ac7e put the
+  excludes presses in Instance over Departments' manifest types, and had `FolderExcludesSection` press the bridge itself; 9453335a7d
+  had Settings' `ChoicesRegistry` read Service's `RepoView` and `PlaceKind`; 8d87e576dd had Settings' `ManifestSetting` build
+  Departments' `ManifestBounds`, and added the verb with no table row; 7dcfbc4253 had Workplace's `TidyHolders` ask Work orders'
+  `PlaceHolders.Leases`; 14a37187bc had `SystemChoiceField` type its helpers by the bridge's plugin entry.
+- **Fix:** each unit moved to the rule's shape, the rule untouched: `ManifestBounds` and `PlaceKind` down to Settings, `SystemPlace`
+  to `Service/Domain/` with the plugin name shape in `PluginIds`, `ChoicesRegistry.Of` over Settings' `IRegistryRow`, which `RepoView`
+  is; `SystemAdd` and `SystemPlanning` up to `Plugins/Systems/`, the registry door sending the plan `SystemAdd` composes and Course
+  asking the planner through `CourseSystems`; `RepositoryPresses` to Departments; the lease's rule to `Workplace/Domain/PlaceLeases`;
+  the table's `manifest` rows; the excludes' save and the systems' helpers in the views that hold the bridge.
+- **Verify:** the driver's `StructureTests` (52), `DriverChoicesTextTests`, `CourseSystemsTests` and the moved units' own tests green;
+  `presentational.test.ts` and the projects' tests green.
+
 ## 2026-11-11 - A quest stayed taken for days after its session was finished
 
 - **Symptom:** a review quest's session ended its turn without its done and parked, as it should; three hours later a terminal's
