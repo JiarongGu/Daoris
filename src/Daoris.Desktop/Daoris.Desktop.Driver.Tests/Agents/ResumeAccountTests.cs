@@ -282,10 +282,7 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Empty(uncoded.Parts);
     }
 
-    /// <summary>
-    /// CONVNOTE2g2: the chat runner's other holds, each by code, its English the line it always wrote: a reason of Daoris's own
-    /// sentence is one coded line; a program's message is a words part between a lead and the tail.
-    /// </summary>
+    // The runner's other holds by code, their English unchanged: Daoris's own reason one line, a program's message between lead and tail.
     [Fact]
     public void The_runner_s_other_holds_are_coded_with_their_english_unchanged()
     {
@@ -304,14 +301,6 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Equal(["held.replaying"], NoteAssert.Codes(replaying.Line.Parts));
         Assert.Equal("engine", replaying.Line.Parts[0].Value("repository"));
         NoteAssert.Holds(replaying.Line);
-
-        var answering = HeldWords.Answering("h2");
-        Assert.Equal(
-            $"Ask Daoris is answering in conversation `h2`; once its turn ends, a word said here takes these with it", answering.Why);
-        Assert.Equal($"{ResumeWords.NotYet}{answering.Why}.{tail}", answering.Line.Note);
-        Assert.Equal(["held.answering"], NoteAssert.Codes(answering.Line.Parts));
-        Assert.Equal("h2", answering.Line.Parts[0].Value("session"));
-        NoteAssert.Holds(answering.Line);
 
         // A program's message rides as its words, trimmed as the line always trimmed it, never a value.
         var unread = HeldWords.ConfigUnread("bad json at D:/x/driver.json.");

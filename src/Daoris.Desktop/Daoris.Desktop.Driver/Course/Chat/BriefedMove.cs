@@ -57,8 +57,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
-    /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session the driver hands
-    /// over, and a conversation whose resume got refused on the wire once its run let go.
+    /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session, a refused resume.
     /// </summary>
     /// <param name="lost">Why its own conversation is proven lost, where it goes on by itself; null for the person's press.</param>
     /// <param name="by">Who asks: <see cref="HandOverBy.Daoris"/> or <see cref="HandOverBy.Person"/>.</param>
@@ -239,8 +238,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The go-on of a conversation its agent refused at the open, after an interruption between its two records:
-    /// no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
+    /// The go-on of a conversation its agent refused at the open, interrupted between its two records: no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
     /// room history) and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
     /// account are tried, the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
     /// that held a conversation, is handed Daoris's brief of that line first, recomposed here (<see cref="ContextBriefs"/>), since its
@@ -352,8 +350,8 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Ask Daoris's new part, in the room of its workspace: that workspace's running conversation set aside, as going on in an
-    /// earlier one sets it aside, the new one placed and run as a press's is, and its link kept in the room's history.
+    /// Ask Daoris's new part, in the room of its workspace: the new one placed and run as a press's is, beside any other
+    /// running, and its link kept in the room's history.
     /// </summary>
     /// <param name="order">Ask Daoris's order its placement walks; null places it on <paramref name="agent"/>.</param>
     /// <param name="handed">What its history says it got: <see cref="HelpConversations.Brief"/> or <see cref="HelpConversations.NotOffered"/>.</param>
@@ -361,11 +359,6 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         PriorSession record, string agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
         IReadOnlyList<ActorEffective>? order = null, string handed = HelpConversations.Brief)
     {
-        if (await help.SetAsideHelpAsync(null, record.Workspace, ct).ConfigureAwait(false) is { } answering)
-        {
-            return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
-        }
-
         var placed = await runner.PlaceHelpAsync(agent, config, record.Workspace, ct, order: order).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return new ChatStart(null, placed.Message);
         try

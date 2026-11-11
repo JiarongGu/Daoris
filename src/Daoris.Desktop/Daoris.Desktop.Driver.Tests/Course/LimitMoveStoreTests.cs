@@ -127,12 +127,9 @@ public sealed class LimitMoveStoreTests : IDisposable
             (ActorEffective Entry, string? Account)? refused = null, bool counts = true, long except = 0) => throw new NotSupportedException();
     }
 
-    /// <summary>Ask Daoris's port, never asked here: every case is a repository's conversation.</summary>
     private sealed class NoHelp : IChatHelping
     {
         public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp => null;
-
-        public Task<string?> SetAsideHelpAsync(string? goingOn, string? workspace, CancellationToken ct) => throw new NotSupportedException();
 
         public Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, string? workspace, CancellationToken ct) =>
             throw new NotSupportedException();

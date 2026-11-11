@@ -823,9 +823,8 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
-   * *New conversation* finishes the one running, which winds up before it ends, and
-   * a driver at 5e36d25 answered the next start with that one, `running`, carried on. The new conversation's first words went to the
-   * conversation finished, back into its box. They wait as the new one opening until the finished one has ended, then open their own.
+   * *New conversation* finishes the one running, which winds up before it ends; the next start is a conversation of
+   * its own beside it, so the new conversation's first words go to it at once, never to the one winding up.
    */
   it('takes a new conversation’s first words into it, never the one New conversation finished while it winds up', async () => {
     const words = 'a question of its own';
@@ -835,10 +834,8 @@ describe('Ask Daoris, with an agent named', () => {
     const answered = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
       if (type === 'START_HELP') {
-        const windingUp = (SESSIONS as { id: string; state: string }[]).some((each) => each.id === HELP.id && each.state === 'working');
-        if (windingUp) return { sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is carried on.', running: true };
-        SESSIONS = [{ ...HELP, state: 'completed' }, next];
-        return { sessionId: next.id, message: 'Ask Daoris `n3wc0000` is starting.', running: false, starting: true };
+        SESSIONS = [HELP, next];
+        return { sessionId: next.id, message: 'Ask Daoris `n3wc0000` is starting.', starting: true };
       }
       if (type === 'SESSION_QUEUE') return { session: next.id, queued: [{ text: words, files: [] }], taking: false, opening: true };
       return answered(module, type, ...rest);
@@ -850,11 +847,6 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.type(await screen.findByLabelText('Message'), words);
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(starts()).toBe(1));
-    expect(await screen.findByText('opening Ask Daoris…')).toBeInTheDocument();
-
-    // The finished one ends, and the shell pushes the list that says so.
-    SESSIONS = [{ ...HELP, state: 'completed' }];
-    await act(() => moved());
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: next.id, text: words } }));
     expect(invoke.mock.calls.filter(([, type, body]) => type === 'SESSION_INPUT'

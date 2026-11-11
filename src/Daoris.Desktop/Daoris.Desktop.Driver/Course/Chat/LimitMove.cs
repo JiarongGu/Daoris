@@ -33,9 +33,8 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     private IChatHelping help => wiring.Of<IChatHelping>();
 
     /// <summary>
-    /// The <see cref="StartedFrom.Why"/> of an ended move that left its conversation waiting for the account the person picked:
-    /// the go-on of a lost conversation reads it, so it waits there rather than going on in the brief's move, which would refuse the same
-    /// account and mark the words as unable to go on.
+    /// The <see cref="StartedFrom.Why"/> of an ended move that left its conversation waiting for the account the person picked: a lost
+    /// conversation's go-on reads it and waits, since the brief's move would refuse that account and mark the words unable to go on.
     /// </summary>
     internal const string OnPick = "on-pick";
 
@@ -49,8 +48,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     internal static readonly LineAnswer NoRoom = new LineAnswer.Hold(NextHold.Cooling, LineRepair.None);
 
     /// <summary>
-    /// The facts a limit move reads into the course: a conversation between its parts, its
-    /// words, whether its account is picked and the account rule's answer as the walk gives it, with its actor's later choice on another agent
+    /// The facts a limit move reads into the course: a conversation between its parts, its words, whether its account is picked and the account rule's answer as the walk gives it, with its actor's later choice on another agent
     /// where one can run (a conversation never takes its own account for an automatic part, except where lost).
     /// </summary>
     internal LineCourse Decide(
@@ -551,11 +549,6 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         PriorSession prior, AgentDoor agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
         IReadOnlyList<ActorEffective>? order = null)
     {
-        if (await help.SetAsideHelpAsync(null, prior.Workspace, ct).ConfigureAwait(false) is { } answering)
-        {
-            return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
-        }
-
         var placed = await runner.PlaceHelpAsync(agent.Id.Value, config, prior.Workspace, ct, carries: prior.Session, order: order).ConfigureAwait(false);
         if (placed is not { SessionId: { } id, Adapter: { } resolved, Selection: { } selection }) return new ChatStart(null, placed.Message);
         try

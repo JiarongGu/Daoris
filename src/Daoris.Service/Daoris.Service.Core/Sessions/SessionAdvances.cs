@@ -305,17 +305,15 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
         }
 
-        // Ask Daoris's holds its own workspace's one at a time, as its start does: every workspace's runs in one room.
-        // In the place itself it takes the writer's lease, as an open does.
+        // Ask Daoris's goes on beside any other; a repository's in the place itself takes the writer's lease, as an open does.
         if (!SessionLedger.IsHelp(session) && SessionHolders.InPlace(session.Tree, root)
             && await holders.PlaceHolderAsync(session.Repository, root, inside, except: session.Id).ConfigureAwait(false) is { } leased)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, SessionPlaceLease.Busy(session.Repository, leased), Session: null);
         }
 
-        var holder = SessionLedger.IsHelp(session)
-            ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
-            : SessionHolders.InPlace(session.Tree, root) ? null
+        var holder = SessionLedger.IsHelp(session) || SessionHolders.InPlace(session.Tree, root)
+            ? null
             : await holders.HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false);
         if (holder is not null)
         {
