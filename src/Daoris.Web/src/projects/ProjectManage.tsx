@@ -224,7 +224,12 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
 
           {found.git ? (
             <div className="mt-3">
-              <CheckField checked={inPlace} onChange={setInPlace} label={t('projects.manage.inPlaceTick')} className="whitespace-normal text-small" />
+              <CheckField
+                checked={inPlace}
+                onChange={setInPlace}
+                label={t('projects.manage.inPlaceTick')}
+                className="whitespace-normal text-small"
+              />
             </div>
           ) : (
             <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceFolder')}</p>

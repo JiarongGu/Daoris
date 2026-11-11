@@ -26,7 +26,10 @@ export function SystemChoiceField({ offered, system, name, onSystem, onName }: {
           onChange={onSystem}
           ariaLabel={t('projects.manage.system')}
           placeholder={t('projects.manage.systemPick')}
-          options={offered.map((each) => ({ value: each.system, label: `${each.name} · ${each.plugin}` }))}
+          options={offered.map((each) => ({
+            value: each.system,
+            label: `${each.name} · ${each.plugin}`,
+          }))}
         />
       </div>
       <label className="mt-4 block text-small text-ink-faint" htmlFor="add-system-name">{t('projects.manage.systemName')}</label>
