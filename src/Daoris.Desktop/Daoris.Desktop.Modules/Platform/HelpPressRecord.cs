@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -21,6 +22,13 @@ public sealed record HelpPressNow(
 
     /// <summary>That it asked the person on a card in restricted mode rather than ran: the receipt's and Notifications' <i>Asked you</i>.</summary>
     public bool Asked { get; init; }
+
+    /// <summary>What a press that opened a place says it made, once its answer is known: the line under its row and under its turn.</summary>
+    public PressReceipt? Receipt { get; init; }
+
+    /// <summary>The card an asked press waited on, which the answer of its confirmed run is found by; never told.</summary>
+    [JsonIgnore]
+    public string? Card { get; init; }
 }
 
 /// <summary>
@@ -51,7 +59,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
     public string Began(IpcRequest request, string session) => Keep(request, session, Running, null, asked: false);
 
     /// <summary>A press <paramref name="session"/>'s conversation asked on a card, with the place it named: its id, for <see cref="Answered"/>.</summary>
-    public string Asked(IpcRequest request, string session, HelpPressPlace? place) => Keep(request, session, Waiting, place, asked: true);
+    public string Asked(IpcRequest request, string session, HelpPressPlace? place, string? card = null) => Keep(request, session, Waiting, place, asked: true, card);
 
     /// <summary>An asked press's card ended: its state from how.</summary>
     public void Answered(string id, PipeConfirmationEnd end) => Settle(id, end switch
@@ -62,7 +70,18 @@ public sealed class HelpPressRecord(TimeProvider clock)
         _ => Unanswered,
     });
 
-    private string Keep(IpcRequest request, string session, string outcome, HelpPressPlace? place, bool asked)
+    /// <summary>What a press that ran with no card made, once its answer is known.</summary>
+    public void Received(string id, PressReceipt receipt) => Change(id, press => press with { Receipt = receipt });
+
+    /// <summary>What an asked press made, found by the card it waited on; a card this run holds no press for says nothing.</summary>
+    public void ReceivedByCard(string card, PressReceipt receipt)
+    {
+        string? id;
+        lock (_gate) id = _presses.FirstOrDefault(each => each.Card == card)?.Id;
+        if (id is not null) Received(id, receipt);
+    }
+
+    private string Keep(IpcRequest request, string session, string outcome, HelpPressPlace? place, bool asked, string? card = null)
     {
         var id = Guid.NewGuid().ToString("N")[..12];
         var (scope, target) = Subject(request);
@@ -71,6 +90,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
             Place = place?.Place.Wire(),
             Beyond = place?.Beyond ?? false,
             Asked = asked,
+            Card = card,
         };
         lock (_gate)
         {

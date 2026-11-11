@@ -43,18 +43,27 @@ public static class RoomBrief
         "Paths are repository-relative with `/`; a folder ends in `/`; `*` stays in a folder and `**` crosses.",
     ];
 
+    /// <summary>The title of the quest that asks for a room at <paramref name="path"/>.</summary>
+    public static string TitleOf(string path) => $"Add a room for {TextBounds.Clip(path, TitleLength)}";
+
+    /// <summary>
+    /// The body's opening: what is asked, the person's reason quoted, and whose the change is. The one source of the words, composed into the body
+    /// and shown on a card before the quest is asked.
+    /// </summary>
+    public static string Opening(string path, string purpose) =>
+        $"**What is asked, and whose it is.** Give `{path}` a room of its own in this repository: a folder with an "
+        + "`AGENTS.md` of its own, declared as a room, so that a session working there reads the conventions of that area and not "
+        + $"only the root brief's. The person's reason:\n\n{TextBounds.Quote(purpose)}\n\n"
+        + "This is this repository's own change, made by its own session on its own branch and landed by the workspace's rule. "
+        + "Daoris never writes a room's text, and nothing was written here from outside: the folder's `AGENTS.md` and its declaration "
+        + "are this repository's own files, and nothing outside this tree is this session's to change.";
+
     /// <summary>The title and the body for a room asked of <paramref name="input"/>'s repository.</summary>
     public static (string Title, string Body) Compose(RoomBriefInput input)
     {
         var path = input.Path;
         var body = new StringBuilder();
-        body.Append("**What is asked, and whose it is.** Give `").Append(path).Append("` a room of its own in this repository: a folder with an ")
-            .Append("`AGENTS.md` of its own, declared as a room, so that a session working there reads the conventions of that area and not ")
-            .Append("only the root brief's. The person's reason:\n\n")
-            .Append(TextBounds.Quote(input.Purpose)).Append("\n\n")
-            .Append("This is this repository's own change, made by its own session on its own branch and landed by the workspace's rule. ")
-            .Append("Daoris never writes a room's text, and nothing was written here from outside: the folder's `AGENTS.md` and its declaration ")
-            .Append("are this repository's own files, and nothing outside this tree is this session's to change.\n\n");
+        body.Append(Opening(path, input.Purpose)).Append("\n\n");
 
         body.Append("**What was read here**, from its line `").Append(input.Line).Append("` at commit `").Append(SetupBrief.Short(input.Commit)).Append("`:\n\n")
             .Append("- `daoris.json`'s `rooms`: ").Append(input.Declared.Count == 0 ? "none." : SetupBrief.Names(input.Declared) + ".").Append('\n')
@@ -101,6 +110,6 @@ public static class RoomBrief
             .Append("its `AGENTS.md` holds; each line declared and where; and what you found that needs a request elsewhere. Or decline, with the ")
             .Append("reason, *the doctrine command could not run here* among them.\n");
 
-        return ($"Add a room for {TextBounds.Clip(path, TitleLength)}", body.ToString().TrimEnd() + "\n");
+        return (TitleOf(path), body.ToString().TrimEnd() + "\n");
     }
 }

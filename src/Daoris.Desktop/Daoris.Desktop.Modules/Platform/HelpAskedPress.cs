@@ -5,12 +5,20 @@ namespace Daoris.Desktop;
 /// those that ran (`docs/2026-11-11-ask-scope-ux-design.md` §4, <i>Asked you</i>): with the place it named, waiting from its card's
 /// asking, then its card's end as its state. The windows are told at each.
 /// </summary>
-internal static class HelpAskedPress
+public static class HelpAskedPress
 {
-    public static void Kept(InstancePipe pipe, PipeReserved reserved, Daoris.Driver.HelpPressPlace? place, Task<PipeEnding> ended)
+    /// <summary>What the press that waited on <paramref name="card"/> made, from its confirmed run's answer, kept with its record; the windows are told it.</summary>
+    public static void Answered(InstancePipe pipe, string card, string answer)
+    {
+        if (PressReceipts.Of(answer) is not { } receipt) return;
+        pipe.StandingConfirmation.HelpPresses.ReceivedByCard(card, receipt);
+        pipe.TellDriverState();
+    }
+
+    internal static void Kept(InstancePipe pipe, PipeReserved reserved, Daoris.Driver.HelpPressPlace? place, string card, Task<PipeEnding> ended)
     {
         var presses = pipe.StandingConfirmation.HelpPresses;
-        var kept = presses.Asked(reserved.Request, reserved.Asker.Session ?? "", place);
+        var kept = presses.Asked(reserved.Request, reserved.Asker.Session ?? "", place, card);
         pipe.TellDriverState();
         _ = ended.ContinueWith(done =>
         {

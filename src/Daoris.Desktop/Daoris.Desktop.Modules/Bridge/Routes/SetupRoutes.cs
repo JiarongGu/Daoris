@@ -63,31 +63,34 @@ public sealed class SetupRoutes(DriverContext context)
         var ask = PlaceAskOf(press.Repositories, null, press.Preset, press.Opinion, press.Look, press.Adoption, press.Builds, press.Drive, press.AtOnce, press.Pilot, press.Room, press.Purpose);
         IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
+        PlaceResult? made = null;
         var doors = new PlaceApplyDoors(
             new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), _context.Unadopted(config),
-            () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
+            () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now))
+        {
+            Made = result => made = result,
+        };
+        // A room's receipt is its quest's line alone: the repository, the path and the quest it asked.
+        PressReceipt? Receipt() => made is { Refused: null } result && ask is { Room: { } room, Repositories: [var repository] } ? PressReceipt.OfRoom(result, repository, room) : null;
         // `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
         if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
                 PlaceCommand.ApplyArgsOf(ask, accepted), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Unadopted,
-                instance: null, apply: doors, ct: cancellationToken)).ConfigureAwait(false);
+                instance: null, apply: doors, ct: cancellationToken), Receipt).ConfigureAwait(false);
             _loop.Nudge();
             return said;
         }
 
         var result = await PlaceApplies.ApplyAsync(doors, ask, digest, accepted, cancellationToken).ConfigureAwait(false);
+        made = result;
         // The look starts what the configuration now allows, and the quest the press asked.
         _loop.Nudge();
-        return new
-        {
-            result.Done,
-            result.Refused,
-            result.Message,
-            result.Digest,
-            Operations = result.Operations.Select(each => new { each.Id, each.Kind, each.Repository, each.Said, each.Outcome, each.Note, each.Quest }).ToArray(),
-        };
+        var operations = result.Operations.Select(each => new { each.Id, each.Kind, each.Repository, each.Said, each.Outcome, each.Note, each.Quest }).ToArray();
+        return Receipt() is { } receipt
+            ? new { result.Done, result.Refused, result.Message, result.Digest, Operations = operations, Receipt = receipt }
+            : new { result.Done, result.Refused, result.Message, result.Digest, Operations = operations };
     }
 
     // A repository's reconcile with the shared doctrine, the set-up press's own case, planned:

@@ -59,16 +59,33 @@ public sealed class PlaceApplyView : IPressView
         {
             ["repositories"] = string.Join(", ", ask.Repositories), ["workspace"] = string.Join(", ", workspaces),
         };
-        if (ask.Room is null) facts["preset"] = ask.Preset;
-        else
-        {
-            facts["room"] = ask.Room;
-            facts["purpose"] = ask.Purpose ?? "";
-        }
-
         var command = string.Join(' ', ["daoris", "place", .. PlaceCommand.ApplyArgsOf(ask, accepted)
             .Select(word => word.StartsWith("--", StringComparison.Ordinal) ? word : ShellWord.Of(word, ShellWord.Name))]);
+        if (ask.Room is not null) return PressViewed.Shown(Room(ask, facts, command, plan));
+
+        facts["preset"] = ask.Preset;
         return PressViewed.Shown(new PressView("place-apply", facts, command, [.. Changes(plan), .. Riders(ask), .. accepted.Select(Accepted)]));
+    }
+
+    /// <summary>
+    /// A room's card, its own sentence: the room and the reason as the plan keeps them, whether it is asked alone because the repository is not
+    /// driven, and the first lines of the one quest it asks, which are the quest's own (<see cref="RoomBrief"/>). The room's one change is that quest,
+    /// so the card words it rather than the plan's.
+    /// </summary>
+    private static PressView Room(PlaceAsk ask, Dictionary<string, string> facts, string command, JsonElement plan)
+    {
+        var kept = PlaceRooms.Normalized(ask);
+        var (room, purpose) = (kept.Room!, kept.Purpose ?? "");
+        facts["room"] = room;
+        facts["purpose"] = purpose;
+        List<PressSaid> also = [];
+        if (PressPayload.Rows(plan, "changes").Any(row => PressPayload.Field(row.TryGetProperty("change", out var made) ? made : default, "said") == PlacePlans.AloneSaid))
+        {
+            also.Add(new PressSaid("place-room-alone", ("repository", facts["repositories"])));
+        }
+
+        also.Add(new PressSaid("place-room-quest", ("title", RoomBrief.TitleOf(room)), ("head", QuestHeads.Plain(RoomBrief.Opening(room, purpose)))));
+        return new PressView("place-room", facts, command, also);
     }
 
     /// <summary>Each change the plan makes, in its words, with the repositories it is made at; or that it changes nothing now.</summary>

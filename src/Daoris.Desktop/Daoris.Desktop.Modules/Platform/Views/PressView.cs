@@ -105,6 +105,7 @@ public static class PressViews
         new SessionBranchDiscardView(),
         new AskNewView(),
         new PlaceApplyView(),
+        new RegistryCreateView(),
         new WorkflowSaveView(),
     ];
 

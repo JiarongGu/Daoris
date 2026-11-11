@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 using Daoris.Desktop.Driver.Tests;
 using Shenora.Core.Ipc;
 
@@ -57,6 +58,42 @@ public sealed class HelpPressRecordTests : IDisposable
         Assert.True(HelpPressRecord.Succeeded("""{"id":"p","success":true}"""));
         Assert.False(HelpPressRecord.Succeeded("""{"id":"p","success":false}"""));
         Assert.False(HelpPressRecord.Succeeded("not json"));
+    }
+
+    private static readonly PressReceipt Opened = new(PressReceipt.KindOpened, "ledger", "aurora", "/work/aurora/ledger", "main", null, ["q7"], true);
+
+    /// <summary>A press that opened a place keeps what it made beside its outcome, and the windows are told it.</summary>
+    [Fact]
+    public void A_press_that_opened_a_place_keeps_what_it_made_and_tells_it()
+    {
+        var record = new HelpPressRecord(TimeProvider.System);
+        var told = new List<HelpPressNow>();
+        record.Moved += told.Add;
+        var id = record.Began(Press("REGISTRY_CREATE", """{"name":"ledger","purpose":"why"}"""), "s1a2b3c4");
+
+        record.Received(id, Opened);
+        record.Ended(id, true);
+
+        var kept = Assert.Single(record.Now());
+        Assert.Equal((Opened, HelpPressRecord.Done), (kept.Receipt, kept.Outcome));
+        Assert.Equal(3, told.Count);
+        Assert.Equal(Opened, told[1].Receipt);
+    }
+
+    /// <summary>A press asked on a card is found by its card's id, which is all the answer of its confirmed run knows.</summary>
+    [Fact]
+    public void A_press_asked_on_a_card_is_found_by_its_card_for_what_it_made()
+    {
+        var record = new HelpPressRecord(TimeProvider.System);
+        record.Asked(Press("REGISTRY_CREATE", """{"name":"ledger","purpose":"why"}"""), "s1a2b3c4", null, "card-1");
+        record.Asked(Press("REGISTRY_CREATE", """{"name":"other","purpose":"why"}"""), "s1a2b3c4", null, "card-2");
+
+        record.ReceivedByCard("card-2", Opened with { Repository = "other" });
+        record.ReceivedByCard("card-gone", Opened);
+
+        var now = record.Now();
+        Assert.Equal("other", Assert.Single(now, each => each.Receipt is not null).Receipt!.Repository);
+        Assert.Null(now.Single(each => each.Receipt is null).Receipt);
     }
 
     [Fact]

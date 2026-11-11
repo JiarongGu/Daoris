@@ -280,7 +280,10 @@ public static class RepositoryCreates
         string.Equals(Path.TrimEndingDirectorySeparator(left), Path.TrimEndingDirectorySeparator(right), StringComparison.OrdinalIgnoreCase);
 
     private static CreateResult Result(CreateReceipt receipt, string? stoppedAt) =>
-        new(receipt.Finished, null, Words(receipt, stoppedAt), receipt.Digest, receipt.Operations) { Folder = receipt.Folder, Commit = receipt.Commit };
+        new(receipt.Finished, null, Words(receipt, stoppedAt), receipt.Digest, receipt.Operations)
+        {
+            Name = receipt.Ask.Name, Workspace = receipt.Workspace, Line = receipt.Line, Folder = receipt.Folder, Commit = receipt.Commit,
+        };
 
     /// <summary>The creation in a sentence, naming each operation's standing: <i>folder made; history made; registered; driving on; set-up asked</i>.</summary>
     public static string Words(CreateReceipt receipt, string? stoppedAt = null)

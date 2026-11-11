@@ -5,7 +5,11 @@ namespace Daoris.Driver;
 /// <param name="Change">The standing choice's one edit (<c>DriverContext.Change</c>): the file read, edited and written, then the loop nudged.</param>
 public sealed record PlaceApplyDoors(
     IPlaceWorld Place, ISetupWorld Setup, string Home, IWorkplacePluginCatalog Plugins, bool Unadopted,
-    Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day);
+    Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day)
+{
+    /// <summary>Told what the verb's apply came to, where the caller says what it made afterwards (the window's receipt line); none asks nothing.</summary>
+    public Action<PlaceResult>? Made { get; init; }
+}
 
 /// <summary>What an apply came to: whether every operation is done, a code where it is refused, and each operation as the receipt keeps it.</summary>
 public sealed record PlaceResult(bool Done, string? Refused, string Message, string Digest, IReadOnlyList<PlaceOperation> Operations);

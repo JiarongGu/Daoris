@@ -149,6 +149,60 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Empty(_said);
     }
 
+    private static readonly object Creation = new { name = "ledger", purpose = "keeps the books", workspace = "aurora" };
+
+    /// <summary>A department Ask Daoris opens in full access is kept in its press record with what it made, which Notifications and the conversation say.</summary>
+    [Fact]
+    public async Task A_full_access_press_that_opens_a_department_keeps_what_it_made_with_its_record()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Full;
+
+        await client.AnswerAsync(await SendProvedAsync(client, "REGISTRY_CREATE", Creation, "h1", key, nonce));
+
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Outcome: HelpPressRecord.Done, Receipt: not null }]);
+        var receipt = pipe.StandingConfirmation.Now().HelpPresses.Single().Receipt!;
+        Assert.Equal(("opened", "ledger", "aurora", "/work/aurora/ledger", "main", true), (receipt.Kind, receipt.Repository, receipt.Workspace, receipt.Folder, receipt.Line, receipt.Done));
+        Assert.Equal(["q7"], receipt.Quests);
+        Assert.Equal(1, driver.Ran("REGISTRY_CREATE"));
+    }
+
+    /// <summary>The same press in restricted mode waits on its card, and what its confirmed run made is found by that card.</summary>
+    [Fact]
+    public async Task A_restricted_press_that_opens_a_department_keeps_what_it_made_once_its_card_is_confirmed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var grounds = new StubGrounds();
+        grounds.Reads["REGISTRY_CREATE_PLAN"] = _ => new { digest = "d", refusals = Array.Empty<object>(), workspace = "aurora", folder = "/work/aurora/ledger", line = "main", steps = Array.Empty<object>() };
+        pipe.Grounds = grounds;
+        pipe.Confirmations.Answered = (card, answer) => HelpAskedPress.Answered(pipe, card, answer);
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Restricted;
+
+        var id = await SendProvedAsync(client, "REGISTRY_CREATE", Creation, "h1", key, nonce);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal("repository-create", card.View!.Kind);
+        Assert.Equal(0, driver.Ran("REGISTRY_CREATE"));
+        Assert.Null(Assert.Single(pipe.StandingConfirmation.Now().HelpPresses).Receipt);
+
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Asked: true, Outcome: HelpPressRecord.Allowed, Receipt.Repository: "ledger" }]);
+    }
+
     [Fact]
     public async Task A_restricted_Ask_Daoris_press_beyond_its_focus_says_so_on_its_card_and_is_kept_as_asked_until_answered()
     {
@@ -447,7 +501,10 @@ public sealed class PipeDelegateTests : Bridge
         {
             _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
             Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
-            return Task.FromResult<object?>(new { Done = true });
+            // A department's creation answers what it made, as the route puts it in its data.
+            return Task.FromResult<object?>(request.Type == "REGISTRY_CREATE"
+                ? new { Done = true, Receipt = new { Kind = "opened", Repository = "ledger", Workspace = "aurora", Folder = "/work/aurora/ledger", Line = "main", Quests = new[] { "q7" }, Done = true } }
+                : new { Done = true });
         }
     }
 

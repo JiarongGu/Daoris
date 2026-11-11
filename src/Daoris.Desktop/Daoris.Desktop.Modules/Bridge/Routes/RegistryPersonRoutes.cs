@@ -62,25 +62,54 @@ public sealed class RegistryPersonRoutes(DriverContext context)
     [Owner("REGISTRY_CREATE", Workspace = "workspace")]
     [GroundRepository("REGISTRY_CREATE", "name")]
     [GroundRepository("REGISTRY_CREATE", "workspace")]
+    [GroundRead("REGISTRY_CREATE", nameof(PipeReads.CreatePlan))]
     [Says("REGISTRY_CREATE", "name:form", "workspace:form")]
     [Publishes("REGISTRY_CREATE", StateScopes.Registry | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.Rules)]
     private Task<object?> RegistryCreateAsync(RegistryCreatePress press, CancellationToken cancellationToken)
     {
-        var service = Service();
-        string? Said(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
-        var ask = new CreateAsk(press.Name.Trim(), press.Purpose.Trim())
+        var ask = CreateAskOf(press.Name, press.Purpose, press.Kind, press.Workspace, press.Under, press.Line, press.Work);
+        var doors = CreateDoorsOf();
+        CreateResult? made = null;
+        return TerminalSaid.PressAsync(
+            _loop, press.Said,
+            (output, _) => RepositoryCreateCommand.ApplyAsync(
+                ask, string.IsNullOrWhiteSpace(press.Digest) ? null : press.Digest.Trim(), doors, output, cancellationToken, result => made = result),
+            () => made is { Name: not null } ? PressReceipt.Of(made) : null);
+    }
+
+    // A creation's plan, `daoris repository create … --plan`'s twin: the ask as it resolves on this machine, the folder, line and identity, each step in
+    // order, every refusal at once, its digest, and the first lines of each quest the press publishes. The press's own ground (the Confirm reads it
+    // again) and the view's one judge at the ask. It reads the registry, the identities and the folder, and writes and asks nothing.
+    [DriverRoute("REGISTRY_CREATE_PLAN", PipeClass.Open)]
+    [ByEvent("REGISTRY_CREATE_PLAN", Untold = "the service's registry, driver.json, the saved workflows, the workspace's checkouts and the folder the department would be made in")]
+    private async Task<object?> RegistryCreatePlanAsync(RegistryCreatePlanRead read, CancellationToken cancellationToken)
+    {
+        var plan = await RepositoryCreatePlans.PlanAsync(
+            CreateDoorsOf(), CreateAskOf(read.Name, read.Purpose, read.Kind, read.Workspace, read.Under, read.Line, read.Work), cancellationToken).ConfigureAwait(false);
+        return CreatePlanWire.Of(plan, DateOnly.FromDateTime(DateTime.Now));
+    }
+
+    /// <summary>The ask the press's words make: each trimmed, a blank one none, the kind a repository where none is said.</summary>
+    private static CreateAsk CreateAskOf(string? name, string? purpose, string? kind, string? workspace, string? under, string? line, string? work)
+    {
+        static string? Said(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+        return new CreateAsk((name ?? "").Trim(), (purpose ?? "").Trim())
         {
-            Kind = Said(press.Kind) ?? PlaceKind.Git,
-            Workspace = Said(press.Workspace),
-            Under = Said(press.Under),
-            Line = Said(press.Line),
-            Work = Said(press.Work),
+            Kind = Said(kind) ?? PlaceKind.Git,
+            Workspace = Said(workspace),
+            Under = Said(under),
+            Line = Said(line),
+            Work = Said(work),
         };
+    }
+
+    private CreateDoors CreateDoorsOf()
+    {
+        var service = Service();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var doors = new CreateDoors(
+        return new CreateDoors(
             new RepositoryCreateWorld(service, _loop.Home), _context.SetupWorldOf(service), _loop.Home, _context.Unadopted(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
-        return SaidAsync(press.Said, (output, _) => RepositoryCreateCommand.ApplyAsync(ask, Said(press.Digest), doors, output, cancellationToken));
     }
 
     private Task<object?> SaidAsync(bool said, Func<TextWriter, TextWriter, Task<int>> run) => TerminalSaid.PressAsync(_loop, said, run);

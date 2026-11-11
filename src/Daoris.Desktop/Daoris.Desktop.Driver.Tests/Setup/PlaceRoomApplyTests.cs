@@ -234,6 +234,23 @@ public sealed class PlaceRoomApplyTests : IDisposable
         Assert.Single(stand.Setup.Published);
     }
 
+    /// <summary>The verb hands its result to the door that asked for it, which is how the window's press says the quest it asked.</summary>
+    [Fact]
+    public async Task The_verb_applied_alone_hands_its_result_to_the_door_that_asked_for_it()
+    {
+        var stand = Make();
+        PlaceResult? made = null;
+
+        var code = await PlaceCommand.RunAsync(
+            ["engine", "--room", "tools/web", "--purpose", "the web app needs conventions of its own", "--apply"], new StringWriter(), stand.Place, stand.Config, _home, Plugins, true,
+            instance: null, apply: stand.Doors() with { Made = result => made = result });
+
+        Assert.Equal(0, code);
+        var receipt = PressReceipt.OfRoom(made!, "engine", "tools/web");
+        Assert.Equal(("room", "engine", "tools/web", true), (receipt.Kind, receipt.Repository, receipt.Room, receipt.Done));
+        Assert.Equal(["q-1"], receipt.Quests);
+    }
+
     private sealed class Stand
     {
         public Stand(string home)

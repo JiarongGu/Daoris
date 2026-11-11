@@ -106,6 +106,15 @@ public static class CreateDigests
 /// <summary>What an apply came to: whether every operation is done, a code where it is refused, and each operation as the receipt keeps it.</summary>
 public sealed record CreateResult(bool Done, string? Refused, string Message, string Digest, IReadOnlyList<PlaceOperation> Operations)
 {
+    /// <summary>The department's name, as it is registered.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>The workspace it joined.</summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>The line its history starts on; none for a folder department.</summary>
+    public string? Line { get; init; }
+
     /// <summary>The folder the plan names.</summary>
     public string? Folder { get; init; }
 

@@ -44,5 +44,9 @@ public sealed record RegistryCreatePress(
     string Name, string Purpose, string? Kind = null, string? Workspace = null, string? Under = null, string? Line = null, string? Work = null, string? Digest = null,
     bool Said = false);
 
+/// <summary>A creation planned (<c>repository create … --plan</c>): the words <see cref="RegistryCreatePress"/> carries, none of them required, so every refusal is said at once.</summary>
+public sealed record RegistryCreatePlanRead(
+    string? Name = null, string? Purpose = null, string? Kind = null, string? Workspace = null, string? Under = null, string? Line = null, string? Work = null);
+
 /// <summary>An installed plugin replaced from <c>Folder</c>; <c>Offer</c> names the install's own offer that folder is, which is recorded as its source.</summary>
 public sealed record PluginReplacePress(string Folder, string? Offer = null);

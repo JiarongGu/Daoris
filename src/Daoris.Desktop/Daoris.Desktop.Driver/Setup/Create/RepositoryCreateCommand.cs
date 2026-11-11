@@ -55,6 +55,24 @@ public static class RepositoryCreateCommand
         return (new CreateWords(new CreateAsk(name, purpose) { Kind = kind ?? PlaceKind.Git, Workspace = workspace, Under = under, Line = line, Work = work }, plan), null);
     }
 
+    /// <summary>The words that ask <paramref name="ask"/>, as <see cref="Parse"/> reads them back: the name, then each word that differs from its default.</summary>
+    public static IReadOnlyList<string> ArgsOf(CreateAsk ask)
+    {
+        var words = new List<string> { ask.Name };
+        void Add(string flag, string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value)) words.AddRange([flag, value]);
+        }
+
+        if (ask.Kind != PlaceKind.Git) Add("--kind", ask.Kind);
+        Add("--workspace", ask.Workspace);
+        Add("--under", ask.Under);
+        Add("--line", ask.Line);
+        Add("--purpose", ask.Purpose);
+        Add("--work", ask.Work);
+        return words;
+    }
+
     /// <summary>The terminal's plan: the lines said, and its exit code (0 where nothing refuses).</summary>
     public static async Task<int> PlanAsync(CreateAsk ask, CreateDoors doors, TextWriter output, CancellationToken ct = default)
     {
@@ -67,11 +85,13 @@ public static class RepositoryCreateCommand
     /// The apply: the plan printed as <c>--plan</c> prints it, then the apply of that plan by its digest (<paramref name="digest"/> where the
     /// person's card pinned one), then the outcome in a sentence and what is made. Exit 0 where every operation is done.
     /// </summary>
-    public static async Task<int> ApplyAsync(CreateAsk ask, string? digest, CreateDoors doors, TextWriter output, CancellationToken ct = default)
+    public static async Task<int> ApplyAsync(
+        CreateAsk ask, string? digest, CreateDoors doors, TextWriter output, CancellationToken ct = default, Action<CreateResult>? made = null)
     {
         var plan = await RepositoryCreatePlans.PlanAsync(doors, ask, ct).ConfigureAwait(false);
         foreach (var line in Lines(plan, applying: true)) output.WriteLine(line);
         var result = await RepositoryCreates.ApplyAsync(doors, ask, digest ?? plan.Digest, ct).ConfigureAwait(false);
+        made?.Invoke(result);
         output.WriteLine($"repository create: {result.Message}");
         if (result.Commit is { } commit) output.WriteLine($"  commit {TextBounds.ShortCommit(commit, 12)} in {result.Folder}");
         foreach (var operation in result.Operations.Where(each => each.Quest is { Length: > 0 })) output.WriteLine($"  quest  #{operation.Quest} for `{operation.Repository}`");

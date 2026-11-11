@@ -134,6 +134,31 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         Assert.Equal("1.1.0", replaced.GetProperty("version").GetString());
     }
 
+    /// <summary>
+    /// A creation's plan is read, never written: every refusal at once in the plan's words, the digest the Confirm pins, and the first lines of
+    /// the quest it would publish; blank words are no words, so a plan with nothing to go on refuses each.
+    /// </summary>
+    [Fact]
+    public async Task A_creation_planned_says_every_refusal_its_digest_and_its_quests_and_writes_nothing()
+    {
+        var standIn = new KeyRecording(_ => "[]");
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(standIn), personKey: Key));
+        var module = new DriverModule(Bus, loop);
+
+        var plan = await AnswerAsync(module, "REGISTRY_CREATE_PLAN", new { name = "scratch", purpose = "a try", work = "Build it." });
+        var blank = await AnswerAsync(module, "REGISTRY_CREATE_PLAN", new { name = " ", purpose = "" });
+
+        Assert.False(plan.GetProperty("applies").GetBoolean());
+        Assert.Contains(plan.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "no-folder");
+        Assert.Equal(64, plan.GetProperty("digest").GetString()!.Length);
+        Assert.Equal(["setup", "work"], plan.GetProperty("quests").EnumerateArray().Select(each => each.GetProperty("role").GetString()));
+        Assert.Equal("scratch", plan.GetProperty("asked").GetProperty("name").GetString());
+        Assert.Contains(blank.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "name-unusable");
+        Assert.Contains(blank.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "no-purpose");
+        Assert.Empty(standIn.Heard);
+    }
+
     /// <summary>A service standing in: the person key each request carried is kept, and its answer is the test's.</summary>
     private sealed class KeyRecording(Func<HttpRequestMessage, string> answer) : HttpMessageHandler
     {

@@ -107,7 +107,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             _state.Lines[id] = mine;
         }
 
-        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Ended);
+        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Shown.Id, shown.Ended);
 
         // A close that began after the claim keeps it as any press waiting: its record kept and its line answered. The close
         // alone: a drain answers no waiting line, and the close it ends in keeps this one when it begins.

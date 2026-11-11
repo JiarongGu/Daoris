@@ -229,6 +229,7 @@ public static class PlaceCommand
         var plan = await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Unadopted, words.Ask, ct).ConfigureAwait(false);
         foreach (var line in Lines(plan, applying: true)) output.WriteLine(line);
         var result = await PlaceApplies.ApplyAsync(doors, words.Ask, plan.Digest, words.Accept, ct).ConfigureAwait(false);
+        doors.Made?.Invoke(result);
         output.WriteLine($"place: {result.Message}");
         foreach (var operation in result.Operations.Where(each => each.Quest is { Length: > 0 })) output.WriteLine($"  quest  #{operation.Quest} for `{operation.Repository}`");
         return result.Done ? 0 : 1;

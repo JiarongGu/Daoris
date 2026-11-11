@@ -156,6 +156,12 @@ internal static class PipeReads
         (a, _) => Fp(Text(At(a, "digest"))),
         TimeSpan.FromMinutes(2));
 
+    /// <summary>The creation the person read, by its digest, which pins the name, workspace, folder, line, identity and quests the card named.</summary>
+    public static PipeGround CreatePlan() => Plan("REGISTRY_CREATE_PLAN", ["name", "purpose", "kind", "workspace", "under", "line", "work"],
+        p => new { name = Text(p, "name"), purpose = Text(p, "purpose"), kind = Text(p, "kind"), workspace = Text(p, "workspace"), under = Text(p, "under"), line = Text(p, "line"), work = Text(p, "work") },
+        (a, _) => Fp(Text(At(a, "digest"))),
+        TimeSpan.FromMinutes(2));
+
     /// <summary>The doctrine tool's status for the checkout and whether it presses.</summary>
     public static PipeGround ReconcilePlan() => Plan("RECONCILE_PLAN", ["repository"], p => new { repository = Text(p, "repository") },
         (a, _) => Fp(Raw(At(a, "status")), Text(At(a, "pressable"))),

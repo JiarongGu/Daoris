@@ -258,7 +258,11 @@ internal sealed class LoopRun(
                 toldHooks(shown, ending);
                 saidChat(shown, ending);
             };
-            served.Confirmations.Answered = (id, answer) => loop.PressedEnds.Answered(id, answer, tellChat(), keepPublished);
+            served.Confirmations.Answered = (id, answer) =>
+            {
+                loop.PressedEnds.Answered(id, answer, tellChat(), keepPublished);
+                HelpAskedPress.Answered(served, id, answer);
+            };
             served.Grounds = new LoopGrounds(loop, served);
             served.Delegates = session => DelegateTiers.Of(loop, session);
             served.TerminalTier = () => DelegateTiers.Terminal(loop);

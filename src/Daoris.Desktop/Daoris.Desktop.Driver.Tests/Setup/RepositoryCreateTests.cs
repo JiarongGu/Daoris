@@ -666,6 +666,21 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.True(Directory.Exists(Work("ledger", ".git")));
     }
 
+    /// <summary>The verb hands its result to the caller that asked for it, which is how the window's press says what it made.</summary>
+    [Fact]
+    public async Task The_terminals_apply_hands_its_result_to_the_caller_that_asked_for_it_and_the_receipt_says_what_was_made()
+    {
+        var stand = await MakeAsync();
+        CreateResult? made = null;
+
+        var code = await RepositoryCreateCommand.ApplyAsync(Ask(), null, stand.Doors(), new StringWriter(), made: result => made = result);
+
+        Assert.Equal(0, code);
+        var receipt = PressReceipt.Of(made!);
+        Assert.Equal(("opened", "ledger", "aurora", Work("ledger"), "main", true), (receipt.Kind, receipt.Repository, receipt.Workspace, receipt.Folder, receipt.Line, receipt.Done));
+        Assert.Equal(["q-1"], receipt.Quests);
+    }
+
     /// <summary>The department's own place of work: the registry, the identities, the lines, the registration door and the set-up press's world.</summary>
     private sealed class Stand : ICreateWorld
     {
