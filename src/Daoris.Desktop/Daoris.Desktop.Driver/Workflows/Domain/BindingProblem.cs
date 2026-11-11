@@ -21,10 +21,7 @@ public sealed record BindingProblem(string Code, IReadOnlyDictionary<string, str
     /// <summary>A step is a plugin's pull request that no plugin here performs (<c>workflow</c>, <c>version</c>, <c>step</c>, <c>plugin</c>).</summary>
     public const string PullRequestUnserved = "pull-request-unserved";
 
-    /// <summary>
-    /// A step is of a kind the department's place cannot run (<c>workflow</c>, <c>version</c>, <c>step</c>, <c>kind</c>, <c>place</c>, and
-    /// <c>serves</c>, the places it runs in, joined by commas).
-    /// </summary>
+    /// <summary>A step its department's place cannot run (<c>workflow</c>, <c>version</c>, <c>step</c>, <c>kind</c>, <c>place</c>, <c>serves</c>).</summary>
     public const string PlaceKindUnserved = "place-kind";
 
     private static BindingProblem Of(string code, params (string Name, string Value)[] values) =>

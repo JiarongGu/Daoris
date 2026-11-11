@@ -23,7 +23,6 @@ internal sealed class ApplyNode : BuiltInNode, IStarts
 
     public override NodeLook Look => NodeLook.Line;
 
-    /// <summary>A system's own: the plan it applies is its adapter's change set.</summary>
     public override IReadOnlyList<string> Places { get; } = [PlaceKind.System];
 
     public INodeDoor? Door(NodeDoorWiring wiring) => new ApplyDoor(wiring.Home, SystemAdapters.Starter(wiring.Home), said => wiring.Say("apply.run", said), wiring.MayStart);

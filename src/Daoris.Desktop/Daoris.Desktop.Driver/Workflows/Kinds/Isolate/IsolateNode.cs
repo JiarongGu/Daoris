@@ -46,7 +46,6 @@ internal sealed class IsolateNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Work;
 
-    /// <summary>Each of its kinds (<c>auto</c>, <c>worktree</c>) makes a git worktree, the one copy a provider makes here.</summary>
     public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
 
     public override bool EndsByTheLine => true;
