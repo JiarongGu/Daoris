@@ -87,7 +87,7 @@ internal static class DriveConsole
         // The plugins that speak: their processes live as long as this host does, and are stopped
         // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
         // What the set does with each, without their words, goes to this host's machine log.
-        await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log, hand: PlaceHands.For(home));
+        await using var hooks = PluginsAtStart.Set(home, (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), output: null, log);
         var hostNews = new NewsTeller(
             news, "host", row => !row.Marks.Contains("chat", StringComparer.Ordinal), () => DateTimeOffset.UtcNow,
             async pieces =>

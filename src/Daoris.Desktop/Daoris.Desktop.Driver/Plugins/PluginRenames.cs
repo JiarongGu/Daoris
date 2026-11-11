@@ -21,6 +21,9 @@ public static class PluginRenames
     public const string Storage = "storage";
     public const string Approvals = "approvals";
 
+    /// <summary>The attempts still in flight under the old id (<see cref="PluginRenamedAttempts"/>).</summary>
+    public const string Attempts = "attempts";
+
     /// <summary>
     /// Every rename the installed plugins declare, moved where there is anything to move, each logged once as <c>plugin.renamed</c> by
     /// ids and part names alone. A home with no plugin declaring an old id reads its manifests and writes nothing.
@@ -46,6 +49,7 @@ public static class PluginRenames
             Part(Storage, Carry(PluginPrivate.Folder(home, former), PluginPrivate.Folder(home, now)));
             var (approved, stayed) = HelpGrants.Renamed(home, former, now);
             Part(Approvals, approved > 0 ? true : stayed > 0 ? false : null);
+            Part(Attempts, PluginRenamedAttempts.Carry(home, former, now));
             if (moved.Count > 0) renames.Add(new PluginRename(now, former, moved, left));
         }
 
