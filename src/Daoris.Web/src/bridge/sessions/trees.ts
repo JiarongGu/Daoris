@@ -203,7 +203,7 @@ export function readDiff(client: QueryClient, session: string, signal: AbortSign
 }
 
 /** What the review keeps a session's answer by: its record's last move, and whether it still runs. */
-export type ReviewRecord = { updated: string; live: boolean };
+export type SessionAnswerRecord = { updated: string; live: boolean };
 
 /** The review an Accept is pressed on: its run and step, and the attempt and revision of the record drawn, absent before it begins. */
 export type ReviewAccept = { run: string; node: string; attempt?: number | null; revision?: string | null };
@@ -231,7 +231,7 @@ export type ReviewAccept = { run: string; node: string; attempt?: number | null;
  * A refusal's code is what the page words it by: "no tree here", "no range recorded", "git could not
  * read it" are different facts with different next moves, and the review says each (`ReviewFailed`).
  */
-export const useSessionDiff = (session: string | null, record?: ReviewRecord | null) => {
+export const useSessionDiff = (session: string | null, record?: SessionAnswerRecord | null) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const moved = record ? Date.parse(record.updated) : Number.NaN;
