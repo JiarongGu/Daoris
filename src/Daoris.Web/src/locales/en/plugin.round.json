@@ -1,0 +1,18 @@
+{
+  "plugin.round.title": "{{plugin}}: {{command}}",
+  "plugin.round.run": "Run",
+  "plugin.round.goOn": "Go on",
+  "plugin.round.cancel": "Cancel",
+  "plugin.round.required": "(required)",
+  "plugin.round.working": "Working…",
+  "plugin.round.done": "Done.",
+  "plugin.round.failed": "It ended with exit {{exit}}.",
+  "plugin.round.cancelled": "Cancelled. A round already under way finishes in the plugin's own process, and nothing more is sent.",
+  "plugin.round.open": "Open the page",
+  "plugin.round.code": "Code",
+  "plugin.round.copy": "Copy",
+  "plugin.round.copied": "Copied",
+  "plugin.round.masked": "Hidden as you type; never shown again, kept or logged.",
+  "plugin.round.data": "What it handed back",
+  "plugin.round.go": "It asks to show its view `{{view}}`, which this build does not draw yet."
+}

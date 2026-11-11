@@ -159,6 +159,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1a and c, the window halves — the Set up tab and the round card (2026-11-12, D274)
+
+> **PLUGINEXT1a, PLUGINEXT1c (web)** (web, modules): Outcome: a plugin that declares interfaces opens at *Set up* (设置), *About* (关于) beside it with the old sections: each command with *Run* (运行), a refused entry drawn *not read* (未读入) with its reason and nothing to press, storage with what it keeps and its sign-out, *Where it is on* (在哪里启用) as a box per part and place pressing `PLUGIN_SWITCH`; *Run* or a palette row (*Plugin X: Sign in*) opens the round card over `PLUGIN_COMMAND`: the plugin's lines, *Open the page* in the person's own browser with the host shown, a code with *Copy*, a hidden field for a masked prompt, *Go on* (继续) and *Cancel* (取消), then *Done.* or the exit code; *Remove…* offers *Ask it to sign out first*; the offer lists its interfaces and the update plan marks *asks more of you* (需要你更多授权); `PLUGINS` sends each offer's interfaces. Proof: `pluginCommand.test` and `RoundCard.test` (red first), 315 tests across the plugin, bridge and menu folders; the Azure DevOps sign-in proved against a stand-in plugin, not yet on the window.
+
+---
+
 ## PLUGINEXT1b and c's driver half — per-place switches, a command round whole (2026-11-11, D274)
 
 > **PLUGINEXT1b, PLUGINEXT1c (driver)** (driver, modules): Outcome: a plugin's parts are switched on or off per place (`switches` in `plugins.json`, per plugin, per interface or point, per place; the narrowest place's word wins, `storage` at the machine only, `disabled` over everything), read by one resolver at each door (a command's run, the storage folder, the token adoption, `quest/consider`, `session/ended`, the work units); `PLUGIN_SWITCH` and `daoris plugin switch`; an older home's `off` list moved into machine-level switches once by a migration step (`PluginInterfaceSwitch` deleted); a command's frame carries the run, its arguments by name, the place, the language and the session, its answer `then` and `data`; `PLUGIN_COMMAND`. Proof: `PluginSwitchesTests`, `PluginSwitchesStepTests`, `CommandWireTests`, `DriverModulePluginSwitchTests`, `DriverModulePluginCommandProcessTests`.

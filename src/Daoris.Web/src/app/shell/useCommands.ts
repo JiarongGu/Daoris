@@ -11,7 +11,8 @@ import { type LayoutRegion } from '../../work/strip/LayoutToggles';
 import { focusRegion } from '../../work/frame/regions';
 import { type OpenPart, questsItem, workspaceItem } from '../opener';
 import { type SettingsAnchor, type SettingsSection } from '../../settings/SettingsView';
-import { logEvent } from '../../bridge/shell';
+import { logEvent, usePlugins } from '../../bridge/shell';
+import { askCommand, pluginCommandRows } from '../../plugins/commandAsks';
 import { byTool } from '../../agents/tools';
 import { menuRows } from '../../work/strip/appMenus';
 import { offeredActs } from '../../work/acts';
@@ -33,7 +34,7 @@ import { type HarnessRoster } from '../../bridge/agents/agents';
 import { type RefreshResponse } from '../../data/generated/service';
 import { type Notify } from '../../design/atoms/Toasts';
 
-export function useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout }: {
+export function useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout, palette = false }: {
   tab: View;
   openSettings: (section: SettingsSection, anchor?: SettingsAnchor | undefined) => void;
   running: UseQueryResult<Session[], Error>;
@@ -72,7 +73,9 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   askQuickly: (question?: string | undefined, draft?: boolean) => void;
   setShortcuts: React.Dispatch<React.SetStateAction<boolean>>;
   setAbout: React.Dispatch<React.SetStateAction<boolean>>;
+  palette?: boolean;
 }) {
+  const plugins = usePlugins({ enabled: attached && palette });
   // The setup guide, from the reading Ask Daoris's starters share: the status bar's count
   // until the required steps are done, and Get started opened once at start on a machine missing any of
   // the first three. Both wait for the machine to be read, and neither is a browser's.
@@ -130,6 +133,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
       agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
         .filter((tool) => tool.present)
         .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
+      pluginCommands: pluginCommandRows(plugins.data, i18n.language),
       domains: SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine).map(({ id, label, rows }) => ({ id, label, rows })),
       knowledge: knowledgeMode,
       // The session attended on Sessions, with what its header offers; *Answer…* is its card's, offered where its row's is.
@@ -197,6 +201,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     go: (target) => open(target),
     knowledge: (mode) => open('knowledge', null, { knowledge: mode }),
     agent: (name) => open('agents', name),
+    pluginCommand: (plugin, command) => { askCommand(plugin, command); open('plugins', plugin); },
     agentPart: (part) => open('agents', null, { agentPart: part }),
     region: (previous) => focusRegion(document, previous),
     // A record's act by its page's own press: the session's through `sessionActs.ts`, the quest's by its page.

@@ -114,4 +114,22 @@ describe('in 中文', () => {
       await i18n.changeLanguage('en');
     }
   });
+
+  it('names an interface entry by its interface and name, and marks one that asks more of you', () => {
+    const plan: PluginUpdatePlanShown = {
+      id: 'acme-boards', applied: false, changes: [
+        { what: 'interfaces', interface: 'commands', name: 'status', was: 'status', now: 'status; tool', asksMore: true },
+        { what: 'interfaces', interface: 'commands', name: 'login', was: 'login', now: 'login; Sign in', asksMore: false },
+        { what: 'interfaces', interface: 'storage', name: null, was: '', now: 'The token', asksMore: true },
+      ],
+    };
+    render(<PluginUpdatePlan plan={plan} onApply={vi.fn()} onCancel={vi.fn()} />);
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('Command status');
+    expect(within(rows[0]!).getByText('asks more of you')).toBeInTheDocument();
+    expect(within(rows[1]!).queryByText('asks more of you')).toBeNull();
+    expect(rows[2]).toHaveTextContent('Storage');
+    expect(within(rows[2]!).getByText('asks more of you')).toBeInTheDocument();
+    cleanup();
+  });
 });

@@ -5,7 +5,7 @@ import { Button, CheckField, Inline, PathText, Pill, Prose } from '../design/ui'
 import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
+import { PageHead, PageSection, PageTabs, ViewMain } from '../work/frame/ViewMain';
 import {
   type HelpServerShown, type PluginShown, pluginState, type ResourceShown, shippedChanged, type SkillShown, speaks, type StepShown,
   takesShipped, type ToolShown, updateWaits,
@@ -261,13 +261,23 @@ export function NameRows({ names }: { names: string[] }) {
  * - **Health's lines, Servers and Activity wait on the host's answers**: today's `PLUGINS` says none of them.
  * - **Its icon leads the header**, its own or its monogram, *update available* sits beside its state where an
  *   update waits, and its Source says why a declared icon is not drawn.
+ * - **Tabs by what it declares**: with a *Set up* body, *Set up* and *About*, the sections above being *About*'s; without one,
+ *   the page is *About*'s alone, with no tab row. A command's round card stands under the header, whichever tab shows.
  */
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
-  toolStanding, checkingTools = false, fixingTool = null, toolRefused = null, onCheckTools, onFixTool,
-  onSwitch, onHelp, onTry, onTryAgain, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
+  toolStanding, checkingTools = false, fixingTool = null, toolRefused = null, onCheckTools, onFixTool, setup, setupFirst = false,
+  round, signOut, onSwitch, onHelp, onTry, onTryAgain, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
 }: {
   plugin: PluginShown;
+  /** Its *Set up* tab's body, where it declares an interface or a point; none draws no tabs. */
+  setup?: ReactNode;
+  /** *Set up* is the tab it opens at: it declares an interface, which is what a person comes to set up. */
+  setupFirst?: boolean;
+  /** A command's round card, drawn under the header. */
+  round?: ReactNode;
+  /** The command a removal asks to sign it out first, or why it asks none; none where it keeps no storage. */
+  signOut?: { command: string | null; why: string | null } | null;
   /** The kit's points with their kinds, which name what each point asks; none arrives with no kinds. */
   kitPoints?: KitPoint[] | null;
   /** This shell has the kit, so a plugin can be tried; an older one offers no *Try*. */
@@ -308,11 +318,13 @@ export function PluginPage({
   onApplyUpdate: (id: string) => void;
   onCancelUpdate: () => void;
   onAskRemove: (id: string) => void;
-  /** The second press, told how the removal ended: a refusal is said inside the ask. */
-  onRemove: (id: string, answered: Answered) => void;
+  /** The second press, told how the removal ended (a refusal is said inside the ask) and whether to ask it to sign out first. */
+  onRemove: (id: string, answered: Answered, signOut: boolean) => void;
   onCancelRemove: () => void;
 }) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<'setup' | 'about'>(setupFirst ? 'setup' : 'about');
+  const [signingOut, setSigningOut] = useState(true);
   const word = STATE_WORD[pluginState(plugin)];
   const tryable = canTry && speaks(plugin);
   // Its own record's update, or the install's copy where it has none; never for a copy whose files the person changed,
@@ -377,6 +389,13 @@ export function PluginPage({
       acts={acts}
     />
   );
+  const about = (
+    <PluginAbout
+      plugin={plugin} kitPoints={kitPoints} trial={trial} trying={trying} tryable={tryable} toolStanding={toolStanding}
+      checkingTools={checkingTools} fixingTool={fixingTool} toolRefused={toolRefused} onCheckTools={onCheckTools} onFixTool={onFixTool}
+      onHelp={onHelp} onTry={onTry}
+    />
+  );
 
   return (
     <ViewMain header={head} menu={menu}>
@@ -389,10 +408,23 @@ export function PluginPage({
         <InlineConfirm
           className="mb-4"
           label={t('plugin.removeTitle', { id: plugin.id })}
-          says={<Inline text={t('plugin.removeConfirm', { data: plugin.data })} />}
+          says={(
+            <span className="flex flex-col gap-1.5">
+              <Inline text={t('plugin.removeConfirm', { data: plugin.data })} />
+              {signOut?.command && (
+                <CheckField
+                  className="text-small"
+                  checked={signingOut}
+                  onChange={setSigningOut}
+                  label={t('plugin.removeSignOut', { command: signOut.command })}
+                />
+              )}
+              {signOut?.why && <span className="text-small"><Inline text={t('plugin.removeSignOutNot', { why: signOut.why })} /></span>}
+            </span>
+          )}
           meanIt={t('plugin.removeMeanIt')}
           busy={acting}
-          onConfirm={(answered) => onRemove(plugin.id, answered)}
+          onConfirm={(answered) => onRemove(plugin.id, answered, Boolean(signOut?.command) && signingOut)}
           onClose={onCancelRemove}
         />
       )}
@@ -403,6 +435,30 @@ export function PluginPage({
         </div>
       )}
 
+      {round}
+
+      {setup ? (
+        <PageTabs
+          label={t('plugin.setup.tabs')}
+          tabs={[{ id: 'setup', label: t('plugin.setup.tab.setup') }, { id: 'about', label: t('plugin.setup.tab.about') }] as const}
+          chosen={tab}
+          onChoose={setTab}
+        >
+          {tab === 'setup' ? setup : about}
+        </PageTabs>
+      ) : about}
+    </ViewMain>
+  );
+}
+
+function PluginAbout({
+  plugin, kitPoints, trial, trying, tryable, toolStanding, checkingTools, fixingTool, toolRefused, onCheckTools, onFixTool, onHelp, onTry,
+}: Pick<Parameters<typeof PluginPage>[0],
+  'plugin' | 'kitPoints' | 'trial' | 'toolStanding' | 'fixingTool' | 'toolRefused' | 'onCheckTools' | 'onFixTool' | 'onHelp' | 'onTry'>
+  & { trying: boolean; tryable: boolean; checkingTools: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <>
       {/* A copy of the install's own plugin that is older than the shipped one, or whose files were changed. */}
       {plugin.shipped && (
         <PageSection title={t('plugin.shipped.title')}>
@@ -487,7 +543,7 @@ export function PluginPage({
         <p className="m-0"><Inline text={t('plugin.page.terminal', { id: plugin.id })} /></p>
         {speaks(plugin) && <p className="m-0"><Inline text={t('plugin.page.terminalTry', { id: plugin.id })} /></p>}
       </div>
-    </ViewMain>
+    </>
   );
 }
 

@@ -132,6 +132,7 @@ const ORGANISMS = new Set<string>([
   // The Plugins view's organism: it holds the catalogue and the plugin's acts, so the list, the
   // strip, the page and the offer's page below it hold none.
   './plugins/PluginsView.tsx',
+  './plugins/usePluginCommands.tsx',
   // The Agents place's organism: it holds the roster, the accounts and every act on an agent, so the
   // list, the strip, the page and an account's row below it hold none.
   './agents/AgentsView.tsx',

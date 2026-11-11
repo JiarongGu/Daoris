@@ -1,5 +1,6 @@
 {
   "command.goTo": "Go to: {{place}}",
+  "command.pluginCommand": "Plugin {{plugin}}: {{command}}",
   "command.scope": "Workspace: {{workspace}}",
   "command.settingsAt": "Settings: {{domain}}",
   "command.theme": "Theme: {{theme}}",
