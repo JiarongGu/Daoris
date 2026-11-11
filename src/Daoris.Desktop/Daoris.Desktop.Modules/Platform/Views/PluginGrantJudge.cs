@@ -25,7 +25,7 @@ internal static class PluginGrantJudge
         var facts = PluginNamed.Facts(("id", named), ("server", declared.Name));
         if (action == "help-withdraw")
         {
-            if (grant is not { State: HelpGrants.Approved })
+            if (grant is not ({ State: HelpGrants.Approved } or { Changed: true }))
             {
                 return PressViewed.Refused($"`{declared.Name}` of plugin `{named}` is not approved for Ask Daoris, so there is nothing to withdraw.");
             }
