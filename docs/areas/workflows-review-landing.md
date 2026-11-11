@@ -210,7 +210,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     ends under its place's `turns/<key>/` (`RunTurns`), and its first turn's start manifest as the named record `run-<key>-base` in the
     place's manifest store, kept by the store's tidy while a review record names it (`ReviewRecords.Manifests`). (from D273)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
-    came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as
+    came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, uncommitted work, or a head moved past the tip
+    judged, answered `moved` as the return and the apply answer a moved record, and tried again once the tree moves), each said as
     the try said it, and a carry-on as *accepted; its session was carried on* (`PerformedAnswers`). Only where no try ended within the
     bound does it answer *accepted; landing*. `WORKFLOW_NODE`'s Accept on a review a `land` follows waits the same way and answers its
     `landing` (`AcceptWaits`). The carried Accept stands for its landing's repair alone (`CarriedRepairs`): the repair names the review
