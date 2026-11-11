@@ -170,6 +170,15 @@ const points = {
 // What it answers: its points, and the requests asked beside them that no manifest names.
 const answers = { ...points, ...kit.calls };
 
+// Each frame answered as its handler settles, never after the one before it; a throw is a refusal said in this plugin's name.
+const answer = async (frame) => {
+  try {
+    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
+  } catch (error) {
+    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
+  }
+};
+
 for await (const line of createInterface({ input: process.stdin })) {
   if (!line.trim()) continue;
   let frame;
@@ -186,12 +195,7 @@ for await (const line of createInterface({ input: process.stdin })) {
   } else if (frame.method === 'shutdown') {
     process.exit(0);
   } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
-    try {
-      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
-    } catch (error) {
-      // A handler that throws is a refusal, which the driver says in this plugin's name. Never silence.
-      send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
-    }
+    answer(frame);
   } else if (frame.id !== undefined) {
     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32601, message: `no ${frame.method}` } });
   }

@@ -99,4 +99,7 @@ public enum StartVerdict
     /// policy's bound of moves in 24 hours. <i>Try again</i> is the yes: one approval releases one move.
     /// </summary>
     PolicyHeld,
+
+    /// <summary>Taken, its session finished and nothing carrying it on (<see cref="UnclosedQuests"/>): it waits on the person's done or word.</summary>
+    Unclosed,
 }

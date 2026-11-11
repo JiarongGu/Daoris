@@ -585,10 +585,10 @@ public static class SessionGroups
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
             // session's tree: its carry-on or its resume, whatever holds that start for now. Bar the person's
             // stop: nothing goes back into its tree until they release it, so its work is theirs to review. And bar
-            // a pause: nothing goes back in until Resume, and the person paused the work to look at it. An open
+            // a pause or a finished session's take, until Resume or the person's word. An open
             // quest whose failed session committed work here goes back into it too, so its tree is not offered meanwhile.
             return VerdictOnLast(record) is { } verdict
-                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused)
+                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused or StartVerdict.Unclosed)
                    && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken" || verdict.CarriesWork is > 0)
                 ? null
                 : tree;

@@ -8,6 +8,7 @@
   "work.attention.parked-quest": "会话失败后挂起",
   "work.attention.steward-stopped": "管家已停止",
   "work.attention.policy-hold": "等你同意改用其他选择",
+  "work.attention.unclosed": "仍是已接下，等你标为完成",
   "work.attention.stewardStoppedSession": "管家停止了会话 `{{session}}`。",
   "work.attention.request-declined": "委托被谢绝",
   "work.attention.requestDeclinedWhy": "发往 `{{to}}` 的委托 #{{quest}} 被谢绝了，工作停在这里，直到你跳过它。",

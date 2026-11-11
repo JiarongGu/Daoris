@@ -204,6 +204,8 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
+        rows.AddRange(UnclosedQuestRows.Rows(facts, quests));
+
         // A quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
         // steward*, the one act of the steward's that can leave something waiting on the owner. Read from the planner's verdict by its code.
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Stopped"
@@ -321,6 +323,7 @@ public static class NeedsAPerson
             counted.Add(($"policy:{quest}", held));
         }
 
+        counted.AddRange(UnclosedQuestRows.Counted(facts, quests));
         return counted;
     }
 
