@@ -70,7 +70,6 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
     // A second opinion waiting on the person opens the session whose work it read, where its gate and every press are
     // A shell's alone: the opinion is this machine's.
-    // A done left unfinished opens its session, whose head says what is left and where the run's steps are acted on. A shell's alone.
     ...(attached ? { left: (item: Attention) => open('sessions', item.id) } : {}),
     ...(attached ? { opinion: (item: Attention) => open('sessions', item.id) } : {}),
     // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits.

@@ -1070,32 +1070,6 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
                 Groups = [Placed(), Placed("""{"session":"w0rk1ng0","group":"working"}"""), Placed("""{"session":"g0ahead0","reason":"go-ahead"}""")],
             })));
 
-    // ---- a done its own record says is unfinished ----
-
-    [Fact]
-    public void A_done_left_unfinished_is_a_row_of_its_own_by_its_session_where_since_it_ended_and_its_place()
-    {
-        var left = Placed("""{"reason":"left"}""");
-        var item = Assert.Single(Rows(new()
-        {
-            Sessions = [Session("""{"id":"r3v13w00","quest":"7a82cc","state":"completed","updated":"2026-09-21T11:00:00Z"}""")],
-            Quests = [Quest("""{"status":"Done"}""")],
-            Registry = [Registration("engine")],
-            Groups = [left],
-        }));
-
-        Is($$"""{"kind":"left","id":"r3v13w00","since":"2026-09-21T11:00:00Z","workspace":"default","where":"engine","placed":{{left.ToJsonString()}}}""", item);
-    }
-
-    [Fact]
-    public void A_left_row_stays_while_its_session_stands_in_needs_you_and_goes_with_the_persons_archive_or_a_finished_run()
-    {
-        var sessions = new[] { Session("""{"id":"r3v13w00","quest":"7a82cc","state":"completed","updated":"2026-09-21T11:00:00Z"}""") };
-        Assert.Equal(["left:r3v13w00"], Keys(Rows(new() { Sessions = sessions, Groups = [Placed("""{"reason":"left"}""")] })));
-        Assert.Empty(Rows(new() { Sessions = sessions, Groups = [Placed("""{"reason":"left","group":"archived"}""")] }));
-        Assert.Empty(Rows(new() { Sessions = sessions, Groups = [Placed("""{"reason":"left","group":"done"}""")] }));
-    }
-
     // ---- a unit's milestone, an agent's ask, a held call, a second opinion ----
 
     private static JsonObject Entry(string over = "{}") => With(

@@ -3,6 +3,6 @@
   "status.Taken": "已接下",
   "status.Submitted": "已交付",
   "status.Done": "已完成",
-  "status.Unfinished": "已完成，仍有部分未做",
+  "status.Unfinished": "完成有遗留",
   "status.Declined": "已谢绝"
 }

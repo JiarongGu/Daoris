@@ -154,9 +154,7 @@ public static class NeedsAPerson
         }
 
         // A run whose every wait is the person's Accept, one row by the session Sessions' list places for it in Needs you: never a
-        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions. A done its own record says
-        // is unfinished (a departed requirement, a run's step that failed after it) is a `left` row, by the same place, for as long as
-        // Sessions' list holds it in Needs you: the person's archive of its session sets it aside.
+        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions. A done left unfinished is a `left` row.
         foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") is SessionReason.Review or SessionReason.Left))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");

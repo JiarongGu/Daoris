@@ -150,8 +150,6 @@ internal sealed class SessionStateReader
         {
             var held = ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(SessionGroups.Normal(tree), out var work) && work.Holds ? work : null;
             var waited = row.WaitedOn(waits, held);
-            // A step left failed after its quest's done is the person's to set aside (`In` folds it under their archive mark); a step
-            // that waits on them is never hidden by the mark.
             return In(waited, SessionGroup.NeedsYou, waited.Reason);
         }
 
@@ -186,8 +184,7 @@ internal sealed class SessionStateReader
             }
         }
 
-        // A done its own record says is unfinished is no done: the requirement it departed from is still wanted, by the person's own
-        // words, whether or not they accepted the departure. Its quest's newest session here stands for it, as a run's does.
+        // A done with a departure on it is unfinished, accepted or not; its quest's newest session here stands for it.
         if (record.State == "completed" && record.Quest is { } closed && _quests.TryGetValue(closed, out var done) && QuestLeft.Has(done)
             && _look.LastRun.TryGetValue(closed, out var newest) && string.Equals(newest.Session, record.Id, StringComparison.Ordinal))
         {

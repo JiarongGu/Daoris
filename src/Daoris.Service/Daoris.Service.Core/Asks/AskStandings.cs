@@ -43,7 +43,7 @@ internal sealed class AskStandings(AskStore asks, QuestExchange exchange)
     /// word, so the proposal of the declarations tier is not a route for it: it stands with no quest and
     /// says so in its note, and no intake serves it — only the person publishes it again, or closes it.
     /// A quest closed done departing from what the person required has not closed for the ask: it waits for their yes, and
-    /// after it still leaves what was not done (<see cref="Quest.Left"/>), so an ask reading done would say it was finished.
+    /// after it still leaves part undone (<see cref="Quest.Left"/>), which an ask reading done would hide.
     /// </remarks>
     /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
     public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked)

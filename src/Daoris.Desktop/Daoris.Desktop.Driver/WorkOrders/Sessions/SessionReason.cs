@@ -25,11 +25,7 @@ public static class SessionReason
     /// <summary>Needs you: its next start waits on a sign-in, with no account to reset.</summary>
     public const string SignIn = "sign-in";
 
-    /// <summary>
-    /// Needs you: its quest closed done and its own record says part of the work is left (<see cref="QuestLeft"/>: a departed
-    /// requirement, accepted or not), or its run failed at a step after the done (<see cref="PersonWaits.Left"/>, the same word). Never
-    /// plain done; the person's archive of the session sets it aside.
-    /// </summary>
+    /// <summary>Needs you: its quest closed done with part left (<see cref="QuestLeft"/>, <see cref="PersonWaits.Left"/>); the person's archive sets it aside.</summary>
     public const string Left = PersonWaits.Left;
 
     /// <summary>Failed: it ended past its transient bound (<see cref="StartVerdict.TransientHeld"/>).</summary>

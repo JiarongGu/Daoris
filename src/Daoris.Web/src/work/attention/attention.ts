@@ -104,7 +104,6 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
   unanswerable: 'word',
-  // A done its own record says is unfinished: part of its work is left, and the session that finished it asks for the next step.
   left: 'word',
   review: 'ready',
 };

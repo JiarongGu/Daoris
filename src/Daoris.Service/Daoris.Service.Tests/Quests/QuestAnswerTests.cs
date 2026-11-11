@@ -297,7 +297,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 The person accepts the departure: the held step is published then, carrying the requirements as any step does,
-    /// the quest is no longer held, and it stays outstanding as unfinished work (<see cref="Quest.Left"/>).
+    /// the quest is no longer held, and it stays outstanding (<see cref="Quest.Left"/>).
     /// </summary>
     [Fact]
     public async Task Accepting_a_departure_publishes_the_held_step_and_releases_the_quest()
@@ -316,7 +316,6 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         var step = Assert.Single(await FollowUps(ask, quest));
         Assert.Equal([Bridge, Common], step.Requirements);
         Assert.Contains($"Then: published `#{step.Id}`", accepted.Message);
-        // Accepted, it is still unfinished work: the departure stays outstanding, listed where open work is, never as a finished done.
         Assert.True(standing.Left);
         Assert.Contains(quest.Id, (await _quests.ListAsync()).Select(listed => listed.Id));
     }
@@ -360,10 +359,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Contains("resumes", accepted.Message);
     }
 
-    /// <summary>
-    /// An ask whose quest departed from what the person required is not done: not while it waits on their yes, and not after it, since
-    /// their yes lets what follows go on and finishes none of what was left. A quest answered met in full lets it be done.
-    /// </summary>
+    /// <summary>An ask whose quest departed is not done, before the person's yes or after it.</summary>
     [Fact]
     public async Task An_ask_whose_quest_departed_is_not_done_before_or_after_the_yes()
     {
@@ -377,17 +373,13 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Equal(AskState.Published, (await _desk.FindAsync(ask.Id))!.State);
     }
 
-    /// <summary>
-    /// Only a done whose record says part is left is unfinished: one that departed, accepted or not; never one answered met in full,
-    /// a quest that is not done, or a done that names no requirement.
-    /// </summary>
+    /// <summary>Only a done that departed is unfinished, accepted or not; one answered met in full, or not done, is not.</summary>
     [Fact]
     public async Task A_done_is_unfinished_where_it_departed_and_finished_where_every_requirement_is_met()
     {
         var (_, left) = await Built(chain: false);
         await Done(left, Met(1), Departed(2, "the v3 common-report"));
 
-        // Stored and listed with the outstanding work, before and after the person's yes.
         Assert.True((await _quests.FindAsync(left.Id))!.Left);
         Assert.Contains(left.Id, (await _quests.ListAsync()).Select(listed => listed.Id));
         await _exchange.AcceptAsync(left.Id, Now);

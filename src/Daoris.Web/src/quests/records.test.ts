@@ -14,7 +14,7 @@ describe("a closure graph's quests as values", () => {
     expect(shownStatus(SUBMITTED)).toBe('Submitted');
     expect(shownStatus(SEALED)).toBe('Submitted');
     expect(shownStatus(TAKEN)).toBe('Taken');
-    expect(shownStatus({ ...SUBMITTED, status: 'Done' })).toBe('Done');
+    expect(shownStatus({ ...SUBMITTED, status: 'Done', answers: [] })).toBe('Done');
   });
 
   it('finds the live step standing on the current submission, and none once it is reopened, closed or grew from another', () => {
@@ -33,7 +33,7 @@ describe("a closure graph's quests as values", () => {
     const groups = questGroups([SUBMITTED, REOPENED, WITHDRAWN, TAKEN], false);
 
     expect(groups.map(({ group, quests }) => [group, quests.map((quest) => quest.id)])).toEqual([
-      ['held', [SUBMITTED.id, REOPENED.id, WITHDRAWN.id]], ['open', []], ['progress', [TAKEN.id]],
+      ['held', [SUBMITTED.id, REOPENED.id, WITHDRAWN.id]], ['left', []], ['open', []], ['progress', [TAKEN.id]],
     ]);
   });
 
@@ -79,10 +79,6 @@ describe("Quests' groups", () => {
     ]);
   });
 
-  /**
-   * A done that departed is unfinished work, accepted or not: the person's yes lets what follows go on and finishes nothing, so the
-   * quest reads *Unfinished*, is listed apart from finished work where open work is, and is never in *Closed*.
-   */
   describe('a done that departed from a requirement', () => {
     const departed = quest({ id: 'u1', status: 'Done', accepted: '2026-10-02T10:00:00Z', answers: [{ requirement: 1, met: 'built' }, { requirement: 2, departed: 'held', quote: 'their words' }] });
     const met = quest({ id: 'm1', status: 'Done', answers: [{ requirement: 1, met: 'built' }, { requirement: 2, met: 'also built' }] });

@@ -20,7 +20,6 @@ internal static class RunWaitSessions
                 ? QuestRuns.Of(quest, id => quests.GetValueOrDefault(id.TrimStart('#')))
                 : record.Quest!;
             if (!byRun.TryGetValue(run, out var waits)) continue;
-            // A step a run ended failed at is work left only for a quest that closed done: a declined or abandoned one left nothing to finish.
             waits = [.. waits.Where(wait => wait.Why != PersonWaits.Left || quest is { Status: "Done" })];
             if (waits.Count == 0) continue;
             if (!standing.TryGetValue(run, out var newest) || Newer(record, newest.Record)) standing[run] = (record, waits);
