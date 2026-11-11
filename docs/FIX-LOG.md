@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - An accepted run's landing waited twenty minutes for its turn, and its press was refused for a judgement not made
+
+- **Symptom:** on an install whose work workspace holds about six hundred open runs, a run's review was accepted and its landing
+  never began; two presses of land minutes later were each refused in about five seconds with *Daoris has not judged run …'s graph at
+  `b7d1799c` yet: its next look does, and this asks for it now.* The landing went active twenty-one minutes after the Accept. The
+  machine log showed the nodes stage at 4 to 15 seconds on almost every look, its `look.slow` line at 5 seconds.
+- **Root cause:** a pass judges at most 32 units (`NodeRuntime.UnitsPerPass`), and past that `NodeOwing.Turn` took them in a rotation
+  by id that put only a held event's unit ahead. 34fa9cde69 had a press ask the loop for a whole pass and read the gate again once it
+  ended, on the premise that a whole pass judges every governed run; it judges the next 32 in the rotation, so neither the press's run
+  nor the run whose Accept that very pass applied was judged unless its turn came, once in about nineteen passes. The pass came
+  within the bound, the gate read the same, and the press was refused with the same words each time. The 5-second `look.slow` line is
+  only where a running stage is named; nothing cuts a stage there, and no pass's result was dropped.
+- **Fix:** a door's ask names the run it waits on (`PassAsks.WaitAsync(unit, …)`), and the pass that takes it judges that run first
+  (`NodeRuntimeLook.Asked`), then a held event's unit and every unit whose record the pass's own answers moved, then a rotation of the
+  units owing a start or a rebinding, then of the unchanged ones, which keep a quarter of the turn. A press is answered as soon as its
+  run's judgement is kept (`PassTaken.Judged`), not at the pass's end. A press its pass left short of the commit says what the
+  judgement found; one whose pass did not come within the bound says so, and that its run is judged first when it does.
+- **Verify:** `AskedRunTurnTests` (seventy runs: the Accept's run and an asked run judged first, red before the fix), `GraphPressTests`
+  and the rotation's `ObservedEventTests` green.
+
 ## 2026-11-11 - A molecule pressing the bridge, a home path joined by hand and words off the glossary turned the fast halves red
 
 - **Symptom:** on main's tip the web's presentational test named `projects/inPlace.ts` reaching a bridge domain; the CLI's

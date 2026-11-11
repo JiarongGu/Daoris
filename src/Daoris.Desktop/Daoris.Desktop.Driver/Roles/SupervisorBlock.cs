@@ -19,16 +19,11 @@ public sealed record SupervisorBlock(
     /// </summary>
     public static (SupervisorBlock? Block, string? Why) Read(string? lastMessage)
     {
-        var text = (lastMessage ?? "").Replace("\r\n", "\n", StringComparison.Ordinal);
-        var start = text.IndexOf(Opening, StringComparison.Ordinal);
-        if (start < 0) return (null, "its last message holds no supervisor decision block");
-        if (text.IndexOf(Opening, start + Opening.Length, StringComparison.Ordinal) >= 0) return (null, "its last message holds more than one block");
-        var body = text[(start + Opening.Length)..];
-        var end = body.IndexOf("\n" + Closing, StringComparison.Ordinal);
-        if (end < 0) return (null, "its block is not closed");
+        var (body, fenced) = Body(lastMessage);
+        if (body is null) return (null, fenced);
         try
         {
-            using var document = JsonDocument.Parse(body[..end]);
+            using var document = JsonDocument.Parse(body);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || Json.Text(root, "kind") is not { } kind || !SupervisorKinds.Known(kind)) return (null, "its block names no kind of decision");
             if (!root.TryGetProperty("subject", out var wire) || SupervisorSubject.Read(kind, wire) is not { } subject) return (null, "its block names no subject of its kind");
@@ -54,5 +49,17 @@ public sealed record SupervisorBlock(
         {
             return (null, "its block is not one form");
         }
+    }
+
+    /// <summary>The words inside the one fence of <paramref name="lastMessage"/>, or why there is no one fence.</summary>
+    public static (string? Body, string? Why) Body(string? lastMessage)
+    {
+        var text = (lastMessage ?? "").Replace("\r\n", "\n", StringComparison.Ordinal);
+        var start = text.IndexOf(Opening, StringComparison.Ordinal);
+        if (start < 0) return (null, "its last message holds no supervisor decision block");
+        if (text.IndexOf(Opening, start + Opening.Length, StringComparison.Ordinal) >= 0) return (null, "its last message holds more than one block");
+        var body = text[(start + Opening.Length)..];
+        var end = body.IndexOf("\n" + Closing, StringComparison.Ordinal);
+        return end < 0 ? (null, "its block is not closed") : (body[..end], null);
     }
 }

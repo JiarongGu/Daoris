@@ -77,6 +77,23 @@ public sealed class AcpStreamsTests
         await streams.EndAllAsync().WaitAsync(Poll.Patience);
     }
 
+    [Fact]
+    public void A_subagent_s_tool_call_is_kept_by_its_stream_and_its_words_are_not()
+    {
+        var kept = new List<(string Stream, SessionEvent Call)>();
+        var streams = new AcpStreams(
+            new SessionStreams(new SessionOutput(), "d-1"), new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet,
+            children: new Told(), calls: (stream, e) => kept.Add((stream, e)));
+        Take(streams, "s-1", Spawned("a1", "Fixer", "fix it"));
+
+        Take(streams, "a1", JsonSerializer.Serialize(new { sessionUpdate = "tool_call", toolCallId = "c1", kind = "edit", title = "Edit a.cs", status = "pending" }));
+        Take(streams, "a1", JsonSerializer.Serialize(new { sessionUpdate = "agent_message_chunk", content = new { type = "text", text = "done" } }));
+
+        var (stream, call) = Assert.Single(kept);
+        Assert.False(string.IsNullOrEmpty(stream));
+        Assert.Equal(("c1", "edit", "Edit a.cs"), (call.Id, call.ToolKind, call.Title));
+    }
+
     private static AcpStreams Streams(IReadingSink children) => new(
         new SessionStreams(new SessionOutput(), "d-1"), new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet,
         children: children);

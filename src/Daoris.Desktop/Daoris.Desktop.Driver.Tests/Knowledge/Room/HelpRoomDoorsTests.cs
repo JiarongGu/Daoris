@@ -128,21 +128,15 @@ public sealed class HelpRoomDoorsTests
             || door.Screen.Contains("Settings → Permissions", StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// A named workflow's whole version and its choice are Ask Daoris's `workflow` kind's
-    /// `new`, `edit` and `use` doors, which the person applies; an import and a kind are doors of their own, which the rows say too.
-    /// </summary>
+    /// <summary>A named workflow's version and its choice are pressed by their verbs, so their rows name no proposal.</summary>
     [Fact]
-    public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
+    public void A_workflow_s_version_and_its_choice_are_pressed_never_proposed()
     {
         var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow new <id>", StringComparison.Ordinal));
-        Assert.Equal(("workflow", "new"), named.Ask?.Through);
-        Assert.EndsWith("(Ask Daoris proposes it, a whole version, new or after the newest, which you apply; not an import yet)", named.To);
+        Assert.Null(named.Ask);
 
         var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow use <id>", StringComparison.Ordinal));
-        Assert.Equal(("workflow", "use"), chosen.Ask?.Through);
-        Assert.EndsWith("(Ask Daoris proposes it, the choice with a version it proposes, as a repository's or a workspace's default; not a "
-            + "kind yet)", chosen.To);
+        Assert.Null(chosen.Ask);
     }
 
     /// <summary>

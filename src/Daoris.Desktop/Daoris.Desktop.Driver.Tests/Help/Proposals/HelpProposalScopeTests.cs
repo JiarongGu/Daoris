@@ -45,12 +45,10 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     [Fact]
-    public void A_move_and_a_workflow_naming_another_workspace_are_judged_by_their_kinds()
+    public void A_move_naming_another_workspace_is_judged_by_its_kind()
     {
         Reaches(Of("repository", "wire", "engine", "beta"));
         Reaches(Of("repository", "wire", "game", "alpha"));
-        Reaches(Of("workflow", "new") with { Scope = "game", Workflow = "docs-flow" });
-        Reaches(Of("workflow", "new") with { Scope = "beta", Workflow = "docs-flow" });
     }
 
     [Fact]
@@ -85,10 +83,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Assert.Equal("there is no ask `#zz000000` on this machine.", Refusal(Of("go", "go", "quests") with { Item = "ask:zz000000" }));
     }
 
-    /// <summary>
-    /// The circle is read from the conversation's record: Ask Daoris's, its room's workspace, so one going on in <c>help</c>, where
-    /// it started before each workspace had a room, and <c>default</c>'s, have none; any other record has none.
-    /// </summary>
+    /// <summary>The circle is read from the conversation's record: Ask Daoris's is its room's workspace, so one going on in <c>help</c>, and <c>default</c>'s, have none.</summary>
     [Fact]
     public void The_circle_is_the_record_s_room_s_workspace()
     {

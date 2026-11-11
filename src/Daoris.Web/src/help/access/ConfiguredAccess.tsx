@@ -16,9 +16,9 @@ const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {
 };
 
 /**
- * Ask Daoris's configured access in restricted mode: the five grants in its order. Each says what it reaches in a
- * sentence, its default and its state, and opens its operations from its door (*Choose operations*, *Manage*, *Choose
- * settings*): each a box of its own where the table chooses them apart, one box for a group; the checkouts a box each, by the
+ * Ask Daoris's configured access in restricted mode: the four grants in its order. Each says what it reaches in a
+ * sentence, its default and its state, and opens its operations from its door (*Choose operations*, *Manage*): the acts a box
+ * for each family, with what the family covers under it; the checkouts a box each, by the
  * repositories the driver serves. A grant set on a plugin's own tab,
  * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes.
  * A grant this agent cannot be held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the
@@ -107,11 +107,20 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
       />
     );
-    return later ? (
-      <span key={operation} className="flex min-w-0 flex-wrap items-center gap-x-2">
+    if (later) {
+      return (
+        <span key={operation} className="flex min-w-0 flex-wrap items-center gap-x-2">
+          {field}
+          <span className="text-meta text-ink-faint">{t('help.grants.notBuilt')}</span>
+        </span>
+      );
+    }
+    // A family of acts says what it covers under its box.
+    return spec.id === 'acts' ? (
+      <div key={operation} className="grid min-w-0 gap-0.5">
         {field}
-        <span className="text-meta text-ink-faint">{t('help.grants.notBuilt')}</span>
-      </span>
+        <p className="m-0 pl-6 text-meta text-ink-faint"><Inline text={t(`help.grants.cover.acts.${operation}`)} /></p>
+      </div>
     ) : field;
   };
 

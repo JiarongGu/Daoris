@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class AcpStreams(
     ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null,
-    IReadingSink? children = null)
+    IReadingSink? children = null, Action<string, SessionEvent>? calls = null)
 {
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says
@@ -106,7 +106,9 @@ internal sealed class AcpStreams(
             if (from is null || !_children.TryGetValue(from, out child)) return false;
         }
 
-        child.Console.Update(update, AcpRender.Map(update));
+        var mapped = AcpRender.Map(update);
+        child.Console.Update(update, mapped);
+        if (mapped is { Kind: SessionEventKind.Tool }) calls?.Invoke(child.StreamId, mapped);
         return true;
     }
 

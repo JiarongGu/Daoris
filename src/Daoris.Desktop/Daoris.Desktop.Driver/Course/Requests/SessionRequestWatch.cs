@@ -17,9 +17,8 @@ namespace Daoris.Driver;
 /// for whatever the watcher missed. The folder hears a request or a press arriving, never what a look writes there itself (a
 /// take, an answer, a removal: <see cref="Hears"/>), so a look never wakes the next.</para>
 ///
-/// <para>The shell's loop and the headless host's run one each, with the registry their conversations and driven sessions
-/// share. A terminal's <c>daoris chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
-/// it stops with its own Ctrl+C.</para>
+/// <para>The shell's loop and the headless host's run one each. A terminal's <c>daoris chat</c> runs none: a stop asked of its
+/// session is withdrawn after the wait, and it stops with its own Ctrl+C.</para>
 ///
 /// <para><b>A terminal's words</b> are a say, handed to <see cref="Say"/> and answered beside the request. A
 /// say for a session this registry runs is this loop's; one for a session nothing on this machine runs is any loop's whose
@@ -44,13 +43,11 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private readonly Func<ServiceClient?> _service;
     private readonly Func<DateTimeOffset> _clock;
 
-    // A say's two questions: whether this registry hears the session's words, a driven session's inbox among them,
-    // and whether a process for it lives anywhere on this machine. The seams answer both by what runs here.
+    // A say's two questions: whether this registry hears the session's words, and whether a process for it lives on this machine.
     private readonly Func<string, bool> _hears;
     private readonly Func<string, bool> _aliveHere;
 
-    // The sessions being honoured now, each its claim's end, and those a look found more for while claimed. Held only to
-    // read and change these, never across a say, a stop or the ledger.
+    // The sessions being honoured now, each its claim's end, and those a look found more for while claimed; never held across a say.
     private readonly object _gate = new();
     private readonly Dictionary<string, Task> _claimed = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _again = new(StringComparer.OrdinalIgnoreCase);
@@ -75,7 +72,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
     /// <summary>
     /// Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's
-    /// (<c>chain.fired</c>); and each chosen setting's outcome (<c>help.setting</c>); none by default.
+    /// (<c>chain.fired</c>); none by default.
     /// </summary>
     public MachineLog? Log
     {
@@ -102,20 +99,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// loop on a registry has <see cref="LoopWords"/>'s by default, which keeps no note; the host hands one that does. Null takes none.
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? TakeBack { get; init; }
-
-    /// <summary>
-    /// A loop's half of Ask Daoris's housekeeping tools: what it does with a housekeeping request for a
-    /// conversation its registry runs, answered beside the request. A loop on a registry has <see cref="HelpHousekeeping"/>'s by
-    /// default, which judges each call and calls the cleanup's own judges; null takes none.
-    /// </summary>
-    public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>>? Housekeep { get; init; }
-
-    /// <summary>
-    /// A loop's half of Ask Daoris's chosen settings: what it does with a setting request for a conversation
-    /// its registry runs, answered beside the request, and its outcome kept in <see cref="Log"/>. A loop on a registry has
-    /// <see cref="HelpSettings"/>'s by default, which judges each call and changes the setting through its own door's edit; null takes none.
-    /// </summary>
-    public Func<SessionRequest, CancellationToken, Task<SettingAnswer>>? Set { get; init; }
 
     /// <summary>
     /// A loop's half of Ask Daoris's checkout reads: what it does with a read of a checkout for a conversation
@@ -157,8 +140,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         var words = new LoopWords(processes, service) { Home = home };
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
-        Housekeep = CourseHelp.Current.Housekeeping(home, service);
-        Set = CourseHelp.Current.Settings(home, service);
         Checkout = new HelpCheckouts(home, service).AnswerAsync;
         Plan = CourseSystems.Current.Plan(home, service);
         // Made before the watch starts, so its watcher opens at once and the first request after an install is
@@ -318,10 +299,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         SessionMove.Say => Say is not null && SaysHere(pending.Session),
         SessionMove.TakeBack => TakeBack is not null && SaysHere(pending.Session),
         // Only the loop running the conversation, whose tool is waiting on it now.
-        SessionMove.Housekeep => Housekeep is not null && _runsHere(pending.Session),
-        // The same for a chosen setting.
-        SessionMove.Set => Set is not null && _runsHere(pending.Session),
-        // And for a checkout read.
         SessionMove.Read => Checkout is not null && _runsHere(pending.Session),
         SessionMove.Plan => Plan is not null && _runsHere(pending.Session),
         SessionMove.Permit => Permit is not null && _runsHere(pending.Session),
@@ -342,8 +319,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         if (pending.Move == SessionMove.Say) return await SayAsync(pending, Say, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.TakeBack) return await SayAsync(pending, TakeBack, ct).ConfigureAwait(false);
-        if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
-        if (pending.Move == SessionMove.Set) return await SetAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Read) return await ReadCheckoutAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Plan) return await PlanAsync(pending, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.Permit)
@@ -444,83 +419,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         return request;
     }
 
-    /// <summary>
-    /// A housekeeping request, taken where this loop runs its conversation and handed to <see cref="Housekeep"/>; what
-    /// became of it is written beside it, a failure included, so the tool is never left to wait out its time. Held in the session's
-    /// claim, so one conversation's requests are judged one after another, never two clean-ups of one repository at once from it.
-    /// Null where it is not this loop's, or another loop took it first.
-    /// </summary>
-    private async Task<SessionRequest?> HousekeepAsync(SessionRequest pending, CancellationToken ct)
-    {
-        if (Housekeep is not { } housekeep || !_runsHere(pending.Session)) return null;
-        if (_requests.Take(pending) is not { } request) return null;
-
-        var operation = request.Operation ?? "";
-        HousekeepingAnswer answer;
-        try
-        {
-            answer = await housekeep(request, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (
-            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
-            || (error is TaskCanceledException && !ct.IsCancellationRequested))
-        {
-            // Never "nothing is done": a clean-up that fails on its third branch has removed the first two.
-            answer = new HousekeepingAnswer(operation, false, HousekeepingAnswer.Failed,
-                $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Look with `housekeeping_inspect` to see what stands now.");
-        }
-
-        try
-        {
-            _requests.Answer(request, answer);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Unwritten: the tool waits out its time and says the act may still be under way.
-        }
-
-        return request;
-    }
-
-    /// <summary>
-    /// A setting request, taken where this loop runs its conversation and handed to <see cref="Set"/>, as a housekeeping
-    /// request is; what became of it is written beside it, a failure included, and kept as its outcome in the machine log: the setting,
-    /// its value, where it is set and whether it changed, never the words. Null where it is not this loop's, or another loop took it.
-    /// </summary>
-    private async Task<SessionRequest?> SetAsync(SessionRequest pending, CancellationToken ct)
-    {
-        if (Set is not { } set || !_runsHere(pending.Session)) return null;
-        if (_requests.Take(pending) is not { } request) return null;
-
-        var setting = request.Operation ?? "";
-        SettingAnswer answer;
-        try
-        {
-            answer = await set(request, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (
-            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
-            || (error is TaskCanceledException && !ct.IsCancellationRequested))
-        {
-            // Never "nothing is changed": a write that fails at its rename may or may not have landed.
-            answer = new SettingAnswer(setting, false, SettingAnswer.Failed,
-                $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Ask the person to look in Settings to see what stands now.");
-        }
-
-        Log?.Info(
-            "help.setting", ("session", request.Session), ("setting", setting), ("value", request.Value), ("repository", request.Repository),
-            ("workspace", request.Workspace), ("done", answer.Done), ("code", answer.Code));
-        try
-        {
-            _requests.Answer(request, answer);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Unwritten: the tool waits out its time and says the change may still be under way.
-        }
-
-        return request;
-    }
 
     /// <summary>
     /// A checkout read, taken where this loop runs its conversation and handed to <see cref="Checkout"/>, as a setting

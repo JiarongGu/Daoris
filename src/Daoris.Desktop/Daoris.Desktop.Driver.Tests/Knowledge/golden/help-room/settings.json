@@ -3,13 +3,13 @@
     "allow": [
       "Bash(daoris:*)",
       "PowerShell(daoris:*)",
+      "Edit(./drafts/**)",
       "mcp__daoris-knowledge__registry",
       "mcp__daoris-knowledge__knowledge_search",
       "mcp__daoris-knowledge__knowledge_get",
       "mcp__daoris-knowledge__knowledge_repositories",
       "mcp__daoris-knowledge__quest_list",
-      "mcp__daoris-knowledge__go_propose",
-      "mcp__daoris-knowledge__workflow_propose"
+      "mcp__daoris-knowledge__go_propose"
     ]
   }
 }

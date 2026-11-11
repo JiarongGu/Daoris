@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <see cref="SessionRequestWatch.Checkout"/> with.
 /// </summary>
 /// <remarks>
-/// <para><b>Judged at every call, whatever the agent</b>, in housekeeping's order (<see cref="HelpHousekeeping"/>): the record named is an
+/// <para><b>Judged at every call, whatever the agent</b>: the record named is an
 /// Ask Daoris conversation's; the repository is registered, in any workspace, with a checkout here; the repository lets agents outside it
 /// read that checkout; the person has not turned it off in <see cref="ConfiguredAccess"/> now, so a narrowing refuses the next call;
 /// and it is handed at this start (its newest

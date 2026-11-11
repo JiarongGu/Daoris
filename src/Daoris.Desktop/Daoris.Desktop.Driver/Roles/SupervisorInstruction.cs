@@ -25,6 +25,7 @@ internal static class SupervisorInstruction
     /// <summary>The prompt around <paramref name="facts"/>.</summary>
     public static string Compose(SupervisorWaiting waiting, string facts)
     {
+        if (waiting.Kind == SupervisorKinds.AskDaoris) return AskDaorisCharge.Compose(waiting, facts);
         var subject = string.Join(", ", waiting.Subject.Wire().Select(each => $"\"{each.Key}\": \"{each.Value}\""));
         var prompt = new StringBuilder();
         prompt.Append("You are the supervisor role `").Append(waiting.Role).Append("`, deciding one ").Append(waiting.Kind)

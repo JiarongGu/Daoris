@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's read of a checkout reaches the driver as its chosen settings do, through the session
-/// requests every loop watches: a keyed request for the conversation's own session, move <c>read</c>, taken once by the loop whose
-/// registry runs that conversation and answered beside it, the answer carrying what is read beside its words.
+/// Ask Daoris's read of a checkout reaches the driver through the session requests every loop watches: a keyed request for the
+/// conversation's own session, move <c>read</c>, taken once by the loop whose registry runs it and answered beside it.
 /// </summary>
 /// <remarks>
 /// 🔴 A twin: the request is written by the service's connector (<c>CheckoutBox</c>), whose <c>McpCheckoutToolTests</c> hold the same
@@ -57,7 +56,6 @@ public sealed class CheckoutRequestTests : IDisposable
 
         Assert.Equal(("h1", SessionMove.Read, RequestDoor.Help, "0123456789ab", Now), (read.Session, read.Move, read.By, read.Key, read.At));
         Assert.Equal(("read", "engine", "src/Game.cs"), (read.Operation, read.Repository, read.Path));
-        Assert.Null(read.Value);
     }
 
     /// <summary>A request written here reads back the same, its path kept beside the repository: the driver's own writer is the twin's shape.</summary>

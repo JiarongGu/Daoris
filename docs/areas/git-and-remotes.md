@@ -204,7 +204,7 @@ is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
     reached inside a flow that holds that lock alone already (a tidy, a removal) runs under it. A reconciler settles an open act;
     nothing is re-run. (from D204)
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
-    (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
+    (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, a removal, a run's
     `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. The Branches tab lists them from the
     journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement; the recovery ref its rule keeps is made in the
     delete's own transaction, so a refused delete makes none, and a late checkout's put-back takes it back with the branch; a door that keeps

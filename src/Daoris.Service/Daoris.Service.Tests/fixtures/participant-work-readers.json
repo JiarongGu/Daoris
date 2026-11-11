@@ -285,11 +285,6 @@
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Help/HelpHousekeeping.cs": {
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
-    },
     "Help/HelpFocusing.cs": {
       "reads": "tells",
       "row": "1q",
@@ -553,17 +548,13 @@
       "reads": "tells",
       "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
-    "Core/Help/HousekeepingBox.cs": {
-      "reads": "tells",
-      "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
-    },
-    "Core/Help/SettingsBox.cs": {
-      "reads": "tells",
-      "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
-    },
     "Core/Knowledge/Memory/MemoryProposals.cs": {
       "reads": "tells",
       "note": "names a memory proposal's proposer: Ask Daoris proposes as its own sender (KNOWCENTRAL2e2, D220's note), the quest's words saying which"
+    },
+    "Core/Quests/QuestPublishing.cs": {
+      "reads": "tells",
+      "note": "files Ask Daoris's quest in the workspace of the repository it names, Ask Daoris having no registered row; no row of this design moves it"
     },
     "Core/Remote/SessionSync.cs": {
       "reads": "tells",

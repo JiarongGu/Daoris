@@ -89,6 +89,42 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(0, driver.Ran("ASK_NEW"));
     }
 
+    [Theory]
+    [InlineData(HelpModes.Full)]
+    [InlineData(HelpModes.Restricted)]
+    public async Task Ask_Daoris_s_workflow_draft_is_saved_in_full_access_and_asks_on_the_design_s_card_in_restricted(string mode)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var graph = new { schemaVersion = 2, entries = new[] { "landing" }, end = "landing", nodes = new[] { new { id = "landing", kind = "land", version = 1, reach = "performed" } }, wires = Array.Empty<object>() };
+        var grounds = new StubGrounds();
+        grounds.Reads["WORKFLOW_SAVE"] = _ => new { id = "docs", done = true, version = 2, appended = true };
+        grounds.Reads["WORKFLOW_SHOW"] = _ => new { id = "docs", name = "Docs", version = 1, body = graph };
+        pipe.Grounds = grounds;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = mode;
+
+        var id = await SendProvedAsync(client, "WORKFLOW_SAVE", new { id = "docs", graph, @base = 1, authorize = Array.Empty<string>() }, "h1", key, nonce);
+
+        if (mode == HelpModes.Full)
+        {
+            Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+            Assert.Equal(1, driver.Ran("WORKFLOW_SAVE"));
+            Assert.Empty(pipe.Confirmations.Now().Waiting);
+            return;
+        }
+
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(("h1", true, "workflow-save-edit"), (card.Asker.Session, card.Asker.Help, card.View?.Kind));
+        Assert.NotNull(card.View!.Workflow);
+        Assert.Equal(0, driver.Ran("WORKFLOW_SAVE"));
+    }
+
     [Fact]
     public async Task A_restricted_Ask_Daoris_press_asks_on_one_card_naming_Ask_Daoris_and_runs_on_the_person_s_yes()
     {
@@ -364,6 +400,38 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(("h1", true), (Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Session, Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Help));
     }
 
+    /// <summary>The settings are a family like the pauses: granted, a restricted press runs with no card; another family's grant leaves it on a card.</summary>
+    [Theory]
+    [InlineData(HelpModes.Restricted, ActFamilies.Settings, false)]
+    [InlineData(HelpModes.Restricted, ActFamilies.CleanUp, true)]
+    [InlineData(HelpModes.Full, null, false)]
+    public async Task A_chosen_setting_s_press_runs_with_no_card_where_its_family_is_granted_or_access_is_full(string mode, string? family, bool carded)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = mode;
+        _families["h1"] = family is null ? [] : [family];
+
+        await SendProvedAsync(client, "SET_NOTIFY", new { notify = true }, "h1", key, nonce);
+
+        if (carded)
+        {
+            await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+            Assert.True(Assert.Single(pipe.Confirmations.Now().Waiting).Asker.Help);
+            Assert.Equal(0, driver.Ran("SET_NOTIFY"));
+            return;
+        }
+
+        await UntilAsync(() => driver.Ran("SET_NOTIFY") == 1);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(("h1", $"{DriverModule.Name}.SET_NOTIFY"), Assert.Single(_said));
+    }
+
     /// <summary>The driver's stand-in: each press counted by route and answered done, with the session it ran as and whether it named the owner's.</summary>
     private sealed class StandIn : ModuleBase
     {
@@ -414,10 +482,7 @@ public sealed class PipeDelegateTests : Bridge
         return (pipe, client, hello.GetProperty("data").GetProperty("nonce").GetString()!, driver, provider, log);
     }
 
-    /// <summary>
-    /// A driver press sent as the verb sends a session's: its payload's text on the line as the proof is made over it (or over
-    /// <paramref name="proofOver"/>), and beside it <c>delegate: { session, proof }</c>.
-    /// </summary>
+    /// <summary>A driver press as the verb sends a session's: its text proved (or <paramref name="proofOver"/>), beside <c>delegate: { session, proof }</c>.</summary>
     private static async Task<string> SendProvedAsync(
         PipeClient client, string route, object payload, string session, string key, string nonce, string? proofOver = null)
     {

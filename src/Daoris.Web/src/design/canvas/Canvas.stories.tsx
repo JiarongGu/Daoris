@@ -21,8 +21,8 @@ import { observeWorld, readWorld } from './worldBoxes';
 function CanvasFlow({ fixture, mode = 'display', marked = false }: { fixture: Fixture | number; mode?: 'display' | 'edit'; marked?: boolean }) {
   const { t, i18n } = useTranslation();
   const marks = marked ? [
-    [{ word: t('workflow.edit.chart.markRefused'), kind: 'refused' as const }], [{ word: t('workflow.edit.proposal.mark.added'), kind: 'new' as const }],
-    [{ word: t('workflow.edit.proposal.mark.removed'), kind: 'remove' as const }], [{ word: t('workflow.edit.proposal.mark.changed'), kind: 'changed' as const }],
+    [{ word: t('workflow.edit.chart.markRefused'), kind: 'refused' as const }], [{ word: 'new', kind: 'new' as const }],
+    [{ word: 'to remove', kind: 'remove' as const }], [{ word: 'changed', kind: 'changed' as const }],
   ] : [];
   const say = (words: Said) => (i18n.language.startsWith('zh') ? words.zh : words.en);
   const viewport: CanvasOptions = {

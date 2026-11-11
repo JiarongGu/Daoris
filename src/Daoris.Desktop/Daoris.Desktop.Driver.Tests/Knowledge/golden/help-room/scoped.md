@@ -156,31 +156,17 @@ under *Done at a terminal* (below), name its command for the person to run.
   staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it
   back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and
   anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.
-- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new
-  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as
-  `daoris workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`
-  step landing the work by its method), and `choose` to make it the scope's workflow too. A list of `steps` is
-  refused: it is no longer saved, and one saved before is the conversion's. Its card says the person's part first, then each step by id,
-  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.
-  A base that is not the newest is refused as stale. A declaration a step needs that is missing where it
-  applies, a landing plugin that cannot land here, or a kind this build does not run
-  makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not
-  proposed yet.
-  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no
-  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`
-  names, takes a whole `graph` of its own: at least one `check`, and nothing that lands. Its gates
-  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.
-  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which
-  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.
-  Where the person has a workflow's steps open in its editor, where they are says so, and the draft goes beside
-  their words as Daoris told it: its fingerprint, its place, where it came from and what it would save to, its route
-  and pipeline, the step selected, the problems open and the whole graph, with what a step graph may hold here the
-  first time and again when that changes. It is told again only once the draft has changed.
-  To change that draft, send `draft` its fingerprint and `graph` the whole changed draft, of either pipeline, with
-  the draft's place as `scope`: nothing is saved or chosen, so no `steps`, `base`, `choose`, `route` or `name` goes
-  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would
-  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint
-  this conversation was not told is refused: ask the person to ask again from the editor.
+- A workflow's new version is saved by pressing, never proposed, as its editor's Save does: write its whole graph (the
+  JSON object, schemaVersion 2, its nodes and wires) as a draft in this room's `drafts/` folder, the one place you
+  may write, and press `daoris workflow apply <id> drafts/<id>.json --base <version>`, the base its newest version
+  as `daoris workflow show <id>` says it. Its card draws the graph for the person as the editor draws it, with each change
+  against the version it replaces; a save the route would refuse (a stale base, a graph that does not hold, a place it
+  reaches that cannot start it) is answered to you at once and never shown. A new workflow starts from a default or a
+  saved one, `daoris workflow new <id> --from <default>|<id> --name "…"`, and your draft is applied onto it. Where the
+  person has a workflow open in its editor, its draft goes beside their words as Daoris told it: write yours from it.
+  Where work follows it is chosen by `daoris workflow use <id> --repository|--workspace <name> [--kind <kind>|--landed]`.
+  Merging with nobody is never pressed: *land without my review* is a pull request opened with no press, which the
+  person still merges, and a merge at done is a decision of its own, which you say.
 - A place's set-up is applied by pressing, never proposed, as its page's *Set up…* does: `daoris place <repository>… --preset <id> --apply`,
   the repositories named as `registry` lists them and all in one workspace, `keep` leaving how their work lands as it is,
   with `--with opinion,look`, `--adoption [--what-it-builds <kind>]` and `--drive` as the person asks, and
@@ -192,11 +178,9 @@ under *Done at a terminal* (below), name its command for the person to run.
   (no tree of its own, no doctrine tool, a set-up already open) is answered to you at once and never shown.
   Daoris never writes into a repository.
 
-Each proposal reaches the person as a card with two buttons, and you name them as the card does:
-a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
-and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
-A press of not now comes back to you as the person's next message;
-dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing
+A go reaches the person as a card with two buttons, and you name them as the card does:
+**go there** and **dismiss** (in 中文 **前往** and **移除**).
+Dismissing it only takes it out of the conversation: nothing comes back to you, and it says nothing
 about the quest, ask or place the card named.
 
 ## Making a plugin
@@ -228,8 +212,8 @@ named, in that repository's checkout; never add one that has not landed.
 | declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the repository's documented procedure), and whether work waits for your look (work that waits lands only once you say it is reviewed, `daoris quest review <quest> reviewed`, or skip the review; no set-up step is composed for you yet; production is never one) | Repositories → the repository's page → Setup → Line and landing → Review before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults | `daoris place review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] [--run "<command>"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), `daoris place review <repository> none|--drop <environment>|--clear` |
 | declare which other agent reads a repository's work before it lands, or a workspace's: reviewers named in the order they are tried, another maker's agent by your naming, each reading in a copy of its own that nothing is taken back from, at landing or each step, whether work waits for you when none can, whether it may run what is declared safe, and how long a pass may take (never on unless you name a reviewer). Each door then says what the gate does: Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, `daoris session opinion myself <session>`. Where a chain's next step here waits for another agent's reading of the step before it, it starts only once that reading is settled. What this repository declares safe is not handed to a reviewer yet. | Repositories → the repository's page → Setup → Line and landing → Second opinion before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults | `daoris place opinion <repository> --agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), `daoris place opinion <repository> none|--clear` |
 | see how a repository's work moves, or a workspace's, at each gate: the workflow it follows, or for a place still on Current its old landing rule's, as they stand; each step (the work, a second opinion, your look, the landing, a pull request a plugin opens after it) and the plugins that may hold a start, who takes part (agent alone, agent + you, you, automatic) and who acts, where each was set, and what Daoris cannot do of it yet; a step opens the workflow editor, or for Current the Setup row that sets it, where a change is made (Ask Daoris never proposes it: it reads and changes nothing) | Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow | `daoris workflow show --repository <name>|--workspace <name>` |
-| name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next version, never edited, said step by step with your part first; a list of steps is no longer saved (Ask Daoris proposes it, a whole version, new or after the newest, which you apply; not an import yet) | (no screen yet) | `daoris workflow new <id> --from <default>|<id>[@<version>]`, `daoris workflow apply|export|import …`, `daoris workflow list`, `daoris workflow show <id>[@<version>]` |
-| choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the newest version at its first start, and how it lands, your look and its second opinion follow that version; `--clear` follows this machine's default workflow). `current` is no development route's choice any more, and is refused there; only the landed route takes it, for no verification (Ask Daoris proposes it, the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet) | (no screen yet) | `daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, `daoris workflow kind <workspace> <kind> --label "…" [--paths <path,…>]|--drop`, `daoris workflow show --repository <name>|--workspace <name> [--kind <kind>]` |
+| name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next version, never edited, said step by step with your part first; a list of steps is no longer saved | (no screen yet) | `daoris workflow new <id> --from <default>|<id>[@<version>]`, `daoris workflow apply|export|import …`, `daoris workflow list`, `daoris workflow show <id>[@<version>]` |
+| choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the newest version at its first start, and how it lands, your look and its second opinion follow that version; `--clear` follows this machine's default workflow). `current` is no development route's choice any more, and is refused there; only the landed route takes it, for no verification | (no screen yet) | `daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, `daoris workflow kind <workspace> <kind> --label "…" [--paths <path,…>]|--drop`, `daoris workflow show --repository <name>|--workspace <name> [--kind <kind>]` |
 | convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or holding a `handed` step, and a place still on Current, which follows its old landing rule, become saved graphs that each place follows, with a home default workflow for a place that chooses none (`--plan` shows every operation and writes nothing; the apply is your press over the plan you read, by its digest; a part that failed is pressed again or left; the latest receipt is undone) (Ask Daoris never proposes it: it opens the page and names the plan, and the apply is your press) | Agents → Setup → the place's head *Convert…*, or *What needs you* → *Review conversion…* | `daoris convert --plan`, then `--apply <digest>` (`--leave <part>` for a failed part) or `--undo`, through the running Daoris |
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Repositories → the workspace's page → Branches → Updates | `daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Repositories → the workspace's page → Branches → Session branches | `daoris tree clean [--workspace <name>]` |

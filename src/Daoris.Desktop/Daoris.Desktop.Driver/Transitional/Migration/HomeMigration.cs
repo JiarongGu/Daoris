@@ -48,6 +48,7 @@ public static class HomeMigration
         new LineageFilesStep(),
         new BrainstormFilesStep(),
         new StandingGrantStep(),
+        new ConfiguredAccessStep(),
         new SupervisorStep(),
         new AbandonedRunsStep(),
         new PlaceWorkStep(),
