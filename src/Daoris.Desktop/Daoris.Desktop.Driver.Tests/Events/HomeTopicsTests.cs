@@ -15,17 +15,7 @@ public sealed class HomeTopicsTests
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal([ChangeTopics.Accounts, ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins, ChangeTopics.Words], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
-    }
-
-    [Fact]
-    public void Ask_Daoris_answers_its_proposals_folder_as_the_one_place_of_the_help_topic()
-    {
-        var places = HomeTopics.Of(ChangeTopics.Help, _home);
-
-        var place = Assert.Single(places);
-        Assert.Equal(Path.GetFullPath(HelpProposals.FolderOf(_home)), place.Folder);
-        Assert.False(place.Subfolders);
+        Assert.Equal([ChangeTopics.Accounts, ChangeTopics.Gates, ChangeTopics.Plugins, ChangeTopics.Words], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]

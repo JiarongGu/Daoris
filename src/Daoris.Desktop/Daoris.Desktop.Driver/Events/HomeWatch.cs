@@ -27,57 +27,6 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
             () => [KeyValuePair.Create(full, HomeWrites.Stamp(full))]);
     }
 
-    /// <summary>
-    /// The <c>*.json</c> files of one folder, by their names and their <c>state</c>: a file
-    /// arriving or leaving moves it, and so does its state changing, so a proposal settled by another process (a terminal's Apply,
-    /// another window's Not now) reaches this window's card; a file written again with its state kept, a card's units kept in it, does
-    /// not. A file's state is read again only when its own stamp moved. A claim, a temporary a writer renames away and a folder are not heard.
-    /// </summary>
-    public static HomePart Named(string folder)
-    {
-        var full = Path.GetFullPath(folder);
-        var known = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
-        var gate = new object();
-        return new(
-            full,
-            Subfolders: false,
-            (moved, _) => !moved.Contains('/') && moved.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
-            () =>
-            {
-                if (!Directory.Exists(full)) return [];
-                lock (gate)
-                {
-                    var now = new Dictionary<string, (string Stamp, string State)>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var file in Directory.EnumerateFiles(full, "*.json"))
-                    {
-                        var stamp = HomeWrites.Stamp(file);
-                        now[file] = known.TryGetValue(file, out var last) && last.Stamp == stamp ? last : (stamp, StateOf(file));
-                    }
-
-                    known.Clear();
-                    foreach (var (file, read) in now) known[file] = read;
-                    return [.. now.Select(entry => KeyValuePair.Create(entry.Key, entry.Value.State))];
-                }
-            });
-    }
-
-    /// <summary>A record's <c>state</c>, or <c>present</c> where it has none or does not read (half-written: its next write moves it).</summary>
-    private static string StateOf(string file)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(file));
-            return document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("state", out var state)
-                && state.ValueKind == JsonValueKind.String
-                ? "state:" + state.GetString()
-                : "present";
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return "present";
-        }
-    }
 
     /// <summary>
     /// Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp: a record
@@ -177,19 +126,6 @@ public sealed class HomeWatch : IAsyncDisposable
 
     /// <summary>What a topic's judge lists of <paramref name="parts"/>, each file's full path with its stamp, which a test counts.</summary>
     internal static IReadOnlyDictionary<string, string> Listed(IEnumerable<HomePart> parts) => Read(parts).Stamps;
-
-    /// <summary>
-    /// Ask Daoris's proposals folder alone (<see cref="ChangeTopics.Help"/>): the window's own process watches it, whoever
-    /// holds the home's lease, since the connector writes there whichever loop drives. Not started: the caller starts it, and tells its
-    /// windows once at the start, since a proposal that arrived before the watch opened is in its first read.
-    /// </summary>
-    public static HomeWatch ForProposals(
-        string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
-    {
-        var watch = new HomeWatch(wake, every, source) { Log = log };
-        watch.Topic(ChangeTopics.Help, "proposals", HomeTopics.Of(ChangeTopics.Help, home));
-        return watch;
-    }
 
     /// <summary>
     /// <c>notices.json</c> alone (<see cref="ChangeTopics.Notices"/>): each process's own, whoever holds the home's lease, since

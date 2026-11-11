@@ -509,7 +509,6 @@ public sealed class PipeCensusTests
     [InlineData("SUPERVISOR_LEAVE", PipeDrain.Passes)]
     // A review's findings: Ask Daoris is told a dismissal as a turn, and a setting can release work the look starts outside the drain's
     // holds of quests (a helper asked under `ask`, now `on`).
-    [InlineData("HELP_DISMISS", PipeDrain.Waits)]
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]

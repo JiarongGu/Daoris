@@ -139,7 +139,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__agent_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__agent_settings_propose", allowed);
-        Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
+        // A place is a link in its answer, which the window opens: no tool of a proposal is left to allow.
+        Assert.DoesNotContain(allowed, rule => rule.EndsWith("_propose", StringComparison.Ordinal));
         // Adding a landed plugin, or switching one, is pressed, never proposed.
         Assert.DoesNotContain("mcp__daoris-knowledge__plugin_propose", allowed);
         // A quest's yes and a landed branch's hand-off are the person's own presses, never a card.

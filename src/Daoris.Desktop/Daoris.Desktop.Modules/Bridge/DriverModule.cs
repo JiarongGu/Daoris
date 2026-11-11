@@ -131,12 +131,6 @@ public sealed class DriverModule : ModuleBase
         });
     }
 
-    /// <summary>
-    /// The doors Ask Daoris's Apply goes through: each the code a screen's own route runs. The module's one seam to
-    /// them, since the tests build doors through a module (<c>DriverModuleBridge.Module()</c>) rather than a context.
-    /// </summary>
-    public IHelpDoors HelpDoors() => new HelpScreenDoors(_context);
-
     /// <summary>The answers of the reads told by event: the tests' window on a work under way.</summary>
     public HeldAnswers Held => _held;
 

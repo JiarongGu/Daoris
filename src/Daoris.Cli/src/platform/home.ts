@@ -128,6 +128,7 @@ export const HOME_ENTRIES = [
   row('handed', 'data', 'data/handed', 'handed'),
   row('setup', 'data', 'data/setup', 'setup'),
   row('workflows', 'data', 'data/workflows', 'workflows'),
+  // A deleted box: named here, never read by the CLI, so the desktop's migration finds a stored folder to remove.
   row('help-proposals', 'data', 'data/help/proposals', 'help/proposals'),
   row('configured-access', 'data', 'data/configured-access.json', 'configured-access.json'),
   row('opinion-gates', 'data', 'data/opinions/gates', 'opinions/gates'),

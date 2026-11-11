@@ -25,7 +25,7 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         }
         else
         {
-            text.Append("This conversation runs in restricted mode: you read, advise and propose, and the person applies (*What you\n");
+            text.Append("This conversation runs in restricted mode: you read, advise and press, and the person says yes on the card (*What you\n");
             text.Append("may do*, below).\n\n");
         }
 
@@ -74,14 +74,14 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         {
             text.Append($"Full access is not confined to `{workspace}`: your shell and file edits reach this whole machine, other workspaces'\n");
             text.Append($"checkouts and records among them. `{workspace}` is where this conversation belongs and starts, not a fence around it.\n");
-            text.Append($"`daoris-knowledge` answers for `{workspace}` unless a call names another workspace, or `all`, and a proposal may name\n");
+            text.Append($"`daoris-knowledge` answers for `{workspace}` unless a call names another workspace, or `all`, and a press may name\n");
             text.Append("another workspace's repository.\n\n");
             return text.ToString();
         }
 
         text.Append($"`daoris-knowledge` answers for `{workspace}` unless a call names another workspace, or `all`: its registry, its search,\n");
         text.Append($"its reads and its quests are `{workspace}`'s by default. The checkouts you may read are every workspace's, `{workspace}`'s\n");
-        text.Append("first, and a proposal may name another workspace or one of its repositories.\n\n");
+        text.Append("first, and a press may name another workspace or one of its repositories.\n\n");
         return text.ToString();
     }
 

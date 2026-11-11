@@ -106,16 +106,16 @@ public static class RouteMarks
         return grounds.Count > 0 || timeless is not null ? new PipeGroundRow(grounds, timeless?.Why) : null;
     }
 
-    /// <summary>A route's owner marks merged, or null where it says none: fields, a closed reason or by its plan, one of the three.</summary>
+    /// <summary>A route's owner marks merged, or null where it says none: fields or a closed reason, one of the two.</summary>
     private static OwnerTarget? Owner(IReadOnlyList<OwnerAttribute> said, string where, string route)
     {
         if (said.Count == 0) return null;
         var reasons = said.Select(each => each.None).OfType<string>().ToList();
-        var target = new OwnerTarget([.. said.SelectMany(each => each.Fields())], reasons.FirstOrDefault(), said.Any(each => each.ByPlan));
-        var ways = (target.Fields.Count > 0 ? 1 : 0) + reasons.Count + (target.ByPlan ? 1 : 0);
+        var target = new OwnerTarget([.. said.SelectMany(each => each.Fields())], reasons.FirstOrDefault());
+        var ways = (target.Fields.Count > 0 ? 1 : 0) + reasons.Count;
         if (ways != 1 || reasons.Any(each => !OwnerNone.All.Contains(each)))
         {
-            throw new InvalidOperationException($"{where} marks `{route}`'s owner as fields, one closed reason or by its plan: one of them, once.");
+            throw new InvalidOperationException($"{where} marks `{route}`'s owner as fields or one closed reason: one of them, once.");
         }
 
         return target;

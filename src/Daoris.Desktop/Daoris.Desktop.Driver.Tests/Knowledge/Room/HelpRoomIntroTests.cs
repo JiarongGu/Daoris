@@ -15,7 +15,7 @@ public sealed class HelpRoomIntroTests
         var room = HelpRoom.Render(HelpRoomFixture.Machine);
 
         Assert.StartsWith("# Ask Daoris\n\nThis conversation runs in restricted mode:", room);
-        Assert.Contains("you read, advise and propose, and the person applies", room);
+        Assert.Contains("you read, advise and press, and the person says yes on the card", room);
         Assert.Equal(HelpModes.Restricted, HelpRoomFixture.Machine.Mode);
         Assert.Equal(
             HelpModes.Full,

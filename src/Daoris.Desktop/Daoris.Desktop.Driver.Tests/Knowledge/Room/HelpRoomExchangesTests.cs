@@ -21,7 +21,7 @@ public sealed class HelpRoomExchangesTests
 
         Assert.Contains("## What waits on what", room, StringComparison.Ordinal);
         Assert.Contains("s12 (engine): helper h7 · codex-acp · asked 16:29 · asked · delivery kept\n", room, StringComparison.Ordinal);
-        Assert.Contains("propose no act for one", room, StringComparison.Ordinal);
+        Assert.Contains("press no act for one", room, StringComparison.Ordinal);
         Assert.Contains("- not read: piece, so what a line waits on may be more.", room, StringComparison.Ordinal);
         Assert.DoesNotContain("## What waits on what", HelpRoom.Render(HelpRoomFixture.Machine with { Waits = HelpWaits.None }), StringComparison.Ordinal);
     }

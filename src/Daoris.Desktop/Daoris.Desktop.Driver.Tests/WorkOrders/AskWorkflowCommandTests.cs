@@ -175,10 +175,10 @@ public sealed class AskWorkflowCommandTests : IDisposable
         Assert.Equal(("docs", "current"), (read.Kind, read.Workflow));
         Assert.True(AskArguments.Read(["--set-workflow", "a1", "--clear"], out _)!.ClearWorkflow);
         var console = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("AskWorkflowCommand.Read(setWorkflow, read.Kind, read.Workflow, read.ClearWorkflow, read.Words, out var workflowProblem)", console);
         var made = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
         Assert.Contains("AskWorkflowCommand.Compose(ask.Kind, ask.Workflow, ask.WorkflowWords, out var workflowProblem)", made);
         Assert.Contains("workflow: workflow", made);
     }

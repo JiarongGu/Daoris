@@ -536,7 +536,6 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             .ToList();
 
         Assert.Contains(presses, press => press.File == "TreesTidyDesk.cs");
-        Assert.Contains(presses, press => press.File == "HelpScreenDoors.cs");
         Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
             $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
     }

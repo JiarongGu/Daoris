@@ -267,24 +267,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary><c>HomeWatch.StateOf</c>, reached through <see cref="HomePart.Named"/>'s stamps, reads a record's state while its move still holds it.</summary>
-    [Fact]
-    public void A_named_record_s_state_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var folder = DaorisHome.Entry(_home, HomeEntry.HelpProposals);
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "p1.json");
-        AtomicFile.WriteText(path, "{\n  \"state\": \"applied\"\n}\n");
-
-        using (MoveHold.Take(path))
-        {
-            Refused(path);
-            var stamp = Assert.Single(HomePart.Named(folder).Stamps());
-            Assert.Equal("state:applied", stamp.Value);
-        }
-    }
-
     /// <summary>
     /// <c>DaorisHome.Holds</c>, reached through <see cref="DaorisHome.Entry"/>, opens a new place its move still holds, so a
     /// torn old place never shadows it.

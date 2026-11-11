@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Acts the person runs at a terminal that no proposal takes (a door only where one is wanted): each with the commands
+/// Acts the person runs at a terminal that Ask Daoris never presses (a door only where one is wanted): each with the commands
 /// that do it, so the helper names the command rather than calling a missing card a limit of its own. Each command is spelled as its
 /// usage spells it (<c>HelpRoomTerminalActsTests</c>).
 /// </summary>
@@ -64,7 +64,7 @@ internal sealed class HelpRoomTerminalActs : IHelpRoomSection
     {
         var text = new StringBuilder();
         text.Append("## Done at a terminal\n\n");
-        text.Append("Each act below is one the person runs at a terminal, and no proposal of yours takes it. When the person\n");
+        text.Append("Each act below is one the person runs at a terminal, and you never press it. When the person\n");
         text.Append("wants one, name its command so they can run it themselves, and its screen where the doors above name one.\n\n");
         foreach (var act in All)
         {

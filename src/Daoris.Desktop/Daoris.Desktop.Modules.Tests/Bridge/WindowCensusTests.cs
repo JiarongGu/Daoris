@@ -84,7 +84,6 @@ public sealed class WindowCensusTests
     [InlineData("SESSION_WHERE")]
     [InlineData("HEAVY_SLOT")]
     [InlineData("SESSION_OPENINGS")]
-    [InlineData("HELP_PROPOSALS")]
     [InlineData("TOOLS_LIST")]
     public void A_route_the_install_saw_hold_the_window_is_told_by_event(string route) =>
         Assert.Contains(route, DriverModule.ByEventRoutes);

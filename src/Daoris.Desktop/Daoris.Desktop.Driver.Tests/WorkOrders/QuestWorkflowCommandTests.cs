@@ -97,7 +97,7 @@ public sealed class QuestWorkflowCommandTests
         Assert.Contains("\n  quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n",
             DriverCommand.Usage.ReplaceLineEndings("\n"));
         var host = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
+            Daoris.Desktop.Driver.Tests.WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("QuestWorkflowCommand.Read(questArgs, out var workflowProblem)", host);
     }
 

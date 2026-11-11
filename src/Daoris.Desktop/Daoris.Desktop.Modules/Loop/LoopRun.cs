@@ -70,14 +70,6 @@ internal sealed class LoopRun(
         // The shell's power event reopens each watch's roots at a resume; their own overrun rule is the fallback.
         using var resumeHeard = loop.Power?.Hear(requests.Resumed);
 
-        // Ask Daoris's proposals, told once now, since one written before the watch opened is in its first read, and again at each
-        // arrival and each settle another process makes, so a card a terminal settled leaves this window too.
-        await using var proposals = HomeWatch.ForProposals(
-            homeDirectory, (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help), log: log);
-        proposals.Start();
-        using var proposalsResumed = loop.Power?.Hear(proposals.Resumed);
-        StatePublisher.Publish(eventBus, StateScopes.Help);
-
         // The notices' record, which any process on the home writes: another's write is heard, or found at the topic's deadline, and
         // this one's wakes nothing, since its writer pushes it.
         global::Daoris.Driver.Notices.ImportFile(homeDirectory);

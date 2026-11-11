@@ -33,7 +33,7 @@ internal sealed class HelpRoomExchanges : IHelpRoomSection
             text.Append("Each line below waits on a request it made of another session, agent or repository, read from this machine's records and\n");
             text.Append("never judged again here: whom it asked, where the request stands, and what Daoris saw of its delivery. Say it as listed; the\n");
             text.Append("terminal's `daoris session at-work <session>` says the same for one session. None of it waits on the person: what does is in\n");
-            text.Append("*What needs you*, and an answer to another agent is that agent's to give, so propose no act for one.\n\n```text\n");
+            text.Append("*What needs you*, and an answer to another agent is that agent's to give, so press no act for one.\n\n```text\n");
             foreach (var wait in waits.Waits.Take(Listed)) text.Append($"{wait.Session} ({wait.Repository}): {wait.Line}\n");
             text.Append("```\n");
             if (waits.Waits.Count > Listed) text.Append($"and {waits.Waits.Count - Listed} more.\n");
