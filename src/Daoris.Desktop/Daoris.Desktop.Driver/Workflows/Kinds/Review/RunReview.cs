@@ -30,6 +30,8 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
 
     public RunReviewNewer? Newer { get; init; }
 
+    public RunReviewSupervisor? Supervisor { get; init; }
+
     /// <summary>The steps an Accept may start, in the graph's order, each as it stands.</summary>
     public IReadOnlyList<RunReviewStep> Follows { get; init; } = [];
 

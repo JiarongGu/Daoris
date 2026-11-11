@@ -139,7 +139,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
         foreach (var file in Directory.EnumerateFiles(book.Files.FolderOf(session), "*.json"))
         {
             if (SupervisorLandingView.Read(book.Files, session, Path.GetFileNameWithoutExtension(file)) is not { } read) continue;
-            views.Add(book.Landings.TryGetValue(read.Id, out var live) ? read with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false } : read);
+            views.Add(book.Landings.TryGetValue(read.Id, out var live) ? read.Over(live) : read);
         }
 
         return [.. views.OrderBy(view => view.KeptAt).ThenBy(view => view.Id, StringComparer.Ordinal)];

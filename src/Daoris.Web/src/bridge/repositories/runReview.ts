@@ -36,11 +36,18 @@ export type RunReviewSays = {
   plan?: number | null; system?: string | null; incomplete: number; coverage?: string | null;
 };
 
+/** The supervisor's newest decision on the attempt read, as `SESSION_SUPERVISOR`'s landings say it, and whether it names the record read. */
+export type RunReviewSupervisor = {
+  id: string; session: string; do: string; state: string; attempt: number; work?: string | null; revision?: string | null; onRecord: boolean;
+  holder?: string | null; keptAt: string; goesOnAt: string; stateAt: string; why?: string | null;
+};
+
 /** What `RUN_REVIEW` answers: the run's review, or `refused` (`not-run`) where none is bound here with a review. */
 export type RunReviewAnswer = {
   run: string | null; refused?: string; node?: string; record?: ReviewRecord | null; state?: string; standing?: number; since?: string | null;
   by?: string | null; words?: string | null; says?: RunReviewSays; before?: RunReviewStep[]; presses?: string[];
-  newer?: { attempt: number; revision: string; changed: string[] } | null; follows?: RunReviewStep[]; ended?: string | null;
+  newer?: { attempt: number; revision: string; changed: string[] } | null; supervisor?: RunReviewSupervisor | null; follows?: RunReviewStep[];
+  ended?: string | null;
 };
 
 /** What `RUN_REVIEW_FILE` answers: the file's text at the record's revision, or why it is not drawn (`moved`, `not-row`, `not-kept`, `not-run`). */
