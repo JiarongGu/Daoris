@@ -18,10 +18,7 @@ public sealed record SuperviseOpen(string Decides, string Role, string Repositor
 /// </summary>
 public sealed class SuperviseDesk(SessionStore sessions, bool local = true)
 {
-    /// <summary>
-    /// Opens the record, or why not: a shared host's refusal, a blank part, a machine subject naming a place, or a copy another active
-    /// session holds.
-    /// </summary>
+    /// <summary>Opens the record, or why not: a shared host's refusal, a blank part, a machine subject's place, or a copy another holds.</summary>
     public async Task<HelperOutcome> OpenAsync(SuperviseOpen open, DateTimeOffset now, CancellationToken ct = default)
     {
         if (!local) return new(HelperRefusal.Shared, "A supervisor's turn reads a copy this machine made, and is opened only on this machine.");

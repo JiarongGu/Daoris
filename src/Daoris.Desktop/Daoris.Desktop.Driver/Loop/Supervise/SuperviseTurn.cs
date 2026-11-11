@@ -1,12 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An agent supervisor's one read-only turn, the helper's turn's shape: a read-only copy of the subject's git work tree at its commit
-/// with its work in progress laid over it, or an empty folder of its own (<see cref="SuperviseFolder"/>); its record marked with the
-/// attempt it decides for, a machine subject's naming no place; the supervise rules (<see cref="SupervisePermissions"/>, the tree guard
-/// always, the person's tier, its handed file and Daoris's connector alone), or a packet's reader's (<see cref="PacketOnlyRules"/>, no
-/// tool and no connector, never started where its harness cannot hold that); one turn, bounded; the copy removed however it ended; its
-/// last message its answer, beside the model its harness reported (<see cref="SuperviseRan"/>).
+/// An agent supervisor's one read-only turn, the helper's shape: a copy of the subject's git work tree with its work in progress, or an
+/// empty folder of its own (<see cref="SuperviseFolder"/>); its record marked with its attempt, a machine subject's naming no place; the
+/// supervise rules (<see cref="SupervisePermissions"/>), or a packet's reader's (<see cref="PacketOnlyRules"/>, no tool, no connector);
+/// one turn, bounded; the copy removed however it ended; its last message its answer, beside the model reported (<see cref="SuperviseRan"/>).
 /// </summary>
 internal sealed class SuperviseTurn(LoopContext context, Driver driver)
 {

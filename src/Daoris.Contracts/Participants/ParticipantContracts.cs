@@ -20,8 +20,7 @@ public sealed record OpenHelper(
 
 /// <summary>
 /// The driver opens a supervisor's turn's record: a chat on no quest marked with the attempt it decides for, at the subject's repository
-/// or the machine's, serving the session the subject waits on where it names one, bound to its supervisor role. A machine subject's
-/// (<paramref name="Machine"/>) names no repository and no workspace.
+/// or the machine's (no repository and no workspace), serving the session the subject waits on where it names one, bound to its role.
 /// </summary>
 public sealed record OpenSupervise(
     string? Decides, string? Role, string? Repository, string? Workspace, string? Serves, string? Door, string? Tree,

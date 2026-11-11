@@ -17,7 +17,7 @@ internal sealed class SuperviseRan : IDisposable
         events.Evented += Heard;
     }
 
-    /// <summary>Each model reported, once and in the order reported; null where none was.</summary>
+    /// <summary>Each model reported, once and in the order reported; null where the harness reports none.</summary>
     public string? Model
     {
         get

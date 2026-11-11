@@ -42,7 +42,7 @@ internal static class PacketOnlyRules
     }
 
     /// <summary>
-    /// The reader's rules file, what its protocol door carries and the account of what was handed; null where its harness cannot hold it
+    /// The reader's rules file, what its protocol door carries and the account of what is handed; null where its harness cannot hold it
     /// packet-only, and then nothing is written or handed.
     /// </summary>
     /// <param name="folder">The reader's empty folder of its own, to which the tree guard holds it.</param>
