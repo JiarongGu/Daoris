@@ -152,8 +152,8 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     /// <summary>What leads the draft to the agent: what it is, and the press that saves a change to it.</summary>
     public string Lead =>
         "The person has a workflow draft open in its editor, not saved, and their words are about it. To change it, write the whole "
-        + $"changed graph as a draft in your room's `{HelpRoom.Drafts}/` folder and press "
-        + $"`daoris workflow apply <id> {HelpRoom.Drafts}/<id>.json --base <version>`, the workflow and the version this draft names: "
+        + $"changed graph as a draft in your room's `{KnowledgeRoomPaths.Drafts}/` folder and press "
+        + $"`daoris workflow apply <id> {KnowledgeRoomPaths.Drafts}/<id>.json --base <version>`, the workflow and the version this draft names: "
         + "the person sees the change on its card before it is saved."
         + (Palette is { Text: { Length: > 0 } text } ? $"\nWhat a step graph may hold here (palette `{Palette.Digest}`):\n{text}" : "")
         + "\nThe draft:";

@@ -66,7 +66,7 @@ public sealed class WorkflowDraftToldTests
         Assert.True(prompt.IndexOf("Where the person is now", StringComparison.Ordinal) < prompt.IndexOf(draft.Json, StringComparison.Ordinal));
         Assert.EndsWith("\n\nadd a release", prompt, StringComparison.Ordinal);
         Assert.Contains("- `claimed`: options `brief`", prompt);
-        Assert.Contains($"`daoris workflow apply <id> {HelpRoom.Drafts}/<id>.json --base <version>`", prompt);
+        Assert.Contains($"`daoris workflow apply <id> {KnowledgeRoomPaths.Drafts}/<id>.json --base <version>`", prompt);
         Assert.DoesNotContain("_propose", prompt);
         Assert.DoesNotContain("options `brief`", new ChatMessage("again", []) { Draft = draft with { Palette = draft.Palette! with { Text = null } } }.Prompt);
     }
