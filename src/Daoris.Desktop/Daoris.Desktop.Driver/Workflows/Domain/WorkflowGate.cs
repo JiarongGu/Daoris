@@ -171,16 +171,6 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         };
     }
 
-    /// <summary>
-    /// A graph version with no <c>land</c> that ends at the person's review: its work is done in its department's place and accepted there,
-    /// so nothing lands it and a landing's press is refused, saying so; its gates are read as any graph's.
-    /// </summary>
-    public static WorkflowProcess InPlace(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates) =>
-        Of(config, repository, workspace, binding, gates, Landing.Merge) with { LandingCannot = InPlaceLands };
-
-    /// <summary>Why work in place is never landed: the words a landing's press under it is refused with.</summary>
-    public const string InPlaceLands = "it lands nothing: its work is done in its department's own place, and your Accept at its review ends it.";
-
     private static string? BoundCannot(Landing bound) =>
         bound.Form == LandingForm.Branch && bound.Pattern is null
             ? "its `land` puts the work on a branch, and neither the node nor the bind names a pattern for it."

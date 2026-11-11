@@ -207,7 +207,7 @@ public sealed class LandNodeKindTests
 
         var review = Node("review", NodeKinds.Review);
         Assert.Empty(Codes(Chain(Claimed(), Node("requests", NodeKinds.WorkRequests), review)));
-        Assert.Contains(GraphRefusal.HoldLate, Codes(new NodeGraph(
+        Assert.Contains(GraphRefusal.WorkRequestsLate, Codes(new NodeGraph(
             [Claimed(), Node("requests", NodeKinds.WorkRequests), review],
             [new("a", WireKinds.After, new("work"), new("review")), new("b", WireKinds.After, new("work"), new("requests"))],
             ["work"], "review")));

@@ -161,7 +161,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 **Review and Accept**
 
 22. The person's Accept is a `review` step before `land`, or the end of a graph that lands nothing, where it ends the run and a
-    landing's press is refused, saying nothing lands it (`WorkflowProcess.InPlace`). A flow with no `review` lands with no press, and
+    landing's press is refused, saying nothing lands it (`InPlaceProcess`). A flow with no `review` lands with no press, and
     the standing authority is judged again before the first effect. (from D145, D227, D264)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
     came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as

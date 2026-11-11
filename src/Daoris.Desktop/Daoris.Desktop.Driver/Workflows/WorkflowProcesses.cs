@@ -104,7 +104,7 @@ public static class WorkflowProcesses
     /// (<see cref="LandNodes.RuleOf"/>) and its gates read from the node options (<see cref="GraphGates"/>), each choosing among what the
     /// repository declares, and the graph carried beside, as its file holds it and never decoded, which the landing's graph part and the run's
     /// view read from the run's record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>). A graph with no <c>land</c>
-    /// that ends at a <c>review</c> is work in place, accepted there and landed by nothing (<see cref="WorkflowProcess.InPlace"/>); any other
+    /// that ends at a <c>review</c> is work in place, accepted there and landed by nothing (<see cref="InPlaceProcess"/>); any other
     /// lands nothing, so no chain's work follows it; a gate node whose option does not read holds the run, saying which; so does a graph that
     /// closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet. Its
     /// <c>claimed</c> node's options are its sessions' either way. A graph whose <c>integrate</c> or plugin nodes the
@@ -138,7 +138,7 @@ public static class WorkflowProcesses
 
         if (landNode is null)
         {
-            return WorkflowProcess.InPlace(config, repository, workspace, binding, gates) with
+            return InPlaceProcess.Of(config, repository, workspace, binding, gates) with
             {
                 Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
             };
