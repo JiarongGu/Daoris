@@ -521,7 +521,7 @@ public sealed class PluginsRoutes(DriverContext context)
     /// <param name="grants">The person's approvals (<see cref="HelpGrants"/>); null for an offer, which nothing here has approved.</param>
     private static object[] HelpServersOf(PluginManifest manifest, HelpGrantSet? grants) =>
     [
-        .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server =>
+        .. PluginCommandServer.OfferedToHelp(manifest).Select(server =>
         {
             var grant = grants?.All.FirstOrDefault(each =>
                 string.Equals(each.Plugin, manifest.Id, StringComparison.OrdinalIgnoreCase) && each.Server.Name == server.Name);

@@ -43,7 +43,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
 | Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs` (the port), `Plugins/PluginsAtStart.cs`, `Workflows/PluginRenamedAttemptsWiring.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/Domain/CommandCall.cs`, `Plugins/Domain/CommandArgs.cs`, `Plugins/PluginCommandRun.cs`, `Modules/Bridge/Routes/PluginCommandRoutes.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
-| Agents' tools | `Plugins/PluginToolList.cs`, `Plugins/PluginToolCall.cs`, `Plugins/PluginToolsServer.cs`, `Plugins/PluginToolsHand.cs`; `Agents/SessionServers.cs` | A session's `daoris-plugins` server: the tool commands at its place, a call as one round `from: agent`, `daoris plugin tools`, the entry a session is handed |
+| Agents' tools | `Plugins/PluginCommandServer.cs`, `Plugins/PluginToolList.cs`, `Plugins/PluginToolCall.cs`, `Plugins/PluginToolsServer.cs`, `Plugins/PluginToolsHand.cs`; `Agents/SessionServers.cs` | A session's `daoris-plugins` server: the tool commands at its place, a call as one round `from: agent`, `daoris plugin tools`, the entry a session is handed |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 | Page's interfaces | `plugins/interfaces.ts`, `PluginSetup.tsx`, `RoundCard.tsx`, `usePluginCommands.tsx`, `commandAsks.ts`; `bridge/pluginCommand.ts`, `bridge/pluginSwitch.ts`; `menus/pluginCommands.ts` | The *Set up* tab, the round card over `PLUGIN_COMMAND`, the switches over `PLUGIN_SWITCH`, the palette's plugin commands |
@@ -234,7 +234,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`: `SessionServers` hands a quest's
-    session, at its start and its going on, the entry its caller built (`PluginToolsHand.OfQuest`, which `Agents` cannot name): the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
+    session, at its start and its going on, an intake's and a repository's chat's at their start, the entry its caller built
+    (`PluginToolsHand.OfQuest`, `ChatServers.HandAsync`'s `tools`, which `Agents` cannot name): the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
     [--workspace <name>] --language en|zh`, the home in the entry's own variables, only where its place lists a tool and the program is
     found (the install's `app/daoris-driver/`, else the running program where it is that one; `PluginToolsHand`). It lists
     (`PluginToolList`) each command marked `tool` and not `interactive` of each installed plugin that is on, not refused and speaks,
@@ -246,7 +247,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     other than 0 an error; a round that asks is refused and never answered, since no person answers a tool call; an argument missing or
     not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round is a `plugin.command`
     line by names alone (plugin, command, from, session, exit, ms). No call asks an approval: the switch `tools` per place is the
-    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. Started for an agent-performed step's session
+    opt-in. Ask Daoris is handed the same server only as the person approved it: a plugin's tool commands are one server of its
+    to offer, named `daoris-plugins` and carrying no command of its own (`PluginCommandServer`), its reads and each write approved like
+    any server's tools (rule 24, `HelpGrants`, the page's press and `daoris plugin approve <id> daoris-plugins`), its rules
+    `mcp__daoris-plugins__<plugin>_<command>`, handed whole in full access; its place is its room's workspace, its language English.
+    A reviewer, a helper and a partner are handed no such server. Started for an agent-performed step's session
     (`--plugin <id> --step <invocation>`, `PluginToolsHand.StepEntry`), it lists that plugin's tools alone and `step_answer`, which
     keeps the step's answer (workflows area, rule 31a). (from D274)
 30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
@@ -292,7 +297,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
-`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`, `PluginToolsServerTests`, `PluginToolsProcessTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
+`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`, `PluginToolsServerTests`, `PluginToolsProcessTests`, `PluginCommandServerTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
 `SystemReadBackTests`, the stand-in's process proofs `SystemPlanProcessTests` and `SystemReadBackProcessTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;
