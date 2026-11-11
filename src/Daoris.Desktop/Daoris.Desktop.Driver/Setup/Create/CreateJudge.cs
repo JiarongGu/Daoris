@@ -17,7 +17,7 @@ public static partial class CreateJudge
     [GeneratedRegex(@"^[A-Za-z0-9._/-]+$", RegexOptions.CultureInvariant)]
     private static partial Regex LineName();
 
-    /// <summary>The refusals the ask itself holds, in the order they are said: the name, the purpose, the kind, and a line on a folder.</summary>
+    /// <summary>The refusals the ask itself holds, in the order they are said: the name, the purpose, the kind, a line on a folder, and work asked of a folder.</summary>
     public static IReadOnlyList<CreateRefusal> Asked(CreateAsk ask)
     {
         var refusals = new List<CreateRefusal>();
@@ -43,6 +43,12 @@ public static partial class CreateJudge
         else if (ask.Line is { } line && LineProblem(line) is { } problem)
         {
             refusals.Add(new(CreateRefusals.LineUnusable, $"`{line}` cannot be a line: {problem}"));
+        }
+
+        if (ask.Kind == PlaceKind.Folder && !string.IsNullOrWhiteSpace(ask.Work))
+        {
+            refusals.Add(new(CreateRefusals.WorkNeedsSetUp,
+                "a folder department has no set-up quest for the work to follow: leave `--work` out and ask its work as a quest once it is registered, or make a git repository."));
         }
 
         return refusals;

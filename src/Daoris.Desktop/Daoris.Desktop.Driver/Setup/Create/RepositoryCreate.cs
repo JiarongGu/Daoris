@@ -24,7 +24,7 @@ public sealed record CreateAsk(string Name, string Purpose)
     /// <summary>The line its history starts on, where the workspace's repositories say another.</summary>
     public string? Line { get; init; }
 
-    /// <summary>The person's request, carried on the receipt for the work to follow the set-up.</summary>
+    /// <summary>The person's request, which follows the set-up as the set-up quest's one chained step (<see cref="RepositoryCreateWork"/>); a git repository's only.</summary>
     public string? Work { get; init; }
 }
 
@@ -50,6 +50,7 @@ public static class CreateRefusals
     public const string FolderExists = "folder-exists";
     public const string LineUnusable = "line-unusable";
     public const string LineFolder = "line-folder";
+    public const string WorkNeedsSetUp = "work-needs-set-up";
     public const string NoIdentity = "no-identity";
     public const string NoGit = "no-git";
     public const string ServiceNotLocal = "service-not-local";

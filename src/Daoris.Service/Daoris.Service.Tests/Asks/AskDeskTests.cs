@@ -464,6 +464,76 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal(AskState.Done, (await _desk.FindAsync(asked.Id))!.State);
     }
 
+    private static readonly QuestStep WorkStep = new("media-api", "Do the work after {parent}", "The work, once {parent} is done.");
+
+    /// <summary>
+    /// A set-up asked with its receiver named carries the person's work as the chain's one step to the same repository: published, asked
+    /// BY the ask, when the set-up closes done, with the parent's id where the step says it.
+    /// </summary>
+    [Fact]
+    public async Task A_named_ask_with_a_step_to_the_same_repository_publishes_the_step_when_its_quest_closes_done()
+    {
+        var outcome = await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api", Then = [WorkStep] }, Now);
+
+        Assert.Equal(AskRefusal.None, outcome.Refusal);
+        var first = outcome.Quest!;
+        Assert.Equal(WorkStep, Assert.Single(first.Then));
+
+        var closed = await _quests.MoveAsync(first.Id, QuestStatus.Done, "Landed.", Now.AddMinutes(1));
+
+        var next = closed.FollowUp!;
+        Assert.Equal("media-api", next.To);
+        Assert.Equal($"ask #{outcome.Ask!.Id}", next.From);
+        Assert.Equal($"Do the work after #{first.Id}", next.Title);
+        Assert.Equal($"The work, once #{first.Id} is done.", next.Body);
+        Assert.Equal(first.Id, next.Parent);
+        Assert.Equal(AskState.Published, (await _desk.FindAsync(outcome.Ask.Id))!.State);
+    }
+
+    /// <summary>A decline of the set-up ends the chain: the work is never published, and the reason is the answer.</summary>
+    [Fact]
+    public async Task A_named_ask_with_a_step_publishes_nothing_more_when_its_quest_is_declined()
+    {
+        var outcome = await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api", Then = [WorkStep] }, Now);
+
+        var closed = await _quests.MoveAsync(outcome.Quest!.Id, QuestStatus.Declined, "Not ours.", Now.AddMinutes(1));
+
+        Assert.Null(closed.FollowUp);
+        Assert.Equal([outcome.Quest.Id], (await _quests.ListAsync(receiver: "media-api")).Select(quest => quest.Id).ToArray());
+    }
+
+    /// <summary>An ask that names a receiver and no step publishes a quest with no chain, as it always has.</summary>
+    [Fact]
+    public async Task A_named_ask_with_no_step_publishes_a_quest_with_no_chain()
+    {
+        var outcome = await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now);
+
+        Assert.Empty(outcome.Quest!.Then);
+    }
+
+    /// <summary>A chain follows a first quest, so a step with no receiver named is refused and nothing is kept: no proposal could carry it.</summary>
+    [Fact]
+    public async Task A_step_with_no_receiver_named_is_refused_and_no_ask_is_kept()
+    {
+        var outcome = await _desk.AskAsync(new AskRequest("work", Sentence) { Then = [WorkStep] }, Now);
+
+        Assert.Equal(AskRefusal.BadChain, outcome.Refusal);
+        Assert.Contains("receiver", outcome.Message);
+        Assert.Null(outcome.Ask);
+        Assert.Empty(await _desk.ListAsync(null, true));
+    }
+
+    /// <summary>A step to a repository nothing can see is the exchange's refusal, said when composed: the ask is kept proposed and no quest exists.</summary>
+    [Fact]
+    public async Task A_step_to_a_repository_nobody_holds_is_refused_by_the_exchange_and_publishes_nothing()
+    {
+        var outcome = await _desk.AskAsync(
+            new AskRequest("work", Sentence) { To = "media-api", Then = [new QuestStep("nobody", "Verify", "Look.")] }, Now);
+
+        Assert.Equal(AskRefusal.QuestRefused, outcome.Refusal);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
     /// <summary>
     /// A step waiting on another repository is taken, and its work is in its taker's tree — so
     /// the ask is not done, even once the question it waits on is answered.

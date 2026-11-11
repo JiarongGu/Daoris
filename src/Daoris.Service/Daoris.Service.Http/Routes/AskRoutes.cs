@@ -88,6 +88,7 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
                 WorkflowWords = request.WorkflowWords,
                 Short = request.Short,
                 Paths = request.Paths ?? [],
+                Then = QuestAnswers.StepsOf(request.Then),
             },
             DateTimeOffset.UtcNow, ct);
         return _answers.Moved(http, outcome);

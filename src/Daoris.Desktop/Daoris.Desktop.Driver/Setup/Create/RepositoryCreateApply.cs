@@ -97,8 +97,6 @@ public static class RepositoryCreates
                 stoppedAt = id;
                 break;
             }
-
-            if (id == CreateOperations.SetUp) receipt = await RepositoryCreateWork.ChainAsync(doors, receipts, receipt, ct).ConfigureAwait(false);
         }
 
         return Result(receipt, stoppedAt);
@@ -224,7 +222,8 @@ public static class RepositoryCreates
 
     /// <summary>
     /// The set-up quest, built once as the set-up press builds it (<see cref="SetupPress"/>, the same plan <c>place --adoption</c> asks), with the
-    /// creation's purpose and key as the body's last lines. Found by its key where it is asked already.
+    /// creation's purpose and key as the body's last lines and the person's work, where there is any, as its one chained step
+    /// (<see cref="RepositoryCreateWork"/>). Found by its key where it is asked already, which finds the chain with it.
     /// </summary>
     private static async Task<CreateReceipt> AskSetUpAsync(CreateDoors doors, CreateReceipts receipts, CreateReceipt receipt, CancellationToken ct)
     {
@@ -256,7 +255,7 @@ public static class RepositoryCreates
         try
         {
             var body = $"{plan.Body}\n\nWhy `{name}` was opened: {receipt.Ask.Purpose}\n\n{KeyOf(receipt.Digest)}\n";
-            outcome = await SetupPress.ApplyAsync(plan with { Body = body }, doors.Setup, doors.Home, ct).ConfigureAwait(false);
+            outcome = await SetupPress.ApplyAsync(plan with { Body = body, Then = RepositoryCreateWork.StepOf(receipt.Ask) }, doors.Setup, doors.Home, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or HttpRequestException or TaskCanceledException)
         {

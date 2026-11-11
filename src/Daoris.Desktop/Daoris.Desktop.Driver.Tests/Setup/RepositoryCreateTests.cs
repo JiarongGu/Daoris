@@ -295,6 +295,105 @@ public sealed class RepositoryCreateTests : IDisposable
         Assert.False(File.Exists(Path.Combine(folder, "daoris.json")));
     }
 
+    // ---- the work follows the set-up as the set-up quest's one step ----
+
+    /// <summary>
+    /// The person's work is the set-up quest's one chained step: a quest to the same repository, built from the request and the purpose with the
+    /// parent's id left for the service to put in, and never part of the set-up's own words. The service publishes it when the set-up closes done.
+    /// </summary>
+    [Fact]
+    public async Task The_work_is_the_set_up_quests_one_step_to_the_same_repository_and_not_part_of_its_words()
+    {
+        var stand = await MakeAsync();
+        var ask = Ask() with { Work = "Build the first monthly report.\nTotals per month, as a table." };
+
+        var (plan, result) = await Apply(stand, ask);
+
+        Assert.True(result.Done, result.Message);
+        var published = Assert.Single(stand.Setup.Published);
+        Assert.Equal("ledger", published.To);
+        Assert.DoesNotContain("monthly report", published.Sentence);
+        Assert.Contains(RepositoryCreates.KeyOf(plan.Digest), published.Sentence);
+        var then = Assert.Single(stand.Setup.Thens);
+        Assert.NotNull(then);
+        Assert.Equal("Build the first monthly report.", then.Title);
+        Assert.StartsWith("Build the first monthly report.\nTotals per month, as a table.", then.Body);
+        Assert.Contains("{parent}", then.Body);
+        Assert.Contains("keeps the books", then.Body);
+        Assert.Contains("`ledger`", then.Body);
+        Assert.Equal("q-1", new CreateReceipts(Home).Read(plan.Digest)!.Of(CreateOperations.SetUp)!.Quest);
+    }
+
+    [Fact]
+    public async Task A_title_is_one_line_cut_at_a_word_where_the_work_runs_long()
+    {
+        var stand = await MakeAsync();
+        var ask = Ask() with { Work = string.Join(' ', Enumerable.Repeat("report", 40)) };
+
+        var (_, result) = await Apply(stand, ask);
+
+        Assert.True(result.Done, result.Message);
+        var title = Assert.Single(stand.Setup.Thens)!.Title;
+        Assert.InRange(title.Length, 1, 101);
+        Assert.EndsWith("…", title);
+        Assert.DoesNotContain('\n', title);
+    }
+
+    [Fact]
+    public async Task A_creation_with_no_work_asks_a_set_up_with_no_step()
+    {
+        var stand = await MakeAsync();
+
+        var (_, result) = await Apply(stand, Ask());
+
+        Assert.True(result.Done, result.Message);
+        Assert.Single(stand.Setup.Published);
+        Assert.Null(Assert.Single(stand.Setup.Thens));
+    }
+
+    /// <summary>A retry that finds the set-up quest by its key asks nothing again, so the chain it carries is not a second one.</summary>
+    [Fact]
+    public async Task A_resume_that_finds_the_set_up_quest_by_its_key_asks_no_second_chain()
+    {
+        var stand = await MakeAsync();
+        var ask = Ask() with { Work = "Build the first monthly report." };
+        var (plan, first) = await Apply(stand, ask);
+        Assert.True(first.Done, first.Message);
+        var receipts = new CreateReceipts(Home);
+        var receipt = receipts.Read(plan.Digest)!;
+        receipts.Write(receipt.With(CreateOperations.SetUp, each => each with { Outcome = PlaceOutcomes.Uncertain, Quest = null }));
+
+        var again = await RepositoryCreates.ApplyAsync(stand.Doors(), ask, plan.Digest);
+
+        Assert.True(again.Done, again.Message);
+        Assert.Single(stand.Setup.Published);
+        Assert.Equal("q-1", receipts.Read(plan.Digest)!.Of(CreateOperations.SetUp)!.Quest);
+    }
+
+    /// <summary>A folder department has no set-up quest for the work to follow, so work asked with it is refused rather than dropped.</summary>
+    [Fact]
+    public async Task Work_asked_of_a_folder_department_is_refused_since_it_has_no_set_up_to_follow()
+    {
+        var stand = await MakeAsync();
+
+        var plan = await Plan(stand, Ask("notes") with { Kind = PlaceKind.Folder, Work = "File the notes." });
+
+        Assert.False(plan.Applies);
+        Assert.Contains("set-up", Refused(plan, CreateRefusals.WorkNeedsSetUp));
+        Assert.Empty(stand.Setup.Published);
+    }
+
+    [Fact]
+    public async Task The_terminals_plan_says_the_work_follows_the_set_up_as_a_quest()
+    {
+        var stand = await MakeAsync();
+
+        var lines = RepositoryCreateCommand.Lines(await Plan(stand, Ask() with { Work = "Build the first monthly report." }));
+
+        Assert.Contains(lines, line => line.StartsWith("  work    ", StringComparison.Ordinal) && line.Contains("follows the set-up") && line.Contains("Build the first monthly report."));
+        Assert.DoesNotContain(lines, line => line.Contains("kept on the receipt"));
+    }
+
     [Fact]
     public async Task The_line_is_the_one_most_of_the_workspaces_repositories_land_on_else_main_and_a_line_asked_wins()
     {
@@ -650,6 +749,9 @@ public sealed class RepositoryCreateTests : IDisposable
 
         public List<(string Workspace, string Sentence, string To)> Published { get; } = [];
 
+        /// <summary>The step each publication carried behind its quest, in the order they were asked; null for none.</summary>
+        public List<SetupThen?> Thens { get; } = [];
+
         public List<QuestView> Quests { get; } = [];
 
         public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => IsolateStep.Trees;
@@ -668,9 +770,10 @@ public sealed class RepositoryCreateTests : IDisposable
 
         public RepositoryDescription? Describe(string root) => null;
 
-        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
+        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct)
         {
             Published.Add((workspace, sentence, to));
+            Thens.Add(then);
             var id = $"q-{Published.Count}";
             Quests.Add(new QuestView(id, "work", to, sentence.Split('\n')[0], sentence[(sentence.IndexOf('\n') + 1)..], "Open"));
             return Task.FromResult(new AskAnswer(true, $"Asked as `#a{id}`.", $"a{id}", id));

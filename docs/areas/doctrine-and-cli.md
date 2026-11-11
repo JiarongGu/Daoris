@@ -198,7 +198,8 @@ as a pack.
 **Set-up of a repository**
 
 45. A set-up is the repository's own session's work, on its branch, landed by the workspace's rule. The press reads the
-    line, publishes one quest and adds a rule; Daoris runs no doctrine command into the repository. (from D32, D117, D124)
+    line, publishes one quest, with the person's work chained behind it as one step where `repository create` asks it (driving rule 52),
+    and adds a rule; Daoris runs no doctrine command into the repository. (from D32, D117, D124)
 46. The line decides the case: not adopted is the whole set-up; an older layout or an unfinished move is a move; clean and
     declaring nothing is the declaration; no index is the index quest; otherwise done. A reconcile is asked for, never
     found. (from D117, D124, D151, D230)

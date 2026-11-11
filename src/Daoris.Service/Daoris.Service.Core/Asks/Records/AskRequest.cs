@@ -21,6 +21,9 @@ public sealed record AskRequest(string Workspace, string Sentence)
     /// <summary>The paths the asker declares the work touches, judged as a quest's are (<see cref="QuestPaths.Judge"/>).</summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
 
+    /// <summary>The steps that follow the named receiver's quest once it closes done; refused where <see cref="To"/> names none.</summary>
+    public IReadOnlyList<QuestStep> Then { get; init; } = [];
+
     /// <summary>Who asked, when the door knows.</summary>
     public string? Asker { get; init; }
 

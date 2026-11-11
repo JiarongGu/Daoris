@@ -154,7 +154,8 @@ public static class AskDoorViews
     public static async Task<AskAnswer> AskAsync(
         this ServiceClient service, string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
-        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null)
+        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null,
+        IReadOnlyList<QuestStepWire?>? then = null)
     {
         var chosen = workflow is { } composed && (composed.Kind ?? composed.Workflow) is not null ? workflow : null;
         return await service.AnsweredAsync(
@@ -164,7 +165,8 @@ public static class AskDoorViews
                 ReviewWords: review is not null && !string.IsNullOrWhiteSpace(reviewWords) ? reviewWords.Trim() : null,
                 Kind: chosen?.Kind, Workflow: chosen?.Workflow,
                 WorkflowWords: chosen is not null && !string.IsNullOrWhiteSpace(chosen.Words) ? chosen.Words.Trim() : null,
-                Short: string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim()),
+                Short: string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim(),
+                Then: then is { Count: > 0 } ? then : null),
             ct).ConfigureAwait(false);
     }
 

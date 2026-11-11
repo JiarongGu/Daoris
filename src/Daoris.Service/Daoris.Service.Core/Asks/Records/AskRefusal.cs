@@ -46,4 +46,7 @@ public enum AskRefusal
 
     /// <summary>A declared path that is no repository-relative glob, or too many.</summary>
     BadPaths,
+
+    /// <summary>A chain's step asked with no receiver named: a chain follows a first quest, and an ask that is only proposed publishes none.</summary>
+    BadChain,
 }

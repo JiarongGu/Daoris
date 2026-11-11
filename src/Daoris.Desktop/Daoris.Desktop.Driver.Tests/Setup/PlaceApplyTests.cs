@@ -54,6 +54,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
         var published = Assert.Single(stand.Setup.Published);
         Assert.EndsWith($"{PlaceApplies.KeyOf(digest)}\n", published.Sentence);
+        Assert.Null(Assert.Single(stand.Setup.Thens));
         var kept = new PlaceReceipts(_home).Read(digest)!;
         Assert.All(kept.Operations, operation => Assert.Equal(PlaceOutcomes.Done, operation.Outcome));
         Assert.Equal("q-1", kept.Of(PlaceOperations.AdoptionOf("atlas"))!.Quest);
@@ -672,6 +673,8 @@ public sealed class PlaceApplyTests : IDisposable
 
         public List<(string Workspace, string Sentence, string To)> Published { get; } = [];
 
+        public List<SetupThen?> Thens { get; } = [];
+
         public Action? OnPublish { get; set; }
 
         /// <summary>The ask reaches the service and its answer is lost.</summary>
@@ -695,11 +698,12 @@ public sealed class PlaceApplyTests : IDisposable
 
         public RepositoryDescription? Describe(string root) => null;
 
-        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
+        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct)
         {
             OnPublish?.Invoke();
             if (LoseBefore) throw new HttpRequestException("the service did not answer");
             Published.Add((workspace, sentence, to));
+            Thens.Add(then);
             var id = $"q-{Published.Count}";
             Quests.Add(new QuestView(id, "work", to, sentence.Split('\n')[0], sentence[(sentence.IndexOf('\n') + 1)..], "Open"));
             if (PublishThenLose) throw new HttpRequestException("the answer was lost");

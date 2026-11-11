@@ -123,7 +123,7 @@ public static class RepositoryCreateCommand
             lines.Add("  no remote is made and nothing is pushed");
         }
 
-        if (ask.Work is { } work) lines.Add($"  work    kept on the receipt: {work}");
+        if (ask.Work is { } work) lines.Add($"  work    follows the set-up as a quest to `{ask.Name}`, once that is done: {work}");
         if (plan.Resumes is { } resumes) lines.Add($"  resumes the receipt `{resumes[..12]}`: its folder holds what it made");
         lines.Add("steps, in order:");
         lines.AddRange(plan.Steps.Select((step, at) => $"  {at + 1}. {step.Said}"));

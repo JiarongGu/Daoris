@@ -36,6 +36,12 @@ internal sealed class AskPublishing(
         var (shortTitle, unfitShort) = QuestTitles.Judge(request.Short);
         if (unfitShort is not null) return new(AskRefusal.BadShort, unfitShort, Ask: null);
 
+        // A chain follows a first quest and a proposal publishes none, so a step with no receiver named is refused before anything is kept.
+        if (request.Then.Count > 0 && string.IsNullOrWhiteSpace(request.To))
+        {
+            return new(AskRefusal.BadChain, "A chain follows the quest an ask becomes, so name its receiver (`to`): an ask that is only proposed publishes none.", Ask: null);
+        }
+
         // The asker's declared paths, judged by the quest's own rule before anything is kept.
         var (paths, unfitPaths) = QuestPaths.Judge(request.Paths);
         if (unfitPaths is not null) return new(AskRefusal.BadPaths, unfitPaths, Ask: null);
@@ -93,7 +99,8 @@ internal sealed class AskPublishing(
 
         if (request.To is { Length: > 0 } to)
         {
-            var published = await askQuests.PublishAsync(ask, to, now, ct).ConfigureAwait(false);
+            var chain = request.Then.Count > 0 ? new AskDraft(null, null) { Then = request.Then } : null;
+            var published = await askQuests.PublishAsync(ask, to, now, ct, chain).ConfigureAwait(false);
             if (published.Quest is not null)
             {
                 var took = ask with { State = AskState.Published, Tier = AskDesk.ByName, Quests = [published.Quest.Id] };
