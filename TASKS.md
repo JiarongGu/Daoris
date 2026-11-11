@@ -37,6 +37,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Install, home and update
 
+- [ ] **HISTCLEAR1 — clearing a workspace's history finishes in one press** (driver, modules; found on the install 2026-11-11): `daoris history clear --workspace <w> --yes` on a workspace with months of runs stopped at the client's read bound with `SERVICE_BUSY` and took three presses to finish, each clearing part of it; the clear goes in bounded batches that each answer within the bound and goes on until done, saying what it removed, or runs as one job whose progress is read. → `docs/areas/install-home-update.md`, Open
 - [ ] **HOMELAYOUT5 — moving what D172 never moves, measured first** (ONEWAY1w, wave 5; D240 point 2): each harness's account homes, trees, rooms and kept files are moved and measured on the install with the owner's sign-in per harness, which decides how ONEWAY1w ends D172's old places. → `docs/areas/install-home-update.md`, Open
 
 ## Driving
