@@ -87,6 +87,15 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
+17a. Nothing Daoris writes is kept forever unnoticed. A tree's files record and install logs go with the tree (the tidy's set-aside,
+    a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
+    sweep (`DeadMarkers`); each store limits its log to 32 MB and the knowledge store truncates it and returns its free pages at
+    open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the `salvage` kind (a migration's folder under
+    `data/salvage` whose newest file is 30 days old goes, `SalvageKeeping`; a row of Disk space, a `space free` group the person
+    may take earlier, a rule no one sets) and the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
+    days, then an emptied folder, `PluginOutputKeeping`; no card row, the plugin's other data stays). `agent account list` names a
+    folder beside an agent's accounts that is no account (a lock's) and a folder under the account homes that no agent names
+    (`<agent>$a`, `StrayAgentFolders`), and `agent account remove <agent> <account>` or `remove <folder>` takes each.
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the
     launcher's swap hold it for their act. A stale lease never blocks, and is removed by moving it aside and
     judging what moved, so a lease written meanwhile is put back. A live `driver.lock`, or a lease at the old place,
@@ -204,8 +213,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     is not converted then, since a build that fails to confirm is rolled back onto the home it left: the application runs the
     migration again in the same process once the update has confirmed and the swap has let go. (from D232)
 52. The migration is a list of steps, each converting its own records and idempotent. Before a file's first change it is
-    copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a database with its journal files; a copy
-    already there is kept. The copy is the undo. (from D232)
+    copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a SQLite store through SQLite's backup
+    (`SalvageCopy`: one file, never its log or index copied by hand); a copy already there is kept. The copy is the undo, and
+    the Disk space card's `salvage` kind (rule 17a) ends it. (from D232)
 53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
     nothing; a step that throws, or whose record cannot be written, stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
@@ -279,9 +289,4 @@ drains, swaps, rolls back and refuses.
 - **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
-- **KEEPDATA1**: salvage and plugin data (the in-app browser's output) are each kept with no rule that ends them, and a stray agent folder
-  under the account homes (`<agent>$a`) has no verb that removes it. A tree's files record and install logs go with the tree (the
-  tidy's set-aside, a removal, the press, a failed open); a session's `.pid` marker whose process is gone is removed by the orphan sweep
-  (`DeadMarkers`); `agent account list` names a folder beside an agent's accounts that is no account, and `account remove` takes it; the
-  knowledge store truncates its log and returns its free pages at open (`StoreCompaction`), and each store limits its log to 32 MB.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

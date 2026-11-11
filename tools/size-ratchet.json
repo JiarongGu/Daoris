@@ -90,7 +90,7 @@
   "src/Daoris.Web/src/help/AskDaoris.test.tsx": 94134,
   "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 81534,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 78607,
-  "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47331,
+  "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 47280,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76003,
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 61787,
   "src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx": 61591,

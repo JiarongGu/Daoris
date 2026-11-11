@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## KEEPDATA1's last part — salvage kind, plugin output prune, stray agent folders, no onConvert chain (2026-11-12)
+
+> **KEEPDATA1 D, I, G and the rest** (driver, web): Outcome: a migration's folder under `data/salvage` whose newest file is 30 days old goes once a day (`SalvageKeeping`, the `salvage` kind of `SpaceKinds.Table` and `KeepKinds`, a Disk space row, a `space free` group; words in both catalogues), and a salvage copy of a SQLite store is made through SQLite's backup, never its log by hand (`SalvageCopy`); a file under `plugins/.data/<id>/output` not written in 14 days goes once a day (`PluginOutputKeeping`, from `TidyKeeping.KeepAsync`); the sign-ins row and rule 16 name older accounts' homes under `data/harnesses` as the exception until HOMELAYOUT5; `agent account list` names a folder under the account homes that no agent names (`claude-code$a`) and `account remove <folder>` takes it whole (`StrayAgentFolders`); the web's `onConvert` chain (the *Convert…* button, its handler, `agents.convert.*`) is gone. Proof: `SalvageCopyTests` (red first on the old copy of the log files), `SalvageKeepingTests`, `PluginOutputKeepingTests`, `AccountLeftoversTests` (the two stray cases red first), `SystemSpaceTests` with the new kind, `WiringSpaceSalvage.test.tsx`; the `onConvert` tests now assert no Convert… button.
+
+---
+
 ## GITREV3a to GITREV3m — thirteen fixes in the driver's git layer (2026-11-11)
 
 > **GITREV3a** (driver): Outcome: a lease file's first line names its package, `GitLibraryLeases.Left` returns each repository with it, and a fault found after an update is journalled under the package that faulted.
