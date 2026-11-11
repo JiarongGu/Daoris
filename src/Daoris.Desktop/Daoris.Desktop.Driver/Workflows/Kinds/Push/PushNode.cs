@@ -42,6 +42,8 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public override bool EndsByTheLine => true;

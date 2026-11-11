@@ -20,6 +20,7 @@ export * from './sessions/conversation';
 export * from './driver';
 export * from './sessions/entries';
 export * from './help';
+export * from './helpBeyond';
 export * from './hold';
 export * from './sessions/history';
 export * from './repositories/lines';

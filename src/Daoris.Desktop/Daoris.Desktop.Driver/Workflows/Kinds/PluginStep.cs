@@ -39,6 +39,8 @@ public record PluginStep : INodeKind, IStarts
 
     public NodeLook Look => NodeLook.Plugin;
 
+    public virtual IReadOnlyList<string> Places => PlaceKind.Every;
+
     public bool ReadsTheLanding => false;
 
     public LandingGuard Guard => LandingGuard.None;

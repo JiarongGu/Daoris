@@ -543,7 +543,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [Theory]
     [InlineData("SET_DRIVABLE", "driver", null)]
     [InlineData("SET_HOLD", "driver", null)]
-    [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
     [InlineData("GIT_REF_CREATE", "driver", null)]
     [InlineData("GIT_REF_UNDO", "driver", null)]
@@ -556,7 +555,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]
     [InlineData("SET_SESSION_CHECKS", "driver", null)]
-    // Who holds a repository's heavy-run slot and who waits, a read.
     [InlineData("HEAVY_SLOT", "", null)]
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]

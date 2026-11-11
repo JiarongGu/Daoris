@@ -48,6 +48,8 @@ internal sealed class MonitorNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public NodeObservation Observe(NodeReading reading) => MonitorReading.Observe(reading);

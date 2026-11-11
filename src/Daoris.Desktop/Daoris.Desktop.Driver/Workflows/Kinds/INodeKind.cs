@@ -77,4 +77,7 @@ public interface INodeKind
 
     /// <summary>The outputs every node of it carries, each with its schema, which its reading puts on its reach.</summary>
     IReadOnlyDictionary<string, string> Outputs => NodePorts.None;
+
+    /// <summary>The kinds of place (<see cref="PlaceKind"/>) a node of it runs in, which the bind holds a department's workflow to (<see cref="PlaceKindUnserved"/>).</summary>
+    IReadOnlyList<string> Places => PlaceKind.Every;
 }
