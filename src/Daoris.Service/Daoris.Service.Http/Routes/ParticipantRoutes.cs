@@ -30,7 +30,7 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
                         request.Decides ?? "", request.Role ?? "", request.Repository ?? "", request.Workspace, request.Serves,
                         request.Door ?? "", request.Tree ?? "")
                     {
-                        Account = request.Account, DoorVersion = request.DoorVersion,
+                        Account = request.Account, DoorVersion = request.DoorVersion, Machine = request.Machine == true,
                     },
                     DateTimeOffset.UtcNow, ct),
                 http)
