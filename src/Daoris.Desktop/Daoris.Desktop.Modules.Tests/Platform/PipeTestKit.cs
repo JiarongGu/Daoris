@@ -165,7 +165,6 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
-    /// <summary>A workspace the machine holds, which a card that names one is judged from at the ask.</summary>
     public StubGrounds Workspace(string name)
     {
         Placed["Held-" + name] = name;

@@ -23,7 +23,6 @@ public static class PluginToolsHand
             new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
     }
 
-    /// <summary>The entry a quest's session is handed in its repository and workspace, or null where no tool is listed there or no program runs it.</summary>
     public static ServerEntry? OfQuest(string home, string session, DriverConfig config, string repository, string? workspace) =>
         Entry(home, PluginToolsAt.OfQuest(session, config, repository, workspace), Program(home));
 

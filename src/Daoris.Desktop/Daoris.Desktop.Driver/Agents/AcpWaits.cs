@@ -189,8 +189,7 @@ internal sealed class AcpWaits(ITurnEndWiring wiring)
         Note(BackgroundNotes.Waits(running));
         // No turn runs while it waits on its own work, which the watcher reads as state C.
         Volatile.Write(ref _waitsOnOwnWork, true);
-        // A wait the quest's end cut leaves it set: the session is winding down, and its quiet there is still judged as waiting on work,
-        // so the watcher's word is not sent into a session that is ending.
+        // A wait the quest's end cut leaves the flag set, so the watcher sends no quiet word into the session as it ends.
         var windingDown = false;
         using var waitingOn = new Disposer(() => { if (!windingDown) Volatile.Write(ref _waitsOnOwnWork, false); });
 
