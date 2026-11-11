@@ -268,10 +268,11 @@ public sealed class DriverRoutes(DriverContext context)
     [Publishes("SET_MANIFEST", StateScopes.Driver)]
     private object? SetManifest(SetManifest press)
     {
-        if (press.Files is null == press.Minutes is null) throw new DriverException(ManifestSetting.OneRefusal);
+        if (new[] { press.Files, press.Minutes, press.Copy }.Count(value => value is not null) != 1) throw new DriverException(ManifestSetting.OneRefusal);
         var files = press.Files is { } f ? (ManifestSetting.TakesFiles(f) ? (int)f : throw new DriverException(ManifestSetting.FilesRefusal)) : (int?)null;
         var minutes = press.Minutes is { } m ? (ManifestSetting.TakesMinutes(m) ? (int)m : throw new DriverException(ManifestSetting.MinutesRefusal)) : (int?)null;
-        _context.Change(config => config.WithManifest(files, minutes));
+        var copy = press.Copy is { } c ? (ManifestSetting.TakesCopy(c) ? (int)c : throw new DriverException(ManifestSetting.CopyRefusal)) : (int?)null;
+        _context.Change(config => config.WithManifest(files, minutes, copy));
         return State(_loop);
     }
 

@@ -64,7 +64,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         : null;
 
     /// <inheritdoc/>
-    public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
+    public bool JudgesHolds => Graph is null;
 
     /// <inheritdoc/>
     public bool LandsByRuntime => Graph?.Nodes.Any(node => node.Kind == NodeKinds.Land) == true

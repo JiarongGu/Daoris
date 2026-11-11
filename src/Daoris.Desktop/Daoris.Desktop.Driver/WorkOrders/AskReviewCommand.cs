@@ -93,13 +93,19 @@ public static class AskReviewCommand
     /// Why a named environment cannot be chosen for an ask in <paramref name="workspace"/>, or null where it can (design §1.4): one its
     /// own rule or a rule of a repository in it declares, as the page offers. <c>on</c> and <c>off</c> read nothing.
     /// </summary>
-    public static async Task<string?> UndeclaredAsync(string choice, string workspace, AskReviewWorld world, CancellationToken ct = default)
+    public static async Task<string?> UndeclaredAsync(string choice, string workspace, AskReviewWorld world, CancellationToken ct = default) =>
+        choice is On or Off
+            ? null
+            : Undeclared(choice, workspace, world.Config(),
+                (await world.Service.RegistryAsync(ct).ConfigureAwait(false)).Select(row => (row.Repository, (string?)row.Workspace)));
+
+    /// <summary>The same, judged against <paramref name="config"/> and the registry's rows as a press's view reads them.</summary>
+    public static string? Undeclared(string choice, string workspace, DriverConfig config, IEnumerable<(string Repository, string? Workspace)> registry)
     {
         if (choice is On or Off) return null;
 
-        var config = world.Config();
         var circle = RemoteTarget.Workspace(workspace);
-        var repositories = (await world.Service.RegistryAsync(ct).ConfigureAwait(false))
+        var repositories = registry
             .Where(row => string.Equals(row.Workspace, circle, StringComparison.OrdinalIgnoreCase))
             .Select(row => row.Repository)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
