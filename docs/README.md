@@ -33,9 +33,9 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/hold-by-title/README.md`|Rehearsal plugin fixture
 |`../examples/plugins/stand-in-system/README.md`|Stand-in system adapter
 |`../examples/plugins/browser/README.md`|Browser plugin
-|`../examples/plugins/in-app-browser/README.md`|Browser connection plugin
-|`../examples/plugins/github-pull-request/README.md`|GitHub landing plugin
-|`../examples/plugins/azure-devops-pull-request/README.md`|Azure DevOps landing plugin
+|`../examples/plugins/daoris-in-app-browser/README.md`|Browser connection plugin
+|`../examples/plugins/daoris-github/README.md`|Daoris's GitHub plugin
+|`../examples/plugins/daoris-azure-devops/README.md`|Daoris's Azure DevOps plugin
 |`../examples/plugins/local-preview/README.md`|Performed step plugin
 |`../tools/dsh-probes/README.md`|Protocol probes
 
@@ -251,6 +251,8 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-10-isolation-beyond-git-survey.md`|Survey: PLACEWORK1a, parallel work beyond git (D254)
 |`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-11-jj-workspaces-measurements.md`|Evidence: PLACEWORK1i, jj workspaces measured
+|`2026-11-11-start-load-measurements.md`|Evidence: STARTPERF1, a start to a full Sessions and Quests view measured
+|`2026-11-11-start-load-database-design.md`|Proposed design: STARTPERF1, an index over the session events and a quests' change mark (D275)
 |`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
@@ -272,6 +274,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
 |`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
 |`2026-11-11-ask-daoris-second-check-design.md`|Accepted design: ASKSUPERVISE1, Ask Daoris's acts read by a second model (D272)
+|`2026-11-11-review-for-every-kind-design.md`|Accepted design: REVIEWUX1, the person's review for every kind of work (D273)
 
 ## UI, browser, tools and plugin contracts
 

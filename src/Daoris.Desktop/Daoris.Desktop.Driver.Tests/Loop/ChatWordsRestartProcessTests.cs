@@ -62,7 +62,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
 
     /// <summary>
     /// 🔴 Trap 7, a conversation: two words said while its turn runs wait on its record, kept before they wait. The shell closes under
-    /// them, and they stay there; the next shell comes up and goes on with both in their order, as the same conversation's next turn,
+    /// them, and they stay there, Daoris's restart word after them; the next shell comes up and goes on with all three in their order, as the same conversation's next turn,
     /// and they leave the record. Then a shell cut off with a word kept for its run (the record still working, nothing running it):
     /// the next shell's sweep ends the record, and the conversation goes on with that word too.
     /// </summary>
@@ -90,17 +90,19 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
             Assert.Equal(["k1", "k2"], first.Queue(id).Queued.Select(word => word.Id));
         }
 
+        // The close cut its turn, so Daoris's restart word waits after them.
         await Poll.Until(() => ledger.State(id) == "stopped", () => Seen(ledger, id));
-        Assert.Equal(["k1", "k2"], ledger.Said(id));
+        Assert.Equal(["k1", "k2", "k3"], ledger.Said(id));
         Assert.DoesNotContain("prompt: Also log the port.", string.Join("\n", HeardLines()));
 
         using (var next = Runner(client, events, Processes()))
         {
             await next.TakeUpAsync();
             await Poll.Until(
-                () => HeardLines().Contains("prompt: Also log the port. | No, 9090.") && ledger.Said(id).Count == 0, () => Seen(ledger, id));
+                () => HeardLines().Contains($"prompt: Also log the port. | No, 9090. | {ShellClose.Words}") && ledger.Said(id).Count == 0,
+                () => Seen(ledger, id));
             Assert.Contains("session/resume: conv-1", HeardLines());
-            Assert.Equal([(id, "k1,k2")], ledger.Taken);
+            Assert.Equal([(id, "k1,k2,k3")], ledger.Taken);
             Assert.True(next.Finish(id));
             await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, id));
         }
@@ -132,12 +134,60 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
         await Poll.Until(() => HeardLines().Contains("prompt: And the readme.") && ledger.Said(id).Count == 0, () => Seen(ledger, id));
         Assert.DoesNotContain(HeardLines(), line => line.Contains("Use port 9090.", StringComparison.Ordinal));
         Assert.Equal([(id, "k8")], ledger.TakenBack);
-        Assert.Equal([(id, "k1,k2"), (id, "k9")], ledger.Taken);
+        Assert.Equal([(id, "k1,k2,k3"), (id, "k9")], ledger.Taken);
         var lost = Assert.Single(events.After(id, 0).Events, e => e.Code == SessionEventCodes.Lost);
         Assert.Equal(["k8"], lost.Words);
         Assert.True(after.Finish(id));
         await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, id));
     }
+
+    /// <summary>
+    /// 🔴 A close that is no update's (the person's, or a restart's) cuts one conversation mid-turn: its record ends as Daoris's stop with
+    /// Daoris's restart word kept, and the next shell goes on with it in its own conversation with no word from the person, its line saying
+    /// Daoris restarted. One idle at the close starts no turn, and one the person stopped stays stopped.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_a_close_cut_mid_turn_goes_on_by_itself_and_an_idle_or_stopped_one_does_not()
+    {
+        var ledger = new ChatLedger().Register("engine", _root).Register("mill", Root("mill")).Register("dock", Root("dock"));
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        string cut, idle, stopped;
+        var processes = Processes();
+        using (var first = Runner(client, events, processes))
+        {
+            cut = (await first.StartAsync("engine", "acp-stub", config)).SessionId!;
+            idle = (await first.StartAsync("mill", "acp-stub", config)).SessionId!;
+            stopped = (await first.StartAsync("dock", "acp-stub", config)).SessionId!;
+            await Poll.Until(() => new[] { cut, idle, stopped }.All(id => ledger.State(id) == "working"), () => Seen(ledger, cut));
+            Assert.True(first.Say(idle, "first"));
+            await Poll.Until(() => HeardLines().Contains("prompt: first") && !first.Taking(idle), () => Seen(ledger, idle));
+            Assert.True(first.Say(stopped, "hold"));
+            Assert.True(first.Say(cut, "hold"));
+            await Poll.Until(() => HeardLines().Count(line => line == "prompt: hold") == 2 && first.Taking(cut), () => Seen(ledger, cut));
+            Assert.True(processes.Stop(stopped));
+            await Poll.Until(() => ledger.State(stopped) == "stopped", () => Seen(ledger, stopped));
+        }
+
+        Assert.Equal(["stopped", "stopped", "stopped"], new[] { cut, idle, stopped }.Select(ledger.State));
+        Assert.Contains("chat.cut", ledger.Record(cut).ToJsonString());
+        Assert.Equal([1, 0, 0], new[] { cut, idle, stopped }.Select(id => Restarts(ledger, id)));
+
+        using var next = Runner(client, events, Processes());
+        await next.TakeUpAsync();
+        await Poll.Until(() => HeardLines().Contains("prompt: " + ShellClose.Words) && ledger.Said(cut).Count == 0, () => Seen(ledger, cut));
+        Assert.Single(HeardLines(), line => line == "prompt: " + ShellClose.Words);
+        Assert.Contains(events.After(cut, 0).Events, e => e.Parts?.Any(part => part.Code == "resumed.opening"
+            && Equals(part.Value("why")?.ToString(), ResumedWhy.Restart)) == true);
+        Assert.Equal(["stopped", "stopped"], new[] { idle, stopped }.Select(ledger.State));
+        Assert.Single(HeardLines(), line => line == "prompt: first");
+    }
+
+    private string Root(string name) => Directory.CreateDirectory(Path.Combine(_home, name)).FullName;
+
+    private static int Restarts(ChatLedger ledger, string id) =>
+        ledger.Record(id)["said"]?.AsArray().Count(word => DaorisKeys.IsRestart(word?["key"]?.GetValue<string>())) ?? 0;
 
     /// <summary>
     /// Through a real conversation: a producer's retry of a word the line settled, said to the

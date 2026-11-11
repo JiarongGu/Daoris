@@ -127,7 +127,7 @@ function start(t, env, journal = null) {
 }
 
 const POINTS = ['work/watch', 'work/step', 'work/perform', 'work/state'];
-const STEP = 'github-pull-request/pull-request';
+const STEP = 'daoris-github/pull-request';
 const tip = 'b'.repeat(40);
 const unitAt = (root) => ({ repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null, pullRequest: null, awaiting: [STEP] });
 

@@ -34,15 +34,6 @@ internal static class HelpDoorRowsSetup
             "(no screen yet)", "`daoris repository register [--repository <name>]`"),
         ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → Line",
             "`daoris place line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
-        // The ticket's key and the squash, which Ask Daoris's `landing` door takes too, keeping the ones set there that a card does
-        // not name. The old landing rule serves only a place still on Current; converting retires it.
-        ("set how accepted work lands: this serves only a place still on Current, which follows its old landing rule (a place that "
-            + "follows a saved workflow lands as that workflow's `land` step says), and converting retires the rule",
-            Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
-            "`daoris place landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
-            + "`--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the "
-            + "pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: "
-            + "Accept makes the pull request's branch one commit of the session's work)"),
         // How work is committed, pressed; its convention may be seeded from the repository's own instructions where the person asks.
         ("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
             + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "

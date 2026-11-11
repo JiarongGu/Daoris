@@ -2,7 +2,7 @@
 // sends the answers given so far, and says these lines, asks what is asked, and ends where nothing is.
 import { forget, keep, kept, refused, stored } from './credential.mjs';
 
-const ID = 'azure-devops-pull-request';
+const ID = 'daoris-azure-devops';
 const MAKE = 'Make a personal access token in Azure DevOps (User settings, Personal access tokens) with the scopes Code (Read & write), '
   + 'Build (Read), Release (Read, write & execute) and Work Items (Read & write).';
 const ASK = { name: 'token', prompt: 'Personal access token', masked: true };

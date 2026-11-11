@@ -42,7 +42,7 @@ of everything it handed, section by section.
 | `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
 | `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
 | `ChatStarts` | `Loop/Chat/ChatStarts.cs` | A conversation's start in a repository: its role, harness and account asked before any record exists, then its tree, its open and the run over its process; a failure between its open and its run concludes the record `failed` |
-| `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps the update's restart word; a person finishing one |
+| `ChatClosing` | `Loop/Chat/ChatClosing.cs` | How conversations end at the driver's hand and a person's: the shell closing stops every one and keeps Daoris's restart word on each it cut mid-turn; a person finishing one |
 | `RepositoryPlacement` | `Loop/Chat/RepositoryPlacement.cs` | Where a conversation in a repository runs and what its agent may do there: its tree, its rules, what it may reach across |
 | `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
 | `ChatServers` | `Loop/Chat/ChatServers.cs` | The servers a conversation is handed at its open: the knowledge connector carrying who it is, and the plugins' servers with the browser brought up for one that drives it |
@@ -83,7 +83,9 @@ of everything it handed, section by section.
 4. A line has one key, `LineKeys.Of`: walk back by `from` on this machine; the quest's id for a driven part, else the first
    part's id. Moves, counts and the go-on admission all read it. (from D229)
 5. A session's events (`<id>.events.jsonl`) and verbatim transcript stay on the machine. No HTTP surface reads them.
-   (from D76)
+   The next event's number, when its record was last written and whether its turn ended are read from the record's end; what
+   a part spent is read on from where its last read stopped (`SessionSpentKept`), the whole record again only where it no
+   longer stands as it was read. (from D76)
 
 **Two contexts**
 
@@ -111,6 +113,11 @@ of everything it handed, section by section.
     the wire. A word a gone shell attempted is settled and never sent twice. (from D137, D188)
 13. An ended chat goes on at once with its kept words. The ledger moves it out of its ended state to `working`. Then its
     own conversation resumes, every waiting word in its first turn. A go-on gets no block and no brief. (from D137, D230)
+    The shell's close, whoever closes it, keeps Daoris's restart word on each conversation it cut (a turn running, a start or go-on
+    pending, words held), keyed by an update's build or the moment of any other close, and its record ends `chat.cut`, Daoris's stop
+    (`stopped-daoris`). The next start takes it up as words kept: its own conversation resumes with the word, or a lost one goes on
+    briefed (rule 14), its line saying *Daoris restarted* (`resumed.opening`, why `restart`). One between turns ends `chat.closed`,
+    or `chat.restarted` at an update, and waits for the person's word; a person's stop keeps no word and never goes on. (from D206)
 14. A conversation whose own conversation is lost (`gone`, `unkept`, `unable`, `offered`) goes on by itself in a new part
     handed the brief, why `resume`. Refused as `elsewhere`, or for a reason that is not loss: it waits for the person.
     (from D189)

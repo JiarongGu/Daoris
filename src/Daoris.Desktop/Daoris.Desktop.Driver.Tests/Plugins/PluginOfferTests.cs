@@ -136,7 +136,7 @@ public sealed class PluginOfferTests : IDisposable
     {
         var examples = Path.Combine(Repository(), "examples", "plugins");
 
-        foreach (var id in new[] { "github-pull-request", "azure-devops-pull-request", "in-app-browser" })
+        foreach (var id in new[] { "daoris-github", "daoris-azure-devops", "daoris-in-app-browser" })
         {
             var (manifest, problem) = PluginCatalog.ReadAsWritten(id, Path.Combine(examples, id, PluginCatalog.ManifestName));
             Assert.Null(problem);
@@ -144,8 +144,8 @@ public sealed class PluginOfferTests : IDisposable
             Assert.NotEmpty(PluginOffers.Needs(Path.Combine(examples, id)));
         }
 
-        foreach (var id in new[] { "github-pull-request", "azure-devops-pull-request" })
-            Assert.Contains(PluginOffers.Needs(Path.Combine(examples, id)), need => need.Contains("API token", StringComparison.Ordinal));
+        foreach (var id in new[] { "daoris-github", "daoris-azure-devops" })
+            Assert.Contains(PluginOffers.Needs(Path.Combine(examples, id)), need => need.Contains("kept by `login`", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public sealed class PluginOfferTests : IDisposable
     public void The_in_app_browser_offers_ask_daoris_its_browser_reads_and_writes_apart_and_no_code_runner()
     {
         var (manifest, problem) = PluginCatalog.ReadAsWritten(
-            "in-app-browser", Path.Combine(Repository(), "examples", "plugins", "in-app-browser", PluginCatalog.ManifestName));
+            "daoris-in-app-browser", Path.Combine(Repository(), "examples", "plugins", "daoris-in-app-browser", PluginCatalog.ManifestName));
 
         Assert.Null(problem);
         var browser = Assert.Single(manifest!.Servers);

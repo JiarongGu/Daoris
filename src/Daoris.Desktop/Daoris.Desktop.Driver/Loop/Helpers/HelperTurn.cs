@@ -226,10 +226,10 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // The person is closing the driver; the record says so rather than sit at "working".
+            // The person is closing the driver; the record says so, interrupted, since the close is no answer and the ask runs again.
             try
             {
-                await service.AdvanceAsync(sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None).ConfigureAwait(false);
+                await service.AdvanceAsync(sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
             }
             catch
             {

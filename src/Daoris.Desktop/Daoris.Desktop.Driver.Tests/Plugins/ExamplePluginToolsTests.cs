@@ -12,7 +12,7 @@ public sealed class ExamplePluginToolsTests
 {
     private static string Examples => Path.Combine(WorkspaceRoot.Folder, "examples", "plugins");
 
-    public static TheoryData<string> Plugins() => new() { "github-pull-request", "azure-devops-pull-request" };
+    public static TheoryData<string> Plugins() => new() { "daoris-github", "daoris-azure-devops" };
 
     private static PluginManifest Read(string plugin)
     {
@@ -57,7 +57,7 @@ public sealed class ExamplePluginToolsTests
         var manifest = Read(plugin);
         var needs = PluginOffers.Needs(folder);
         Assert.Contains(needs, need => need.Contains("`plugin.json`", StringComparison.Ordinal) && need.Contains("`tools`", StringComparison.Ordinal));
-        Assert.Contains(needs, need => need.Contains("API token", StringComparison.Ordinal));
+        Assert.Contains(needs, need => need.Contains("kept by `login`", StringComparison.Ordinal));
         // No floor is written twice: the manifest holds each, and the README's needs name none.
         foreach (var tool in manifest.Tools)
         {

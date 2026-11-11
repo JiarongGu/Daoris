@@ -52,7 +52,7 @@ public static class LandingAdvance
         if (!facts.Descends)
         {
             return Exists($"`{sessionBranch}` does not grow from `{name}`, so moving it on would not be a fast-forward, and Daoris "
-                + "merges nothing into a branch. Land this work by hand, or change the pattern with `daoris place landing`.");
+                + "merges nothing into a branch. Land this work by hand, or change the `pattern` of its workflow's `land` step.");
         }
 
         return facts.Ahead > 0
@@ -77,7 +77,7 @@ public static class LandingAdvance
         if (recorded is null)
         {
             return Exists($"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it did not make. "
-                + "Rename or delete it there, or change the pattern with `daoris place landing`.");
+                + "Rename or delete it there, or change the `pattern` of its workflow's `land` step.");
         }
 
         if (!string.Equals(tip, recorded.Tip, StringComparison.OrdinalIgnoreCase))

@@ -1,10 +1,11 @@
 {
-  "id": "azure-devops-pull-request",
+  "id": "daoris-azure-devops",
+  "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
-  "name": "Azure DevOps pull request",
-  "version": "2.2.0",
-  "changes": "It signs in itself: `login` keeps a personal access token in the plugin's own private storage (the one a git identity serving Azure DevOps held is taken over once), `status` says whether one is kept and whether Azure DevOps last refused it, and `logout` forgets it; no git identity's token is read any more.",
-  "description": "Two performed steps through Azure DevOps' REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release watches the merged commit's release to its end.",
+  "name": "Azure DevOps",
+  "version": "3.0.0",
+  "changes": "It is `daoris-azure-devops` now, Daoris's own Azure DevOps plugin, no longer only a pull request's: its sign-in, its switches and what it kept move over from `azure-devops-pull-request` once, a workflow naming `azure-devops-pull-request/pull-request` or `/release` runs on it, and its commands are `daoris daoris-azure-devops login`, `status` and `logout`.",
+  "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
     "points": ["work/watch", "work/step", "work/perform", "work/state"]

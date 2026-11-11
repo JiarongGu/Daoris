@@ -6,7 +6,10 @@ is proved by the family rehearsal, and the two browsers are a manifest alone.
 | Folder | What it shows |
 |---|---|
 | [hold-by-title](hold-by-title/README.md) | a landing decision; the family rehearsal's fixture |
-| [github-pull-request](github-pull-request/README.md), [azure-devops-pull-request](azure-devops-pull-request/README.md) | a pull request opened and read through the hosted service's REST API |
-| [browser](browser/README.md), [in-app-browser](in-app-browser/README.md) | a browser connection for sessions |
+| [daoris-github](daoris-github/README.md), [daoris-azure-devops](daoris-azure-devops/README.md) | Daoris's own plugins for GitHub and Azure DevOps: a pull request opened and read through the service's REST API, and on Azure DevOps its auto-complete and release followed |
+| [browser](browser/README.md), [daoris-in-app-browser](daoris-in-app-browser/README.md) | a browser connection for sessions |
+
+A plugin's id is `<family>-<name>`, lowercase with dashes. Daoris's own plugins are the `daoris-` family; yours takes your own
+family, never `daoris-`. A plugin renamed says what it was in its manifest (`formerly`), and Daoris moves the old id's records to it once.
 | [local-preview](local-preview/README.md) | one performed step with a temporary resource |
 | [local-release](local-release/README.md) | publish and release as performed steps: find, release, publish |

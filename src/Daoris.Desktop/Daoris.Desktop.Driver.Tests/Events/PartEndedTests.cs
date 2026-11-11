@@ -126,6 +126,14 @@ public sealed class PartEndedTests
         Assert.Equal(raised, EndReaders.Notifies(ended.Class));
     }
 
+    /// <summary>A conversation the shell's close cut mid-turn, or stopped idle, ended by Daoris's own stop, never the person's.</summary>
+    [Theory]
+    [InlineData("chat.cut")]
+    [InlineData("chat.closed")]
+    [InlineData("chat.restarted")]
+    public void A_conversation_the_close_ended_is_stopped_by_daoris(string code) =>
+        Assert.Equal("stopped-daoris", PartEnds.ClassOf("stopped", limited: false, [code]));
+
     /// <summary>Every <c>ended.*</c> code of <see cref="NoteCodes"/> is in the class table or says it takes its class from the state, and the table names no code that is gone.</summary>
     [Fact]
     public void The_class_table_matches_the_note_codes_both_ways()

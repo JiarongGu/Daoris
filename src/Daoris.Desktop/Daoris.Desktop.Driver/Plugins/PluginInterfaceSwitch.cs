@@ -33,6 +33,20 @@ public static class PluginInterfaceSwitch
         JsonKeeping.Save(path, File.Exists(path), Written(read), Written(edited));
     }
 
+    /// <summary>A renamed plugin's switched-off interfaces carried to its new id where that has none; false where the old id had none.</summary>
+    public static bool Renamed(string home, string from, string to)
+    {
+        var read = Read(home);
+        if (!read.TryGetValue(from, out var off)) return false;
+        _ = PluginState.Editable(home);
+        var edited = read.ToDictionary(each => each.Key, each => each.Value, StringComparer.Ordinal);
+        edited.Remove(from);
+        edited.TryAdd(to, off);
+        var path = PluginState.PathIn(home);
+        JsonKeeping.Save(path, File.Exists(path), Written(read), Written(edited));
+        return true;
+    }
+
     private static Dictionary<string, IReadOnlyList<string>> Read(string home)
     {
         var off = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
