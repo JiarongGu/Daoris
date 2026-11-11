@@ -45,6 +45,13 @@ public sealed class SessionViewsTests
     }
 
     [Fact]
+    public async Task An_id_is_read_exactly_as_the_route_compares_it_so_a_hash_before_it_is_no_session()
+    {
+        Assert.Equal("there is no session `#s1` on this machine.", (await Archive(new { ids = new[] { "#s1" }, archived = true })).Refusal);
+        Assert.Equal("there is no session `#s1` on this machine.", (await Delete(new { id = "#s1" })).Refusal);
+    }
+
+    [Fact]
     public async Task An_unarchive_is_shown_even_of_a_session_still_running()
     {
         var viewed = await Archive(new { ids = new[] { "s3" }, archived = false });

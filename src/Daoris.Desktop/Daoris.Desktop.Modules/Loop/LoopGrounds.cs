@@ -64,6 +64,19 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
     public async Task<string?> AskAsync(string id, CancellationToken cancellationToken) =>
         (await Service().FindAskAsync(id, cancellationToken).ConfigureAwait(false))?.State;
 
+    public async Task<IReadOnlyDictionary<string, string?>?> RemotesAsync(string repository, CancellationToken cancellationToken)
+    {
+        var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);
+        var root = LinesRoutes.Checkouts(registry, repository, null).Select(row => row.Root).FirstOrDefault(each => !string.IsNullOrEmpty(each) && Directory.Exists(each));
+        return root is null ? null : await GitRemoteRows.AddressesAsync(root, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<bool?> QuestDeletableAsync(string id, CancellationToken cancellationToken) =>
+        (await Service().FindQuestAsync(id, cancellationToken).ConfigureAwait(false))?.Deletable;
+
+    public async Task<bool?> AskDeletableAsync(string id, CancellationToken cancellationToken) =>
+        (await Service().FindAskAsync(id, cancellationToken).ConfigureAwait(false))?.Deletable;
+
     public async Task<string?> TipAsync(string repository, string branch, CancellationToken cancellationToken)
     {
         var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);

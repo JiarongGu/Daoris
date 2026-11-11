@@ -53,6 +53,23 @@ public sealed class AccountSettingsViewTests
     }
 
     [Fact]
+    public async Task An_effort_for_one_model_is_shown_with_the_for_flag_and_beside_a_model_and_an_effort()
+    {
+        var alone = await View(Roster(), new { door = "claude-code", profile = "work", perModel = new { opus = "high" } });
+        var beside = await View(Roster(), new { door = "claude-code", profile = "work", model = "sonnet", perModel = new { opus = (string?)null } });
+
+        Assert.Equal("account-settings-for", alone.View!.Kind);
+        Assert.Equal("opus", alone.View.Facts["model"]);
+        Assert.Equal("high", alone.View.Facts["effort"]);
+        Assert.Equal("daoris agent settings claude-code --account work effort high --for opus", alone.View.Command);
+        Assert.Equal("account-settings-model", beside.View!.Kind);
+        Assert.Equal("account-settings-for", Assert.Single(beside.View.Also!).Kind);
+        Assert.Equal("daoris agent settings claude-code --account work model sonnet effort unset --for opus", beside.View.Command);
+        Assert.NotNull((await View(Roster(), new { door = "claude-code", profile = "work", perModel = new { opus = "max" } })).Refusal);
+        Assert.NotNull((await View(Roster(), new { door = "claude-code", profile = "work", perModel = new { opus = 3 } })).Refusal);
+    }
+
+    [Fact]
     public async Task A_press_the_route_would_refuse_is_refused_at_the_ask_with_no_card()
     {
         Assert.Contains("no agent `nope`", (await View(Roster(), new { door = "nope", profile = "work", model = "opus" })).Refusal);

@@ -38,7 +38,8 @@ public sealed class SupervisorDecidersTests
         var deciders = SupervisorDeciders.Of(slots, Placed);
 
         Assert.Equal(["machine", "workspace:games", "repository:atlas", "repository:engine"], deciders.Places.Select(each => each.Place));
-        Assert.All(deciders.Places, each => Assert.Equal(SupervisorKinds.All, each.Kinds.Select(line => line.Kind)));
+        Assert.All(deciders.Places, each => Assert.Equal(
+            SupervisorKinds.All.Where(kind => each.Place == "machine" || !SupervisorKinds.MachineOnly(kind)), each.Kinds.Select(line => line.Kind)));
         Assert.Equal(
             new DeciderLine(SupervisorKinds.Allow, "gatekeeper", "workspace:games", RoleHolders.Terminal, ["allow.once"], null),
             Line(deciders, "repository:engine", SupervisorKinds.Allow), Comparer);

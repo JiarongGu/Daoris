@@ -18,8 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 internal static partial class HostEnvironment
 {
-    /// <summary>The goldens' write switch, the suite's own and never Daoris's.</summary>
-    private const string GoldenWriteSwitch = "DAORIS_GOLDEN_WRITE";
+    /// <summary>The suite's own switches, never Daoris's: the goldens' write and the real reader's run.</summary>
+    private static readonly string[] SuiteSwitches = ["DAORIS_GOLDEN_WRITE", RealReaderTheoryAttribute.Variable];
 
     /// <summary>This run's home, under the checkout's scratch.</summary>
     public static string Home { get; } = Path.Combine(TestHomes.Root, "host-" + Environment.ProcessId);
@@ -29,9 +29,9 @@ internal static partial class HostEnvironment
     {
         // Read before the removal below takes the switch out with the rest of Daoris's variables.
         var pinned = PinnedLeg.Apply();
-        // The goldens' write switch is the suite's own, never Daoris's, so it is the one kept.
+        // The suite's own switches are never Daoris's, so they are the ones kept.
         foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
-                     .Where(name => Removed().IsMatch(name) && !string.Equals(name, GoldenWriteSwitch, StringComparison.OrdinalIgnoreCase))
+                     .Where(name => Removed().IsMatch(name) && !SuiteSwitches.Contains(name, StringComparer.OrdinalIgnoreCase))
                      .ToList())
         {
             Environment.SetEnvironmentVariable(name, null);

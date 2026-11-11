@@ -45,8 +45,15 @@ internal sealed class SupervisePass(LoopContext context, Driver driver)
         }
 
         var spent = attempts.Spent(subject);
-        var left = order.Where((_, at) => !spent.Contains(at + 1)).ToList();
+        IReadOnlyList<ActorEffective> left = order.Where((_, at) => !spent.Contains(at + 1)).ToList();
         if (left.Count == 0) return SaidUnavailable(waiting, "every choice of its order was tried and none decided it.");
+        if (waiting.PacketOnly)
+        {
+            var (held, passed) = PacketOnlyRules.Readers(context.Adapters, left);
+            if (held.Count == 0) return SaidUnavailable(waiting, $"no choice left of its order holds its reader packet-only ({string.Join(", ", passed)}: not enforced).");
+            left = held;
+        }
+
         var choice = await ChooseAsync(waiting, left, ct).ConfigureAwait(false);
         if (!choice.Chosen || choice.Effective is not { } entry) return SaidUnavailable(waiting, choice.Sentence);
 

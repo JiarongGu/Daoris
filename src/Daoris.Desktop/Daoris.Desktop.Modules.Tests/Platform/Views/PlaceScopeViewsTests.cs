@@ -40,6 +40,19 @@ public sealed class PlaceScopeViewsTests
         Assert.Contains("not a branch name", (await View(new PlaceLineView(), """{"repository":"engine","branch":"a b"}""")).Refusal);
     }
 
+    [Theory]
+    [InlineData("""{"repository":"engine","branch":" develop"}""")]
+    [InlineData("""{"repository":"engine","branch":"   "}""")]
+    [InlineData("""{"repository":"engine","language":""}""")]
+    [InlineData("""{"repository":"engine","says":"   "}""")]
+    public async Task A_blank_or_padded_text_is_read_as_the_route_reads_it_and_refused_with_no_card(string json)
+    {
+        var viewed = await View(json.Contains("branch") ? new PlaceLineView() : json.Contains("language") ? new PlaceLanguageView() : new PlaceStandingView(), json);
+
+        Assert.Null(viewed.View);
+        Assert.NotEmpty(viewed.Refusal!);
+    }
+
     [Fact]
     public async Task A_policy_press_with_no_branch_is_shown_by_its_values_alone()
     {
@@ -105,6 +118,8 @@ public sealed class PlaceScopeViewsTests
         Assert.Equal("engine", shown.View.Facts["other"]);
         Assert.Contains("`ghost` is not registered", (await View(PlaceAcrossView.WriteTo(), """{"repository":"plugins","to":"ghost","allow":true}""")).Refusal);
         Assert.Contains("write-to", (await View(PlaceAcrossView.WriteTo(), """{"workspace":"work","to":"engine","allow":true}""")).Refusal);
+        var stale = await View(PlaceAcrossView.WriteTo(), """{"repository":"plugins","to":"ghost","allow":false}""");
+        Assert.Equal(("across-write-clear", "daoris place across plugins write-to ghost --clear"), (stale.View!.Kind, stale.View.Command));
         Assert.NotNull((await View(PlaceAcrossView.WriteTo(), """{"repository":"engine","to":"engine","allow":true}""")).Refusal);
     }
 }

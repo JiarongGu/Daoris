@@ -30,7 +30,7 @@ public static class CallLineageFilter
         {
             var tool = request.Params?.Name;
             var lineage = CallLineage.Read(request.Params?.Meta);
-            file.Call(tool, lineage, DateTimeOffset.UtcNow);
+            file.Call(tool, lineage, DateTimeOffset.UtcNow, CallPlace.ActOf(tool));
             if (file.NamesSession)
             {
                 var refusal = await RefusalAsync(request, tool, lineage, file, joinBudget ?? HookJoin.Budget, cancellationToken).ConfigureAwait(false);

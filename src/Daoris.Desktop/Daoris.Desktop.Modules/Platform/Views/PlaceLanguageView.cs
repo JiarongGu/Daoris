@@ -18,9 +18,9 @@ public sealed class PlaceLanguageView : IPressView
         var scoped = await PlaceScope.ReadAsync(world, payload, "a session language", true, cancellationToken).ConfigureAwait(false);
         if (scoped.Refusal is not null) return PlaceScope.Refusal(scoped);
 
-        var spelled = PressPayload.Text(payload, "language");
-        var code = spelled.Length == 0 ? null : SessionLanguages.Code(spelled);
-        if (spelled.Length > 0 && code is null) return PressViewed.Refused(SessionLanguages.Refusal(spelled));
+        var spelled = PressPayload.Raw(payload, "language");
+        var code = spelled is null ? null : SessionLanguages.Code(spelled);
+        if (spelled is not null && code is null) return PressViewed.Refused(SessionLanguages.Refusal(spelled));
 
         var facts = scoped.Facts();
         if (code is not null) facts["language"] = SessionLanguages.NameOf(code);
