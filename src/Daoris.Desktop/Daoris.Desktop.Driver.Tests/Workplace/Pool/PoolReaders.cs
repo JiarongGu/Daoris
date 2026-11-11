@@ -69,7 +69,6 @@ internal static class PoolReaders
         new(Driver + "Workplace/TreeStrays.cs", InUse, "c", "the strays' busy folders"),
         new(Driver + "Workplace/TreeSweeps.cs", InUse, "c", "the sweep's test of a listed folder against the set"),
         new(Driver + "Workplace/TreeSync.cs", InUse, "c", "the sync's use of the set"),
-        new(Modules + "Bridge/Routes/HelpScreenDoors.cs", InUse, "c", "the help screen's set"),
         new(Modules + "Bridge/Routes/LinesRoutes.cs", InUse, "c", "the lines' set"),
         new(Modules + "Bridge/Routes/TreesTidyDesk.cs", InUse, "c", "the trees desk's set"),
     ];
