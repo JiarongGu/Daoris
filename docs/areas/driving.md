@@ -160,8 +160,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
     into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
     which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
-    converted the old per-repository trees switch and the line policies' `overlap` into the step; `daoris place trees` answers where
-    the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
+    converted the old per-repository trees switch and the line policies' `overlap` into the step, and no verb or key sets a
+    repository apart beside it. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
     whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
     uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
     there. The person's commit or stash in the checkout releases from the mark each path it took out (`PlaceMarkDiscards`,

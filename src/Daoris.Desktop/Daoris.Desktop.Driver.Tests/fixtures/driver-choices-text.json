@@ -218,51 +218,19 @@
       "after": null
     },
     {
-      "name": "trees on",
+      "name": "keep, a kind it does not set, leaves the file as it was",
       "argv": [
-        "trees",
-        "engine",
-        "on"
-      ],
-      "changed": "PLACEWORK1d: the trees switch is gone; the verb answers where a place's sessions are set apart now, and writes nothing.",
-      "before": null,
-      "exit": 1,
-      "out": [],
-      "err": [
-        "daoris: `place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an `isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its checkout one at a time. `daoris workflow show <workflow>` names the step."
-      ],
-      "after": null
-    },
-    {
-      "name": "trees off",
-      "argv": [
-        "trees",
-        "engine",
-        "off"
+        "keep",
+        "caches",
+        "30"
       ],
       "before": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"2026-10-01T10:00:00.000Z\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"2026-10-02T08:00:00Z\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "PLACEWORK1d: the trees switch is gone; the verb answers where a place's sessions are set apart now, and writes nothing.",
-      "exit": 1,
+      "exit": 2,
       "out": [],
       "err": [
-        "daoris: `place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an `isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its checkout one at a time. `daoris workflow show <workflow>` names the step."
+        "daoris: `caches` is no kind whose rule you set here: name `set-aside`, `downloads`, `browser-cache`, `logs`, `history`, `allowance` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default`, `allowance <n>GB|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris settings keep set-aside 30`."
       ],
       "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n"
-    },
-    {
-      "name": "trees, no direction",
-      "argv": [
-        "trees",
-        "engine"
-      ],
-      "changed": "PLACEWORK1d: the trees switch is gone; the verb answers where a place's sessions are set apart now, and writes nothing.",
-      "before": null,
-      "exit": 1,
-      "out": [],
-      "err": [
-        "daoris: `place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an `isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its checkout one at a time. `daoris workflow show <workflow>` names the step."
-      ],
-      "after": null
     },
     {
       "name": "notify on",

@@ -24,21 +24,14 @@ public static class DriverChoicesCommand
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
         "brainstorms", "workflow", "keep", "role", "terminal", MachineSettingsSaid.Every,
     ];
-
-    /// <summary>What the gone <c>trees</c> verb answers: where a place's sessions are set apart now.</summary>
-    public const string TreesMoved =
-        "`place trees` is gone: a repository's sessions work apart in trees of their own where the workflow it follows starts with an "
-        + "`isolate` step (*Work apart* in the workflow's editor), whose `at-once` says how many at once; without one they work in its "
-        + "checkout one at a time. `daoris workflow show <workflow>` names the step.";
 
     public const string Usage =
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris place trees (gone: a workflow's `isolate` step)
                daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
@@ -245,9 +238,6 @@ public static class DriverChoicesCommand
                         return 0;
                     });
             }
-
-            case "trees":
-                throw new ChoiceWords(TreesMoved, exit: 1);
 
             case "notify":
             {
