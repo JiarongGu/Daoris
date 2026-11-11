@@ -4,7 +4,7 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { ask, decisionOf, wouldAsk } from './permission-ask.mjs';
+import { ask, decisionOf, requestOf, wouldAsk } from './permission-ask.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const scratch = path.resolve(here, '../../../../../../../_fixtures/permission-ask');
@@ -72,4 +72,10 @@ test('the answer the loop writes beside the request is the decision; none by the
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+});
+
+test('the request names the harness id of the call it asks about, so an answered hold is matched to its card', () => {
+  const request = requestOf('s1', 'a1b2c3d4e5f6', { ...call('Bash', 'default', { command: 'npm test' }), tool_use_id: 'toolu_01' });
+  assert.equal(request.call, 'toolu_01');
+  assert.equal('call' in requestOf('s1', 'a1b2c3d4e5f6', call('Bash', 'default', { command: 'npm test' })), false);
 });
