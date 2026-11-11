@@ -12,6 +12,8 @@ import type { ChatMessage, Level, Usage } from './conversation';
 import { MentionList } from './MentionList';
 import { mentionAt, rankMentions, withMention } from './mentions';
 import { type SessionOption, SessionOptions } from './SessionOptions';
+import { SendNow } from './SendNow';
+import type { Levels } from '../say';
 
 /**
  * What the frame knows of the session's tree, for `@`: its files, or null while they are
@@ -110,10 +112,10 @@ export function Composer({
   answers?: ReactNode;
   /**
    * What the session's door does with a word while a turn runs, which the
-   * composer offers the levels by: `nextStep`, it takes words at the turn's next step; `steers`, its agent steers, so *now* cuts
-   * its step. Absent, no level is offered and a press queues as it did: a door this page does not follow, or none known yet.
+   * composer offers the levels and *Send now* by ({@link Levels}). Absent, no level is offered and a press queues as it did: a
+   * door this page does not follow, or none known yet.
    */
-  levels?: { nextStep: boolean; steers: boolean };
+  levels?: Levels;
   /** Change a waiting word's level by its id, answering as `onRemove` does. Absent, its words offer none. */
   onLevel?: (id: string, level: Level) => Promise<{ done: boolean } | void>;
   /**
@@ -662,6 +664,7 @@ export function Composer({
                 {sendLabel ?? t('work.composer.send')}
               </Button>
             ))}
+        {leveled && levels && <SendNow levels={levels} disabled={!hasWords || sending} onPress={() => sendAt('now')} />}
         {/* The levels beside *Send*, each sending the box's words at its level. */}
         {leveled && levels && (
           <Menu.Root>
@@ -679,11 +682,12 @@ export function Composer({
                   {!levels.nextStep && <span className="text-meta text-ink-faint">{t('work.steer.notNowTurnEnd')}</span>}
                 </span>
               </Menu.Item>
-              <Menu.Item disabled={!levels.steers} onSelect={() => sendAt('now')}>
+              <Menu.Item disabled={!levels.steers && !levels.stops} onSelect={() => sendAt('now')}>
                 <span className="grid min-w-0">
                   <span>{t('work.composer.levelNow')}</span>
                   <span className="text-meta text-ink-faint">
-                    {t(levels.steers ? 'work.steer.nowTip' : levels.nextStep ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')}
+                    {t(levels.steers ? 'work.steer.nowTip' : levels.stops ? 'work.steer.nowStopsTip'
+                      : levels.nextStep ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')}
                   </span>
                 </span>
               </Menu.Item>

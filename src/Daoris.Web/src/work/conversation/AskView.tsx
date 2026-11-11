@@ -112,6 +112,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
           <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
         )}
       <Attached files={ask.files} />
+      {ask.cutIn && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('work.conversation.cutIn')}</p>}
       {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
       {/* What the target is composed of, section by section, beside the words it composes. */}
       {target && !findings && <HandedAccount account={ask.account} />}

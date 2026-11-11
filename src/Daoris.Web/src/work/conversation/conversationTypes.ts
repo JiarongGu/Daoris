@@ -307,6 +307,8 @@ export type Ask = {
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
   /** Another agent's findings, handed as the session's next turn: the second opinion they are from. */
   opinion?: string;
+  /** The person's *Send now* stopped the turn before these words, which began this one. */
+  cutIn?: true;
   /**
    * Whose words where not the person's, by their mark ({@link Author}): Daoris's own, the
    * supervisor's on the owner's behalf, a helper's or a partner's answer, or an author the page does not know; never the person's,

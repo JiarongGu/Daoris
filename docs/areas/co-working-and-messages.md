@@ -52,7 +52,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | ContextWorkOrders | `Driver/Context/ContextWorkOrders.cs` | The exchanges and channel bounds as an instruction and a hand-over brief quote them |
 | AttentionStateSlice, AttentionSessionRows, NeedsAPerson | `Modules/Loop/AttentionStateSlice.cs`, `AttentionSessionRows.cs`, `NeedsAPerson.cs` | *What needs you*'s rows, judged once and pushed to every window |
 | StewardDesk | `Modules/Platform/StewardDesk.cs`; holder's verb `Driver/Roles/StewardCommand.cs` | Requests for the steward, as claims, bounded, history in `data/steward-desk.json` |
-| Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
+| Page: conversation | `Web/work/conversation/Composer.tsx`, `SendNow.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu, and *Send now* beside *Send* while a turn runs where the agent steers or the door cuts in (rule 3), its tip saying which, and the ask it began marked *Sent now*; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
 | Page: the pieces | `Web/work/pieces/Pieces.tsx`, `AskPartner.tsx`, `pieceRows.ts`; `Web/work/identity.ts`'s `leadsPieces`; `Web/work/acts.ts`'s `askPiece` | The Pieces section under a lead's head, driven or a conversation: each piece's state and acts, and *Ask another agent to work on a piece…*, the one ask the section's press and the head's ⋯ open (the frame holds it open, `useHeadAsks`' `pieceAsking`) |
 | Page: the team | `Web/work/team/CoWorkers.tsx`, `MemberThread.tsx`, `BringInAgent.tsx`, `OutsideAgentRow.tsx`, `teamRows.ts`, `useTeam.ts` | The head's *Co-workers*: the lead, each member by state and where its answer went, its thread's door, *Pass to the lead*, the pending asks' presses, *Bring in another agent…* in its ⋯ (*Answer a question*, *Write a piece* and *Second opinion* open the helper's ask, the Pieces ask and the review, the last two only for a session with a tree of its own; *Go on with another agent*; *Work alongside* is a sentence with no press (a second request on the ask already runs alongside by itself)); each agent outside Daoris on the line's channel as itself (agent, repository, joined, last read or posted) with *Remove*; a member's thread head with *Back to lead*, *Ask again…* and the pass. A member's channel message is headed *outside Daoris* in the channel and as an outside agent's claim in the conversation; a join's card says `untold` where the system would not place the terminal |
 | Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `TeammateAskPage.tsx`, `Web/bridge/sessions/asks.ts`'s `useLineChannel`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request, with the line's channel; the ask's channel and a teammate's; *What needs you* and the foot's count by one key; the steward's line |
@@ -63,13 +63,24 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Levels and delivery**
 
-1. A message never stops a turn. Only a stop does: the person's *Stop*, *Stop turn* or keeping stop, or Daoris's own timeouts, pauses,
+1. A message never stops a turn. Only a stop does: the person's *Stop*, *Stop turn*, keeping stop or a conversation's *Send now* that
+   cuts in (rule 3), or Daoris's own timeouts, pauses,
    limits and pressed hand-overs. No agent stops another's work. (from D188)
 2. A level says when a word may reach its reader, never its order. Ordinary waits for a natural point: the turn's end, between turns,
    the next part, or the agent's own read. Urgent goes at the next step where the door takes words then. Now cuts the step in flight
    where the agent steers. (from D188, D136)
-3. A level is a request. On a door that takes words only at its turn's end, urgent and now wait for that end, and say so. A text-only
-   conversation honours no level. (from D188, D136)
+3. A level is a request. On a door that takes words only at its turn's end, urgent waits for that end, and says so. Now waits too
+   where the door cannot stop a turn keeping its session (a driven native run); a conversation's door that can (the native wire's
+   interrupt, `codex-acp`'s cancel) cuts in: the word goes first among what waits, the turn is stopped, and the word is the next
+   turn's first, its ask marked sent now. Never on a next-step door, nor with a word on its way. A text-only conversation honours no
+   level. (from D188, D136)
+   What each harness does with a word written mid-turn, measured keylessly against a stub model endpoint on loopback (STEER3,
+   `docs/2026-10-03-steer-evidence.md` §8): Claude Code's stream-json folds a line with no priority into the running turn at its next
+   step (into the tool's result, one `result` for the turn; echoed under `--replay-user-messages`), or makes it the next turn where no
+   step follows; a line at priority `now` aborts the step in flight, ends the cut turn with a `result` of its own and runs the word as
+   the next turn. `codex-acp`'s `_session/steering` (Codex's `turn/steer`) is answered `injected` and takes the word into the same
+   turn: after a running tool ends, or by dropping the sampling in flight and sampling again; with no live turn it starts one
+   (`startedNewTurn`).
 4. The person may send all three, urgent by default; now is theirs alone. Daoris sends ordinary, or urgent for a fact that makes the
    work in flight wrong. An agent posts ordinary or urgent, never now. (from D188)
 5. Every word to a session is kept on its record's `said`, with its level, sender and producer key, before its sender is told. One
@@ -276,13 +287,15 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 10. D199 point 2 (the lead asks a piece with `partner_ask`) vs code (no such tool; `Mcp/ToolClasses.cs` has `partner_answer` alone). Code reads right today.
 11. D203 point 7 (*What needs you* gains no kind) vs code (a `helper-ended` row, `Modules/Loop/AttentionSessionRows.cs:80`, from D203's own HELPERWAIT1c note). Code reads right: it stands in for the park row.
 12. D225's COMMS1i note (*At work* lists no reviewers) vs its later note and code (reviewers from records with `serves`, `Driver/WorkOrders/AtWorkExchangeReading.cs:14-33`). Code reads right.
-13. D136 point 4 (*Send now* stops the turn on a turn-end door) vs D188 (now stops nothing; `--now` is refused, naming `--level now`). D188 reads right.
+13. D136 point 4 (*Send now* stops the turn on a turn-end door) vs D188 (now stops nothing; `--now` is refused, naming `--level now`). A
+    conversation's *Send now* follows D136 point 4 where its door stops a turn keeping it (ASKPUSH1, `Loop/Chat/Turns/TurnCutIn.cs`); a
+    driven session's follows D188.
 14. D176 point 1 (the driver's verb writes the request) vs its ONEWAY1t note and code (the service desk is the one writer, `Service/Sessions/BrainstormDesk.cs`). Code reads right.
 15. D32's shape (a quest is a checklist item written into the receiver's backlog by `daoris quest post`) vs its amendment and code (the service holds quests; the CLI has no quest command). The amendment reads right.
 
 ## Open
 
-- **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door, each after its measured turn (D188 point 3) and so in the spend sitting. MSG1h's design must meet that `codex-acp` honours no `idleBehavior`: a steer that finds no live turn starts one (`docs/2026-10-03-steer-evidence.md` §5), so the door steers only while a turn it prompted is live and treats `startedNewTurn` as a turn nobody asked for.
+- **MSG1h**, **MSG1i**: next-step words on Codex and on the native door, built on STEER3's measured turns (rule 3) in the spend sitting. MSG1h's design must meet that `codex-acp` honours no `idleBehavior`: a steer that finds no live turn starts one (`docs/2026-10-03-steer-evidence.md` §5, §8), so the door steers only while a turn it prompted is live and treats `startedNewTurn` as a turn nobody asked for. MSG1i's must learn where a folded line landed, which only `--replay-user-messages` tells (§8).
 - **COWORKUX1** (row i): the lead's wait on its own partner.
 - The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the

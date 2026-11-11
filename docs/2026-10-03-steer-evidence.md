@@ -148,7 +148,44 @@ while it was writing the first.
 - **A step that is a long tool.** Both turns' steps were reads of a few milliseconds. That a fold waits for a running
   tool to finish, and that a steer aborts one, is read (§1, §2), not seen.
 - **A stop with words on their way** (§3): read only. Seeing it costs a turn whose words would act unseen.
-- **The native door** (§4) and **`codex-acp`** (§5): read only. A native driven session on `--input-format
-  stream-json`, and Codex's `turn/steer`, are each one turn to measure before either is built.
+- **The native door** (§4) and **`codex-acp`** (§5): measured on 2026-11-12, §8.
 - **Words folded while a permission request waits.** Daoris refuses every request at once (D52), so the adapter's
   `later` priority for a steer should not arise; it was not seen.
+
+## 8. STEER3: the native wire and `codex-acp`, measured (2026-11-12)
+
+**How it ran.** Keylessly: no account, no model, no credential. Each harness ran as shipped, against a stub model endpoint
+on loopback that a scratch script served (Claude Code's `ANTHROPIC_BASE_URL` with a placeholder key; Codex's custom
+provider over `wire_api = "responses"`), with a scratch home and working folder. The stub answered the first model call
+with a tool call that sleeps eight seconds (`tool`), or with a slow stream of text (`stream`), and every later call with a
+short reply; it logged each call's input, so where a word landed is read from what the model was sent next. The word was
+written two seconds into the tool, or half a second into the stream.
+
+| Harness | Version |
+|---|---|
+| Claude Code, native stream-json (`-p --input-format stream-json --output-format stream-json --verbose`) | **2.1.322** |
+| `@agentclientprotocol/codex-acp` over its own `codex app-server` | **2.6.0**, Codex **0.166.0** |
+
+**Claude Code, a user line on stdin mid-turn.**
+
+| Line | Step | What the harness did |
+|---|---|---|
+| no `priority` | tool | The tool ran to its end; the word was appended to the tool's result as `<system-reminder>The user sent a new message while you were working: …</system-reminder>` and the next model call carried it, in the same turn. **One** `result` for the turn. No echo on stdout, unless `--replay-user-messages`: then the word is echoed (`isReplay`) right after the tool's result, before the next model call. |
+| no `priority` | stream | The streamed answer ended the turn (`result` #1); the word was the next turn's prompt (`result` #2). |
+| `priority: "now"` | tool | The tool was aborted (`<error>Command was aborted before completion</error>`); the cut turn ended with its own `result` (`success`, empty text); a fresh `system/init`, then the word as the next turn's prompt, `result` #2. |
+| `priority: "now"` | stream | The stream was cut where it stood; `result` #1; the word as the next turn, `result` #2. |
+
+**`codex-acp`, `_session/steering` mid-turn.** `initialize` answers `_meta.steering.supported: true` and no
+`promptQueueing`.
+
+| Step | What the harness did |
+|---|---|
+| tool | Answered `{"outcome":"injected"}` at once. The tool ran to its end (8.8 s); the next model call carried its output, then the word as a user message, in the same turn; the one `session/prompt` was answered `end_turn` once. |
+| stream | Answered `injected`. The sampling in flight was dropped (its streamed text appears nowhere after) and a new model call carried the word, in the same turn; one `end_turn`. |
+| none (the turn ended) | Answered `{"outcome":"startedNewTurn"}`: a turn of its own began with the word, which no `session/prompt` owns. |
+
+**What Daoris builds on it.** A conversation's *Send now* on a door that cannot steer but stops a turn keeping it (the native
+wire's `interrupt` control, `codex-acp`'s `session/cancel`) stops the turn and makes the word the next turn's first
+(`TurnCutIn`): what a `now` line does on the native wire, through the turn accounting the door already has. Folding a word
+into the native turn at its next step needs to know where it landed (the replay echo), and steering Codex needs
+`startedNewTurn` read as a turn nobody asked for; both are MSG1i's and MSG1h's.

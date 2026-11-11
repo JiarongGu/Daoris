@@ -25,13 +25,19 @@ export type Reach = {
   keepingStop?: boolean;
 };
 
+/** A running door: words at the next step (`nextStep`); *Send now* steered (`steers`), or the turn stopped for it (`stops`). */
+export type Levels = { nextStep: boolean; steers: boolean; stops?: boolean };
+
 /**
  * The levels the composer offers while a turn runs, from what a word said now would
  * do: none where the reach is not a running turn's, or the shell does not say what its door can do.
  */
-export const levelsOf = (reach: Reach | undefined): { nextStep: boolean; steers: boolean } | undefined =>
+export const levelsOf = (reach: Reach | undefined): Levels | undefined =>
   reach && (reach.reaches === 'next-step' || reach.reaches === 'turn-end') && reach.steers !== undefined
-    ? { nextStep: reach.reaches === 'next-step', steers: reach.steers }
+    ? {
+      nextStep: reach.reaches === 'next-step', steers: reach.steers,
+      stops: reach.reaches === 'turn-end' && !reach.steers && reach.keepingStop === true,
+    }
     : undefined;
 
 /**

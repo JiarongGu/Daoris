@@ -39,6 +39,8 @@
   "work.conversation.attached": "attached",
   "work.conversation.held.nextStep": "Held: it reads this at its next step, once the step in flight ends.",
   "work.conversation.held.now": "Sent now: it took this at once, in the turn it was on.",
+  "work.conversation.held.nextTurn": "Sent now: its turn is being stopped, and this goes as the next one.",
+  "work.conversation.cutIn": "Sent now: its turn was stopped for this, which began the next.",
   "work.conversation.held.turnEnd": "Held: it reads this when its turn ends.",
   "work.conversation.held.urgentTurnEnd": "Urgent, held: its door takes words only when its turn ends.",
   "work.conversation.held.never": "It ended before reading this.",

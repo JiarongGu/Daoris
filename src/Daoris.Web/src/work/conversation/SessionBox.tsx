@@ -5,7 +5,7 @@ import { ParkAnswer } from '../waits/ParkAnswer';
 import { Composer } from './Composer';
 import type { ChatMessage, Level } from './conversation';
 import type { Answered } from '../InlineConfirm';
-import { type Box, neverSentence } from '../say';
+import { type Box, type Levels, neverSentence } from '../say';
 import type { HeadLink } from '../head/headRows';
 
 /**
@@ -76,7 +76,7 @@ function Boxed({
    */
   park?: ComponentProps<typeof ParkAnswer>;
   /** What the running door does with a word while its turn runs, which the box offers the levels by; absent, none. */
-  levels?: { nextStep: boolean; steers: boolean };
+  levels?: Levels;
   /** A held word's level changed by its id; absent, none is offered. */
   onLevel?: (id: string, level: Level) => Promise<{ done: boolean } | void>;
   /** The keeping stop, offered where the running door can stop a turn keeping the session; absent, none. */
