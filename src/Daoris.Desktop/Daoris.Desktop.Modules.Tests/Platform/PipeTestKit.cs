@@ -131,6 +131,9 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     public Dictionary<string, string> Asks { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>The quests and asks whose record the service would keep rather than delete, though they exist.</summary>
+    public HashSet<string> Staying { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Tips by <c>repository:branch</c>.</summary>
     public Dictionary<string, string> Tips { get; } = new(StringComparer.Ordinal);
 
@@ -234,6 +237,27 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         return Asks.GetValueOrDefault(id);
+    }
+
+    /// <summary>A repository's remotes by name, each with its address; a repository left out has no checkout here.</summary>
+    public Dictionary<string, IReadOnlyDictionary<string, string?>> Remotes { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public async Task<IReadOnlyDictionary<string, string?>?> RemotesAsync(string repository, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Remotes.GetValueOrDefault(repository);
+    }
+
+    public async Task<bool?> QuestDeletableAsync(string id, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Quests.ContainsKey(id) ? !Staying.Contains(id) : null;
+    }
+
+    public async Task<bool?> AskDeletableAsync(string id, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Asks.ContainsKey(id) ? !Staying.Contains(id) : null;
     }
 
     public async Task<string?> TipAsync(string repository, string branch, CancellationToken cancellationToken)

@@ -123,8 +123,9 @@ public sealed class RoleChangeView : IPressView
         var said = new StringBuilder($"daoris role set {role.Id} {NameFlags(role.Name)}");
         if (role.Hold is { } hold)
         {
-            said.Append($" --scope {Scope(role.Scope)} --decides {(hold.Generic ? "every" : string.Join(",", hold.Decides))}")
-                .Append($" --acts {(hold.Acts.Count == 0 ? "\"\"" : string.Join(",", hold.Acts))} --holder {hold.Holder ?? RoleHolders.Rules} --window {hold.Window}");
+            said.Append($" --scope {Scope(role.Scope)}")
+                .Append(hold.Kind == AppointedRoles.Steward ? "" : $" --decides {(hold.Generic ? "every" : string.Join(",", hold.Decides))}")
+                .Append($" --acts {(hold.Acts.Count == 0 ? "\"\"" : string.Join(",", hold.Acts))} --holder {hold.Holder ?? (hold.Kind == AppointedRoles.Steward ? "none" : RoleHolders.Rules)} --window {hold.Window}");
         }
         else said.Append($" --takes {string.Join(",", role.Takes)} --scope {Scope(role.Scope)}");
 

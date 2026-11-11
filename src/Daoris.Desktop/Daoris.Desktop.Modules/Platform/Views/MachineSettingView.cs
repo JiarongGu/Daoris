@@ -84,7 +84,7 @@ public sealed class MachineSettingView : IPressView
         Task.FromResult(_judge(payload));
 
     private static long? Number(JsonElement? payload, string name) =>
-        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.TryGetInt64(out var number) ? number : null;
+        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number) ? number : null;
 
     private static PressViewed Shown(string kind, Dictionary<string, string> facts, string command) =>
         PressViewed.Shown(new PressView(kind, facts, command));

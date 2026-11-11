@@ -5,8 +5,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// <c>daoris quest delete &lt;id&gt;</c> as the card shows it: a quest made by mistake gone from every list. Refused before any card
-/// where the service has no such quest or it is taken, done or declined, whose record stays (declining is the way instead); an open one a
-/// session already started on is refused by the route in the service's words when it runs.
+/// where the service has no such quest, it is taken, done or declined, whose record stays (declining is the way instead), or the service says work stands on it (an open one a session
+/// started on).
 /// </summary>
 public sealed class QuestDeleteView : IPressView
 {
@@ -28,6 +28,11 @@ public sealed class QuestDeleteView : IPressView
             _ => null,
         };
         if (kept is not null) return PressViewed.Refused($"quest `#{id}` is {status.ToLowerInvariant()}: {kept}. Decline it instead, with the reason.");
+        if (await world.QuestDeletableAsync(id, cancellationToken).ConfigureAwait(false) == false)
+        {
+            return PressViewed.Refused($"quest `#{id}` is {status.ToLowerInvariant()}, but work stands on it (a session started on it, or a quest waits on it), so its record stays. Decline it instead, with the reason.");
+        }
+
         return PressViewed.Shown(new PressView(
             "quest-delete", new Dictionary<string, string>(StringComparer.Ordinal) { ["quest"] = id }, $"daoris quest delete {ShellWord.Of(id, ShellWord.Name)}"));
     }

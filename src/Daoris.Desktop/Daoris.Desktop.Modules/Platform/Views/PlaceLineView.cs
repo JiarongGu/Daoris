@@ -21,7 +21,7 @@ public sealed class PlaceLineView : IPressView
         var sentBranch = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("branch", out _);
         if (!sentBranch) return new PressViewed(null, null);
 
-        var branch = PressPayload.Text(payload, "branch") is { Length: > 0 } text ? text : null;
+        var branch = PressPayload.Raw(payload, "branch") is { Length: > 0 } text ? text : null;
         try
         {
             _ = scoped.Circle ? DriverConfig.Empty.WithWorkspaceLine(scoped.Workspace!, branch) : DriverConfig.Empty.WithLine(scoped.Repository!, branch);
