@@ -320,6 +320,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 ## Open
 
 - **THROUGH1** (D277): Ask Daoris carries the person's words on an ask (`--require`, `--through`), never pressing a run's step.
+- **CONVO1b** (D280, proposed): Ask Daoris's reach set by its access mode alone, the card's *Always* its grant, five fences in both
+  modes; the *yours alone* rows and *Done at a terminal* go (`docs/2026-11-12-conversation-foundation-design.md` §5).
 - **GROWDEPT1** (D276): an agent's press creates a repository or a room, per the design; not built.
 - **CONTEXTDRIVE1j, l, m**: the installed proof of a parked quest gone on, and of the hooks.
 - **STAFFPOLICY1h, i**: selection by measurement; the installed proof.
