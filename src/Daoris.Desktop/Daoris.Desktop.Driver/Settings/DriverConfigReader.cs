@@ -68,6 +68,8 @@ internal static class DriverConfigReader
             WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
             HandOver = HandOverKey.Map(root, "handOver"),
             WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
+            Growth = GrowthKey.Map(root, "growth"),
+            WorkspaceGrowth = GrowthKey.Map(root, "workspaceGrowth"),
             Brainstorms = BrainstormKey.Machine(root),
             WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
             Commits =CommitKey.Map(root, "commits"),

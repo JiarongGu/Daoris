@@ -19,6 +19,7 @@ public static class CreatePlanWire
         Author = plan.Author is { } author ? new { author.Name, author.Email } : null,
         plan.RemoteStep,
         plan.Resumes,
+        plan.Growth,
         Steps = plan.Steps.Select(step => new { step.Id, step.Said }).ToArray(),
         Refusals = plan.Refusals.Select(refusal => new { refusal.Code, refusal.Sentence }).ToArray(),
         Applies = plan.Applies,

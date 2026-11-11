@@ -86,6 +86,9 @@ public sealed record PlacePlanned(
 {
     public IReadOnlyList<PlaceSave> Saves { get; init; } = [];
 
+    /// <summary>The growth switch a room's plan read for its repository (<see cref="GrowthKey"/>); null for a plan that opens no room.</summary>
+    public string? Growth { get; init; }
+
     public bool Applies => Refusals.Count == 0;
 
     public string Digest => PlaceDigests.Of(this);

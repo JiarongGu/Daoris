@@ -46,6 +46,10 @@ internal sealed class HelpRoomGrowth : IHelpRoomSection
         text.Append("does not exist, no git identity, a room's repository not adopted or held) is answered to you at once in the route's\n");
         text.Append("own words and never shown on a card: say them, never reword them into a promise, and work inside the departments\n");
         text.Append("and rooms that exist, saying in your answer that a place of its own was wanted.\n\n");
+        text.Append("The person alone changes the switch that holds opening a place to the access mode, to a card even in full access, or\n");
+        text.Append("to off (Settings, *New repositories and rooms*, on a workspace or a repository): it is no verb of yours in any mode,\n");
+        text.Append("and a press to change it is refused. Where it is off the route refuses in its own words; where it asks, the card is\n");
+        text.Append("the person's.\n\n");
         return text.ToString();
     }
 }

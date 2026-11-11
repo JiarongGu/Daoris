@@ -39,6 +39,9 @@ public static class PlaceRoomRefusals
 
     /// <summary>A held repository, which starts nothing new.</summary>
     public const string Held = "held";
+
+    /// <summary>The growth switch is off for the repository, so no room is asked of it.</summary>
+    public const string Growth = "growth-off";
 }
 
 /// <summary>

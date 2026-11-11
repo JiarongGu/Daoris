@@ -27,6 +27,8 @@ public static class RepositoryCreatePlans
         var refusals = new List<CreateRefusal>(CreateJudge.Asked(ask));
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
         var config = doors.Config();
+        var growth = GrowthRules.Resolve(config, null, workspace).Value;
+        if (growth == GrowthKey.Off) refusals.Add(new(CreateRefusals.GrowthOff, GrowthRules.OffOpening(workspace)));
 
         var resume = CreateJudge.NameUsable(ask.Name) ? new CreateReceipts(doors.Home).Unfinished(ask.Name) : null;
         if (resume is not null && !(string.Equals(resume.Workspace, workspace, StringComparison.OrdinalIgnoreCase) && resume.Ask.Kind == ask.Kind))
@@ -82,7 +84,7 @@ public static class RepositoryCreatePlans
 
         var remote = resume is not null ? resume.RemoteStep : world.RemoteStepOf(config, ask.Name, workspace);
         var steps = StepsOf(ask, workspace, folder, line, author, remote);
-        return new CreatePlanned(ask, workspace, folder, line, author, steps, refusals) { RemoteStep = remote, Resumes = resume?.Digest };
+        return new CreatePlanned(ask, workspace, folder, line, author, steps, refusals) { RemoteStep = remote, Resumes = resume?.Digest, Growth = growth };
     }
 
     /// <summary>The folder the department's folder is made at: under the asked parent, else the workspace's roots' parent; empty where none can be said.</summary>

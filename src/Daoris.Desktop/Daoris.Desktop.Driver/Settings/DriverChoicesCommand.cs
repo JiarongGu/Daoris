@@ -17,14 +17,14 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms", "terminal", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
         "brainstorms", "workflow", "keep", "role", "terminal", MachineSettingsSaid.Every,
     ];
 
@@ -46,6 +46,7 @@ public static class DriverChoicesCommand
                       [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear
                daoris place helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear
                daoris settings handover <repository>|--workspace <name> --mode ask|on|off | --clear
+               daoris settings growth <workspace> [--repository <name>] mode|asked|off  (no value says it: the person's alone, never an agent's)
                daoris place commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end]
                       [--convention "…"|--no-convention] | --clear
                daoris settings brainstorms [--workspace <name>] [--mode ask|off] [--agents <a,b>] [--pass-minutes <n>]
@@ -93,6 +94,7 @@ public static class DriverChoicesCommand
             "list" or MachineSettingsSaid.Every => false,
             _ when args.Count == 1 && MachineSettings.Of(verb) is not null => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
+            "growth" => ChoiceGrammar.GrowthChanges(args),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read.
             "keep" => args.Count > 1,

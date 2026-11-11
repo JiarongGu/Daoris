@@ -511,7 +511,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     written and nothing is pushed. The plan is also `REGISTRY_CREATE_PLAN` (open; the ask resolved, the folder, line and identity, the steps, every
     refusal, the digest and the first lines of each quest, `CreatePlanWire`, `CreateQuests`), the press's own ground and its view's one judge. The
     apply's answer carries the `PressReceipt` it made (the department, workspace, folder, line and set-up quest, and whether it is done), which Ask
-    Daoris's press record keeps (roles-and-supervision 56).
+    Daoris's press record keeps (roles-and-supervision 56). The person's growth switch for its workspace (`GrowthRules`, `growth` and `workspaceGrowth` in
+    `driver.json`, `daoris settings growth <workspace> [--repository <name>] mode|asked|off`, the person's alone) is read by the plan: `off` refuses it
+    (`growth-off`, "Opening repositories in `<workspace>` is off …") in every door, and the plan carries the value (`growth`) the card and the pipe
+    read, so `asked` puts the press on a card even in full access (rule 56).
 52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one repository
     with its receiver named, as the person's, carrying `SetupPlan.Then`, a `SetupThen` (title and body) the service chains behind the quest as
     its one step to the same repository, or none. `place --adoption`, a workspace plan's tick, `repository create` and `place --room` publish through it;
@@ -531,6 +534,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     configuration written and no chain. The quest's body (`RoomBrief`) names the repository, the path, the person's reason, the canon's `rooms-and-classes`
     convention (four of its lines quoted, which a test holds to the canon's text) and the repository's own declaration as its line holds it, and asks only
     for `daoris --version`, `sync` and `check` (`SetupPressRules.RoomRules`, added to the repository's scope beside the rules its set-up added).
+    The growth switch for the repository (its own value, else its workspace's, `GrowthRules.Resolve`) is read by the same plan: `off` refuses the room
+    (`growth-off`, "Opening rooms in `<repository>` is off …", beside every other refusal), and the plan carries the value for the card and the pipe.
 
 ## Where a change goes
 

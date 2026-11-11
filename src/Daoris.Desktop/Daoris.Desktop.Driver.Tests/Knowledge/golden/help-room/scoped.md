@@ -230,6 +230,11 @@ does not exist, no git identity, a room's repository not adopted or held) is ans
 own words and never shown on a card: say them, never reword them into a promise, and work inside the departments
 and rooms that exist, saying in your answer that a place of its own was wanted.
 
+The person alone changes the switch that holds opening a place to the access mode, to a card even in full access, or
+to off (Settings, *New repositories and rooms*, on a workspace or a repository): it is no verb of yours in any mode,
+and a press to change it is refused. Where it is off the route refuses in its own words; where it asks, the card is
+the person's.
+
 ## Making a plugin
 
 A plugin runs on this machine as the person (one that opens a pull request does so with their sign-in), so making

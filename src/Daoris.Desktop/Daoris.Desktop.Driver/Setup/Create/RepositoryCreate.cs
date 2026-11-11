@@ -54,6 +54,7 @@ public static class CreateRefusals
     public const string NoIdentity = "no-identity";
     public const string NoGit = "no-git";
     public const string ServiceNotLocal = "service-not-local";
+    public const string GrowthOff = "growth-off";
 }
 
 /// <summary>The operations a creation's receipt keeps, in the order the press makes them.</summary>
@@ -78,6 +79,9 @@ public sealed record CreatePlanned(
 
     /// <summary>The digest of the unfinished receipt this plan goes on from, where it does.</summary>
     public string? Resumes { get; init; }
+
+    /// <summary>The growth switch the plan read for the workspace the department opens in (<see cref="GrowthKey"/>).</summary>
+    public string? Growth { get; init; }
 
     public bool Applies => Refusals.Count == 0;
 

@@ -140,6 +140,7 @@ public static class PlaceRooms
         var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
         var store = WorkflowPorts.Store(home);
         var rows = new List<PlaceRepository>();
+        string? growth = null;
         var made = new List<(PlaceChange Change, string Repository)>();
         foreach (var name in ask.Repositories)
         {
@@ -150,6 +151,8 @@ public static class PlaceRooms
                 continue;
             }
 
+            growth = GrowthRules.Resolve(config, row.Repository, RemoteTarget.Workspace(row.Workspace)).Value;
+            if (growth == GrowthKey.Off) refusals.Add(new(row.Repository, PlacePlans.Room, PlaceRoomRefusals.Growth, GrowthRules.OffRoom(row.Repository)));
             IReadOnlyList<PlaceRefusal> judged = [];
             PlaceRoomRead? read = null;
             if (path is not null) (judged, read) = await JudgeAsync(world, config, unadopted, row, path, quests, ct).ConfigureAwait(false);
@@ -171,7 +174,7 @@ public static class PlaceRooms
         }
 
         var said = made.GroupBy(each => each.Change).Select(group => new PlaceChanged(group.Key, [.. group.Select(each => each.Repository)])).ToList();
-        return new PlacePlanned(ask, rows, refusals.Count == 0 ? said : [], refusals, PlacePlans.Terminal(ask));
+        return new PlacePlanned(ask, rows, refusals.Count == 0 ? said : [], refusals, PlacePlans.Terminal(ask)) { Growth = growth };
     }
 
     /// <summary>The terminal's lines of a room's plan: the room and its reason, the change it makes, and each refusal.</summary>

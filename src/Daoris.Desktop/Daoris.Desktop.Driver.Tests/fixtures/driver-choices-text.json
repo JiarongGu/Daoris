@@ -2169,6 +2169,72 @@
       "after": null
     },
     {
+      "name": "growth, a workspace",
+      "argv": [
+        "growth",
+        "aurora",
+        "off"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: new repositories and rooms in the workspace `aurora`: off.",
+        "  An agent's press that opens a repository or a room is refused, even in full access; it works inside what exists.",
+        "  Written to <config>."
+      ],
+      "err": [],
+      "after": "{\n  \"workspaceGrowth\": {\n    \"aurora\": \"off\"\n  }\n}\n"
+    },
+    {
+      "name": "growth, a repository",
+      "argv": [
+        "growth",
+        "aurora",
+        "--repository",
+        "ledger",
+        "asked"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: new rooms in `ledger`: asked (its own).",
+        "  An agent's press that opens a repository or a room waits for your Confirm in Daoris's window, even in full access.",
+        "  Written to <config>."
+      ],
+      "err": [],
+      "after": "{\n  \"growth\": {\n    \"ledger\": \"asked\"\n  }\n}\n"
+    },
+    {
+      "name": "growth, the value it stands at",
+      "argv": [
+        "growth",
+        "aurora",
+        "--repository",
+        "ledger"
+      ],
+      "before": "{\n  \"workspaceGrowth\": {\n    \"aurora\": \"asked\"\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: new rooms in `ledger`: asked (from the workspace `aurora`).",
+        "  An agent's press that opens a repository or a room waits for your Confirm in Daoris's window, even in full access."
+      ],
+      "err": [],
+      "after": "{\n  \"workspaceGrowth\": {\n    \"aurora\": \"asked\"\n  }\n}\n"
+    },
+    {
+      "name": "growth, no workspace",
+      "argv": [
+        "growth"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `settings growth` needs the workspace the switch is for. — usage: daoris settings growth <workspace> [--repository <name>] mode|asked|off — e.g. `daoris settings growth aurora off`; with no value it says the value and where it comes from."
+      ],
+      "after": null
+    },
+    {
       "name": "commits",
       "argv": [
         "commits",
