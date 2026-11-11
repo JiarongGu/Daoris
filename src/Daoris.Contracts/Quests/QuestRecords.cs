@@ -130,6 +130,13 @@ public sealed record QuestSubmissionWire(
 /// </summary>
 public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, string? Sha256, long? Bytes);
 
+/// <summary>
+/// The quest list as its change since a mark: the mark to ask from next, every quest's id in the list's order, and each quest whose
+/// answer moved since the mark asked from, as the list answers it.
+/// </summary>
+/// <param name="Whole">The mark asked from is none this host holds, so every quest is among the changed.</param>
+public sealed record QuestChangesResponse(string Mark, IReadOnlyList<string> Order, IReadOnlyList<QuestResponse> Changed, bool Whole);
+
 /// <summary>What a quest door did: the quest as it now stands, and the exchange's sentence.</summary>
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 

@@ -200,6 +200,9 @@ public sealed class QuestStore
 
     internal ConnectionGate Db => _db;
 
+    /// <summary>Where the store's writes stand, by every writer of its file; see <see cref="StoreMark"/>.</summary>
+    public Task<StoreMark> MarkAsync(CancellationToken ct = default) => StoreMark.ReadAsync(_db, ct);
+
     private readonly QuestLogSync _sync;
 
     internal QuestLogSync Sync => _sync;

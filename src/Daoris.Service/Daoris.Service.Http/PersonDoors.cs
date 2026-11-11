@@ -180,6 +180,7 @@ public static class PersonDoors
         new("GET", "/api/entries", DoorClass.Open),
         new("GET", "/api/convergence", DoorClass.Open),
         new("GET", "/api/quests", DoorClass.Open),
+        new("GET", "/api/quests/changes", DoorClass.Open),
         new("GET", "/api/quests/{id}/attachments/{sha256}", DoorClass.Open),
         new("GET", "/api/quests/{id}/claim", DoorClass.Open),
         // A quest's moves by allow-list, on both hosts.

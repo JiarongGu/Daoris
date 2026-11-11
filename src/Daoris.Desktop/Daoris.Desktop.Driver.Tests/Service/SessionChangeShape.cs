@@ -2,11 +2,21 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The sessions' change door's path and the contract's shape of a first read, held once for the wrappers over a stand-in's HTTP or doors.</summary>
+/// <summary>The lists' change doors' paths and the contract's shape of a first read, held once for the wrappers over a stand-in's HTTP or doors.</summary>
 internal static class SessionChangeShape
 {
     public const string ChangesPath = "/api/sessions/changes";
     public const string ListDoor = "/api/sessions?includeClosed=true";
+    public const string QuestChangesPath = "/api/quests/changes";
+    public const string QuestListDoor = "/api/quests?includeClosed=true";
+
+    /// <summary>The whole list a change door is answered from, or null for a path that is no change door.</summary>
+    public static string? ListDoorOf(string path) => path switch
+    {
+        ChangesPath => ListDoor,
+        QuestChangesPath => QuestListDoor,
+        _ => null,
+    };
 
     /// <summary>The change that carries every record of <paramref name="sessions"/>, a JSON array, as a first read; an answer that is no array is passed as it came.</summary>
     public static string Whole(string sessions)
