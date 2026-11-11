@@ -1,7 +1,7 @@
 # Evidence: from a start to a full Sessions and Quests view (STARTPERF1's measurement, 2026-11-11)
 
 **Standing:** evidence. It reads the installed window's machine log for 2026-11-11 and its data folder's layout, both read only, and
-the service's and the desktop's stores from a copy in a gitignored scratch folder. The three fixes it names are on STARTPERF1's branch;
+the service's and the desktop's stores from a copy in a gitignored scratch folder. The fixes it names are on STARTPERF1's branches;
 the [database design](2026-11-11-start-load-database-design.md) beside it is proposed. Times are from the process's start unless a
 line says otherwise.
 
@@ -97,11 +97,20 @@ they began at 42 s and took 46-48 s each, and no word came.
 | 1 | The first screen's roots are the status, registry, quests, asks, sessions (their groups among them) and notices; *What needs you* and the repositories draw as loading until they land (`0366058c36`) | the word at 64.6-75.9 s or never; the facts and the deferred look work at the 30 s bound, about 40 s | the word at the groups' first judgement; the facts and the deferred work start then, not at the bound; *What needs you* is the facts' first judgement after it |
 | 4 | A door walks the trees no part judged `HelpTreeFacts.AtOnce` (4) at once (`f69d52f951`) | six trees of 50 ms: one at a time, 300 ms | four at once, 100 ms; at a start the sum of the walks becomes about a quarter of it, each walk still under cause 3 |
 | 6 | What a part spent reads on from its last read (`SessionSpentKept`), whole again only where the record no longer stands as read; an append's number is read from the end (`651c69a51b`) | each ask parsed every asked part whole: 17-47 ms a large record in Node, the 775 ms stall in .NET | the first ask reads each record once; each later ask reads the lines written since; the number reads 4 KB from the end (0.2-0.9 ms) |
+| 2 | A start takes the readings an earlier process left, stamped by this build (`KeptReadings`), and reads only the roots that moved; the summary counts in the store (`979440b9fc`) | every root read again at the first use: 22.5-28.8 s at the install; 36.7 s over four copies of this repository's records (89,744 entries); the summary's count 1,010 ms | nothing moved: 334 ms; one root moved: 9.3 s; the count 300 ms |
+| 5 | The service keeps its quest list by the store's mark and answers a change since a mark (`GET /api/quests/changes`); every desktop reader of every quest reads the list kept by it (`QuestListKept`) (`80b4c960a5`) | 950 quests: each read made the list again, 613 ms and 3.9 MB | answered again unmoved 70 ms; a reader asking since its mark with nothing moved 4 ms and 14 KB of ids; one quest moved 204 ms and 18 KB |
+| PUSH1d2b | The sessions and quests slices judge a kept list once while it is the same object (`JudgedOnce`), and a slice handed its last judgement compares nothing (`73972c604a`) | with no window, each 15 s period judged and compared every record: 148.7 ms over 1,261 | 0.003 ms a period |
+
+Causes 2 and 5 are measured in-process without the window: `StartReadingProcessTests` (four committed copies of this repository's
+records under `_fixtures/`, a store kept between composed hosts) and `QuestChangesProcessTests` (950 quests of about 4 KB on the
+local host); PUSH1d2b by `SessionsSliceIdleProcessTests`. The slice already read the sessions on their change door (`SessionListKept`),
+and the door answers from its kept answer while the store's mark holds; a write anywhere in the store's file moves that mark and
+makes the whole session list again, `deletable` judged for every record (about 520 ms at 3,000 records, the route budget's reading).
 
 The window's own after-measurement is the install's: once this branch is merged and the install updated, five starts' `start.stages`
-(`page`, `splash`), the first `help.room.look` with trees and the first `watch.looked by=start` read against §2. This branch ran no
-installed window.
+(`page`, `splash`), the first `help.room.look` with trees, the first `watch.looked by=start` and the first `/api/repositories` read
+against §2. This branch ran no installed window.
 
-Not fixed here: cause 2 is the service's index (`KnowledgeService.SummarizeAsync` counting by reading every entry, and the refresh at
-first use), off the word now; cause 3 is the machine's protection, and fewer starts in the first look is a change of its own; cause 5
-needs a change mark for the quests, which the service does not keep (the design's §3).
+Not fixed here: cause 3 is the machine's protection, and fewer starts in the first look is a change of its own; the session door's
+mark is the store file's, which any write moves (a mark of the sessions' own needs the quests' and the asks' too, since a record's
+answer reads them); the session events' heads and offsets are the design's §2, for D275.

@@ -39,10 +39,12 @@ So a database is called for narrowly: an index over the event records, and a mar
 
 ## 3. The quests: a change mark
 
-The service stamps a `quest_revision` on every quest write, as it does the sessions', and answers the quests moved since a mark
-(`GET /api/quests/changes`). The desktop keeps the list by its change (`QuestListKept`, as `SessionListKept`): every reader of every quest
-reads the kept list, and one quest's lookup reads one record of it. A host without the door answers it not found and the desktop reads
-the whole list, as it does for an older host's session list. This is the service's store change, and its door.
+Built on STARTPERF1's second branch, as the sessions' change door is rather than by a `quest_revision` on each row: a quest's answer
+moves with records beside it (its delete with a session that names it, its takes with its log), so the service keeps the list's answer
+by the store's mark (`QuestListAnswers`) and answers each quest whose written answer moved since a mark (`GET /api/quests/changes`,
+`ListChanges<T>`). The desktop keeps the list by its change (`QuestListKept`, as `SessionListKept`): every reader of every quest reads
+the kept list, and one quest's lookup reads one record of it. A host without the door answers it not found and the desktop reads the
+whole list, as it does for an older host's session list. No store column moved.
 
 ## 4. Migration
 
