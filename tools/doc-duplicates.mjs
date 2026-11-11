@@ -18,7 +18,7 @@
  *
  * It is read where `daoris.json` declares it (`documents.decisions`). As one file it tore in 33 of 134
  * merges, so it is a folder of one file per decision, merged by union per file
- * (`docs/2026-10-03-decisions-record-design.md`). A file is checked for a number twice. A
+ * (`docs/archive/2026-10-03-decisions-record-design.md`). A file is checked for a number twice. A
  * folder is checked for what union can still leave in one decision's file (§3.4): a file not named
  * `D<n>.md`, a heading that is not exactly one and its own, a conflict marker, a note's label glued to the
  * line above it, a note held twice (union keeps a note both sides carried, each copy set apart).

@@ -12,7 +12,7 @@
 > cannot complete on a repository nobody opened"*: PERM1 (D72) hands Daoris's own rules at spawn, and
 > they reach an untrusted folder, measured. §4a's *"not Daoris's to write"*: D73 writes the trust
 > flag, on a person's act that names the folder. §5's *"the protocol door may not have this problem"*:
-> it does, measured on both doors (`2026-09-24-deploy1-acp-trust-evidence.md`). §5's missing
+> it does, measured on both doors (`archive/2026-09-24-deploy1-acp-trust-evidence.md`). §5's missing
 > deployment gate: `rehearse:deploy` (D60). And `~/.daoris/bin` is `$DAORIS_HOME/bin` (D63).
 
 ## 1. What was deployed, and how

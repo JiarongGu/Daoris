@@ -98,7 +98,7 @@ Three directions of the owner's, 2026-10-28, in this design's words (the third r
    start, work, a pull-request branch, completed. Steps inside the work may ask another repository or agent (a quest), shown and waited on as
    part of the flow, and later kinds (a push, a release) extend the same flow.
 
-FOUNDATION1 (`docs/2026-10-25-foundation-design.md`, D212) stays the priority for building; this design may be written now and is built after
+FOUNDATION1 (`docs/archive/2026-10-25-foundation-design.md`, D212) stays the priority for building; this design may be written now and is built after
 or beside it as the steward sequences.
 
 ### 0.2 What was read
@@ -106,7 +106,7 @@ or beside it as the steward sequences.
 The brief and `docs/development.md`; the discovery skills' matches (`autonomous-development`, `claims-need-checks`, `development-documents`,
 `held-clocks`, `ref-removal-transactions`), and for round 2 `compatible-builds`, `session-record-fields` and `pushed-slices`; D87 and its notes
 (LANDSYNC0 to LANDREBASE2, GENREGEN1, LANDBACKLOG1), D145, D164, D173's fabric events design parts B, C and E
-(`docs/2026-10-16-fabric-events-design.md`), D190, D192 and its pipeline design §4, D207, D209, D191, D212's §4 and §14, the event hook design's
+(`docs/archive/2026-10-16-fabric-events-design.md`), D190, D192 and its pipeline design §4, D207, D209, D191, D212's §4 and §14, the event hook design's
 kinds; `tools/merge-branch.mjs` (its header, the queue's sections, the commit check, the private files' copy, the prune) and
 `tools/merge-queue.mjs` whole, the driver's landing in `Workplace/`, `Settings/` and `Workflows/` at `7ebeba1ba`; the in-flight branches by
 `git show`; the queue's own records of 2026-10-26 to 28 under the main checkout's ignored `local/` (read, never written); the backlog rows
@@ -201,13 +201,13 @@ the service's `Quests/Quests.cs` and `QuestExchange.cs`. §1.1's lines in `tools
 ### 1.3 What the fabric already holds
 
 - **A rule carries what follows the landing.** `cycle` on the landing rule is a graph fragment (`Settings/LandingKey.cs:54-60`; the fabric events
-  design §C2 and §E7, `docs/2026-10-16-fabric-events-design.md:529-611`, `:1784-1791`), inherited whole with the rule (D164). A unit's own
+  design §C2 and §E7, `docs/archive/2026-10-16-fabric-events-design.md:529-611`, `:1784-1791`), inherited whole with the rule (D164). A unit's own
   landing graph is `handed` then `line`, with `pushed` and `pull-request` between them where a branch rule names a plugin
   (`NodeGraphHomes.Landing`, `Trees/Nodes/NodeGraphs.cs:747-762`).
 - **Nodes and their authority.** `handed` and `line` are observed by git's proof (§E2's table and §E4, `:1464-1466`, `:1520-1534`;
   `Trees/Nodes/NodeContract.cs:433-435`). `work.landed` is EVENTHOOK1's: the install landed a session's work as a branch the line does not hold
   yet, told from the automatic landing's try (`docs/2026-10-24-event-hook-design.md:490`, `:496`), never for a merge rule; FOUNDATION1 keeps
-  its kinds' meaning through its adapter (`docs/2026-10-25-foundation-design.md:1169`) and names `work.integrated` once the line holds the work
+  its kinds' meaning through its adapter (`docs/archive/2026-10-25-foundation-design.md:1169`) and names `work.integrated` once the line holds the work
   (`:1157`) *(F4)*.
 - **Two engines.** A run bound to a schema-1 version stays D157's to its end; no run is governed by a decoded graph; a steps version reaches the
   runtime only as a new graph version a person saves (D190 point 1, `docs/decisions/D190.md:13-18`) *(C10)*.
@@ -221,7 +221,7 @@ the service's `Quests/Quests.cs` and `QuestExchange.cs`. §1.1's lines in `tools
   (`GeneratedWriters.cs:44-52`).
 - **The environment.** A start drops the role variables it inherits and keeps `DAORIS_HOME` (`Agents/Adapters.cs:1661-1677`; ENVLEAK1,
   `docs/FIX-LOG.md:2930-2941`).
-- **The map.** Settings holds the keys' shapes (`docs/2026-10-25-foundation-design.md:2335`), Workplace the trees, git and the landing
+- **The map.** Settings holds the keys' shapes (`docs/archive/2026-10-25-foundation-design.md:2335`), Workplace the trees, git and the landing
   (`:2342`), Review the heavy gates, checks and a check's verdict (`:2348`), Workflows the node runtime (`:2350`), Events the vocabulary
   (`:2339`), Roles the role catalogue (`:2343`); a subdomain names only lower ones, and a `LoopContext`-built executor stays in Loop
   (`:2363-2373`).

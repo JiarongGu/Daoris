@@ -1,10 +1,10 @@
 # AGENTSPLACE1: the Agents place made usable (accepted 2026-11-01)
 
 **Standing:** accepted under D191 on 2026-11-01. Round 1's two sealed proposals were:
-- the Opus maker's, `2026-11-01-agents-place-proposal-opus.md`;
-- Codex's, `2026-11-01-agents-place-proposal-codex.md`.
+- the Opus maker's, `archive/2026-11-01-agents-place-proposal-opus.md`;
+- Codex's, `archive/2026-11-01-agents-place-proposal-codex.md`.
 
-Both answer the brief `2026-11-01-agents-place-brief.md`. The steward synthesized them, both makers read the synthesis and accepted it with named changes, and the steward settled those changes in `2026-11-01-agents-place-reads.md`. This text is the design as settled.
+Both answer the brief `archive/2026-11-01-agents-place-brief.md`. The steward synthesized them, both makers read the synthesis and accepted it with named changes, and the steward settled those changes in `archive/2026-11-01-agents-place-reads.md`. This text is the design as settled.
 
 ## 1. What both proposals found
 

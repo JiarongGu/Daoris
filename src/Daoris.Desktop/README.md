@@ -6,7 +6,7 @@ generated `docs/index/routes.md` locates bridge handlers; its roster is generate
 the table below explains the contracts. [The router](../../docs/README.md) names later amendments.
 
 The driver, its headless host and the shell all exist, and the family rehearsal
-drives them end to end. `docs/2026-09-19-driver-design.md` (D46) is the contract; how each part
+drives them end to end. `docs/archive/2026-09-19-driver-design.md` (D46) is the contract; how each part
 got its shape is in `docs/decisions/` and `docs/task-archive.md`, not here.
 
 For an isolated development start, run these from the repository root:
@@ -983,7 +983,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **The start is timed stage by stage** (STARTFAST1): `StartStages`, begun at the top of `Main`, writes one
   `start.stages` line per start, each stage in ms from the process's start (the home, the driver, the pipe, the
   host, the window shown, the page's browser, the page's first data, the splash). It times only; what starts is
-  unchanged. `docs/2026-10-23-start-path-design.md` reads the path to the first page.
+  unchanged. `docs/archive/2026-10-23-start-path-design.md` reads the path to the first page.
 - **The start's cut** (STARTFAST1b, D56's note): `Program` begins the host (`HostSupervisor.Begin`) before the kit's
   runner starts Chromium, by the launch holding `HostStartClaim` (a named mutex per service address, since the
   single-instance guard runs inside the runner), and the loop takes that start (`UpAsync`); the supervisor marks
@@ -1038,7 +1038,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is. It takes the address only where its
   `/api/status`, asked with redirects off, answers this home's id (HOMEID1: `<home>/data/home.json`, `HomeIdentity`, which every
   path to the folder reads alike), so another install's service at that address is never used. A status door that does not answer within its two seconds, where the lease's process runs, is waited for (SERVICEPROBE1): one line on stderr says so, it is asked again each second with a ten-second bound, for thirty seconds in all, and where none answers the refusal says what it saw (the address, the thirty seconds, how many times it asked) and that `DAORIS_SERVICE_URL` is not the cause, never *no DAORIS_SERVICE_URL*; a lease whose process is gone still refuses at once. A read of the service (`ServiceHttp`) the service does not answer in the client's own bound (thirty seconds) is asked once more after a second and then said so; a press that changes state is asked once and says what to look at before pressing it again. Only the bound `ServiceHttp` made for itself is retried (SERVICESTALL1b): a client a caller hands in carries the caller's deadline, whose timeout ends a request once as the cancellation `HttpClient` made it (the loop's look names its exit 2 from it), and a service that could not be reached is neither retried nor reworded.
-- **A terminal's verb is its client over a pipe** (RPC1a, D171 point 3, `docs/2026-10-16-terminal-rpc-design.md`). Once the
+- **A terminal's verb is its client over a pipe** (RPC1a, D171 point 3, `docs/archive/2026-10-16-terminal-rpc-design.md`). Once the
   loop holds the home it serves `daoris-<home id>-<session>` (`InstancePipe`): this user's alone, the first instance of its
   name, the kit's request envelopes on lines into the same dispatcher the pages use, so a press over it is the window's press,
   under way and published in every window. Only a route `PipeCensus` classes `open` runs as asked; a `person` route waits for
@@ -1339,7 +1339,7 @@ sitting that the driver should have started".
 
 ## The design, settled (DRV1, 2026-09-19)
 
-`docs/2026-09-19-driver-design.md` answers the brief's five questions; the short form:
+`docs/archive/2026-09-19-driver-design.md` answers the brief's five questions; the short form:
 
 1. **Spawn, not wake** — a fresh non-interactive session per quest, one active session per repository,
    onto a clean tree only; the spawned session claims its own quest through its own connector, so the

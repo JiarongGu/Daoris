@@ -5,7 +5,7 @@
 // read. That file belongs to the ADOPTER — one of them carries 133 lines of its own in it — so
 // Daoris owns a region of it and nothing else.
 //
-// `docs/2026-09-22-instruction-file-design.md` §4 is the state space, and it extends the sync's rows with three
+// `docs/archive/2026-09-22-instruction-file-design.md` §4 is the state space, and it extends the sync's rows with three
 // states a file never had. Every one of them REFUSES.
 //
 // 🔴 **Never guess at a boundary.** The text on the other side is somebody's own doctrine, and

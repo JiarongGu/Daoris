@@ -18,7 +18,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 | **Plugins** | this machine's plugins and offers; desktop only |
 
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
-time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
+time (D55, `docs/archive/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
 The session's Workflow view names its bound saved version, or Current for live declarations, and the route that
 chose it (FABRIC-PIPELINE1a). Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
@@ -105,7 +105,7 @@ under `SignIn`, the link, the code and the ask read from the tool's lines by the
 steps as before, with the time since the press. A sign-in that ends without signing in says so in its panel with *Try
 again* and *Close*, and one the person cancelled closes saying nothing.
 
-**The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
+**The design language is written down** — `docs/archive/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
 detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a

@@ -1,5 +1,5 @@
 /**
- * The screen counter (docs/2026-10-04-ux6-redesign.md §9.1–§9.3):
+ * The screen counter (docs/archive/2026-10-04-ux6-redesign.md §9.1–§9.3):
  *
  *   node --test tools/ux-count.test.mjs
  *

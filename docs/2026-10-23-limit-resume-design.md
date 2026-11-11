@@ -5,13 +5,13 @@ driven line at a limit. Nothing is built here. Every line below was read at `995
 is built: on a session branch (`5a2cd2a1f`, `5abcb801f`, `d67be99f1`) that is not merged at that commit. Paths are under
 `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they say otherwise.
 
-**Round 2** (2026-10-23) answers round 1's Opus foundation read (`docs/2026-10-23-limit-resume-reads.md`: 41 facts checked, 7
+**Round 2** (2026-10-23) answers round 1's Opus foundation read (`docs/archive/2026-10-23-limit-resume-reads.md`: 41 facts checked, 7
 wrong as F1-F7; B1-B7 blocking, N1-N15 not; *another round*). The code is read again with LIMITGOON1 merged (`2d2aedca0`), so
 its citations are now main's. The reader's line numbers held; where this round cites new ones, they are main's. Every finding is
 taken or answered in §8's table, and where the answer changes the text, the section carries it marked *(round 2, Bn)*. New
 sections: §3.8 (the other kinds of run, B5), §3.9 (an update's close, B6), §3.10 (a conversation that kept no id, B7).
 
-**Round 3** (2026-10-24) answers round 2's two reads (`docs/2026-10-23-limit-resume-reads.md`): Codex's (12 findings, 8 blocking,
+**Round 3** (2026-10-24) answers round 2's two reads (`docs/archive/2026-10-23-limit-resume-reads.md`): Codex's (12 findings, 8 blocking,
 4-11; *another round*) and the Opus foundation read (37 facts, F8-F13 wrong; B8 and B9 blocking, N16-N29 not; *accept after B8
 and B9*). The code is read again on main at `05328a5c9`. Since `2d2aedca0` only APIREFUSAL1 and MODELROLE1a touched the driver,
 which shifted `Driver.cs` past `:2417` by two lines and `Observation.cs` past `:99`; this round cites main's lines. Where the two
@@ -430,7 +430,7 @@ to conversations. The owner's direction of 2026-10-23, recorded in D205's accept
 walks its choices*. This design takes that: **a driven line whose last part ended limited walks its actor's effective order at
 step 2**, choice-major, every account of the out choice passed, as (e) does for a conversation. *(Round 3, Codex 11.)* D205 is
 accepted, so this walk is an amendment to it in three places, each made by its dated note and §4: D205 §3.5(e)'s *why
-conversations and not driven lines* (`docs/2026-10-23-actors-design.md:532-534`), the card's consent (§6.3, `:905-915`) and
+conversations and not driven lines* (`docs/archive/2026-10-23-actors-design.md:532-534`), the card's consent (§6.3, `:905-915`) and
 the editors' words (§7, `:1025-1029`), all below. It carries the brief and the
 held words, said once (*Went on with Codex · account default, Build's choice 2: Claude Code's accounts are at their limit until
 14:05*). A **pick**, a **handed quest's named agent** and an actor *as before* (one entry) do not walk: they wait. The extension
@@ -495,7 +495,7 @@ existing *Try now* (`AccountCooling.End`) sits beside it.
   the actor's own choices first. It is the person's press, so it may name a maker outside the actor (D205 §4.2's offer). It is
   the only way a pick moves. *(Round 2, B4.)* It falls under D205 (e)'s Ask Daoris exception only for the automatic move. D163's
   offer refuses Ask Daoris's own conversation (`Conversations/HandOver/HandOver.cs:51-53`, `:188-190`), and D205 §3.5(e) keeps
-  *the person's press … still never move it* (`docs/2026-10-23-actors-design.md:507-508`). So on Ask Daoris the press is its own
+  *the person's press … still never move it* (`docs/archive/2026-10-23-actors-design.md:507-508`). So on Ask Daoris the press is its own
   door, `ResumeWords.HelpDoor` (*start a new conversation from this one*), never D163's offer.
 - ***Pause*** for a driven line *(round 2, B4)*. A waiting driven line's last record has ended, and *nothing else leaves an ended
   state* (`src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs:1446-1451`), so there is no stop to make on it. Its
@@ -526,7 +526,7 @@ its own `Cooled` (`DriverBrainstorms.cs:723-727`). None counts a strike, since `
 
 | Kind | Today after a limited end | Round 2 |
 |---|---|---|
-| **Intake** | Ends `failed` with the flag (`DriverIntakes.cs:272-276`); its ask keeps its `Intake` binding and the look picks only asks with none (`:79`), so the ask is used up | **Covered, row 1h.** The ask is unbound by D205 §3.5(f)'s door (`EndRefusedIntakeAsync`, `docs/2026-10-23-actors-design.md:546-560`, not built; built by whichever of 1h and MODELROLE1's row f lands first), so the look picks the ask again and its start is held by the cool-off as any start's is, no strike |
+| **Intake** | Ends `failed` with the flag (`DriverIntakes.cs:272-276`); its ask keeps its `Intake` binding and the look picks only asks with none (`:79`), so the ask is used up | **Covered, row 1h.** The ask is unbound by D205 §3.5(f)'s door (`EndRefusedIntakeAsync`, `docs/archive/2026-10-23-actors-design.md:546-560`, not built; built by whichever of 1h and MODELROLE1's row f lands first), so the look picks the ask again and its start is held by the cool-off as any start's is, no strike |
 | **Second opinion** | Gate `Unavailable` with `Code = Why ?? "ended"` and no `Until` (`Review/Domain/OpinionGate.cs:400`); the automatic re-ask needs `Cooling` with an `Until` passed (`OpinionGateLook.cs:221`), so only the person's *Try again* re-asks | **Covered, row 1h.** *(Round 3, Codex 3, N25.)* There is no `Cooling` gate state. A limited pass sets the gate to the exact shape the re-ask reads, `State: Unavailable, Code: ReviewerUnavailable.Cooling, Until: reset` (`OpinionGateLook.cs:220-221`), as a choice refused at start already returns it (`OpinionGate.cs:395`). The pass opened its opinion, so the gate reads `first.Why` with no `Until` (`:400`); row 1h reads the `Until` from the cool-off entry by its session (`CoolingEntry.Session`, `AccountCooling.cs:22-27`), and the opinion's `Why` is `limited` |
 | **Helper** | `SettleHelperAsync` refuses it `HelperWhy.NoAnswer` (`DriverHelpers.cs:631-637`, `:539-548`), so the asker reads *no answer*, not a limit | **Covered where a lead waits on it; deferred where none does** *(round 3, Codex 9)*. HELPERWAIT1 lets a driven lead end its turn waiting on its own open helper (`DriverHelpers.cs:165-171`), and a helper refused with no answer brings that lead back to the person (`BackToPersonAsync`, `:363-386`), so a limit would still need the person. Row 1h: where the asker's last record waits on this helper (`HelperWaits.Waits`, its quest `Taken`), a limited helper run is **not refused**: the ask stays open in a state of its own, `cooling` with its `Until`, which `HelperWaits.Open` counts as open, so the lead keeps waiting. The ask is run again by the helpers' own pick (`ReviewerChoice.ChooseAsync`), which passes the cooling account: another eligible account or choice of the Helper actor at once, else at its `Until`. It is run again only while the lead still waits on it; a lead that has gone on, parked or ended lets it be refused as below. Where no lead waits (a live asker that has moved on), it is refused `limited`, naming when its account is ready again, and nothing resumes it: an answer hours later lands in a turn that no longer wants it |
 | **Brainstorm voice** | Moves once to the walk's next ready account within its minutes (`DriverBrainstorms.cs:603-609`); a second failure ends it `Unavailable` with `limit` (`:598-600`) | **Deferred.** A brainstorm is a pass bounded by its minutes, and D205 keeps its voices frozen, a voice that cannot run being dropped and never replaced; waiting hours for a reset breaks the minutes it was asked within |
@@ -645,7 +645,7 @@ Added in round 2 (N4, B2, B6, N13):
 - **D163**'s *Rejected: automatic hand-overs by default*: a driven line at a limit is moved by itself across its actor's choices
   (§3.6), as (e) already is for a conversation.
 - **D205 §3.5(a)'s round-4 bullet**, *(e) is reached only from a turn that met a limit, never from words said to a conversation
-  already ended* (`docs/2026-10-23-actors-design.md:379-382`): an ended conversation held by a limit is moved at the wake within
+  already ended* (`docs/archive/2026-10-23-actors-design.md:379-382`): an ended conversation held by a limit is moved at the wake within
   its agent (§3.5's seam); across agents it is still (e)'s, from a limit only.
 - **D125 point 6**'s *What needs you*: a held limited line is not listed there; it says its wait on its own page (§3.7).
 - **D104**: a driven session stopped by an update's close counts no strike (§3.9 point 4); the person's close keeps it.
@@ -727,7 +727,7 @@ their windows (N21); for the others the attempt is the probe.
 
 ## 8. Round 2: round 1's reads answered
 
-Every finding of the Opus foundation read (`docs/2026-10-23-limit-resume-reads.md`), against the code on main at `2d2aedca0`.
+Every finding of the Opus foundation read (`docs/archive/2026-10-23-limit-resume-reads.md`), against the code on main at `2d2aedca0`.
 *Taken* means the change is made as the reader proposed, or narrower; *answered* means the design keeps its text and says why.
 
 | Finding | Taken or answered | Where |
@@ -764,7 +764,7 @@ Every finding of the Opus foundation read (`docs/2026-10-23-limit-resume-reads.m
 
 ## 9. Round 3: round 2's reads answered
 
-Every finding of Codex's read and of the Opus foundation read of round 2 (`docs/2026-10-23-limit-resume-reads.md`), against the
+Every finding of Codex's read and of the Opus foundation read of round 2 (`docs/archive/2026-10-23-limit-resume-reads.md`), against the
 code on main at `05328a5c9`. *Taken* and *answered* as in §8. Where the two reads agree, one row says so and both are taken by it.
 
 | Finding | Taken or answered | Where |

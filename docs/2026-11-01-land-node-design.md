@@ -1,10 +1,10 @@
 # LANDNODE1: landing a performed, configurable node of the workflow (accepted 2026-11-01)
 
 **Standing:** accepted under D191 on 2026-11-01. Round 1's two sealed proposals were:
-- the Opus maker's, `2026-11-01-land-node-proposal-opus.md`;
-- Codex's, `2026-11-01-land-node-proposal-codex.md`.
+- the Opus maker's, `archive/2026-11-01-land-node-proposal-opus.md`;
+- Codex's, `archive/2026-11-01-land-node-proposal-codex.md`.
 
-Both answer `2026-11-01-land-node-brief.md`. The steward synthesized them, both makers read the synthesis and accepted it with named changes, and the steward settled those changes in `2026-11-01-land-node-reads.md`. This text is the design as settled.
+Both answer `archive/2026-11-01-land-node-brief.md`. The steward synthesized them, both makers read the synthesis and accepted it with named changes, and the steward settled those changes in `archive/2026-11-01-land-node-reads.md`. This text is the design as settled.
 
 ## 1. What both found
 

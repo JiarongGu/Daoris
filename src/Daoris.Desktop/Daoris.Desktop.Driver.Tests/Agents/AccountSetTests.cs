@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent's accounts as one set (<c>docs/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
+/// An agent's accounts as one set (<c>docs/archive/2026-10-21-account-pool-design.md</c> §2, §6): the fold's table of shapes,
 /// <see cref="HarnessSettings.Change"/> folding before every edit, the receipts said by id, the come-up a held lock refuses, and an
 /// older build's reading of a folded file.
 /// </summary>

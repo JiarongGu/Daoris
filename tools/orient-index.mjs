@@ -70,7 +70,7 @@ if (isMain(import.meta.url)) {
     }
     const refused = markFindings(root);
     if (refused.length) {
-      console.error(`orient-index: ${refused.length} mark(s) a decision's note carries are refused (docs/2026-10-30-knowledge-freshness-design.md §3.1):`);
+      console.error(`orient-index: ${refused.length} mark(s) a decision's note carries are refused (docs/archive/2026-10-30-knowledge-freshness-design.md §3.1):`);
       for (const { file, line, fact } of refused) console.error(`  ${file}:${line} ${fact}`);
       process.exit(1);
     }

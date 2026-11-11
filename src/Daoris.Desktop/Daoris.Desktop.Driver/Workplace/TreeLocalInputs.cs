@@ -75,6 +75,31 @@ internal static class TreeLocalInputs
     }
 
     /// <summary>
+    /// The private patterns file <paramref name="checkout"/>'s gates file names, or the devkit's default where it names none, in git's
+    /// spelling; null where there is no readable gates file or the path is not one an input may name.
+    /// </summary>
+    internal static string? PatternsFile(string checkout)
+    {
+        try
+        {
+            var file = Path.Combine(checkout, DeclarationNames.Gates);
+            if (!File.Exists(file)) return null;
+            using var document = JsonDocument.Parse(File.ReadAllBytes(file));
+            var path = document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("sensitive", out var sensitive) && sensitive.ValueKind == JsonValueKind.Object
+                && sensitive.TryGetProperty("patternsFile", out var named) && named.ValueKind == JsonValueKind.String
+                && named.GetString() is { Length: > 0 } declared
+                    ? Spelled(declared)
+                    : DefaultPatternsFile;
+            return Within(path) ? path : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// The checkout's declared inputs copied into <paramref name="tree"/>, a tree of <paramref name="root"/> git has just checked out:
     /// git says which it ignores there, and <see cref="Copy"/> does the rest. A cancel stops it and takes back what it copied.
     /// </summary>

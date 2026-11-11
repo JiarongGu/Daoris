@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// Cookies as the Chrome DevTools Protocol carries them, and as the kept sign-in holds them:
 /// what <c>Storage.getCookies</c> answers, and what <c>Storage.setCookies</c> is given. The carry the
-/// Edge evidence measured (`docs/2026-09-28-managed-edge-evidence.md`), as code.
+/// Edge evidence measured (`docs/archive/2026-09-28-managed-edge-evidence.md`), as code.
 /// </summary>
 public static class CdpCookies
 {

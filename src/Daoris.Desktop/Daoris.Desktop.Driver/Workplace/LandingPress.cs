@@ -124,6 +124,18 @@ internal sealed class LandingPress(
         var review = gate?.ReviewLanding;
 
         var (workspace, repository) = context.OwnerOf(full);
+        // The repository's private patterns live in its checkout, which a tree does not hold: what the work adds is read against them
+        // here, before anything is made, whatever the landing's form.
+        if (here is not null)
+        {
+            var checkout = Path.GetDirectoryName(here.CommonDir.Trim())!;
+            if ((await context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch is { } lineName
+                && await SensitiveLandings.RefusalAsync(checkout, full, lineName, ct).ConfigureAwait(false) is { } sensitive)
+            {
+                return new(false, sensitive) { Refusal = LandingCode.Refused };
+            }
+        }
+
         // The run's bound version decides how it lands, read with the gate: a version is never edited, so nothing changes under it.
         var process = gate?.Process;
         var named = delivering is null && process is { Named: true } ? process : null;

@@ -2,7 +2,7 @@
 
 **Status: accepted amendment to D213 (AGENTINFRA1, 2026-10-27; scoped owner exception under D191).** The owner confirmed the full boundary: local agent programs,
 ACP and native transports, remote APIs and hosted runtimes, with their accounts, capabilities, usage and error dialects.
-This extends the accepted [provider design](2026-10-26-agent-provider-design.md); its accepted migration remains the base.
+This extends the accepted [provider design](archive/2026-10-26-agent-provider-design.md); its accepted migration remains the base.
 It changes D125/D206's treatment of some limits and D213's process-only run preparation. The owner waived the unavailable Opus
 read for this amendment; §11 records settlement and its limits under [D191](decisions/D191.md). No new runtime behavior is shipped here.
 

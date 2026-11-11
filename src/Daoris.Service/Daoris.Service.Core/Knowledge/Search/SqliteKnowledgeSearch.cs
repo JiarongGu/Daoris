@@ -148,6 +148,18 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
             parameters.AddRange(names);
         }
 
+        if (query.Present is { } present)
+        {
+            // PresentFirst.TenseOf in SQL: a history kind, a folder of the path named for the archive (LIKE folds ASCII
+            // case as the name is compared there), or a file or folder named for its date.
+            var historyKinds = PresentFirst.HistoryKinds.Select((k, i) => (Name: $"$historyKind{i}", Value: (object)(int)k)).ToList();
+            const string path = "('/' || replace(e.relative_path, '\\', '/'))";
+            var notPresent = $"(e.kind IN ({string.Join(", ", historyKinds.Select(k => k.Name))}) "
+                           + $"OR {path} LIKE '%/{PresentFirst.ArchiveFolder}/%' OR {path} GLOB '*/*{PresentFirst.DateGlob}*')";
+            filter.Append(present ? $" AND NOT {notPresent}" : $" AND {notPresent}");
+            parameters.AddRange(historyKinds);
+        }
+
         if (query.Repositories is { Count: > 0 } repositories)
         {
             var names = repositories.Select((r, i) => (Name: $"$repo{i}", Value: (object)r)).ToList();

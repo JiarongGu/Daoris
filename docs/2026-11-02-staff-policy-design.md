@@ -1,8 +1,8 @@
 # STAFFPOLICY1: a role's staffing as a policy of weighted choices and the conditions that move a line to another choice
 
 Status: accepted by the steward 2026-11-02 (D226), the synthesis of both sealed proposals; the read runs beside the first rows.
-It answers `2026-11-02-staff-policy-brief.md` from `2026-11-02-staff-policy-proposal-opus.md` and
-`2026-11-02-staff-policy-proposal-codex.md`, each claim about today's code checked at `2b28fdbaa` before it is relied on. It
+It answers `archive/2026-11-02-staff-policy-brief.md` from `archive/2026-11-02-staff-policy-proposal-opus.md` and
+`archive/2026-11-02-staff-policy-proposal-codex.md`, each claim about today's code checked at `2b28fdbaa` before it is relied on. It
 amends D205, D206, D197, D210, D200, D163, D189 and D212 (§7). Web paths start at `src/Daoris.Web/src/`, driver paths at
 `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the bridge's at `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/`.
 
@@ -414,7 +414,7 @@ Every row writes its own line of D226's note and its own translations; a row tha
 
 ## 11. Settled after Codex's read
 
-Codex's read (`docs/2026-11-02-staff-policy-reads.md`) is taken whole; these amend §2 to §9, and each row carries its part.
+Codex's read (`docs/archive/2026-11-02-staff-policy-reads.md`) is taken whole; these amend §2 to §9, and each row carries its part.
 
 1. **Older builds** (row a): the store step that adds the policy raises the writer stamp, so an older Daoris on the home reads the
    store and writes nothing, and starts no choice past a policy it cannot read; a write that leaves the choices as they were keeps

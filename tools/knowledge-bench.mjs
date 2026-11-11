@@ -35,7 +35,7 @@
  *   node tools/knowledge-bench.mjs rank "<question>"     the push design's ranking, with no model
  *
  * The helpers are tested by `node --test tools/knowledge-bench.test.mjs`. The results are
- * `docs/2026-10-02-knowledge-bench-results.md`.
+ * `docs/archive/2026-10-02-knowledge-bench-results.md`.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';

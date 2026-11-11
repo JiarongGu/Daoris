@@ -2,7 +2,7 @@
 
 **Standing:** accepted 2026-10-24 by the steward under D191 (D156's CONFIRMWAIT1 acceptance note; Codex's read of this text owed), round 2 with its named changes, a note amending D156 (CONFIRMWAIT1). Round 1 was written by Claude
 Opus 5.5 from the code on main at `aa16658e7` and read at `c44121e2a` by the independent Opus foundation reader alone, its read verbatim
-in `docs/2026-10-24-confirm-wait-reads.md`: 25 findings, 7 blocking, another round; Codex's read is owed, its credits out. Round 2 is
+in `docs/archive/2026-10-24-confirm-wait-reads.md`: 25 findings, 7 blocking, another round; Codex's read is owed, its credits out. Round 2 is
 written by Claude Opus 5.5 from the code on main at `ffcf42926`, where nothing round 1 or the read cites has changed (the one commit
 touching the desktop since `6accf4a01` is HOOKMERGE1's, in the merge's tree code). It answers every finding in §13, each checked
 against that code. Round 2 was read at `48c614823` by the Opus foundation reader alone: 20 findings, 2 blocking, accept after named
@@ -34,7 +34,7 @@ is not refused by it, and shows at the Confirm as a ground that changed (§5).
 **After STEWARDROLE1d.** A role's terminal makes no card: there every press verb refuses `role-terminal` (`D209.md:73`). The person's
 own terminal and an agent's job outside any role still make cards, and the owner's three cases from 2026-10-24 stay cards from every
 terminal until their steward acts land: the hand-over at STEWARDROLE1e, the go-on at 1f and the set-up at 1g (the steward design's rows,
-`docs/2026-10-24-steward-role-design.md:976-1017`). This design's waiting is for those cards, and it stays for every `Person` route no
+`docs/archive/2026-10-24-steward-role-design.md:976-1017`). This design's waiting is for those cards, and it stays for every `Person` route no
 role takes.
 
 A path without a root is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`; `Driver/` is `src/Daoris.Desktop/Daoris.Desktop.Driver/`,
@@ -814,7 +814,7 @@ installed proof is the parent's. The grounds are read through the loop's readers
 *History: round 2's answers, superseded by §14 and §15 (2026-10-24, Codex's finding 16). Directions here that §14 or §15 changed
 (parsing in `InstanceHost.World`, skipping the restore for a held pipe, grouping the undrawn row, 1b beside the other rows) do not stand.*
 
-Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-confirm-wait-reads.md` §4), each checked against the code on
+Every finding of the Opus foundation read of round 1 (`docs/archive/2026-10-24-confirm-wait-reads.md` §4), each checked against the code on
 main at `ffcf42926`. *Taken* means the design now says it; *answered* means it is not taken, for the reason given; *deferred* means
 a later row carries it. The read's §1 corrections (a to j) are findings 8, 12, 13, 14, 22 and 25 below, and the rest are taken where
 they are named.
@@ -849,7 +849,7 @@ they are named.
 
 ## 14. Round 2's read: where each named change went
 
-Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-confirm-wait-reads.md`, round 2 §4), taken as the read names it,
+Every finding of the Opus foundation read of round 2 (`docs/archive/2026-10-24-confirm-wait-reads.md`, round 2 §4), taken as the read names it,
 each checked against the code on main at `1248aa393`. Blocking in bold.
 
 | # | Finding | Where it went | Checked against |
@@ -881,7 +881,7 @@ takes it.
 ## 15. Codex's read: the amendment (2026-10-24)
 
 Codex read this text against main at `16e0950e2`, with CONFIRMWAIT1b and 1a-i landed: 16 findings, 9 blocking, *reopen*
-(`docs/2026-10-24-confirm-wait-reads.md`, *Codex (final text)*). It holds the unbounded wait, the separate cards and the withdrawal
+(`docs/archive/2026-10-24-confirm-wait-reads.md`, *Codex (final text)*). It holds the unbounded wait, the separate cards and the withdrawal
 rule, and finds three faults. The grounds let different work pass under an unchanged reading. The restore and the record's
 rewrites leave duplicates and failed writes undefined. And the phase in which a press's grounds are read, before its card, has no
 complete lifecycle. **This amendment takes every finding, and the decision stands again on the amended text:** the direction and
