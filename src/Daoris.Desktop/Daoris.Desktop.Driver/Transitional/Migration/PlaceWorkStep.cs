@@ -55,7 +55,6 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
                 var suffix = overlap == IsolateStep.Wait ? "-apart-wait" : "-apart";
                 var copy = flow.Key[..Math.Min(flow.Key.Length, 40 - suffix.Length)].TrimEnd('-') + suffix;
                 if (store.Load(copy) is null && IsolatedFiles.Copy(saved, copy, overlap) is { } made) store.Write(copy, made);
-                // A workflow the step cannot be put in, or a name another workflow holds, leaves the repository on the workflow it follows.
                 if (IsolateSteps.In(store.Load(copy)?.Read.Versions.LastOrDefault()?.Graph) is null) continue;
                 foreach (var each in apart.Where(each => Overlap(each) == overlap))
                 {
@@ -73,10 +72,7 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
 
     private static bool Same(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// The repositories, and the workspaces as <c>workspace:&lt;name&gt;</c>, whose line policy says <c>overlap: wait</c>, and the
-    /// repositories with a policy of their own, which replaces their workspace's whole as it did where the policy was read.
-    /// </summary>
+    /// <summary>Those whose line policy says <c>overlap: wait</c> (a workspace as <c>workspace:&lt;name&gt;</c>), and the repositories whose own policy replaces their workspace's.</summary>
     private static (HashSet<string> Waits, HashSet<string> Owns) Waiting(JsonObject root)
     {
         var waits = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

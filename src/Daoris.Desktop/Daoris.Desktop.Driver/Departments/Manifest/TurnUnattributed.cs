@@ -30,7 +30,6 @@ public static class TurnUnattributed
         return [.. changed.Where(path => !named.Contains(path))];
     }
 
-    /// <summary>The kinds of tool call that look at a path without changing it: a file only read is not one the session changed.</summary>
     private static readonly HashSet<string> Reads = ["read", "search", "fetch", "think"];
 
     private static string Relative(string root, string location) =>

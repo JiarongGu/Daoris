@@ -10,10 +10,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
     /// <summary>Whether a conversation opens in a tree of its own: said, or else whether its repository's workflow sets its work apart.</summary>
     public static bool Isolates(bool? ownTree, IsolateStep? apart) => ownTree ?? apart is not null;
 
-    /// <summary>
-    /// Why a conversation that works the checkout itself may not start: another home on this machine works it in place
-    /// (<see cref="PlaceHomeMarker"/>), which a driven start is asked as well. Null for one in a tree, which is no place's lease.
-    /// </summary>
+    /// <summary>Why a conversation in the checkout itself may not start: another home works it in place (<see cref="PlaceHomeMarker"/>); null in a tree.</summary>
     internal static string? PlaceHeld(string home, string root, string repository, bool isolated, string? tree) =>
         isolated || tree is not null ? null : PlaceHomeMarker.Claim(home, root, repository);
 
