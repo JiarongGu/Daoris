@@ -16,7 +16,7 @@ public sealed class SessionArchiveView : IPressView
 
     public async Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
-        var ids = PressPayload.Words(payload, "ids");
+        var ids = PressPayload.Strings(payload, "ids");
         if (ids.Count == 0) return PressViewed.Refused("a press names the sessions by id, as Sessions lists them.");
         var archive = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("archived", out var flag) && flag.ValueKind == JsonValueKind.True;
 

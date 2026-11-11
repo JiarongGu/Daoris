@@ -178,4 +178,17 @@ public sealed class PluginViewsTests : DriverModuleBridge, IDisposable
         Assert.Contains("nothing would change", again.Refusal);
         Assert.Equal(("plugin-withdraw", true), (withdraw.View!.Kind, withdraw.View.Grant!.Withdraw));
     }
+
+    [Fact]
+    public async Task An_approval_left_stale_by_an_update_that_changed_the_tools_can_still_be_withdrawn()
+    {
+        Installed(Browser);
+        HelpGrants.Approve(Home, PluginCatalog.Load(Home), "in-app-browser", "browser", readsOnly: true);
+        var manifest = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Plugins, "in-app-browser"), PluginCatalog.ManifestName);
+        File.WriteAllText(manifest, Browser.Replace("browser_navigate", "browser_snapshot", StringComparison.Ordinal));
+
+        var withdraw = await View(new PluginActionView(), new { action = "help-withdraw", id = "in-app-browser", server = "browser" });
+
+        Assert.Equal("plugin-withdraw", withdraw.View!.Kind);
+    }
 }

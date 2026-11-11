@@ -47,6 +47,30 @@ public sealed class RecordDeleteViewTests
     }
 
     [Fact]
+    public async Task An_open_quest_a_session_started_on_is_refused_before_any_card()
+    {
+        var grounds = Records();
+        grounds.Staying.Add("q1");
+
+        var viewed = await new QuestDeleteView().ViewAsync(grounds, JsonSerializer.SerializeToElement(new { quest = "q1" }), CancellationToken.None);
+
+        Assert.Null(viewed.View);
+        Assert.Equal("quest `#q1` is open, but work stands on it (a session started on it, or a quest waits on it), so its record stays. Decline it instead, with the reason.", viewed.Refusal);
+    }
+
+    [Fact]
+    public async Task An_ask_whose_quests_must_stay_is_refused_before_any_card()
+    {
+        var grounds = Records();
+        grounds.Staying.Add("a1");
+
+        var viewed = await new AskDeleteView().ViewAsync(grounds, JsonSerializer.SerializeToElement(new { ask = "a1" }), CancellationToken.None);
+
+        Assert.Null(viewed.View);
+        Assert.Equal("ask `#a1` stays, with its quests: an ask is deleted only with every quest it became, and one of them is taken, closed or started on. Close the ask instead, with the reason.", viewed.Refusal);
+    }
+
+    [Fact]
     public async Task An_ask_the_service_holds_is_shown_with_its_command()
     {
         var viewed = await Ask(new { ask = "a1", said = true });

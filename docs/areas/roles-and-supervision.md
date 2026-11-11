@@ -20,7 +20,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RoleCatalog` | `Roles/RoleCatalog.cs` | The roles: the seed per id, the store's rows, the judge, the role that takes a work at a place, the appointed role of a kind at a place |
 | `RoleHold`, `AppointedRoles`, `RoleHolders` | `Roles/RoleHold.cs` | The appointed shape: kind, acts, holder, the supervisor's window; the kinds' act vocabularies; its judge |
 | `AppointedStaffing`, `AgentHold` | `Roles/AppointedStaffing.cs`, `Roles/AgentHold.cs` | An agent-held supervisor's order and policy at the door; its generation by role and revision |
-| The agent's turn | `Loop/Look/SuperviseLook.cs`, `Loop/Supervise/SupervisePass.cs`, `Loop/Supervise/SuperviseTurn.cs`, `Roles/SupervisorInstruction.cs`, `Roles/SupervisorFacts.cs`, `Roles/SupervisorBlock.cs`, `Roles/SupervisorHolders.cs`, `Roles/SupervisorRuns.cs`, `Roles/ISupervisorDesk.cs`, `Modules/Bridge/AgentSupervisorDesk.cs`, `Participants/Supervise/SuperviseDoors.cs`, `Review/Domain/SupervisePermissions.cs`, `Service/Daoris.Service.Core/Sessions/SuperviseDesk.cs` | The look's pass, one attempt and its turn, the prompt and the facts it shares with the print, the answer's block, the agent's holder on a decision, the running turns, the decision door's half the look reaches, the record's open on either side, the turn's rules |
+| The agent's turn | `Loop/Look/SuperviseLook.cs`, `Loop/Supervise/SupervisePass.cs`, `Loop/Supervise/SuperviseTurn.cs`, `Roles/SupervisorInstruction.cs`, `Roles/SupervisorFacts.cs`, `Roles/SupervisorBlock.cs`, `Roles/SupervisorHolders.cs`, `Roles/SupervisorRuns.cs`, `Roles/ISupervisorDesk.cs`, `Modules/Bridge/AgentSupervisorDesk.cs`, `Participants/Supervise/SuperviseDoors.cs`, `Review/Domain/SupervisePermissions.cs`, `Loop/Supervise/PacketOnlyRules.cs`, `Review/Domain/PacketOnlyPermissions.cs`, `Loop/Supervise/SuperviseFolder.cs`, `Loop/Supervise/SuperviseRan.cs`, `Service/Daoris.Service.Core/Sessions/SuperviseDesk.cs` | The look's pass, one attempt and its turn, the prompt and the facts it shares with the print, the answer's block, the agent's holder on a decision, the running turns, the decision door's half the look reaches, the record's open on either side, the turn's rules, a packet's reader's rules, the turn's folder, the model it ran |
 | `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the ten works; machine, workspace or repository scope |
 | The seed | `Defaults/roles.json` | The ten seeded roles, machine-wide; Design's order is `ActorChoices.DesignSeed`, Exact build's `ActorChoices.ExactSeed` |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
@@ -267,9 +267,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     the person. An agent-held supervisor's subjects are its own look's (`SuperviseLook`, after `course-release`), never listed
     to a terminal: each attempt (`SupervisePass`) walks the bound supervisor's order through the start plan less the choices its
     attempts spent, writes the attempt, and runs one read-only turn (`SuperviseTurn`, a helper's shape) in a copy of the
-    subject's work with its work in progress laid over it, or an empty folder of its own where the subject has no tree, removed
-    however it ends, bounded by ten minutes, taking no place under the cap. Its record opens through `POST /api/supervise`,
-    marked `decides` with the attempt (the `supervise` work) and `serves` with the subject's session; its prompt
+    subject's git work tree with its work in progress laid over it, or an empty folder of its own where the subject's record names
+    no git work tree (Ask Daoris's room among them, never asked of git) or the subject is read from a packet (`SuperviseFolder`), removed
+    however it ends, bounded by ten minutes, taking no place under the cap. A subject read from a packet alone
+    (`SupervisorWaiting.PacketOnly`) is read packet-only (`PacketOnlyRules`): where its harness takes Daoris's rules, every tool
+    and server its harness offers is denied whole and nothing is allowed or asked (`PacketOnlyPermissions`), with the person's
+    tier and its own file alone and no connector, so the harness offers it no tool (measured on Claude Code 2.1.322, the native
+    door, in its default and full-access modes: `PacketOnlyReaderProcessTests`, run with `DAORIS_REAL_READER=1`), and its prompt
+    says its tools are off, since a reader told nothing writes its calls out as text and ends with no block (measured on haiku and
+    sonnet); a harness that takes none (Codex) answers
+    `not-enforced`, and the walk passes that choice, never starting a reader that holds its tools. Its record opens through
+    `POST /api/supervise`, marked `decides` with the attempt (the `supervise` work) and `serves` with the subject's session, a
+    machine subject's (no repository named) opened `machine`, naming no repository and no workspace; its prompt
     (`SupervisorInstruction`) hands the same facts as the holder's print, one composer (`SupervisorFacts`) serving both, the acts
     its grants cover and the bounds; an agent takes the question kind's subjects and the points of the course and limit kinds
     (`SupervisorKinds.IsPoint`), and the landing, allow and files kinds' subjects, whose facts each kind's row composes (`ISupervisorKind.FactsAsync` over
@@ -278,7 +287,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     block of its last message (`SupervisorBlock`), which names a `choice` exactly where the act chooses a label, as the door's form
     does, and is kept through its
     kind's row by the decision door (`AgentSupervisorDesk`), its grant and hold read again first, the decision keeping the
-    agent's holder (role, revision, choice, tier that ran, posture, session, tokens). A limited or transient end is a pass and the
+    agent's holder (role, revision, choice, posture, session, tokens, and the model its harness reported for the turn, never the
+    one asked, none reported kept unknown: `SuperviseRan`). A limited or transient end is a pass and the
     next look takes the next choice; a failed end, a timeout, a block that does not read or names another subject ends the
     subject's attempts; a block the keeping refuses is dropped (`supervisor.dropped`) and said on the subject's line, ending its attempts, but one
     dropped `role-changed` spends no choice and decides again under the role as it now stands (outcome `role-changed`); a
@@ -448,13 +458,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     is the one way to ask the person: a route with a view (`PressViews`, one unit per route) judges the press at the ask with the
     route's own rules, answers one it would refuse to the terminal in those words with no card, and gives the card what the press
     means and the command it is, above every value it carries; the views are a repository's move (`repository wire`), a session's
-    archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`) and the
+    archive, unarchive and delete, a quest's and an ask's delete (`ask --delete` is a press of its own, `ASK_DELETE`; refused at the ask where the service's own `deletable` says work stands on it) and the
     pause and resume of an ask's or a quest's work, an account's model and effort (`agent settings`), and how an agent's accounts are
     used, ordered and ended early (`agent account use|order|ready`, one view of `ACCOUNT_USE`), a repository's drive and hold
     switches (`place drive|undrive|hold|resume`), a line, a session language, a standing answer and reading and
     writing across (`place line|language|standing|across`), a repository's or workspace's review, second-opinion, helpers and
     commit rules (`place review|opinion|helpers|commits`, judged against the rule the machine holds now), a retry of a parked or
-    held quest (`quest retry`), a git identity's use (`git use`, every form pressed) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
+    held quest (`quest retry`), a git identity's use (`git use`, every form pressed, judged as the route reads it: exact `own`, a repository's checkout, remote and the remote's host) and the machine's notify, cap, cool-off, quiet and keep rules and a terminal's tier
     (`settings notify|cap|cooloff|quiet|keep|terminal`), an agent's update and pin (`agent update|pin`) and Daoris's browser's settings and
     favorites (`browser use|links|extensions|favorite add|remove`, the person's presses `BROWSER_SETTING` and `BROWSER_FAVORITE`, which
     the terminal sends where Daoris runs and writes alone where it does not), a role's change (`role set|remove|default|policy|rules`,
@@ -466,10 +476,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (`quest clear <id> [--failed] --yes`, `ask clear <id> --yes`, `history clear --workspace <name> --yes`, the view of `HISTORY_CLEAR`,
     counted from its first press's list, `HISTORY_PLAN`, and what that list keeps refused in the verb's own words), and bringing
     repositories up to date (`tree sync [--repository|--workspace <name>|--all] --yes`, the running Daoris's `TREES_SYNC` pressed by the
-    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves), a place's set-up applied (`place
+    verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves, and wording its scope as the route takes it: the repositories holding a branch of Daoris's, every checkout with `--all`), a place's set-up applied (`place
     <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
-    the plan refuses), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
-    its view judged by the verb's own judges, `AskNewCommand.Unfit`, so Ask Daoris makes an ask in full access with no card and in
+    the plan refuses and an acceptance it does not offer), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
+    its view judged by the verb's own judges, `AskNewCommand.Unfit`, and a `--file` this machine lacks, so Ask Daoris makes an ask in full access with no card and in
     restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is

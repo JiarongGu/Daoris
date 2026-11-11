@@ -40,6 +40,11 @@ public sealed class AskNewView : IPressView
         var registry = (await world.RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(row => (row.Repository, row.Workspace));
         if (AskNewCommand.Unfit(ask, machine.Config, machine.Facts.Home ?? "", registry, out _) is { } unfit) return PressViewed.Refused(unfit);
 
+        foreach (var path in ask.Files ?? [])
+        {
+            if (!File.Exists(path)) return PressViewed.Refused($"`{path}` is not a file on this machine. Nothing was asked.");
+        }
+
         var facts = new Dictionary<string, string>(StringComparer.Ordinal) { ["workspace"] = ask.Workspace, ["sentence"] = ask.Sentence.Trim() };
         if (ask.To is not null) facts["to"] = ask.To;
         return PressViewed.Shown(new PressView(ask.To is null ? "ask-new" : "ask-new-to", facts, Command(ask), Carried(ask) is { Count: > 0 } also ? also : null));
@@ -50,7 +55,7 @@ public sealed class AskNewView : IPressView
     {
         var also = new List<PressSaid>();
         if (ask.Short is { } title) also.Add(new PressSaid("ask-new-short", ("title", title)));
-        if (ask.Review is { } review)
+        if (ask.Review is { } review && review != AskReviewCommand.Rule)
         {
             also.Add(review switch
             {

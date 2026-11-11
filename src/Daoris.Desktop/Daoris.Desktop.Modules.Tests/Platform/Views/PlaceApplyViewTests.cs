@@ -23,7 +23,11 @@ public sealed class PlaceApplyViewTests
 
     private static object Plan(object[] changes, object[]? refusals = null) => new
     {
-        repositories = new[] { new { repository = "engine", workspace = "aurora" }, new { repository = "site", workspace = "aurora" } },
+        repositories = new object[]
+        {
+            new { repository = "engine", workspace = "aurora", declaration = new { acceptances = new[] { new { purpose = "integration" } } } },
+            new { repository = "site", workspace = "aurora" },
+        },
         changes, refusals = refusals ?? NoRefusals, digest = "abc",
     };
 
@@ -63,6 +67,18 @@ public sealed class PlaceApplyViewTests
 
         Assert.Equal("`site` is not registered here.", (await View(Planned(plan), new { repositories = new[] { "site" }, preset = "keep" })).Refusal);
         Assert.Contains("`repositories`", (await View(Planned(Plan([])), new { repository = "site", preset = "keep" })).Refusal);
+    }
+
+    [Theory]
+    [InlineData("engine", "review")]
+    [InlineData("site", "integration")]
+    [InlineData("ghost", "integration")]
+    public async Task An_acceptance_the_plan_does_not_offer_is_refused_at_the_ask_as_the_apply_refuses_it(string repository, string purpose)
+    {
+        var viewed = await View(Planned(Plan([])), new { repositories = new[] { "engine", "site" }, preset = "keep", accept = new[] { new { repository, purpose } } });
+
+        Assert.Null(viewed.View);
+        Assert.Equal($"the plan offers no `{purpose}` acceptance for `{repository}`, so nothing was written.", viewed.Refusal);
     }
 
     [Fact]

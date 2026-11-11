@@ -40,6 +40,16 @@ public sealed class KeepRuleViewTests
     }
 
     [Fact]
+    public async Task A_rule_is_said_as_the_route_merges_it_into_what_the_machine_keeps_now()
+    {
+        var grounds = new StubGrounds { Config = Daoris.Driver.DriverConfig.Empty with { Keep = new Daoris.Driver.KeepChoices { SetAsideDays = 14 } } };
+
+        var viewed = await new KeepRuleView().ViewAsync(grounds, JsonDocument.Parse("""{"kind":"set-aside","whole":true}""").RootElement, CancellationToken.None);
+
+        Assert.Contains("14 days, whole", viewed.View!.Facts["rule"]);
+    }
+
+    [Fact]
     public async Task Days_and_a_size_together_have_no_one_command_and_are_refused()
     {
         var viewed = await View("""{"kind":"set-aside","days":30,"gb":5}""");

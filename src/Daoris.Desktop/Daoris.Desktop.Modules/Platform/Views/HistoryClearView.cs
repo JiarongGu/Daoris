@@ -69,13 +69,16 @@ public sealed class HistoryClearView : IPressView
         var units = PressPayload.Rows(plan, "units").ToList();
         var facts = Facts(("workspace", name), ("quests", Number(Number(takes, "quests"))), ("asks", Number(Number(takes, "asks"))),
             ("sessions", Number(Number(takes, "sessions"))), ("copies", Number(Number(takes, "teammates"))), ("size", HistoryCommand.Size(Long(takes, "bytes"))));
-        if (Number(takes, "quests") + Number(takes, "asks") + Number(takes, "sessions") + Number(takes, "teammates") + leftOver == 0)
+        var room = Long(reading, "intake") is > 0 and var intake
+            && Long(takes, "bytes") - Long(Object(reading, "leftOver"), "bytes") - units.Where(unit => unit.TryGetProperty("clearable", out var may) && may.ValueKind == JsonValueKind.True).Sum(Bytes) >= intake;
+        if (!room && Number(takes, "quests") + Number(takes, "asks") + Number(takes, "sessions") + Number(takes, "teammates") + leftOver == 0)
         {
             return new PressView("history-clear-workspace-nothing", facts, command);
         }
 
         var also = new List<PressSaid>();
         if (leftOver > 0) also.Add(new PressSaid("history-clear-leftover", ("count", Number(leftOver))));
+        if (room) also.Add(new PressSaid("history-clear-room"));
         if (units.Count(unit => !(unit.TryGetProperty("clearable", out var may) && may.ValueKind == JsonValueKind.True)) is > 0 and var kept)
         {
             also.Add(new PressSaid("history-clear-workspace-keeps", ("count", Number(kept))));

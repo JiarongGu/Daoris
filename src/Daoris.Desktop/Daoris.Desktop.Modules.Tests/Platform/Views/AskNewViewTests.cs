@@ -36,6 +36,28 @@ public sealed class AskNewViewTests
     }
 
     [Fact]
+    public async Task The_review_rule_choice_sends_no_choice_so_its_card_names_no_environment()
+    {
+        var viewed = await View(new { workspace = "default", sentence = "tidy the docs", review = "rule" });
+
+        Assert.Null(viewed.View!.Also);
+        Assert.Equal("daoris ask --workspace default --review rule \"tidy the docs\"", viewed.View.Command);
+    }
+
+    [Fact]
+    public async Task A_file_this_machine_lacks_is_refused_at_the_ask_as_the_verb_refuses_it()
+    {
+        var missing = Path.Combine(AppContext.BaseDirectory, "no-such-file.txt");
+
+        var viewed = await View(new { workspace = "default", sentence = "tidy the docs", files = new[] { missing } });
+
+        Assert.Null(viewed.View);
+        Assert.Equal($"`{missing}` is not a file on this machine. Nothing was asked.", viewed.Refusal);
+        var present = await View(new { workspace = "default", sentence = "tidy the docs", files = new[] { typeof(AskNewViewTests).Assembly.Location } });
+        Assert.Contains("ask-new-files", present.View!.Also!.Select(said => said.Kind));
+    }
+
+    [Fact]
     public async Task An_ask_its_intake_answers_names_no_receiver()
     {
         var viewed = await View(new { workspace = "default", sentence = "tidy the docs", said = true });

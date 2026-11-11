@@ -16,7 +16,7 @@ public sealed class SessionDeleteView : IPressView
 
     public async Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
-        var id = PressPayload.Text(payload, "id").TrimStart('#');
+        var id = PressPayload.Raw(payload, "id") ?? "";
         if (id.Length == 0) return PressViewed.Refused("a delete names the session by its id, as Sessions lists it.");
 
         var read = await world.ReadAsync(DriverModule.Name, "SESSION_GROUPS", new { ids = new[] { id } }, cancellationToken).ConfigureAwait(false);
