@@ -37,7 +37,7 @@ public sealed class AskDaorisRangesTests : IDisposable
         Assert.Null(read);
         Assert.Equal(first.Range, second.Range);
         var report = Assert.Single(Reports.Of("s1"));
-        Assert.Equal(AskDaorisReport.Queued, report.State);
+        Assert.Equal(AskDaorisStates.Queued, report.State);
         Assert.Equal(["w1", "w2"], report.Turns.Select(turn => turn.Id));
     }
 
@@ -61,7 +61,7 @@ public sealed class AskDaorisRangesTests : IDisposable
     {
         var ranges = Ranges();
         var taken = ranges.Take("s1", Turn("w1"), on: true)!;
-        Reports.Write(taken with { State = AskDaorisReport.Running });
+        Reports.Write(taken with { State = AskDaorisStates.Running });
 
         var after = ranges.Take("s1", Turn("w2"), on: true)!;
         var other = ranges.Take("s2", Turn("w9"), on: true)!;
@@ -77,9 +77,9 @@ public sealed class AskDaorisRangesTests : IDisposable
     {
         var report = Ranges().Take("s1", Turn("w1"), on: false)!;
 
-        Assert.Equal(AskDaorisReport.Disabled, report.State);
+        Assert.Equal(AskDaorisStates.Disabled, report.State);
         Assert.NotNull(report.Closed);
-        Assert.Equal(AskDaorisReport.Disabled, Assert.Single(Reports.Of("s1")).State);
+        Assert.Equal(AskDaorisStates.Disabled, Assert.Single(Reports.Of("s1")).State);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class AskDaorisRangesTests : IDisposable
         Assert.Equal(1, ranges.CloseStale());
 
         var closed = Reports.Of("s1").Single(report => report.Range == queued.Range);
-        Assert.Equal(AskDaorisReport.Unread, closed.State);
+        Assert.Equal(AskDaorisStates.Unread, closed.State);
         Assert.NotNull(closed.Why);
         Assert.NotEqual(queued.Range, ranges.Take("s1", Turn("w2"), on: true)!.Range);
     }

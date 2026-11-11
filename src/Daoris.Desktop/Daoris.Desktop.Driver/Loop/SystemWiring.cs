@@ -99,7 +99,7 @@ public static class SystemWiring
     // ---------------------------------------------------------------------------------------------------------------------
 
     /// <summary>Every secret this reader may meet: each key variable's value, here, in the account and on the machine, and each remote's key.</summary>
-    private static List<string> Secrets(WiringWorld world)
+    internal static List<string> Secrets(WiringWorld world)
     {
         var secrets = new List<string>();
         foreach (var variable in WiringVariables.Shown.Where(v => v.Value == WiringValue.Key))
