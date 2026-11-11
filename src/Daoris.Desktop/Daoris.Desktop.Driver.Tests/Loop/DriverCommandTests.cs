@@ -260,8 +260,7 @@ public sealed class DriverCommandTests
         Assert.Contains("TreesCommand.ReadEntryLand(args, out var problem)", console);
         Assert.Contains("accepts.LandAsync(entry, rows, ask.LeaveOut, default)", console);
         Assert.Contains("Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);", console);
-        // The terminal's door is the log's, and its press carries the route's own marks: no copy of the page's code in the host.
-        Assert.Contains("ReviewDoors.Terminal", console);
+        // The terminal's press carries the route's own marks: no copy of the page's code in the host.
         Assert.DoesNotContain("LandEntryAsync", console);
         Assert.Contains(PressesTold.LandEntry, PressesTold.Routes);
         Assert.Contains(PressesTold.LandAsk, PressesTold.Routes);

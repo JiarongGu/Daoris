@@ -38,7 +38,7 @@ function answer(diff: unknown) {
       if (diff instanceof Error) throw diff;
       return diff;
     }
-    if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-api-gap', source: 'workspace' };
+    if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-api-gap', source: 'workspace', accept: { run: 'q1', node: 'review' } };
     return {};
   });
 }

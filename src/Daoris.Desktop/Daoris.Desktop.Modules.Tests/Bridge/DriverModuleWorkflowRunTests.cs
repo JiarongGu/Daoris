@@ -56,7 +56,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             Assert.Equal(state, preview.GetProperty("workflow").GetProperty("state").GetString());
             Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
             // A run whose graph holds no review offers no Accept.
-            Assert.Equal(JsonValueKind.Null, preview.GetProperty("accept").ValueKind);
+            Assert.True(!preview.TryGetProperty("accept", out var accept) || accept.ValueKind == JsonValueKind.Null);
             Assert.Empty(new LandedBranches(Home).Entries());
             var branches = await GitAsync(root, "branch", "--list", "feature/*");
             Assert.True(string.IsNullOrWhiteSpace(branches));

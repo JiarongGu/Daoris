@@ -22,7 +22,7 @@ import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'src/report/compare.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1,2 @@\n-a\n+b' }];
 const DIFF = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: null, files: FILES, source: 'tree' };
-const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace' };
+const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', accept: { run: 'q1', node: 'review' } };
 
 function answer(landing: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
@@ -290,7 +290,7 @@ describe('the review of a tree with nothing beyond the line', () => {
     baseCommit: '0fda18c2b7e4a9d1',
   };
   // The seen case: the rule lands on a branch, so the pane once said Accept would put the work on one.
-  const BRANCH_PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/aeefe837-fix-the-gap', source: 'workspace' };
+  const BRANCH_PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/aeefe837-fix-the-gap', source: 'workspace', accept: { run: 'q1', node: 'review' } };
   const EVEN = { files: [], base: '9c41e07d2b5a8f13', behind: { line: 'main', commits: 0, ahead: 0 } };
   const landings = () => invoke.mock.calls.filter(([, type]) => type === 'LANDING');
 
