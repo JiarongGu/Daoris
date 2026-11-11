@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vii and g-viii — a workflow draft pressed, housekeeping and settings as act families (2026-11-11)
+
+> **ASKFULL1g-vii** (driver, modules, service, web): Outcome: Ask Daoris's room keeps a `drafts/` folder and presses `daoris workflow apply <id> drafts/<id>.json --base <v>`; `WorkflowSaveView` judges `WORKFLOW_SAVE` at the ask with the route's own plan and draws the graph and its changes on the Confirm card; the workflow proposal kind, its tool, writer, box row, call-table entries, room lines, the editor's proposal bar and `HelpApply`'s `Taken`/`Left` are gone; `ProposalCard` is the go alone. **g-viii**: Ask Daoris's housekeeping and chosen settings are families of acts pressed by their verbs — pause, clean-up (`SWEEP`), discard (`DISCARD_SESSION_BRANCH`) and settings (`SET_NOTIFY`, `SET_LANGUAGE`, `SET_CAP`, `SET_COOLOFF`, `SET_QUIET`) — viewed by `SweepView` and `SessionBranchDiscardView`; configured access keeps only the families and the checkouts turned off (`ConfiguredAccessStep` converting an older record), the grants page drawing a box per family; the `housekeeping_*` and `settings_*` tools are gone. The two branches' removals were merged so both hold. Proof: `HelpProposalKindsTests`, `ActFamiliesTests`, `HousekeepingViewsTests`, `ConfiguredAccessStepTests`, `PipeDelegateTests`' family case, the tool registration, description and call-table tests, the grants page's vitests in both languages.
+
+---
+
 ## An accepted run's landing judged at once, however many runs there are (2026-11-11)
 
 > **The landing judgement's starvation** (driver): Outcome: a pass judges at most 32 runs; past that it took them in id order, so with about 600 open runs in the work workspace each came round once in some 19 passes, and a person's land press — which asks for a pass assuming it judges every run — was refused "has not judged … yet" again and again (introduced by 34fa9cde69; FIX-LOG). Now a press's ask names its run and the pass judges it first, then held events' runs and runs the pass's own answers changed (an Accept it applied), then a rotation that keeps at least a quarter for unchanged runs; the press is answered as soon as its run is judged, and a refusal says the landing step's state and commit, or that no pass came within 20 s. Found on the owner's own work in the installed copy. Proof: `AskedRunTurnTests` (70 runs; the asked run skipped before, seen failing first), `GraphPressTests`.

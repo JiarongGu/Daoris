@@ -26,11 +26,7 @@ internal static class HelpPlacement
     internal static ChatPlace In(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null, HelpFocus? focus = null)
     {
         var circle = focus is null ? HelpCircle.Of(home, room, workspace) : HelpCircle.OfFocus(focus);
-        // The housekeeping the person chose, and the settings, read once for this start,
-        // so its allow-list and its receipt say the same; each tool's call is judged again by the record then (HelpHousekeeping,
-        // HelpSettings).
         var access = ConfiguredAccess.Read(home);
-        var housekeeping = access.Housekeeping;
         // The readable checkouts the person left on, in any workspace, read through `checkout_read`, which each call judges again.
         IReadOnlyList<HelpRead> handed = [.. reads.Where(read => access.Reads(read.Name))];
         return new(
@@ -38,7 +34,7 @@ internal static class HelpPlacement
             (file, id) =>
             {
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, ProviderRegistry.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture)
         {
@@ -47,8 +43,6 @@ internal static class HelpPlacement
             Workspace = RemoteTarget.Workspace(workspace),
             Circle = circle,
             Reads = handed,
-            Housekeeping = housekeeping,
-            Settings = access.Settings,
             CheckoutsOff = access.CheckoutsOff,
             // In no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
             Block = new StandingFacts { Workspace = circle },

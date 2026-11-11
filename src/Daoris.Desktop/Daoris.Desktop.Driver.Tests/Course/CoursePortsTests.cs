@@ -2,12 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// The seams the Course cuts add. The lower homes and each higher spelling held to them, the types Course
-/// declares or holds answering as the runner's, the turns' and Ask Daoris's own did, the installed help judges being Help's and a supplied
-/// stand-in used where the loop's watch is built, and a missing operation required only where it is reached. What the cuts keep is
-/// <c>CourseBoundaryTests</c>'.
-/// </summary>
+/// <summary>The seams the Course cuts add, held to their lower homes and higher spellings; what the cuts keep is <c>CourseBoundaryTests</c>'.</summary>
 [Collection("agent operation ports")]
 public sealed class CoursePortsTests : IDisposable
 {
@@ -76,69 +71,5 @@ public sealed class CoursePortsTests : IDisposable
         Assert.False(turns.Hold());
         turns.Release();
         Assert.True(turns.Hold());
-    }
-
-    [Fact]
-    public async Task The_installed_help_judges_are_Helps_and_a_supplied_stand_in_is_what_a_watch_over_processes_answers_with()
-    {
-        Assert.IsType<CourseHelpOperations>(CourseHelp.Current);
-        var judges = CourseHelp.Current;
-        Assert.Equal(typeof(HelpHousekeeping), judges.Housekeeping(_home, () => null).Target!.GetType());
-        Assert.Equal(typeof(HelpSettings), judges.Settings(_home, () => null).Target!.GetType());
-
-        var actual = CourseHelp.Current;
-        try
-        {
-            var stand = new StandInJudges();
-            CourseHelp.Current = stand;
-            var processes = new SessionProcesses();
-            await using var watch = new SessionRequestWatch(_home, processes, () => null);
-            Assert.Same(stand.Housekeep, watch.Housekeep);
-            Assert.Same(stand.Set, watch.Set);
-            Assert.Equal([_home, _home], stand.Homes);
-        }
-        finally { CourseHelp.Current = actual; }
-    }
-
-    [Fact]
-    public async Task A_missing_operation_is_required_only_where_it_is_reached()
-    {
-        var actual = CourseHelp.Current;
-        try
-        {
-            CourseHelp.Current = null!;
-            Assert.Contains("Help installs them", Assert.Throws<InvalidOperationException>(() => CourseHelp.Current).Message);
-
-            // The test seam's watch judges nothing of Ask Daoris's, so it never reaches the port.
-            await using var seam = new SessionRequestWatch(_home, runsHere: _ => true, stop: _ => true, service: () => null, clock: () => At);
-            Assert.Null(seam.Housekeep);
-            Assert.Null(seam.Set);
-
-            // Where reached, the watch over processes says so and the failure propagates.
-            var processes = new SessionProcesses();
-            Assert.Throws<InvalidOperationException>(() => new SessionRequestWatch(_home, processes, () => null));
-        }
-        finally { CourseHelp.Current = actual; }
-    }
-
-    private sealed class StandInJudges : ICourseHelp
-    {
-        public List<string> Homes { get; } = [];
-
-        public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>> Housekeep { get; } = (_, _) => throw new NotSupportedException();
-
-        public Func<SessionRequest, CancellationToken, Task<SettingAnswer>> Set { get; } = (_, _) => throw new NotSupportedException();
-
-        public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>> Housekeeping(string home, Func<ServiceClient?> service)
-        {
-            Homes.Add(home);
-            return Housekeep;
-        }
-
-        public Func<SessionRequest, CancellationToken, Task<SettingAnswer>> Settings(string home, Func<ServiceClient?> service)
-        {
-            Homes.Add(home);
-            return Set;
-        }
     }
 }

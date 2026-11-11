@@ -38,13 +38,13 @@ public sealed class HelpCheckoutsGitTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    private HousekeepingLedger Ledger()
+    private HelpLedgerStandIn Ledger()
     {
         new HelpWired(_home).Keep("h1", new HelpReceipt
         {
             At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home), Checkouts = [new HelpRead("engine", "default", Root)],
         });
-        return new HousekeepingLedger { Records = [("h1", HelpRoom.Repository, "default", null)], Registry = [("engine", "default", Root)] };
+        return new HelpLedgerStandIn { Records = [("h1", HelpRoom.Repository, "default", null)], Registry = [("engine", "default", Root)] };
     }
 
     private Task<CheckoutAnswer> AnswerAsync(string operation, string? path = null) =>

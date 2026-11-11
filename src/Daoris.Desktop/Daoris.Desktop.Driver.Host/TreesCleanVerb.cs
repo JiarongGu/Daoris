@@ -7,12 +7,21 @@ internal static class TreesCleanVerb
 {
     /// <summary>
     /// The list first, and with --yes the press — a workspace's Branches tab is the other door, and --workspace takes that
-    /// workspace's checkouts alone, as the tab does. The checkouts and the sessions in use are the service's, so this one
-    /// asks it, once its words read.
+    /// workspace's checkouts alone, as the tab does. The press is the running Daoris's <c>SWEEP</c> where one answers, confirmed in
+    /// its window or run under the family a person granted; alone where none runs. The checkouts and the sessions in use are the
+    /// service's, so this one asks it, once its words read.
     /// </summary>
     public static async Task<int> RunAsync(string[] args, string home, SessionTrees trees, SessionTrees asking)
     {
         if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);
+        if (!ask.Yes) return await AloneAsync(ask, home, trees, asking).ConfigureAwait(false);
+
+        return await InstanceDoor.PressAsync(TreesRoutes.Sweep, new { workspace = ask.Workspace }, () => AloneAsync(ask, home, trees, asking),
+            answer => TreesSaid.ReadWords(Console.Out, Console.Error)(answer) ?? 2, InstanceHost.World(home, "trees")).ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(TreesAsk ask, string home, SessionTrees trees, SessionTrees asking)
+    {
         using var service = ServiceClient.FromEnvironment();
         var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);
         if (taken.Refusal is { } refusal)

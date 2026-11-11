@@ -1,6 +1,5 @@
-// Ask Daoris's mode and its receipts as shapes: the bridge answers them, and the
-// panel's molecules draw them. Types alone, so a molecule takes them here and never from a bridge domain (the presentational
-// boundary, `design/presentational.test.ts`).
+// Ask Daoris's mode and its receipts as shapes: the bridge answers them, the panel's molecules draw them. Types alone, so a molecule
+// never takes them from a bridge domain (`design/presentational.test.ts`).
 
 /** Ask Daoris's access modes: restricted, which reads and proposes, or full, which acts itself. */
 export type HelpMode = 'restricted' | 'full';
@@ -69,9 +68,10 @@ export type HelpWired = { session: string; recorded: boolean; receipts: HelpRece
 
 /**
  * The grants of restricted mode's configured access, in the table's order:
- * Daoris's housekeeping, the browser, reading checkouts, chosen settings, and a confined shell, later.
+ * the browser, reading checkouts, the families of acts (pauses, clean-up, discarding a session branch, the chosen settings), and a
+ * confined shell, later.
  */
-export type HelpGrantId = 'housekeeping' | 'browser' | 'checkouts' | 'settings' | 'acts' | 'shell';
+export type HelpGrantId = 'browser' | 'checkouts' | 'acts' | 'shell';
 
 /**
  * A grant's state as its row says it: off or on by the operations chosen; the browser waiting for approval, or changed

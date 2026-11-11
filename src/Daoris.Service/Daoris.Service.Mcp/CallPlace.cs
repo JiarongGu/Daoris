@@ -29,7 +29,7 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
 
         var what = act switch
         {
-            Read => Text(arguments, "path") ?? (tool == "housekeeping_inspect" ? "housekeeping" : null),
+            Read => Text(arguments, "path"),
             Search => Text(arguments, "query"),
             Propose => tool[..^ProposalSuffix.Length],
             _ => tool,
@@ -39,7 +39,7 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
 
     public static string? ActOf(string? tool) => tool is null || ToolClasses.Of(tool) is not { } kind ? null : tool switch
     {
-        "checkout_read" or "housekeeping_inspect" => Read,
+        "checkout_read" => Read,
         _ when tool.EndsWith(ProposalSuffix, StringComparison.Ordinal) => Propose,
         _ when kind == ToolClass.Read => Search,
         _ => Press,

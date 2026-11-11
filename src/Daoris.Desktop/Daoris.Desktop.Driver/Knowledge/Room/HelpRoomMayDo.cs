@@ -40,20 +40,16 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("this machine as the person, each press of yours run at once; only the person chooses it, with\n");
         text.Append("`daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
         text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
-        // A discard of a session branch granted is the helper's to do through its tool.
-        var discards = machine.Housekeeping.Contains(ConfiguredAccess.DiscardBranch);
+        // A discard of a session branch granted is the helper's to press with no card.
+        var discards = machine.Acts.Contains(ActFamilies.Discard);
         text.Append(discards
             ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
             : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
-        if (machine.Housekeeping.Count > 0) text.Append(Housekeeping(machine.Housekeeping, alone: machine.Settings.Count == 0));
-        // The chosen settings granted, changed by the helper's own tools with no Apply.
-        if (machine.Settings.Count > 0) text.Append(Settings(machine.Settings, alone: machine.Housekeeping.Count == 0));
-        // A repository question otherwise meets a shell refused before it ran, then a guess at the
-        // repository's branches presented as its tree, or a turn spent on a ticket's URL,
-        // refused the same way. Said plainly, so none of them happens. The checkouts reading
-        // across allows are read through one typed tool Daoris judges at each call, on
-        // every agent, which is still no shell; so the room names no path, which no tool of its takes.
+        if (machine.Acts.Count > 0) text.Append(HelpRoomFamilies.Granted(machine.Acts));
+        // A repository question otherwise meets a shell refused before it ran, then a guess at the repository's branches
+        // presented as its tree, or a turn spent on a ticket's URL. Said plainly, so none happens. The checkouts reading across
+        // allows are read through one typed tool Daoris judges at each call, still no shell; so the room names no path.
         var reads = machine.Reads.Where(read => !machine.CheckoutsOff.Contains(read.Name, StringComparer.OrdinalIgnoreCase)).ToList();
         var off = machine.Reads.Where(read => !reads.Contains(read)).Select(read => $"`{read.Name}`").ToList();
         if (reads.Count > 0)
@@ -96,8 +92,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
-        // A plugin's server reaches it only where declared for it, and only its declared tools are
-        // allowed; what such a tool does outside Daoris is the plugin's, and Daoris itself still changes only by a proposal.
+        // A plugin's server reaches it only where declared for it, and only its declared tools are allowed.
         if (machine.PluginServers.Count > 0)
         {
             text.Append("Plugins installed here hand you these servers, as the person approved them. Call only the tools listed for\n");
@@ -116,9 +111,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
         }
 
-        // A manifest describes and grants nothing: a server waiting for the person's approval is handed nothing.
-        // A server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
-        // once at the start, and the helper proposes the approval rather than only opening the page.
+        // A manifest grants nothing: a server waiting for approval is handed nothing. What it would have, and where it is
+        // approved, is said once at the start, and the helper proposes the approval rather than only opening the page.
         if (machine.PluginServersWaiting.Count > 0 || machine.PluginServersOffered.Count > 0)
         {
             static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));
@@ -176,69 +170,6 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
         return text.ToString();
     }
-
-    /// <summary>
-    /// The housekeeping the person granted, a change restricted mode makes itself (the one, where no
-    /// setting is granted beside it), each tool named with what it does, and what holds every one of them.
-    /// </summary>
-    private static string Housekeeping(IReadOnlyList<string> granted, bool alone)
-    {
-        var text = new StringBuilder();
-        text.Append(alone
-            ? "The person granted you Daoris's own housekeeping, the one change you make yourself here, with these tools alone:\n\n"
-            : "The person granted you Daoris's own housekeeping, a change you make yourself here, with these tools alone:\n\n");
-        if (granted.Contains(ConfiguredAccess.Inspect))
-        {
-            text.Append("- `housekeeping_inspect`: Daoris's session branches and the branches its landings made, each cleared to go or kept, and why\n");
-        }
-
-        if (granted.Contains(ConfiguredAccess.CleanUp))
-        {
-            text.Append("- `housekeeping_clean_up`: removes the branches you name, with their trees, where the cleanup clears them\n");
-        }
-
-        if (granted.Contains(ConfiguredAccess.DiscardBranch))
-        {
-            text.Append("- `housekeeping_discard_branch`: discards one session branch by name, where its own proof lets it go\n");
-        }
-
-        text.Append('\n');
-        text.Append("Each target is a repository of this conversation's and a branch's name, never a path; each is judged again\n");
-        text.Append("before it goes, nothing is forced, and a branch a running or waiting session holds is kept. Say what you will\n");
-        text.Append("remove before you do, and what went and what was kept after. A tool the person has not granted is refused.\n\n");
-        return text.ToString();
-    }
-
-    /// <summary>
-    /// The chosen settings the person granted, each changed by its own tool with no Apply, through the
-    /// checks and writer Settings uses; every other setting is still proposed.
-    /// </summary>
-    private static string Settings(IReadOnlyList<string> granted, bool alone)
-    {
-        var text = new StringBuilder();
-        text.Append(alone
-            ? "The person granted you these settings, the one change you make yourself here, with these tools alone:\n\n"
-            : "The person also granted you these settings, changed yourself with these tools alone:\n\n");
-        foreach (var setting in ConfiguredAccess.SettingsBuilt.Where(granted.Contains))
-        {
-            text.Append($"- `{ConfiguredAccess.SettingToolOf(setting)}`: {SettingSaid(setting)}\n");
-        }
-
-        text.Append('\n');
-        text.Append("Each changes the setting at once, with no Apply, through the same checks and writer as Settings, and the change\n");
-        text.Append("is recorded. Do it only when the person asks for it, and say what you changed, and to what. Any other setting is\n");
-        text.Append("still pressed with its `daoris` verb for their Confirm. A tool the person has not granted is refused.\n\n");
-        return text.ToString();
-    }
-
-    private static string SettingSaid(string setting) => setting switch
-    {
-        ConfiguredAccess.Notify => "whether Daoris says so when a session parks, or ends without being asked",
-        ConfiguredAccess.Language => "the language a repository's or a workspace's sessions write to the person in",
-        ConfiguredAccess.Cap => "how many sessions run at once on this machine",
-        ConfiguredAccess.Quiet => "how long a session may say nothing and run nothing before Daoris looks in on it",
-        _ => "how long an account whose limit names no time cools before it is offered again",
-    };
 
     /// <summary>
     /// The section in full access: it acts on this machine as the person, Daoris's verbs among it, with every server the plugins here

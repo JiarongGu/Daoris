@@ -240,39 +240,22 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
-    /// The receipt says the housekeeping its start is handed, the operations chosen in the record at
-    /// that moment, whatever the agent: on Claude its tools are on the allow-list beside the room's own, and on Codex, which takes
-    /// no rules, the receipt still says them, since the driver judges each call by it. Nothing chosen is none handed.
+    /// Housekeeping and the chosen settings are presses granted as families, read at each press, so a start is handed no tool for
+    /// either and its receipt keeps none, whatever the record holds and whatever the agent.
     /// </summary>
     [Fact]
-    public async Task The_receipt_says_the_housekeeping_its_start_was_handed_on_every_agent()
+    public async Task A_start_is_handed_no_housekeeping_or_settings_tool_on_any_agent()
     {
         await using var service = StandInService.Start(_home);
-        await StartAsync(service, "help0005", "claude-code", HelpModes.Restricted);
-        Assert.Empty(Assert.Single(new HelpWired(_home).Read("help0005")).Housekeeping);
-        Assert.Empty(Assert.Single(new HelpWired(_home).Read("help0005")).Settings);
-
-        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"], "settings": ["cap"] }""");
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "acts": ["clean-up", "settings"], "housekeeping": ["inspect"], "settings": ["cap"] }""");
         var spawned = await StartAsync(service, "help0006", "claude-code", HelpModes.Restricted);
         await StartAsync(service, "help0007", "codex-acp", HelpModes.Restricted);
 
         var claude = Assert.Single(new HelpWired(_home).Read("help0006"));
-        Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], claude.Housekeeping);
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", claude.Tools);
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", claude.Tools);
-        Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", claude.Tools);
-        // The chosen settings, kept beside housekeeping the same way.
-        Assert.Equal([ConfiguredAccess.Cap], claude.Settings);
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cap", claude.Tools);
+        Assert.DoesNotContain(claude.Tools, tool => tool.Contains("housekeeping_", StringComparison.Ordinal) || tool.Contains("__settings_", StringComparison.Ordinal));
         using var settings = JsonDocument.Parse(spawned.Settings!);
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", Strings(settings.RootElement.GetProperty("permissions"), "allow"));
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cap", Strings(settings.RootElement.GetProperty("permissions"), "allow"));
-        var codex = Assert.Single(new HelpWired(_home).Read("help0007"));
-        Assert.Null(codex.Rules);
-        Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], codex.Housekeeping);
-        Assert.Equal([ConfiguredAccess.Cap], codex.Settings);
-        Assert.Contains("\"housekeeping\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
-        Assert.Contains("\"settings\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
+        Assert.DoesNotContain(Strings(settings.RootElement.GetProperty("permissions"), "allow"), tool => tool.Contains("housekeeping_", StringComparison.Ordinal));
+        Assert.DoesNotContain("\"housekeeping\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
     }
 
     /// <summary>
@@ -320,16 +303,13 @@ public sealed class HelpWiredTests : IDisposable
 
     /// <summary>
     /// A conversation whose access changed while it ran resumes at its next words under the access chosen,
-    /// and the resumed start's receipt names it: the mode widened and the housekeeping granted since, beside the first start's restricted
-    /// receipt with none; its record keeps the new mode, and the spawn resumes its own harness conversation.
+    /// and the resumed start's receipt names it: the mode widened since, beside the first start's restricted receipt; its record keeps the new mode, and the spawn resumes its own harness conversation.
     /// </summary>
     [Fact]
     public async Task A_conversation_resumed_after_its_access_changed_records_the_new_access()
     {
         await using var service = StandInService.Start(_home);
         await StartAsync(service, "help0008", "claude-code", HelpModes.Restricted);
-        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.CleanUp, chosen: true);
-
         var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -359,8 +339,6 @@ public sealed class HelpWiredTests : IDisposable
         var receipts = new HelpWired(_home).Read("help0008");
         Assert.Equal([HelpWired.GoingOn, HelpWired.New], receipts.Select(receipt => receipt.Start));
         Assert.Equal([HelpModes.Full, HelpModes.Restricted], receipts.Select(receipt => receipt.Mode));
-        Assert.Equal([ConfiguredAccess.CleanUp], receipts[0].Housekeeping);
-        Assert.Empty(receipts[1].Housekeeping);
         Assert.Equal("bypassPermissions", receipts[0].PermissionMode);
         Assert.Equal(HelpModes.Full, service.HelpMode("help0008"));
         Assert.Contains("--resume", resumed!.ArgumentList);

@@ -1,7 +1,5 @@
 /** The budget judgements the names report leaves for the window, each a name whose length is what it says. */
 export const BUDGET_LEFT = [
-  // A grant's box names each act it lets through, which a shorter name would leave out.
-  'help.grants.op.acts.pause:en', 'help.grants.op.acts.pause:zh',
   'help.setup:en', 'help.setup:zh',
   // The chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
   'review.act.withoutLook:en',
@@ -15,6 +13,8 @@ export const BUDGET_LEFT = [
 /** The sentences the audit found saying a word that rightly names another thing than the term that avoids it. */
 export const STRAY_AUDITED = [
   'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
+  // 暂停 is a repository's hold, the one verb the pause family covers beside the pause itself (暂缓).
+  'help.grants.cover.acts.pause:zh',
   // 焦点 is the keyboard's focus, which the focus term's own reason names as another thing.
   'menu.keys.field:zh',
   // 远程 here is the act's own: a git act on a git remote, which is no Daoris remote.

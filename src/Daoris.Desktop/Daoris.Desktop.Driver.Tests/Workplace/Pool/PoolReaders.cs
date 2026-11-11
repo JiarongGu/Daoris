@@ -39,8 +39,7 @@ internal static class PoolReaders
         new(Driver + "Workplace/TreeWorkReads.cs", @"BranchOfTree", "c", "the branch of the tree a work read opens"),
     ];
 
-    /// <summary>Every in-use set built from records and every test of a listed folder against one: a slot's folder is no record's path, so
-    /// each set adds, for each held line, the slot the pool names, and the landing's set and the follow's test are among them.</summary>
+    /// <summary>Every in-use set built from records and every test of a listed folder against one: each adds, for each held line, the slot the pool names.</summary>
     internal static IReadOnlyList<PoolReader> InUseSets { get; } =
     [
         new(Driver + "Workplace/TidyHolders.cs", InUse, "c", "the tidy's in-use set and the trees sessions hold"),
@@ -50,7 +49,6 @@ internal static class PoolReaders
         new(Driver + "Departments/Isolation/CopyTidy.cs", InUse, "c", "the copies' tidy's test of a copy's folder against the set"),
         new(Driver + "Loop/Watch/WatchRun.cs", InUse, "c", "the headless look's set"),
         new(Driver + "Loop/Watch/WatchNodes.cs", InUse, "c", "the rebase door's test of a run's tree against the set"),
-        new(Driver + "Help/HelpHousekeeping.cs", InUse, "c", "Ask Daoris's housekeeping set"),
         new(Driver + "Knowledge/HelpWorkFacts.cs", @"var inUse", "c", "the knowledge room's set from the active sessions"),
         new(Driver + "WorkOrders/Inventory/WorkInventories.cs", InUse, "c", "the inventory's set"),
         new(Driver + "WorkOrders/Inventory/WorkUnits.cs", InUse, "c", "the inventory's test of a tree against the set"),

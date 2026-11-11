@@ -28,12 +28,20 @@ internal static class TreesRemoveVerb
                 .ConfigureAwait(false);
         }
 
+        // A session's branch is the running Daoris's DISCARD_SESSION_BRANCH where one answers, confirmed in its window or run under the
+        // family a person granted; alone where none runs.
+        if (!LooksLikePath(named))
+        {
+            var repository = Option(args, "--repository");
+            return await InstanceDoor.PressAsync(TreesRoutes.DiscardBranch, new { named, repository, force },
+                () => DiscardAloneAsync(trees, home, named, repository, force),
+                answer => TreesSaid.ReadWords(Console.Out, Console.Error)(answer) ?? 2, InstanceHost.World(home, "trees")).ConfigureAwait(false);
+        }
+
         // The ledger is asked where a service is there to ask; alone, the removal judges from the files.
         using var service = ServiceOrNone();
-        var removal = LooksLikePath(named)
-            ? await trees.RemoveAsync(named, force, service: service).ConfigureAwait(false)
-            : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
-        Told(home, LooksLikePath(named) ? PressesTold.DiscardTree : PressesTold.DiscardBranch);
+        var removal = await trees.RemoveAsync(named, force, service: service).ConfigureAwait(false);
+        Told(home, PressesTold.DiscardTree);
         // A refusal that preserves work is policy doing its job, not a tool error. The words are the routes' too.
         var said = TreesWords.Remove(removal);
         said.Print(Console.Out, Console.Error);
@@ -41,15 +49,18 @@ internal static class TreesRemoveVerb
     }
 
     /// <summary>
-    /// A session branch the person removes by its door: named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
-    /// session, its tree with it while it is here. The driver's one discard, the call the screen's <c>DISCARD_SESSION_BRANCH</c>
-    /// ends in, so a branch a live session's tree holds is kept here as there. The service answers the sessions in use
-    /// and the registry's checkout.
+    /// A session branch the person removes by its door, where no Daoris runs: named by the branch (<c>daoris/s-…</c> or <c>s-…</c>)
+    /// or by the session, its tree with it while it is here. The driver's one discard, the call <c>DISCARD_SESSION_BRANCH</c> ends in,
+    /// so a branch a live session's tree holds is kept here as there. The service answers the sessions in use and the registry's checkout.
     /// </summary>
-    private static async Task<TreeRemoval> RemoveSessionBranchAsync(SessionTrees trees, string named, string? repository, bool force)
+    private static async Task<int> DiscardAloneAsync(SessionTrees trees, string home, string named, string? repository, bool force)
     {
         using var service = ServiceClient.FromEnvironment();
-        return await new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force).ConfigureAwait(false);
+        var removal = await new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force).ConfigureAwait(false);
+        Told(home, PressesTold.DiscardBranch);
+        var said = TreesWords.Remove(removal);
+        said.Print(Console.Out, Console.Error);
+        return said.Code;
     }
 
     /// <summary>

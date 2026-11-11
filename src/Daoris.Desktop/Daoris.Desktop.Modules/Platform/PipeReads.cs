@@ -217,7 +217,7 @@ internal static class PipeReads
     public static PipeGround Terminal() => State(["tier"], (a, _) => Text(At(a, "terminal")) ?? "", p => Text(p, "tier"));
 
     public static PipeGround HelpGrant() => State(["grant", "operation", "chosen"],
-        (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? "housekeeping"), "chosen")).Any(each => Text(each) == Text(p, "operation"))
+        (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? Daoris.Driver.ConfiguredAccess.ActsGrant), "chosen")).Any(each => Text(each) == Text(p, "operation"))
             ? "true" : "false",
         p => Raw(Field(p, "chosen")));
 

@@ -20,9 +20,6 @@
     "mcp__daoris-knowledge__handover_propose",
     "mcp__daoris-knowledge__helper_answer",
     "mcp__daoris-knowledge__helper_ask",
-    "mcp__daoris-knowledge__housekeeping_clean_up",
-    "mcp__daoris-knowledge__housekeeping_discard_branch",
-    "mcp__daoris-knowledge__housekeeping_inspect",
     "mcp__daoris-knowledge__knowledge_convergence",
     "mcp__daoris-knowledge__knowledge_get",
     "mcp__daoris-knowledge__knowledge_refresh",
@@ -45,11 +42,6 @@
     "mcp__daoris-knowledge__registry",
     "mcp__daoris-knowledge__review_ready",
     "mcp__daoris-knowledge__review_serve",
-    "mcp__daoris-knowledge__settings_cap",
-    "mcp__daoris-knowledge__settings_cooloff",
-    "mcp__daoris-knowledge__settings_language",
-    "mcp__daoris-knowledge__settings_notify",
-    "mcp__daoris-knowledge__settings_quiet",
     "mcp__daoris-knowledge__system_plan"
   ],
   "hardDeny": "Doing anything but reading this folder and giving one answer while taking part in a brainstorm: editing, writing, moving or deleting a file in any form; running any command or program; reading a file outside this folder; reaching the web or any network; calling any tool but the one result tool; committing, pushing, deploying or publishing; and asking another agent anything. A brainstorm's pass reads its packet and gives its answer, and changes nothing."

@@ -14,8 +14,8 @@ public sealed class CallActTests
     {
         Assert.Equal("search", CallPlace.ActOf("knowledge_search"));
         Assert.Equal("read", CallPlace.ActOf("checkout_read"));
-        Assert.Equal("propose", CallPlace.ActOf("workflow_propose"));
-        Assert.Equal("press", CallPlace.ActOf("settings_cap"));
+        Assert.Equal("propose", CallPlace.ActOf("go_propose"));
+        Assert.Equal("press", CallPlace.ActOf("quest_publish"));
         Assert.Null(CallPlace.ActOf("no_such_tool"));
         Assert.Null(CallPlace.ActOf(null));
     }
@@ -25,7 +25,7 @@ public sealed class CallActTests
     {
         var at = DateTimeOffset.UnixEpoch;
 
-        Assert.Contains("\"act\":\"press\"", LineageFile.Line("settings_cap", new CallLineage(CallLineage.Claude) { ToolUse = "toolu_1" }, at, act: "press"), StringComparison.Ordinal);
-        Assert.DoesNotContain("\"act\"", LineageFile.Line("settings_cap", null, at), StringComparison.Ordinal);
+        Assert.Contains("\"act\":\"press\"", LineageFile.Line("quest_publish", new CallLineage(CallLineage.Claude) { ToolUse = "toolu_1" }, at, act: "press"), StringComparison.Ordinal);
+        Assert.DoesNotContain("\"act\"", LineageFile.Line("quest_publish", null, at), StringComparison.Ordinal);
     }
 }

@@ -53,7 +53,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         });
 
     /// <summary>Ask Daoris's <c>h1</c> in workspace <c>aurora</c>, a driven <c>s1</c>; engine and game aurora's, rival borealis's, ghost with no checkout.</summary>
-    private HousekeepingLedger Ledger() => new()
+    private HelpLedgerStandIn Ledger() => new()
     {
         Records = [("h1", HelpRoom.Repository, "aurora", null), ("s1", "engine", "aurora", null)],
         Registry =
@@ -69,7 +69,7 @@ public sealed class HelpCheckoutsTests : IDisposable
             By = RequestDoor.Help, Key = "0123456789ab", Operation = operation, Repository = repository, Path = path,
         };
 
-    private Task<CheckoutAnswer> AnswerAsync(HousekeepingLedger ledger, SessionRequest request) =>
+    private Task<CheckoutAnswer> AnswerAsync(HelpLedgerStandIn ledger, SessionRequest request) =>
         new HelpCheckouts(_home, ledger.Client).AnswerAsync(request, CancellationToken.None);
 
     /// <summary>The git each call asks, by its arguments, kept for the test to read.</summary>
@@ -93,7 +93,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     }
 
     /// <summary>Granted and handed: engine and game handed at this start, nothing turned off.</summary>
-    private HousekeepingLedger Granted()
+    private HelpLedgerStandIn Granted()
     {
         Handed("h1", "engine", "game");
         Git();
@@ -110,7 +110,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     {
         Assert.Empty(ConfiguredAccess.Read(_home).CheckoutsOff);
         Assert.True(ConfiguredAccess.Read(_home).Reads("engine"));
-        Choose("""{ "housekeeping": ["inspect"] }""");
+        Choose("""{ "acts": ["discard"] }""");
 
         var off = ConfiguredAccess.Choose(_home, ConfiguredAccess.CheckoutsGrant, "engine", false);
         ConfiguredAccess.Choose(_home, ConfiguredAccess.CheckoutsGrant, "Alpha", false);
@@ -120,7 +120,7 @@ public sealed class HelpCheckoutsTests : IDisposable
         Assert.Equal(["Alpha", "engine"], read.CheckoutsOff);
         Assert.False(read.Reads("ENGINE"));
         Assert.True(read.Reads("game"));
-        Assert.Equal([ConfiguredAccess.Inspect], read.Housekeeping);
+        Assert.Equal([ActFamilies.Discard], read.Acts);
         Assert.Equal(read.CheckoutsOff, read.Of(ConfiguredAccess.CheckoutsGrant));
         Assert.False(read.Same(off));
         using (var file = JsonDocument.Parse(File.ReadAllText(ConfiguredAccess.PathOf(_home))))

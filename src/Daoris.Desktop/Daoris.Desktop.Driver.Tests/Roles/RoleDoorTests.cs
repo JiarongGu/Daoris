@@ -224,7 +224,7 @@ public sealed class RoleDoorTests : IDisposable
     [Fact]
     public void No_settings_grant_reaches_a_role_or_an_actor()
     {
-        Assert.DoesNotContain(ConfiguredAccess.SettingsBuilt, setting => setting.Contains("role", StringComparison.OrdinalIgnoreCase)
-            || setting.Contains("actor", StringComparison.OrdinalIgnoreCase) || setting.Contains("staff", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(ActFamilies.Built.SelectMany(ActFamilies.RoutesOf), route => route.Contains("ROLE", StringComparison.Ordinal)
+            || route.Contains("ACTOR", StringComparison.Ordinal) || route.Contains("STAFF", StringComparison.Ordinal));
     }
 }
