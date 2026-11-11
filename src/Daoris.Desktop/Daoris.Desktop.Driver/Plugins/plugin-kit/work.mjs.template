@@ -2,16 +2,19 @@
 // promises every plugin at the work points, so its author writes only the external calls, in plugin.mjs.
 // Daoris's plugin kit wrote this file, and `daoris plugin new` writes it again for a newer build: change plugin.mjs, not
 // this. README.md says what each part promises; `node --test` here checks it (plugin.test.mjs, plugin.contract.test.mjs).
-// What it keeps, it keeps in the plugin's data folder, in `work-journal.json`, written whole before anything it records is said:
+// What it keeps, it keeps in the plugin's data folder, in `work-journal.json`, one record at a time under the kit's storage.mjs lock,
+// before anything it records is said, and read fresh each time, so the processes of the plugin's places sharing that folder never
+// write over each other's records:
 //  - each attempt by its idempotency key, written BEFORE the external call, so a redelivered key never calls it twice;
 //  - each attempt's outcome, so `work/reconcile` answers from it and a resync sends the same event again;
 //  - each resource's cleanup, so a repeated cleanup is `already-gone`, never a second removal;
 //  - each observation it reported, so the same one is never reported under a new id.
 // A journal that does not read stops the plugin rather than starting afresh: forgetting an attempt is how an effect happens twice.
 import { createHash } from 'node:crypto';
-import { appendFileSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { records } from './storage.mjs';
 
 /** The capability a performer's handshake names: without it, Daoris never asks it to perform. */
 export const CAPABILITY = '{{capability}}';
@@ -35,23 +38,9 @@ export function work({ data, send, say, act, check, remove, observe }) {
   // This process's life: an attempt begun under another is one begun by a process that has since gone.
   const life = `${process.pid}-${Date.now()}`;
 
-  mkdirSync(data, { recursive: true });
-  const file = join(data, 'work-journal.json');
-  let journal;
-  try {
-    journal = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw new Error(`${file} does not read (${error.message}); it is kept as it is, and nothing is performed until it reads`);
-    journal = {};
-  }
-  journal.attempts ??= {};
-  journal.cleanups ??= {};
-  journal.observed ??= {};
-  const keep = () => {
-    const written = `${file}.${process.pid}.tmp`;
-    writeFileSync(written, `${JSON.stringify(journal, null, 2)}\n`);
-    renameSync(written, file);
-  };
+  const journal = records(join(data, 'work-journal.json'));
+  journal.read();
+  const keep = (attempt) => journal.put('attempts', attempt.idempotencyKey, attempt);
 
   /** A completion as the one event Daoris takes: bound to its invocation, its id the invocation, so a second sending is the same event. */
   const tell = (attempt) => send({
@@ -64,7 +53,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
     attempt.state = outcome.state;
     attempt.outcome = outcome;
     attempt.at = new Date().toISOString();
-    keep();
+    keep(attempt);
     tell(attempt);
   };
 
@@ -83,10 +72,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
   const asked = async (attempt) => {
     const said = calls.check ? await calls.check(attempt) : null;
     if (said?.state === 'done' || said?.state === 'failed') settle(attempt, outcomeOf(said.outcome));
-    if (said?.state === 'not-started') {
-      delete journal.attempts[attempt.idempotencyKey];
-      keep();
-    }
+    if (said?.state === 'not-started') journal.remove('attempts', attempt.idempotencyKey);
     return said;
   };
 
@@ -96,8 +82,8 @@ export function work({ data, send, say, act, check, remove, observe }) {
     'work/watch': async (frame) => {
       setImmediate(async () => {
         if (frame.resync) {
-          for (const attempt of Object.values(journal.attempts)) if (attempt.outcome) tell(attempt);
-          for (const seen of Object.values(journal.observed)) send(seen.event);
+          for (const attempt of Object.values(journal.all('attempts'))) if (attempt.outcome) tell(attempt);
+          for (const seen of Object.values(journal.all('observed'))) send(seen.event);
         }
         if (calls.observe) await observed(frame.units ?? []);
       });
@@ -106,13 +92,12 @@ export function work({ data, send, say, act, check, remove, observe }) {
 
     // One attempt: written down before it is acknowledged, acknowledged before the work, its outcome sent at `work/step` once known.
     'work/perform': async (call) => {
-      const known = journal.attempts[call.idempotencyKey];
+      const known = journal.get('attempts', call.idempotencyKey);
       if (!known) {
         const attempt = { idempotencyKey: call.idempotencyKey, invocation: call.invocation, unit: call.unit, step: call.step,
           stepVersion: call.stepVersion, subjectRevision: call.subjectRevision, inputs: call.inputs, options: call.options ?? {}, deadlineAt: call.deadlineAt,
           state: 'begun', life };
-        journal.attempts[call.idempotencyKey] = attempt;
-        keep();
+        keep(attempt);
         setImmediate(() => run(attempt));
       } else if (known.outcome && known.state !== 'unknown') {
         // Delivered again: the same key never calls the platform twice. Its outcome goes again, which Daoris takes once.
@@ -129,7 +114,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
   const answers = {
     // What became of an attempt: from the journal where it knows, else asked of the platform.
     'work/reconcile': async (call) => {
-      const attempt = journal.attempts[call.idempotencyKey];
+      const attempt = journal.get('attempts', call.idempotencyKey);
       if (!attempt) return { state: 'not-started' };
       if (attempt.state === 'reached') return { state: 'done', outcome: attempt.outcome };
       if (attempt.state === 'failed') return { state: 'failed', outcome: attempt.outcome };
@@ -143,7 +128,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
 
     // One resource removed, once: the same resource asked again is `already-gone`, never a second removal.
     'work/cleanup': async (call) => {
-      const done = journal.cleanups[call.resource];
+      const done = journal.get('cleanups', call.resource);
       if (done?.disposition === 'removed' || done?.disposition === 'already-gone') {
         return { disposition: 'already-gone', ...(done.proof ? { proof: done.proof } : {}) };
       }
@@ -154,8 +139,7 @@ export function work({ data, send, say, act, check, remove, observe }) {
       } catch (error) {
         answer = { disposition: 'failed', message: words(error) };
       }
-      journal.cleanups[call.resource] = answer;
-      keep();
+      journal.put('cleanups', call.resource, answer);
       return answer;
     },
   };
@@ -176,14 +160,13 @@ export function work({ data, send, say, act, check, remove, observe }) {
         if (!outcome) continue;
         outcome = outcomeOf(outcome);
         const where = [unit.repository, unit.branch, unit.tip, step].join('\n');
-        const seen = journal.observed[where];
+        const seen = journal.get('observed', where);
         if (seen && JSON.stringify(seen.outcome) === JSON.stringify(outcome)) continue;
         const changes = (seen?.changes ?? 0) + 1;
         const id = `${createHash('sha256').update(where).digest('hex').slice(0, 32)}-${changes}`;
         const event = { jsonrpc: '2.0', method: 'work/step', params: { step, repository: unit.repository, branch: unit.branch,
           commit: unit.tip, ...outcome, at: new Date().toISOString(), id } };
-        journal.observed[where] = { outcome, changes, event };
-        keep();
+        journal.put('observed', where, { outcome, changes, event });
         send(event);
       }
     }

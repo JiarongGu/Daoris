@@ -2,7 +2,8 @@
   "id": "local-preview",
   "apiVersion": 1,
   "name": "Local preview",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "changes": "Its work journal is written one record at a time under a lock (the kit's storage.mjs), so two processes of it sharing its data folder keep each other's attempts.",
   "description": "An example performed step: writes a preview of the attempt's revision into its own data folder, once per attempt, and removes it once the work is over. It touches nothing outside that folder.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

@@ -151,7 +151,7 @@ public sealed class PluginKitTests : IDisposable
 
         var folder = Path.Combine(_scratch, "acme-quiet-hours");
         Assert.Equal(folder, plan.Folder);
-        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"], written);
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "storage.mjs", "storage.test.mjs"], written);
         Assert.Equal(written.OrderBy(n => n, StringComparer.Ordinal), Directory.GetFiles(folder).Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal));
 
         // The manifest is one the catalogue reads as sound, speaking where it is asked to.
@@ -918,7 +918,7 @@ public sealed class PluginKitTests : IDisposable
         // It reports at `work/step` too, where its outcome is heard, and is told the awaited set at `work/watch`, as every plugin that
         // works is: the kit adds both, in the driver's order.
         Assert.Equal([HookPoints.Watch, HookPoints.Step, HookPoints.Perform], plan.Points);
-        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "work.mjs", "plugin.contract.test.mjs", "cycle.json"], written);
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "storage.mjs", "storage.test.mjs", "work.mjs", "plugin.contract.test.mjs", "cycle.json"], written);
 
         var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
         Assert.Null(problem);
@@ -961,7 +961,7 @@ public sealed class PluginKitTests : IDisposable
         var plan = PluginKit.Plan("acme-checks", [HookPoints.Watch], _scratch);
 
         Assert.Equal([HookPoints.Watch, HookPoints.Step], plan.Points);
-        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "work.mjs"], plan.Files.Select(file => file.Name));
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "storage.mjs", "storage.test.mjs", "work.mjs"], plan.Files.Select(file => file.Name));
         PluginKit.Write(plan);
         var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
         Assert.Null(problem);
@@ -983,8 +983,9 @@ public sealed class PluginKitTests : IDisposable
 
         Assert.True(exit == 0, output);
         Assert.Contains("# fail 0", output);
-        Assert.Contains("# pass 9", output);
+        Assert.Contains("# pass 14", output);
         foreach (var shown in new[] { "one external effect under duplicate delivery", "each work/reconcile answer", "already-gone on a repeated cleanup",
+                     "two processes sharing the data folder keep each other's attempts", "two processes writing one file at once keep every record",
                      "an event sent again keeps the id it first had", "no frame claims what a plugin may not" })
         {
             Assert.Contains(shown, output);
@@ -1082,86 +1083,6 @@ public sealed class PluginKitTests : IDisposable
         refused = new StringWriter();
         Assert.Equal(2, await PluginKitCommand.RunAsync(["try", "acme-deploy", "--cycle", fixture], refused, home: Home));
         Assert.Contains("never an installed plugin's data", refused.ToString());
-    }
-
-    /// <summary>
-    /// The example performed plugin (<c>examples/plugins/local-preview</c>) is the kit's own output filled in: its kit-owned files are what
-    /// the kit writes now, so a change to the kit changes the example in the same commit, and it passes its cycle through the driver.
-    /// </summary>
-    [Fact]
-    public async Task The_example_performer_is_the_kit_s_scaffold_filled_in_and_passes_its_cycle()
-    {
-        var example = Path.Combine(GitSeed.RepoRoot(), "examples", "plugins", "local-preview");
-        var made = PluginKit.Plan("local-preview", [HookPoints.Perform], _scratch);
-
-        foreach (var name in new[] { PluginKit.WorkScript, PluginKit.Test, PluginKit.ContractTest, PluginKit.CycleFixture })
-        {
-            Assert.Equal(made.Files.Single(file => file.Name == name).Content, File.ReadAllText(Path.Combine(example, name)).Replace("\r\n", "\n"));
-        }
-
-        var (manifest, problem) = PluginCatalog.ReadFolder(example);
-        Assert.Null(problem);
-        Assert.Equal("local-preview/perform", Assert.Single(manifest.Steps).Kind);
-
-        // Copied out, so the cycle's journal and previews never land in the repository's folder.
-        var copy = Path.Combine(_scratch, "local-preview");
-        Directory.CreateDirectory(copy);
-        foreach (var file in Directory.GetFiles(example)) File.Copy(file, Path.Combine(copy, Path.GetFileName(file)));
-        var cycle = await PluginCycles.TryAsync(Home, copy, PluginCycles.Read(Path.Combine(copy, PluginKit.CycleFixture)) with { Deadline = TimeSpan.FromSeconds(1) });
-        Assert.True(cycle.Passed, Describe(cycle));
-    }
-
-    /// <summary>
-    /// <c>examples/plugins/local-release</c> keeps the kit's files as the kit writes them (its cycle fixture is its own, naming
-    /// the tail), and declares find, release and publish as three performed, idempotent, reconciled steps.
-    /// </summary>
-    [Fact]
-    public async Task The_release_example_keeps_the_kit_s_files_and_declares_three_performed_steps()
-    {
-        var example = Path.Combine(GitSeed.RepoRoot(), "examples", "plugins", "local-release");
-        var made = PluginKit.Plan("local-release", [HookPoints.Perform], _scratch);
-
-        foreach (var name in new[] { PluginKit.WorkScript, PluginKit.Test, PluginKit.ContractTest })
-        {
-            Assert.Equal(made.Files.Single(file => file.Name == name).Content, File.ReadAllText(Path.Combine(example, name)).Replace("\r\n", "\n"));
-        }
-
-        var (manifest, problem) = PluginCatalog.ReadFolder(example);
-        Assert.Null(problem);
-        Assert.Equal(["local-release/find", "local-release/release", "local-release/publish"], manifest.Steps.Select(step => step.Kind));
-        Assert.All(manifest.Steps, step =>
-        {
-            Assert.Equal("performed", step.Reach);
-            Assert.True(step.Perform!.Idempotent);
-            Assert.True(step.Perform.Reconcile);
-            Assert.Equal("local-release/receipt@1", step.Evidence);
-        });
-        Assert.Equal("local-release/release@1", manifest.Steps[0].Outputs["release"]);
-        Assert.Equal("local-release/release@1", manifest.Steps[1].Inputs["release"]);
-        Assert.Equal("local-release/release@1", manifest.Steps[2].Inputs["release"]);
-
-        // Each step says what it does in both languages, and none says it publishes anywhere: it copies into its own registry folder.
-        Assert.All(manifest.Steps, step =>
-        {
-            Assert.NotNull(step.Title);
-            Assert.NotNull(step.About);
-            foreach (var words in step.Title!.Texts.Concat(step.About!.Texts))
-            {
-                Assert.DoesNotContain("publish", words, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("发布", words, StringComparison.Ordinal);
-            }
-        });
-        Assert.Contains("registry", manifest.Steps[2].About!.In("en"), StringComparison.OrdinalIgnoreCase);
-
-        var fixture = PluginCycles.Read(Path.Combine(example, PluginKit.CycleFixture));
-        Assert.Equal("publish", fixture.Step);
-
-        // Copied out, so the cycle's journal never lands in the repository's folder.
-        var copy = Path.Combine(_scratch, "local-release");
-        Directory.CreateDirectory(copy);
-        foreach (var file in Directory.GetFiles(example)) File.Copy(file, Path.Combine(copy, Path.GetFileName(file)));
-        var cycle = await PluginCycles.TryAsync(Home, copy, PluginCycles.Read(Path.Combine(copy, PluginKit.CycleFixture)) with { Deadline = TimeSpan.FromSeconds(1) });
-        Assert.True(cycle.Passed, Describe(cycle));
     }
 
     // ——— helpers

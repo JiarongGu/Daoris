@@ -2,7 +2,8 @@
   "id": "local-release",
   "apiVersion": 1,
   "name": "Local release",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "changes": "Its work journal is written one record at a time under a lock (the kit's storage.mjs), so two processes of it sharing its data folder keep each other's attempts.",
   "description": "An example of recording and copying a release as a plugin's performed steps: it finds a pending release for the attempt's revision, records the release, and copies the built package into a registry folder, all inside its own data folder. It never pushes.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

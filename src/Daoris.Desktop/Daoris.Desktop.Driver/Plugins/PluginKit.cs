@@ -307,6 +307,7 @@ public static class PluginKit
             new(Test, WireTest()),
             new(Readme, ReadmeOf(id, name, chosen).Replace("\r\n", "\n")),
         };
+        files.AddRange(PluginKitStorage.Files());
         if (Works(chosen)) files.Add(new(WorkScript, WorkLibrary()));
         if (PluginKitSystems.Adapts(chosen)) files.Add(new(PluginKitSystems.Library, PluginKitFiles.Template(PluginKitSystems.Library)));
         if (Performs(chosen))
