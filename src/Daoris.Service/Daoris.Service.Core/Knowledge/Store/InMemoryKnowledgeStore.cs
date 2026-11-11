@@ -42,7 +42,10 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
             // Before anything here changes, so a failure there leaves this store unchanged.
             if (alongside is not null) await alongside(CancellationToken.None).ConfigureAwait(false);
             _byRepository[repository] = [.. entries.Select(entry => entry with { Workspace = Workspaces.Normalize(entry.Workspace) })];
-            _readings[repository] = new IndexReading(repository, generation + 1, reading.Commit, reading.Signature, reading.Fed, reading.At);
+            _readings[repository] = new IndexReading(repository, generation + 1, reading.Commit, reading.Signature, reading.Fed, reading.At)
+            {
+                Scanner = reading.Scanner,
+            };
             return true;
         }
         finally
@@ -60,7 +63,7 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
             {
                 if (entries.All(entry => Workspaces.Same(entry.Workspace, workspace))) continue;
                 _byRepository[name] = [.. entries.Select(entry => entry with { Workspace = Workspaces.Normalize(workspace) })];
-                if (_readings.TryGetValue(name, out var reading)) _readings[name] = reading with { Generation = reading.Generation + 1 };
+                if (_readings.TryGetValue(name, out var reading)) _readings[name] = reading with { Generation = reading.Generation + 1, Scanner = null };
             }
         }
         finally

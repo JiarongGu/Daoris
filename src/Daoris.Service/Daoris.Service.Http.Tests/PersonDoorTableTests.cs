@@ -31,6 +31,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/entries", Open),
         ("GET", "/api/convergence", Open),
         ("GET", "/api/quests", Open),
+        ("GET", "/api/quests/changes", Open),
         ("GET", "/api/quests/{id}/attachments/{sha256}", Open),
         ("GET", "/api/quests/{id}/claim", Open),
         // A quest's moves (FLOWCHART1a2): a read by allow-list, on both hosts.
@@ -193,7 +194,7 @@ public sealed class PersonDoorTableTests
         Assert.Equal(Routes, PersonDoors.Table.Select(door => (door.Method, door.Pattern, door.Class)));
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
-        Assert.Equal(39, Routes.Count(route => route.Class == Open));
+        Assert.Equal(40, Routes.Count(route => route.Class == Open));
         // An outside agent's read, post and leave, and the person's admission of it.
         Assert.Equal(8, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.

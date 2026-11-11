@@ -216,6 +216,24 @@ test('one external effect under duplicate delivery, before and after a restart',
   assert.deepEqual(after.params, outcome.params);
 });
 
+test('two processes sharing the data folder keep each other\'s attempts, as two places\' processes of one plugin do', async (t) => {
+  const place = scratch(t);
+  const [one, two] = await Promise.all([start(t, place), start(t, place)]);
+  const by = [one, two, one, two];
+  await Promise.all(by.map((plugin, n) => plugin.ask('hook/work/perform', attempt(n + 1))));
+  await Promise.all(by.map((plugin, n) => plugin.until(completion(n + 1), `outcome for \`i-${n + 1}\``)));
+  await Promise.all([one.stop(), two.stop()]);
+
+  const after = await start(t, place);
+  for (const n of [1, 2, 3, 4]) {
+    const answer = await after.ask('hook/work/reconcile', {
+      unit: 'u-contract', step: STEP, invocation: `i-${n}`, idempotencyKey: `k-${n}`, subjectRevision: 'r1',
+    });
+    assert.equal(answer.state, 'done', `the attempt \`i-${n}\` is not kept: one process wrote its journal over the other's`);
+  }
+  await after.stop();
+});
+
 test('each work/reconcile answer', async (t) => {
   const place = scratch(t, {
     acts: { 'i-2': { state: 'failed', code: transient }, 'i-3': { hold: true }, 'i-4': { exit: true } },

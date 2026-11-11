@@ -265,6 +265,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
             {
                 "/api/sessions" => JsonSerializer.Serialize(records),
                 "/api/sessions/changes" => JsonSerializer.Serialize(new { whole = true, changed = records, order = new[] { Session }, mark = (string?)null }),
+                SessionChangeShape.QuestChangesPath => SessionChangeShape.Whole("[]"),
                 _ => "[]",
             };
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)

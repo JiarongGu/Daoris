@@ -271,4 +271,5 @@ drains, swaps, rolls back and refuses.
 - **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
+- **HISTCLEAR1**: a workspace's history clear stops at the client's read bound on a long history and needs several presses.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

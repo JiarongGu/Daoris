@@ -380,7 +380,7 @@ public sealed class NodeRuntime(
             if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
             // The person's skip or stop of a run's node, kept on its record by their door, applied before anything on it is judged; a run it
             // names is judged this pass.
-            var worded = await Keeping.WordedAsync(governed.Values, ct).ConfigureAwait(false);
+            var worded = await Keeping.WordedAsync(governed.Values, ct, (each, scope) => tips.TipAsync(scope.Root, each.Watched.Branch, ct)).ConfigureAwait(false);
             done.AddRange(worded.Done);
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
@@ -475,6 +475,7 @@ public sealed class NodeRuntime(
         {
             tip = scope.Branch is not null ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             Keeping.Reopen(governed, scope);
+            ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
         }
 
         for (var round = 0; round <= governed.Graph.Nodes.Count; round++)

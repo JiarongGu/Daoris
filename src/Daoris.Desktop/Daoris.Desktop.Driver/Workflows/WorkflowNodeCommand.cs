@@ -5,10 +5,11 @@ namespace Daoris.Driver;
 /// <param name="Run">The run, as its binding names it and <c>workflow run</c> prints it.</param>
 /// <param name="Node">The node's id in the run's graph.</param>
 /// <param name="Words">Every word after the node's, joined as said; null where none.</param>
-public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words);
+/// <param name="Revision">The review record an <c>accept</c> names (<c>--at</c>), whole or by its first characters; null where none is named.</param>
+public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words, string? Revision = null);
 
 /// <summary>
-/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> and <c>workflow accept &lt;run&gt; &lt;node&gt; ["…"]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
+/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> and <c>workflow accept &lt;run&gt; &lt;node&gt; [--at &lt;revision&gt;]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
 /// version, kept on the run's record by <see cref="RunNodeWords.Word"/>, which the page's <c>WORKFLOW_NODE</c> calls too, and applied by
 /// Daoris's next look.
 /// </summary>
@@ -23,6 +24,9 @@ public static class WorkflowNodeCommand
 {
     public const string Usage = RunNodeWords.Usage;
 
+    /// <summary>The flag naming the review record an Accept is given on.</summary>
+    public const string At = "--at";
+
     /// <summary>Whether the words after <c>workflow</c> ask for a word on a run's node, rightly or not: every act the node door takes.</summary>
     public static bool Asks(IReadOnlyList<string> args) => args is [var act, ..] && NodeWordActs.All.Contains(act, StringComparer.Ordinal);
 
@@ -32,8 +36,22 @@ public static class WorkflowNodeCommand
         problem = null;
         if (args is [var act, var run, var node, ..] && Asks(args) && run.TrimStart('#').Trim().Length > 0 && node.Trim().Length > 0)
         {
-            var words = string.Join(' ', args.Skip(3)).Trim();
-            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null);
+            var rest = args.Skip(3).ToList();
+            string? revision = null;
+            if (rest.IndexOf(At) is var at and >= 0)
+            {
+                if (act != NodeWordActs.Accept || at + 1 >= rest.Count || rest[at + 1].Trim().Length == 0)
+                {
+                    problem = $"`{At}` names the review record an accept is given on: `workflow accept <run> <node> {At} <revision>`.";
+                    return null;
+                }
+
+                revision = rest[at + 1].Trim();
+                rest.RemoveRange(at, 2);
+            }
+
+            var words = string.Join(' ', rest).Trim();
+            return new WorkflowNodeAsk(act, run.Trim().TrimStart('#'), node.Trim(), words.Length > 0 ? words : null, revision);
         }
 
         problem = "`workflow skip` and `workflow stop` name a run and one of its nodes: `workflow skip <run> <node> \"…\"`.";
@@ -50,7 +68,7 @@ public static class WorkflowNodeCommand
         Func<DateTimeOffset>? clock = null, CancellationToken ct = default, IIntegrationDoor? door = null)
     {
         var variables = environment ?? instance?.Environment ?? Environment.GetEnvironmentVariable;
-        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words));
+        var payload = InstanceDoor.Said(("run", ask.Run), ("node", ask.Node), ("act", ask.Act), ("words", ask.Words), ("revision", ask.Revision));
         return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkflowNode, payload, () => AloneAsync(ask, records, output, variables, clock, door, ct), output, ct);
     }
 
@@ -68,7 +86,8 @@ public static class WorkflowNodeCommand
             return 1;
         }
 
-        var done = await RunNodeWords.WordAsync(records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct).ConfigureAwait(false);
+        var done = await RunNodeWords.WordAsync(records, door ?? NodeRuntime.HomeDoor(records.Home), ask.Run, ask.Node, ask.Act, ask.Words, clock, ct, revision: ask.Revision)
+            .ConfigureAwait(false);
         output.WriteLine(RunNodeWords.Said(done));
         return done.Done ? 0 : 1;
     }

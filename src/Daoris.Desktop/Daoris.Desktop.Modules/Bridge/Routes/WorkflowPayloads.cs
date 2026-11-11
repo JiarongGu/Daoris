@@ -34,4 +34,7 @@ public sealed record WorkflowSavePress(
     string? Id, string? From, JsonElement? Steps, JsonElement? Graph, string? Name, long? Base, IReadOnlyList<string>? Authorize, string? Updates,
     bool WithOpinion = false, bool WithLook = false, bool Plan = false);
 
-public sealed record WorkflowNodePress(string Run, string Node, string Act, string? Words, bool Said = false);
+/// <summary>A word on a run's node; an <c>accept</c> names the review record drawn and the unchecked dones it passes, <c>changes</c> their part.</summary>
+public sealed record WorkflowNodePress(
+    string Run, string Node, string Act, string? Words, bool Said = false, long? Attempt = null, string? Revision = null, bool Unchecked = false,
+    string? Part = null);

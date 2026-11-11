@@ -401,10 +401,16 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.NotNull(lease);
         var unworded = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes" });
         Assert.Equal((false, "no-words"), (unworded.GetProperty("done").GetBoolean(), unworded.GetProperty("refused").GetString()));
-        var kept = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes", words = "Shorter, please." });
+        Assert.True(ReviewRecords.Keep(Home, new ReviewRecord("q1", "review", 1, ReviewKinds.Answer, "feedc0de0123456789", T)));
+        var moved = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", attempt = 1, revision = "0badc0de" });
+        Assert.Equal((false, "moved", "feedc0de0123456789"),
+            (moved.GetProperty("done").GetBoolean(), moved.GetProperty("refused").GetString(), moved.GetProperty("revision").GetString()));
+        var named = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", revision = "feedc0de0123456789", @unchecked = true });
+        Assert.Equal(UncheckedAccepts.NoneUnchecked, named.GetProperty("refused").GetString());
+        var kept = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes", words = "Shorter, please.", part = "q1" });
         Assert.True(kept.GetProperty("done").GetBoolean());
         var word = Assert.Single(files.Read(unit)!.Pending);
-        Assert.Equal(("review", NodeWordActs.Changes, "Shorter, please."), (word.Node, word.Act, word.Words));
+        Assert.Equal(("review", NodeWordActs.Changes, "Shorter, please.", "q1"), (word.Node, word.Act, word.Words, word.Part));
     }
 
     [Fact]

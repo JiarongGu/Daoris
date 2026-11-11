@@ -55,7 +55,7 @@ public static class PluginCommandConsole
 
     private static string Usage(string home, string id) =>
         PluginCatalog.Load(home).Plugins.FirstOrDefault(each => string.Equals(each.Manifest.Id, id, StringComparison.OrdinalIgnoreCase)) is { } plugin
-            ? $"name a command: {string.Join("; ", plugin.Manifest.Interfaces.Commands.Select(each => $"`daoris {plugin.Manifest.Id} {each.Name}` {each.About}"))}"
+            ? $"name a command: {string.Join("; ", plugin.Manifest.Interfaces.Commands.Select(each => $"`daoris {plugin.Manifest.Id} {each.Name}` {each.About.AsWritten}"))}"
             : $"no plugin `{id}` is installed.";
 
     /// <summary>The person's own terminal: a hidden line where asked, typed keys never echoed.</summary>

@@ -20,6 +20,21 @@ repository.
   left by the same judgement and counts them.
 - **Verification:** `ClosedRunEndTests` (whole passes, 300 runs ending and a later pass judging none) and `ClosedRunsStepGitTests` (a real
   checkout whose line took the work by cherry-pick).
+## 2026-11-11 - Two places' work processes of one plugin wrote its work journal over each other's attempts
+
+- **Symptom:** a plugin with a pull-request step awaited in a repository and in a workspace runs one work process per place, both in
+  `.data/<id>`; an attempt one of them journalled was missing from `work-journal.json` after the other wrote, so a later process
+  answered it `not-started` at `work/reconcile` and a redelivery could open the pull request a second time.
+- **Root cause:** the kit's `work.mjs` read the journal once at its start and wrote its whole copy back after every change (a rename,
+  atomic per write but not per record). Correct while one process owned the folder; 4702a828aa (D241 point 5) split a plugin's work
+  processes by place under the same data folder, so each process's write replaced the file with its own copy and dropped every record
+  the other had written since it started.
+- **Fix:** the kit's `storage.mjs` writes one record at a time under a lock file, reading the file fresh inside the lock and replacing
+  it by a rename; a lock whose holder is gone is taken over. `work.mjs` reads and writes each attempt, cleanup and observation through
+  it, and every example that works carries both files as the kit writes them.
+- **Verification:** the kit's contract test starts two plugin processes on one data folder, performs four attempts across them at
+  once, and a third process answers all four `done`; before the fix it answered `i-1` not kept. `storage.test.mjs` runs two writer
+  processes at once and keeps all 300 records.
 
 ## 2026-11-11 - A plugin's own command answered "this channel runs no commands" on the installed copy
 

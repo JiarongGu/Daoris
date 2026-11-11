@@ -136,7 +136,8 @@ internal sealed class NodeRunKeeping(
     /// the run's declarations and the scope its starts take, and taken off whether applied or not. Each is said, and names its run, so the run
     /// is judged this pass. A record that does not read keeps them: the evaluation says it.
     /// </summary>
-    public async Task<(List<WorkPerformed> Done, List<string> Said)> WordedAsync(IEnumerable<GovernedUnit> governed, CancellationToken ct)
+    public async Task<(List<WorkPerformed> Done, List<string> Said)> WordedAsync(
+        IEnumerable<GovernedUnit> governed, CancellationToken ct, Func<GovernedUnit, RunScope, Task<string?>>? tipOf = null)
     {
         var done = new List<WorkPerformed>();
         var said = new List<string>();
@@ -151,13 +152,15 @@ internal sealed class NodeRunKeeping(
                 ? await IntegrateNodes.PromotedAsync(door, pending, ct).ConfigureAwait(false)
                 : null;
             var landed = landings();
-            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed));
+            var present = await ReviewAccepts.PresentAsync(records.Home, each, pending,
+                run => tipOf is null ? Task.FromResult<string?>(null) : tipOf(each, run)).ConfigureAwait(false);
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed, present));
             if (refused is not null) continue;
             SupervisedWords.Settle(landed, applied!);
             foreach (var (word, code) in applied!)
             {
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
-                said.Add(RunNodeWords.AppliedSaid(unit, word, code));
+                said.Add(code == ReviewAccepts.Moved ? ReviewAccepts.DroppedSaid(unit, word, present) : RunNodeWords.AppliedSaid(unit, word, code));
 
                 // The person's changes on a review with no way back on its rejection go to the work all the same, as the look's not-yet does;
                 // one with a way back is told as that wire is taken, and only where it goes back to the work.
@@ -206,8 +209,8 @@ internal sealed class NodeRunKeeping(
     private static string ChangesWords(string node, string words)
     {
         var quoted = string.Join("\n", words.Trim().ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? ">" : "> " + line));
-        return $"Daoris: the person asked for changes at `{node}` before your work lands, so it goes back to you. Make them and commit: what you "
-            + $"commit is reviewed again. Their words:\n\n{quoted}";
+        return $"Daoris: the person asked for changes at `{node}` before your work goes on, so it goes back to you. Make them, commit what changes "
+            + $"files, and hand back again: your next handback is reviewed again, even where no file changed. Their words:\n\n{quoted}";
     }
 
     /// <summary>The key the work is told under: the run, the step that sent it back and that step's attempt, so it is said once.</summary>
@@ -220,7 +223,9 @@ internal sealed class NodeRunKeeping(
     private async Task TellWorkAsync(GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
-        if ((scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault()) is not { } session)
+        // The part the person's changes name is told, by the session that made it; else the newest part's.
+        if ((ChangesParts.SessionOf(scope, ChangesParts.Of(records.Read(unit), node, attempt))
+             ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault()) is not { } session)
         {
             said.Add($"work  {unit}: no session of its work is known here, so nobody is told what `{node}` sent back; the words stay on its record.");
             return;

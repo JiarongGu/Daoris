@@ -29,7 +29,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Offers | `Plugins/PluginOffers.cs`, `tools/desktop-publish/lay.mjs` (`OFFERED_PLUGINS`, `layOffers`) | `app/plugin-offers/` in the install, and where each door finds it |
 | Shipped judgement | `Plugins/Domain/PluginShipped.cs` | An offer's installed copy: `older`, `changed`, or older and unjudged |
 | Package | `Plugins/PluginPackage.cs`, `Plugins/PluginPackageFile.cs` | Reads and installs a `.nupkg` offline |
-| Kit | `Plugins/PluginKit.cs`, `PluginKitSystems.cs`, `PluginKitFiles.cs`, `PluginTrials.cs`, `PluginTrialProcess.cs`, `plugin-kit/*.template` | `new` and `try` |
+| Kit | `Plugins/PluginKit.cs`, `PluginKitSystems.cs`, `PluginKitStorage.cs`, `PluginKitInterfaces.cs`, `PluginKitFiles.cs`, `PluginTrials.cs`, `PluginTrialProcess.cs`, `PluginTrialInterfaces.cs`, `plugin-kit/*.template` | `new` and `try`; the record store `storage.mjs` every scaffold carries |
 | Tools and sign-in | `Plugins/Domain/PluginTools.cs`, `Plugins/PluginToolChecks.cs`, `Plugins/PluginToolSetUp.cs` | Declared tools, their checks on a press, a fix in a console the person sees |
 | Ask Daoris grants | `Plugins/HelpGrants.cs` | `<home>/plugin-approvals.json`: a server's tools the person approved |
 | Health and log | `PluginHealth.cs`, `PluginLog.cs`, `PluginActivity.cs`, `Domain/PluginEvents.cs` | `plugin.*` lines; the loop's record of each plugin's health |
@@ -42,7 +42,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Switch | `Plugins/PluginState.cs`, `Plugins/PluginInterfaceSwitch.cs` | `<home>/plugins.json`: the disabled rows, and `off`, each plugin's interfaces switched off |
 | Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
 | Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs`, `Plugins/PluginsAtStart.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
-| Interfaces | `Plugins/Domain/PluginInterfaces.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
+| Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 
@@ -56,7 +56,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
    `protocolVersion` is 1. (from D64, D148)
 3. A broken manifest is a named problem on its row, never a crash. A harness name this build carries, or one an
    earlier plugin declared, refuses the later plugin before anything loads, naming both; a server name declared twice in one manifest refuses that plugin. A plugin never replaces. (from D64)
-4. A problem in `icon` or `tools` never refuses the plugin; a problem in `steps` or `resources` does. (from D140, D150, D173)
+4. A problem in `icon`, `tools` or an `interfaces` entry never refuses the plugin; a problem in `steps` or `resources` does. (from D140, D150, D173, D274)
 5. Off is a row in `plugins.json`, never a rename. An installed plugin is on until the person switches it off; a
    remove clears its row and leaves `.data/<id>`. (from D64, D120)
 6. A process may listen only on points its manifest declares, or it is refused. A point this build lacks is named
@@ -80,8 +80,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `{offer, digest}` or `{package, version, sha512, source}`. No record is said, never guessed; an unreadable one is named; the list, the page and `plugin show` say the source by its kind: folder, offer, package, none or unread. (from D103, D119, D120)
 14. The window's add adds and never replaces. Only the terminal's `daoris plugin add` replaces an installed plugin,
     wholesale. A source inside or holding the home is refused. (from D103, D194)
-15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources. It
-    applies only on a press or `--yes`. The installed folder is moved aside whole, the copy renamed in, `.data/<id>`
+15. An update shows its plan first: version, command, points, harnesses, servers, skills, steps and resources, then an
+    `interfaces` row per entry added, removed or changed, compared whole by its name or id (`PluginInterfaceChanges`), each with its
+    interface and name and marked `asksMore` where it asks more of the person: a command gaining `tool`, `writes`, `adopts` or an
+    argument, a view gaining `context`, storage newly declared. It applies only on a press or `--yes`. The installed folder is moved aside whole, the copy renamed in, `.data/<id>`
     untouched, and nothing starts at the press. A rename that fails puts the installed folder back; where that fails
     too, the refusal names the `.removing-*` folder the plugin now lies in. (from D103)
 16. A plugin from a package is never updated in place: it is removed and a newer package installed. (from D120)
@@ -132,14 +134,22 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     unjudged. Newer: the person's, said nothing. A pre-release tag (`1.2.0-beta.1`) is older than the same numbers without one, and its dotted parts compare number by number (`beta.2` before `beta.10`). (from D119)
 19. A `changed` copy is never overwritten by an update. A copy with no record, or one that does not read, may take
     the shipped copy (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch; the route also takes one recorded as a folder or an offer, never a package's (rule 16). (from D119)
-20. `plugins new` writes a self-contained folder (manifest with `tools: []`, `plugin.mjs`, `plugin.test.mjs`, README; `work.mjs`
-    for a plugin on a work point, and for one that performs, `plugin.contract.test.mjs` and `cycle.json`; for one on a system point,
+20. `plugins new` writes a self-contained folder (manifest with `tools: []` and `interfaces` declaring the sample command `hello`,
+    `storage` and the view stub `overview` on its page; `plugin.mjs`, answering `command/run` for `hello`, which keeps a count in its
+    private storage, and `view/read` with a one-section tree; `plugin.test.mjs`; README; `storage.mjs`, the kit's record store, with
+    `storage.test.mjs` (`PluginKitStorage`), which writes one record of a JSON file at a time under a `<file>.lock` held by
+    exclusive create, reading the file fresh inside it and renaming the whole into place, takes over a lock whose holder's pid has
+    gone or that is 30 s old, and refuses and keeps a file that does not read; `work.mjs` for a plugin on a work point, keeping
+    `work-journal.json` through that store record by record, so the work processes of a plugin's places, which share `.data/<id>`,
+    keep each other's attempts, cleanups and observations, and for one that performs, `plugin.contract.test.mjs` and `cycle.json`; for one on a system point,
     both system points, one system `system` guarded by `etag`, and `system.mjs`, the kit's answers to both over the author's `read()`
     and `write()` with a stand-in store in the kit's world) and refuses rather than overwrites. It asks for the family (rule 30): an id
     naming none, and one in Daoris's own `daoris-` family anywhere but this repository's `examples/plugins/` (the checkout holding
     `canon/` and the desktop's source), are refused, each saying why and naming `<your-family>-<name>` (`PluginKitFamily`). It installs nothing and scaffolds no harness. Its samples come from `HookFrames` and `SystemWire`. (from D101, D150)
 21. `plugins try` starts the plugin as the driver would, in scratch under `<home>/plugins/.trials/`, one sentence per
-    check; exit 0, 1 or 2. It fails a declared point the process does not listen on. A system point's sample names the plugin's first
+    check; exit 0, 1 or 2. Its `interfaces` step (`PluginTrialInterfaces`), for a plugin that declares any, fails on each entry
+    refused, an interface this build does not know and a forget not run, and otherwise says the commands, storage and views read;
+    it runs no command, since a command reaches its platform. It fails a declared point the process does not listen on. A system point's sample names the plugin's first
     system; `apply/perform`, like `work/perform`, goes only to a plugin that took the kit's stand-in world. (from D101)
 22. A sample frame names no repository: an empty scratch root and a `GIT_DIR` that is not there. (from D101)
 23. A tool is found and checked only at a trial or on a press, never at a load or on a timer. A check's `fix` (such
@@ -161,9 +171,19 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 28. Every plugin press is the person's: a session's terminal is refused. With Daoris running a verb takes the route,
     else it acts alone under the home's lease. (from D194)
 29. A manifest's `interfaces` names what the plugin implements that Daoris reaches it through besides its points: `commands` (each
-    `{ name, about, interactive, tool, adopts }`) and `storage` (`{ for }`). Any problem refuses the plugin; an interface needs `hooks`.
+    `{ name, title, about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each
+    `{ id, title, icon, where, places, context, body }`), every word authored (D222). A command's `title` is its name where unwritten;
+    `args` are `{ name, type: text | number | boolean | choice, title, required, choices }`, `choices` only and always for a `choice`;
+    `on` lists `session`, `quest`, `run`, `repository` or `workspace`; a `tool` never asks the person; one command at most adopts. A
+    view's `where` is `side` and `page` (`page` unwritten), `places` `machine`, `workspace` and `repository` (`machine` unwritten),
+    `context` `session` and `quest`, `icon` a path inside the folder, and `body` `drawn` alone. A problem refuses that entry alone,
+    never the plugin, and is kept in `Refused` by interface and name; an interface this build does not know is kept in `Unknown` and
+    skipped; an interface needs `hooks`, else each is refused. `forget` names a declared command that runs alone, and one naming a
+    refused, missing or asking command is kept and disabled with the reason. `daoris plugin list` says each (`PluginInterfaceLines`),
+    and `PLUGINS` answers a plugin's `interfaces` whole.
     A command runs one round per process at `hook/command/run` (`{ command, args, answers, from }`, never a point claimed at the
-    handshake), answered `{ said, ask: { name, prompt, masked }, open, code, exit }`, at most 8 rounds, 60 s each, the answers so far
+    handshake), answered `{ said, ask: { name, prompt, masked }, open, code, exit }`, `said` at most 40 lines of 2,000 characters
+    and 8 KiB in all (`CommandWire.SaidBytes`, under the work wire's 64 KiB frame), at most 8 rounds, 60 s each, the answers so far
     sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin running commands
     (rule 30);
     it asks each value at the terminal, hidden where `masked`, and refuses a session's terminal. `storage` is `profiles/plugins/<id>/`,
@@ -204,12 +224,14 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
   the terminal in `PluginCommand`.
 - Offers: `OFFERED_PLUGINS` in `tools/desktop-publish/lay.mjs` and `PluginOffers`.
 - A shipped plugin's behaviour: its folder in `examples/plugins/`, its version and `changes` line, its README's
-  `## What it needs`. A working plugin's kit files change in `examples/plugins/local-preview` in the same commit.
+  `## What it needs`. The kit's files (`work.mjs`, `storage.mjs` and the three tests) change in every working example
+  (`local-preview`, `local-release`, `daoris-azure-devops`, `daoris-github`) in the same commit, which `PluginKitExampleTests` holds.
 - Tools and sign-in: `PluginTools`, `PluginToolChecks`, `PluginToolSetUp`.
 - The page: `src/Daoris.Web/src/plugins/`, chrome through both catalogues.
 - Steps, resources and the work wire: the workflows area.
 
-**Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`,
+**Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginKitExampleTests`,
+`PluginKitInterfacesTests`, `PluginInterfacesTests`, `PluginInterfaceChangesTests`, `PluginCommandRunTests`, `PluginInstallTests`,
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
@@ -233,7 +255,7 @@ example's `node --test`.
 - D119 §5 and §6 promise `PLUGIN_TEST`, `plugins test` and kept checks in `<home>/plugins/.checks/<id>.json`; none exists (`PluginsCommand.Usage`; the `PLUGIN*` rows of `docs/index/routes.md`). The code reads right.
 - D119 §7 refuses a go to Settings → plugins; its PLUGUI1h note keeps it as a moved place that opens Plugins. The note reads right.
 - D119 §8 says Settings keeps nothing of a plugin; D183's PLUGSET1 adds a read-only list (`settings/plugins/PluginSettings.tsx`). D183 reads right, since it sets nothing.
-- D103 names five update rows; the code compares eight (`PluginChange.Between` in `Domain/PluginSource.cs`). The code reads right; neither shows a change to `tools` or `icon`.
+- D103 names five update rows; the code compares nine and a row per interface entry (`PluginChange.Between` in `Domain/PluginSource.cs`). The code reads right; neither shows a change to `tools` or `icon`.
 - D101 puts the kit's New in Settings → Plugins; it is the Plugins view's (`PLUGIN_NEW`), and `PluginKit`'s remarks still say Settings. The view reads right.
 - Ask Daoris's room says a plugin with no record cannot be updated (`Knowledge/Room/HelpRoomMayPropose.cs`, the plugins sentence); D119's LANDPIN3 lets an offer's copy take the shipped one. Both hold for their door; the room offers no shipped take.
 

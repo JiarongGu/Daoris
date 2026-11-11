@@ -368,7 +368,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     (the open hold's candidates, `SessionOpenDoors.HoldAsync`; the accounts' running counts, `AccountsRoutes`), a reader of one
     session asks for it alone (`GET /api/sessions/{id}`; the sessions routes' doors), and every other reader of the session list
     reads the list kept by its change since the last mark (`SessionListKept`): its text and its typed records are made once for
-    each state of the list, one record is typed alone, and a host from before the change door is read whole each time. A look
+    each state of the list, one record is typed alone, and a host from before the change door is read whole each time. Every
+    reader of every quest (`EveryQuestAsync`, `QuestsJsonAsync`, one quest's `FindQuestAsync`) reads the quest list kept the same
+    way (`QuestListKept`, `GET /api/quests/changes`), and the service keeps its quest list's answer by the store's mark
+    (`QuestListAnswers`). The sessions and quests slices judge a kept list once while it is the same object (`JudgedOnce`), and a
+    slice handed back the judgement it last made compares nothing, so a period with nothing moved does no work. A look
     reads the open ones and every record once each, in its snapshot; what it tells takes the open ones from that snapshot
     (`LookTold`), and the parks it says, only where they moved, from the kept list. A landing's plan and its press each read
     every record once, the session's tree and quest, its line's parts and a chat's run all read from it (`TreesLandDesk`). The

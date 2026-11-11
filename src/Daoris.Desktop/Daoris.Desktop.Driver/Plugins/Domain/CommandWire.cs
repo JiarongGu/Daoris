@@ -29,6 +29,8 @@ public static class CommandWire
     /// <summary>The most rounds one run takes before it is stopped as a command that never ends.</summary>
     public const int Rounds = 8;
 
+    public const int SaidBytes = 8 * 1024;
+
     /// <summary>How long a round may take, a call to the plugin's platform among it.</summary>
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(60);
 
@@ -56,6 +58,8 @@ public static class CommandWire
                 if (line.ValueKind != JsonValueKind.String || line.GetString()!.Length > 2000) throw Unread(plugin, "a line of `said` is not a text");
                 said.Add(line.GetString()!);
             }
+
+            if (said.Sum(line => System.Text.Encoding.UTF8.GetByteCount(line)) > SaidBytes) throw Unread(plugin, "`said` is longer than 8 KiB in all");
         }
 
         CommandAsk? ask = null;
