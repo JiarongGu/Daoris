@@ -15,6 +15,10 @@
  * service's door its environment names, as a session's connector would; a conversation (no quest) says back each line it hears.
  * - `open`, on the protocol door: the spec's calls answered, a new conversation `s-1`, any conversation resumed, each prompt said back as
  * `heard: ` and its first line, and a prompt with a quest taken and closed through the service's door before its turn ends.
+ * - `step`, on the protocol door: a workflow step's session. The prompt's turn starts the `daoris-plugins` server `session/new` handed,
+ * calls the prompt's plugin's `pull-request-status` for its origin and branch, and answers `step_answer` from that pull request: reached
+ * with its address and its id as each output the prompt names, failed `refused` where the tool refused. `--server-env NAME=VALUE` adds a
+ * variable to the server's environment (a stand-in platform's address).
  * - `missing` and `elsewhere`: a resume refused, as gone (`Resource not found`) or held by another client (`thread_active_writer`).
  * - `transient`: the first prompt refused overloaded, the next answered. `access` (or `refused`): the credential refused, a prompt on the
  * protocol door and a start's end on the native one. `fatal`: the turn failed. `limit`: a limit said, with its reset.
@@ -22,6 +26,8 @@
  * A failed call to the service is said, never thrown: the suite's starts name a service nobody listens on. It ends by its input closing,
  * never by `process.exit` after a call (Node 24 on Windows could end in a libuv assertion with a socket still open).
  */
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { appendFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
@@ -83,6 +89,61 @@ const work = async (say) => {
   }
 };
 
+/** The variable `--server-env` names for the servers this stand-in starts, as `{ NAME: value }`. */
+const serverEnv = () => {
+  const named = option('--server-env');
+  const at = named?.indexOf('=') ?? -1;
+  return at > 0 ? { [named.slice(0, at)]: named.slice(at + 1) } : {};
+};
+
+/** One server as the protocol hands it (`{ name, command, args, env: [{ name, value }] }`), started and spoken to a line a frame. */
+const started = (server) => {
+  const env = { ...process.env, ...Object.fromEntries((server.env ?? []).map((each) => [each.name, each.value])), ...serverEnv() };
+  const child = spawn(server.command, server.args ?? [], { env, stdio: ['pipe', 'pipe', 'inherit'] });
+  const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+  let id = 0;
+  const ask = async (method, params) => {
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params })}\n`);
+    for (;;) {
+      const { value, done } = await lines.next();
+      if (done) throw new Error(`the server ended before it answered ${method}`);
+      const frame = JSON.parse(value);
+      if (frame.id === id) return frame;
+    }
+  };
+  const end = async () => {
+    child.stdin.end();
+    if (child.exitCode === null) await once(child, 'exit');
+  };
+  return { ask, end };
+};
+
+/** The `step` case's turn over the prompt's words and the servers its session holds; what it answered, said back. */
+const step = async (words, servers, say) => {
+  const field = (pattern) => pattern.exec(words)?.[1];
+  const plugin = field(/of the plugin `([^`]+)`/);
+  const origin = field(/origin's address `([^`]+)`/);
+  const branch = field(/the branch `([^`]+)`/);
+  const outputs = field(/the id of each output \(([^)]+)\)/)?.split(', ') ?? [];
+  const server = servers.find((each) => each.name === 'daoris-plugins');
+  if (!server) return 'answered nothing: no daoris-plugins server was handed';
+  const { ask, end } = started(server);
+  try {
+    await ask('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'stub', version: '1.0.0' } });
+    say(`tools: ${((await ask('tools/list', {})).result?.tools ?? []).map((tool) => tool.name).join(', ')}`);
+    const status = (await ask('tools/call', { name: `${plugin}_pull-request-status`, arguments: { origin, branch } })).result;
+    const told = status?.content?.[0]?.text ?? 'no answer';
+    const pr = status?.isError ? null : status?.structuredContent;
+    const answer = pr?.url
+      ? { state: 'reached', url: pr.url, message: told, outputs: Object.fromEntries(outputs.map((name) => [name, String(pr.id)])) }
+      : { state: 'failed', code: 'refused', message: told };
+    const kept = (await ask('tools/call', { name: 'step_answer', arguments: answer })).result;
+    return `answered ${answer.state}: ${kept?.content?.[0]?.text ?? 'no answer'}`;
+  } finally {
+    await end();
+  }
+};
+
 if (door === 'native') {
   if (quest !== undefined) {
     if (scenario === 'access' || scenario === 'refused') {
@@ -113,6 +174,7 @@ if (door === 'native') {
     params: { sessionId, update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } },
   });
   let session = null;
+  let servers = [];
   let prompts = 0;
 
   // Handled without awaiting inside the reader: a prompt's work calls the service and must keep reading while it waits.
@@ -124,6 +186,7 @@ if (door === 'native') {
         return answer({ protocolVersion: 1, agentCapabilities: { loadSession: true, sessionCapabilities: { resume: {}, close: {} } } });
       case 'session/new':
         session = 's-1';
+        servers = frame.params?.mcpServers ?? [];
         say(`conversation ${session} opened`);
         return answer({ sessionId: session });
       case 'session/resume':
@@ -132,6 +195,7 @@ if (door === 'native') {
           return refuse({ code: -32603, message: 'Internal error: another client holds the thread', data: { reason: 'thread_active_writer' } });
         }
         session = frame.params?.sessionId ?? session;
+        servers = frame.params?.mcpServers ?? servers;
         say(`conversation ${session} resumed`);
         return answer({});
       case 'session/prompt': {
@@ -145,6 +209,7 @@ if (door === 'native') {
         const words = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\n').split(/\r?\n/)[0];
         const on = frame.params?.sessionId ?? session;
         chunk(on, `heard: ${words}`);
+        if (scenario === 'step') chunk(on, await step((frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\n'), servers, say));
         if (quest !== undefined) await work(say);
         return answer({ stopReason: 'end_turn' });
       }

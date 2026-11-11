@@ -201,6 +201,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1e — a plugin step performed by an agent, proven end to end (2026-11-12, D274)
+
+> **PLUGINEXT1e** (driver, examples): Outcome: a plugin step declaring a `goal` is delivered to the step agents alone, never to its plugin's `work/perform` (an attempt already there stays with its plugin); the loop starts the step's session (`StepSessionTurn`, a record of the run's own at `POST /api/step-sessions`, held as the build role, started on the door runner under the attempt's own step), at the place's checkout with no tree, holding only its plugin's tools and `step_answer`; Sessions names it a workflow step and closes it with the step's outcome. A defect the proof found: the session was held as actor `step`, which has no order, so a goal step's session could never run (since f6db00195c). Proof: `StepSessionProcessTests` on real processes: a stand-in harness starts `daoris-plugins`, calls the Azure DevOps example's `pull-request-status` against a loopback stand-in service, answers through `step_answer`, and the step is reached with the pull request's address; `StepAgentPerformTests`, the census.
+
+---
+
 ## SENSLAND1 — a session's work is checked for private names before it lands (2026-11-12)
 
 > **SENSLAND1** (driver): Outcome: a landing, in every form, is held before any branch, merge or replay is made when the lines the work adds (`git diff --unified=0 <line>...HEAD`) match the repository's declared private patterns, read from the repository's own checkout (`sensitive.patternsFile`, kept under its `local/`; `TreeLocalInputs.PatternsFile`), case-insensitive as the devkit gate is; the refusal names the path and the pattern's number, never its text; a repository declaring none is unaffected (`SensitiveLandings`). Found when an install session's backlog row named a private workspace and landed unchecked. Proof: `SensitiveLandingTests` (process half, a neutral fixture pattern): a held landing lands nothing and its words carry no private text; a clean one lands.
@@ -5620,7 +5626,7 @@ already had entries of their own, so those rows were simply removed.
 
 - [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
   structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
-  (*"you might check how yaorin did"*). `docs/archive/2026-09-22-plugin-design-study.md` is the note.
+  (*"you might check how the sibling app did"*). `docs/archive/2026-09-22-plugin-design-study.md` is the note.
   🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
   the declared gate list, and the ACP door — and none of them is called one. So the finding is not
   "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a

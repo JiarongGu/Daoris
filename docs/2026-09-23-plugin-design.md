@@ -5,7 +5,7 @@
 > Written 2026-09-23 at the owner's direction. The 2026-09-22 study (`archive/2026-09-22-plugin-design-study.md`)
 > found three extension seams nobody had named and declined a plugin *runtime*; the owner read the
 > result as *"the plugin is not built at all"* and, asked what shape it should take, answered: *"you
-> should check deepseek-harness design for plugin and idea from yaorin."* This is that design — the two
+> should check deepseek-harness design for plugin and idea from the sibling app."* This is that design — the two
 > references' **logic**, in Daoris's terms and none of their words (the correction the accounts surface
 > already took: a reference is a reference). Both were read on this machine and neither was written.
 > The decision is **D64**.
@@ -24,7 +24,7 @@ decision** in a waterfall; a registration is an **effect that unwinds when the p
 running tree is composed from **ordered layers**, and a layer may switch a row off. Its runtime
 (Cordis) was declined twice and stays declined: the logic transfers, the framework does not.
 
-**Yaorin.** A plugin is a **folder with a manifest** — `id`, an integer `apiVersion`, `capabilities`,
+**The sibling app.** A plugin is a **folder with a manifest** — `id`, an integer `apiVersion`, `capabilities`,
 an `entry`, and `definitions: true` for one that extends by data alone. It **registers its features
 explicitly** into a registrar; the host reads the catalogue back and drives *whatever is there*,
 naming no plugin. A management screen is **safe markup the host renders with its own atoms** — no
@@ -46,7 +46,7 @@ So a Daoris plugin runs **beside** the host, never inside it. What it contribute
 process of its own — the same JSON-RPC-over-stdio shape ACP and MCP already use here. That gives every
 property the references had to engineer, for free: a registration is exactly as alive as the process
 (dsh's rule, made structural); a plugin may be written in any language; a plugin that crashes takes
-nothing down but itself; and the host holds **no per-plugin knowledge beyond the manifest** (Yaorin's
+nothing down but itself; and the host holds **no per-plugin knowledge beyond the manifest** (the sibling app's
 catalogue). There is no SDK to keep append-only, because the contract is a wire with a version.
 
 ## 3. A plugin
@@ -94,7 +94,7 @@ repository names one, and a scratch run redirects it with everything else.
   machine. The fields are the adapter seam's own (`command`, `posture` in the harness's vocabulary or
   null for a wire that carries none, the profile variable that makes an account, the toolchain rows
   the roster needs). `${plugin}` in a command is the plugin's install folder, because a plugin cannot
-  work that out for itself (Yaorin's lesson, verbatim in its own SDK).
+  work that out for itself (the sibling app's lesson, verbatim in its SDK).
 - **`hooks`** names a process and the **points** it listens on. Nothing else about the process is
   declared: what it does is spoken. *(D100: a plugin that lands work declares `work/land`, and a
   workspace's branch rule names it; `examples/plugins/github-pull-request` and
@@ -146,7 +146,7 @@ repository names one, and a scratch run redirects it with everything else.
   steps, and restarts an exit it did not ask for after 1, 5 and 15 minutes. `WorkWire` is the messages' one writer and
   reader; D173's FABRIC-PERFORM1a note is its contract as built.
 
-A plugin with only `harnesses` never runs anything — it is Yaorin's `definitions: true`, and most
+A plugin with only `harnesses` never runs anything — it is the sibling app's `definitions: true`, and most
 plugins will be that.
 
 ## 4. The wire
@@ -192,7 +192,7 @@ Every decision and every failure is a console line under `plugin:<id>`, the way 
   overrides nothing.
 - **A conflict is refused before anything loads, naming both sides**: two plugins declaring the same
   harness name, or a plugin declaring a name this build carries. The refused plugin contributes
-  nothing and the roster says why — Yaorin's "the host knows what a plugin claims before it loads it".
+  nothing and the roster says why — the sibling app's "the host knows what a plugin claims before it loads it".
 - **Disabled is a row in `plugins.json`**, not a folder rename: the plugin stays where it is, its data
   stays where it is, and the two doors show it as present and off.
 
@@ -238,7 +238,7 @@ id. Installing one runs nothing.
 
 ## 7. Deliberately not in this design
 
-- **A plugin cannot add a view.** D52 stands. If that ever changes, Yaorin's markup-rendered manager
+- **A plugin cannot add a view.** D52 stands. If that ever changes, the sibling app's markup-rendered manager
   is the shape — the host's atoms, no plugin code in the page — and not a bundle. *(D119: the Plugins view is
   Daoris's own, drawing plugins as data with the host's atoms. No plugin adds it, and this stands.)*
 - **No registry, no marketplace, no catalogue of third-party plugins.** D24 and D57 stand; a plugin
