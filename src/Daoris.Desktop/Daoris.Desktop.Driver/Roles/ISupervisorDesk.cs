@@ -14,6 +14,8 @@ public sealed record SupervisorWaiting(string Kind, SupervisorSubject Subject, s
 
     /// <summary>A subject read from the packet in its prompt alone, by a reader held packet-only (<see cref="PacketOnlyRules"/>).</summary>
     public bool PacketOnly { get; init; }
+
+    public IReadOnlyList<string> Writers { get; init; } = [];
 }
 
 /// <summary>What a kept block answered: kept, or why not.</summary>

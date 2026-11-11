@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A selected turn's place in its conversation's ranges. It joins the conversation's queued range while the packet's bound holds, and opens
-/// the next past it or once a reader took the queued one, which never grows again; a turn alone over the bound is a range of its own,
-/// marked. While the check is off a selected turn is kept in a report closed <i>disabled</i>, never read later. A turn that only read is
-/// written nowhere. A range has one session, so one writer.
+/// A selected turn's place in its conversation's ranges: the queued range while the packet's bound holds, else the next, a taken range never
+/// growing again and a turn alone over the bound a range of its own, marked; while the check is off, a report closed <i>disabled</i>, never
+/// read later. A turn that only read is written nowhere. A range has one session, so one writer.
 /// </summary>
 public sealed class AskDaorisRanges(AskDaorisReports reports, Func<DateTimeOffset> clock, int bound = AskDaorisRanges.Bound)
 {
@@ -15,18 +14,19 @@ public sealed class AskDaorisRanges(AskDaorisReports reports, Func<DateTimeOffse
     public static readonly TimeSpan Waits = TimeSpan.FromHours(24);
 
     /// <summary>The report that holds <paramref name="turn"/> now; null for a turn that only read.</summary>
-    public AskDaorisReport? Take(string session, ReadTurn turn, bool on)
+    public AskDaorisReport? Take(string session, ReadTurn turn, bool on) => turn.Selected ? reports.Locked(() => Taken(session, turn, on)) : null;
+
+    private AskDaorisReport Taken(string session, ReadTurn turn, bool on)
     {
-        if (!turn.Selected) return null;
         var now = clock();
         if (!on)
         {
-            var off = Opened(session, turn, now) with { State = AskDaorisReport.Disabled, Closed = now };
+            var off = Opened(session, turn, now) with { State = AskDaorisStates.Disabled, Closed = now };
             reports.Write(off);
             return off;
         }
 
-        if (reports.Of(session).LastOrDefault(report => report.State == AskDaorisReport.Queued) is { } queued && queued.Size + turn.Size <= bound)
+        if (reports.Of(session).LastOrDefault(report => report.State == AskDaorisStates.Queued) is { } queued && queued.Size + turn.Size <= bound)
         {
             var joined = queued with { Turns = [.. queued.Turns, turn], Limits = [.. queued.Limits.Union(turn.Limits)] };
             reports.Write(joined);
@@ -62,13 +62,11 @@ public sealed class AskDaorisRanges(AskDaorisReports reports, Func<DateTimeOffse
     public int CloseStale()
     {
         var now = clock();
-        var stale = reports.InState(AskDaorisReport.Queued).Where(report => now - report.Opened >= Waits).ToList();
-        foreach (var report in stale)
+        var stale = reports.InState(AskDaorisStates.Queued).Where(report => now - report.Opened >= Waits).ToList();
+        return stale.Count(report => reports.Change(report.Session, report.Range, each => each.State != AskDaorisStates.Queued ? null : each with
         {
-            reports.Write(report with { State = AskDaorisReport.Unread, Closed = now, Why = "no reader could take it within 24 hours" });
-        }
-
-        return stale.Count;
+            State = AskDaorisStates.Unread, Closed = now, Why = "no reader could take it within 24 hours" + (each.Waiting is { } waiting ? ": " + waiting : ""),
+        }) is not null);
     }
 
     private IReadOnlyList<AskDaorisReport> Since(string session, IReadOnlyList<ReadTurn> turns, bool on, long seen)
@@ -84,6 +82,6 @@ public sealed class AskDaorisRanges(AskDaorisReports reports, Func<DateTimeOffse
     }
 
     private AskDaorisReport Opened(string session, ReadTurn turn, DateTimeOffset now) => new(
-        "r-" + Guid.NewGuid().ToString("N")[..12], session, AskDaorisReport.Queued, now, [turn],
+        "r-" + Guid.NewGuid().ToString("N")[..12], session, AskDaorisStates.Queued, now, [turn],
         turn.Size > bound ? [.. turn.Limits, new ReadLimitAt(ReadLimit.OverBound)] : turn.Limits);
 }

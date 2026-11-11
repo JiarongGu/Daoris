@@ -65,7 +65,7 @@ public sealed class AskDaorisSecondCheckTests : IDisposable
         await check.EndedAsync("s1", CancellationToken.None);
 
         var report = Assert.Single(new AskDaorisReports(_home).Of("s1"));
-        Assert.Equal(AskDaorisReport.Disabled, report.State);
+        Assert.Equal(AskDaorisStates.Disabled, report.State);
         Assert.Equal([("toolu_1", SelectedWhy.Press, "housekeeping_clean")], report.Turns.Single().Calls.Select(call => (call.Id, call.Why, call.Tool)));
 
         var seeded = RoleCatalog.Seed.Single(role => role.Id == SecondCheck.Role);
@@ -76,6 +76,6 @@ public sealed class AskDaorisSecondCheckTests : IDisposable
 
         await check.EndedAsync("s1", CancellationToken.None);
 
-        Assert.Equal([AskDaorisReport.Disabled, AskDaorisReport.Queued], new AskDaorisReports(_home).Of("s1").Select(each => each.State));
+        Assert.Equal([AskDaorisStates.Disabled, AskDaorisStates.Queued], new AskDaorisReports(_home).Of("s1").Select(each => each.State).Order(StringComparer.Ordinal));
     }
 }
