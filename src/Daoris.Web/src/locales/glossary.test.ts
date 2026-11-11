@@ -113,10 +113,7 @@ describe('the glossary', () => {
     expect(doors).toEqual([]);
   });
 
-  /**
-   * A role is one concept in two shapes, a working role and an appointed one, and the page says 角色 for it in both.
-   * *Actor* survives only in code names and stored shapes, so the page never says it.
-   */
+  /** A role is one concept in two shapes, working and appointed, 角色 in both; *Actor* lives only in code names and stored shapes. */
   describe('the role', () => {
     const byId = new Map(glossary.terms.map((term) => [term.term, term]));
     const role = byId.get('role')!;

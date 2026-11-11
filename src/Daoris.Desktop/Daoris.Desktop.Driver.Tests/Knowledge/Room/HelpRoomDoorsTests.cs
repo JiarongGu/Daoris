@@ -272,11 +272,7 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("*I looked myself…*", answer.Screen);
     }
 
-    /// <summary>
-    /// The room names the helpers rule and the commit rule, each with its
-    /// Setup row and the terminal's twin as <c>daoris place helpers|commits</c> spells it, said to be Ask Daoris's to propose;
-    /// and no row names a landing rule's verb, since a place lands as its workflow's <c>land</c> step says.
-    /// </summary>
+    /// <summary>The helpers and commit rules with their Setup rows and terminal twins; no landing rule, a place lands by its <c>land</c> step.</summary>
     [Fact]
     public void The_room_names_the_helpers_and_commit_rules_and_no_landing_rule()
     {
