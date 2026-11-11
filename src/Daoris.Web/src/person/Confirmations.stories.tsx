@@ -48,7 +48,7 @@ const SERVICE: Confirmation = {
 };
 
 const MANY: Confirmation = {
-  ...UNWORDED, id: 'c4', route: 'SET_LANDING',
+  ...UNWORDED, id: 'c4', route: 'SET_LINE',
   fields: Array.from({ length: 256 }, (_, index) => ({ name: `/rules/${index}`, type: 'string', value: `rule ${index}` })),
 };
 
