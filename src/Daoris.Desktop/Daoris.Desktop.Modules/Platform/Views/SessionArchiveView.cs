@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <c>daoris sessions archive|unarchive &lt;id&gt;…</c> as the card shows it: marks of this machine's list, no record changed. An archive
-/// is refused before any card for a session still running, waiting on the person or with work to review, and for an id no record here
-/// has, as the list places each; an unarchive of what is not archived changes nothing and is shown as it is.
+/// <c>daoris sessions archive|unarchive &lt;id&gt;…</c> as the card shows it: marks of this machine's list, no record changed, refused
+/// before any card for a session working, pending or needing you, or an id no record has; an unarchive of none archived changes nothing.
 /// </summary>
 public sealed class SessionArchiveView : IPressView
 {

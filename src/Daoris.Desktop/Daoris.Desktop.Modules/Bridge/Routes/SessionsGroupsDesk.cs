@@ -183,10 +183,7 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         _ => Refusals.SessionUnknown,
     };
 
-    /// <summary>
-    /// The refusal for one session archive kept. A group travels as the catalogue's <c>context</c> too, so the page's
-    /// sentence names which: waiting on you, or to review.
-    /// </summary>
+    /// <summary>The refusal for one session archive kept; its group travels as the catalogue's <c>context</c> too.</summary>
     private static Exception Kept(ArchiveOutcome outcome) => outcome.Verdict switch
     {
         ArchiveVerdict.Live => Refusals.Because(

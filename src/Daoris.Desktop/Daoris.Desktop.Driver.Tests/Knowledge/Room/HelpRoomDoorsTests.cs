@@ -309,7 +309,7 @@ public sealed class HelpRoomDoorsTests
 
         Assert.Equal("`daoris session archive <id>… | --ended [--yes]`, `daoris session unarchive <id>…`", archive.Terminal);
         Assert.Equal("Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived", archive.Screen);
-        Assert.Contains("a session running, waiting on you or to review is never archived", archive.To);
+        Assert.Contains("only a done or failed session is archived", archive.To);
         Assert.Equal("`daoris session delete <id>`", delete.Terminal);
         Assert.Equal("Sessions → a session's ⋯ → Delete…", delete.Screen);
         Assert.StartsWith("delete a conversation that served no quest", delete.To);

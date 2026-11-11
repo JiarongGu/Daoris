@@ -89,7 +89,7 @@ public static class AttentionStateSlice
             "state", "holds", "required", "opinion", "reviewer", "product", "maker", "label", "reviewing", "findings", "disputes", "since",
             "code", "until", "later", "person", "answers", "says",
         ],
-        ["placed"] = ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "waits"],
+        ["placed"] = ["session", "group", "state", "reason", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "waits"],
         ["placedWaits"] = ["run", "node", "why", "since"],
         ["placedWork"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],

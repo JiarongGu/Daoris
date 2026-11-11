@@ -27,6 +27,8 @@ public static class SessionsGroupsWires
     {
         row.Session,
         row.Group,
+        row.State,
+        row.Reason,
         row.Shown,
         row.Archived,
         row.Teammate,

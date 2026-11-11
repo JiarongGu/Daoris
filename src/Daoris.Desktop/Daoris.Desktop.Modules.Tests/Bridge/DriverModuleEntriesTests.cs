@@ -11,9 +11,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleEntriesTests
 {
-    private static EntryPart Part(string session) => new(session, "0fda18", "completed", SessionGroup.Review, PartBegan.Opened);
+    private static EntryPart Part(string session) => new(session, "0fda18", "completed", SessionGroup.Done, PartBegan.Opened);
 
-    private static SessionGrouping Row(string session, bool lands) => new(session, SessionGroup.Review, "completed")
+    private static SessionGrouping Row(string session, bool lands) => new(session, SessionGroup.Done, "completed")
     {
         Lands = lands ? new LandOffer($"daoris/s-{session}", $"s-{session}", 1, 0) : null,
     };
@@ -21,7 +21,7 @@ public sealed class DriverModuleEntriesTests
     [Fact]
     public void An_entrys_accept_takes_the_parts_whose_tree_offers_work_in_the_entrys_order()
     {
-        var entry = new SessionEntry("ask:a3/engine", "ask:a3", "engine", SessionGroup.Review, "s3", [Part("s1"), Part("s2"), Part("s3")]);
+        var entry = new SessionEntry("ask:a3/engine", "ask:a3", "engine", SessionGroup.Done, "s3", [Part("s1"), Part("s2"), Part("s3")]);
 
         var parts = EntriesRoutes.PartsOf(entry, [Row("s3", lands: true), Row("s2", lands: false), Row("s1", lands: true)]);
 
@@ -31,7 +31,7 @@ public sealed class DriverModuleEntriesTests
     [Fact]
     public void An_asks_accept_takes_its_own_entries_one_per_repository_and_never_its_intake()
     {
-        SessionEntry Entry(string key) => new(key, key.Split('/')[0], key.Split('/')[1], SessionGroup.Review, "s1", [Part("s1")]);
+        SessionEntry Entry(string key) => new(key, key.Split('/')[0], key.Split('/')[1], SessionGroup.Done, "s1", [Part("s1")]);
 
         var entries = EntriesRoutes.EntriesOf("a3", [Entry("ask:a3/web"), Entry("ask:a4/engine"), Entry("ask:a3/intake"), Entry("ask:a3/engine")]);
 

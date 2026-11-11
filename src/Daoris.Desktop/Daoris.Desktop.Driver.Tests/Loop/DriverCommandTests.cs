@@ -472,7 +472,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_sessions_and_the_host_routes_it_to_the_librarys_words()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
+        Assert.Contains("\n  session list [--group needs-you|working|pending|failed|done|archived] [--repository", usage);
         Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
         Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);

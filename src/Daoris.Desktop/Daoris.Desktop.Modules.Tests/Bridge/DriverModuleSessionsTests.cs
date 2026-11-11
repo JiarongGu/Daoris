@@ -273,7 +273,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     /// <summary>
     /// Each session's group and the word its row shows, from the records, the quests and the
     /// planner's verdict, which with no look yet is a plan over a fresh snapshot: a quest its three failed sessions park
-    /// shows its last session parked, waiting on you. Nothing machine-local comes back.
+    /// shows its last session parked, failed. Nothing machine-local comes back.
     /// </summary>
     [Fact]
     public async Task Each_session_is_answered_in_its_group_and_a_quest_its_strikes_park_shows_its_last_session_parked()
@@ -286,18 +286,18 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var rows = answer.GetProperty("sessions").EnumerateArray().ToList();
         var bySession = rows.ToDictionary(row => row.GetProperty("session").GetString()!);
 
-        // In the order the person acts on them: what waits on you first, the oldest wait first.
-        Assert.Equal(["failed3", "waiting1", "running1", "done1", "failed2", "failed1"], rows.Select(row => row.GetProperty("session").GetString()));
-        Assert.Equal("you", bySession["failed3"].GetProperty("group").GetString());
-        Assert.Equal("parked", bySession["failed3"].GetProperty("shown").GetString());
+        // In the order the person acts on them: what needs you first, the oldest wait first.
+        Assert.Equal(["waiting1", "running1", "failed3", "failed2", "failed1", "done1"], rows.Select(row => row.GetProperty("session").GetString()));
+        Assert.Equal(("failed", "failed", "parked"), (bySession["failed3"].GetProperty("group").GetString(),
+            bySession["failed3"].GetProperty("state").GetString(), bySession["failed3"].GetProperty("reason").GetString()));
         Assert.Equal(3, bySession["failed3"].GetProperty("strikes").GetInt32());
-        Assert.Equal("you", bySession["waiting1"].GetProperty("group").GetString());
+        Assert.Equal("needs-you", bySession["waiting1"].GetProperty("group").GetString());
         Assert.Equal("awaiting-person", bySession["waiting1"].GetProperty("shown").GetString());
         Assert.Equal("working", bySession["running1"].GetProperty("group").GetString());
-        Assert.Equal("ended", bySession["done1"].GetProperty("group").GetString());
+        Assert.Equal("done", bySession["done1"].GetProperty("group").GetString());
         Assert.Equal("completed", bySession["done1"].GetProperty("shown").GetString());
         Assert.False(bySession["done1"].GetProperty("archived").GetBoolean());
-        Assert.Equal("ended", bySession["failed1"].GetProperty("group").GetString());
+        Assert.Equal("failed", bySession["failed1"].GetProperty("group").GetString());
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
 
         // Asked for some, it answers those.
@@ -321,7 +321,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(answer.GetProperty("sessions").GetArrayLength(), entries.Count);
         var done = entries.Single(entry => entry.GetProperty("leading").GetString() == "done1");
         Assert.Equal(SessionsCommand.JsonEntryFields, done.EnumerateObject().Select(field => field.Name));
-        Assert.Equal("ended", done.GetProperty("group").GetString());
+        Assert.Equal("done", done.GetProperty("group").GetString());
         var part = Assert.Single(done.GetProperty("parts").EnumerateArray());
         Assert.Equal(SessionsCommand.JsonPartFields, part.EnumerateObject().Select(field => field.Name));
         Assert.Equal(("done1", "opened"), (part.GetProperty("session").GetString(), part.GetProperty("began").GetString()));
@@ -346,18 +346,18 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         // The loop parked q4 and said nothing of q1, whatever a fresh plan would say of either.
         Assert.Equal("parked", rows["done1"].GetProperty("shown").GetString());
-        Assert.Equal("ended", rows["failed3"].GetProperty("group").GetString());
+        Assert.Equal("failed", rows["failed3"].GetProperty("group").GetString());
         // Whether a row's stop holds its quest rides each row; no stop holds one here.
         Assert.False(rows["failed3"].GetProperty("holdsQuest").GetBoolean());
     }
 
     /// <summary>
     /// An ended record the person's words wait on, whose start the loop's last look held on a cooling
-    /// account, resumes later, and its row carries what holds the words with the cool-off's reset, read from the waits that
+    /// account, is pending, and its row carries what holds the words with the cool-off's reset, read from the waits that
     /// look kept beside its verdicts.
     /// </summary>
     [Fact]
-    public async Task Words_a_cool_off_holds_resume_later_saying_its_reset()
+    public async Task Words_a_cool_off_holds_are_pending_saying_its_reset()
     {
         using var ledger = Ledger();
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
@@ -370,7 +370,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
 
-        Assert.Equal(("later", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        Assert.Equal(("pending", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
@@ -381,11 +381,11 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
     /// <summary>
     /// A closed quest's record holding Daoris's own rebase word, held by the loop's look for the
-    /// earliest reset of any account, resumes later and says that wait on the wire as it does the person's words': the account that resets
+    /// earliest reset of any account, is pending and says that wait on the wire as it does the person's words': the account that resets
     /// first, by its id and name, and its time, which the page's row, head and Attention say in the same words.
     /// </summary>
     [Fact]
-    public async Task Daoris_s_rebase_word_a_limit_holds_resumes_later_saying_the_earliest_reset_of_any_account()
+    public async Task Daoris_s_rebase_word_a_limit_holds_is_pending_saying_the_earliest_reset_of_any_account()
     {
         using var ledger = Ledger();
         ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
@@ -399,7 +399,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
 
-        Assert.Equal(("later", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        Assert.Equal(("pending", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
@@ -432,18 +432,17 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Empty(back.GetProperty("archived").EnumerateArray());
         Assert.Equal(["failed1"], back.GetProperty("notArchived").EnumerateArray().Select(id => id.GetString()));
-        Assert.Equal("ended", (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } }))
+        Assert.Equal("done", (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } }))
             .GetProperty("sessions")[0].GetProperty("group").GetString());
     }
 
     /// <summary>
-    /// Archive refuses a session still running, one that waits on you (a parked session, or a quest's parked last one),
-    /// and an id no record has, each a code the page says in its own language, naming the session; nothing is written.
+    /// Archive refuses a session still running, one that needs you, and an id no record has, each a code the page says in its
+    /// own language, naming the session; nothing is written.
     /// </summary>
     [Theory]
     [InlineData("running1", Refusals.SessionLive, "")]
-    [InlineData("waiting1", Refusals.SessionNeedsYou, "group=you")]
-    [InlineData("failed3", Refusals.SessionNeedsYou, "group=you")]
+    [InlineData("waiting1", Refusals.SessionNeedsYou, "group=needs-you")]
     [InlineData("nobody", Refusals.SessionUnknown, "")]
     public async Task An_archive_that_would_hide_what_needs_you_or_stop_nothing_is_refused(string session, string code, string group)
     {
@@ -630,7 +629,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var kept = answer.GetProperty("kept").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
         Assert.Equal(Refusals.SessionLive, kept["running1"].GetProperty("code").GetString());
         Assert.Equal(Refusals.SessionNeedsYou, kept["waiting1"].GetProperty("code").GetString());
-        Assert.Equal("you", kept["waiting1"].GetProperty("group").GetString());
+        Assert.Equal("needs-you", kept["waiting1"].GetProperty("group").GetString());
     }
 
     /// <summary>
@@ -838,8 +837,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(0, Volatile.Read(ref gits));
         Assert.Equal(answers[0].GetRawText(), answers[1].GetRawText());
         var rows = answers[0].GetProperty("sessions").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
-        Assert.Equal(["failed3", "waiting1", "running1", "done1", "failed2", "failed1"], rows.Keys);
-        Assert.Equal(("ended", "completed"), (rows["done1"].GetProperty("group").GetString(), rows["done1"].GetProperty("shown").GetString()));
+        Assert.Equal(["waiting1", "running1", "failed3", "failed2", "failed1", "done1"], rows.Keys);
+        Assert.Equal(("done", "completed"), (rows["done1"].GetProperty("group").GetString(), rows["done1"].GetProperty("shown").GetString()));
     }
 
     /// <summary>
@@ -923,7 +922,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     public void A_groups_row_carries_what_its_tree_offers_to_land()
     {
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, null) };
+        var failed = new SessionGrouping("f41led00", SessionGroup.Failed, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, null) };
 
         var row = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(failed), camel);
         var bare = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(failed with { Lands = null }), camel);
@@ -945,7 +944,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     {
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         const string kept = "refs/daoris/discarded/daoris/s-4e6837ed";
-        var held = new SessionGrouping("f41led00", SessionGroup.Ended, "failed")
+        var held = new SessionGrouping("f41led00", SessionGroup.Failed, "failed")
         {
             Discards = new DiscardOffer("daoris/s-4e6837ed", "s-4e6837ed", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
         };
@@ -970,7 +969,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     public void A_groups_row_names_the_branch_its_moved_tree_is_on()
     {
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
+        var moved = new SessionGrouping("m0ved000", SessionGroup.Done, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
 
         var row = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(moved), camel);
         var own = JsonSerializer.SerializeToElement(SessionsGroupsWires.Grouped(moved with { Work = new TreeWork(1, 0) }), camel);
