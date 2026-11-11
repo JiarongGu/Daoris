@@ -194,6 +194,9 @@ finishes first and the whole set runs once.
 
 ## Open
 
+- DOCDIET1: the records outgrew a reader's context (areas up to 99 KB, the backlog twice its budget, the archive and fix log one file
+  each); they are cut to what is true now and split so a search returns a small entry.
+- TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
   kept by age and size, and a gate killed from outside said as lost (`docs/2026-11-05-merge-tool-design.md`).
