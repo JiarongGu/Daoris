@@ -359,6 +359,29 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(["— the agent refused a control request: no turn to interrupt"], lines);
     }
 
+    /// <summary>
+    /// A line written with a uuid is echoed under it where the binary takes it (Claude Code 2.1.322 under <c>--replay-user-messages</c>,
+    /// measured): the echo is read as that uuid, and records nothing, since Daoris recorded the words before it wrote them.
+    /// </summary>
+    [Fact]
+    public void A_replayed_user_line_is_read_as_its_echo_by_uuid_and_records_nothing()
+    {
+        var mapper = new ClaudeStreamJson();
+        var framed = new ClaudeNativeDialect().FrameSteer("put MANGO in your reply", "11111111-2222-4333-8444-555555555555");
+
+        var echoed = mapper.Read("""{"type":"user","message":{"role":"user","content":[{"type":"text","text":"put MANGO in your reply"}]},"parent_tool_use_id":null,"session_id":"s","uuid":"11111111-2222-4333-8444-555555555555","isReplay":true}""");
+        var result = mapper.Read("""{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t","content":"done"}]},"uuid":"22222222-2222-4333-8444-555555555555"}""");
+
+        Assert.Equal("11111111-2222-4333-8444-555555555555", echoed.Echoed);
+        Assert.Empty(echoed.Events);
+        Assert.Null(result.Echoed);
+        using var json = System.Text.Json.JsonDocument.Parse(framed!);
+        Assert.Equal("user", json.RootElement.GetProperty("type").GetString());
+        Assert.Equal("11111111-2222-4333-8444-555555555555", json.RootElement.GetProperty("uuid").GetString());
+        Assert.False(json.RootElement.TryGetProperty("priority", out _));
+        Assert.DoesNotContain('\n', framed);
+    }
+
     /// <summary>The native door's stop, as the one line the binary answers in the probe.</summary>
     [Fact]
     public void The_dialect_frames_an_interrupt_as_the_control_request_it_answers()

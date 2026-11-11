@@ -268,6 +268,8 @@
   "note.words.not-sent": "消息无法发送：智能体已经退出。",
   "note.words.start-not-taken": "这次对话开始时的话无法从会话 {{session}} 的记录中移除：",
   "note.words.not-kept": "你在它收尾时说的话没有保存下来，无法让它继续：",
+  "note.words.sent-now-in-turn": "已立即发送：它进入了正在进行的这一轮。",
+  "note.words.sent-now-next-turn": "已立即发送：这一轮在它接收之前就结束了，所以它开始了下一轮。",
   "note.words.why.ended-first": "它先结束了",
   "note.words.why.unkept": "Daoris 没有保存这次对话的编号",
   "note.words.why.unmarked": "它的记录没有将它们标记为已尝试，因此它们留在记录里，等会话下次继续时再发送",

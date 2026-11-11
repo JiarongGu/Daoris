@@ -112,11 +112,12 @@ internal static class HarnessCapture
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
     /// <param name="account">What the prompt is composed of, kept beside it on its event; null where none is.</param>
     /// <param name="own">Where the harness's own words are kept for its run's ending, begun again here; null keeps none.</param>
+    /// <param name="echoed">Told the uuid of each line the harness echoed where it took it, in the wire's order with the events.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, IStreamMapper mapper, string? prompt,
         CancellationToken ct, string? preamble = null, Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action? named = null, InstructionAccount? account = null,
-        HarnessWords? own = null, IReadOnlyList<SaidWordView>? handed = null)
+        HarnessWords? own = null, IReadOnlyList<SaidWordView>? handed = null, Action<string>? echoed = null)
     {
         own?.Begin();
         await using var file = AgentContext.Current.OpenTranscript(transcript, append);
@@ -220,6 +221,8 @@ internal static class HarnessCapture
                 Event(e);
                 observed?.Invoke(e);
             }
+
+            if (mapped.Echoed is { } uuid) echoed?.Invoke(uuid);
 
             if (mapped.Limits is { } limits)
             {

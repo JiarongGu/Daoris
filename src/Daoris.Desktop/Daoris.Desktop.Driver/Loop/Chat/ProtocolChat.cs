@@ -259,7 +259,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     }
 
     /// <summary>A word handed to the turn on the wire under the record's id where it is kept there, or a fresh one of its own.</summary>
-    private static ChatMessage Identified(ChatMessage message) =>
+    internal static ChatMessage Identified(ChatMessage message) =>
         message is { Kept: true, Id: not null } ? message : message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
 
     /// <summary>

@@ -18,6 +18,18 @@ internal sealed class ClaudeNativeDialect : INativeDialect
     });
 
     /// <summary>
+    /// Words sent now as one user line with no <c>priority</c>, under <paramref name="uuid"/>. Measured on 2.1.322: written during a tool,
+    /// the binary folds it into the running turn at its next step; written while the turn's last text streams, it is the next turn; under
+    /// <c>--replay-user-messages</c> its echo carries the uuid either way, before the turn's <c>result</c> or after it.
+    /// </summary>
+    public string FrameSteer(string text, string uuid) => JsonSerializer.Serialize(new
+    {
+        type = "user",
+        uuid,
+        message = new { role = "user", content = new[] { new { type = "text", text } } },
+    });
+
+    /// <summary>
     /// The turn's stop as a <c>control_request</c> of subtype <c>interrupt</c>: the binary answers with a <c>control_response</c>, the
     /// turn ends <c>aborted_streaming</c> or <c>aborted_tools</c>, and the session takes the next turn (stream-json evidence, § Stopping a
     /// turn).
