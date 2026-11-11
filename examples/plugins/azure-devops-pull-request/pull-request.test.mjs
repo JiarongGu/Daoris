@@ -18,10 +18,7 @@ after(() => rmSync(scratch, { recursive: true, force: true }));
 
 const WEB = 'https://dev.azure.com/acme/Proj/_git/app';
 
-/**
- * Azure DevOps' pull-request calls as its REST API answers them, admitting one token as Basic's password and counting what it is asked.
- * `status`, while set, is what every call is answered with instead: Azure DevOps down or limiting the token.
- */
+/** Azure DevOps' pull-request calls as its REST API answers them, admitting one token as Basic's password; else `status`, while set. */
 async function standIn() {
   const api = { pulls: [], calls: [], address: '', status: null };
   const { pulls, calls } = api;
@@ -67,10 +64,7 @@ function checkout(origin) {
   return root;
 }
 
-/**
- * The plugin started as the driver starts it, with the frames it is sent and what it says on stderr; `journal`, where given, is the kit's
- * journal it finds in its data. Killed when the test ends, so a failed assertion leaves no plugin holding the run open.
- */
+/** The plugin started as the driver starts it over `journal`, the kit's, and killed when the test ends, so a failure holds no run open. */
 function start(t, env, journal = null) {
   const data = mkdtempSync(join(scratch, 'data-'));
   if (journal) writeFileSync(join(data, 'work-journal.json'), `${JSON.stringify(journal)}\n`);

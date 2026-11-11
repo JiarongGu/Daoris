@@ -16,10 +16,7 @@ const TOKEN = 'throwaway-token-for-the-stand-in';
 const scratch = mkdtempSync(join(tmpdir(), 'github-pr-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
-/**
- * GitHub's pull-request calls as the REST API answers them, admitting one token and counting what it is asked. `status`, while set,
- * is what every call is answered with instead: GitHub down or limiting the token.
- */
+/** GitHub's pull-request calls as the REST API answers them, admitting one token and counting what it is asked; else `status`, while set. */
 async function standIn() {
   const api = { pulls: [], calls: [], address: '', status: null };
   const { pulls, calls } = api;
@@ -65,10 +62,7 @@ function checkout(origin) {
   return root;
 }
 
-/**
- * The plugin started as the driver starts it, with the frames it is sent and what it says on stderr; `journal`, where given, is the kit's
- * journal it finds in its data. Killed when the test ends, so a failed assertion leaves no plugin holding the run open.
- */
+/** The plugin started as the driver starts it over `journal`, the kit's, and killed when the test ends, so a failure holds no run open. */
 function start(t, env, journal = null) {
   const data = mkdtempSync(join(scratch, 'data-'));
   if (journal) writeFileSync(join(data, 'work-journal.json'), `${JSON.stringify(journal)}\n`);

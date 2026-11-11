@@ -73,8 +73,7 @@ class Refusal extends Error {
   }
 }
 
-/** The refusals that may pass: Azure DevOps down, or limiting the token for now. */
-const PASSING = ['unavailable', 'rate-limited'];
+const TRANSIENT = ['unavailable', 'rate-limited'];
 
 async function call(repo, method, path, body) {
   const token = process.env.DAORIS_HOST_TOKEN;
@@ -233,8 +232,7 @@ const kit = work({
     if (String(attempt.step).split('/').pop() !== 'pull-request') return failed('unknown-step', `no step ${attempt.step}`);
     return pullRequest(attempt);
   },
-  // An attempt an earlier process began: the pull request active from its branch says whether the attempt made one. Azure DevOps down
-  // or limiting the token cannot say yet, so the attempt is running and asked again; a refused token stops the step.
+  // An attempt an earlier process began: the pull request active from its branch says whether the attempt made one.
   check: async (attempt) => {
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
@@ -243,7 +241,7 @@ const kit = work({
       const active = (await fromBranch(repo, unit.branch)).find((pr) => pr.status === 'active');
       return active ? { state: 'done', outcome: reached(attempt, repo, active, `pull request ${active.pullRequestId} is active from \`${unit.branch}\`.`) } : { state: 'not-started' };
     } catch (error) {
-      if (!(error instanceof Refusal) || !PASSING.includes(error.code)) return null;
+      if (!(error instanceof Refusal) || !TRANSIENT.includes(error.code)) return null;
       say(`${error.message}; attempt ${attempt.invocation} is asked again later.`);
       return { state: 'running' };
     }
@@ -263,8 +261,6 @@ const points = {
 
 const answers = { ...points, ...kit.calls };
 
-// One frame answered once its handler settles, never after the frame before it: a slow read holds back no other answer, and
-// Daoris waits 10 s for each. A handler that throws is a refusal, which the driver says in this plugin's name.
 const answer = async (frame) => {
   try {
     send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
