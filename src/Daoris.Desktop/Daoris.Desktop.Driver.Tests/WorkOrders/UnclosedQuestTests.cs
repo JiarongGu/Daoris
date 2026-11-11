@@ -100,6 +100,6 @@ public sealed class UnclosedQuestTests
             Trees = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase) { [SessionGroups.Normal(tree)] = new TreeWork(2, 0) },
         };
 
-        Assert.Equal(SessionGroup.Review, Assert.Single(SessionGroups.Read(look)).Group);
+        Assert.Equal(SessionGroup.NeedsYou, Assert.Single(SessionGroups.Read(look)).Group);
     }
 }

@@ -73,5 +73,5 @@ public sealed record SessionEntry(string Key, string Origin, string Repository, 
     public string? Head { get; init; }
 
     /// <summary>The part a row opens on: the leading one where a part waits on the person or is working, else the head.</summary>
-    public string Opens => Group is SessionGroup.You or SessionGroup.Working ? Leading : Head ?? Leading;
+    public string Opens => Group is SessionGroup.NeedsYou or SessionGroup.Working or SessionGroup.Pending ? Leading : Head ?? Leading;
 }

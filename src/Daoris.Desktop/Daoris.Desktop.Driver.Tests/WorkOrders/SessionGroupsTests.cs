@@ -134,7 +134,7 @@ public sealed class SessionGroupsTests
     private static readonly Dictionary<string, Case> Cases = new()
     {
         // Working: it is moving, and the person may watch it.
-        ["queued is working"] = new(Look([Record("s1", "queued", "q1")], [Open]), "s1", SessionGroup.Working, "queued"),
+        ["queued is working"] = new(Look([Record("s1", "queued", "q1")], [Open]), "s1", SessionGroup.Pending, "queued"),
         ["starting is working"] = new(Look([Record("s1", "starting", "q1")], [Open]), "s1", SessionGroup.Working, "starting"),
         ["working is working"] = new(Look([Record("s1", "working", "q1")], [Taken]), "s1", SessionGroup.Working, "working")
         {
@@ -160,7 +160,7 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.Null(row.Calling),
             },
         ["a parked session says no call"] =
-            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.You, "awaiting-person")
+            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.NeedsYou, "awaiting-person")
             {
                 Also = row => Assert.Null(row.Calling),
             },
@@ -170,7 +170,7 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.Null(row.Calling),
             },
         ["an ended session says no call"] =
-            new(Look([Record("s1", "failed", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.Ended, "failed")
+            new(Look([Record("s1", "failed", "q1")], [Taken], calls: [("s1", NpmTest)]), "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Calling),
             },
@@ -184,7 +184,7 @@ public sealed class SessionGroupsTests
 
         // Waiting on you: only the person's press moves it.
         ["a parked session waits on you"] =
-            new(Look([Record("s1", "awaiting-person", "q1", Tree)], [Taken]), "s1", SessionGroup.You, "awaiting-person"),
+            new(Look([Record("s1", "awaiting-person", "q1", Tree)], [Taken]), "s1", SessionGroup.NeedsYou, "awaiting-person"),
         // The person answered, and the same session goes on at the driver's next look, so nothing waits
         // on them. Until that look its record is still parked, with the answer set.
         ["an answered park goes on: working, and shown answered"] =
@@ -197,54 +197,54 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.True(row.Archived),
             },
         ["a park with an empty answer still waits on you"] =
-            new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "")], [Taken]), "s1", SessionGroup.You, "awaiting-person"),
+            new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "")], [Taken]), "s1", SessionGroup.NeedsYou, "awaiting-person"),
         ["an intake that asked waits on you"] =
-            new(Look([Record("s1", "awaiting-person", repository: "ask #a1", kind: "chat", ask: "a1")]), "s1", SessionGroup.You, "awaiting-person"),
+            new(Look([Record("s1", "awaiting-person", repository: "ask #a1", kind: "chat", ask: "a1")]), "s1", SessionGroup.NeedsYou, "awaiting-person"),
         ["the last session of a quest parked on its failed sessions is parked"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "failed", "q1", at: 10)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)]),
-                "s2", SessionGroup.You, ShownState.Parked)
+                "s2", SessionGroup.Failed, ShownState.Parked)
             {
                 Also = row => Assert.Equal(2, row.Strikes),
             },
         ["an earlier session of a parked quest is ended"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "failed", "q1", at: 10)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a parked quest's last session the sweep cut off is parked"] =
             new(Look([Record("s1", "stopped", "q1", interrupted: true)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)]),
-                "s1", SessionGroup.You, ShownState.Parked)
+                "s1", SessionGroup.Failed, ShownState.Parked)
             {
                 Also = row => Assert.Equal(1, row.Strikes),
             },
         ["the strikes a parked quest says count from its last Try again"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "failed", "q1", at: 10), Record("s3", "failed", "q1", at: 20)],
                     [Open], [Verdict(Open, StartVerdict.Exhausted)], forgiven: quest => quest == "q1" ? 1 : 0),
-                "s3", SessionGroup.You, ShownState.Parked)
+                "s3", SessionGroup.Failed, ShownState.Parked)
             {
                 Also = row => Assert.Equal(2, row.Strikes),
             },
         ["parked comes before to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.You, ShownState.Parked),
+                "s1", SessionGroup.Failed, ShownState.Parked),
 
         // To review: an ended session whose own tree holds work no branch of the person's holds.
         ["unlanded commits in its own tree are to review"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(3, 0))]), "s1", SessionGroup.Review, "completed")
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(3, 0))]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Equal(new TreeWork(3, 0), row.Work),
             },
         ["uncommitted changes in its own tree are to review"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 2))]), "s1", SessionGroup.Review, "completed"),
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 2))]), "s1", SessionGroup.Done, "completed"),
         ["a tree git could not read is kept to review, as the clean-up keeps it"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(null, null))]), "s1", SessionGroup.Review, "completed"),
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(null, null))]), "s1", SessionGroup.Done, "completed"),
         ["a tree whose work every commit of landed is ended"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 0))]), "s1", SessionGroup.Ended, "completed"),
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 0))]), "s1", SessionGroup.Done, "completed"),
         ["a stopped session with unlanded work is to review"] =
-            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(1, 0))]), "s1", SessionGroup.Review, "stopped"),
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(1, 0))]), "s1", SessionGroup.Done, "stopped"),
         // The planner considers a taken quest the person's stop holds, and nothing goes back into its tree until
         // they release it, so the stop's work stays to review.
         ["a stop that holds its taken quest leaves its tree to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Stopped)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Review, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.True(row.HoldsQuest),
             },
@@ -252,7 +252,7 @@ public sealed class SessionGroupsTests
         // until Resume, and the person paused it to look; its line names the pause rather than a stop.
         ["a session the pause stopped leaves its tree to review, naming the pause"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [PausedVerdict(Taken)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Review, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row =>
                 {
@@ -262,13 +262,13 @@ public sealed class SessionGroupsTests
             },
         ["a session the pause stopped with nothing in its tree is ended, naming the pause"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [PausedVerdict(Taken)], [(Tree, new TreeWork(0, 0))]),
-                "s1", SessionGroup.Ended, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.Equal(ByAsk, row.PausedBy),
             },
         ["the asker of a paused waiting quest rests ended, naming the pause, and its tree is to review"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [PausedVerdict(Asking)], [(Tree, new TreeWork(3, 0))]),
-                "s1", SessionGroup.Review, "completed")
+                "s1", SessionGroup.Done, "completed")
             {
                 Also = row =>
                 {
@@ -278,52 +278,52 @@ public sealed class SessionGroupsTests
             },
         ["an earlier session of a paused quest does not name the pause"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "stopped", "q1", at: 10)], [Taken], [PausedVerdict(Taken)]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.PausedBy),
             },
         ["a parked session of a paused ask still waits on you"] =
-            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], [PausedVerdict(Taken)]), "s1", SessionGroup.You, "awaiting-person")
+            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], [PausedVerdict(Taken)]), "s1", SessionGroup.NeedsYou, "awaiting-person")
             {
                 Also = row => Assert.Null(row.PausedBy),
             },
         ["a released stop whose carry-on is planned is ended, not to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Ended, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.False(row.HoldsQuest),
             },
         ["a conversation's own tree with work is to review"] =
-            new(Look([Record("s1", "completed", tree: Tree, kind: "chat")], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed"),
+            new(Look([Record("s1", "completed", tree: Tree, kind: "chat")], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Done, "completed"),
         ["the tree's separators and case are one tree"] =
             new(Look([Record("s1", "completed", "q1", Tree.Replace('/', '\\').ToUpperInvariant())], [Done], trees: [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.Review, "completed"),
+                "s1", SessionGroup.Done, "completed"),
         ["only the newest session on a tree is to review"] =
             new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "completed", "q1", Tree, at: 10)], [Done], trees: [(Tree, new TreeWork(1, 0))]),
-                "s2", SessionGroup.Review, "completed"),
+                "s2", SessionGroup.Done, "completed"),
         ["an earlier session on a tree to review is ended"] =
             new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "completed", "q1", Tree, at: 10)], [Done], trees: [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a tree a live session holds is not to review"] =
             new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "working", "q1", Tree, at: 10)], [Taken], trees: [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a cut-off its quest goes back into is ended, not to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a cut-off whose carry-on waits for the cap is ended, not to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a failed first start whose quest starts again in a new tree leaves its own to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.Start)], [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.Review, "failed"),
+                "s1", SessionGroup.NeedsYou, "failed"),
         // An open quest whose failed session committed work goes back into that tree, whatever holds its carry-on.
         ["a failed first start whose committed work its open quest carries on is ended, not to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.AtCapacity) with { CarriesWork = 1 }],
                     [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         ["a teammate's record is never to review: its tree is on its machine"] =
             new(Look([Record("laptop/s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(3, 0))]),
-                "laptop/s1", SessionGroup.Ended, "completed")
+                "laptop/s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.True(row.Teammate),
             },
@@ -331,7 +331,7 @@ public sealed class SessionGroupsTests
         // Resumes later: it moves by itself when what it waits on arrives.
         ["the session that asked another repository is awaiting reply"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)]),
-                "s1", SessionGroup.Later, ShownState.AwaitingReply)
+                "s1", SessionGroup.Working, ShownState.AwaitingReply)
             {
                 Also = row =>
                 {
@@ -341,20 +341,20 @@ public sealed class SessionGroupsTests
             },
         ["awaiting reply with work in its tree resumes later: the quest goes back into it"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], [(Tree, new TreeWork(3, 0))]),
-                "s1", SessionGroup.Later, ShownState.AwaitingReply),
+                "s1", SessionGroup.Working, ShownState.AwaitingReply),
         // A failure an account's limit made is said limited, as the page says it; one without the flag stays failed.
         ["a session a limit ended is limited"] =
-            new(Look([Record("s1", "failed", "q1", limit: true)], [Taken]), "s1", SessionGroup.Ended, ShownState.Limited),
+            new(Look([Record("s1", "failed", "q1", limit: true)], [Taken]), "s1", SessionGroup.Failed, ShownState.Limited),
         ["a session that failed without a limit is failed"] =
-            new(Look([Record("s1", "failed", "q1")], [Taken]), "s1", SessionGroup.Ended, "failed"),
+            new(Look([Record("s1", "failed", "q1")], [Taken]), "s1", SessionGroup.Failed, "failed"),
         ["an earlier session of a waiting quest is ended"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "completed", "q1", at: 10)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         // A session that ended its turn on its own helper's ask waits on that helper, never on the person: resumes later,
         // whatever its tree holds, since it goes on in that tree with the helper's answer. Its answer waiting on it, it goes on.
         ["a session waiting on its own helper resumes later, never to review"] =
             new(Look([Record("s1", "completed", "q1", Tree, noteCode: "ended.awaits-helper")], [Taken], trees: [(Tree, new TreeWork(3, 1))]),
-                "s1", SessionGroup.Later, ShownState.AwaitingHelper)
+                "s1", SessionGroup.Working, ShownState.AwaitingHelper)
             {
                 Also = row => Assert.Null(row.Work),
             },
@@ -363,10 +363,10 @@ public sealed class SessionGroupsTests
                 "s1", SessionGroup.Working, ShownState.GoingOn),
         ["a completed session with no helper to wait on and work in its tree is to review"] =
             new(Look([Record("s1", "completed", "q1", Tree, noteCode: "ended.awaits")], [Taken], trees: [(Tree, new TreeWork(3, 1))]),
-                "s1", SessionGroup.Review, "completed"),
+                "s1", SessionGroup.Done, "completed"),
         ["the asker of a quest whose answer came back is ended while it resumes"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking], [Verdict(Asking, StartVerdict.Start)], [(Tree, new TreeWork(3, 0))]),
-                "s1", SessionGroup.Ended, "completed"),
+                "s1", SessionGroup.Done, "completed"),
 
         // An ended record the person's words wait on goes on with them, or resumes later, its line naming
         // what holds them, by the planner's own verdict on its quest.
@@ -382,38 +382,38 @@ public sealed class SessionGroupsTests
         // Words taken back leave nothing waiting, so the record rests as it ended, even where the last
         // look planned it going on with them.
         ["an ended record whose words were taken back rests as it ended"] =
-            new(Look([Record("s1", "completed", "q1", said: [])], [Done], [GoesOn(Done)]), "s1", SessionGroup.Ended, "completed"),
+            new(Look([Record("s1", "completed", "q1", said: [])], [Done], [GoesOn(Done)]), "s1", SessionGroup.Done, "completed"),
         ["an archived record whose words go on is working"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"])], [Taken], [GoesOn(Taken)], archived: ["s1"]),
                 "s1", SessionGroup.Working, ShownState.GoingOn),
         ["words the cap holds resume later, naming the cap"] =
             new(Look([Record("s1", "failed", "q1", Tree, said: ["w1"])], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Later, "failed")
+                "s1", SessionGroup.Pending, "failed")
             {
                 Also = row => Assert.Equal((WordsHold.Cap, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
             },
         ["words the person's hold holds resume later, naming the repository"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Held)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal((WordsHold.Hold, "engine"), (row.Holds!.Why, row.Holds.Repository)),
             },
         ["words a cooling account holds resume later waiting for the limit, until its reset"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
-                "s1", SessionGroup.Later, ShownState.LimitWaits)
+                "s1", SessionGroup.Pending, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
             },
         // A record a limit ended says so already, so the wait is not laid over it.
         ["words a cooling account holds on a record a limit ended keep its own word"] =
             new(Look([Record("s1", "failed", "q1", limit: true, said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
-                "s1", SessionGroup.Later, ShownState.Limited)
+                "s1", SessionGroup.Pending, ShownState.Limited)
             {
                 Also = row => Assert.Equal(WordsHold.Cooling, row.Holds!.Why),
             },
         ["words another hold at the spawn holds resume later, in its words"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q9")]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal((WordsHold.Waits, (DateTimeOffset?)null), (row.Holds!.Why, row.Holds.Until)),
             },
@@ -421,14 +421,14 @@ public sealed class SessionGroupsTests
         ["words whose start the service refused resume later, with the refusal's sentence"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done],
                     [GoesOn(Done) with { Verdict = StartVerdict.Blocked, Reason = "refused  #q1 → engine: a session is already open." }]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal(
                     (WordsHold.Waits, "refused  #q1 → engine: a session is already open."), (row.Holds!.Why, row.Holds.Reason)),
             },
         ["words a pause holds resume later, naming the pause"] =
             new(Look([Record("s1", "stopped", "q1", said: ["w1"])], [Taken], [PausedVerdict(Taken)]),
-                "s1", SessionGroup.Later, "stopped")
+                "s1", SessionGroup.Pending, "stopped")
             {
                 Also = row =>
                 {
@@ -438,7 +438,7 @@ public sealed class SessionGroupsTests
             },
         ["words a session in the way holds resume later"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.RepositoryBusy)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal(WordsHold.Busy, row.Holds!.Why),
             },
@@ -450,7 +450,7 @@ public sealed class SessionGroupsTests
             },
         ["words every one of which could not go on wait for nothing: ended"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.AtCapacity)], unable: [("s1", ["w1"])]),
-                "s1", SessionGroup.Ended, "completed")
+                "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Null(row.Holds),
             },
@@ -459,7 +459,7 @@ public sealed class SessionGroupsTests
                 "s1", SessionGroup.Working, ShownState.GoingOn),
         ["an earlier session of a quest whose words wait on a later one is ended"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
-                "s1", SessionGroup.Ended, "failed"),
+                "s1", SessionGroup.Failed, "failed"),
         // The planner goes on with a reopen's words in the session the reopen
         // names though a later one is the quest's last record here, so that row reads going on, or later with the planner's hold.
         ["the session a reopen names goes on with its words though a later one is the quest's last"] =
@@ -470,10 +470,10 @@ public sealed class SessionGroupsTests
             },
         ["the later last session of a quest whose reopen's words go on in an earlier one rests as it ended"] =
             new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
-                "s2", SessionGroup.Ended, "completed"),
+                "s2", SessionGroup.Done, "completed"),
         ["a pause holding a reopen's words on the session it names resumes later, naming the pause"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [PausedVerdict(ReopenNamesS1)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row =>
                 {
@@ -483,7 +483,7 @@ public sealed class SessionGroupsTests
             },
         ["the person's stop of the last session holds the words on the session a reopen names"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "stopped", "q1", at: 10)], [ReopenNamesS1], [Verdict(ReopenNamesS1, StartVerdict.Stopped)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal((WordsHold.Waits, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
             },
@@ -524,13 +524,13 @@ public sealed class SessionGroupsTests
                 "s1", SessionGroup.Working, ShownState.GoingOn),
         ["a chat its runner held resumes later, in the runner's words"] =
             new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"], held: [("s1", ChatHeld)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Same(ChatHeld, row.Holds),
             },
         ["a chat its account's cool-off held resumes later, until the reset"] =
             new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"], held: [("s1", OwnCooling)]),
-                "s1", SessionGroup.Later, ShownState.LimitWaits)
+                "s1", SessionGroup.Pending, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
             },
@@ -541,7 +541,7 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.Same(ChatHeld, row.Holds),
             },
         ["a chat with no words its runner could take rests as it ended"] =
-            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])]), "s1", SessionGroup.Ended, "completed")
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Null(row.Holds),
             },
@@ -549,43 +549,43 @@ public sealed class SessionGroupsTests
         // planner's own holds still come first, and the loop's look says its own.
         ["words whose own account cools resume later where no loop has looked, until its reset"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [GoesOn(Done)], held: [("s1", OwnCooling)]),
-                "s1", SessionGroup.Later, ShownState.LimitWaits)
+                "s1", SessionGroup.Pending, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work is cooling until 11:00."),
                     (row.Holds!.Why, row.Holds.Until, row.Holds.Reason)),
             },
         ["the planner's own hold comes before a cool-off read from the home"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.AtCapacity)], held: [("s1", OwnCooling)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Pending, "completed")
             {
                 Also = row => Assert.Equal(WordsHold.Cap, row.Holds!.Why),
             },
 
         // Ended: a record.
-        ["completed is ended"] = new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Ended, "completed"),
-        ["declined is ended"] = new(Look([Record("s1", "declined", "q1")], [Quest("q1", "Declined")]), "s1", SessionGroup.Ended, "declined"),
+        ["completed is ended"] = new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Done, "completed"),
+        ["declined is ended"] = new(Look([Record("s1", "declined", "q1")], [Quest("q1", "Declined")]), "s1", SessionGroup.Done, "declined"),
         ["failed where the quest is not parked is ended"] =
-            new(Look([Record("s1", "failed", "q1")], [Open], [Verdict(Open, StartVerdict.Held)]), "s1", SessionGroup.Ended, "failed"),
-        ["stopped is ended"] = new(Look([Record("s1", "stopped", "q1")], [Taken]), "s1", SessionGroup.Ended, "stopped"),
+            new(Look([Record("s1", "failed", "q1")], [Open], [Verdict(Open, StartVerdict.Held)]), "s1", SessionGroup.Failed, "failed"),
+        ["stopped is ended"] = new(Look([Record("s1", "stopped", "q1")], [Taken]), "s1", SessionGroup.Done, "stopped"),
         // Its line says *held here until you try again*, from this fact.
         ["a stop that holds its quest is ended, and says it holds it"] =
-            new(Look([Record("s1", "stopped", "q1")], [Taken], [Verdict(Taken, StartVerdict.Stopped)]), "s1", SessionGroup.Ended, "stopped")
+            new(Look([Record("s1", "stopped", "q1")], [Taken], [Verdict(Taken, StartVerdict.Stopped)]), "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.True(row.HoldsQuest),
             },
         ["a stop that holds its open quest says so too"] =
-            new(Look([Record("s1", "stopped", "q1")], [Open], [Verdict(Open, StartVerdict.Stopped)]), "s1", SessionGroup.Ended, "stopped")
+            new(Look([Record("s1", "stopped", "q1")], [Open], [Verdict(Open, StartVerdict.Stopped)]), "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.True(row.HoldsQuest),
             },
         ["an earlier stop of a quest held by a later one does not hold it"] =
             new(Look([Record("s1", "stopped", "q1"), Record("s2", "stopped", "q1", at: 10)], [Taken], [Verdict(Taken, StartVerdict.Stopped)]),
-                "s1", SessionGroup.Ended, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.False(row.HoldsQuest),
             },
-        ["stood down is ended"] = new(Look([Record("s1", "stood-down", "q1")], [Taken]), "s1", SessionGroup.Ended, "stood-down"),
-        ["a conversation that ended is ended"] = new(Look([Record("s1", "completed", kind: "chat")]), "s1", SessionGroup.Ended, "completed"),
+        ["stood down is ended"] = new(Look([Record("s1", "stood-down", "q1")], [Taken]), "s1", SessionGroup.Done, "stood-down"),
+        ["a conversation that ended is ended"] = new(Look([Record("s1", "completed", kind: "chat")]), "s1", SessionGroup.Done, "completed"),
 
         // Archived: out of the way, kept whole, and never what needs the person.
         ["an archived ended session is archived"] =
@@ -595,26 +595,26 @@ public sealed class SessionGroupsTests
             },
         ["an archived session awaiting reply is archived"] =
             new(Look([Record("s1", "completed", "q1")], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], archived: ["s1"]),
-                "s1", SessionGroup.Archived, ShownState.AwaitingReply),
+                "s1", SessionGroup.Working, ShownState.AwaitingReply),
         ["a teammate's record may be archived here"] =
             new(Look([Record("laptop/s1", "completed", "q1")], [Done], archived: ["laptop/s1"]), "laptop/s1", SessionGroup.Archived, "completed"),
         ["an archived session waiting on you is never hidden"] =
-            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], archived: ["s1"]), "s1", SessionGroup.You, "awaiting-person")
+            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], archived: ["s1"]), "s1", SessionGroup.NeedsYou, "awaiting-person")
             {
                 Also = row => Assert.True(row.Archived),
             },
         ["an archived parked session is never hidden"] =
             new(Look([Record("s1", "failed", "q1")], [Taken], [Verdict(Taken, StartVerdict.Exhausted)], archived: ["s1"]),
-                "s1", SessionGroup.You, ShownState.Parked),
+                "s1", SessionGroup.Failed, ShownState.Parked),
         ["an archived session with work to review is never hidden"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(1, 0))], archived: ["s1"]),
-                "s1", SessionGroup.Review, "completed"),
+                "s1", SessionGroup.Done, "completed"),
         ["an archived live session stays working"] =
             new(Look([Record("s1", "working", "q1")], [Taken], archived: ["s1"]), "s1", SessionGroup.Working, "working"),
 
         // Deletable where the ledger would delete the record and this machine holds nothing of it.
         ["a conversation the ledger would delete is deletable"] =
-            new(Look([Record("s1", "completed", kind: "chat", deletable: true)]), "s1", SessionGroup.Ended, "completed")
+            new(Look([Record("s1", "completed", kind: "chat", deletable: true)]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.True(row.Deletable),
             },
@@ -624,12 +624,12 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.True(row.Deletable),
             },
         ["a conversation whose tree or landing is still here is not deletable"] =
-            new(Look([Record("s1", "completed", kind: "chat", deletable: true)], kept: ["s1"]), "s1", SessionGroup.Ended, "completed")
+            new(Look([Record("s1", "completed", kind: "chat", deletable: true)], kept: ["s1"]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.False(row.Deletable),
             },
         ["a session the ledger keeps is not deletable"] =
-            new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Ended, "completed")
+            new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.False(row.Deletable),
             },
@@ -637,67 +637,67 @@ public sealed class SessionGroupsTests
         // A session that ended with commits no branch of the person's holds offers its landing, whatever its ending and
         // whichever group it rests in, naming its branch and its tree; the group is the reader's.
         ["a session finished at a checkpoint with commits offers its landing"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed")
+            new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 2, 0), row.Lands),
             },
         // A tree its agent moved onto a branch of its own offers that branch, read from the tree, not the layout's name.
         ["a session whose tree moved onto its own branch offers that branch"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0) { Branch = "feature/TK-1-engine" })]),
-                "s1", SessionGroup.Review, "completed")
+                "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Equal(new LandOffer("feature/TK-1-engine", "s-1a2b3c4d", 2, 0), row.Lands),
             },
         ["a failed session with commits its quest goes back into offers its landing, and rests ended"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(3, 1))]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 3, 1), row.Lands),
             },
         ["a parked quest's last session with commits offers its landing beside Try again"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)], [(Tree, new TreeWork(1, 0))]),
-                "s1", SessionGroup.You, ShownState.Parked)
+                "s1", SessionGroup.Failed, ShownState.Parked)
             {
                 Also = row => Assert.Equal(1, row.Lands!.Commits),
             },
         ["a stopped session with commits offers its landing"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Stopped)], [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Review, "stopped")
+                "s1", SessionGroup.Done, "stopped")
             {
                 Also = row => Assert.Equal(2, row.Lands!.Commits),
             },
         ["the asker of a waiting quest with commits offers its landing while it resumes later"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], [(Tree, new TreeWork(3, 0))]),
-                "s1", SessionGroup.Later, ShownState.AwaitingReply)
+                "s1", SessionGroup.Working, ShownState.AwaitingReply)
             {
                 Also = row => Assert.Equal(3, row.Lands!.Commits),
             },
         ["a session with no commits offers no landing"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(0, 0))]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
         ["uncommitted changes alone offer no landing: a branch would leave them behind"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 2))]), "s1", SessionGroup.Review, "completed")
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 2))]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
         ["commits git could not count offer no landing, though they stay to review"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(null, 0))]), "s1", SessionGroup.Review, "completed")
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(null, 0))]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
         ["an earlier session on a tree offers no landing: the newest stands for it"] =
             new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "failed", "q1", Tree, at: 10)], [Taken], [Verdict(Taken, StartVerdict.Start)],
                     [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
         ["a tree a live session holds offers no landing"] =
             new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "working", "q1", Tree, at: 10)], [Taken], trees: [(Tree, new TreeWork(2, 0))]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
@@ -708,7 +708,7 @@ public sealed class SessionGroupsTests
                 Also = row => Assert.Null(row.Lands),
             },
         ["a teammate's record offers no landing: its tree is on its machine"] =
-            new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0))]), "laptop/s1", SessionGroup.Ended, "failed")
+            new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0))]), "laptop/s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Lands),
             },
@@ -718,7 +718,7 @@ public sealed class SessionGroupsTests
         // in Discard's own words and naming the ref an unforced discard keeps its commits at.
         ["a session whose work the line holds by content offers its discard, not its landing"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(2, 0) { Held = Squashed })]),
-                "s1", SessionGroup.Review, "completed")
+                "s1", SessionGroup.Done, "completed")
             {
                 Also = row =>
                 {
@@ -729,7 +729,7 @@ public sealed class SessionGroupsTests
         ["a failed session whose work a person's branch holds by content offers its discard wherever it rests"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)],
                     [(Tree, new TreeWork(1, 0) { Held = new HeldWork(new ContentHold("feature/x", Squash: false), Kept, null) })]),
-                "s1", SessionGroup.Ended, "failed")
+                "s1", SessionGroup.Failed, "failed")
             {
                 Also = row =>
                 {
@@ -740,7 +740,7 @@ public sealed class SessionGroupsTests
         ["a held tree that holds what no commit does offers no landing, and says why its tree stays"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Done],
                     trees: [(Tree, new TreeWork(2, 0) { Held = Squashed with { Keeps = null, Stays = "it has 1 uncommitted path(s), which a discard would destroy" } })]),
-                "s1", SessionGroup.Review, "completed")
+                "s1", SessionGroup.Done, "completed")
             {
                 Also = row =>
                 {
@@ -750,7 +750,7 @@ public sealed class SessionGroupsTests
                 },
             },
         ["a tree with commits held nowhere else offers its landing and no discard"] =
-            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed")
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Done, "completed")
             {
                 Also = row =>
                 {
@@ -766,7 +766,7 @@ public sealed class SessionGroupsTests
             },
         ["a teammate's held record offers no discard: its tree is on its machine"] =
             new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0) { Held = Squashed })]),
-                "laptop/s1", SessionGroup.Ended, "failed")
+                "laptop/s1", SessionGroup.Failed, "failed")
             {
                 Also = row => Assert.Null(row.Discards),
             },
@@ -818,7 +818,7 @@ public sealed class SessionGroupsTests
             ["you-old", "you-new", "review", "work-engine", "work-engine-late", "work-game", "later", "ended-new", "ended-old", "archived"],
             read.Select(row => row.Session));
         Assert.Equal(
-            [SessionGroup.You, SessionGroup.Review, SessionGroup.Working, SessionGroup.Later, SessionGroup.Ended, SessionGroup.Archived],
+            [SessionGroup.NeedsYou, SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Pending, SessionGroup.Done, SessionGroup.Archived],
             read.Select(row => row.Group).Distinct());
     }
 
@@ -834,7 +834,7 @@ public sealed class SessionGroupsTests
 
         var row = Assert.Single(read);
         Assert.Equal("s1", row.Session);
-        Assert.Equal(SessionGroup.Ended, row.Group);
+        Assert.Equal(SessionGroup.Done, row.Group);
     }
 
     /// <summary>
@@ -967,9 +967,9 @@ public sealed class SessionGroupsTests
         var read = SessionGroups.Read(judged);
 
         Assert.Equal(2, asked.Count);
-        Assert.Equal(SessionGroup.Review, read.Single(row => row.Session == "s1").Group);
+        Assert.Equal(SessionGroup.NeedsYou, read.Single(row => row.Session == "s1").Group);
         Assert.Equal(4, read.Single(row => row.Session == "s1").Work!.Commits);
-        Assert.Equal(SessionGroup.Ended, read.Single(row => row.Session == "s2").Group);
+        Assert.Equal(SessionGroup.Done, read.Single(row => row.Session == "s2").Group);
     }
 
     /// <summary>
@@ -1193,7 +1193,7 @@ public sealed class SessionGroupsTests
 
         var entry = Assert.Single(SessionGroups.ReadEntries(look));
 
-        Assert.Equal(("ask:841c38/engine", SessionGroup.Ended, "5e55a000"), (entry.Key, entry.Group, entry.Leading));
+        Assert.Equal(("ask:841c38/engine", SessionGroup.Done, "5e55a000"), (entry.Key, entry.Group, entry.Leading));
         Assert.Equal(["5e55a000"], entry.Parts.Select(part => part.Session));
     }
 
@@ -1206,8 +1206,8 @@ public sealed class SessionGroupsTests
         var unpublished = Look(
             [Record("1n7a8e01", "completed", repository: "ask #a2", kind: "chat", ask: "a2", entry: "ask:a2/intake")]);
 
-        Assert.Equal(SessionGroup.You, Assert.Single(SessionGroups.ReadEntries(running)).Group);
-        Assert.Equal(SessionGroup.Ended, Assert.Single(SessionGroups.ReadEntries(unpublished)).Group);
+        Assert.Equal(SessionGroup.NeedsYou, Assert.Single(SessionGroups.ReadEntries(running)).Group);
+        Assert.Equal(SessionGroup.Done, Assert.Single(SessionGroups.ReadEntries(unpublished)).Group);
     }
 
     /// <summary>An ask's quests are known by the sessions that worked them where the quest itself is cleared.</summary>
@@ -1239,7 +1239,7 @@ public sealed class SessionGroupsTests
 
         var entries = SessionGroups.ReadEntries(look);
 
-        Assert.Equal([("quest:q1/engine", SessionGroup.You, "e1d00001"), ("quest:q4/game", SessionGroup.Working, "e1d00006")],
+        Assert.Equal([("quest:q1/engine", SessionGroup.NeedsYou, "e1d00001"), ("quest:q4/game", SessionGroup.Working, "e1d00006")],
             entries.Select(entry => (entry.Key, entry.Group, entry.Leading)));
     }
 
@@ -1323,6 +1323,6 @@ public sealed class SessionGroupsTests
         ]);
 
         Assert.Equal(
-            [SessionGroup.You, SessionGroup.Working, SessionGroup.Ended], SessionGroups.ReadEntries(look).Select(entry => entry.Group));
+            [SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Done], SessionGroups.ReadEntries(look).Select(entry => entry.Group));
     }
 }

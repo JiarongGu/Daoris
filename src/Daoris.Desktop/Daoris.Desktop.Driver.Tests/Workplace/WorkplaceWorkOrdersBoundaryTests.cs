@@ -69,7 +69,7 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
     {
         Assert.Equal(["you", "review", "working", "later", "ended", "archived"], SessionGroup.Order);
         Assert.Equal(("you", "review", "working", "later", "ended", "archived"),
-            (SessionGroup.You, SessionGroup.Review, SessionGroup.Working, SessionGroup.Later, SessionGroup.Ended, SessionGroup.Archived));
+            (SessionGroup.NeedsYou, SessionGroup.NeedsYou, SessionGroup.Working, SessionGroup.Pending, SessionGroup.Done, SessionGroup.Archived));
     }
 
     [Theory]
@@ -125,17 +125,17 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
     [Fact]
     public void An_entrys_accept_lands_the_parts_whose_rows_offer_a_landing_and_an_ask_names_its_own_entries()
     {
-        var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Review, "s2",
+        var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.NeedsYou, "s2",
         [
-            new EntryPart("s1", "q1", "failed", SessionGroup.Ended, PartBegan.Opened),
-            new EntryPart("s2", "q1", "completed", SessionGroup.Review, PartBegan.Retried) { After = "s1" },
-            new EntryPart("s3", "q1", "completed", SessionGroup.Review, PartBegan.Resumed) { After = "s2" },
+            new EntryPart("s1", "q1", "failed", SessionGroup.Done, PartBegan.Opened),
+            new EntryPart("s2", "q1", "completed", SessionGroup.NeedsYou, PartBegan.Retried) { After = "s1" },
+            new EntryPart("s3", "q1", "completed", SessionGroup.NeedsYou, PartBegan.Resumed) { After = "s2" },
         ]);
         SessionGrouping[] rows =
         [
-            new("s1", SessionGroup.Ended, "failed"),
-            new("s2", SessionGroup.Review, "completed") { Lands = new LandOffer("daoris/a", "a", 1, 0) },
-            new("s3", SessionGroup.Review, "completed") { Discards = new DiscardOffer("daoris/b", "b", Held(null, "main")) },
+            new("s1", SessionGroup.Done, "failed"),
+            new("s2", SessionGroup.NeedsYou, "completed") { Lands = new LandOffer("daoris/a", "a", 1, 0) },
+            new("s3", SessionGroup.NeedsYou, "completed") { Discards = new DiscardOffer("daoris/b", "b", Held(null, "main")) },
         ];
 
         Assert.Equal(["s2"], EntryAccepts.PartsOf(entry, rows).Select(part => part.Session));

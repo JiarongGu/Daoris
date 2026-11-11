@@ -99,9 +99,7 @@ public sealed class SessionArchive(string home)
             {
                 ArchiveVerdict.Archived => $"sessions: archived {outcome.Session}.",
                 ArchiveVerdict.Live => $"sessions: kept {outcome.Session}: it is still running; stop it first.",
-                ArchiveVerdict.NeedsYou when outcome.Group == SessionGroup.Review =>
-                    $"sessions: kept {outcome.Session}: it has work to review; archive never hides what needs you.",
-                ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it is waiting on you; archive never hides what needs you.",
+                ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it needs you; archive never hides what needs you.",
                 _ => $"sessions: kept {outcome.Session}: no session here is {outcome.Session}.",
             }),
         ],
@@ -121,8 +119,8 @@ public sealed class SessionArchive(string home)
     private static ArchiveOutcome Judge(string id, IWorkplaceSessionRow? placed) => placed?.Group switch
     {
         null => new(id, ArchiveVerdict.Unknown),
-        SessionGroup.Working => new(id, ArchiveVerdict.Live),
-        SessionGroup.You or SessionGroup.Review => new(id, ArchiveVerdict.NeedsYou) { Group = placed.Group },
+        SessionGroup.Working or SessionGroup.Pending => new(id, ArchiveVerdict.Live),
+        SessionGroup.NeedsYou => new(id, ArchiveVerdict.NeedsYou) { Group = placed.Group },
         _ => new(id, ArchiveVerdict.Archived),
     };
 

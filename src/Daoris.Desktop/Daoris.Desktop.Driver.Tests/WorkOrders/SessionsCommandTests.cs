@@ -471,12 +471,12 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public void A_session_with_commits_to_land_names_its_branch_its_tree_and_the_door()
     {
-        var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
-        var finished = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
+        var failed = new SessionGrouping("f41led00", SessionGroup.Done, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
+        var finished = new SessionGrouping("f1n1sh00", SessionGroup.NeedsYou, "completed")
         {
             Work = new TreeWork(2, 0), Lands = new LandOffer("daoris/s-56cb4d29", "s-56cb4d29", 2, null),
         };
-        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Done, "failed");
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([failed, bare]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
@@ -501,8 +501,8 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public void A_moved_trees_branch_is_in_the_json_work()
     {
-        var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
-        var own = new SessionGrouping("0wn00000", SessionGroup.Review, "completed") { Work = new TreeWork(1, 0) };
+        var moved = new SessionGrouping("m0ved000", SessionGroup.Done, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
+        var own = new SessionGrouping("0wn00000", SessionGroup.NeedsYou, "completed") { Work = new TreeWork(1, 0) };
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([moved, own]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
@@ -545,7 +545,7 @@ public sealed class SessionsCommandTests : IDisposable
     public void A_session_whose_work_the_line_holds_by_content_names_its_discard_and_never_its_landing()
     {
         const string kept = "refs/daoris/discarded/daoris/s-56cb4d29";
-        var squashed = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
+        var squashed = new SessionGrouping("f1n1sh00", SessionGroup.NeedsYou, "completed")
         {
             Work = new TreeWork(2, 0),
             Discards = new DiscardOffer("daoris/s-56cb4d29", "s-56cb4d29", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
@@ -556,7 +556,7 @@ public sealed class SessionsCommandTests : IDisposable
                 "daoris/s-56cb4d29", "s-56cb4d29",
                 new HeldWork(new ContentHold("main", Squash: true), null, "it has 1 uncommitted path(s), which a discard would destroy")),
         };
-        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Done, "failed");
 
         using var answer = JsonDocument.Parse(SessionsCommand.Json([squashed, dirty, bare]));
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();

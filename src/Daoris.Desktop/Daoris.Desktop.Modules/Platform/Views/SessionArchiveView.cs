@@ -27,9 +27,8 @@ public sealed class SessionArchiveView : IPressView
         foreach (var id in ids)
         {
             if (!placed.TryGetValue(id, out var group)) kept.Add($"there is no session `{id}` on this machine");
-            else if (archive && group == SessionGroup.Working) kept.Add($"`{id}` is still running: stop it first");
-            else if (archive && group == SessionGroup.You) kept.Add($"`{id}` is waiting on you, and archive never hides what needs you");
-            else if (archive && group == SessionGroup.Review) kept.Add($"`{id}` has work to review, and archive never hides what needs you");
+            else if (archive && group is SessionGroup.Working or SessionGroup.Pending) kept.Add($"`{id}` is still running: stop it first");
+            else if (archive && group == SessionGroup.NeedsYou) kept.Add($"`{id}` needs you, and archive never hides what needs you");
         }
 
         if (kept.Count > 0) return PressViewed.Refused($"{string.Join("; ", kept)}.");

@@ -110,7 +110,7 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void An_entry_with_no_part_to_land_says_so()
     {
-        var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Ended, "s1", []);
+        var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Done, "s1", []);
         var lines = TreesPlanWords.EntryPlanned(entry, new EntryPlan(LandingForm.Branch, "", []), new Dictionary<string, string>()).ToList();
 
         Assert.Equal(["trees: `k` (game) has no part with work to land here."], lines);
@@ -120,7 +120,7 @@ public sealed class TreesPlanWordsTests
     [Fact]
     public void A_clash_is_said_as_conflicting_and_a_superseded_part_keeps_its_leave_out_hint()
     {
-        var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Ended, "s1", []);
+        var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Done, "s1", []);
         var plan = new EntryPlan(LandingForm.Branch, "feature/x", [
             new EntryPartPlan("s1", null) { Clash = new PartClash("s2", "CLAUDE.md") },
             new EntryPartPlan("s3", null) { Superseded = new PartSuperseded("s2", "a.cs", Conflicts: false) },

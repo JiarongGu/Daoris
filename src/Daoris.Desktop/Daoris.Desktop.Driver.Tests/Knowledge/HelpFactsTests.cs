@@ -756,7 +756,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Empty(walked);
         Assert.Equal([SessionGroups.Normal(siteTree), SessionGroups.Normal(engineTree)], read.Trees.Keys.Order(StringComparer.Ordinal));
         var groups = SessionGroups.Read(read).ToDictionary(row => row.Session, row => row.Group);
-        Assert.Equal((SessionGroup.Review, SessionGroup.Ended, SessionGroup.Review), (groups["e1"], groups["e2"], groups["s3"]));
+        Assert.Equal((SessionGroup.NeedsYou, SessionGroup.Done, SessionGroup.NeedsYou), (groups["e1"], groups["e2"], groups["s3"]));
         Assert.Equal(
             [SessionGroups.Normal(engineTree), SessionGroups.Normal(quietTree)],
             facts.Current.Value<HelpTrees>(HelpFacts.Trees, "engine")!.Asked.Order(StringComparer.Ordinal));

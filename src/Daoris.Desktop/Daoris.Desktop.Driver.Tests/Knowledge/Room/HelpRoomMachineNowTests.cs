@@ -213,10 +213,10 @@ public sealed class HelpRoomMachineNowTests
         });
 
         Assert.Contains("- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
-            + "1 waiting on you, 2 to review, 3 working, 4 resuming later, 12 ended.", some);
-        Assert.Contains("- Ended sessions, newest first: `s9a` (in `engine`), `s8b` (in `console-ui`), and 10 more.", some);
+            + "1 needing you, 2 working, 3 pending, 4 failed, 12 done.", some);
+        Assert.Contains("- Failed and done sessions, newest first: `s9a` (in `engine`), `s8b` (in `console-ui`), and 14 more.", some);
         var none = HelpRoom.Render(HelpRoomFixture.Machine with { Sessions = new HelpSessions(0, 0, 0, 0, 0, []) });
-        Assert.Contains("- Ended sessions, newest first: none.", none);
+        Assert.Contains("- Failed and done sessions, newest first: none.", none);
         Assert.Contains("- This machine's sessions by the Sessions list's groups: not read.", HelpRoom.Render(HelpRoomFixture.Machine with { Sessions = null }));
     }
 
@@ -247,10 +247,10 @@ public sealed class HelpRoomMachineNowTests
         var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, sessions: look);
 
         var sessions = machine.Sessions!;
-        Assert.Equal((1, 0, 1, 0, 13), (sessions.You, sessions.Review, sessions.Working, sessions.Later, sessions.Ended));
+        Assert.Equal((1, 1, 0, 1, 12), (sessions.NeedsYou, sessions.Working, sessions.Pending, sessions.Failed, sessions.Done));
         Assert.Equal(10, sessions.Listed.Count);
         Assert.Equal(new HelpEndedSession("e12", "game"), sessions.Listed[0]);
-        Assert.Equal(3, sessions.Ended - sessions.Listed.Count);
+        Assert.Equal(3, sessions.Failed + sessions.Done - sessions.Listed.Count);
         Assert.DoesNotContain(sessions.Listed, each => each.Id is "h1" or "laptop/t1" or "a1");
         Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0).Sessions);
     }

@@ -32,7 +32,7 @@ internal static class SessionsArchiving
     {
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct).ConfigureAwait(false);
         var rows = SessionGroups.Read(look);
-        var ended = rows.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
+        var ended = rows.Where(row => row.Group is SessionGroup.Failed or SessionGroup.Done && !row.Archived).Select(row => row.Session).ToList();
         if (ended.Count == 0)
         {
             output.WriteLine("sessions: nothing that ended is left to archive.");
@@ -43,12 +43,8 @@ internal static class SessionsArchiving
         {
             output.WriteLine($"sessions: would archive {Sessions(ended.Count)} that ended:");
             foreach (var id in ended) output.WriteLine($"  {id}");
-            var (you, review) = (rows.Count(row => row.Group == SessionGroup.You), rows.Count(row => row.Group == SessionGroup.Review));
-            if (you > 0 || review > 0)
-            {
-                output.WriteLine("sessions: kept in the list: " + (you > 0 && review > 0 ? $"{you} waiting on you, {review} to review."
-                    : you > 0 ? $"{you} waiting on you." : $"{review} to review."));
-            }
+            var needsYou = rows.Count(row => row.Group == SessionGroup.NeedsYou);
+            if (needsYou > 0) output.WriteLine($"sessions: kept in the list: {needsYou} needing you.");
 
             output.WriteLine("sessions: `--yes` archives them, each judged again as it goes.");
             return 0;
