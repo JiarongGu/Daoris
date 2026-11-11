@@ -37,6 +37,25 @@ public sealed class GitLibraryHousekeepingTests : LandedFixture
         Assert.Null(GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Refs));
     }
 
+    [Fact]
+    public async Task A_question_that_waited_for_a_slot_is_admitted_once_it_has_one()
+    {
+        var root = await BuildRepositoryAsync("housekeeping-queued");
+        using var release = new ManualResetEventSlim();
+        var holders = Enumerable.Range(0, GitLibrary.AtOnce)
+            .Select(_ => GitLibrary.AskAsync(root, GitLibraryQuestion.Refs, _ => { release.Wait(); return "held"; }, CancellationToken.None))
+            .ToList();
+        while (GitLibrary.Open < GitLibrary.AtOnce) await Task.Delay(10);
+
+        var queued = GitLibrary.AskAsync(root, GitLibraryQuestion.Refs, _ => "never", CancellationToken.None);
+        await Task.Delay(200);
+        await File.WriteAllTextAsync(Path.Combine(RefFiles.CommonDirOf(root)!, "gc.pid"), "x");
+        release.Set();
+
+        Assert.Null(await queued.WaitAsync(Poll.Patience));
+        await Task.WhenAll(holders).WaitAsync(Poll.Patience);
+    }
+
     [GitLegFact]
     public async Task A_marker_a_crashed_run_left_for_a_day_stops_no_question()
     {

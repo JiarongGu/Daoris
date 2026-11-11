@@ -325,12 +325,12 @@ public sealed class ActJournal(
         return StepsIn(write, claim.Act).Single(each => each.Ordinal == ordinal);
     });
 
-    /// <summary>The step's process, once it is held in the act's job and before it runs: its id and its start.</summary>
-    public void Launched(ActClaim claim, int ordinal, int pid, long started) => Fenced(claim, write =>
+    /// <summary>The step's process, held in the act's job before it runs: its id and start, and its deadline where the git queued after <see cref="Begin"/>.</summary>
+    public void Launched(ActClaim claim, int ordinal, int pid, long started, DateTimeOffset? deadline = null) => Fenced(claim, write =>
     {
         var set = write.Execute(
-            "UPDATE git_act_steps SET pid = $pid, pid_started = $started WHERE act = $act AND ordinal = $ordinal AND began_at IS NOT NULL AND ended_at IS NULL",
-            ("$pid", pid), ("$started", started), ("$act", claim.Act), ("$ordinal", ordinal));
+            "UPDATE git_act_steps SET pid = $pid, pid_started = $started, deadline = COALESCE($deadline, deadline) WHERE act = $act AND ordinal = $ordinal AND began_at IS NOT NULL AND ended_at IS NULL",
+            ("$pid", pid), ("$started", started), ("$deadline", deadline is { } moment ? Moments.Write(moment) : null), ("$act", claim.Act), ("$ordinal", ordinal));
         if (set != 1) throw new ActRefusedException(claim.Act, $"its step {ordinal} is not open");
     });
 

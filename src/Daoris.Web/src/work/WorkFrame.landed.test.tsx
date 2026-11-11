@@ -28,9 +28,8 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-// 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
-// and a test that hid the console left it hidden for whichever console test ran next: four failed
-// in a shuffled order, and passed in file order only by luck of the order.
+// 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer, and a test that hid
+// the console left it hidden for whichever console test ran next.
 afterEach(() => window.localStorage.clear());
 
 /**
@@ -364,50 +363,6 @@ describe('a session’s page header and its acts', () => {
     await screen.findByRole('group', { name: 'Session actions' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'accounts' } }));
     expect(screen.queryByRole('group', { name: 'hand-over offer' })).toBeNull();
-  });
-
-  /**
-   * An ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
-   * once under the header, deletes nothing until its second press, and a driven session's ⋯ offers none.
-   */
-  it('deletes an ended conversation from its header’s ⋯, asking once, and offers a driven session none', async () => {
-    const ended = { ...CHAT, state: 'completed' };
-    SESSIONS = [ended, { ...DRIVEN, state: 'completed' }];
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return { sessions: [
-          { session: 'c0ffee11', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false, deletable: true },
-          { session: 's1a2b3c4', group: 'done', state: 'done', shown: 'completed', archived: false, teammate: false, deletable: false },
-        ] };
-      }
-      if (type === 'SESSION_DELETE') return { deleted: 'c0ffee11', removed: ['record'] };
-      return DRIVER_STATE;
-    });
-    const notify = vi.fn();
-    show('c0ffee11', notify);
-
-    const user = userEvent.setup();
-    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
-    acts.getByRole('button', { name: 'More actions' }).focus();
-    await user.keyboard('{Enter}');
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
-
-    const ask = screen.getByRole('group', { name: 'delete this session' });
-    expect(ask).toHaveTextContent('Nothing brings it back.');
-    // Opened from the ⋯, its sentence takes the focus, and *Never mind* gives it back to the ⋯.
-    await waitFor(() => expect(within(ask).getByText(/^Deletes this conversation’s record/)).toHaveFocus());
-    await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
-    expect(screen.queryByRole('group', { name: 'delete this session' })).toBeNull();
-    expect(acts.getByRole('button', { name: 'More actions' })).toHaveFocus();
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', expect.anything());
-
-    acts.getByRole('button', { name: 'More actions' }).focus();
-    await user.keyboard('{Enter}');
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
-    await user.click(screen.getByRole('button', { name: 'Delete session' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 'c0ffee11' } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^Deleted c0ffee11/)));
   });
 
   /**

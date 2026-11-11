@@ -16,6 +16,7 @@ const t = i18n.t.bind(i18n);
 const DEFAULTS = join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Defaults', 'workflows');
 const SHIPPED = readdirSync(DEFAULTS).filter((file) => file.endsWith('.json')).sort()
   .map((file) => JSON.parse(readFileSync(join(DEFAULTS, file), 'utf8')) as { id: string; graph: Record<string, unknown> });
+const LANDS_NOTHING = ['in-copy', 'in-place', 'plan-review-apply'];
 const shipped = (id: string) => SHIPPED.find((each) => each.id === id)!;
 
 const draw = (graph: unknown, options: Partial<Parameters<typeof graphFlow>[2]> = {}) =>
@@ -31,10 +32,10 @@ const placedAt = (graph: unknown, rem: number, options: Partial<Parameters<typeo
 describe('the shipped workflows, read from the driver\'s own data', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('are the nine this drawing is proved over, so a default added or changed is looked at here', () => {
+  it('are the eleven this drawing is proved over, so a default added or changed is looked at here', () => {
     expect(SHIPPED.map((each) => each.id)).toEqual([
-      'branch-to-push', 'documents', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept', 'merge-automatic', 'pull-request',
-      'release',
+      'branch-to-push', 'documents', 'in-copy', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept', 'merge-automatic',
+      'plan-review-apply', 'pull-request', 'release',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
     expect([release.nodes.length, release.wires.length, release.end]).toEqual([11, 13, 'line']);
@@ -60,7 +61,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
       const flow = draw(each.graph);
       const drawn = new Set(flow.nodes.map((node) => node.id));
       for (const section of flow.sections) expect(drawn.has(section.from), `${each.id}: ${section.title}`).toBe(true);
-      expect(flow.sections.map((section) => section.title)[0], each.id).toBe(each.id === 'in-place' ? 'Steps' : 'Before it lands');
+      expect(flow.sections.map((section) => section.title)[0], each.id).toBe(LANDS_NOTHING.includes(each.id) ? 'Steps' : 'Before it lands');
     }
     expect(draw(shipped('in-place').graph).sections).toEqual([{ title: 'Steps', from: 'work' }]);
     expect(draw(shipped('release').graph).sections).toEqual([

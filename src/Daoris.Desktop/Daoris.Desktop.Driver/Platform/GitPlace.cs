@@ -62,6 +62,7 @@ internal sealed class GitPlace
         try
         {
             own = Process.GetProcessById(pid);
+            _ = own.SafeHandle;
         }
         catch (ArgumentException)
         {
@@ -71,9 +72,24 @@ internal sealed class GitPlace
         {
             return;
         }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return;
+        }
 
         lock (_gate) _pids.Add(pid);
-        Bind(() => HasExited(own), () => own.WaitForExitAsync());
+        var exited = Task.Run(async () =>
+        {
+            try
+            {
+                await own.WaitForExitAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                own.Dispose();
+            }
+        });
+        Bind(() => exited.IsCompleted, () => exited);
     }
 
     private readonly List<int> _pids = [];
@@ -110,22 +126,6 @@ internal sealed class GitPlace
     internal Task ExitedAsync()
     {
         lock (_gate) return Task.WhenAll(_exits.Select(each => each.Exit()));
-    }
-
-    private static bool HasExited(Process process)
-    {
-        try
-        {
-            return process.HasExited;
-        }
-        catch (InvalidOperationException)
-        {
-            return true;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            return true;
-        }
     }
 
     /// <summary>

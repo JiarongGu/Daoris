@@ -77,12 +77,12 @@ internal static class GitObjectReads
     }
 
     /// <summary>
-    /// An answer's bytes as text, read as git's text output is read: UTF-8, a leading byte-order mark taken as the mark it is.
+    /// An answer's bytes as text, read as git's text output is: UTF-8, a leading UTF-8 byte-order mark taken as one and no other.
     /// </summary>
     internal static string Text(byte[] bytes, GitObjectAnswer answer)
     {
-        using var reader = new StreamReader(new MemoryStream(bytes, answer.Start, answer.Count), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
+        var text = new ReadOnlySpan<byte>(bytes, answer.Start, answer.Count);
+        return Encoding.UTF8.GetString(text.StartsWith(Encoding.UTF8.Preamble) ? text[Encoding.UTF8.Preamble.Length..] : text);
     }
 
     private static async Task<(GitObjectAnswer Answer, byte[] Bytes)?> NamedAsync(string root, GitObjectName name, int limit, CancellationToken ct)

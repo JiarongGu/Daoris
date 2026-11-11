@@ -662,8 +662,7 @@ describe('work to review, worded', () => {
   });
 
   /**
-   * A record whose words an account's limit holds is worded in What needs you as the limit's wait is worded elsewhere:
-   * the wait, its time and the account that resets first, in both languages, never only that it completed.
+   * A record an account's limit holds is worded as the limit's wait: its time and the account that resets first, in both languages.
    */
   it('says a held record’s wait as a limit’s wait, in both languages', async () => {
     const held: SessionGrouping = {

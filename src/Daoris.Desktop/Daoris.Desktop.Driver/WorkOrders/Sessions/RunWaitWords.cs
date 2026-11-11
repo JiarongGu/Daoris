@@ -17,6 +17,7 @@ internal static class RunWaitWords
         PersonWaits.Task => "waits for your Done",
         PersonWaits.GoAhead => "waits for your go-ahead",
         PersonWaits.Held => "is held for your word",
+        PersonWaits.Choose => "waits for your choice of the files changed on both sides",
         _ => "waits for you",
     };
 }
