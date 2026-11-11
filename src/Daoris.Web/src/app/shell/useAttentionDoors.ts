@@ -28,6 +28,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     'steward-stopped': (item) => openQuest(item.id),
     // A quest its role's policy holds opens its page, as a parked quest does.
     'policy-hold': (item) => openQuest(item.id),
+    unclosed: (item) => openQuest(item.id),
     // A run held at a declined request opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
     // A run waiting on a person's task (HUMAN) opens its work quest's page, where the run is read.

@@ -36,6 +36,7 @@ internal static class DriverConfigReader
             // Out of its bounds, or not a whole number, is the default: never a bound the doors would refuse.
             QuietMinutes = root.TryGetProperty(QuietSetting.File, out var quiet) && quiet.ValueKind == JsonValueKind.Number
                 ? QuietSetting.Read(quiet.TryGetInt64(out var whole) ? whole : null) : null,
+            Manifest = ManifestSetting.Read(root),
             // Each actor's order: an entry that does not read is kept as its error, and holds its starts.
             Actors = actors,
             ActorErrors = actorErrors,

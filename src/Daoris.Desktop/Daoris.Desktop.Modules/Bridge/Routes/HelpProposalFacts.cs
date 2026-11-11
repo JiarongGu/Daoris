@@ -13,18 +13,10 @@ public sealed class HelpProposalFacts(DriverContext context)
     /// <summary>Whether a pending proposal is a go naming a quest or an ask on Quests, judged against every one, so the service is asked for the records only then.</summary>
     public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "quests"));
 
-    /// <summary>
-    /// Whether a pending proposal is judged against this machine's session records, closed ones included: a go naming a
-    /// session on Sessions, so the service is asked for them only then.
-    /// </summary>
+    /// <summary>Whether a pending proposal is a go naming a session on Sessions, so the service is asked for its records only then.</summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => ItemOn(proposal, "sessions"));
 
-    public static bool JudgedAgainstHistory(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "clear");
-
-    /// <summary>
-    /// Whether a pending proposal is a workflow, judged by the named workflows saved here and the runs bound to
-    /// them, so the home is read for those only then.
-    /// </summary>
+    /// <summary>Whether a pending proposal is a workflow, judged by the workflows saved here and their runs, read only then.</summary>
     public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
 
     /// <summary>
@@ -94,25 +86,6 @@ public sealed class HelpProposalFacts(DriverContext context)
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
-        }
-
-        // A clear proposal is judged by what this machine keeps of the work it names, as HISTORY_PLAN reads it.
-        // A service that cannot be read throws, and the proposal stays unsettled.
-        if (JudgedAgainstHistory(proposals))
-        {
-            var world = HistoryRoutes.WorldOf(_loop);
-            var plans = new List<HistoryPlan>();
-            foreach (var proposal in proposals.Where(each => each.Kind == "clear"))
-            {
-                var scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "failed" => HistoryScope.Failed, "workspace" => HistoryScope.Workspace, _ => (HistoryScope?)null };
-                if (scope is not { } named) continue;
-                var target = proposal.Target?.Trim() ?? "";
-                if (named != HistoryScope.Workspace) target = target.TrimStart('#').Trim();
-                if (target.Length == 0) continue;
-                plans.Add(await HistoryClearing.PlanAsync(world, named, target, ct).ConfigureAwait(false));
-            }
-
-            facts = facts with { History = plans };
         }
 
         // A workflow proposal is judged by the named workflows here and the runs bound to them; the

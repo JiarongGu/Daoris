@@ -167,6 +167,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sync/machines/{machine}/retire", Person),
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
+        ("POST", "/api/registry/{repository}/excludes", Person),
         ("POST", "/api/registry/import", Person),
         ("POST", "/api/confirmations/{id}/confirm", Person),
         ("POST", "/api/confirmations/{id}/refuse", Person),
@@ -197,7 +198,7 @@ public sealed class PersonDoorTableTests
         Assert.Equal(8, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(33, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(39, Routes.Count(route => route.Class == Person));
+        Assert.Equal(40, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

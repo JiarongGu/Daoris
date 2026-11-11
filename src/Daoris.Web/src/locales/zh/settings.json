@@ -56,5 +56,16 @@
   "settings.terminal.state.ask": "询问：本机终端发来的每个操作都在这里等你确认。",
   "settings.terminal.state.act": "执行：本机上不属于任何 Daoris 会话的终端发来的操作会直接以你的名义执行，并列在通知中。",
   "settings.terminal.set.ask": "终端发来的操作现在会等你确认。",
-  "settings.terminal.set.act": "终端发来的操作现在会直接以你的名义执行。"
+  "settings.terminal.set.act": "终端发来的操作现在会直接以你的名义执行。",
+  "settings.manifest.label": "文件夹过大而不再跟踪的界限",
+  "settings.manifest.terminal": "也可用 `daoris settings manifest files <n>` 和 `minutes <n>`，文件数 1,000 起，分钟数 1 到 60——同一个文件，任一入口。",
+  "settings.manifest.body": "会话在文件夹里工作之前，Daoris 会列出其中的文件，以便说清这期间有什么变化。文件数超过这里的数目、或列出所用时间超过这里的分钟数的文件夹，就算过大而不再跟踪：它仍在原处工作，一次一个会话，但会话不会被告知这期间的变化，它的改动也不会逐个列出。想跟踪更大的文件夹就调高；想让每次开始更快就调低。",
+  "settings.manifest.files": "文件夹清单最多列出的文件数",
+  "settings.manifest.filesUnit": "个文件",
+  "settings.manifest.minutes": "读取文件夹清单最长用时",
+  "settings.manifest.minutesUnit": "分钟",
+  "settings.manifest.setFiles": "Daoris 现在会跟踪最多 {{count}} 个文件的文件夹。",
+  "settings.manifest.setFiles_other": "Daoris 现在会跟踪最多 {{count}} 个文件的文件夹。",
+  "settings.manifest.setMinutes": "Daoris 现在列出文件夹的文件最多用 {{count}} 分钟。",
+  "settings.manifest.setMinutes_other": "Daoris 现在列出文件夹的文件最多用 {{count}} 分钟。"
 }

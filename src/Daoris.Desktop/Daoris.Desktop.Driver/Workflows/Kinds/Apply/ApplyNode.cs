@@ -23,6 +23,8 @@ internal sealed class ApplyNode : BuiltInNode, IStarts
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places { get; } = [PlaceKind.System];
+
     public INodeDoor? Door(NodeDoorWiring wiring) => new ApplyDoor(wiring.Home, SystemAdapters.Starter(wiring.Home), said => wiring.Say("apply.run", said), wiring.MayStart);
 
     /// <summary>Begun in the pass; its door applies it after the rounds.</summary>

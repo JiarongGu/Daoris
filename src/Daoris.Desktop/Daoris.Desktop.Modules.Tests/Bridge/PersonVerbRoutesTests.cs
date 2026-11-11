@@ -40,6 +40,22 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         { "REGISTRY_IMPORT", new { said = true }, 0 },
     };
 
+    /// <summary>A folder's excludes press reads the registry, then sends the whole new list to the excludes door with the person key.</summary>
+    [Fact]
+    public async Task A_folder_excludes_press_sends_the_new_list_to_the_service_with_the_person_key()
+    {
+        var standIn = new KeyRecording(request => request.Method == HttpMethod.Get
+            ? """[{"repository":"scratch","kind":"folder","excludes":["build/**"],"workspace":"default"}]"""
+            : """{"repository":"scratch","workspace":"default"}""");
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(standIn), personKey: Key));
+
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "REGISTRY_EXCLUDES", new { repository = "scratch", add = new[] { "*.log" }, said = true });
+
+        Assert.Equal(0, answer.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Equal(("/api/registry/scratch/excludes", Key), Assert.Single(standIn.Heard));
+    }
+
     /// <summary>
     /// A press reaches the service with the person key on every request it makes, and answers the lines the verb said with its exit code;
     /// the key is the loop's client's, never a field of the press.

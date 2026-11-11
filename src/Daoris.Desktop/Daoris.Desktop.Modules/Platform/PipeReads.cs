@@ -206,6 +206,9 @@ internal static class PipeReads
 
     public static PipeGround Quiet() => State(["minutes"], (a, _) => Raw(At(a, "quiet")) ?? "", p => Raw(Field(p, "minutes")));
 
+    public static PipeGround Manifest() => State(["files", "minutes"],
+        (a, p) => Raw(At(a, Field(p, "files") is null ? "manifestMinutes" : "manifestFiles")) ?? "", p => Raw(Field(p, "files") ?? Field(p, "minutes")));
+
     public static PipeGround Cap() => State(["cap"], (a, _) => Raw(At(a, "cap")) ?? "", p => Raw(Field(p, "cap")));
 
     public static PipeGround HelpMode() => State(["mode"], (a, _) => Text(At(a, "helpMode")) ?? "", p => Text(p, "mode"));

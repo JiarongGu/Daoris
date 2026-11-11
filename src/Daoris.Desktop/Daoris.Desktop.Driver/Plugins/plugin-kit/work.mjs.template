@@ -23,7 +23,7 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
  * The work points' handlers, built around the author's external calls:
  *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`; `call.options` holds the step's graph options by name, `{}` if none
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
- *                      or null when the platform cannot say
+ *                      `{ state: 'running' }` while its platform cannot be asked (down, rate-limited; `say` why), or null (a refused credential) to stop
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
  *   observe(unit, step) what an observed step's platform says of a unit's tip: an outcome, or null while it says nothing yet
  * Under the kit's stand-in world (DAORIS_PLUGIN_WORLD, which its tests and `plugins try` set), none of them is called: the world
@@ -209,7 +209,7 @@ function words(error) {
  * place, read again at every call. Each external effect is one line in `<world>.effects`, so a test counts them; `<world>.taken` says
  * this plugin took the world, before anything is sent it. Scripted per invocation, or per resource:
  *   { "acts": { "<invocation>": { "state": "failed", "code": "unavailable" } | { "hold": true } | { "exit": true } },
- *     "checks": { "<invocation>": { "state": "done", "outcome": { … } } },
+ *     "checks": { "<invocation>": { "state": "done", "outcome": { … } } | { "hold": true } },
  *     "removes": { "<resource>": { "disposition": "retained", "message": "…" } },
  *     "observed": { "<step>": { "state": "reached" } } }
  * Anything not scripted is reached, removed, or not known.
@@ -231,7 +231,10 @@ function standIn(file) {
       if (said.state === 'failed') return { state: 'failed', code: said.code ?? 'unavailable', evidence };
       return { state: 'reached', evidence, ...(made ? { resources: [{ schema: made, id: `r-${call.invocation}` }] } : {}) };
     },
-    check: async (attempt) => script().checks?.[attempt.invocation] ?? null,
+    check: async (attempt) => {
+      const said = script().checks?.[attempt.invocation] ?? null;
+      return said?.hold ? new Promise(() => {}) : said;
+    },
     remove: async (call) => {
       effect(`remove ${call.resource}`);
       return script().removes?.[call.resource] ?? { disposition: 'removed', proof: `removed ${call.resource}` };

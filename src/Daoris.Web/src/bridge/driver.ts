@@ -70,6 +70,9 @@ export type DriverState = {
   coolOff?: number;
   /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
+  /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
+  manifestFiles?: number;
+  manifestMinutes?: number;
   cap?: number;
   /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
   terminal?: string;
@@ -339,6 +342,17 @@ export const useSetCoolOff = () => useDriverChange('SET_COOLOFF');
 
 /** How long a session may be quiet before Daoris looks in: the same `quiet` `daoris settings quiet <minutes>` edits. */
 export const useSetQuiet = () => useDriverChange('SET_QUIET');
+
+/** One bound of a folder's manifest read, files or minutes: the same `manifest` `daoris settings manifest files|minutes <n>` edits. */
+export const useSetManifest = () => useDriverChange('SET_MANIFEST');
+
+/**
+ * A folder department's excludes changed: the globs to leave out and the globs to take back, the same list
+ * `daoris repository excludes` edits. The driver changes the registration and reads the folder's manifest again.
+ */
+export const useSetFolderExcludes = () => useMutation({
+  mutationFn: (variables: Payload<'REGISTRY_EXCLUDES'>) => call('REGISTRY_EXCLUDES', variables),
+});
 
 /** How many sessions Daoris starts at once: the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');

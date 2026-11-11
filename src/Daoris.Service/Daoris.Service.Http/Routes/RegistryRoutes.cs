@@ -16,6 +16,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         routes.Map<RegisterRepository, RegisteredResponse>(RegisterAsync);
         routes.Map<RetireRepository, RetiredResponse>(RetireAsync);
         routes.Map<WireRepository, RegisteredResponse>(WireAsync);
+        routes.Map<SetFolderExcludes, RegisteredResponse>(ExcludesAsync);
         routes.Map<ImportRepositories, ImportedResponse>(ImportAsync);
         routes.Map<ListRegistry, RegistrationResponse[]>(ListAsync);
         routes.Map<ReadCodeMap, JsonObject>(CodeMapAsync);
@@ -142,6 +143,25 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         var wired = await Service.Service.RegisterAsync(
             existing with { Workspace = Workspaces.Normalize(body.Workspace) }, DateTimeOffset.UtcNow, ct);
         return new RegisteredResponse(wired.Repository, DateTimeOffset.UtcNow, wired.InWorkspace);
+    }
+
+    private async Task<Answer<RegisteredResponse>> ExcludesAsync(SetFolderExcludes body, HttpContext http, CancellationToken ct)
+    {
+        var existing = (await Service.Service.RegistryAsync(ct: ct)).Named(body.Repository);
+        if (existing is null)
+        {
+            return Refusal.NotFound($"`{body.Repository}` is not registered here — `daoris repository add <folder>` registers a folder.");
+        }
+
+        if (existing.PlaceKind != PlaceKinds.Folder)
+        {
+            return Refusal.Conflict($"`{body.Repository}` is not a folder: excludes are a folder department's, for the files its manifest passes by.");
+        }
+
+        // Each glob once, trimmed; an empty list is `[]`, which clears, where null would keep what the row held.
+        var excludes = body.Excludes.Where(glob => !string.IsNullOrWhiteSpace(glob)).Select(glob => glob.Trim()).Distinct(StringComparer.Ordinal).ToArray();
+        var set = await Service.Service.RegisterAsync(existing with { Excludes = excludes }, DateTimeOffset.UtcNow, ct);
+        return new RegisteredResponse(set.Repository, DateTimeOffset.UtcNow, set.InWorkspace);
     }
 
     // Local only: a shared deployment is fed, and has no disk of its own to read.

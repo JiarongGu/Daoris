@@ -50,8 +50,9 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  */
 export function ProjectPage({
   registration, counts, line, unlanded = 0, here, drivable, held, branches, history, changes, integration, files, tab = 'details', onTab,
-  onManage, onOpenCode, onOpenSetup, onOpenFolder, heavy,
+  onManage, onOpenCode, onOpenSetup, onOpenFolder, heavy, excludes,
 }: {
+  excludes?: ReactNode;
   /** Open its folder in the system's file manager: a shell's, offered where the folder is on this machine. */
   onOpenFolder?: () => void;
   /** Open its page in the Agents place's Setup mode, where its Setup is. */
@@ -216,6 +217,8 @@ export function ProjectPage({
           </Fact>
         )}
       </dl>
+
+      {excludes}
 
       {adopted && declared && (
         <PageSection title={t('projects.page.declaration')}>

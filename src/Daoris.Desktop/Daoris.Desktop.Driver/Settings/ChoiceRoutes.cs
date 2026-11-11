@@ -15,6 +15,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Quiet { get; } = Person("SET_QUIET");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
     public static InstanceRoute Terminal { get; } = Person("SET_TERMINAL");
+    public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
@@ -42,6 +43,7 @@ public static class ChoiceRoutes
         ("driver quiet <minutes>", Quiet, "the window's quiet bound"),
         ("driver cap <n>", Cap, "the window's session cap"),
         ("driver terminal ask|act", Terminal, "the window's tier of a terminal's presses"),
+        ("driver manifest files|minutes <n>", Manifest, "the window's bounds on a folder's manifest read"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),

@@ -55,7 +55,7 @@ public static class PlaceTurns
         if (Find(home, record) is not { } found || found.Start.Root is not { } root) return null;
         var (store, start) = found;
         if (store.Read(record, ManifestMoment.End) is { } read && read.At >= start.At) return read.Own ?? [];
-        if (start.Kind == PlaceKind.Folder) return FolderTurns.End(store, record, start);
+        if (start.Kind == PlaceKind.Folder) return FolderTurns.End(home, store, record, start);
         RunManifest end;
         try
         {

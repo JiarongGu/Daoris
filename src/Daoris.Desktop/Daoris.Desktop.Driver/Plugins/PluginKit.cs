@@ -462,7 +462,8 @@ public static class PluginKit
               //   return { state: 'failed', code: 'unavailable', evidence: { message: '…' } };
               act: async (call) => ({ state: 'failed', code: 'not-written', evidence: { message: `${id} does not perform yet.` } }),
               // What became of an attempt a process before this one began, asked of the platform: { state: 'done', outcome },
-              // { state: 'not-started' }, or null where it cannot say, which stops the step for the person.
+              // { state: 'not-started' }; { state: 'running' } while the platform cannot be asked (down, rate-limited), said why
+              // with say(), so Daoris asks again; or null where it answered and cannot tell, which stops the step for the person.
               check: async (attempt) => null,
               // One thing act made, removed: { disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof, message }.
               remove: async (resource) => ({ disposition: 'failed', message: `${id} does not remove ${resource.resource} yet.` }),

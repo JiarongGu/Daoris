@@ -32,6 +32,8 @@ public sealed record DriverConfig(
 
     public int? QuietMinutes { get; init; }
 
+    public ManifestSetting Manifest { get; init; } = ManifestSetting.Unset;
+
     public bool Draining { get; init; }
 
     internal int? TestBound { get; init; }

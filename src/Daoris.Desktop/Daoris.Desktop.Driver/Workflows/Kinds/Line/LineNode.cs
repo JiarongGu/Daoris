@@ -14,6 +14,8 @@ internal sealed class LineNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public override bool EndsByTheLine => true;

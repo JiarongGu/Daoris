@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useSetQuiet, useSetTerminal,
+  useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetManifest, useSetNotify, useSetQuiet, useSetTerminal,
 } from '../bridge/shell';
 import { terminalTierOf } from './machine/TerminalTierSetting';
 import { type MachineSetting, SETTINGS } from '../bridge/generated/routes';
@@ -45,6 +45,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setCoolOff = useSetCoolOff();
   const setQuiet = useSetQuiet();
   const setCap = useSetCap();
+  const setManifest = useSetManifest();
   const setTerminal = useSetTerminal();
   // This machine's sessions' access: the default under every workspace's and repository's.
   const setAccess = useSetAccess();
@@ -53,13 +54,15 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
 
   return (
     <DriverCards
-      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet') }}
+      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), manifest: settingOf('manifest') }}
       facts={{
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,
         coolOff: driver.data?.coolOff,
         quiet: driver.data?.quiet,
+        manifestFiles: driver.data?.manifestFiles,
+        manifestMinutes: driver.data?.manifestMinutes,
         cap: driver.data?.cap,
         terminal: terminalTierOf(driver.data?.terminal),
         machineAccess: driver.data?.machineAccess,
@@ -82,6 +85,12 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onQuiet={(value) => setQuiet.mutate({ minutes: value }, {
         onSuccess: () => notify(t('settings.quiet.set', { count: value })),
+        onError,
+      })}
+      onManifest={(bound) => setManifest.mutate(bound, {
+        onSuccess: () => notify('files' in bound
+          ? t('settings.manifest.setFiles', { count: bound.files })
+          : t('settings.manifest.setMinutes', { count: bound.minutes })),
         onError,
       })}
       onCap={(value) => setCap.mutate({ cap: value }, {

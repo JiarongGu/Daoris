@@ -339,7 +339,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     {
         if (_loop.Service is not { } service) return new ChoicesRegistry(null, "the driver is still coming up");
         var rows = await service.RegistryAsync(ct).ConfigureAwait(false);
-        return new ChoicesRegistry([.. rows.Select(row => (row.Repository, (string?)row.Workspace, (string?)row.Root))], null);
+        return ChoicesRegistry.Of(rows);
     };
 
     private static object[] ReachRows(IReadOnlyList<WorkflowReach> reach) =>

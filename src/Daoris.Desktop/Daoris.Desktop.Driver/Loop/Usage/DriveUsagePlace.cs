@@ -109,7 +109,7 @@ internal static class DriveUsagePlace
           repository register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `repository connect` would; a start and a line Daoris moves do the same on their own.
-          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]
+          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]  ·  repository excludes <folder> [--add <glob>]… [--remove <glob>]…
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.
