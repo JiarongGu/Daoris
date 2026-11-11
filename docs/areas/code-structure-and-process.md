@@ -194,9 +194,10 @@ finishes first and the whole set runs once.
 
 ## Open
 
-- DOCDIET1: the canon's records only grow, so every driven repository's reading grows with its age (here: areas up to 99 KB, the
-  backlog twice its budget, the archive and fix log one file each). Needs a design: budgets per record kind in the canon, present state
-  only where a change reads, history where search recalls it (Lyntai's memory or month-split files, chosen by measured recall).
+- DOCDIET1: a long-lived repository develops worse than a fresh start: the canon's records only grow, so what a change reads and what
+  a search returns grow with the repository's age (here: areas up to 99 KB, the backlog twice its budget, the archive and fix log one
+  file each). Needs a design: the read path kept as small and current as at day one, history whole but off it (Lyntai's memory or
+  month-split files, chosen by measured recall), measured against a fresh copy.
 - TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
