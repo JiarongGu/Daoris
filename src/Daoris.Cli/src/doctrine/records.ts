@@ -236,10 +236,7 @@ export interface DriftReport {
   unlisted: { path: string; move: string }[];
   /** The repository's own skills under the mirror root, read by that harness alone. */
   readAlone: string[];
-  /**
-   * The repository's own knowledge documents with no frontmatter, which the index lists by their first
-   * heading: reported once, never failed on.
-   */
+  /** The repository's own knowledge documents with no frontmatter, listed by their first heading: reported, never failed on. */
   withoutFrontmatter: number;
   /** The region's *Where things are* table differs from the manifest's documents: a fact. */
   documentsStale: boolean;

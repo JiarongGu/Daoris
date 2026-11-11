@@ -190,7 +190,6 @@ finishes first and the whole set runs once.
 - `docs/development.md`'s "The CI between releases" still lists an archive move, the changelog and a fix-log entry in every
   merge's records commit, while its "Integrate and record" and `change` ask only for the area document, a decision for a rejected
   alternative, and the fix log for a regression. `change` reads right.
-- The archive and the FIX-LOG hold years of per-row essays. They stay as history and are not read by default.
 
 ## Open
 
