@@ -919,19 +919,19 @@ describe('Ask Daoris, with an agent named', () => {
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'p1a2b3c4', kind: 'role', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
-      terminal: 'daoris place drive engine', why: 'the person asked for engine to be driven',
+      id: 'p1a2b3c4', kind: 'go', describe: 'Open Repositories → `engine`, its Setup.',
+      terminal: '', why: 'the person asked where engine is driven',
     }];
     bridge();
     show();
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(code('daoris place drive engine'))).toBeInTheDocument();
+    expect(within(cards).getByText(code('engine'))).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id, held: expect.any(String) } });
 
-    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Not now' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
     PROPOSALS = [];
   });
