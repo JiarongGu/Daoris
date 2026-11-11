@@ -18,7 +18,6 @@ public sealed class HelpRoomDoorsTests
         {
             "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
             "daoris place line <repository> <branch>|--clear",
-            "daoris place landing <repository> merge|branch <pattern>|--clear",
             "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
             "daoris settings notify on|off", "daoris agent rules", "daoris ask --workspace <name>",
             // The clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
@@ -110,9 +109,6 @@ public sealed class HelpRoomDoorsTests
             "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line",
             Screen("set the line"));
         Assert.Equal(
-            "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → How work lands",
-            Screen("set how accepted work lands"));
-        Assert.Equal(
             "Repositories → the repository's page → Setup → Reach; a workspace's reading, Repositories → the workspace's page → Setup → Defaults → Read by agents outside",
             Screen("let agents read"));
         Assert.Equal("Repositories → the repository's page → Setup → Sessions", Screen("keep a standing answer"));
@@ -141,7 +137,7 @@ public sealed class HelpRoomDoorsTests
 
     /// <summary>
     /// The room teaches one way. The conversion has its door, which opens the page and never proposes the
-    /// apply; the old landing rule is a place still on Current's, which converting retires; a workflow is made from a default or
+    /// apply; no door sets a landing rule, since a place lands as its workflow's <c>land</c> step says; a workflow is made from a default or
     /// another saved one, never edited, and `current` is chosen for no development route.
     /// </summary>
     [Fact]
@@ -153,9 +149,7 @@ public sealed class HelpRoomDoorsTests
         Assert.IsType<HelpDoorAsk.Never>(convert.Ask);
         Assert.Contains("it opens the page and names the plan, and the apply is your press", convert.To);
 
-        var landing = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
-        Assert.Contains("only a place still on Current", landing.To);
-        Assert.Contains("converting retires", landing.To);
+        Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
 
         var show = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow show --repository", StringComparison.Ordinal));
         Assert.DoesNotContain("read from its rules", show.To);
@@ -281,14 +275,13 @@ public sealed class HelpRoomDoorsTests
     /// <summary>
     /// The room names the helpers rule and the commit rule, each with its
     /// Setup row and the terminal's twin as <c>daoris place helpers|commits</c> spells it, said to be Ask Daoris's to propose;
-    /// and the landing's row names the ticket's key and the squash beside its other switches.
+    /// and no row names a landing rule's verb, since a place lands as its workflow's <c>land</c> step says.
     /// </summary>
     [Fact]
-    public void The_room_names_the_helpers_and_commit_rules_and_the_landings_key_and_squash()
+    public void The_room_names_the_helpers_and_commit_rules_and_no_landing_rule()
     {
         var helpers = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place helpers", StringComparison.Ordinal));
         var commits = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place commits", StringComparison.Ordinal));
-        var landing = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris place landing", StringComparison.Ordinal));
 
         Assert.Contains("`daoris place helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]`", helpers.Terminal);
         Assert.Contains("`daoris place helpers <repository> --clear`", helpers.Terminal);
@@ -304,9 +297,7 @@ public sealed class HelpRoomDoorsTests
             Assert.Null(door.Ask);
         }
 
-        Assert.Contains("`{ticket}`", landing.To + landing.Terminal);
-        Assert.Contains("`--key <shape>|--no-key`", landing.Terminal);
-        Assert.Contains("`--squash|--no-squash`", landing.Terminal);
+        Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.Terminal.Contains("place landing", StringComparison.Ordinal));
     }
 
     /// <summary>
