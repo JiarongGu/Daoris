@@ -87,7 +87,6 @@ public sealed class NodePlacesTests
         Assert.Null(PlaceKindUnserved.Of(Read(WorkflowDefaults.Of("in-place")!), place, "in-place", 1));
         if (place != PlaceKind.Git)
         {
-            // Each kind of department but git's has the one shipped graph made for it beside Work in place.
             var made = place == PlaceKind.System ? "plan-review-apply" : "in-copy";
             Assert.Null(PlaceKindUnserved.Of(Read(WorkflowDefaults.Of(made)!), place, made, 1));
             Assert.All(WorkflowDefaults.All.Where(each => each.Id is not ("in-place" or "plan-review-apply" or "in-copy")),

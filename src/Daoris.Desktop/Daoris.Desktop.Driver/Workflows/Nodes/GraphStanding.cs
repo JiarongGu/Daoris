@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A graph read as the save's order rules read it: its nodes, entries, own and ordering wires, landings, and what a hold judges the work before
-/// (<see cref="Judged"/>: its landings; in a graph landing nothing, its reviews and the steps writing the work), on which each kind's
-/// <see cref="INodeKind.Problems"/> judges too.
+/// (<see cref="Judged"/>: its landings, or its reviews and writing steps), on which each kind's <see cref="INodeKind.Problems"/> judges too.
 /// </summary>
 internal sealed record GraphStanding(
     Dictionary<string, NodeDeclaration> ById, IReadOnlyList<string> Starts, IReadOnlyList<Wire> Local, IReadOnlyList<Wire> Ordered, IReadOnlyList<NodeDeclaration> Landings)

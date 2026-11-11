@@ -43,10 +43,7 @@ internal static class PlanReview
     public static IReadOnlyList<ReviewGap> Gaps(string home, ReviewReference reference) =>
         reference.Plan is null ? [new ReviewGap(ReviewGaps.NotRead, null, $"The plan its session `{reference.PlanRecord}` kept does not read.")] : [];
 
-    /// <summary>
-    /// The plan <paramref name="record"/> names, by its record, number and digest, so what is applied is what was read; else why there is none
-    /// to apply: no record, work that kept no plan, a plan that did not read, one no longer kept or not the one read.
-    /// </summary>
+    /// <summary>The plan <paramref name="record"/> names, held to the digest it read; else why there is none to apply.</summary>
     public static (SystemChangeSet? Plan, string? None) Named(string home, ReviewRecord? record)
     {
         if (record is null) return (null, "no record of its work reads");

@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public static class RunOutcomes
 {
-    /// <summary>Its end node reached, or no step of it failed or was stopped.</summary>
+    /// <summary>Its end node reached, or no step of it failed or stopped.</summary>
     public const string Completed = "completed";
 
     /// <summary>A step stopped or turned down, by the person or a supervisor, and nothing went on from it.</summary>

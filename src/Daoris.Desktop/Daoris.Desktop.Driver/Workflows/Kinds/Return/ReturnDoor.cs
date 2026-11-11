@@ -2,10 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Performs a run's <c>return</c>: the copy its review record names brought back into its folder under the folder's start lock, with no
-/// turn running there, and what it came to written on the node. Every file back reaches it and removes the copy; a file changed on both
-/// sides keeps it active on <c>both-changed</c>, the files only the copy changed brought back first and the copy kept, until each waiting
-/// path has the person's choice made on the versions shown; a turn in the folder keeps it on <c>place-busy</c>. A run whose session worked
-/// in the folder itself reaches it with nothing to bring back.
+/// turn running there. Every file back reaches it and removes the copy; a file changed on both sides keeps it on <c>both-changed</c>, the
+/// rest brought back first, until each waiting path has the person's choice on the versions shown; a turn in the folder keeps it on
+/// <c>place-busy</c>. A run that worked in the folder itself reaches it with nothing to bring back.
 /// </summary>
 /// <param name="turning">The folders a session runs a turn or waits in, which a return waits out.</param>
 public sealed class ReturnDoor(
@@ -33,11 +32,7 @@ public sealed class ReturnDoor(
     /// <summary>Completes once every return started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 
-    /// <summary>
-    /// The copy its review record names brought back at the record's revision, and what it came to written on the node: a copy that moved
-    /// since fails it <c>moved</c>, for its newer work to be reviewed; work its record shows done in the folder itself, or no record, reaches it
-    /// with nothing brought back, said.
-    /// </summary>
+    /// <summary>The copy its record names brought back at the record's revision: one that moved since fails it <c>moved</c>.</summary>
     internal async Task PerformAsync(ReturnStart start, CancellationToken ct)
     {
         if (start.Reviewed is not { Kind: ReviewKinds.Copy, Reference.Copy: { } named } reviewed || FolderCopies.Named(home, named) is not { } copy)

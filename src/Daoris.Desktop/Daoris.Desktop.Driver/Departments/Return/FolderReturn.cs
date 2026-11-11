@@ -9,7 +9,6 @@ public static class FolderReturn
 {
     /// <summary>Bring <paramref name="copy"/>'s changes back into its folder, a file changed on both sides settled by <paramref name="choices"/>.</summary>
     /// <param name="choices">The person's choice by path, one of <see cref="ReturnChoices.All"/>.</param>
-    /// <param name="bound">The versions each choice was made on, by path: a choice whose path no longer holds them lapses, and the path waits again.</param>
     public static FolderReturned Run(
         string home, FolderCopy copy, IReadOnlyDictionary<string, string> choices, ManifestBounds bounds, string journal, Action<string>? passed = null,
         IReadOnlyDictionary<string, ReturnShown>? bound = null)
@@ -105,9 +104,8 @@ public sealed record FolderReturned(IReadOnlyList<string> Written, IReadOnlyList
     /// <summary>The paths refused rather than guessed at, by what the return found there (<see cref="ReturnRefusal"/>).</summary>
     public IReadOnlyDictionary<string, string> Refused { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The versions it showed of each path that waits or is refused, which a choice of that path is bound to.</summary>
     public IReadOnlyDictionary<string, ReturnShown> Shown { get; init; } = new Dictionary<string, ReturnShown>();
 
-    /// <summary>The paths whose choice lapsed: one side no longer holds the version the choice was made on.</summary>
+    /// <summary>The paths whose choice lapsed: a side holds another version than the choice named.</summary>
     public IReadOnlyList<string> Lapsed { get; init; } = [];
 }

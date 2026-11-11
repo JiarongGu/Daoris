@@ -36,11 +36,7 @@ public sealed class ApplyDoor(
     /// <summary>Completes once every apply started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => _runs.IdleAsync();
 
-    /// <summary>
-    /// The plan its record names applied by its adapter, once per plan, and what it came to written on the node: never a plan written since,
-    /// which waits for a review of its own. Work that kept no plan, or one that does not read, settles with nothing applied and why; an empty
-    /// plan settles unchanged.
-    /// </summary>
+    /// <summary>The plan its record names applied once, never a plan written since; no plan to apply settles with the reason.</summary>
     internal async Task PerformAsync(ApplyStart start, CancellationToken ct)
     {
         var plans = new SystemPlans(home);
@@ -87,10 +83,7 @@ public sealed class ApplyDoor(
         }
     }
 
-    /// <summary>
-    /// What the apply came to, written on the node where it is still the active attempt: reached with <paramref name="words"/> where it applied,
-    /// changed nothing or had nothing to apply (<paramref name="applied"/> null), failed with its code otherwise.
-    /// </summary>
+    /// <summary>What the apply came to, written on the node where it is still the active attempt: reached with <paramref name="words"/>, else failed with its code.</summary>
     private void Settle(ApplyStart start, SystemChangeSet? plan, SystemApplied? applied, string? words)
     {
         log?.Invoke(applied?.State switch

@@ -44,10 +44,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork
             $"node `{node.Id}`: a `{NodeKinds.Return}` brings back the copy an `{NodeKinds.Isolate}` made, and this graph sets no work apart.");
     }
 
-    /// <summary>
-    /// The wait an active node's status names: its paths changed on both sides as <c>paths</c>, those refused as <c>refused</c> (a path, a tab,
-    /// its code, a line each), and the files already brought back as <c>returned</c>; a busy place's copy as its <c>paths</c>.
-    /// </summary>
+    /// <summary>The wait an active node's status names: <c>paths</c> changed on both sides, <c>refused</c> ones (path, tab, code) and the count <c>returned</c>.</summary>
     public override WorkflowRunWait? WaitOf(NodeStatus status)
     {
         if (status.State != NodeStates.Active || status.Code is not (PlaceBusy or BothChanged)) return null;
@@ -88,10 +85,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork
     /// <summary>A choice moves nothing: it is kept as a mark of the attempt, which the door reads.</summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => null;
 
-    /// <summary>
-    /// The record's mark of the person's <paramref name="act"/> for <paramref name="path"/> on <paramref name="node"/>'s attempt, bound to the
-    /// versions of it the wait showed (<c>act@copy/folder</c>, a side holding none <c>-</c>).
-    /// </summary>
+    /// <summary>The record's mark of the person's <paramref name="act"/> for <paramref name="path"/>, bound to the versions shown (<c>act@copy/folder</c>, none <c>-</c>).</summary>
     public static string ChoiceKey(string node, int attempt, string act, string path, ReturnShown? shown = null) =>
         $"choice:{node}:{attempt}:{act}{(shown is null ? "" : $"@{shown.Copy ?? "-"}/{shown.Folder ?? "-"}")}:{path}";
 
@@ -99,7 +93,7 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork
     public static IReadOnlyDictionary<string, string> Choices(NodeRecord record, string node, int attempt) =>
         Marked(record, node, attempt).ToDictionary(each => each.Key, each => each.Value.Act, StringComparer.Ordinal);
 
-    /// <summary>The versions each newest choice on <paramref name="node"/>'s attempt was made on, by path; a choice kept unbound names none.</summary>
+    /// <summary>The versions each newest choice on <paramref name="node"/>'s attempt names, by path.</summary>
     public static IReadOnlyDictionary<string, ReturnShown> Bound(NodeRecord record, string node, int attempt) =>
         Marked(record, node, attempt).Where(each => each.Value.Shown is not null).ToDictionary(each => each.Key, each => each.Value.Shown!, StringComparer.Ordinal);
 

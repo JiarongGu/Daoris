@@ -190,13 +190,13 @@ public sealed record ObservedEvent(string Plugin, string Repository, string Step
 /// </summary>
 public sealed record RunEnd(string Quest, DateTimeOffset At)
 {
-    /// <summary>One of <see cref="RunOutcomes"/>; null on an end kept before its outcome was.</summary>
+    /// <summary>One of <see cref="RunOutcomes"/>; null on an older end.</summary>
     public string? Outcome { get; init; }
 
     /// <summary>The step a failed or stopped run came out at.</summary>
     public string? Node { get; init; }
 
-    /// <summary>Whose stop a stopped run's was (<see cref="NodeSource"/>).</summary>
+    /// <summary>Whose stop it is (<see cref="NodeSource"/>).</summary>
     public string? By { get; init; }
 }
 

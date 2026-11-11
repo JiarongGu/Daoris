@@ -2,10 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A system place's apply (design §5.3): performed through its door, which hands the change set its review record names (<see cref="EffectRecord"/>)
-/// to the system's adapter, applied under each operation's precondition after the review accepted it. Reached when every operation applied,
-/// when its plan changed nothing and when its work kept none to apply, said why;
-/// failed <c>stale</c> with each stale resource's present version, which a way back to the work tells it, so it plans again; failed
-/// <c>apply-refused</c> in the adapter's words otherwise.
+/// to the system's adapter, applied under each operation's precondition. Reached when every operation applied, its plan changed nothing or
+/// its work kept none to apply, said why; failed <c>stale</c> with each stale resource's present version, which a way back tells the work, so it
+/// plans again; failed <c>apply-refused</c> in the adapter's words otherwise.
 /// </summary>
 [NodeKind(NodeKinds.Apply, NodeGroup.Others)]
 internal sealed class ApplyNode : BuiltInNode, IStarts, IWritesWork

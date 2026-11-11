@@ -101,7 +101,6 @@ public static class FolderCopies
         return All(home).Where(copy => copy.Records.Any(asked.Contains)).OrderByDescending(copy => File.GetLastWriteTimeUtc(copy.Folder + ".json")).FirstOrDefault();
     }
 
-    /// <summary>The copy named <paramref name="id"/>, or null where it is no longer kept.</summary>
     public static FolderCopy? Named(string home, string id) => All(home).FirstOrDefault(copy => copy.Id == id);
 
     /// <summary>Every copy of every place in the home, by its sidecar.</summary>

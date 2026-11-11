@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A system's run on the shipped <i>Plan, review and apply</i> graph, through the node runtime: its review binds the plan's record, the person
-/// accepts it, and the apply writes the plan that record names though a newer plan was written meanwhile, which waits for a review of its own.
+/// accepts it, and the apply writes the plan that record names though a newer plan came meanwhile, which waits for a review of its own.
 /// </summary>
 public sealed class PlanReviewApplyRunTests : NodeRunFixture
 {

@@ -273,7 +273,6 @@ internal static class NodeGoverning
 
         var root = read.Roots.GetValueOrDefault(repository) ?? "";
         var identity = IdentityOf(identities, root);
-        // The sessions that served the run's quests are its unit's executors, as a quest's are its own.
         List<string> sessions = [.. work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal)];
         var self = new WorkUnit(run.Unit, WorkUnitKind.Run, new WorkOwner(repository, binding.Workspace, WorkflowRunBindings.Folder, WorkRecord.DriverWriter),
             new WorkSubject(binding.Run, null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its graph runs"), []) { Executors = sessions };
@@ -285,7 +284,6 @@ internal static class NodeGoverning
             Branches = branches,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
-            // The quests a session serving the run's work published, which its `work.requests` holds the work on.
             Requests = WorkRequestsReading.Published(quests, sessions, work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
             Sessions = sessions,
             Root = root,

@@ -86,10 +86,7 @@ internal sealed class NodeRunKeeping(
         if ((await StepRefs.ReleaseAsync(scope.Root, scope.Run.Run, ct).ConfigureAwait(false)).Done) NodeStepReads.Release(records.Home, scope.Run.Run);
     }
 
-    /// <summary>
-    /// Whether nothing on the record is still to come: no attempt or word pending, and no node of its graph able to move, its end settled or
-    /// not, so a step after the end runs to its settle before the run is over.
-    /// </summary>
+    /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and no node of its graph able to move, its end or not.</summary>
     private static bool Over(GovernedUnit governed, NodeRecord record)
     {
         if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return false;

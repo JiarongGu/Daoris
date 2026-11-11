@@ -171,11 +171,9 @@ public static class WorkflowNamed
             : null;
 
     /// <summary>
-    /// Why a named version's graph is not one landing at most, or null: it holds no more than one <c>land</c>, a <c>claimed</c> where it holds
-    /// none, and at most one <c>opinion</c>
-    /// and one <c>look</c>, since the process it is read as holds one of each; where it ends is the kit's rule (<see cref="EffectOrder"/>).
-    /// Judged after the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
-    /// <c>workflow-graph-versions.json</c>.
+    /// Why a named version's graph is not one landing at most, or null: at most one <c>land</c>, a <c>claimed</c> where it holds none, and at
+    /// most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each; where it ends is <see cref="EffectOrder"/>'s.
+    /// Judged after the graph holds, so a save is refused and a stored version is read as unreadable. Held to <c>workflow-graph-versions.json</c>.
     /// </summary>
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {

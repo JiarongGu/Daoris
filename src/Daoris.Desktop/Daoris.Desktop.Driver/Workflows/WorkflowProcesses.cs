@@ -119,7 +119,6 @@ public static class WorkflowProcesses
         var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
         if (landNode is null && graph.Nodes.All(node => node.Kind != NodeKinds.Claimed))
         {
-            // A verification pipeline's graph observes no chain's work, so none follows it.
             return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Land}`), so no chain's work lands by it." };
         }
 
