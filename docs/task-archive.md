@@ -110,6 +110,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1h's second part — a run's step outcomes in Done and failed (2026-11-12, D273)
+
+> **REVIEWUX1h, second part** (driver, web): Outcome: each watched step after a run's review, once reached or failed, is one *Done and failed* line keyed `outcome:<run>/<node>/<attempt>` (`RunOutcomeNotices`), read from the run's record at every look and claimed once through the news by the look's last pass (`RunOutcomesLook`), so a dismissed one stays dismissed and one a lost write left is kept at the next look; it is said by its step's kind and its run in both languages. Proof: `RunOutcomeNoticesTests` and the outcome words test, each seen failing first; the look's pass order census.
+
+---
+
 ## REVIEWUX1e's second part and REVIEWUX1i — the review read whole, the supervisor on every kind (2026-11-12, D273)
 
 > **REVIEWUX1e, second part** (driver, modules, web): Outcome: the run's review answers the values its sentence of its kind is worded from (`RunReviewSays`), the steps before the review with their states, and each following step's wire, outcome, door and the recovery its attempt takes; `RUN_REVIEW_FILE` draws a branch's or a checkout's file from the commits the record names (`ReviewCommits`), never the checkout as it stands; the page reads the review through `useRunReview`. Proof: `RunReviewsTests` and `ReviewCommitsTests` (a real repository whose branch moved past the review), the web typecheck.
