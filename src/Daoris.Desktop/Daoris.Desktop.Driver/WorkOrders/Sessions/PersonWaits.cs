@@ -32,4 +32,10 @@ public static class PersonWaits
 
     /// <summary>A <c>return</c> holding files changed on both sides for the person's choice of each.</summary>
     public const string Choose = "choose";
+
+    /// <summary>
+    /// A run that ended failed at this step after its quest's done, so the steps after it never ran: unfinished work, which asks the
+    /// person for its next step and is set aside by their archive of its session. Never read from a run still going.
+    /// </summary>
+    public const string Left = "left";
 }

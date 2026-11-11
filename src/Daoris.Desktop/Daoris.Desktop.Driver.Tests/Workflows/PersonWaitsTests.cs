@@ -59,4 +59,27 @@ public sealed class PersonWaitsTests : NodeRunFixture
 
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
+
+    [Theory]
+    [InlineData(RunOutcomes.Failed, "return", PersonWaits.Left)]
+    [InlineData(RunOutcomes.Failed, null, null)]
+    [InlineData(RunOutcomes.Stopped, "return", null)]
+    [InlineData(RunOutcomes.Completed, null, null)]
+    public void A_run_that_ended_failed_at_a_step_leaves_that_step_and_one_stopped_or_completed_leaves_none(string outcome, string? node, string? why)
+    {
+        BoundTo(CopyGraph);
+        var unit = RunUnits.IdOf(RunId);
+        Files.Write(new NodeRecord(unit)
+        {
+            Ended = new RunEnd(RunId, _now) { Outcome = outcome, Node = node },
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["return"] = new(unit, "return", outcome == RunOutcomes.Failed ? NodeStates.Failed : NodeStates.Reached) { Attempt = 1, Since = _now },
+            },
+        });
+
+        var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, wait.Since)).ToList();
+
+        Assert.Equal(why is null ? [] : [(RunId, node!, why, (DateTimeOffset?)_now)], waits);
+    }
 }

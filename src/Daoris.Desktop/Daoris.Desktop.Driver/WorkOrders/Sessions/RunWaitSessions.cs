@@ -13,17 +13,20 @@ internal static class RunWaitSessions
             .ToDictionary(group => group.Key, group => (IReadOnlyList<PersonWait>)[.. group], StringComparer.Ordinal);
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        var standing = new Dictionary<string, SessionRecord>(StringComparer.Ordinal);
+        var standing = new Dictionary<string, (SessionRecord Record, IReadOnlyList<PersonWait> Waits)>(StringComparer.Ordinal);
         foreach (var record in look.Records.Where(record => !record.Teammate && record.Quest is { Length: > 0 }))
         {
             var run = quests.TryGetValue(record.Quest!, out var quest)
                 ? QuestRuns.Of(quest, id => quests.GetValueOrDefault(id.TrimStart('#')))
                 : record.Quest!;
-            if (!byRun.ContainsKey(run)) continue;
-            if (!standing.TryGetValue(run, out var newest) || Newer(record, newest)) standing[run] = record;
+            if (!byRun.TryGetValue(run, out var waits)) continue;
+            // A step a run ended failed at is work left only for a quest that closed done: a declined or abandoned one left nothing to finish.
+            waits = [.. waits.Where(wait => wait.Why != PersonWaits.Left || quest is { Status: "Done" })];
+            if (waits.Count == 0) continue;
+            if (!standing.TryGetValue(run, out var newest) || Newer(record, newest.Record)) standing[run] = (record, waits);
         }
 
-        return standing.ToDictionary(pair => pair.Value.Id, pair => byRun[pair.Key], StringComparer.Ordinal);
+        return standing.ToDictionary(pair => pair.Value.Record.Id, pair => pair.Value.Waits, StringComparer.Ordinal);
     }
 
     private static bool Newer(SessionRecord record, SessionRecord than) =>

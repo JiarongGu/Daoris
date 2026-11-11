@@ -6,14 +6,25 @@ namespace Daoris.Driver;
 /// </summary>
 public static class PersonWaitReader
 {
-    /// <summary>Every step of a run not ended that waits on the person, by run and then by the graph's order.</summary>
+    /// <summary>
+    /// Every step of a run not ended that waits on the person, by run and then by the graph's order, and the step a run ended failed at
+    /// (<see cref="PersonWaits.Left"/>).
+    /// </summary>
     /// <param name="record">A unit's node record, or null where it does not read.</param>
     public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record)
     {
         var waits = new List<PersonWait>();
-        foreach (var run in runs.Where(run => run.Ended is null && run.Line is null).OrderBy(run => run.Run, StringComparer.Ordinal))
+        foreach (var run in runs.Where(run => run.Line is null).OrderBy(run => run.Run, StringComparer.Ordinal))
         {
-            if (run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
+            // A run that ended failed at a step is work left: nothing went on from that step, so what follows it never ran. Its end is
+            // read as the runtime kept it (`RunOutcomes`); a stopped one is the person's or a supervisor's own word, and a completed one left nothing.
+            if (run.Ended is { Outcome: RunOutcomes.Failed, Node: { Length: > 0 } failed } ended)
+            {
+                waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At));
+                continue;
+            }
+
+            if (run.Ended is not null || run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);

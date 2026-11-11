@@ -54,6 +54,12 @@ public static class EndNoteCodes
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);
 
+    /// <summary>
+    /// The quest reached done, and its own answers say part of the work is left: it departed from <c>left</c> of its requirements.
+    /// Never the plain done, which says nothing is left.
+    /// </summary>
+    public static readonly NoteCode EndedDoneLeft = new("ended.done-left", ["left"]);
+
     // A closure graph's quest is never done before the graph's end, so a session ends with the quest still taken, at its submission.
     public static readonly NoteCode EndedSubmitted = new("ended.submitted", [], Key: "statusHint.Submitted");
     public static readonly NoteCode EndedDeclined = new("ended.declined", []);
