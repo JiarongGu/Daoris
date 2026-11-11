@@ -47,7 +47,10 @@ public sealed class TreesSyncViewTests
     public async Task A_workspaces_and_every_repositorys_are_their_own_sentences_and_a_list_with_nothing_moving_says_so()
     {
         var workspace = await View(Listing(), new { workspace = "my team" });
-        Assert.Equal("sync-workspace", workspace.View!.Kind);
+        // Without --all the sync takes the repositories holding a branch of Daoris's, as the route does; the headline says so.
+        Assert.Equal("sync-workspace-held", workspace.View!.Kind);
+        Assert.Equal("sync-workspace", (await View(Listing(), new { workspace = "my team", all = true })).View!.Kind);
+        Assert.Equal("sync-held", (await View(Listing(), new { })).View!.Kind);
         Assert.Equal("daoris tree sync --workspace \"my team\" --yes", workspace.View.Command);
 
         var every = await View(Listing(moves: false), new { all = true });

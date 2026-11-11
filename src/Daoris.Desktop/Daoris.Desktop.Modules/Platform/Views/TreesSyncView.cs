@@ -50,8 +50,8 @@ public sealed class TreesSyncView : IPressView
         var (kind, facts) = repository.Length > 0
             ? ("sync-repository", new Dictionary<string, string>(StringComparer.Ordinal) { ["repository"] = repository })
             : workspace.Length > 0
-                ? ("sync-workspace", new Dictionary<string, string>(StringComparer.Ordinal) { ["workspace"] = workspace })
-                : ("sync-all", new Dictionary<string, string>(StringComparer.Ordinal));
+                ? (all ? "sync-workspace" : "sync-workspace-held", new Dictionary<string, string>(StringComparer.Ordinal) { ["workspace"] = workspace })
+                : (all ? "sync-all" : "sync-held", new Dictionary<string, string>(StringComparer.Ordinal));
         return PressViewed.Shown(new PressView(kind, facts, command, rows));
     }
 

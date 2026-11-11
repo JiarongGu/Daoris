@@ -252,6 +252,8 @@
   "person.view.sync-repository": "以你的身份从 origin 把 {{repository}} 更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。",
   "person.view.sync-workspace": "以你的身份从 origin 把工作区 {{workspace}} 的仓库更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。",
   "person.view.sync-all": "以你的身份从 origin 把本机有检出的每个仓库更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。",
+  "person.view.sync-held": "以你的身份从 origin 把持有道衍分支的每个仓库更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。`--all` 则处理本机有检出的每个仓库。",
+  "person.view.sync-workspace-held": "以你的身份从 origin 把工作区 {{workspace}} 中持有道衍分支的仓库更新到最新：再获取每条主线并快进它，把仍在进行的分支重放到它上面，删除工作已到达主线的已落地分支；每一行在动手之前都会再判断一次。道衍从不推送。`--all` 则处理有检出的每一个。",
   "person.view.sync-line": "{{repository}}：{{line}} 从 origin 快进 {{commits}} 个提交。",
   "person.view.sync-replay": "{{repository}}：{{branch}} 把它的 {{commits}} 个提交重放到主线上。",
   "person.view.sync-delete": "{{repository}}：删除已落地分支 {{branch}}，它的工作已在主线上。",
