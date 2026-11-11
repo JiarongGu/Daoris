@@ -18,6 +18,19 @@ public static class PluginToolsHand
         if (at.Place.Repository is { Length: > 0 } repository) words.AddRange(["--repository", repository]);
         if (at.Place.Workspace is { Length: > 0 } workspace) words.AddRange(["--workspace", workspace]);
         words.AddRange(["--language", at.Language]);
+        if (at.Plugin is { } plugin) words.AddRange(["--plugin", plugin]);
+        if (at.Step is { } step) words.AddRange(["--step", step]);
+        return new ServerEntry(
+            PluginToolsServer.Name, program, words,
+            new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
+    }
+
+    /// <summary>A step's session's entry: <paramref name="plugin"/>'s tools alone and <c>step_answer</c> for the attempt it serves, listed or not.</summary>
+    public static ServerEntry? StepEntry(string home, PluginToolsAt at, string? program, string plugin)
+    {
+        if (program is null) return null;
+        List<string> words = ["plugin", "tools", "--session", at.Session, "--repository", at.Place.Repository ?? "", "--language", at.Language, "--plugin", plugin, "--step", at.Session];
+        if (at.Place.Workspace is { Length: > 0 } workspace) words.AddRange(["--workspace", workspace]);
         return new ServerEntry(
             PluginToolsServer.Name, program, words,
             new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
@@ -38,7 +51,7 @@ public static class PluginToolsHand
     /// <summary>The words <c>plugin tools</c> takes, read back: the session, the place and the language; null where the session is not named.</summary>
     public static PluginToolsAt? Read(IReadOnlyList<string> words)
     {
-        string? session = null, repository = null, workspace = null, language = null;
+        string? session = null, repository = null, workspace = null, language = null, plugin = null, step = null;
         for (var at = 0; at + 1 < words.Count; at += 2)
         {
             switch (words[at])
@@ -47,10 +60,14 @@ public static class PluginToolsHand
                 case "--repository": repository = words[at + 1]; break;
                 case "--workspace": workspace = words[at + 1]; break;
                 case "--language": language = words[at + 1]; break;
+                case "--plugin": plugin = words[at + 1]; break;
+                case "--step": step = words[at + 1]; break;
                 default: return null;
             }
         }
 
-        return session is { Length: > 0 } ? new(session, new PluginPlace(repository, workspace), language is "zh" ? "zh" : "en") : null;
+        return session is { Length: > 0 }
+            ? new(session, new PluginPlace(repository is { Length: > 0 } ? repository : null, workspace), language is "zh" ? "zh" : "en") { Plugin = plugin, Step = step }
+            : null;
     }
 }

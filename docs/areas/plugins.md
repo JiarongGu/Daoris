@@ -104,7 +104,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `daoris-github`, `daoris-azure-devops` and `daoris-in-app-browser`. None installs without a press. The driver looks beside the
     application first, then beside the home. An offer is listed as installed where its id or one it was formerly is
     (`PluginOffers.For`). (from D103, D274)
-17a. Daoris's GitHub and Azure DevOps plugins perform a `pull-request` step on `work/perform` and answer `work/state`. The Azure DevOps one's step
+17a. Daoris's GitHub and Azure DevOps plugins (3.2.0) declare a `goal` on their `pull-request` step and carry `create-pull-request`,
+    `pull-request-status` and `complete-pull-request` as tools, so a loop that wires the step agents has an agent perform it (workflows
+    area, rule 31a); elsewhere they perform it on `work/perform`, and they answer `work/state`. The Azure DevOps one's step
     sets the pull request to auto-complete by the token's own identity where its options say `autoComplete: true` (with `mergeStrategy`,
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
@@ -244,7 +246,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     other than 0 an error; a round that asks is refused and never answered, since no person answers a tool call; an argument missing or
     not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round is a `plugin.command`
     line by names alone (plugin, command, from, session, exit, ms). No call asks an approval: the switch `tools` per place is the
-    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. (from D274)
+    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. Started for an agent-performed step's session
+    (`--plugin <id> --step <invocation>`, `PluginToolsHand.StepEntry`), it lists that plugin's tools alone and `step_answer`, which
+    keeps the step's answer (workflows area, rule 31a). (from D274)
 30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
     `daoris-azure-devops`, `daoris-in-app-browser`), and anyone else's uses its own family, never `daoris-`. A manifest's `formerly`
     names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The family is the word before

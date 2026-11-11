@@ -191,6 +191,26 @@ public sealed class PluginToolsServerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_step_s_server_lists_its_plugin_s_tools_and_step_answer_alone_and_keeps_the_answer_once()
+    {
+        Install("other-tools", """{ "commands": [{ "name": "ping", "about": "Pings.", "tool": true }] }""");
+        var ask = new StepAgentAsk("i-1", "run:r", "open", 1, "acme-tickets", "open", "Open it.", "engine", "games", "b", null, "main", new string('a', 40));
+        Directory.CreateDirectory(StepAnswer.Folder(_home));
+        File.WriteAllText(StepAnswer.AskPath(_home, "i-1"), ask.Write());
+        var at = PluginToolsHand.Read(["--session", "i-1", "--repository", "engine", "--workspace", "games", "--plugin", "acme-tickets", "--step", "i-1"])!;
+        var server = new PluginToolsServer(_home, at, PluginLog.None, (_, _) => Task.FromResult<IHookChannel>(new Channel(_ => "{}", _frames)));
+
+        var listed = (await Ask(server, """{ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }""")).GetProperty("result").GetProperty("tools")
+            .EnumerateArray().Select(tool => tool.GetProperty("name").GetString()).ToList();
+        Assert.Equal(["acme-tickets_open", "acme-tickets_status", StepAnswer.Tool], listed);
+
+        var call = """{ "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": "step_answer", "arguments": { "state": "reached", "message": "opened" } } }""";
+        Assert.False((await Ask(server, call)).GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.True((await Ask(server, call)).GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.Equal(WorkStates.Reached, StepAnswer.Read(_home, "i-1")!.Outcome!.State);
+    }
+
+    [Fact]
     public async Task A_notification_is_answered_nothing_and_an_unknown_method_is_not_found()
     {
         var server = Server(_ => "{}");

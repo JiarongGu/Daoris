@@ -3,8 +3,8 @@
   "formerly": ["github-pull-request"],
   "apiVersion": 1,
   "name": "GitHub",
-  "version": "3.1.0",
-  "changes": "Three tools for an agent working a pull-request step: create-pull-request opens one from a pushed branch (or finds the open one), pull-request-status says how one stands with its address, complete-pull-request merges it by the method asked.",
+  "version": "3.2.0",
+  "changes": "Its pull-request step declares a goal, so a Daoris that starts a step's agent has an agent open the pull request with the plugin's own tools; elsewhere the step is performed on work/perform as before, and an attempt begun there is settled by its own check.",
   "description": "Daoris's work on GitHub through its REST API, with the token its own login keeps: pull-request opens a GitHub pull request from the branch Daoris pushed and reads its state.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -50,6 +50,7 @@
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
       "about": { "en": "Opens a GitHub pull request from the branch Daoris pushed to origin, or finds the one already open for it. It sends nothing but its API calls, with the token its own login keeps.", "zh": "从 Daoris 已推送到 origin 的分支创建 GitHub 拉取请求，已有未关闭的则直接沿用。只发送它的 API 请求，使用它自己登录时保存的令牌。" },
+      "goal": { "en": "Open a GitHub pull request from the pushed branch into the line with create-pull-request (finding the open one where there is one), check it with pull-request-status, and answer reached with its address as the evidence's url and its number as the pull-request output; answer failed with the code a tool's refusal names where it cannot be opened.", "zh": "用 create-pull-request 从已推送的分支向主线创建 GitHub 拉取请求（已有打开的则找到它），用 pull-request-status 确认，然后回答 reached，证据的 url 为其地址，pull-request 输出为其编号；无法创建时回答 failed，代码取工具拒绝时给出的代码。" },
       "reach": "performed",
       "outputs": { "pull-request": "github-pull-request/pull-request@1" },
       "evidence": { "schema": "github-pull-request/receipt@1" },

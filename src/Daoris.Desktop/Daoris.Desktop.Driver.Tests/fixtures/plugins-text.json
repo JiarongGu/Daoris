@@ -1494,6 +1494,31 @@
       }
     },
     {
+      "name": "switch writes one word at a place",
+      "argv": [
+        "switch",
+        "acme.agent",
+        "tools",
+        "off",
+        "--place",
+        "repository:engine"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: plugin `acme.agent`'s tools is off at repository:engine; the driver reads it at its next look."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }",
+        "data/plugins.json": "{ \"switches\": { \"acme.agent\": { \"tools\": { \"repository:engine\": false } } } }"
+      }
+    },
+    {
       "name": "an unknown verb",
       "argv": [
         "frobnicate"
@@ -1504,7 +1529,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable, try-again (and new, try: the kit)"
+        "daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable, try-again, switch (and new, try: the kit)"
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n"
