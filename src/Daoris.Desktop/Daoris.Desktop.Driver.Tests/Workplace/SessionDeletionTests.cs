@@ -40,7 +40,7 @@ public sealed class SessionDeletionTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Sessions, id, "files"));
         File.WriteAllText(Path.Combine(Sessions, id, "files", "shot.png"), "png");
         // Every id a test keeps files for is a known record, so one mark's write keeps the others'.
-        new SessionArchive(_home).Archive([id], [new SessionGrouping(id, SessionGroup.Ended, "completed")], ["c1", "c2", id], DateTimeOffset.UtcNow);
+        new SessionArchive(_home).Archive([id], [new SessionGrouping(id, SessionGroup.Done, "completed")], ["c1", "c2", id], DateTimeOffset.UtcNow);
     }
 
     private bool AnyKept(string id) =>

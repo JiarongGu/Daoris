@@ -20,6 +20,8 @@ internal static class SessionsJson
                 writer.WriteStartObject();
                 writer.WriteString("session", row.Session);
                 writer.WriteString("group", row.Group);
+                writer.WriteString("state", row.State);
+                writer.WriteString("reason", row.Reason);
                 writer.WriteString("shown", row.Shown);
                 writer.WriteBoolean("archived", row.Archived);
                 writer.WriteBoolean("teammate", row.Teammate);

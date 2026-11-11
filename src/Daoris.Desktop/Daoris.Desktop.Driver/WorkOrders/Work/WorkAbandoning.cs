@@ -404,7 +404,6 @@ public static class WorkAbandoning
                 var why = outcome.Verdict switch
                 {
                     ArchiveVerdict.Unknown => AbandonWhy.Gone,
-                    ArchiveVerdict.NeedsYou when outcome.Group == SessionGroup.Review => AbandonWhy.Review,
                     _ => AbandonWhy.Unreached,
                 };
                 // An archive the list held alone changed since; one after a stop is the stop's, and the session stays named.

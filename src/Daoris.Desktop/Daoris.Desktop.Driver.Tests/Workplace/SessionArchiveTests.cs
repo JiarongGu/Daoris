@@ -26,13 +26,13 @@ public sealed class SessionArchiveTests : IDisposable
     /// <summary>Every session the reader placed, as the routes hand them over: one in each group.</summary>
     private static readonly IReadOnlyList<SessionGrouping> Groups =
     [
-        In("waiting", SessionGroup.You, "awaiting-person"),
-        In("parked", SessionGroup.You, ShownState.Parked),
-        In("review", SessionGroup.Review),
+        In("waiting", SessionGroup.NeedsYou, "awaiting-person"),
+        In("parked", SessionGroup.NeedsYou, ShownState.Parked),
+        In("review", SessionGroup.NeedsYou),
         In("running", SessionGroup.Working, "working"),
-        In("asked", SessionGroup.Later, ShownState.AwaitingReply),
-        In("done", SessionGroup.Ended),
-        In("old", SessionGroup.Ended),
+        In("asked", SessionGroup.Pending, ShownState.AwaitingReply),
+        In("done", SessionGroup.Done),
+        In("old", SessionGroup.Done),
     ];
 
     private static readonly string[] Known = [.. Groups.Select(group => group.Session)];
@@ -98,10 +98,10 @@ public sealed class SessionArchiveTests : IDisposable
         var outcomes = answer.Outcomes.ToDictionary(outcome => outcome.Session);
         Assert.Equal(ArchiveVerdict.Live, outcomes["running"].Verdict);
         Assert.Equal(ArchiveVerdict.NeedsYou, outcomes["waiting"].Verdict);
-        Assert.Equal(SessionGroup.You, outcomes["waiting"].Group);
-        Assert.Equal(SessionGroup.You, outcomes["parked"].Group);
+        Assert.Equal(SessionGroup.NeedsYou, outcomes["waiting"].Group);
+        Assert.Equal(SessionGroup.NeedsYou, outcomes["parked"].Group);
         Assert.Equal(ArchiveVerdict.NeedsYou, outcomes["review"].Verdict);
-        Assert.Equal(SessionGroup.Review, outcomes["review"].Group);
+        Assert.Equal(SessionGroup.NeedsYou, outcomes["review"].Group);
         Assert.Equal(ArchiveVerdict.Unknown, outcomes["nobody"].Verdict);
         Assert.Empty(answer.Marks);
         Assert.False(File.Exists(archive.FilePath));

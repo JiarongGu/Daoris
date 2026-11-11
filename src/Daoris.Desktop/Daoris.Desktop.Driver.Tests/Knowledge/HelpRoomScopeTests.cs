@@ -112,10 +112,10 @@ public sealed class HelpRoomScopeTests : IDisposable
         var alpha = whole.Within("alpha").Sessions!;
         var beta = whole.Within("beta").Sessions!;
 
-        Assert.Equal((1, 0, 0, 0, 2), (alpha.You, alpha.Review, alpha.Working, alpha.Later, alpha.Ended));
+        Assert.Equal((1, 0, 0, 2), (alpha.NeedsYou, alpha.Working, alpha.Pending, alpha.Failed + alpha.Done));
         Assert.Equal([new HelpEndedSession("ea2", "site"), new HelpEndedSession("ea1", "engine")], alpha.Listed);
-        Assert.Equal((12, HelpRoomMachineNow.EndedListed), (beta.Ended, beta.Listed.Count));
-        Assert.Equal(15, whole.Sessions!.Ended);
+        Assert.Equal((12, HelpRoomMachineNow.EndedListed), (beta.Failed + beta.Done, beta.Listed.Count));
+        Assert.Equal(15, whole.Sessions!.Failed + whole.Sessions.Done);
 
         var room = HelpRoom.Render(whole.Within("alpha"));
         Assert.Contains("- Workspace `alpha`'s sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "

@@ -94,11 +94,11 @@ internal static class SessionsListing
 
     private static string Nothing(SessionsAsk ask) => (ask.Group, ask.Repository) switch
     {
-        (SessionGroup.You, _) => "nothing waits on you",
-        (SessionGroup.Review, _) => "nothing to review",
+        (SessionGroup.NeedsYou, _) => "nothing needs you",
         (SessionGroup.Working, _) => "nothing is working",
-        (SessionGroup.Later, _) => "nothing resumes later",
-        (SessionGroup.Ended, _) => "nothing has ended",
+        (SessionGroup.Pending, _) => "nothing is pending",
+        (SessionGroup.Failed, _) => "nothing has failed",
+        (SessionGroup.Done, _) => "nothing is done",
         (SessionGroup.Archived, _) => "nothing is archived",
         (_, { } repository) => $"no session of {repository} on this machine",
         _ => "no session on this machine",
@@ -106,12 +106,24 @@ internal static class SessionsListing
 
     private static string GroupName(string group) => group switch
     {
-        SessionGroup.You => "Waiting on you",
-        SessionGroup.Review => "To review",
+        SessionGroup.NeedsYou => "Needs you",
         SessionGroup.Working => "Working",
-        SessionGroup.Later => "Resumes later",
-        SessionGroup.Ended => "Ended",
+        SessionGroup.Pending => "Pending",
+        SessionGroup.Failed => "Failed",
+        SessionGroup.Done => "Done",
         _ => "Archived",
+    };
+
+    /// <summary>The reason inside its state where no other fact of its line says it, in the terminal's words.</summary>
+    private static string? ReasonWords(SessionGrouping row) => row.Reason switch
+    {
+        SessionReason.Unclosed => "its quest waits on your done",
+        SessionReason.StewardStop => "the steward stopped it; it waits on your try again",
+        SessionReason.SignIn => "its next start waits on a sign-in",
+        SessionReason.CarriedOn => "its quest carries on",
+        SessionReason.Opinion => "its next step waits on a second opinion",
+        SessionReason.Elsewhere => "its quest is taken elsewhere",
+        _ => null,
     };
 
     /// <summary>The word a row shows, as the page says it in English: the record's state, or the reader's own word.</summary>
@@ -162,8 +174,9 @@ internal static class SessionsListing
         }
 
         if (row.Shown == ShownState.Answered) yield return "your answer goes on at the driver's next look";
+        if (ReasonWords(row) is { } reason) yield return reason;
         foreach (var said in RunWaitWords.Of(row)) yield return said;
-        if (row.Group == SessionGroup.Review && row.Work is { } work)
+        if (row.Reason == SessionReason.Review && row.Work is { } work)
         {
             yield return work.Commits is > 0 and var commits ? $"{commits} commit{(commits == 1 ? "" : "s")} to review"
                 : work.Commits == 0 && work.Uncommitted > 0 ? "uncommitted changes"

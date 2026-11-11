@@ -46,7 +46,7 @@ public sealed class RunWaitGroupsTests
 
         var row = Row(look, "s1");
 
-        Assert.Equal(SessionGroup.Review, row.Group);
+        Assert.Equal(SessionGroup.NeedsYou, row.Group);
         Assert.Equal([("q1", "review", PersonWaits.Accept)], row.Waits!.Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
 
@@ -56,8 +56,8 @@ public sealed class RunWaitGroupsTests
         var look = Look(
             [Record("s1", "failed", "q1", 0), Record("s2", "completed", "q1", 5)], [Quest("q1")], [Waits("q1", "approve", PersonWaits.Approval)]);
 
-        Assert.Equal(SessionGroup.You, Row(look, "s2").Group);
-        Assert.Equal(SessionGroup.Ended, Row(look, "s1").Group);
+        Assert.Equal(SessionGroup.NeedsYou, Row(look, "s2").Group);
+        Assert.Equal(SessionGroup.Done, Row(look, "s1").Group);
         Assert.Null(Row(look, "s1").Waits);
     }
 
@@ -70,9 +70,9 @@ public sealed class RunWaitGroupsTests
             [Waits("q1", "review", PersonWaits.Accept), Waits("q1", "check", PersonWaits.Held)]);
 
         var row = Row(look, "s2");
-        Assert.Equal(SessionGroup.You, row.Group);
+        Assert.Equal(SessionGroup.NeedsYou, row.Group);
         Assert.Equal([PersonWaits.Accept, PersonWaits.Held], row.Waits!.Select(wait => wait.Why));
-        Assert.Equal(SessionGroup.Ended, Row(look, "s3").Group);
+        Assert.Equal(SessionGroup.Done, Row(look, "s3").Group);
     }
 
     [Fact]
@@ -92,8 +92,8 @@ public sealed class RunWaitGroupsTests
             [Waits("q1", "review", PersonWaits.Accept), Waits("q2", "go", PersonWaits.GoAhead)],
             archived: ["s1"]);
 
-        var review = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.Review }, TestHomes.Root, T0));
-        var you = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.You }, TestHomes.Root, T0));
+        var review = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.NeedsYou }, TestHomes.Root, T0));
+        var you = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Group = SessionGroup.NeedsYou }, TestHomes.Root, T0));
 
         Assert.Contains("s1", review, StringComparison.Ordinal);
         Assert.Contains("run q1 waits for your Accept at `review` · daoris workflow run --session s1", review, StringComparison.Ordinal);

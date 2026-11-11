@@ -22,7 +22,7 @@ public enum ArchiveVerdict
 /// <summary>One session's outcome, with the group that kept it where that is what refused it.</summary>
 public sealed record ArchiveOutcome(string Session, ArchiveVerdict Verdict)
 {
-    /// <summary>For <see cref="ArchiveVerdict.NeedsYou"/>: <see cref="SessionGroup.You"/> or <see cref="SessionGroup.Review"/>.</summary>
+    /// <summary>For <see cref="ArchiveVerdict.NeedsYou"/>: <see cref="SessionGroup.NeedsYou"/>.</summary>
     public string? Group { get; init; }
 }
 

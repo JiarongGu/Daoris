@@ -68,8 +68,8 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
         var archive = new SessionArchive(_home);
         IWorkplaceSessionRow[] rows =
         [
-            new Row("ended", SessionGroup.Ended), new Row("review", SessionGroup.Review), new Row("working", SessionGroup.Working),
-            new Row("you", SessionGroup.You), new Row("later", SessionGroup.Later),
+            new Row("ended", SessionGroup.Done), new Row("review", SessionGroup.NeedsYou), new Row("working", SessionGroup.Working),
+            new Row("you", SessionGroup.NeedsYou), new Row("later", SessionGroup.Pending),
         ];
 
         var answer = archive.Archive(["ended", "review", "working", "you", "later", "gone"], rows, ["ended", "later"], At);
@@ -78,7 +78,7 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
             [("ended", ArchiveVerdict.Archived), ("review", ArchiveVerdict.NeedsYou), ("working", ArchiveVerdict.Live),
              ("you", ArchiveVerdict.NeedsYou), ("later", ArchiveVerdict.Archived), ("gone", ArchiveVerdict.Unknown)],
             answer.Outcomes.Select(outcome => (outcome.Session, outcome.Verdict)));
-        Assert.Equal([SessionGroup.Review, SessionGroup.You], answer.Outcomes.Select(outcome => outcome.Group).OfType<string>());
+        Assert.Equal([SessionGroup.NeedsYou, SessionGroup.NeedsYou], answer.Outcomes.Select(outcome => outcome.Group).OfType<string>());
         Assert.Equal(["ended", "later"], archive.Marks().Keys.Order(StringComparer.Ordinal));
     }
 
@@ -86,10 +86,10 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
     public void A_sessions_row_answers_the_facet_with_its_own_session_group_and_offer()
     {
         var offer = new LandOffer("daoris/a", "a", 1, 0);
-        IWorkplaceSessionRow row = new SessionGrouping("s1", SessionGroup.Review, "completed") { Lands = offer };
+        IWorkplaceSessionRow row = new SessionGrouping("s1", SessionGroup.NeedsYou, "completed") { Lands = offer };
 
         Assert.Equal(("s1", "review", offer), (row.Session, row.Group, row.Lands));
-        Assert.Null(((IWorkplaceSessionRow)new SessionGrouping("s2", SessionGroup.Ended, "failed")).Lands);
+        Assert.Null(((IWorkplaceSessionRow)new SessionGrouping("s2", SessionGroup.Done, "failed")).Lands);
     }
 
     [Fact]
