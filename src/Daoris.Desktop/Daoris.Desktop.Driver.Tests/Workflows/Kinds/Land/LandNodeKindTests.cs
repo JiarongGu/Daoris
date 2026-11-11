@@ -203,9 +203,14 @@ public sealed class LandNodeKindTests
     {
         var authority = NodeKit.Row(NodeKinds.Review)!;
         Assert.Equal((NodeReach.Pressed, NodeSource.Person, (string?)null), (authority.Reach, authority.ReachBy, authority.FailureBy));
-        Assert.Equal((false, false, false), (authority.PersonSkips, authority.MayEnd, authority.Evidenced));
+        Assert.Equal((false, true, false), (authority.PersonSkips, authority.MayEnd, authority.Evidenced));
 
         var review = Node("review", NodeKinds.Review);
+        Assert.Empty(Codes(Chain(Claimed(), Node("requests", NodeKinds.WorkRequests), review)));
+        Assert.Contains(GraphRefusal.WorkRequestsLate, Codes(new NodeGraph(
+            [Claimed(), Node("requests", NodeKinds.WorkRequests), review],
+            [new("a", WireKinds.After, new("work"), new("review")), new("b", WireKinds.After, new("work"), new("requests"))],
+            ["work"], "review")));
         var beside = new NodeGraph(
             [Claimed(), review, Land(), Line()],
             [new("a", WireKinds.After, new("work"), new("review")), new("b", WireKinds.After, new("work"), new("land")), new("c", WireKinds.After, new("land"), new("line"))],

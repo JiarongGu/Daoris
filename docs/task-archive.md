@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
+
+> **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.
+
+---
+
 ## ASKFULL1g-vi's ask route and the setup view, and the ask defects Ask Daoris met in the install (2026-11-11)
 
 > **ASKFULL1g-vi, routes** (driver, modules, service, web): Outcome: `daoris ask "…"` is a person's press `ASK_NEW` (`AskArguments` reads the words before anything is sent, `AskNewCommand` makes the ask, `AskNewRoutes`, `AskNewView` on the card), so Ask Daoris in full access starts an ask with no card and in restricted on a card naming it; `PLACE_APPLY`'s card lists each change the plan makes (`PlaceApplyView`); a quest Ask Daoris publishes is filed in the named repository's workspace and a refusal with nothing addressable says so in words (`QuestPublishing`); `--help` prints the usage and an unknown flag is refused. Found by Ask Daoris in the installed copy, refused at each. Proof: `PipeDelegateTests`' new-ask case and `QuestExchangeTests`' cross-workspace case (seen failing first), `AskArgumentsTests`, the two view tests in both languages.

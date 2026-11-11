@@ -61,14 +61,15 @@ internal static class HoldReading
             yield return new WireProblem(GraphRefusal.HoldTwice, null, hold.Id, $"node `{hold.Id}`: `{first.Id}` and `{hold.Id}` are both a `{hold.Kind}`, and the graph judges each hold once.");
         }
 
-        if (standing.Landings.Count == 0)
+        var judged = standing.Judged;
+        if (judged.Count == 0)
         {
             yield return new WireProblem(GraphRefusal.HoldUnlanded, null, hold.Id, $"node `{hold.Id}`: a `{hold.Kind}` judges the work before it lands, and the graph holds no landing.");
             yield break;
         }
 
         var early = NodeGraphStarts.StartsWithout(standing.ById, standing.Starts, standing.Local, node => node.Id == hold.Id);
-        foreach (var landing in standing.Landings.Where(landing => early.Contains(landing.Id)))
+        foreach (var landing in judged.Where(landing => early.Contains(landing.Id)))
         {
             yield return new WireProblem(GraphRefusal.HoldLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{hold.Kind}` judges the work before it lands: "
                 + $"every way to it passes `{hold.Id}`.");

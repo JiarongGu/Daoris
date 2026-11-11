@@ -89,14 +89,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    its places (`INodeKind.Places`): `land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`,
    `merge`, `isolate` (its kinds make a worktree) and Daoris's half of a plugin's `pull-request` run in a git repository alone, `apply`
    in a system alone, and every other kind and any other plugin step in every kind of place, since no plugin declares where its step
-   runs. (from D221, D227, D264)
+   runs. The shipped *Work in place* (`in-place`) holds none of the git kinds, so every kind of department can follow it: the window's
+   add chooses it for a folder and a system in the press that registers them, and for a repository where the person ticks it, as a
+   set-up's plan of one and its apply (`projects/inPlace.ts`); the terminal's choice is `daoris place <department> --preset in-place
+   --apply`. (from D221, D227, D264)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`
    with no method (`land-method`), an `accept` option (`accept`), a kind marked arriving, declared before the palette offers it, and a wire
    naming a port or an outcome its kind declares arriving (`arriving-kind`, `ArrivingKinds`, `NodeArrivals`). Only a graph version binds and runs. (from D227, D232)
-8. A graph holds at most 24 authored nodes and 96 wires, and one landing: one `land`. There is no `handed` kind.
-   (from D190, D227, D232)
+8. A graph holds at most 24 authored nodes and 96 wires. A graph that lands holds one `land` and ends after it; a graph that lands
+   nothing (a folder's, a system's, or a git department's worked in place, its session committing as it goes) holds no `land` and ends
+   at the person's `review`, which ends no graph that lands, its holds judging the work before that review (`GraphStanding.Judged`).
+   There is no `handed` kind. (from D190, D227, D232, D264)
 9. The opinion, the look and the `review` each come before every landing and are wired straight into it, and no landing may start
    before a look has passed. The opinion need not come before the look. These gates are the kinds that declare a guard, and their
    order is one rule the kit runs at the save beside each kind's own (`ProtectedOrder`). The holds (`quest.holds`, `content.holds`,
@@ -155,8 +160,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 **Review and Accept**
 
-22. The person's Accept is a `review` step before `land`. A flow with no `review` lands with no press, and the standing authority
-    is judged again before the first effect. (from D145, D227)
+22. The person's Accept is a `review` step before `land`, or the end of a graph that lands nothing, where it ends the run and a
+    landing's press is refused, saying nothing lands it (`InPlaceProcess`). A flow with no `review` lands with no press, and
+    the standing authority is judged again before the first effect. (from D145, D227, D264)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
     came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as
     the try said it, and a carry-on as *accepted; its session was carried on* (`PerformedAnswers`). Only where no try ended within the

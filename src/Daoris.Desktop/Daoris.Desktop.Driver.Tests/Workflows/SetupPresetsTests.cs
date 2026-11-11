@@ -13,7 +13,7 @@ public sealed class SetupPresetsTests
     private const string Plugin = "example.github-pull-request";
 
     [Fact]
-    public void The_five_presets_are_the_land_node_designs_table()
+    public void The_six_presets_are_the_land_node_designs_table_and_work_in_place()
     {
         Assert.Equal(
             [
@@ -22,6 +22,7 @@ public sealed class SetupPresetsTests
                 ("branch-to-push", "A branch to push", new SetupLand("branch", "you")),
                 ("pull-request", "A pull request", new SetupLand("pull-request", "you", "github-pull-request")),
                 ("integrated", "Integrated into the line", new SetupLand("integrate", "you", null, "owner")),
+                ("in-place", "Work in place", new SetupLand("in-place", "you")),
             ],
             SetupPresets.Table.Select(preset => (preset.Id, preset.Name, preset.Land)));
     }
@@ -59,6 +60,7 @@ public sealed class SetupPresetsTests
     [InlineData("pull-request", "pull-request", "you", "github-pull-request", null)]
     [InlineData("integrated", "integrate", "you", null, "owner")]
     [InlineData("integrated-no-press", "integrate", "automatic", null, "done")]
+    [InlineData("in-place", "in-place", "you", null, null)]
     public void A_shipped_default_s_delivery_is_derived_from_its_graph(string id, string method, string accept, string? plugin, string? request)
     {
         var shipped = WorkflowDefaults.Of(id)!;

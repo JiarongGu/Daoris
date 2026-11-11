@@ -507,7 +507,8 @@
       { "en": "Hosted merge workflow", "zh": "托管合并工作流" },
       { "en": "Integration workflow", "zh": "集成工作流" },
       { "en": "No-press integration workflow", "zh": "免按键集成工作流" },
-      { "en": "Release workflow", "zh": "发版工作流" }
+      { "en": "Release workflow", "zh": "发版工作流" },
+      { "en": "In-place workflow", "zh": "原处工作流" }
     ],
     "delivery": [
       { "en": "Merge after you accept", "zh": "你采纳后合并" },
@@ -516,6 +517,7 @@
       { "en": "Integrated into the line", "zh": "集成到主线" },
       { "en": "Merge with no review", "zh": "无需审阅即合并" },
       { "en": "Integrated with no press", "zh": "集成到主线，无需按键" },
+      { "en": "Work in place", "zh": "在原处工作" },
       { "en": "Not driven", "zh": "未驱动" }
     ],
     "step": [
