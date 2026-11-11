@@ -11,10 +11,8 @@ public static class PluginCommandConsole
     /// <summary>The words a person's terminal reads and writes; a test's stand-in.</summary>
     public sealed record Terminal(TextWriter Out, TextWriter Error, Func<bool, string?> ReadLine, Func<string, string?> Environment);
 
-    /// <summary>Whether <paramref name="word"/> names an installed plugin that runs commands, so the command is its.</summary>
-    public static bool Names(string home, string word) =>
-        PluginCatalog.Load(home).Plugins.Any(each => string.Equals(each.Manifest.Id, word, StringComparison.OrdinalIgnoreCase)
-            && each.Manifest.Interfaces.Commands.Count > 0);
+    /// <summary>Whether <paramref name="word"/> names an installed plugin that runs commands, by its id or its id's tail (<see cref="PluginTerminalWord"/>).</summary>
+    public static bool Names(string home, string word) => PluginTerminalWord.Named(PluginCatalog.Load(home), word).Count > 0;
 
     public static async Task<int> RunAsync(string home, string[] args, Terminal terminal, CancellationToken ct, PluginCommandRun.Starter? start = null)
     {
@@ -28,8 +26,9 @@ public static class PluginCommandConsole
         var words = args.Where(arg => arg != "--stdin").ToList();
         try
         {
-            if (words.Count < 2) throw new DriverException(Usage(home, words[0]));
-            var (plugin, command) = PluginCommandRun.Find(home, words[0], words[1]);
+            var id = PluginTerminalWord.IdOf(PluginCatalog.Load(home), words[0]);
+            if (words.Count < 2) throw new DriverException(Usage(home, id));
+            var (plugin, command) = PluginCommandRun.Find(home, id, words[1]);
             var answers = new Dictionary<string, string>(StringComparer.Ordinal);
             for (var round = 0; round < CommandWire.Rounds; round++)
             {

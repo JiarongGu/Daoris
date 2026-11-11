@@ -64,7 +64,7 @@ public static class PluginKitCommand
         if (positional is null)
         {
             throw new DriverException(
-                "`plugins new` needs a plugin id — e.g. `daoris plugin new acme.quiet-hours --point quest/consider`.");
+                "`plugins new` needs a plugin id, `<family>-<name>` — e.g. `daoris plugin new acme-quiet-hours --point quest/consider`.");
         }
 
         var plan = PluginKit.Plan(positional, points, options.GetValueOrDefault("--in") ?? PluginKitFiles.Here());

@@ -36,7 +36,7 @@ public sealed class WorkEventKitTests : IDisposable
     [Fact]
     public void A_scaffold_on_the_events_point_answers_it()
     {
-        var plan = PluginKit.Plan("acme.listener", [HookPoints.Event], _scratch);
+        var plan = PluginKit.Plan("acme-listener", [HookPoints.Event], _scratch);
 
         Assert.Contains("'work/event'", plan.Files.Single(file => file.Name == PluginKit.Script).Content);
     }

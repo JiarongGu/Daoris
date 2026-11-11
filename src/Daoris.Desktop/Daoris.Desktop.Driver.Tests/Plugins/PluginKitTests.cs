@@ -85,13 +85,13 @@ public sealed class PluginKitTests : IDisposable
         var step = PluginKit.Find(HookPoints.Step)!;
         Assert.Equal("event", step.Kind);
         var own = step.Frame.ToJsonString()
-            .Replace(PluginKit.SampleStep, "acme.deploy/perform", StringComparison.Ordinal)
-            .Replace(PluginKit.SamplePlugin, "acme.deploy", StringComparison.Ordinal);
+            .Replace(PluginKit.SampleStep, "acme-deploy/perform", StringComparison.Ordinal)
+            .Replace(PluginKit.SamplePlugin, "acme-deploy", StringComparison.Ordinal);
         var heard = WorkWire.ReadStep(JsonDocument.Parse(own).RootElement, out var field);
         Assert.True(heard is not null, $"the sample event does not read at `{field}`");
         Assert.Equal(PluginKit.SamplePerform.Invocation, heard!.Invocation);
-        Assert.Equal("acme.deploy/receipt@1:i-0fda18a2b3c4", heard.Outcome.Evidence!.Ref);
-        Assert.Equal([new WorkResource("acme.deploy/resource@1", "r-i-0fda18a2b3c4")], heard.Outcome.Resources);
+        Assert.Equal("acme-deploy/receipt@1:i-0fda18a2b3c4", heard.Outcome.Evidence!.Ref);
+        Assert.Equal([new WorkResource("acme-deploy/resource@1", "r-i-0fda18a2b3c4")], heard.Outcome.Resources);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public sealed class PluginKitTests : IDisposable
         var told = new List<object>();
         var channel = new RecordingChannel(HookPoints.All, told);
         var home = Path.Combine(_scratch, "home");
-        InstallManifest(home, "acme.every", HookPoints.All);
+        InstallManifest(home, "acme-every", HookPoints.All);
 
         await using (var set = new HookSet(home, start: (_, _, _) => Task.FromResult<IHookChannel>(channel)))
         {
@@ -118,7 +118,7 @@ public sealed class PluginKitTests : IDisposable
         var landed = new LandedBranch("engine", "default", PluginKit.SampleState.Branch, "main", PluginKit.SampleState.PushedTip!, "s1a2b3c4",
             "0fda18", "Expose a streaming budget", DateTimeOffset.UnixEpoch);
         await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
-            .AskStatesAsync([new StateAsk(landed, "acme.every", PluginKit.SampleState)]);
+            .AskStatesAsync([new StateAsk(landed, "acme-every", PluginKit.SampleState)]);
 
         // The change's frame, through the loop's set as the shell's bus tells it.
         await using (var set = new HookSet(home, start: (_, _, _) => Task.FromResult<IHookChannel>(channel)))
@@ -146,10 +146,10 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_new_plugin_is_a_folder_with_a_manifest_a_wire_script_its_test_and_a_readme()
     {
-        var plan = PluginKit.Plan("acme.quiet-hours", [HookPoints.QuestConsider], _scratch);
+        var plan = PluginKit.Plan("acme-quiet-hours", [HookPoints.QuestConsider], _scratch);
         var written = PluginKit.Write(plan);
 
-        var folder = Path.Combine(_scratch, "acme.quiet-hours");
+        var folder = Path.Combine(_scratch, "acme-quiet-hours");
         Assert.Equal(folder, plan.Folder);
         Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"], written);
         Assert.Equal(written.OrderBy(n => n, StringComparer.Ordinal), Directory.GetFiles(folder).Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal));
@@ -157,7 +157,7 @@ public sealed class PluginKitTests : IDisposable
         // The manifest is one the catalogue reads as sound, speaking where it is asked to.
         var (manifest, problem) = PluginCatalog.ReadFolder(folder);
         Assert.Null(problem);
-        Assert.Equal("acme.quiet-hours", manifest.Id);
+        Assert.Equal("acme-quiet-hours", manifest.Id);
         Assert.Equal("Quiet hours", manifest.Name);
         Assert.Equal([HookPoints.QuestConsider], manifest.Hooks!.Points);
         Assert.Equal(["node", Path.Combine(folder, "plugin.mjs")], manifest.Hooks.Command.Select(Path.GetFullPath).Skip(1).Prepend("node"));
@@ -180,7 +180,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.DoesNotContain("'work/land'", script);
         // The README carries the frame the point is sent and what it must answer.
         var readme = File.ReadAllText(Path.Combine(folder, "README.md"));
-        Assert.Contains("acme.quiet-hours", readme);
+        Assert.Contains("acme-quiet-hours", readme);
         Assert.Contains("\"quest\"", readme);
         Assert.Contains("\"kind\": \"hold\"", readme);
         Assert.Contains("node --test", readme);
@@ -190,7 +190,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_plan_writes_nothing()
     {
-        var plan = PluginKit.Plan("acme.quiet-hours", [HookPoints.QuestConsider, HookPoints.QuestConsider], _scratch);
+        var plan = PluginKit.Plan("acme-quiet-hours", [HookPoints.QuestConsider, HookPoints.QuestConsider], _scratch);
 
         Assert.False(Directory.Exists(plan.Folder));
         // A point named twice is one point.
@@ -200,9 +200,9 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_query_plugin_carries_the_helper_that_runs_a_platform_s_tool_and_its_quoting()
     {
-        Assert.DoesNotContain("function run(", PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content);
+        Assert.DoesNotContain("function run(", PluginKit.Plan("acme-gate", [HookPoints.QuestConsider], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content);
         // A query asks its platform's tool, so it carries the helper.
-        var asks = PluginKit.Plan("acme.asks", [HookPoints.State], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content;
+        var asks = PluginKit.Plan("acme-asks", [HookPoints.State], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content;
         Assert.Contains("'work/state'", asks);
         Assert.Contains("function run(", asks);
         // cmd reads a `.cmd` tool's line a second time, so what it would act on inside quotes is refused.
@@ -226,11 +226,11 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_point_this_build_lacks_or_none_at_all_is_refused_naming_the_points()
     {
-        var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", ["quest/started"], _scratch));
+        var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme-gate", ["quest/started"], _scratch));
         Assert.Contains("`quest/started` is not a point", unknown.Message);
         Assert.Contains("quest/consider, session/ended, work/state, state/changed, work/watch, work/step, work/perform", unknown.Message);
 
-        var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [], _scratch));
+        var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme-gate", [], _scratch));
         Assert.Contains("at least one point", none.Message);
         Assert.Empty(Directory.GetFileSystemEntries(_scratch));
     }
@@ -238,11 +238,11 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_folder_that_holds_anything_is_refused_rather_than_written_over()
     {
-        var folder = Path.Combine(_scratch, "acme.gate");
+        var folder = Path.Combine(_scratch, "acme-gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.mjs"), "// somebody's work");
 
-        var refused = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch));
+        var refused = Assert.Throws<DriverException>(() => PluginKit.Plan("acme-gate", [HookPoints.QuestConsider], _scratch));
 
         Assert.Contains("already holds", refused.Message);
         Assert.Equal("// somebody's work", File.ReadAllText(Path.Combine(folder, "plugin.mjs")));
@@ -254,7 +254,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var nowhere = Path.Combine(_scratch, "no-such-folder");
 
-        var refused = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], nowhere));
+        var refused = Assert.Throws<DriverException>(() => PluginKit.Plan("acme-gate", [HookPoints.QuestConsider], nowhere));
 
         Assert.Contains("does not exist", refused.Message);
         Assert.False(Directory.Exists(nowhere));
@@ -263,11 +263,11 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void An_empty_folder_of_the_plugin_s_name_is_written_into()
     {
-        Directory.CreateDirectory(Path.Combine(_scratch, "acme.gate"));
+        Directory.CreateDirectory(Path.Combine(_scratch, "acme-gate"));
 
-        PluginKit.Write(PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch));
+        PluginKit.Write(PluginKit.Plan("acme-gate", [HookPoints.QuestConsider], _scratch));
 
-        Assert.True(File.Exists(Path.Combine(_scratch, "acme.gate", "plugin.json")));
+        Assert.True(File.Exists(Path.Combine(_scratch, "acme-gate", "plugin.json")));
     }
 
     // ——— a fresh plugin passes its own test, and try
@@ -290,7 +290,7 @@ public sealed class PluginKitTests : IDisposable
     [MemberData(nameof(PointSets))]
     public async Task A_fresh_plugin_passes_its_own_wire_test(string[] points)
     {
-        var folder = New("acme.fresh", points);
+        var folder = New("acme-fresh", points);
 
         var (exit, output) = await NodeTestAsync(folder);
 
@@ -308,7 +308,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_wire_test_ends_once_its_plugin_leaves_not_when_the_grace_runs_out()
     {
-        var folder = New("acme.fresh", [HookPoints.SessionEnded]);
+        var folder = New("acme-fresh", [HookPoints.SessionEnded]);
         var test = Path.Combine(folder, "plugin.test.mjs");
         var grace = $"const GRACE = {(long)HookProcess.Grace.TotalMilliseconds};";
         var text = File.ReadAllText(test);
@@ -325,13 +325,13 @@ public sealed class PluginKitTests : IDisposable
     [MemberData(nameof(PointSets))]
     public async Task A_fresh_plugin_passes_try_at_every_point_it_declares(string[] points)
     {
-        var folder = New("acme.fresh", points);
+        var folder = New("acme-fresh", points);
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
         Assert.True(trial.Passed, Describe(trial));
         Assert.Equal(0, trial.ExitCode);
-        Assert.Equal("acme.fresh", trial.Plugin);
+        Assert.Equal("acme-fresh", trial.Plugin);
         Assert.Equal(["handshake", .. points, "shutdown", "stdout"], trial.Steps.Select(step => step.Name));
         Assert.Contains("listens on", trial.Steps[0].Sentence);
         Assert.Contains("left when told", trial.Steps.Single(step => step.Name == "shutdown").Sentence);
@@ -347,7 +347,7 @@ public sealed class PluginKitTests : IDisposable
     [InlineData(HookPeer.AnswerBytes + 1, false)]
     public async Task Try_reads_a_long_answer_as_the_driver_does(int length, bool passes)
     {
-        var folder = New("acme.long", [HookPoints.State]);
+        var folder = New("acme-long", [HookPoints.State]);
         Replace(folder, "state: 'unknown',", $"state: 'unknown', diagnostic: 'd'.repeat({length}),");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -368,7 +368,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_wrong_answer_is_the_driver_s_own_sentence_and_exit_1()
     {
-        var folder = New("acme.wrong", [HookPoints.QuestConsider]);
+        var folder = New("acme-wrong", [HookPoints.QuestConsider]);
         Replace(folder, "({ kind: 'allow' })", "({ kind: 'maybe' })");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -389,7 +389,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_silent_plugin_is_still_running_and_said_nothing_within_the_patience()
     {
-        var folder = New("acme.silent", [HookPoints.State]);
+        var folder = New("acme-silent", [HookPoints.State]);
         // It takes the frame and never answers it.
         Replace(folder, "    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });", "    // silence");
         Replace(folder, "    const declared = frame.params?.points ?? [];",
@@ -407,7 +407,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_line_on_stdout_that_is_not_a_frame_fails_the_stdout_check_and_nothing_else()
     {
-        var folder = New("acme.noisy", [HookPoints.SessionEnded]);
+        var folder = New("acme-noisy", [HookPoints.SessionEnded]);
         Replace(folder, "const send = ", "console.log('hello from stdout');\nconst send = ");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -428,7 +428,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_plugin_that_crashes_on_a_frame_is_named_with_its_exit_code_and_its_last_words()
     {
-        var folder = New("acme.crashes", [HookPoints.QuestConsider]);
+        var folder = New("acme-crashes", [HookPoints.QuestConsider]);
         Replace(folder, "({ kind: 'allow' })", "(() => { console.error('cannot read the calendar'); process.exit(3); })()");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -449,7 +449,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_plugin_that_cannot_start_speaking_fails_the_handshake_with_its_exit_code()
     {
-        var folder = New("acme.broken", [HookPoints.QuestConsider]);
+        var folder = New("acme-broken", [HookPoints.QuestConsider]);
         File.WriteAllText(Path.Combine(folder, "plugin.mjs"), "this is not javascript at all\n");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -464,7 +464,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_plugin_that_stays_after_shutdown_is_ended_and_says_so()
     {
-        var folder = New("acme.stays", [HookPoints.SessionEnded]);
+        var folder = New("acme-stays", [HookPoints.SessionEnded]);
         Replace(folder, "    process.exit(0);", "    // stays");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -480,7 +480,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_point_declared_and_not_listened_on_is_a_promise_the_process_does_not_keep()
     {
-        var folder = New("acme.promises", [HookPoints.QuestConsider, HookPoints.SessionEnded]);
+        var folder = New("acme-promises", [HookPoints.QuestConsider, HookPoints.SessionEnded]);
         Replace(folder, "  'session/ended'", "  'session/ended-not'");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -495,7 +495,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task One_point_with_the_person_s_own_frame_is_sent_that_frame()
     {
-        var folder = New("acme.gate", [HookPoints.QuestConsider, HookPoints.SessionEnded]);
+        var folder = New("acme-gate", [HookPoints.QuestConsider, HookPoints.SessionEnded]);
         Replace(folder, "({ kind: 'allow' })",
             "(frame.quest.title.includes('[hold]') ? { kind: 'hold', reason: 'the title says so' } : { kind: 'allow' })");
         var frame = JsonNode.Parse("""{ "quest": { "id": "q1", "title": "[hold] rename everything" }, "repository": "engine" }""")!.AsObject();
@@ -526,7 +526,7 @@ public sealed class PluginKitTests : IDisposable
         var temp = Path.Combine(repository, "temp");
         Directory.CreateDirectory(temp);
 
-        var folder = New("acme.reads", [HookPoints.State]);
+        var folder = New("acme-reads", [HookPoints.State]);
         Replace(folder, """
               'work/state': (frame) => ({
                 state: 'unknown',
@@ -555,7 +555,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_folder_s_plugin_is_told_the_trial_s_data_folder_and_nothing_lands_beside_it()
     {
-        var folder = New("acme.keeps", [HookPoints.State]);
+        var folder = New("acme-keeps", [HookPoints.State]);
         var manifest = Path.Combine(folder, "plugin.json");
         var text = File.ReadAllText(manifest);
         Assert.Contains("\"${plugin}/plugin.mjs\"]", text);
@@ -578,7 +578,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_trials_scratch_is_under_the_homes_plugins_folder_and_goes_after()
     {
-        var folder = New("acme.where", [HookPoints.SessionEnded]);
+        var folder = New("acme-where", [HookPoints.SessionEnded]);
         Replace(folder, "  'session/ended': (frame) => ({}),", "  'session/ended': (frame) => { console.error('data at ' + process.env.DAORIS_PLUGIN_DATA); return {}; },");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
@@ -594,7 +594,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminal_refuses_a_folder_trial_with_no_home()
     {
-        var folder = New("acme.homeless", [HookPoints.SessionEnded]);
+        var folder = New("acme-homeless", [HookPoints.SessionEnded]);
         var said = new StringWriter();
 
         Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder], said, home: null));
@@ -607,32 +607,32 @@ public sealed class PluginKitTests : IDisposable
     {
         var home = Path.Combine(_scratch, "home");
         Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins));
-        PluginKit.Write(PluginKit.Plan("acme.installed", [HookPoints.SessionEnded], DaorisHome.Entry(home, HomeEntry.Plugins)));
+        PluginKit.Write(PluginKit.Plan("acme-installed", [HookPoints.SessionEnded], DaorisHome.Entry(home, HomeEntry.Plugins)));
 
-        var trial = await PluginTrials.TryInstalledAsync(home, "acme.installed");
+        var trial = await PluginTrials.TryInstalledAsync(home, "acme-installed");
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.True(Directory.Exists(DaorisHome.Entry(home, HomeEntry.Plugins,".data", "acme.installed")));
-        Assert.Contains("no plugin `acme.nobody`",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryInstalledAsync(home, "acme.nobody"))).Message);
+        Assert.True(Directory.Exists(DaorisHome.Entry(home, HomeEntry.Plugins,".data", "acme-installed")));
+        Assert.Contains("no plugin `acme-nobody`",
+            (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryInstalledAsync(home, "acme-nobody"))).Message);
     }
 
     [Fact]
     public async Task What_try_cannot_check_is_refused_before_anything_starts()
     {
-        var folder = New("acme.gate", [HookPoints.QuestConsider]);
+        var folder = New("acme-gate", [HookPoints.QuestConsider]);
 
         Assert.Contains("no `plugin.json`",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, _scratch))).Message);
-        Assert.Contains("`work/state` is not a point `acme.gate` declares",
+        Assert.Contains("`work/state` is not a point `acme-gate` declares",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.State)))).Message);
         Assert.Contains("a frame needs its point",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Frame: new JsonObject())))).Message);
 
-        var declares = Path.Combine(_scratch, "acme.agent");
+        var declares = Path.Combine(_scratch, "acme-agent");
         Directory.CreateDirectory(declares);
         File.WriteAllText(Path.Combine(declares, "plugin.json"),
-            """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
+            """{ "id": "acme-agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
         Assert.Contains("speaks on no point",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, declares))).Message);
     }
@@ -640,10 +640,10 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_manifest_the_catalogue_refuses_fails_try_with_the_catalogue_s_sentence()
     {
-        var folder = Path.Combine(_scratch, "acme.future");
+        var folder = Path.Combine(_scratch, "acme-future");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
-            """{ "id": "acme.future", "apiVersion": 99, "hooks": { "command": ["node", "x.mjs"], "points": ["quest/consider"] } }""");
+            """{ "id": "acme-future", "apiVersion": 99, "hooks": { "command": ["node", "x.mjs"], "points": ["quest/consider"] } }""");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
@@ -662,7 +662,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task Try_finds_each_declared_tool_asks_its_version_and_runs_its_checks_each_in_its_own_sentence()
     {
-        var folder = New("acme.tools", [HookPoints.SessionEnded]);
+        var folder = New("acme-tools", [HookPoints.SessionEnded]);
         DeclareTools(folder, """
             [{ "id": "node", "versions": ">=18", "for": "Runs the wire script.",
                "ready": [{ "run": ["node", "-e", "process.exit(0)"], "says": "It runs a script" }] }]
@@ -683,7 +683,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_bad_manifests_tools_fail_their_own_steps_and_the_plugin_is_still_tried()
     {
-        var folder = New("acme.tools", [HookPoints.SessionEnded]);
+        var folder = New("acme-tools", [HookPoints.SessionEnded]);
         var marker = Path.Combine(_scratch, "fixed");
         DeclareTools(folder, $$"""
             [{ "id": "node", "versions": ">=999",
@@ -713,9 +713,9 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminal_tries_a_plugins_tools_and_its_exit_is_the_verdict()
     {
-        var good = New("acme.good", [HookPoints.SessionEnded]);
+        var good = New("acme-good", [HookPoints.SessionEnded]);
         DeclareTools(good, """[{ "id": "node", "versions": ">=18" }]""");
-        var bad = New("acme.bad", [HookPoints.SessionEnded]);
+        var bad = New("acme-bad", [HookPoints.SessionEnded]);
         DeclareTools(bad, """[{ "id": "node", "versions": "latest" }]""");
 
         var passed = new StringWriter();
@@ -780,7 +780,7 @@ public sealed class PluginKitTests : IDisposable
     public async Task Try_and_the_wire_test_give_every_answer_the_same_verdict(string point, string answer, bool accepted)
     {
         var declared = point == "initialize" ? HookPoints.QuestConsider : point;
-        var folder = New("acme.echo", [declared]);
+        var folder = New("acme-echo", [declared]);
         File.WriteAllText(Path.Combine(folder, "answer.json"),
             JsonSerializer.Serialize(new { point, answer = answer.Replace("{point}", declared, StringComparison.Ordinal) }));
         File.WriteAllText(Path.Combine(folder, "plugin.mjs"), Echo);
@@ -818,23 +818,23 @@ public sealed class PluginKitTests : IDisposable
         var output = new StringWriter();
 
         var exit = await PluginKitCommand.RunAsync(
-            ["new", "acme.gate", "--point", "quest/consider", "--point", "session/ended", "--in", _scratch], output, home: null);
+            ["new", "acme-gate", "--point", "quest/consider", "--point", "session/ended", "--in", _scratch], output, home: null);
 
         Assert.Equal(0, exit);
         var said = output.ToString();
-        Assert.Contains("made `acme.gate`", said);
+        Assert.Contains("made `acme-gate`", said);
         Assert.Contains("plugin.test.mjs", said);
         Assert.Contains("node --test", said);
         Assert.Contains("daoris plugin try", said);
         Assert.Contains("daoris plugin add", said);
-        Assert.True(File.Exists(Path.Combine(_scratch, "acme.gate", "plugin.mjs")));
+        Assert.True(File.Exists(Path.Combine(_scratch, "acme-gate", "plugin.mjs")));
     }
 
     [Fact]
     public async Task The_terminal_tries_a_folder_and_its_exit_is_the_verdict()
     {
-        var good = New("acme.good", [HookPoints.QuestConsider]);
-        var bad = New("acme.bad", [HookPoints.QuestConsider]);
+        var good = New("acme-good", [HookPoints.QuestConsider]);
+        var bad = New("acme-bad", [HookPoints.QuestConsider]);
         Replace(bad, "({ kind: 'allow' })", "({ kind: 'maybe' })");
 
         var passed = new StringWriter();
@@ -850,10 +850,10 @@ public sealed class PluginKitTests : IDisposable
 
     [Theory]
     [InlineData(new[] { "new" }, "needs a plugin id")]
-    [InlineData(new[] { "new", "acme.gate" }, "at least one point")]
+    [InlineData(new[] { "new", "acme-gate" }, "at least one point")]
     [InlineData(new[] { "new", "Acme", "--point", "quest/consider" }, "is not a plugin id")]
     [InlineData(new[] { "try" }, "needs a folder")]
-    [InlineData(new[] { "try", "acme.nowhere" }, "no folder `acme.nowhere`")]
+    [InlineData(new[] { "try", "acme-nowhere" }, "no folder `acme-nowhere`")]
     [InlineData(new[] { "explode" }, "usage: daoris plugin new")]
     public async Task What_the_terminal_cannot_do_is_a_sentence_and_exit_2(string[] args, string sentence)
     {
@@ -868,7 +868,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminal_sends_a_frame_file_to_one_point()
     {
-        var folder = New("acme.gate", [HookPoints.QuestConsider]);
+        var folder = New("acme-gate", [HookPoints.QuestConsider]);
         var frame = Path.Combine(_scratch, "frame.json");
         File.WriteAllText(frame, """{ "quest": { "id": "q1", "title": "anything" } }""");
         var notJson = Path.Combine(_scratch, "frame.txt");
@@ -890,11 +890,11 @@ public sealed class PluginKitTests : IDisposable
     public async Task The_terminals_trial_of_an_installed_plugin_is_one_line_in_the_machine_log_and_a_folders_is_none()
     {
         Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Plugins));
-        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], DaorisHome.Entry(Home, HomeEntry.Plugins)));
-        var folder = New("acme.loose", [HookPoints.SessionEnded]);
+        PluginKit.Write(PluginKit.Plan("acme-logged", [HookPoints.SessionEnded], DaorisHome.Entry(Home, HomeEntry.Plugins)));
+        var folder = New("acme-loose", [HookPoints.SessionEnded]);
         using (var log = new MachineLog(Home, "driver"))
         {
-            Assert.Equal(0, await PluginKitCommand.RunAsync(["try", "acme.logged"], new StringWriter(), Home, log: log));
+            Assert.Equal(0, await PluginKitCommand.RunAsync(["try", "acme-logged"], new StringWriter(), Home, log: log));
             Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
         }
 
@@ -902,7 +902,7 @@ public sealed class PluginKitTests : IDisposable
         var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines,
             each => each.Event != "agent.contained");
         Assert.Equal("plugin.tried", line.Event);
-        Assert.Equal("acme.logged", line.Data.GetProperty("plugin").GetString());
+        Assert.Equal("acme-logged", line.Data.GetProperty("plugin").GetString());
         Assert.True(line.Data.GetProperty("passed").GetBoolean());
         Assert.Equal("terminal", line.Data.GetProperty("door").GetString());
     }
@@ -912,7 +912,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_new_performer_declares_its_step_and_what_it_makes_and_carries_the_kit_s_work_files()
     {
-        var plan = PluginKit.Plan("acme.deploy", [HookPoints.Perform], _scratch);
+        var plan = PluginKit.Plan("acme-deploy", [HookPoints.Perform], _scratch);
         var written = PluginKit.Write(plan);
 
         // It reports at `work/step` too, where its outcome is heard, and is told the awaited set at `work/watch`, as every plugin that
@@ -923,10 +923,10 @@ public sealed class PluginKitTests : IDisposable
         var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
         Assert.Null(problem);
         var step = Assert.Single(manifest.Steps);
-        Assert.Equal(("acme.deploy/perform", NodeReach.Performed, "acme.deploy/receipt@1"), (step.Kind, step.Reach, step.Evidence));
+        Assert.Equal(("acme-deploy/perform", NodeReach.Performed, "acme-deploy/receipt@1"), (step.Kind, step.Reach, step.Evidence));
         Assert.Equal(new NodePerform(Idempotent: true, Reconcile: true, ["unavailable", "rate-limited", "timeout"]), step.Perform);
         Assert.Equal(3, step.Retry!.MaxAttempts);
-        Assert.Equal(new PluginResource("acme.deploy/resource@1", PluginResourceRoles.Temporary, PluginSteps.CleanupPoint), Assert.Single(manifest.Resources));
+        Assert.Equal(new PluginResource("acme-deploy/resource@1", PluginResourceRoles.Temporary, PluginSteps.CleanupPoint), Assert.Single(manifest.Resources));
 
         var script = File.ReadAllText(Path.Combine(plan.Folder, "plugin.mjs"));
         Assert.Contains("import { work } from './work.mjs';", script);
@@ -941,8 +941,8 @@ public sealed class PluginKitTests : IDisposable
         });
         // The README says the plugin's own step and receipt, never the samples' markers.
         var readme = File.ReadAllText(Path.Combine(plan.Folder, "README.md"));
-        Assert.Contains("\"step\": \"acme.deploy/perform\"", readme);
-        Assert.Contains("acme.deploy/receipt@1:i-0fda18a2b3c4", readme);
+        Assert.Contains("\"step\": \"acme-deploy/perform\"", readme);
+        Assert.Contains("acme-deploy/receipt@1:i-0fda18a2b3c4", readme);
         Assert.Contains("## Its contract test", readme);
         foreach (var name in written)
         {
@@ -958,14 +958,14 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public void A_new_observer_declares_an_observed_step_and_no_performer_s_files()
     {
-        var plan = PluginKit.Plan("acme.checks", [HookPoints.Watch], _scratch);
+        var plan = PluginKit.Plan("acme-checks", [HookPoints.Watch], _scratch);
 
         Assert.Equal([HookPoints.Watch, HookPoints.Step], plan.Points);
         Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "work.mjs"], plan.Files.Select(file => file.Name));
         PluginKit.Write(plan);
         var (manifest, problem) = PluginCatalog.ReadFolder(plan.Folder);
         Assert.Null(problem);
-        Assert.Equal(("acme.checks/observe", NodeReach.Observed), (Assert.Single(manifest.Steps).Kind, manifest.Steps[0].Reach));
+        Assert.Equal(("acme-checks/observe", NodeReach.Observed), (Assert.Single(manifest.Steps).Kind, manifest.Steps[0].Reach));
         Assert.Empty(manifest.Resources);
         Assert.Contains("observe: async (unit, step) => null", File.ReadAllText(Path.Combine(plan.Folder, "plugin.mjs")));
     }
@@ -977,7 +977,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_fresh_performer_passes_its_wire_test_and_its_contract_test()
     {
-        var folder = New("acme.deploy", [HookPoints.Perform, HookPoints.Watch]);
+        var folder = New("acme-deploy", [HookPoints.Perform, HookPoints.Watch]);
 
         var (exit, output) = await NodeTestAsync(folder);
 
@@ -994,7 +994,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_fresh_observer_passes_its_wire_test()
     {
-        var folder = New("acme.checks", [HookPoints.Watch]);
+        var folder = New("acme-checks", [HookPoints.Watch]);
 
         var (exit, output) = await NodeTestAsync(folder);
 
@@ -1006,7 +1006,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_performer_that_does_the_work_twice_fails_its_contract_test_and_its_cycle()
     {
-        var folder = New("acme.twice", [HookPoints.Perform]);
+        var folder = New("acme-twice", [HookPoints.Perform]);
         Sabotage(folder, "work.mjs", "      if (!known) {", "      if (!known || true) {");
 
         var (exit, output) = await NodeTestAsync(folder);
@@ -1025,7 +1025,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_plugin_that_does_not_take_the_stand_in_world_is_sent_no_attempt()
     {
-        var folder = New("acme.real", [HookPoints.Perform]);
+        var folder = New("acme-real", [HookPoints.Perform]);
         Sabotage(folder, "work.mjs", "process.env.DAORIS_PLUGIN_WORLD ? standIn(process.env.DAORIS_PLUGIN_WORLD) : null", "null");
         // Were an attempt sent, its own act() would leave this mark beside it: the platform reached.
         Sabotage(folder, "plugin.mjs", "act: async (call) => ({",
@@ -1046,7 +1046,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_fresh_performer_passes_try_and_its_cycle_through_the_driver()
     {
-        var folder = New("acme.deploy", [HookPoints.Perform]);
+        var folder = New("acme-deploy", [HookPoints.Perform]);
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
         var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default with { Deadline = TimeSpan.FromSeconds(1) });
@@ -1057,7 +1057,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.True(cycle.Passed, Describe(cycle));
         Assert.Equal(["handshake", "eligible", "duplicate", "failure", "timeout", "handshake again", "restart", "stale", "cleanup", "shutdown", "stdout"],
             cycle.Steps.Select(step => step.Name));
-        Assert.Contains("on `acme.deploy/receipt@1:i-1`", cycle.Steps.Single(step => step.Name == "eligible").Sentence);
+        Assert.Contains("on `acme-deploy/receipt@1:i-1`", cycle.Steps.Single(step => step.Name == "eligible").Sentence);
         Assert.Contains("which its step tries again", cycle.Steps.Single(step => step.Name == "failure").Sentence);
         Assert.Contains("removed, then already-gone, removed once", cycle.Steps.Single(step => step.Name == "cleanup").Sentence);
         // The cycle's scratch goes with it, under the home's trials.
@@ -1067,7 +1067,7 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminal_drives_a_folder_s_cycle_and_refuses_what_a_cycle_does_not_take()
     {
-        var folder = New("acme.deploy", [HookPoints.Perform]);
+        var folder = New("acme-deploy", [HookPoints.Perform]);
         var fixture = Path.Combine(folder, "cycle.json");
         File.WriteAllText(fixture, File.ReadAllText(fixture).Replace("\"deadlineSeconds\": 3", "\"deadlineSeconds\": 1", StringComparison.Ordinal));
 
@@ -1080,7 +1080,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder, "--cycle", fixture, "--point", HookPoints.Perform], refused, home: Home));
         Assert.Contains("takes no --point or --frame", refused.ToString());
         refused = new StringWriter();
-        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", "acme.deploy", "--cycle", fixture], refused, home: Home));
+        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", "acme-deploy", "--cycle", fixture], refused, home: Home));
         Assert.Contains("never an installed plugin's data", refused.ToString());
     }
 
