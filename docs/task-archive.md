@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Main's reds after the place and press merges (2026-11-11)
+
+> **Reds fixed** (web, cli, driver): Outcome: *Work in place*'s choice reaches the bridge from `bridge/repositories/setup.ts`, the presentational boundary holding; the history test waits for its section's data; the unclosed quest's and the terminal tier's Chinese words follow the glossary (已停下, 启用); the plans folder is the home's `plans` entry in all three twins; the tree console's source tests read every `Trees*Verb.cs`; the shipped-workflow flow test holds nine; three driver censuses follow the sync verb's move (FIX-LOG, one entry for the regressions). Proof: each file run filtered, `npm run quick`, `i18n:check`, `names:check --strict`.
+
+---
+
 ## PLACEWORK1f's return made safe: refusals, the write window, a journal, the tidy (2026-11-11, D265's note)
 
 > **PLACEWORK1f, the return hardened** (driver, web): Outcome: a return refuses rather than guesses — a path outside the folder, a link or junction on either side, a file turned folder, a case-only rename — showing the path and what was found with *Keep yours* only; the folder's file is set aside and checked under an exclusive handle, so a write landing in the window, or a file another program holds open, is left and put to the person; each file's decision and effect is journaled with the bytes it replaces kept beside it, so a return stopped at any boundary ends right when run again; the copy bound has its Settings row and the look tidies an orphan copy (`ICopyTidying`, `OrphanCopies`), said in its report; the three choices live in `ReturnChoices`, within the structure rule. Proof: `FolderReturnRefusalTests`, `FolderReturnProcessTests` (a real process holding a file open, junctions), the journal's stop at every boundary, `CopyTidyTests`, the web tests in both languages, each seen failing first.

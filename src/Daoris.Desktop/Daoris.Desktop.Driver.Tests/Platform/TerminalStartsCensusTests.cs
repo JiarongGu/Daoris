@@ -44,6 +44,7 @@ public sealed class TerminalStartsCensusTests
         ["TreesEntryLandVerb"] = null,
         ["TreesRemoveVerb"] = "git's removal of one tree under the home's lease, seconds long and waited on",
         ["TreesStateVerb"] = Reads,
+        ["TreesSyncVerb"] = null,
         ["VerifyConsole"] = Reads,
         ["WorkConsole"] = null,
         ["WorkflowConsole"] = null,
