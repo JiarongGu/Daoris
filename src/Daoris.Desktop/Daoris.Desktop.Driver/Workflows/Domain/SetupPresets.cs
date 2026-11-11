@@ -13,6 +13,9 @@ public sealed record SetupLand(string Method, string Accept, string? Plugin = nu
 
     /// <summary>The delivery of a branch pushed, with a plugin's step that opens a pull request: not a <c>land</c> method.</summary>
     public const string PullRequest = "pull-request";
+
+    /// <summary>The delivery of a graph with no <c>land</c>: the work stays in the department's place, where the person accepts it.</summary>
+    public const string InPlace = "in-place";
 }
 
 /// <summary>One delivery preset: its id, the name the page shows, and its land; <i>Not driven</i> has none.</summary>
@@ -80,7 +83,7 @@ public static class SetupPresets
 
     /// <summary>
     /// The land a workflow's steps say, Current's drawn or a version's: <c>integrate</c> where an integrate step follows the landing, a pull
-    /// request where one does, else the landing's method or form. Current never says <c>push</c>.
+    /// request where one does, else the landing's method or form, or <see cref="SetupLand.InPlace"/> where no step lands. Current never says <c>push</c>.
     /// </summary>
     public static SetupLand LandOf(IReadOnlyList<NamedStep> steps)
     {
@@ -98,7 +101,8 @@ public static class SetupPresets
         }
 
         if (landing?.Field("method") is string method) return new(method, accept);
-        return landing?.Field("form") as string == LandingForm.Branch
+        if (landing is null) return new(SetupLand.InPlace, SetupLand.You);
+        return landing.Field("form") as string == LandingForm.Branch
             ? new(LandNodes.Branch, accept)
             : new(LandNodes.Merge, accept);
     }

@@ -5,6 +5,26 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1f — a folder's sessions in copies of their own, brought back file by file (2026-11-11, D265)
+
+> **PLACEWORK1f** (driver, modules, web): Outcome: the isolate step's `copy` kind gives a folder session a copy of its own under the place's copies folder (`Departments/Isolation/FolderCopies.cs`, `CopyStart`); over the bound (size, 20,000 files, or less than twice its size free) the start is held with words saying how to go on, never worked in place; the `return` kind writes back each file changed only in the copy, against the copy's bytes hashed fresh, keeps each changed only in the folder, and leaves each changed on both sides, an unread one or a binary, to the person per path (*Keep yours* / *Take the session's* / *Keep both*, `ReturnChoice`); supervisors get no act over it; the bound is `daoris settings manifest`'s `copy`. Proof: `FolderCopyTests`, `ReturnDoorTests` (seen failing first), `FolderCopyProcessTests`, `ReturnChoice.test`.
+>
+> **PLACEWORK1i, measured by the installed Daoris** (docs): a quest the install's own session took measured jj 0.46 workspaces as an isolation kind (`docs/2026-11-11-jj-workspaces-measurements.md`), reviewed by the steward and landed by Daoris's workflow.
+
+---
+
+## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
+
+> **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.
+
+---
+
+## ASKFULL1g-vi's ask route and the setup view, and the ask defects Ask Daoris met in the install (2026-11-11)
+
+> **ASKFULL1g-vi, routes** (driver, modules, service, web): Outcome: `daoris ask "…"` is a person's press `ASK_NEW` (`AskArguments` reads the words before anything is sent, `AskNewCommand` makes the ask, `AskNewRoutes`, `AskNewView` on the card), so Ask Daoris in full access starts an ask with no card and in restricted on a card naming it; `PLACE_APPLY`'s card lists each change the plan makes (`PlaceApplyView`); a quest Ask Daoris publishes is filed in the named repository's workspace and a refusal with nothing addressable says so in words (`QuestPublishing`); `--help` prints the usage and an unknown flag is refused. Found by Ask Daoris in the installed copy, refused at each. Proof: `PipeDelegateTests`' new-ask case and `QuestExchangeTests`' cross-workspace case (seen failing first), `AskArgumentsTests`, the two view tests in both languages.
+
+---
+
 ## A terminal's presses at a tier the person sets (2026-11-11, D271)
 
 > **TERMTIER1** (driver, modules, web): Outcome: a machine setting decides whether a person's press from a terminal no Daoris session owns waits on the Confirm card (`ask`, the default) or runs at once as the person's (`act`): `daoris settings terminal ask|act`, itself pressed so turning on `act` is confirmed once (`Settings/TerminalTiers.cs`, `TerminalVerb.cs`, `TerminalTierRoutes`, the Settings row); under `act` such a press goes through the delegate's no-card path (`PipeTerminalTier`), logged `terminal.pressed` and listed in Notifications as a terminal's; a process inside an agent's job, or one the pipe cannot place, still gets a card, and a session's own press keeps its tier. Left: a `hold: true` start and `HOLD` still ask under `act`. Proof: `PipeTerminalTierTests` (seen failing first), `TerminalTiersTests`, the route, view and census tests, the text fixtures, the web tests in both languages.

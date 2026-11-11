@@ -66,4 +66,6 @@ public abstract class BuiltInNode : INodeKind
     public virtual NodeArrivals Arrives => NodeArrivals.None;
 
     public virtual IReadOnlyList<string> Waits => [];
+
+    public virtual WorkflowRunWait? WaitOf(NodeStatus status) => null;
 }

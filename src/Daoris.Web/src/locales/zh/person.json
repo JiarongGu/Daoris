@@ -76,6 +76,7 @@
   "person.view.quiet": "会话沉默且无运行 {{minutes}} 分钟后，Daoris 会前去查看；会话不会因运行过久而被停止。",
   "person.view.manifest-files": "文件夹的清单最多列出 {{files}} 个文件：超过的文件夹算过大而不再跟踪，仍在原处工作，一次一个会话。",
   "person.view.manifest-minutes": "文件夹的清单读取最多用 {{minutes}} 分钟：用时更长的文件夹算过大而不再跟踪，仍在原处工作，一次一个会话。",
+  "person.view.manifest-copy": "只为分开工作的会话复制不超过 {{copy}} MB 的文件夹：更大的文件夹，其会话在文件夹本身里工作，一次一个。",
   "person.view.folder-excludes": "更改文件夹 {{repository}} 的清单跳过的文件（{{change}}）：此后它跳过 {{now}}，以及默认项。只改本机注册表的一行，并重新读取它的清单。",
   "person.view.folder-excludes-none": "更改文件夹 {{repository}} 的清单跳过的文件（{{change}}）：此后它只跳过默认项。只改本机注册表的一行，并重新读取它的清单。",
   "person.view.keep": "设置某一类内容的保留时长：{{rule}}。",

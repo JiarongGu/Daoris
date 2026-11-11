@@ -47,7 +47,9 @@ public static class WorkflowPresets
         var nodes = next["nodes"]!.AsArray();
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
-        var landing = (string)nodes.First(node => (string)node!["kind"]! == NodeKinds.Land)!["id"]!;
+        // The gates guard a landing: a graph that lands nothing has none to add, and its review is the person's look.
+        if (nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Land)?["id"] is not JsonValue landed) return next;
+        var landing = (string)landed!;
         // The gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
         var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
         var into = review ?? landing;
@@ -100,6 +102,10 @@ public static class WorkflowPresets
                 _ => you ? "You accept each piece of work onto a branch, and push it yourself."
                     : "Each piece of work lands on a branch once its agent is done, and you push it yourself.",
             });
+        }
+        else if (Of(NodeKinds.Land) is null && you)
+        {
+            said.Add("Each piece of work is done in its department's own place, and you accept it there: nothing lands.");
         }
 
         said.Add("Its agent's done closes the quest; the flow's end is the work's.");

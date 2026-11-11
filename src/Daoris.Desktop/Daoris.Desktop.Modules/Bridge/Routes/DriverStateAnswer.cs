@@ -61,6 +61,7 @@ internal static class DriverStateAnswer
             // The bounds of a folder's manifest read: the file's, or the defaults.
             ManifestFiles = config.Manifest.Bounds.Files,
             ManifestMinutes = (int)config.Manifest.Bounds.Time.TotalMinutes,
+            ManifestCopy = config.Manifest.Bounds.Copy >> 20,
             config.Forgiven,
             // The stops the person released, the quest against the session, as the terminal lists them.
             config.Released,

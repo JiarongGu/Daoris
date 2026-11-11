@@ -28,6 +28,7 @@ internal static class WorkflowPlaceKinds
             .Where(each => each.Problem is not null)
             .Select(each => $"`{each.Department}` cannot follow it: {each.Problem!.Said}")
             .ToList();
-        return refused.Count == 0 ? null : $"{string.Join(' ', refused)} Nothing was written.";
+        return refused.Count == 0 ? null
+            : $"{string.Join(' ', refused)} The shipped *Work in place* runs in any department: `daoris place <department> --preset in-place`. Nothing was written.";
     }
 }

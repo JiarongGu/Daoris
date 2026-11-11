@@ -55,8 +55,15 @@ public sealed class MachineSettingView : IPressView
 
     public static MachineSettingView Manifest() => new("SET_MANIFEST", payload =>
     {
-        var (files, minutes) = (Number(payload, "files"), Number(payload, "minutes"));
-        if (files is null == minutes is null) return PressViewed.Refused(ManifestSetting.OneRefusal);
+        var (files, minutes, copy) = (Number(payload, "files"), Number(payload, "minutes"), Number(payload, "copy"));
+        if (new[] { files, minutes, copy }.Count(value => value is not null) != 1) return PressViewed.Refused(ManifestSetting.OneRefusal);
+        if (copy is { } megabytes)
+        {
+            if (!ManifestSetting.TakesCopy(megabytes)) return PressViewed.Refused(ManifestSetting.CopyRefusal);
+            var bound = megabytes.ToString(CultureInfo.InvariantCulture);
+            return Shown("manifest-copy", new() { ["copy"] = bound }, $"daoris settings manifest copy {bound}");
+        }
+
         if (files is { } count)
         {
             if (!ManifestSetting.TakesFiles(count)) return PressViewed.Refused(ManifestSetting.FilesRefusal);

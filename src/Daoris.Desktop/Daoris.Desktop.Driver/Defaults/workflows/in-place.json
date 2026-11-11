@@ -1,0 +1,25 @@
+{
+  "id": "in-place",
+  "order": 9,
+  "name": "In-place workflow",
+  "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
+  "delivery": {
+    "name": "Work in place",
+    "for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands."
+  },
+  "setUp": true,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["work"],
+    "end": "review",
+    "nodes": [
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "review", "kind": "review", "version": 1, "reach": "pressed" }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "b", "kind": "after", "from": "requests", "to": "review" }
+    ]
+  }
+}
