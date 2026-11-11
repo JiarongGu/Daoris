@@ -415,7 +415,9 @@ export function App() {
                   onOpenAsk={(entry) => openAsk(entry.ask)}
                   onMarkAsk={(entry) => markChannel.mutate({ ask: entry.ask, through: entry.newest?.at })}
                   onOpenAnswer={(notice) => { if (notice.session) openAnswer(notice.session, notice.repository); }}
-                  standing={<NotificationsStanding notify={notify} onOpenHelp={openHelp} />}
+                  standing={<NotificationsStanding notify={notify} onOpenHelp={openHelp} onOpenTarget={(scope, id) => (
+                    scope === 'quest' ? openQuest(id) : scope === 'ask' ? openAsk(id) : scope === 'session' ? openInWork(id) : go({ view: 'projects', item: id })
+                  )} />}
                 />
               )}
               notificationsShow={notificationsShow}

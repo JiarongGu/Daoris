@@ -25,7 +25,13 @@ public sealed class TerminalVerb : ChoiceVerb
         {
             // With no Daoris running there is no card, and act is granted only on one: alone, only ask is written.
             if (tier == TerminalTiers.Act) throw new ChoiceWords(AloneAct, exit: 1);
-            StandingChoices.Write(path, config => config.WithTerminal(tier));
+            string? was = null;
+            StandingChoices.Write(path, config =>
+            {
+                was = config.Terminal;
+                return config.WithTerminal(tier);
+            });
+            if (was != tier) new TerminalActs(DaorisHome.Entry(DriverConfig.HomeOf(path), HomeEntry.TerminalActs)).Changed(tier, TerminalTierBy.Alone, null);
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {

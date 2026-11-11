@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The terminal tier shown: who set it, and each press with its outcome (2026-11-11, D271's note)
+
+> **TERMTIER1, visibility** (driver, modules, web): Outcome: the terminal tier's changes and a terminal's presses are kept in `data/terminal-acts.json` (`Settings/TerminalActs.cs`, the newest 20 changes and 100 presses): a change keeps its tier, time and door (window, card, Ask Daoris, a session, a terminal, alone), logged `terminal.tier`; a press keeps its route, target, command, admission time and outcome (done, failed with its code, unknown, or interrupted when Daoris stopped under it); Notifications' `TerminalTierLine` says who turned `act` on and when, offers a one-press *Back to ask*, and lists each press opening what it changed, and the Settings row says the same. Codex's narrowing (an attached controller, a carded grant) is deferred to restricted mode's opt-in hardening (TERMTIER2), the owner's rule being that visibility is the key and a security improvement never blocks development. Proof: `TerminalActsTests`, the Settings row and `TerminalTierLine` vitests (seen failing first), `PipeTerminalTierTests`, `DriverModuleTerminalTests`.
+
+---
+
 ## PLACEWORK1f — a folder's sessions in copies of their own, brought back file by file (2026-11-11, D265)
 
 > **PLACEWORK1f** (driver, modules, web): Outcome: the isolate step's `copy` kind gives a folder session a copy of its own under the place's copies folder (`Departments/Isolation/FolderCopies.cs`, `CopyStart`); over the bound (size, 20,000 files, or less than twice its size free) the start is held with words saying how to go on, never worked in place; the `return` kind writes back each file changed only in the copy, against the copy's bytes hashed fresh, keeps each changed only in the folder, and leaves each changed on both sides, an unread one or a binary, to the person per path (*Keep yours* / *Take the session's* / *Keep both*, `ReturnChoice`); supervisors get no act over it; the bound is `daoris settings manifest`'s `copy`. Proof: `FolderCopyTests`, `ReturnDoorTests` (seen failing first), `FolderCopyProcessTests`, `ReturnChoice.test`.

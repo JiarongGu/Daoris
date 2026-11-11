@@ -113,27 +113,45 @@ public static class PipeDoor
     /// <summary>The working session whose own press this request is (<see cref="PipeDelegate"/>), never made the owner's; null for every other.</summary>
     public static string? Worker => Current.Value == Terminal ? Working.Value : null;
 
+    private static readonly AsyncLocal<(string By, string? Session)?> Uncarded = new();
+
+    /// <summary>
+    /// Who pressed the request this call runs for, as the terminal tier's record names it (<see cref="TerminalTierBy"/>): the person in the
+    /// window, a working session as its own, Ask Daoris or a terminal under act with no card, and otherwise the person on a terminal's card.
+    /// </summary>
+    public static (string By, string? Session) By =>
+        Current.Value != Terminal ? (TerminalTierBy.Window, null)
+        : Working.Value is { } worker ? (TerminalTierBy.Session, worker)
+        : Uncarded.Value ?? (TerminalTierBy.Card, null);
+
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
-    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(role: null, client, worker: null);
+    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(role: null, client, worker: null, uncarded: null);
 
     /// <summary>The same, for a role's act the judge's role method covered (<see cref="Role"/>).</summary>
-    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client, worker: null);
+    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client, worker: null, uncarded: null);
 
     /// <summary>The same, for a working session's own press (<see cref="Worker"/>).</summary>
-    internal static IDisposable EnterWorker(string session, PipeClientProcess? client = null) => Enter(role: null, client, session);
+    internal static IDisposable EnterWorker(string session, PipeClientProcess? client = null) => Enter(role: null, client, session, uncarded: null);
 
-    private static IDisposable Enter(RoleJudgement? role, PipeClientProcess? client, string? worker)
+    /// <summary>The same, for a press run with no card on the delegate's path (<see cref="By"/>).</summary>
+    internal static IDisposable EnterCovered(PipeDelegateJudgement covered, PipeClientProcess? client = null) =>
+        covered.Own ? EnterWorker(covered.Session!, client)
+        : Enter(role: null, client, worker: null, covered.Terminal ? (TerminalTierBy.Terminal, null) : (TerminalTierBy.AskDaoris, covered.Session));
+
+    private static IDisposable Enter(RoleJudgement? role, PipeClientProcess? client, string? worker, (string, string?)? uncarded)
     {
-        var before = (Current.Value, Appointed.Value, Connected.Value, Working.Value);
+        var before = (Current.Value, Appointed.Value, Connected.Value, Working.Value, Uncarded.Value);
         Current.Value = Terminal;
         Appointed.Value = role;
         Connected.Value = client;
         Working.Value = worker;
+        Uncarded.Value = uncarded;
         return new Restore(before);
     }
 
-    private sealed class Restore((string? Door, RoleJudgement? Role, PipeClientProcess? Client, string? Worker) before) : IDisposable
+    private sealed class Restore(
+        (string? Door, RoleJudgement? Role, PipeClientProcess? Client, string? Worker, (string, string?)? Uncarded) before) : IDisposable
     {
-        public void Dispose() => (Current.Value, Appointed.Value, Connected.Value, Working.Value) = before;
+        public void Dispose() => (Current.Value, Appointed.Value, Connected.Value, Working.Value, Uncarded.Value) = before;
     }
 }

@@ -233,6 +233,9 @@ public sealed class InstancePipe : IDisposable
 
     public Func<string?>? TerminalTier { get; set; }
 
+    /// <summary>The record of what a terminal pressed under the tier's act; none keeps no record.</summary>
+    public TerminalActs? TerminalActs { get; set; }
+
     internal PipeDelegate Delegate { get; }
 
     internal void TellDriverState() => StatePublisher.Publish(_bus, StateScopes.Driver);
@@ -621,9 +624,11 @@ public sealed class InstancePipe : IDisposable
     /// <param name="role">The role act the judge's role method covered: run inside <see cref="PipeDoor.EnterRole"/>.</param>
     /// <param name="begun">Told once the journal's first line is written or failed, before anything runs.</param>
     /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>).</param>
+    /// <param name="covered">The judgement of a press run with no card on the delegate's path: run inside <see cref="PipeDoor.EnterCovered"/>.</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
-        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, string? worker = null)
+        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, string? worker = null,
+        PipeDelegateJudgement? covered = null)
     {
         string text;
         try
@@ -638,7 +643,10 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (role is not null ? PipeDoor.EnterRole(role, client) : worker is not null ? PipeDoor.EnterWorker(worker, client) : PipeDoor.Enter(client))
+                using (role is not null ? PipeDoor.EnterRole(role, client)
+                    : covered is not null ? PipeDoor.EnterCovered(covered, client)
+                    : worker is not null ? PipeDoor.EnterWorker(worker, client)
+                    : PipeDoor.Enter(client))
                 using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);

@@ -162,6 +162,11 @@ public sealed class DriverLoop(
 
     private NoticesStateSlice? _notices;
 
+    /// <summary>Who changed the terminal's tier and what a terminal pressed under act, read at its first use after a start.</summary>
+    public TerminalActs TerminalActs => LazyInitializer.EnsureInitialized(ref _terminalActs, () => new TerminalActs(DaorisHome.Entry(Home, HomeEntry.TerminalActs)));
+
+    private TerminalActs? _terminalActs;
+
     /// <summary>What Ask Daoris's confirmed presses did, said in its conversation: an update's or pin's end, and the ask or quest a verb published.</summary>
     public PressedEnds PressedEnds { get; } = new();
 

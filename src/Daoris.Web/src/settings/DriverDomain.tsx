@@ -3,6 +3,7 @@ import {
   useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetManifest, useSetNotify, useSetQuiet, useSetTerminal,
 } from '../bridge/shell';
 import { terminalTierOf } from './machine/TerminalTierSetting';
+import { terminalActsOf } from '../person/terminalActs';
 import { type MachineSetting, SETTINGS } from '../bridge/generated/routes';
 import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
@@ -65,6 +66,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         manifestMinutes: driver.data?.manifestMinutes,
         cap: driver.data?.cap,
         terminal: terminalTierOf(driver.data?.terminal),
+        terminalChanges: terminalActsOf(driver.data?.terminalActs).changes,
         machineAccess: driver.data?.machineAccess,
         machineGitAccess: driver.data?.machineGitAccess,
       }}
