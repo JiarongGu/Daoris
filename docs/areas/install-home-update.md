@@ -85,7 +85,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`. (from D172)
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
-    never by deleting a folder while it runs. (from D172, D195)
+    never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the
     launcher's swap hold it for their act. A stale lease never blocks, and is removed by moving it aside and
     judging what moved, so a lease written meanwhile is put back. A live `driver.lock`, or a lease at the old place,
@@ -276,7 +276,6 @@ drains, swaps, rolls back and refuses.
 - **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
-- **HISTCLEAR1**: a workspace's history clear stops at the client's read bound on a long history and needs several presses.
 - **KEEPDATA1**: salvage and plugin data (the in-app browser's output) are each kept with no rule that ends them, and a stray agent folder
   under the account homes (`<agent>$a`) has no verb that removes it. A tree's files record and install logs go with the tree (the
   tidy's set-aside, a removal, the press, a failed open); a session's `.pid` marker whose process is gone is removed by the orphan sweep

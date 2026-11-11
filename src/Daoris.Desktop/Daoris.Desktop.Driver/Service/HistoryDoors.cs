@@ -6,8 +6,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The service's history doors (the service's history routes), a local host's only: what a
 /// clear of finished history would take, and the clear itself. A class over the client, reached as its <see cref="ServiceClient.History"/> and
-/// by the client's own doors of the same names. The driver's <c>HistoryClearing</c> calls them, judging this machine's half before and removing
-/// the home's files after.
+/// by the client's own doors of the same names. The driver's <c>HistoryClearing</c> calls them.
 /// </summary>
 public sealed class HistoryDoors
 {
@@ -23,24 +22,30 @@ public sealed class HistoryDoors
         return [.. plans.Units.Select(ReadUnit)];
     }
 
+    /// <summary>The most units one press names: the service judges each against every record, so a long history named whole outlasts the client's bound (<see cref="DriverHttp.Timeout"/>).</summary>
+    public const int PressUnits = 5;
+
     /// <summary>
     /// The second press: exactly <paramref name="units"/>, each judged again by the service and cleared in one transaction of its own, or
-    /// kept with its word.
+    /// kept with its word, in presses of at most <see cref="PressUnits"/>.
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, or one that refused the press, in its words.</exception>
     public async Task<IReadOnlyList<HistoryClearedView>> ClearAsync(IReadOnlyList<HistoryUnitName> units, CancellationToken ct = default)
     {
-        var cleared = Answered(await _service.SendAsync(
-            new ClearHistory([.. units.Select(unit => new HistoryUnitRequest(unit.Kind, unit.Id))]), ct).ConfigureAwait(false));
-        return
-        [
-            .. cleared.Units.Select(each => new HistoryClearedView(ReadUnit(each.Unit), each.Cleared, each.Message)
+        var answers = new List<HistoryClearedView>();
+        foreach (var press in units.Chunk(PressUnits))
+        {
+            var cleared = Answered(await _service.SendAsync(
+                new ClearHistory([.. press.Select(unit => new HistoryUnitRequest(unit.Kind, unit.Id))]), ct).ConfigureAwait(false));
+            answers.AddRange(cleared.Units.Select(each => new HistoryClearedView(ReadUnit(each.Unit), each.Cleared, each.Message)
             {
                 // Additive: absent where every removal is made, and from an older host.
                 FailedQuests = each.Failed?.Quests ?? [],
                 FailedAsks = each.Failed?.Asks ?? [],
-            }),
-        ];
+            }));
+        }
+
+        return answers;
     }
 
     /// <summary>The door's answer, or its refusal said: in its words where it gave some, else as a host older than the door.</summary>
