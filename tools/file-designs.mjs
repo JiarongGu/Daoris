@@ -5,6 +5,10 @@
  *
  *   node tools/file-designs.mjs [--plan] [--root <dir>] [--unclaimed] [--skip-refused] [--expect-moved N]
  *                               [--expect-rewritten N] [docs/<name>.md ...]
+ *   node tools/file-designs.mjs --check [--root <dir>]
+ *
+ * `--check` holds the tree to every design already filed under `docs/archive/`: a citation reaching its old place (one a
+ * branch merged after the filing added) is reported, exit 1.
  *
  * `--unclaimed` names every dated document at `docs/`'s top that neither the backlog, an area document nor the brief
  * cites: a design whose work is done. A citation is the document's file name in a tracked text file, with the path
@@ -277,11 +281,19 @@ export function verifyFiling(root, plan, { env = process.env, read = (path) => r
   return failures;
 }
 
+/** Every filed dated document, as the move that filed it: what `--check` holds the tree to after a merge. */
+export function filedMoves(files) {
+  return new Map(files
+    .filter((file) => posix.dirname(file) === ARCHIVE && DATE.test(posix.basename(file)))
+    .map((file) => [`${DOCS}/${posix.basename(file)}`, file]));
+}
+
 function parseArgs(argv) {
-  const args = { paths: [], plan: false, unclaimed: false, skipRefused: false, root: process.cwd(), expect: {} };
+  const args = { paths: [], plan: false, unclaimed: false, skipRefused: false, check: false, root: process.cwd(), expect: {} };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--plan') args.plan = true;
+    if (arg === '--check') args.check = true;
+    else if (arg === '--plan') args.plan = true;
     else if (arg === '--unclaimed') args.unclaimed = true;
     else if (arg === '--skip-refused') args.skipRefused = true;
     else if (arg === '--root') args.root = argv[++i];
@@ -290,7 +302,7 @@ function parseArgs(argv) {
     else if (arg.startsWith('--')) throw new Error(`unknown flag ${arg}`);
     else args.paths.push(arg.replace(/\\/g, '/'));
   }
-  if (!args.unclaimed && !args.paths.length) throw new Error('name a document, or --unclaimed');
+  if (!args.check && !args.unclaimed && !args.paths.length) throw new Error('name a document, --unclaimed or --check');
   return args;
 }
 
@@ -305,6 +317,12 @@ export function main(argv, { out = (line) => console.log(line), err = (line) => 
   try {
     const files = repositoryFiles(args.root, { env });
     const read = (path) => readFileSync(join(args.root, path), 'utf8');
+    if (args.check) {
+      const failures = verifyFiling(args.root, { moved: filedMoves(files) }, { env, read });
+      for (const failure of failures) err(`left behind: ${failure}`);
+      out(`file-designs: ${failures.length ? `${failures.length} citations reach a filed design's old place` : 'every citation reaches its filed design'}`);
+      return failures.length ? 1 : 0;
+    }
     let manifest = null;
     try { manifest = JSON.parse(read('daoris.json')); } catch { manifest = null; }
     const paths = args.unclaimed ? [...new Set([...unclaimed(files, read, manifest), ...args.paths])] : args.paths;

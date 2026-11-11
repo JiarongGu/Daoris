@@ -102,6 +102,12 @@ test('a run moves the files with git, writes the citations, and leaves none behi
     assert.match(readFileSync(join(root, 'src/README.md'), 'utf8'), /docs\/archive\/2026-09-01-gate-design\.md/);
     assert.match(git('status', '--porcelain').stdout, /R. docs\/2026-09-01-gate-design\.md -> docs\/archive\/2026-09-01-gate-design\.md/);
     assert.equal(main(['--root', root, 'docs/2026-10-01-open-design.md', '--expect-moved', '2', '--plan'], { out: () => {}, err: () => {} }), 1);
+    assert.equal(main(['--root', root, '--check'], { out: () => {}, err: () => {} }), 0);
+    writeFileSync(join(root, 'src/Late.cs'), '// merged later: docs/2026-09-01-gate-design.md\n');
+    git('add', 'src/Late.cs');
+    const late = [];
+    assert.equal(main(['--root', root, '--check'], { out: () => {}, err: (line) => late.push(line) }), 1);
+    assert.match(late.join('\n'), /src\/Late\.cs:1: docs\/2026-09-01-gate-design\.md reaches/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
