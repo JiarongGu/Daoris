@@ -476,12 +476,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <inheritdoc cref="ChatClosing.Finish"/>
     public bool Finish(string sessionId) => _closing.Finish(sessionId);
 
-    /// <inheritdoc cref="ChatClosing.Finishing"/>
-    public bool Finishing(string sessionId) => _closing.Finishing(sessionId);
-
-    /// <inheritdoc cref="ChatClosing.WoundUpAsync"/>
-    public Task<bool> WoundUpAsync(string sessionId, TimeSpan bound, CancellationToken ct = default) => _closing.WoundUpAsync(sessionId, bound, ct);
-
     /// <inheritdoc cref="ChatWords.Say(string, string, out string?, IReadOnlyList{ChatUpload}?, string?, MessageLevel)"/>
     public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null) =>
         _words.Say(sessionId, message, out _, files, preface);

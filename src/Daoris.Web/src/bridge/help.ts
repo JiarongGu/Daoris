@@ -16,14 +16,13 @@ import { call } from './call';
  * The press names the workspace its conversation is in: the caller reads the
  * window's at the press and hands it here, so a window that changes workspace while the start is under way moves nothing. None
  * is today's start, `default`'s, which the panel sends only where the machine holds no other workspace to choose.
- * `finishing`: the one running is one the person finished, still winding up past the driver's wait; it is no
- * conversation to carry on, and a start asks again once it has ended.
+ * Each start is a new conversation beside any running; `starting` is one this press's twin placed a moment ago.
  */
 export const useStartHelp = () =>
   useMutation({
     mutationFn: ({ workspace, focus }: { workspace?: string; focus?: Place } = {}) =>
       call('START_HELP', { ...(workspace ? { workspace } : {}), ...(focus ? { focus } : {}) }) as Promise<
-      { sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>,
+      { sessionId: string | null; message: string; starting?: boolean }>,
   });
 
 /**

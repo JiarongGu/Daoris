@@ -248,8 +248,8 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
 
     /// <summary>
     /// Ask Daoris's ended conversation goes on with the person's words: judged as a chat's is up to its account, then
-    /// the room's one running conversation set aside, the ledger's move, and its own conversation resumed in the room. It reads
-    /// the help chat's set-aside and room; the help chat calls nothing here.
+    /// the ledger's move, and its own conversation resumed in the room, beside any other running. It reads the help chat's room;
+    /// the help chat calls nothing here.
     /// </summary>
     private async Task<ChatStart> HelpGoingOnAsync(
         PriorSession record, AgentDoor adapter, HarnessConversation kept, DriverConfig config,
@@ -278,11 +278,8 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
 
-        // Its own workspace's running one alone: another workspace's runs on beside it.
-        if (await _help.SetAsideHelpAsync(sessionId, record.Workspace, ct).ConfigureAwait(false) is { } answering) return owner.Held(sessionId, HeldWords.Answering(answering));
-
-        // 🔴 The ledger's one move out of an ended state, before anything is spawned: it holds the room again,
-        // and refuses where another conversation holds it, one another process here runs among them.
+        // 🔴 The ledger's one move out of an ended state, before anything is spawned; another conversation running, in its room or
+        // any other, holds nothing of it.
         try
         {
             await _context.Service.AdvanceAsync(sessionId, "working", Continuations.GoingOnNoted, ct: ct).ConfigureAwait(false);

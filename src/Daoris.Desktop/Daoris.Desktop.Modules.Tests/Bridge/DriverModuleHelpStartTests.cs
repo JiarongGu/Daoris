@@ -19,9 +19,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     private const string Words = "how do I drive engine?";
 
     /// <summary>
-    /// The press answers within a short bound while the room's reading is held: the conversation placed (its record queued, no
-    /// room written), a second press handed the same one, the person's words held as its queue. Once read, the room is written
-    /// and the conversation starts; its end reaches the page as a start's does.
+    /// The press answers while the room's reading is held, its conversation placed and a second press placing its own, words held
+    /// as each one's queue; once read, the room is written and the conversation starts, its end reaching the page.
     /// </summary>
     [Fact]
     public async Task The_press_answers_before_the_room_is_read_and_the_conversation_starts_after()
@@ -34,16 +33,18 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var answer = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
 
         Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
-        Assert.False(answer.GetProperty("running").GetBoolean());
+        Assert.False(answer.TryGetProperty("running", out _));
         Assert.True(answer.GetProperty("starting").GetBoolean());
         Assert.Equal("queued", service.State("h1"));
         Assert.False(File.Exists(room));
 
-        // A second press while it starts (the panel's opening ahead, then the send's own) is handed it, never a second.
+        // 🔴 A second press while it starts is a new conversation of its own, never handed the one starting: its first word is its own.
         var again = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
-        Assert.Equal("h1", again.GetProperty("sessionId").GetString());
+        Assert.Equal("h2", again.GetProperty("sessionId").GetString());
         Assert.True(again.GetProperty("starting").GetBoolean());
-        Assert.Equal(1, service.Opened);
+        Assert.Equal(2, service.Opened);
+        await AnswerAsync(module, "SESSION_INPUT", new { id = "h2", text = "the new one's own" });
+        Assert.Equal("the new one's own", Assert.Single((await AnswerAsync(module, "SESSION_QUEUE", new { id = "h2" })).GetProperty("queued").EnumerateArray()).GetProperty("text").GetString());
 
         // The person's words wait for it, said as waiting on its opening.
         var said = await AnswerAsync(module, "SESSION_INPUT", new { id = "h1", text = Words });
@@ -55,8 +56,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
 
-        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
-        Assert.Equal("""{"Session":"h1","State":"failed"}""", JsonSerializer.Serialize(Raised.Single(m => m.Type == "SESSION_ENDED").Payload));
+        await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 2);
+        Assert.Contains("""{"Session":"h1","State":"failed"}""", Raised.Where(m => m.Type == "SESSION_ENDED").Select(m => JsonSerializer.Serialize(m.Payload)));
         Assert.True(File.Exists(room));
         // Its failure is said in the conversation, and the words it held are there as the person's: never lost.
         Assert.Contains("this test spawns nothing", service.Note("h1"));
@@ -95,13 +96,13 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
     /// <summary>
     /// The press names the workspace its window is on, captured there.
-    /// Two workspaces' presses each place their own conversation, the other's still starting, and a second press in one is
-    /// handed that one's; each answer names its workspace, so a late one is known for the workspace that asked it. Each
+    /// Every press places its own conversation, another's still starting, a second in one workspace too; each answer names
+    /// its workspace, so a late one is known for the workspace that asked it. Each
     /// starts in its own workspace's room folder, written for that workspace, each reaching its own spawn; none
     /// named is <c>default</c>'s, sends none and starts in <c>help</c>.
     /// </summary>
     [Fact]
-    public async Task Each_workspace_s_press_places_its_own_conversation_and_a_second_is_handed_its_own()
+    public async Task Each_press_places_its_own_conversation_in_its_workspace()
     {
         var (loop, module, service) = await UpAsync();
         service.Registry = """
@@ -117,12 +118,12 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         Assert.Equal(("h1", "alpha"), (alpha.GetProperty("sessionId").GetString(), alpha.GetProperty("workspace").GetString()));
         Assert.Equal(("h2", "beta"), (beta.GetProperty("sessionId").GetString(), beta.GetProperty("workspace").GetString()));
-        // A name is one workspace whatever its letters' case; the answer names it as it is asked.
-        Assert.Equal(("h1", "Alpha"), (again.GetProperty("sessionId").GetString(), again.GetProperty("workspace").GetString()));
+        // A name is one workspace whatever its letters' case, spelled as the machine holds it; the answer names it as it is asked.
+        Assert.Equal(("h3", "Alpha"), (again.GetProperty("sessionId").GetString(), again.GetProperty("workspace").GetString()));
         Assert.True(again.GetProperty("starting").GetBoolean());
-        Assert.Equal(("h3", "default"), (unnamed.GetProperty("sessionId").GetString(), unnamed.GetProperty("workspace").GetString()));
-        Assert.Equal(["alpha", "beta", null], service.Asked);
-        Assert.Equal(("alpha", "beta", "default"), (service.Workspace("h1"), service.Workspace("h2"), service.Workspace("h3")));
+        Assert.Equal(("h4", "default"), (unnamed.GetProperty("sessionId").GetString(), unnamed.GetProperty("workspace").GetString()));
+        Assert.Equal(["alpha", "beta", "alpha", null], service.Asked);
+        Assert.Equal(("alpha", "beta", "alpha", "default"), (service.Workspace("h1"), service.Workspace("h2"), service.Workspace("h3"), service.Workspace("h4")));
 
         // Words said to one go to it alone.
         await AnswerAsync(module, "SESSION_INPUT", new { id = "h2", text = Words });
@@ -130,8 +131,8 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
 
-        await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 3);
-        Assert.All(new[] { "h1", "h2", "h3" }, id => Assert.Contains("this test spawns nothing", service.Note(id)));
+        await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_ENDED") == 4);
+        Assert.All(new[] { "h1", "h2", "h3", "h4" }, id => Assert.Contains("this test spawns nothing", service.Note(id)));
         Assert.True(File.Exists(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
         // Each workspace's room in its own folder, saying its workspace; `default`'s is `help`, saying none.
         Assert.All(new[] { "alpha", "beta" }, workspace => Assert.Contains(
@@ -425,16 +426,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                         return (HttpStatusCode.OK, "[]");
                     case ("POST", "/api/sessions/help"):
                     {
-                        // One running per workspace, as the ledger holds it; none named is `default`'s.
+                        // Each open its own, as the ledger opens them; none named is `default`'s.
                         var named = JsonNode.Parse(body)!["workspace"]?.GetValue<string>();
                         Asked.Add(named);
                         var workspace = named ?? "default";
-                        if (_sessions.FirstOrDefault(s => s["state"]!.GetValue<string>() is "queued" or "starting" or "working"
-                                && string.Equals(s["workspace"]?.GetValue<string>() ?? "default", workspace, StringComparison.OrdinalIgnoreCase)) is { } running)
-                        {
-                            return (HttpStatusCode.Conflict, $$"""{"error":"Ask Daoris `{{running["id"]}}` is running in `{{workspace}}`."}""");
-                        }
-
                         Opened++;
                         var session = new JsonObject
                         {

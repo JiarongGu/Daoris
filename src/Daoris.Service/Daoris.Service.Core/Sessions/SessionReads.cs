@@ -253,10 +253,7 @@ internal sealed class SessionReads(SessionStore store)
         return found;
     }, ct);
 
-    /// <summary>
-    /// The session with a PROCESS in this directory, whichever record it belongs to — the intake
-    /// room's lock, where every ask in a circle is a different "repository" in one room.
-    /// </summary>
+    /// <summary>The session with a PROCESS in this directory, whichever record it belongs to: the intake room's lock.</summary>
     /// <remarks>
     /// <b>Parked does not count here</b>, unlike <see cref="ActiveForAsync"/>. The tree lock keeps a
     /// parked session's tree because its git state is work in flight; a parked intake has no process
@@ -272,28 +269,6 @@ internal sealed class SessionReads(SessionStore store)
             LIMIT 1
             """;
         command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }, ct);
-
-    /// <summary>
-    /// This machine's session of <paramref name="repository"/> running in <paramref name="workspace"/>, if any: Ask Daoris's
-    /// one at a time, which is per workspace and not per tree, since every
-    /// workspace's conversation runs in the one room. A team's record is never this machine's, as for the tree's lock.
-    /// </summary>
-    /// <param name="parked">Whether a parked record counts, as the tree's lock counts it for going on (<see cref="ActiveForAsync"/>).</param>
-    public Task<Session?> RunningInWorkspaceAsync(
-        string repository, string workspace, bool parked = false, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = $"""
-            SELECT * FROM sessions
-            WHERE repository = $repository AND workspace = $workspace COLLATE NOCASE AND origin IS NULL
-              AND state IN ({(parked ? ActiveStates : "'Queued', 'Starting', 'Working'")})
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$repository", repository);
-        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
