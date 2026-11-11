@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -65,7 +66,9 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
     [MemberData(nameof(Presses))]
     public async Task A_press_calls_the_service_with_the_person_key_and_answers_the_verbs_words(string route, object payload, int exit)
     {
-        var standIn = new KeyRecording(request => request.Method == HttpMethod.Get ? "[]" : """{"message":"Done as the person's.","repository":"engine","workspace":"work"}""");
+        var standIn = new KeyRecording(request => request.Method != HttpMethod.Get
+            ? """{"message":"Done as the person's.","repository":"engine","workspace":"work"}"""
+            : request.RequestUri!.AbsolutePath == SessionChangeShape.QuestChangesPath ? SessionChangeShape.Whole("[]") : "[]");
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(standIn), personKey: Key));
         var module = new DriverModule(Bus, loop);

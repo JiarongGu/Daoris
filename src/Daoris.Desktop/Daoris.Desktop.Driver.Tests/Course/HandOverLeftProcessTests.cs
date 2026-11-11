@@ -23,7 +23,7 @@ public sealed class HandOverLeftProcessTests : IDisposable
     public HandOverLeftProcessTests()
     {
         _root = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_root);
+        GitSeed.PlainAsync(_root, "engine").GetAwaiter().GetResult();
     }
 
     public void Dispose()
@@ -39,7 +39,7 @@ public sealed class HandOverLeftProcessTests : IDisposable
             catch (Exception error) when (error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { }
         }
 
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private string Heard => Path.Combine(_home, "heard.txt");

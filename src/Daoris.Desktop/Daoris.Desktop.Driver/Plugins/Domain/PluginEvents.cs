@@ -27,6 +27,8 @@ public static class PluginEvents
     /// <summary>A plugin's own tests ran: <c>plugin</c>, <c>passed</c>, <c>code</c>, <c>ms</c>, <c>door</c>.</summary>
     public const string Tested = "plugin.tested";
 
+    public const string Command = "plugin.command";
+
     public static readonly IReadOnlyList<string> All = [Started, Stopped, Called, Failed, Served, Tried, Tested];
 
     /// <summary>Who started the process: the driver loop, a landing, or a hand-off after one.</summary>

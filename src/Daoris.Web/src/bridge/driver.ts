@@ -350,14 +350,6 @@ export const useSetQuiet = () => useDriverChange('SET_QUIET');
 /** One bound of a folder's manifest read, files or minutes: the same `manifest` `daoris settings manifest files|minutes <n>` edits. */
 export const useSetManifest = () => useDriverChange('SET_MANIFEST');
 
-/**
- * A folder department's excludes changed: the globs to leave out and the globs to take back, the same list
- * `daoris repository excludes` edits. The driver changes the registration and reads the folder's manifest again.
- */
-export const useSetFolderExcludes = () => useMutation({
-  mutationFn: (variables: Payload<'REGISTRY_EXCLUDES'>) => call('REGISTRY_EXCLUDES', variables),
-});
-
 /** How many sessions Daoris starts at once: the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');
 

@@ -577,6 +577,14 @@ try
     if (args is ["plugins", .. var pluginsArgs])
     {
         var pluginsHome = DaorisHome.Resolve();
+        // A session's plugin tools, served on stdio to the harness that started it: frames alone on stdout.
+        if (pluginsArgs is ["tools", .. var toolWords])
+        {
+            using var stdin = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false));
+            await using var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+            return await PluginToolsServer.ServeAsync(pluginsHome, toolWords, log, stdin, stdout, Console.Error, CancellationToken.None);
+        }
+
         // Approve and withdraw go through the running Daoris where one answers, confirmed in its window.
         return await PluginsCommand.RunAsync(
             pluginsArgs, Console.Out, pluginsHome, log, instance: Daoris.Driver.Host.InstanceHost.World(pluginsHome, "plugins"));

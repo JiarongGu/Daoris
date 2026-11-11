@@ -50,6 +50,16 @@ and whether GitHub last refused it; `logout` forgets it. A git identity serving 
 `origin` is served by a read-only identity or git access denies Write. Where the host is a GitHub Enterprise one, the API is
 `https://<host>/api/v3`; `DAORIS_HOST_API` names another base address, as the test's stand-in does.
 
+## Tools for an agent
+
+Four commands are marked `tool`, so a session at a place where the plugin's tools are on calls them through its `daoris-plugins`
+server: `status`, and the three an agent working a pull-request step needs, each naming the repository by its origin's address:
+`create-pull-request` (a pushed branch, its base, a title and a body; the open one found again), `pull-request-status` (by its
+address or number, or from its branch) and `complete-pull-request` (by `merge`, `squash` or `rebase`, the branch deleted where asked,
+branch protection still deciding). Each answers its pull request's number, address, state, branches and merge commit as `data`
+(`pull-request-commands.mjs`, over the API helpers in `github.mjs` the step shares). A merge needs the token's Contents (Read and
+write) on the repository.
+
 ## What it needs
 
 - **Node.js**, as `plugin.json` declares under `tools`: the process, and its calls to the API.

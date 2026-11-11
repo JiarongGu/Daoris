@@ -43,6 +43,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
 | Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs` (the port), `Plugins/PluginsAtStart.cs`, `Workflows/PluginRenamedAttemptsWiring.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/Domain/CommandCall.cs`, `Plugins/Domain/CommandArgs.cs`, `Plugins/PluginCommandRun.cs`, `Modules/Bridge/Routes/PluginCommandRoutes.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
+| Agents' tools | `Plugins/PluginToolList.cs`, `Plugins/PluginToolCall.cs`, `Plugins/PluginToolsServer.cs`, `Plugins/PluginToolsHand.cs`; `Agents/SessionServers.cs` | A session's `daoris-plugins` server: the tool commands at its place, a call as one round `from: agent`, `daoris plugin tools`, the entry a session is handed |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 | Page's interfaces | `plugins/interfaces.ts`, `PluginSetup.tsx`, `RoundCard.tsx`, `usePluginCommands.tsx`, `commandAsks.ts`; `bridge/pluginCommand.ts`, `bridge/pluginSwitch.ts`; `menus/pluginCommands.ts` | The *Set up* tab, the round card over `PLUGIN_COMMAND`, the switches over `PLUGIN_SWITCH`, the palette's plugin commands |
@@ -108,7 +109,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
     the classic release made from it, or the pipeline run's own stages, and watches each awaited stage to its end, starting one by `deploy`
-    where nothing started it, a pending approval said and waited on. Both plugins call their
+    where nothing started it, a pending approval said and waited on. With no options it serves a repository whose build several release
+    definitions take: it watches the releases made from that build by the definitions whose CD trigger takes its branch (a release whose
+    stages all start by hand left alone), and a merge no pipeline builds (every CI trigger off or its branch and path filters, a YAML
+    pipeline's read at the merge commit, leaving it out) reaches saying nothing is to release. Both plugins call their
     service's REST API with the token their own `login` command keeps in their private storage (rule 29), and say a refused one at
     `status`. A place whose hand is refused (no origin, the identity serving it read only, Write denied: `PlaceHands`) is not started:
     the refusal is logged as `refused`, never as a start that failed (`unstartable`), counts as no exit toward unsound, and the hand is
@@ -227,6 +231,20 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
+29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`: `SessionServers` hands a quest's
+    session, at its start and its going on, the desktop's program as `daoris plugin tools --session <id> [--repository <id>]
+    [--workspace <name>] --language en|zh`, the home in the entry's own variables, only where its place lists a tool and the program is
+    found (the install's `app/daoris-driver/`, else the running program where it is that one; `PluginToolsHand`). It lists
+    (`PluginToolList`) each command marked `tool` and not `interactive` of each installed plugin that is on, not refused and speaks,
+    where its `commands` and `tools` are both on at the session's place, read again at each list and call; each is named
+    `<plugin>_<command>` (an id and a name hold no underscore, and the model APIs' tool names take no dot), its description the
+    command's `about` and its title its `title` in the session's language, its input schema from `args` (`text` and `choice` strings,
+    a choice's `enum`, the required ones), annotated read-only unless it `writes`. A call (`PluginToolCall`) is one round at
+    `command/run` `from: agent` with the session, its place and language: `said` is the text, `data` the structured content, an exit
+    other than 0 an error; a round that asks is refused and never answered, since no person answers a tool call; an argument missing or
+    not of its type is refused before any process starts; a tool not listed there is a `-32602` error. Every round is a `plugin.command`
+    line by names alone (plugin, command, from, session, exit, ms). No call asks an approval: the switch `tools` per place is the
+    opt-in. Ask Daoris, a reviewer, a helper and a partner are handed no such server. (from D274)
 30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
     `daoris-azure-devops`, `daoris-in-app-browser`), and anyone else's uses its own family, never `daoris-`. A manifest's `formerly`
     names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The family is the word before
@@ -270,7 +288,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
-`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
+`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`, `PluginToolsServerTests`, `PluginToolsProcessTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
 `SystemReadBackTests`, the stand-in's process proofs `SystemPlanProcessTests` and `SystemReadBackProcessTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;

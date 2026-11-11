@@ -110,6 +110,20 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1h's second part — a run's step outcomes in Done and failed (2026-11-12, D273)
+
+> **REVIEWUX1h, second part** (driver, web): Outcome: each watched step after a run's review, once reached or failed, is one *Done and failed* line keyed `outcome:<run>/<node>/<attempt>` (`RunOutcomeNotices`), read from the run's record at every look and claimed once through the news by the look's last pass (`RunOutcomesLook`), so a dismissed one stays dismissed and one a lost write left is kept at the next look; it is said by its step's kind and its run in both languages. Proof: `RunOutcomeNoticesTests` and the outcome words test, each seen failing first; the look's pass order census.
+
+---
+
+## REVIEWUX1e's second part and REVIEWUX1i — the review read whole, the supervisor on every kind (2026-11-12, D273)
+
+> **REVIEWUX1e, second part** (driver, modules, web): Outcome: the run's review answers the values its sentence of its kind is worded from (`RunReviewSays`), the steps before the review with their states, and each following step's wire, outcome, door and the recovery its attempt takes; `RUN_REVIEW_FILE` draws a branch's or a checkout's file from the commits the record names (`ReviewCommits`), never the checkout as it stands; the page reads the review through `useRunReview`. Proof: `RunReviewsTests` and `ReviewCommitsTests` (a real repository whose branch moved past the review), the web typecheck.
+>
+> **REVIEWUX1i, but the card** (driver, modules): Outcome: a landing supervisor decides a run's step from any session of the run's chain (`LandingKind`, by `QuestRuns.Of`), reads the review record's facts on every kind alike (`LandingReviewFacts`), and keeps its decision naming the record's revision (`SupervisorReviewBinding`): released only while the attempt's record holds it, carried onto the run's record and dropped `stale` `moved` at the pass where the work read afresh holds another; one naming no revision stands on a branch's review alone, so a held decision from before the record is dropped. Proof: `SupervisorReviewBindingTests` seen failing first, the supervisor landing and landing kind suites.
+
+---
+
 ## REVIEWUX1e's first part and REVIEWUX1h's `choose` — a run's review read by run; a return's choice a person wait (2026-11-12, D273)
 
 > **REVIEWUX1e, first part** (driver, modules): Outcome: `RUN_REVIEW { run | session, attempt }` (modules `RunReviewRoutes`, told by event) answers a run's review read by `RunReviews` from the run's binding, node record and review records alone, so it opens after its trees and sessions are gone: the newest record or an attempt named, where the review stands, the presses only on the attempt it stands on, a newer record with the paths whose content it changed, the steps an Accept may start with their states, the run's end; a session opens its run's review by the run its quest is (`QuestRuns.Of`), an earlier part's included; `RUN_REVIEW_FILE` draws a folder's or a copy's file at the record's hash from the content store, or from the place only while it still hashes so, else refused `moved` (`ReviewContent`). Proof: `RunReviewsTests` (driver), `DriverModuleRunReviewTests` seen failing first (the route refused unknown), the held reads' payloads.
@@ -136,6 +150,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## ASKFULL1g-ix — the proposal box gone, `go` a link of its own (2026-11-11, D261)
 
 > **ASKFULL1g-ix** (service, driver, modules, web): Outcome: the last proposal kind, `go`, is a link in Ask Daoris's words (`daoris:go?view=…`) that its panel draws as a press opening the place (`help/goLink.tsx`), plain words anywhere else; the box is removed whole — `go_propose`, its writer, `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `Help/Proposals/`, `HELP_PROPOSALS`, `HELP_APPLY`, `HELP_DISMISS`, `HelpScreenDoors`, `ProposalCard`, their words — and the room's *What you may do* names the verbs alone (`HelpRoomVerbs`); a run-once home step salvages and clears the proposals folder. Every way Ask Daoris asks the person is now a press viewed on the Confirm card (D261). Proof: the service registration, call-table and brainstorm tests, the web call-table twin and `goLink.test` (seen failing first), `HelpProposalsStepTests`, the room goldens.
+
+---
+
+## PLUGINEXT1d — a plugin's commands as a session's tools (2026-11-12, D274)
+
+> **PLUGINEXT1d** (driver): Outcome: a quest's session, at its start and its going on, is handed one MCP server, `daoris-plugins` (`daoris plugin tools --session <id> --repository <id> --workspace <name> --language en|zh`, the desktop's program from the install's `app/daoris-driver/`), only where its place lists a tool; it lists each command marked `tool` and not interactive of each plugin on, sound and speaking, where `commands` and `tools` are on at the session's place, read again at each call, as `<plugin>_<command>` with the `about` and `title` in the session's language, a schema from `args` and a read-only mark unless it `writes`; a call is one round `from: agent` with the session and place, `said` the text, `data` the structured content, an exit an error, an ask or a missing argument refused before a second round or any process, a `plugin.command` line by names alone. Proof: `PluginToolsServerTests` (could not compile before the units), `PluginToolsProcessTests` (a stand-in session's client calling the Azure DevOps example's `status` through the built program, and nothing listed or run once switched off at the repository).
 
 ---
 
