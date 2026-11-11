@@ -110,7 +110,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
     the classic release made from it, or the pipeline run's own stages, and watches each awaited stage to its end, starting one by `deploy`
-    where nothing started it, a pending approval said and waited on. Both plugins call their
+    where nothing started it, a pending approval said and waited on. With no options it serves a repository whose build several release
+    definitions take: it watches the releases made from that build by the definitions whose CD trigger takes its branch (a release whose
+    stages all start by hand left alone), and a merge no pipeline builds (every CI trigger off or its branch and path filters, a YAML
+    pipeline's read at the merge commit, leaving it out) reaches saying nothing is to release. Both plugins call their
     service's REST API with the token their own `login` command keeps in their private storage (rule 29), and say a refused one at
     `status`. A place whose hand is refused (no origin, the identity serving it read only, Write denied: `PlaceHands`) is not started:
     the refusal is logged as `refused`, never as a start that failed (`unstartable`), counts as no exit toward unsound, and the hand is

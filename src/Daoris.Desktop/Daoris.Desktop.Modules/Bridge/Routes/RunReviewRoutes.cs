@@ -30,16 +30,23 @@ public sealed class RunReviewRoutes(DriverLoop loop)
     private async Task<object?> RunReviewFileAsync(RunReviewFileRead press, CancellationToken cancellationToken)
     {
         var run = press.Run.Trim().TrimStart('#');
-        return await Task.Run<object?>(() =>
-        {
-            if (RunReviews.Read(_loop.Home, run, press.Attempt) is not { Record: { } record } review || record.Attempt != press.Attempt)
-            {
-                return new { Run = run, press.Path, Refused = RunNodeWords.NotRun };
-            }
+        var review = await Task.Run(() => RunReviews.Read(_loop.Home, run, press.Attempt), cancellationToken).ConfigureAwait(false);
+        if (review is not { Record: { } record } || record.Attempt != press.Attempt) return new { Run = run, press.Path, Refused = RunNodeWords.NotRun };
 
-            var (text, refused) = ReviewContent.Read(_loop.Home, record, press.Path, press.Side);
-            return new { Run = run, review.Node, record.Attempt, record.Revision, press.Path, press.Side, Text = text, Refused = refused };
-        }, cancellationToken).ConfigureAwait(false);
+        var (text, refused) = record.Kind is ReviewKinds.Branch or ReviewKinds.Checkout
+            ? await CheckoutOfAsync(record.Place, cancellationToken).ConfigureAwait(false) is { } root
+                ? await ReviewCommits.ReadAsync(root, record, press.Path, press.Side, cancellationToken).ConfigureAwait(false)
+                : (null, ReviewContent.NotKept)
+            : await Task.Run(() => ReviewContent.Read(_loop.Home, record, press.Path, press.Side), cancellationToken).ConfigureAwait(false);
+        return new { Run = run, review.Node, record.Attempt, record.Revision, press.Path, press.Side, Text = text, Refused = refused };
+    }
+
+    /// <summary>The first checkout of <paramref name="repository"/> on this disk, as the registry names it; null where none stands here.</summary>
+    private async Task<string?> CheckoutOfAsync(string repository, CancellationToken ct)
+    {
+        if (_loop.Service is not { } service) return null;
+        var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
+        return LinesRoutes.Checkouts(registry, repository, null).Select(row => row.Root).FirstOrDefault(Directory.Exists);
     }
 
     /// <summary>The run the quest of <paramref name="session"/> is, its chain read up its parents; null where it serves none.</summary>

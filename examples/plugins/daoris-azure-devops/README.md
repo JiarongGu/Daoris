@@ -87,8 +87,11 @@ project's API and `api-version=7.1-preview` on release management's (`vsrm.dev.a
 
 ```
 GET   {org}/{project}/_apis/build/builds?repositoryId=…&repositoryType=TfsGit&branchName={target}[&definitions={pipeline}]
-GET   {vsrm}/{project}/_apis/release/definitions?artifactType=Build&artifactSourceId={projectId}:{pipeline}&$expand=artifacts
-GET   {vsrm}/{project}/_apis/release/releases?definitionId=…&artifactTypeId=Build&sourceId=…&artifactVersionId={build}
+GET   {org}/{project}/_apis/build/definitions?repositoryId=…&repositoryType=TfsGit&includeAllProperties=true   where no build ran
+GET   {org}/{project}/_apis/git/repositories/{repo}/commits/{commit}/changes                                   where no build ran
+GET   {org}/{project}/_apis/git/repositories/{repo}/items?path={yaml}&versionDescriptor.version={commit}…      a YAML pipeline's trigger
+GET   {vsrm}/{project}/_apis/release/definitions?artifactType=Build&artifactSourceId={projectId}:{pipeline}&$expand=artifacts,triggers
+GET   {vsrm}/{project}/_apis/release/releases?[definitionId=…&]artifactTypeId=Build&sourceId=…&artifactVersionId={build}
 GET   {vsrm}/{project}/_apis/release/releases/{id}                             each stage's status and approvals, every so often
 PATCH {vsrm}/{project}/_apis/release/releases/{id}/environments/{stage}         { status: inProgress }, for `deploy` alone
 GET   {org}/{project}/_apis/build/builds/{build}/timeline                       a pipeline run's own stages and approvals
@@ -100,13 +103,28 @@ succeed, finds the classic release made from it, and watches that release's stag
 stages (a YAML pipeline's). Each stage awaited is watched until it ends: a pending approval is said on the plugin's console and waited
 on, never given here. The step reaches when every awaited stage succeeded, with the release's or the run's address as evidence and each
 stage's outcome in its message (*Release-12 of app-release from build 20261110.41 (1a2b3c4d): Staging succeeded; Production succeeded
-after an approval by Release Approvers.*). It fails with:
+after an approval by Release Approvers.*).
+
+**With no options**, a repository's pipeline is usually the artifact of several release definitions (dev, QA and prod; a disabled one).
+The step then watches the releases actually made from the build, each by its own stages: it waits (within `findSeconds`) for a release of
+every definition whose CD trigger takes the build's branch, and watches those together, a release whose every stage starts by hand left
+alone and said. A definition with no trigger on the branch (QA, prod) is not watched unless a release was made from the build anyway. One
+release failing fails the step.
+
+**A merge that builds nothing** is reached at the first look, saying *Nothing to release*, where every pipeline of the repository leaves
+it out: its CI trigger is off, or its branch filters leave out the target branch, or its path filters leave out every file the merge
+commit changed (a classic pipeline's filters, a YAML pipeline's `trigger:` read from its file at the merge commit; `trigger: none`, a list of
+branches, or `branches` and `paths` with `include` and `exclude`). Anything it cannot read (a trigger in another shape, a file it cannot
+fetch, no pipeline listed, a long list of changes) is not taken for that: it waits `findSeconds` and fails `no-release` as before.
+
+It fails with:
 
 - `stage-failed`: a stage rejected, failed or canceled (a stage of a pipeline run skipped too, where `stages` names it), in its words;
 - `build-failed`: the build a classic release takes did not succeed;
-- `no-release`: no build of the merged commit within `findSeconds`, no release made from it within `findSeconds`, a build with no
+- `no-release`: no build of the merged commit within `findSeconds` (and the merge not shown to build nothing), no release made from it
+  within `findSeconds` (of several definitions: none triggering on the branch, or every release made starting by hand), a build with no
   stages that no release definition takes, or a pipeline, release definition or stage named that is not there;
-- `ambiguous`: builds of several pipelines, or several release definitions, and no option naming one;
+- `ambiguous`: builds of several pipelines, and no option naming one;
 - `timeout`: the attempt's deadline (the node's `timeoutSeconds`, else the step's 3600) came first, saying where each stage stood, and of
   a stage nothing started that `deploy` would start it;
 - `not-merged`, `no-unit`, `no-origin`, `no-token`, `unauthorized`; `unavailable` and `rate-limited` are transient, and while it
@@ -117,7 +135,7 @@ Its options, each optional:
 | Option | What it says |
 |---|---|
 | `pipeline` | the build pipeline, by name or id; else the one that built the merged commit |
-| `releaseDefinition` | the classic release definition, by name or id; else the one whose artifact is that build |
+| `releaseDefinition` | the classic release definition, by name or id; else the releases made from that build by the definitions whose CD trigger takes its branch |
 | `stages` | the stage or stages to wait for, by name; else every stage |
 | `deploy` | the stage or stages of a classic release to start where nothing started them; Azure DevOps' approvals and gates still decide |
 | `findSeconds` | how long to look for the build and the release before saying none was found; 600 |
@@ -170,6 +188,8 @@ and merge commit as `data` (`pull-request-commands.mjs`).
 DevOps' API on the loopback: `pull-request.test.mjs` (open, reuse, state with the merge commit, a refused token, no token, and that the
 source starts no program), `auto-complete.test.mjs` (set, off by default, refused by a policy, refused for want of permission, an unknown
 merge strategy) and `release.test.mjs` (a classic release watched to success, a failed stage, a pending approval waited on, a stage
-started by `deploy`, no build and no release found, a pipeline run's own stages, and the deadline). None of it has been run against a
+started by `deploy`, no build and no release found, a pipeline run's own stages, and the deadline), `release-places.test.mjs` (a build taken
+by several release definitions as four repositories of one organisation shape them, and a merge no pipeline builds, by a path filter, a branch
+filter or a trigger off) and `triggers.test.mjs` (the YAML trigger's shapes). None of it has been run against a
 real Azure DevOps organisation: whether `lastMergeCommit` names a squash's commit on the target, and how each API answers a refusal by
 policy, were never measured, and git's confirmation is what keeps a wrong reading safe.

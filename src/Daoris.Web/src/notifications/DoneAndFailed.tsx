@@ -30,6 +30,12 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return count > 1 ? t('notifications.done.lost', { count }) : t('notifications.done.lost_one');
   }
   if (notice.kind === 'newer') return t('notifications.done.newer');
+  if (notice.kind === 'outcome') {
+    // A run's step after its review: the step by its kind's own words, the run by its id.
+    const step = notice.route ? t(`workflow.step.${notice.route}`, { defaultValue: notice.act ?? '' }) : notice.act ?? '';
+    const words = { step, run: notice.quest ?? '' };
+    return notice.state === 'failed' ? t('notifications.done.outcome.failed', words) : t('notifications.done.outcome.reached', words);
+  }
   if (notice.kind === 'look') {
     // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');

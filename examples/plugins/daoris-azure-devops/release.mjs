@@ -2,7 +2,9 @@
 // the target branch; then the classic release made from that build (a release definition taking its artifact) or, where no definition
 // takes it, the pipeline run's own stages; watched until each awaited stage ends, each stage's outcome its evidence.
 import { Refusal, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
+import { watchSeveral } from './several.mjs';
 import { until, watchRelease, watchRun } from './stages.mjs';
+import { builtNothing } from './triggers.mjs';
 
 const EVIDENCE = 'azure-devops-pull-request/release@1';
 // The watch ends this long before the attempt's deadline, so its outcome reaches Daoris before Daoris asks after it.
@@ -57,7 +59,7 @@ const pipelineTaken = (definition) => {
 };
 
 const taking = async (repo, build) =>
-  (await releases(repo, 'GET', `/definitions?artifactType=Build&artifactSourceId=${encodeURIComponent(sourceOf(build))}&$expand=artifacts`)).json?.value ?? [];
+  (await releases(repo, 'GET', `/definitions?artifactType=Build&artifactSourceId=${encodeURIComponent(sourceOf(build))}&$expand=artifacts,triggers`)).json?.value ?? [];
 
 /** The builds of `commit` on `target`, newest first, of `pipeline` where one is named; undefined while there are none. */
 async function buildsOf(repo, repositoryId, commit, target, pipeline) {
@@ -101,15 +103,24 @@ export async function release(attempt, unit, say) {
     const named = asked.definition !== null ? await definitionOf(repo, asked.definition) : null;
     const pipeline = asked.pipeline !== null ? await pipelineOf(repo, asked.pipeline) : named ? pipelineTaken(named) : null;
     const repositoryId = (await call(repo, 'GET', '')).json?.id ?? repo.repository;
-    const ran = await until(() => buildsOf(repo, repositoryId, commit, target, pipeline), finding(), asked.every, say);
+    // A merge no pipeline takes (every CI trigger off, or its branch or path filters leaving it out) builds nothing: said once, at the first look.
+    let looked = pipeline !== null;
+    const ran = await until(async () => {
+      const found = await buildsOf(repo, repositoryId, commit, target, pipeline);
+      if (found || looked) return found;
+      looked = true;
+      const nothing = await builtNothing(repo, repositoryId, commit, target);
+      return nothing ? { nothing } : undefined;
+    }, finding(), asked.every, say);
     if (!ran) {
       return failed('no-release', `no build ran for ${short} on \`${withoutHeads(target)}\`${pipeline ? ` in pipeline ${pipeline}` : ''} within ${asked.find / 1000} s.`);
     }
+    if (ran.nothing) {
+      return { state: 'reached', evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, url: web(null, `_git/${encodeURIComponent(repo.repository)}/commit/${commit}`),
+        message: fit(`Nothing to release: ${ran.nothing}.`) } };
+    }
     const { build, definitions } = await chosen(repo, ran, named);
     const buildUrl = web(build, `_build/results?buildId=${build.id}`);
-    if (definitions.length > 1) {
-      return failed('ambiguous', `release definitions ${definitions.map((each) => each.name).join(', ')} each take build ${numberOf(build)}; name one in the step's releaseDefinition option.`, buildUrl);
-    }
 
     const outcome = (header, watched, url) => {
       if (watched.verdict === 'missing') return failed('no-release', `${header}no stage is named ${watched.missing.join(', ')}.`, url);
@@ -132,6 +143,11 @@ export async function release(attempt, unit, say) {
     if (!built) return failed('timeout', `build ${numberOf(build)} of ${short} had not completed by the step's deadline.`, buildUrl);
     if (!['succeeded', 'partiallySucceeded'].includes(built.result)) {
       return failed('build-failed', `build ${numberOf(build)} of ${short} ${built.result ?? 'ended'}, so no release takes it.`, buildUrl);
+    }
+    if (definitions.length > 1) {
+      const watched = await watchSeveral({ repo, build, definitions, asked, by: finding(), ends, say, commit, sourceId: sourceOf(build), buildNumber: numberOf(build) });
+      if (watched.verdict === 'none') return failed('no-release', watched.words, buildUrl);
+      return outcome('', watched, watched.url ?? buildUrl);
     }
     const made = await until(async () => {
       const query = `definitionId=${definition.id}&artifactTypeId=Build&sourceId=${encodeURIComponent(sourceOf(build))}&artifactVersionId=${build.id}`;

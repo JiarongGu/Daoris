@@ -1,0 +1,49 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// <i>Done and failed</i>'s run outcomes (<see cref="RunOutcomeNotices"/>): one per watched step after a run's review, by run, node and
+/// attempt, read from the run's record at every look so one a lost write left is kept the next time, and a step still going leaves none.
+/// </summary>
+public sealed class RunOutcomeNoticesTests : IDisposable
+{
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "run-outcomes", Guid.NewGuid().ToString("N")[..8]);
+
+    private static readonly DateTimeOffset T = DateTimeOffset.Parse("2026-11-12T09:00:00Z");
+
+    private const string Graph = """
+        {"schemaVersion":2,"entries":["work"],"end":"push",
+         "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"daoris/{quest}"}},
+                  {"id":"push","kind":"push","version":1,"reach":"performed"}],
+         "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"b","kind":"after","from":"review","to":"landing"},
+                  {"id":"c","kind":"after","from":"landing","to":"push"}]}
+        """;
+
+    public void Dispose() => GitSeed.Discard(_home);
+
+    [Fact]
+    public void Each_settled_step_after_the_review_is_one_outcome_by_run_node_and_attempt_and_a_step_going_on_is_none()
+    {
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, Graph), T);
+        var unit = RunUnits.IdOf("q1");
+        new NodeRecordFiles(_home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["review"] = new(unit, "review", NodeStates.Reached) { Attempt = 1, Since = T },
+                ["landing"] = new(unit, "landing", NodeStates.Reached) { Attempt = 1, Since = T.AddMinutes(1) },
+                ["push"] = new(unit, "push", NodeStates.Failed) { Attempt = 2, Since = T.AddMinutes(2), Code = "rejected" },
+            },
+        });
+
+        var told = RunOutcomeNotices.Occurrences(_home, T.AddMinutes(5));
+
+        Assert.Equal(["outcome:q1/landing/1", "outcome:q1/push/2"], told.Select(each => each.Key));
+        var push = told[1].Notice!;
+        Assert.Equal((RunOutcomeNotices.Kind, "q1", "push", NodeKinds.Push, NodeStates.Failed, "rejected", 2),
+            (push.Kind, push.Quest, push.Act, push.Route, push.State, push.Code, push.Count));
+        Assert.Empty(RunOutcomeNotices.Occurrences(_home, T.AddDays(8)));
+    }
+}
