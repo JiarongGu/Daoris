@@ -11,7 +11,7 @@ import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { chooseInPlace } from '../bridge/repositories/setup';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
-import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
+import { Button, CheckField, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
 
 /**
  * Managing the machine's repositories — the surfaces that exist only where a shell is
@@ -223,10 +223,14 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           {!found.git && <FolderExcludesField value={excludes} onChange={setExcludes} />}
 
           {found.git ? (
-            <label className="mt-3 flex items-start gap-2 text-small text-ink-soft">
-              <input type="checkbox" className="mt-0.5" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
-              <span>{t('projects.manage.inPlaceTick')}</span>
-            </label>
+            <div className="mt-3">
+              <CheckField
+                checked={inPlace}
+                onChange={setInPlace}
+                label={t('projects.manage.inPlaceTick')}
+                className="whitespace-normal text-small"
+              />
+            </div>
           ) : (
             <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceFolder')}</p>
           )}

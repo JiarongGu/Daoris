@@ -5,9 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// An ORGANISM, so this is the layer that holds the hooks and the layer a mocked bridge is for
-// The bridge is mocked as present, because the Work frame is desktop-only
-// and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
+// An organism: the layer that holds the hooks and the one a mocked bridge is for. The bridge is mocked as present,
+// since the Work frame is desktop-only and the group header's driver facts exist nowhere else; one case takes it away.
 
 const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -122,8 +121,7 @@ describe('the session rail', () => {
   it('groups what is running by repository, in a stable order', async () => {
     show(<SessionRail notify={() => {}} arrangement="repository" />);
 
-    // The repository groups' headings — not the ended section's, which is a peer of the groups
-    // rather than one of them, and lists what is not running.
+    // The repository groups' headings, not the finished section's: a peer of the groups that lists what is not running.
     const ended = await screen.findByRole('region', { name: 'Failed and done' });
     const headings = screen.getAllByRole('heading', { level: 3 })
       .filter((heading) => !ended.contains(heading));
