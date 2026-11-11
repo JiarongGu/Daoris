@@ -401,7 +401,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `integrate` becomes its line's policy; the landing rules and work cycles leave `driver.json`. A version the save refuses is
     left, said. Its `run-rebinds` step (`RunRebindsStep`) binds a run whose version does not read here (Current's, or one its
     workflow's file no longer holds as a graph) and that has no node record again, as a first start binds it, to the place's choice
-    today; a run whose place chooses nothing that binds is left as it was. There is no door, receipt or undo. (from D232)
+    today; a run whose place chooses nothing that binds is left as it was. Its `review-records` step (`ReviewRecordsStep`) converts the
+    words an older build kept on a branchless review with no record to name (`ReviewLegacy`): a person's Accept is kept, its receipt *accepted
+    as it stood at …, before Daoris drew a revision*, only where the run's pinned graph ends at its review with nothing after it, and is
+    otherwise dropped and said on the run's history, so the review waits for a word on its record; a supervisor's is dropped stale; a branch
+    run's words stand, and the pass itself gives each standing review its record. There is no door, receipt or undo. (from D232, D273)
 45. There is no landing rule: no type, reader or writer of `landings` or `workspaceLandings` outside the migration, which reads them raw
     (`MigratedPlaces`) and takes them out of `driver.json` once. Every door that lands, plans, names a branch or says how work lands reads
     the run's bound `land`; work no version governs lands as the declared merge and is held by its gate. A line's integration reads

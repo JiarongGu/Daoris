@@ -82,6 +82,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1d — runs in flight: a review's words that name no record (2026-11-12, D273)
+
+> **REVIEWUX1d** (driver): Outcome: the `review-records` home step (`ReviewRecordsStep`, `ReviewLegacy`) converts the words an older build kept on a branchless review: a person's Accept given with no commit is kept as legacy only where the run's pinned graph ends at its review with nothing after it, its receipt carried to the review's Accept (*accepted as it stood at …, before Daoris drew a revision*), and is otherwise dropped and said on the run's history; a supervisor's such word is dropped stale; a branch run's words stand; no pinned graph is edited, and the pass gives each standing review its record. Proof: `ReviewRecordsStepTests` (seen failing first), the step run twice changing nothing.
+
+---
+
 ## The plugin family's follow-ups and FABRIC-TRYAGAIN1 — the kit's family rule, the short command, try again (2026-11-11)
 
 > **Plugins, follow-ups** (driver, modules, web): Outcome: `daoris plugin new` refuses an id with no family and the `daoris-` family outside Daoris's own examples, and its form asks `<family>-<name>`; a plugin's commands answer to the id's tail where one installed plugin has it (`daoris azure-devops login`), an ambiguous tail refused naming both (D274's note); both loops and the headless `drive --once` start plugins through the rename first, an unsettled attempt moves to the new id with its step kind, and the editor and `workflow show` read the new kind; **FABRIC-TRYAGAIN1:** `daoris plugin try-again <id>` restarts an unsound plugin in the running Daoris, and the plugin's page shows *Try again* (重试) while it is unsound, with why. Left: the remaining tests and stories that use the old example ids as sample strings. Proof: `PluginFamilyTests`, `PluginRenameGapsTests` (seen failing first), `DriverModulePluginTryAgainTests`, `PluginPage.tryAgain.test`.

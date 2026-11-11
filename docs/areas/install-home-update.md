@@ -209,7 +209,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     nothing; a step that throws, or whose record cannot be written, stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
 54. This release's migration is `nocompat1`, in the order of `HomeMigration.Steps`: the staffing into the store; the caps as
-    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; a run bound to a workflow version no graph reads, rebound to its place's choice; `driver.json`'s keys
+    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; a run bound to a workflow version no graph reads, rebound to its place's choice; a review's words that name no record (`review-records`,
+    `ReviewLegacy`: a person's Accept given with no commit kept as legacy only where the run's pinned graph has nothing after its review,
+    its receipt saying it was given before Daoris drew a revision, else dropped and said on the run; a supervisor's dropped stale); `driver.json`'s keys
     no code writes; `no-push` as git access; `harnesses.json`'s old names and pooled sections; a waiting say's `now`; unkeyed
     solicited attempts; held presses with no question; the event logs' `answered` receipts, `chat.told-routing` notes and old
     handed sections; the session records' `answer` column; finished records' English-only notes; closed quests with a
