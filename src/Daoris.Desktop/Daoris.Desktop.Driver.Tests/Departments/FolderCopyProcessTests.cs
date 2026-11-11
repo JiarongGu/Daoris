@@ -48,6 +48,25 @@ public sealed class FolderCopyProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_return_waits_while_a_session_still_works_in_the_copy_and_never_removes_it()
+    {
+        Directory.CreateDirectory(Place);
+        File.WriteAllText(Path.Combine(Place, "summary.md"), "# Summary\n");
+        var copy = Copy("rec-a");
+        File.WriteAllText(Path.Combine(copy.Folder, "summary.md"), "# Summary\nOctober closed.\n");
+        Active("run:a");
+        var door = new ReturnDoor(Home, holdsLease: () => true, turning: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string> { copy.Folder }));
+        var status = Records.Read("run:a")!.Statuses[Return.Id];
+
+        await door.PerformAsync(ReturnStart.Of(Run("run:a", "rec-a"), Return, status, Records.Read("run:a")!, StepAuthority.OfDoor("run:a", Return.Id, 1)), CancellationToken.None);
+
+        var held = Records.Read("run:a")!.Statuses[Return.Id];
+        Assert.Equal((NodeStates.Active, ReturnNode.PlaceBusy), (held.State, held.Code));
+        Assert.Equal("# Summary\n", File.ReadAllText(Path.Combine(Place, "summary.md")));
+        Assert.True(Directory.Exists(copy.Folder));
+    }
+
+    [Fact]
     public async Task Two_sessions_work_apart_in_copies_and_a_file_both_changed_waits_for_the_person_s_choice()
     {
         Directory.CreateDirectory(Path.Combine(Place, "q4"));

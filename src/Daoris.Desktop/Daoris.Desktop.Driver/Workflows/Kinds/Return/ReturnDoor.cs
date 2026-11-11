@@ -46,7 +46,8 @@ public sealed class ReturnDoor(
         try
         {
             using var held = TreeLock.TryStarting(home, copy.Root, StartIn.In(copy.Root));
-            if (held is null || (turning is not null && (await turning(ct).ConfigureAwait(false)).Any(folder => TreeGit.SamePath(folder, copy.Root))))
+            if (held is null || (turning is not null
+                    && (await turning(ct).ConfigureAwait(false)).Any(folder => TreeGit.SamePath(folder, copy.Root) || TreeGit.SamePath(folder, copy.Folder))))
             {
                 Settle(start, ReturnNode.PlaceBusy, Path.GetFileName(copy.Root));
                 return;
