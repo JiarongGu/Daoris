@@ -385,9 +385,10 @@ method-not-found draws *It does not do this*.
 ### 3.4 Commands as agents' tools
 
 - **One server per session.** A session in a place is handed one MCP server, `daoris-plugins`, which the driver serves for that
-  session (`daoris-driver plugins tools --session <id>`), as a plugin's declared server is handed today (rule 24). It lists each `tool`
+  session (`daoris plugin tools --session <id>`), as a plugin's declared server is handed today (rule 24). It lists each `tool`
   command of each plugin that is installed, on and sound, with `commands` and `tools` on at the session's place, named
-  `<plugin>.<command>`. It is handed only where it lists one.
+  `<plugin>_<command>` (built: the model APIs' tool names take no dot, and no id or command name holds an underscore). It is handed
+  only where it lists one.
 - **Each tool.** Its description is the command's `about` in the session's language, its input schema comes from `args`, and its
   annotations say `writes`. A call is one round, `from: agent`, with the session's id and place. `said` is the text content, `data` the
   structured content, and an exit other than 0 an error result with `said`.

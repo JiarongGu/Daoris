@@ -100,6 +100,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1d — a plugin's commands as a session's tools (2026-11-12, D274)
+
+> **PLUGINEXT1d** (driver): Outcome: a quest's session, at its start and its going on, is handed one MCP server, `daoris-plugins` (`daoris plugin tools --session <id> --repository <id> --workspace <name> --language en|zh`, the desktop's program from the install's `app/daoris-driver/`), only where its place lists a tool; it lists each command marked `tool` and not interactive of each plugin on, sound and speaking, where `commands` and `tools` are on at the session's place, read again at each call, as `<plugin>_<command>` with the `about` and `title` in the session's language, a schema from `args` and a read-only mark unless it `writes`; a call is one round `from: agent` with the session and place, `said` the text, `data` the structured content, an exit an error, an ask or a missing argument refused before a second round or any process, a `plugin.command` line by names alone. Proof: `PluginToolsServerTests` (could not compile before the units), `PluginToolsProcessTests` (a stand-in session's client calling the Azure DevOps example's `status` through the built program, and nothing listed or run once switched off at the repository).
+
+---
+
 ## PLUGINEXT1b and c's driver half — per-place switches, a command round whole (2026-11-11, D274)
 
 > **PLUGINEXT1b, PLUGINEXT1c (driver)** (driver, modules): Outcome: a plugin's parts are switched on or off per place (`switches` in `plugins.json`, per plugin, per interface or point, per place; the narrowest place's word wins, `storage` at the machine only, `disabled` over everything), read by one resolver at each door (a command's run, the storage folder, the token adoption, `quest/consider`, `session/ended`, the work units); `PLUGIN_SWITCH` and `daoris plugin switch`; an older home's `off` list moved into machine-level switches once by a migration step (`PluginInterfaceSwitch` deleted); a command's frame carries the run, its arguments by name, the place, the language and the session, its answer `then` and `data`; `PLUGIN_COMMAND`. Proof: `PluginSwitchesTests`, `PluginSwitchesStepTests`, `CommandWireTests`, `DriverModulePluginSwitchTests`, `DriverModulePluginCommandProcessTests`.
