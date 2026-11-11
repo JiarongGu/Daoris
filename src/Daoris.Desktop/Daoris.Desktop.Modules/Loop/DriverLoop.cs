@@ -309,6 +309,12 @@ public sealed class DriverLoop(
     /// <summary>Stop one plugin's hook process now — before its folder is removed.</summary>
     public Task<bool> StopPluginAsync(string id) => _state.Hooks?.StopAsync(id) ?? Task.FromResult(false);
 
+    /// <summary>Whether the hook set holds the plugin unsound, so it is not started again until the person tries again.</summary>
+    public bool PluginUnsound(string id) => _state.Hooks?.IsUnsound(id) == true;
+
+    /// <summary>The person's <i>Try again</i> on an unsound plugin.</summary>
+    public void TryPluginAgain(string id) => _state.Hooks?.TryAgain(id);
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge()

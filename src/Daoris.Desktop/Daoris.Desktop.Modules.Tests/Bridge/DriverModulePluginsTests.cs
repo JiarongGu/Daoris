@@ -327,8 +327,8 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
 
         var repository = Path.Combine(Home, "a-plugins-repository");
         Directory.CreateDirectory(repository);
-        var made = await AnswerAsync(module, "PLUGIN_NEW", new { id = "acme.gate", points = new[] { "quest/consider" }, folder = repository });
-        var folder = Path.Combine(repository, "acme.gate");
+        var made = await AnswerAsync(module, "PLUGIN_NEW", new { id = "acme-gate", points = new[] { "quest/consider" }, folder = repository });
+        var folder = Path.Combine(repository, "acme-gate");
         Assert.Equal(folder, made.GetProperty("folder").GetString());
         Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"],
             made.GetProperty("files").EnumerateArray().Select(f => f.GetString()!).ToArray());
@@ -337,14 +337,14 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
 
         var tried = await AnswerAsync(module, "PLUGIN_TRY", new { folder });
         Assert.True(tried.GetProperty("passed").GetBoolean(), tried.GetRawText());
-        Assert.Equal("acme.gate", tried.GetProperty("plugin").GetString());
+        Assert.Equal("acme-gate", tried.GetProperty("plugin").GetString());
         Assert.Equal(["handshake", "quest/consider", "shutdown", "stdout"],
             tried.GetProperty("steps").EnumerateArray().Select(s => s.GetProperty("name").GetString()!).ToArray());
         Assert.Contains("answered as the driver reads it", tried.GetProperty("summary").GetString());
 
-        Assert.Contains("already holds", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme.gate", points = new[] { "quest/consider" }, folder = repository }));
-        Assert.Contains("is not a point", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme.other", points = new[] { "quest/started" }, folder = repository }));
-        Assert.False(Directory.Exists(Path.Combine(repository, "acme.other")));
+        Assert.Contains("already holds", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme-gate", points = new[] { "quest/consider" }, folder = repository }));
+        Assert.Contains("is not a point", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme-other", points = new[] { "quest/started" }, folder = repository }));
+        Assert.False(Directory.Exists(Path.Combine(repository, "acme-other")));
 
         // Installed, it is tried by its id, from its own folder under the home.
         var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");

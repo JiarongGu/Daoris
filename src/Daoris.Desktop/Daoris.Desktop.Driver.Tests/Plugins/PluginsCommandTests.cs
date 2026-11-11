@@ -264,10 +264,10 @@ public sealed class PluginsCommandTests : IDisposable
         var parent = Path.Combine(_home, "work");
         Directory.CreateDirectory(parent);
 
-        var (exit, said) = await Run("new", "acme.made", "--point", "quest/consider", "--in", parent);
+        var (exit, said) = await Run("new", "acme-made", "--point", "quest/consider", "--in", parent);
 
         Assert.Equal(0, exit);
-        Assert.Contains("made `acme.made`", said);
+        Assert.Contains("made `acme-made`", said);
         Assert.Contains("plugin show <id>", PluginsCommand.Usage);
         Assert.Contains("plugin activity <id>", PluginsCommand.Usage);
     }

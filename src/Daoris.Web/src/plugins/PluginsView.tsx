@@ -180,6 +180,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onSuccess: () => notify(t(action === 'enable' ? 'plugin.enabled' : 'plugin.disabled', { id })),
     onError: failed,
   });
+  const tryAgain = (id: string) => act.mutate({ id, action: 'try-again' }, { onSuccess: () => notify(t('plugin.triedAgain', { id })), onError: failed });
   // The person's approval of what a server offers Ask Daoris; the list is asked again
   // by the route's STATE_CHANGED, as a switch is. An approval carries the writes the person ticked.
   const helpOne = (id: string, server: string, action: HelpPress, writes: string[]) =>
@@ -280,6 +281,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             onSwitch={switchOne}
             onHelp={helpOne}
             onTry={tryOne}
+            onTryAgain={tryAgain}
             toolStanding={standings[shown.plugin.id]}
             checkingTools={checking.isPending && checking.variables?.id === shown.plugin.id}
             fixingTool={fixing.isPending && fixing.variables?.id === shown.plugin.id

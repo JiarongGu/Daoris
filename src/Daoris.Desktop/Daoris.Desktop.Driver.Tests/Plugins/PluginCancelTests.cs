@@ -34,7 +34,7 @@ public sealed class PluginCancelTests : IDisposable
     [Fact]
     public async Task A_cancelled_trial_ends_the_plugin_s_process()
     {
-        var folder = Scaffold("acme.cancelled", HookPoints.State, out var pidFile);
+        var folder = Scaffold("acme-cancelled", HookPoints.State, out var pidFile);
         var script = Path.Combine(folder, "plugin.mjs");
         var text = File.ReadAllText(script);
         const string answer = "      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });";
@@ -54,7 +54,7 @@ public sealed class PluginCancelTests : IDisposable
     [Fact]
     public async Task A_cancelled_cycle_ends_the_plugin_s_process()
     {
-        var folder = Scaffold("acme.cycling", HookPoints.Perform, out var pidFile);
+        var folder = Scaffold("acme-cycling", HookPoints.Perform, out var pidFile);
         using var window = new CancellationTokenSource();
 
         var cycle = PluginCycles.TryAsync(

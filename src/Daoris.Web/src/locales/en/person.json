@@ -209,6 +209,7 @@
   "person.view.plugin-enable": "Switches plugin {{id}} on: the driver starts what it runs at its next look.",
   "person.view.plugin-disable": "Switches plugin {{id}} off: it stays installed with what it kept, and the driver stops asking it at its next look.",
   "person.view.plugin-remove": "Removes plugin {{id}}: its process is stopped and its folder goes. What it kept stays, for you to throw away.",
+  "person.view.plugin-try-again": "Starts plugin {{id}} again at the driver's next look, where three unasked exits within an hour held it back.",
   "person.view.plugin-unsound": "As it stands it contributes nothing: {{problem}}",
   "person.view.plugin-approve": "Approves server {{server}} of plugin {{id}} for Ask Daoris, from its next conversation, with the tools below. A plugin is code that runs as you; an update that adds or widens a tool asks you again.",
   "person.view.plugin-approved-before": "It was approved before, and an update has changed its tools since.",

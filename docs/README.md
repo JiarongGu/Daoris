@@ -252,6 +252,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-11-jj-workspaces-measurements.md`|Evidence: PLACEWORK1i, jj workspaces measured
 |`2026-11-11-start-load-measurements.md`|Evidence: STARTPERF1, a start to a full Sessions and Quests view measured
+|`2026-11-11-cleanup-census.md`|Evidence: the superseded ways' remnants found, removed or kept with their end
 |`2026-11-11-start-load-database-design.md`|Proposed design: STARTPERF1, an index over the session events and a quests' change mark (D275)
 |`2026-11-06-backlog-plan-2.md`|Plan: backlog chunks BL31-BL57
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
@@ -309,6 +310,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-20-ui-ux-design.md`|Accepted contract: screen rules
 |`2026-10-21-notification-design.md`|Accepted design: notifications
 |`2026-10-22-park-ask-design.md`|Built: parked session's ask
+|`2026-11-11-plugin-ui-design.md`|Accepted design: PLUGINEXT1, a plugin's interfaces, views, commands and sign-in (D274)
 
 ## Studies and evidence
 

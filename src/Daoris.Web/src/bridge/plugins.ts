@@ -94,7 +94,7 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  */
 export const usePluginAction = () => useMutation({
   mutationFn: (action: {
-    id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string; writes?: string[];
+    id: string; action: 'enable' | 'disable' | 'remove' | 'try-again' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string; writes?: string[];
   }) =>
     call('PLUGIN_ACTION', action) as Promise<{ id: string; action: string; data: string | null }>,
 });

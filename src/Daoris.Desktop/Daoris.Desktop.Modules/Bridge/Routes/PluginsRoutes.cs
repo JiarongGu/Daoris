@@ -85,6 +85,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     // The loop's own record: the state, since when, and its failure while failing.
                     Health = new { health.State, health.Since, health.Failure },
                     Running = running.Contains(plugin.Manifest.Id),
+                    // Held back after three unasked exits within an hour, which the page's Try again clears.
+                    Unsound = _loop.PluginUnsound(plugin.Manifest.Id),
                     plugin.Folder,
                     plugin.Data,
                     // Where it came from: what an Update re-reads, or why there is none.
@@ -358,10 +360,13 @@ public sealed class PluginsRoutes(DriverContext context)
             case "help-withdraw":
                 HelpGrants.Withdraw(_loop.Home, entry.Manifest.Id, ActField.Needs(press.Server, "server"));
                 break;
+            case "try-again":
+                _loop.TryPluginAgain(entry.Manifest.Id);
+                break;
             default:
                 throw Refusals.Because(
                     Refusals.PluginActionUnknown,
-                    $"unknown plugin action '{action}' — one of: enable, disable, remove, help-approve, help-reads, help-withdraw",
+                    $"unknown plugin action '{action}' — one of: enable, disable, remove, try-again, help-approve, help-reads, help-withdraw",
                     ("action", action));
         }
 
