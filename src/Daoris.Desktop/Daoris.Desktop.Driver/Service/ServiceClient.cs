@@ -37,6 +37,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         Opens = new SessionOpenDoors(this);
         Registry = new RegistryDoors(this);
         SessionList = new SessionListDoors(this);
+        QuestList = new QuestListKept(this);
         Words = new SessionWordDoors(this);
         Moves = new SessionMoveDoors(this);
         Keeps = new SessionKeepDoors(this);
@@ -60,6 +61,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public RegistryDoors Registry { get; }
 
     public SessionListDoors SessionList { get; }
+
+    public QuestListKept QuestList { get; }
 
     public SessionWordDoors Words { get; }
 

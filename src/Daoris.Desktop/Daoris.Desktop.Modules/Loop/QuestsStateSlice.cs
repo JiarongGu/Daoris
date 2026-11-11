@@ -67,8 +67,10 @@ public static class QuestsStateSlice
     ];
 
     /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers.</summary>
-    public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await service.QuestsJsonAsync(ct).ConfigureAwait(false)) : null)
+    public static StateSlice Of(DriverLoop loop, IEventBus bus)
+    {
+        var judged = new JudgedOnce<string>(Judge);
+        return new(Name, bus, async ct => loop.Service is { } service ? judged.Of(await service.QuestsJsonAsync(ct).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -76,6 +78,7 @@ public static class QuestsStateSlice
             // The service away or refusing: the windows keep the last judgement, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
+    }
 
     /// <summary>One judgement of what the service answered: a partition per workspace, each quest under its id with the page's fields.</summary>
     public static IReadOnlyList<SliceJudged> Judge(string answered) => Partitioned(answered, Fields, "quests");

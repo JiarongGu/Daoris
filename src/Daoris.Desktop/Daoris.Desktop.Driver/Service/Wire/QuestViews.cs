@@ -10,29 +10,20 @@ namespace Daoris.Driver;
 /// </summary>
 public static class QuestViews
 {
-    /// <summary>Every quest, closed ones included.</summary>
+    /// <summary>Every quest, closed ones included, from the list kept by its change (<see cref="ServiceClient.QuestList"/>).</summary>
     public static async Task<IReadOnlyList<QuestView>> EveryQuestAsync(this ServiceClient service, CancellationToken ct = default) =>
-        [.. (await service.SendAsync(new ListQuests(IncludeClosed: true), ct).ConfigureAwait(false)).Answered().Select(View)];
+        [.. (await service.QuestList.ListedAsync(ct).ConfigureAwait(false)).Select(View)];
 
     /// <summary>
     /// One quest as it stands, closed ones included: how a session's end is observed, and what a resumed session is told its question
     /// came back with. Null where the service has none.
     /// </summary>
     public static async Task<QuestView?> FindQuestAsync(this ServiceClient service, string id, CancellationToken ct = default) =>
-        (await service.EveryQuestAsync(ct).ConfigureAwait(false))
-            .FirstOrDefault(quest => string.Equals(quest.Id, id.TrimStart('#'), StringComparison.OrdinalIgnoreCase));
+        await service.QuestList.OneAsync(id.TrimStart('#'), ct).ConfigureAwait(false) is { } quest ? View(quest) : null;
 
-    /// <summary>
-    /// Every quest as the service wrote it: what a trace reads a quest's answers, its yes and its moments from, which
-    /// <see cref="QuestView"/> leaves out because no planner needs them.
-    /// </summary>
+    /// <summary>Every quest as the service wrote it, what a trace reads a quest's answers, its yes and its moments from.</summary>
     /// <exception cref="DriverException">A refused read, in the service's words.</exception>
-    public static async Task<string> QuestsJsonAsync(this ServiceClient service, CancellationToken ct = default)
-    {
-        var sent = await service.SendAsync(new ListQuests(IncludeClosed: true), ct).ConfigureAwait(false);
-        sent.Answered();
-        return sent.Reply.Payload;
-    }
+    public static Task<string> QuestsJsonAsync(this ServiceClient service, CancellationToken ct = default) => service.QuestList.JsonAsync(ct);
 
     /// <summary>
     /// One quest's moves as the service wrote them, in the order its history replays. Null from a host without the door, which

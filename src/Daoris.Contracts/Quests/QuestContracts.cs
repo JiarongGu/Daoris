@@ -14,6 +14,13 @@ public sealed record ListQuests(string? Repository = null, bool? IncludeClosed =
     public static string Path => "/api/quests";
 }
 
+/// <summary>Every quest as its change since <c>Since</c>, a mark this door answered; none, or one it no longer holds, is every quest.</summary>
+public sealed record ListQuestChanges(string? Since = null) : IRoute<QuestChangesResponse>
+{
+    public static string Method => "GET";
+    public static string Path => "/api/quests/changes";
+}
+
 /// <summary>One quest's moves, on both hosts; an id with no history has none, so a client tells this door from an older host's 404.</summary>
 public sealed record ReadQuestMoves(string Id) : IRoute<QuestMovesResponse>
 {
@@ -100,6 +107,8 @@ public sealed record PostQuestEvidence(
 [JsonSerializable(typeof(ListQuests))]
 [JsonSerializable(typeof(QuestResponse))]
 [JsonSerializable(typeof(QuestResponse[]))]
+[JsonSerializable(typeof(ListQuestChanges))]
+[JsonSerializable(typeof(QuestChangesResponse))]
 [JsonSerializable(typeof(ReadQuestMoves))]
 [JsonSerializable(typeof(QuestMovesResponse))]
 [JsonSerializable(typeof(PublishQuest))]
