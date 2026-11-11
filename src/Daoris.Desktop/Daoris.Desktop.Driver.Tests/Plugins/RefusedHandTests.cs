@@ -52,16 +52,16 @@ public sealed class RefusedHandTests : IDisposable
     }
 
     private HookSet Set() => new(_home, say: (_, _) => { }, holdsHome: () => true, clock: () => _now, log: _log,
-        hostToken: (_, place, _) =>
+        hand: (_, place, _) =>
         {
             _asked++;
-            return Task.FromResult(_token is { } token
-                ? new HostTokenHand(token, null)
-                : new HostTokenHand(null, $"work has no API token set for dev.azure.com, so the plugin was not started"));
+            return Task.FromResult(_token is not null
+                ? new PlaceHand(null)
+                : new PlaceHand("this repository's git access denies writes to origin, so the plugin was not started"));
         },
         start: (_, _, _) =>
         {
-            _started.Add(HookProcess.HostToken.Value);
+            _started.Add(_token);
             return Task.FromResult<IHookChannel>(new Channel());
         });
 
@@ -115,7 +115,7 @@ public sealed class RefusedHandTests : IDisposable
         await set.ReconcileAsync(catalog, CancellationToken.None);
         Assert.Equal(7, _asked);
 
-        // The person sets the token: the next look past the minute starts it, handed that token, with no press.
+        // The person allows Write again: the next look past the minute starts it, with no press.
         _token = "the-api-token";
         _now = _now.AddMinutes(1);
         await set.ReconcileAsync(catalog, CancellationToken.None);

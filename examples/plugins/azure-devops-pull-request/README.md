@@ -122,18 +122,25 @@ this one began is taken up from its start: it reads each stage before it starts 
 
 ## The token
 
-The API call carries `DAORIS_HOST_TOKEN`: the API token (a personal access token, sent as Basic's password) of the git identity
-serving `origin`, handed to this one process by the driver and to no other. The plugin is not started where no identity serves
-`origin`, the identity is read only on its host, git access denies Write, or the identity has no API token (set one in the identity's
-page, or `daoris git identity token <identity> --kind api --token-stdin`). The token is never logged or written, and is sent only to the API. `DAORIS_HOST_API` names another
-base address in place of `https://dev.azure.com` and release management's, as the test's stand-in does.
+The plugin signs in itself, through the commands its manifest declares under `interfaces`:
+
+- `daoris azure-devops-pull-request login` asks for a personal access token, hidden as you type it (or reads it from standard input
+  with `--stdin`), and keeps it in the plugin's own private storage (`DAORIS_PLUGIN_PRIVATE`, `credential.json`), a folder Daoris
+  hands this plugin's processes alone. A git identity serving Azure DevOps that already held an API token hands it to `login` once.
+- `daoris azure-devops-pull-request status` says whether a token is kept, since when, and whether Azure DevOps last refused it.
+- `daoris azure-devops-pull-request logout` forgets it.
+
+Each API call carries the kept token as Basic's password; it is never logged, said back or put in evidence, and is sent only to the
+API. A refused one is noted for `status`. The plugin is not started where `origin` is served by a read-only identity or git access
+denies Write. `DAORIS_HOST_API` names another base address in place of `https://dev.azure.com` and release management's, as the
+test's stand-in does.
 
 ## What it needs
 
 - **Node.js**, as `plugin.json` declares under `tools`: the process, and its calls to the API.
-- **An API token on the git identity serving `origin`**, with the scopes Code (read and write) for the pull request and its auto-complete,
+- **A personal access token, kept by `login`**, with the scopes Code (read and write) for the pull request and its auto-complete,
   Build (read) for the release step, and Release (read, write and execute) where it starts a stage by `deploy` (read alone otherwise).
-  The token's identity needs the repository's *Contribute to pull requests* permission to set auto-complete.
+  The token's user needs the repository's *Contribute to pull requests* permission to set auto-complete.
 - **`origin`** naming the Azure Repos repository.
 
 ## Why each version

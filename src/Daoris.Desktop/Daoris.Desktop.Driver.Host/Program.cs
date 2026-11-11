@@ -68,6 +68,9 @@ args = [.. route.Words];
 // nothing else: no person's press and no verb acting alone. Those it runs refuse their own alone paths (`InstanceDoor`).
 if (RoleTerminal.AtEntry(args, Console.Error) is { } roleRefused) return roleRefused;
 
+if (route.Kind == TreeRouteKind.Doctrine && args.Length > 0 && DaorisHome.Resolve() is { } pluginHome && PluginCommandConsole.Names(pluginHome, args[0]))
+    return await PluginCommandConsole.RunAsync(pluginHome, args, PluginCommandConsole.Console(), CancellationToken.None);
+
 // A word no group owns is the CLI's: handed to the one this install carries, which refuses it where it is no doctrine command.
 if (route.Kind == TreeRouteKind.Doctrine) return await Daoris.Driver.Host.DoctrineConsole.RunAsync(args);
 

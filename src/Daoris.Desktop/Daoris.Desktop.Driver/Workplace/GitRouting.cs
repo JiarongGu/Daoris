@@ -13,9 +13,6 @@ public static class GitRouting
     /// <summary>The push act's grant, handed to that act's own git start alone (<see cref="GitGrants"/>).</summary>
     public const string GrantVariable = "DAORIS_GIT_GRANT";
 
-    /// <summary>The API token of the identity serving a place's origin, handed to one plugin process alone (<c>PluginHostToken</c>); no other start carries it.</summary>
-    public const string HostTokenVariable = "DAORIS_HOST_TOKEN";
-
     /// <summary>The identity an HTTPS act is carried as, set by the remote helper on its transport alone; the credential door answers for it.</summary>
     public const string IdentityVariable = "DAORIS_GIT_IDENTITY";
 

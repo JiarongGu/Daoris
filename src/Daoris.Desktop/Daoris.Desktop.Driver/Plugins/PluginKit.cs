@@ -160,8 +160,8 @@ public static class PluginKit
             """
               // A query, only where git cannot tell: the pull request from frame.branch (or at frame.pullRequest),
               // asked of your platform's API. Nothing is removed until git confirms a completed answer, so
-              // `unknown` is an honest answer until this asks. A read is one call with the token Daoris hands this
-              // process, `fetch(url, { headers: { Authorization: `Bearer ${process.env.DAORIS_HOST_TOKEN}` } })
+              // `unknown` is an honest answer until this asks. A read is one call with the token your own `login` command keeps
+              // in DAORIS_PLUGIN_PRIVATE, `fetch(url, { headers: { Authorization: `Bearer ${token}` } })
               'work/state': (frame) => ({
                 state: 'unknown',
                 pullRequest: null,

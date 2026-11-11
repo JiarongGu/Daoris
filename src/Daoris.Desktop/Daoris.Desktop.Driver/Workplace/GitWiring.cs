@@ -41,7 +41,7 @@ public static class GitWiring
     [
         "SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", ChildMarks.RoleKeyVariable,
         ChildMarks.DelegateKeyVariable,
-        GitRouting.HostTokenVariable, .. ChildMarks.MessagingVariables,
+        PluginPrivate.Variable, .. ChildMarks.MessagingVariables,
     ];
 
     /// <summary>

@@ -1,20 +1,21 @@
 // Azure DevOps pull request (`azure-devops-pull-request`): a plugin that opens and reads a pull request through Azure DevOps' REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
-// handed the API token of the git identity serving origin, for this process alone, in DAORIS_HOST_TOKEN, and is not started where
-// no identity serves origin, the identity is read only, git access denies Write, or the identity has no API token.
+// not started where origin is served by a read-only identity or git access denies Write. It signs in itself: its `login` command keeps a
+// personal access token in its own private storage (credential.mjs), and each API call carries that token.
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its two steps, once per idempotency key (the kit's work.mjs keeps that): `pull-request` opens the pull request
 //  from the pushed branch, or finds the active one, and sets auto-complete where its options ask (auto-complete.mjs); `release` watches
 //  what the merged commit's release takes to its end (release.mjs). The branch and checkout come from the units `work/watch` tells it.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
-//  DAORIS_HOST_TOKEN the identity's personal access token: never logged, never written, sent only to the API as Basic's password
+//  DAORIS_PLUGIN_PRIVATE this plugin's own storage, where login keeps the token: never logged, sent only to the API as Basic's password
 //  DAORIS_HOST_API the API's base address where it is not Azure DevOps' (a test's stand-in), put before the organization's name
 import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { release } from './release.mjs';
 import { work } from './work.mjs';
+import { run } from './commands.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
@@ -152,7 +153,7 @@ const points = {
   'work/state': state,
 };
 
-const answers = { ...points, ...kit.calls };
+const answers = { ...points, ...kit.calls, 'command/run': run };
 
 const answer = async (frame) => {
   try {

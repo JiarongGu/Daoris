@@ -21,7 +21,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Points and frames | `Knowledge/Domain/PluginVocabulary.cs` (`HookPoints`), `Plugins/Domain/HookPoints.cs` (`HookFrames`) | The point names, and the one builder of each point's frame |
 | Wire | `Plugins/IHookChannel.cs` (the port), `HookPeer.cs`, `HookChannels.cs`, `HookSet.cs`, `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
 | Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | Whether a plugin performs pull-request steps; `work/state` at its occasions; a pull request's address is written from its `pull-request` step's evidence (`PullRequestRecords`) |
-| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PlacedWork.cs`, `Plugins/PlaceHostTokens.cs`, `Plugins/HandRefusals.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
+| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PlacedWork.cs`, `Plugins/PlaceHand.cs`, `Plugins/HandRefusals.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
 | Harness | `Plugins/PluginDoors.cs`, `Plugins/PluginAgentSkills.cs` | A manifest's harness converted to Agents' `DeclaredDoor` (its named fields alone, its `posture`, `fullPosture` and `askingPosture` among them), which Agents' `DeclaredDoors` makes a protocol-transport contract door and the registry places by its `accountOf`; the sound skills each contributing plugin hands a destination, as `SkillSource` values a door's skill layout lays out at spawn |
 | Install | `Plugins/PluginInstall.cs` | Add, add an offer, plan and apply an update, replace, remove; every swap staged beside |
 | Source record | `Plugins/Domain/PluginSource.cs` | `.daoris-source.json` (folder, offer with digest, or package); an update's change rows |
@@ -39,7 +39,8 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | The events relay's verb | `Plugins/Relay/RelayCommand.cs` (`events relay`), `RelayAsk.cs`, `RelayCopy.cs`, `RelayPipe.cs`, `RelayRun.cs`; `Instance/UserPipe.cs` | EVENTHOOK1c: routed at the host's entry after the role terminal's gate (which refuses it, being no verb of `RoleTerminal.Runs`) and before the home's adoption, the generic lease and the machine log, one catch saying every failure as `the relay stopped (<code>)`; `--where` adopts the install's home, holds its lease by `HomeLease.ForVerb` (refused as `HeldByAnother`), lays the running build out at `bin/events-relay/<RelayBuild.Of>` staged and moved whole with its `in-use` file, removes a build none holds by an exclusive open and a rename first, deletes a stopped removal, follows no junction, and prints the copy's command; `--once` drops the holder key the entry took and strips the service, remote and messaging variables, runs only from a whole copy whose `in-use` it holds shared for reading, removes a dead relay's subscriber file, serves `daoris-event-<32 hex>` by `UserPipe.Security` for two instances (a Unix socket in the subscribers' folder elsewhere), puts its `<pid>.json` in place whole, refuses a client whose holder is no instance or whose agents' job (`ProcessJob.NamedHolds`) answers no, takes one the job cannot answer untold, checks the first line within 5 s, ends on a second client, three bad frames, the connection's end, the 30 s gathering, `--session-pid`'s exit (printing nothing) or the 15-minute bound read off its clock while an instance holds the home or the lease is a doubt (`HomeLease.HeldBy(home, out doubt)`), and prints its tallies, then its batch; `work/event`'s handshake names the set's `run`, which the plugin's first line carries. The plugin is Daoris.Plugins' `event-relay` (§5 of the design); Daoris holds none of it, and the relay's Process tests run their own stand-in for it, `Driver.Tests/Plugins/RelayStandIn/` (the hook wire and the relay's first line and frames, no more) |
 | Work events' frame and teller | `Plugins/Domain/WorkEventGrammar.cs`, `HookFrames.Event` (`Plugins/Domain/HookPoints.cs`), `Plugins/WorkEventPoint.cs`, `Plugins/RelayBuild.cs` | `work/event`'s parts: the grammar (version 3: `session.parked`, `quest.parked`, `session.ended`, `work.landed`, `events.missed`, the version 2 kinds `quest.published`, `quest.closed`, `quest.close-lost`, `confirmation.ended`, `work.ended`, and version 3's `channel.posted`, each kind's closed list of ids, codes, counts and a UTC time); the frame built by it, an optional field that fails left out and an event whose required field fails told as `events.missed` in its place; the teller, which mints every `seq` under one lock whether or not it tells, tells only while `Held`, keeps a queue of 256 and a teller per plugin that joined (the oldest dropped and counted in the next frame's `missed`), and stops a plugin after three late answers in a row; a build's hash over its whole bundle, 64 zeros where there is none |
 | Systems | `Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/` (`SystemAdapter`, `SystemAdapters`, `SystemReadBack`, `SystemPlanning`, `SystemAdd`), `Service/Domain/SystemPlace.cs`, `HookPoints.System`, `HookPeer.SystemAsync` | A manifest's `systems` read; a system's adapter started from the catalogue and asked to plan and apply; a system department's registration composed from the plugins that adapt it (`SystemAdd`, which the registry door sends whole), a system guarded by `none` read before and after each write (the driving area keeps the plans, the workflows area the apply) |
-| Switch | `Plugins/PluginState.cs` | `<home>/plugins.json`: the disabled rows |
+| Switch | `Plugins/PluginState.cs`, `Plugins/PluginInterfaceSwitch.cs` | `<home>/plugins.json`: the disabled rows, and `off`, each plugin's interfaces switched off |
+| Interfaces | `Plugins/Domain/PluginInterfaces.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
 | Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 
@@ -91,15 +92,15 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
     the classic release made from it, or the pipeline run's own stages, and watches each awaited stage to its end, starting one by `deploy`
     where nothing started it, a pending approval said and waited on. Both plugins call their
-    service's REST API with `DAORIS_HOST_TOKEN`: the API token of the identity serving origin (`PluginHostToken`), set by `HookProcess`
-    around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
-    serves origin, the identity is read only, Write denies, no API token) is not started: the refusal is logged as `refused`, never as a
-    start that failed (`unstartable`), counts as no exit toward unsound, and the hand is asked again a minute later (`HandRefusals`), so a
-    token set later starts the process with no press. `plugin try` asks the same question of the checkout it is run in, through `PluginHostToken` (`PluginTrialHand`, the step `host-token`): a plugin that takes the token fails it, saying "this plugin's start needs an API token on identity X; set it in Settings → Git", where the start would be refused; with no origin to ask it says so and passes. They run no git, `gh` or `az`, and declare
+    service's REST API with the token their own `login` command keeps in their private storage (rule 29), and say a refused one at
+    `status`. A place whose hand is refused (no origin, the identity serving it read only, Write denied: `PlaceHands`) is not started:
+    the refusal is logged as `refused`, never as a start that failed (`unstartable`), counts as no exit toward unsound, and the hand is
+    asked again a minute later (`HandRefusals`), so access allowed later starts the process with no press. `plugin try` asks the same
+    question of the checkout it is run in (`PluginTrialHand`, the step `place-hand`); with no origin to ask it says so and passes. They run no git, `gh` or `az`, and declare
     node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
-    unsound mark and idle stop are its place's own, and `PlaceHostTokens` (given to `HookSet` by the loop and the headless host) reads
-    that place's origin and hands its token to that process alone. An attempt goes to the place its unit was told for; the runtime
+    unsound mark and idle stop are its place's own, and `PlaceHands` (given to `HookSet` by the loop and the headless host) reads
+    that place's origin and judges that process's start. An attempt goes to the place its unit was told for; the runtime
     sees the plugin's id, its generations unique across the places (`GenerationOf(plugin, held)` fences against the process that took
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
 17b. `work/perform`'s params carry `options`, an object of the performed node's graph options (`NodeDeclaration.Options`) by name, each
@@ -152,7 +153,18 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     description and version stay as declared. No plugin adds a view or runs code in the page. (from D119, D140, D52)
 28. Every plugin press is the person's: a session's terminal is refused. With Daoris running a verb takes the route,
     else it acts alone under the home's lease. (from D194)
-29. Settings sets nothing about a plugin. Settings → Driver lists the installed plugins read-only, each opening its
+29. A manifest's `interfaces` names what the plugin implements that Daoris reaches it through besides its points: `commands` (each
+    `{ name, about, interactive, tool, adopts }`) and `storage` (`{ for }`). Any problem refuses the plugin; an interface needs `hooks`.
+    A command runs one round per process at `hook/command/run` (`{ command, args, answers, from }`, never a point claimed at the
+    handshake), answered `{ said, ask: { name, prompt, masked }, open, code, exit }`, at most 8 rounds, 60 s each, the answers so far
+    sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin running commands;
+    it asks each value at the terminal, hidden where `masked`, and refuses a session's terminal. `storage` is `profiles/plugins/<id>/`,
+    limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
+    nothing in it. Each interface is on until the person switches it off (`plugins.json`'s `off`). A command declaring `adopts`
+    (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
+    keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
+    plugin's answers. (from D274)
+31. Settings sets nothing about a plugin. Settings → Driver lists the installed plugins read-only, each opening its
     page. (from D119, D183)
 
 ## Where a change goes

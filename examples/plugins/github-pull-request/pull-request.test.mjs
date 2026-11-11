@@ -62,6 +62,28 @@ function checkout(origin) {
   return root;
 }
 
+function signedIn(token) {
+  const at = mkdtempSync(join(scratch, 'private-'));
+  writeFileSync(join(at, 'credential.json'), `${JSON.stringify({ token, kept: '2026-11-11T09:00:00.000Z' })}\n`);
+  return { DAORIS_PLUGIN_PRIVATE: at };
+}
+
+test('login keeps the token in the plugin\'s own storage and never says it back; status and logout follow it', async (t) => {
+  const storage = signedIn('');
+  const plugin = start(t, storage);
+  await plugin.ask('initialize', { protocolVersion: 1, points: [] });
+  const run = async (command, answers = {}) => (await plugin.ask('hook/command/run', { command, args: [], answers, from: 'terminal' })).result;
+
+  assert.equal((await run('login')).ask.masked, true);
+  const kept = await run('login', { token: TOKEN });
+  assert.equal(kept.exit, 0);
+  assert.ok(!JSON.stringify(kept).includes(TOKEN));
+  assert.equal(JSON.parse(readFileSync(join(storage.DAORIS_PLUGIN_PRIVATE, 'credential.json'), 'utf8')).token, TOKEN);
+  assert.match((await run('status')).said[0], /^A token is kept, since /);
+  assert.equal((await run('logout')).exit, 0);
+  assert.equal((await run('status')).exit, 1);
+});
+
 /** The plugin started as the driver starts it over `journal`, the kit's, and killed when the test ends, so a failure holds no run open. */
 function start(t, env, journal = null) {
   const data = mkdtempSync(join(scratch, 'data-'));
@@ -124,7 +146,7 @@ async function opened(t, env, root, key = 'k-1') {
 test('it opens the pull request through the REST API with the handed token, from the origin its checkout names', async (t) => {
   const api = await standIn();
   const root = checkout('daoris::https://github.com/acme/app.git');
-  const { step } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { step } = await opened(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) }, root);
 
   assert.equal(step.params.state, 'reached');
   assert.equal(step.params.evidence.url, 'https://github.com/acme/app/pull/1');
@@ -137,7 +159,7 @@ test('it opens the pull request through the REST API with the handed token, from
 test('a key delivered again makes no second pull request, and one already open for the branch is found, not made again', async (t) => {
   const api = await standIn();
   const root = checkout('git@github.com:acme/app.git');
-  const { plugin, perform } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { plugin, perform } = await opened(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) }, root);
 
   await perform('i-1', 'k-1');
   await perform('i-2', 'k-2');
@@ -150,7 +172,7 @@ test('a key delivered again makes no second pull request, and one already open f
 test('its state is open, then completed with the merge commit once GitHub merges it', async (t) => {
   const api = await standIn();
   const root = checkout('https://github.com/acme/app.git');
-  const { plugin } = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: TOKEN }, root);
+  const { plugin } = await opened(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) }, root);
   const frame = { root, branch: 'daoris/work', pullRequest: 'https://github.com/acme/app/pull/1', origin: null };
 
   const open = (await plugin.ask('hook/work/state', frame)).result;
@@ -165,7 +187,7 @@ test('a refused token fails the step as unauthorized, and no token at all fails 
   const api = await standIn();
   const root = checkout('https://github.com/acme/app.git');
 
-  const refused = await opened(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: 'not-the-token' }, root);
+  const refused = await opened(t, { DAORIS_HOST_API: api.address, ...signedIn('not-the-token') }, root);
   const absent = await opened(t, { DAORIS_HOST_API: api.address }, root, 'k-2');
 
   assert.deepEqual([refused.step.params.state, refused.step.params.code], ['failed', 'unauthorized']);
@@ -179,7 +201,7 @@ test('an attempt an earlier process began is running while GitHub is down or lim
   const begun = { attempts: { 'k-1': { idempotencyKey: 'k-1', invocation: 'i-1', unit: 'app:daoris/work', step: STEP, stepVersion: 1,
     subjectRevision: tip, inputs: [], options: {}, state: 'begun', life: 'an earlier process' } } };
   const reconciled = async (token) => {
-    const plugin = start(t, { DAORIS_HOST_API: api.address, DAORIS_HOST_TOKEN: token }, begun);
+    const plugin = start(t, { DAORIS_HOST_API: api.address, ...signedIn(token) }, begun);
     await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
     await plugin.ask('hook/work/watch', { generation: 1, resync: false, units: [unitAt(root)] });
     const answer = (await plugin.ask('hook/work/reconcile', { unit: 'app:daoris/work', step: STEP, invocation: 'i-1', idempotencyKey: 'k-1', subjectRevision: tip })).result;

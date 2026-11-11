@@ -464,41 +464,42 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         _ => (bool?)null,
     }) ?? false;
 
-    /// <summary>
-    /// The newest readable event's answer to <paramref name="read"/>, read from the file's end, so a list asking it of many records
-    /// reads a line of each rather than the whole of each; an event it answers null for is passed over. Null for no record, an
-    /// unreadable one, one with no event answered for, or an id that is not one.
-    /// </summary>
+    /// <summary>The newest readable event's answer to <paramref name="read"/>, read from the file's end (a line of each record, never the
+    /// whole), one answered null passed over; null for no record, an unreadable one, none answered, or an id that is not one.</summary>
     private T? Newest<T>(string sessionId, Func<SessionEvent, T?> read) where T : struct
     {
         if (!SessionEventText.IsId(sessionId)) return null;
         try
         {
-            var path = PathOf(sessionId);
-            if (!File.Exists(path)) return null;
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            var length = stream.Length;
-            // A window from the end, grown until it holds a line answered for: a line longer than the window is read in a later one.
-            for (var window = 4096L; ; window *= 4)
-            {
-                var start = Math.Max(0, length - window);
-                var bytes = new byte[length - start];
-                stream.Seek(start, SeekOrigin.Begin);
-                stream.ReadExactly(bytes);
-                var lines = Utf8.GetString(bytes).Split('\n');
-
-                // A window's first line is part of one unless the window starts the file.
-                for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
-                {
-                    if (Event(lines[at]) is { } e && read(e) is { } answered) return answered;
-                }
-
-                if (start == 0) return null;
-            }
+            return NewestIn(PathOf(sessionId), read);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return null;
+        }
+    }
+
+    private static T? NewestIn<T>(string path, Func<SessionEvent, T?> read) where T : struct
+    {
+        if (!File.Exists(path)) return null;
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var length = stream.Length;
+        // A window from the end, grown until it holds a line answered for: a line longer than the window is read in a later one.
+        for (var window = 4096L; ; window *= 4)
+        {
+            var start = Math.Max(0, length - window);
+            var bytes = new byte[length - start];
+            stream.Seek(start, SeekOrigin.Begin);
+            stream.ReadExactly(bytes);
+            var lines = Utf8.GetString(bytes).Split('\n');
+
+            // A window's first line is part of one unless the window starts the file.
+            for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
+            {
+                if (Event(lines[at]) is { } e && read(e) is { } answered) return answered;
+            }
+
+            if (start == 0) return null;
         }
     }
 
@@ -527,22 +528,15 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>
-    /// What a session spent, by its record: its turns that ended, those whose door said
-    /// what they consumed, and each of the four counts summed over those. A part's cost on the *Parts* strip's own row, so a moved
-    /// session reads as one. Nothing for no record, an unreadable one, or an id that is not one.
+    /// What a session spent, by its record (<see cref="SessionSpentKept"/>): its turns ended, those whose door said what they consumed and
+    /// the four counts summed, a part's cost on the *Parts* strip's own row. None for no record, an unreadable one, or no id.
     /// </summary>
     public SessionSpent Spent(string sessionId)
     {
         if (!SessionEventText.IsId(sessionId)) return SessionSpent.None;
         try
         {
-            var spent = SessionSpent.None;
-            foreach (var e in Lines(PathOf(sessionId)))
-            {
-                if (e.Kind == SessionEventKind.Turn) spent = spent.With(e.Tokens);
-            }
-
-            return spent;
+            return SessionSpentKept.Shared.Of(PathOf(sessionId));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -621,6 +615,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         {
             var path = PathOf(sessionId);
             _latest.Remove(path);
+            SessionSpentKept.Shared.Forget(path);
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;
@@ -646,11 +641,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         return stream.ReadByte() == '\n';
     }
 
-    private static long Last(string path)
-    {
-        var all = Read(path);
-        return all.Count == 0 ? 0 : all[^1].Seq;
-    }
+    private static long Last(string path) => NewestIn(path, e => (long?)e.Seq) ?? 0;
 
     /// <summary>Every readable event in a file, in order; a line that is not one is skipped.</summary>
     private static List<SessionEvent> Read(string path) => [.. Lines(path)];
