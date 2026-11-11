@@ -44,6 +44,7 @@ public sealed class OwnerSetCensusTests
         ["WORKFLOW_SAVE"] = OwnerNone.MachineSetting, // a version of one of the machine's saved workflows, by its id
         ["GIT_IDENTITY"] = OwnerNone.MachineSetting, // one of the machine's git identities; a test names only the remote it reaches
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
+        ["SET_TERMINAL"] = OwnerNone.MachineSetting, // the terminal's tier; the `session` it names is the one that changed it, kept in the log
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest
         ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names

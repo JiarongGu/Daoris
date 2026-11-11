@@ -28,8 +28,8 @@ internal static class CarriedRepairs
 
     /// <summary>The words the Accept given again carries: the record accepted and the tip the repair carried it to.</summary>
     public static string Receipt(string home, string run, NodeRepair repair, string tip) =>
-        $"carried on from the record you accepted ({ReviewAccepts.Short(repair.Attempt is { } attempt ? ReviewRecords.Read(home, run, repair.Node, attempt)?.Revision : null)}) "
-        + $"to {ReviewAccepts.Short(tip)}, to finish the repair its landing asked for";
+        $"carried on from the record you accepted ({ReviewMoved.Short(repair.Attempt is { } attempt ? ReviewRecords.Read(home, run, repair.Node, attempt)?.Revision : null)}) "
+        + $"to {ReviewMoved.Short(tip)}, to finish the repair its landing asked for";
 
     private static (string, string?, long?) Key(ReviewPart part) => (part.Quest, part.Machine, part.Sequence);
 }

@@ -95,8 +95,8 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
         var stale = Accept("0123456789abcdef", review.Attempt);
         var earlier = Accept(record.Revision, review.Attempt - 1);
 
-        Assert.Equal((ReviewAccepts.Moved, record.Revision), (stale.Refused, stale.Detail));
-        Assert.Equal(ReviewAccepts.Moved, earlier.Refused);
+        Assert.Equal((ReviewMoved.Word, record.Revision), (stale.Refused, stale.Detail));
+        Assert.Equal(ReviewMoved.Word, earlier.Refused);
         Assert.Contains(record.Revision[..12], RunNodeWords.Said(stale));
         Assert.Empty(Files.Read(RunUnit)!.Pending);
     }

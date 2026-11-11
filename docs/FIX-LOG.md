@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - The window never showed the terminal's tier or its record, and the terminal grouped a left-taken quest as a word
+
+- **Symptom:** Settings' terminal row and Notifications' standing read no tier and no record of who changed it on a window's load;
+  `DriverStateSliceTests` named `terminal` and `terminalActs` as classed in neither list. The terminal's `notices` grouped an
+  `unclosed` row (a quest its finished session left taken) under *a word*, where the page holds it under *holding*.
+- **Root cause:** the tier (48021cab4f) and its record (d23c75469a) were added to `STATE`'s answer and not to the driver slice's
+  allow-list, so they were never pushed, and the window reads the driver's state from the push alone. The page's `unclosed` group
+  (336d8d1a18) was not added to `NoticesRead.KindGroups`, the terminal's twin of the page's table.
+- **Fix:** both fields are pushed in the `choices` partition; `unclosed` is `holding` in the terminal's table.
+- **Verification:** `DriverStateSliceTests` and `NotificationsReadTests.Each_kind_s_group_is_the_page_s` pass.
+
+## 2026-11-12 - The CLI's and the service's home tables had no row for a plugin's private storage
+
+- **Symptom:** `home.test.ts` *the driver's and the service's tables are this one, cell for cell* failed on a `plugin-private` row only the
+  driver's table held.
+- **Root cause:** the plugin's private storage (`profiles/plugins`, 62aafd16ba) was added to the driver's `DaorisHome` alone; the
+  three tables are twins held equal cell for cell, so the CLI's and the service's did not know the entry.
+- **Fix:** the row is in the CLI's `home.ts` and the service's `DaorisHome.cs`, in the same place.
+- **Verification:** `home.test.ts` passes, 17 of 17.
+
 ## 2026-11-11 - The tool-tests gate waited two and a half hours on one queue case whose bound did not end its tree
 
 - **Symptom:** in a full CI the merge-queue case *an invocation with no verdict is ended at its bound* ran from 09:03 to 11:38 UTC; its
