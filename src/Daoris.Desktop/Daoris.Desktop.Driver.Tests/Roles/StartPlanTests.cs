@@ -104,7 +104,7 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal(
             [
                 ("build", "build"), ("design", "design"), ("exact", "exact"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
-                ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"), ("supervise", "supervisor"),
+                ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"), ("supervise", "supervisor"), ("step", "build"),
             ],
             ParticipantWork.Codes.Select(work => (work, StartPlan.RoleOf(work))));
         Assert.All(ParticipantWork.Codes.Where(work => work != ParticipantWork.Supervise), work => Assert.Contains(StartPlan.RoleOf(work), ActorChoices.Ids));

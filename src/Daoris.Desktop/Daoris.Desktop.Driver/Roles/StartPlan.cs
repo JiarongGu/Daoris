@@ -267,7 +267,7 @@ internal sealed class StartPlan
 
     /// <summary>
     /// The seeded role of a work: the role whose order a start of that work walks where no role catalogue gives one. Design work
-    /// walks Build's while no role takes it. The works are spelled here as the participant's work codes spell them, since Roles sits below Participants; <c>StartPlanTests</c> holds the two alike.
+    /// walks Build's while no role takes it, and a goal step's session is held as a build. The works are spelled here as the participant's work codes spell them, since Roles sits below Participants; <c>StartPlanTests</c> holds the two alike.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">No work of that name.</exception>
     public static string RoleOf(string work) => work switch
@@ -283,6 +283,7 @@ internal sealed class StartPlan
         "review" => "opinion",
         "brainstorm" => "brainstorm",
         "supervise" => "supervisor",
+        "step" => "build",
         _ => throw new ArgumentOutOfRangeException(nameof(work), work, "no work of that name: a start's work is one of the participant's work codes"),
     };
 
