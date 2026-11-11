@@ -194,8 +194,9 @@ finishes first and the whole set runs once.
 
 ## Open
 
-- DOCDIET1: the records outgrew a reader's context (areas up to 99 KB, the backlog twice its budget, the archive and fix log one file
-  each); they are cut to what is true now and split so a search returns a small entry.
+- DOCDIET1: the canon's records only grow, so every driven repository's reading grows with its age (here: areas up to 99 KB, the
+  backlog twice its budget, the archive and fix log one file each). Needs a design: budgets per record kind in the canon, present state
+  only where a change reads, history where search recalls it (Lyntai's memory or month-split files, chosen by measured recall).
 - TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
