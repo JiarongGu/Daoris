@@ -225,8 +225,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (completed, stopped, declined, stood down). Each row carries `state` and the finer `reason`; *Archived* folds a done or failed
     session and a left one, which is the person's to set aside. A done whose own record says work is left is never done: the
     quest's newest session here is needs you with reason `left` where its answers departed from a requirement, accepted or not
-    (`QuestLeft`), and where its run ended failed at a step after the done (`PersonWaits.Left`, read from `RunEnd`, for a quest closed
-    done alone); its end's note says part is left (`ended.done-left`), the service lists the quest with the outstanding ones and
+    (`QuestLeft`), and where its run holds a step failed and kept for the person, or ended failed at one, after the done (`PersonWaits.Left`, for a
+    quest closed done alone); its end's note says part is left (`ended.done-left`), the service lists the quest with the outstanding ones and
     *What needs you* has a `left` row by the session. A line is in the first of needs you, working and pending any part is in, else as
     its newest part ended. A tree holding commits no run waits on is offered on its session, bar one running. `daoris session list
     --group` takes the five and `archived`. (D132, D273, D279)

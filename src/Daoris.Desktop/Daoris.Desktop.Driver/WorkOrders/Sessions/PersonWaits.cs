@@ -33,6 +33,6 @@ public static class PersonWaits
     /// <summary>A <c>return</c> holding files changed on both sides for the person's choice of each.</summary>
     public const string Choose = "choose";
 
-    /// <summary>A run that ended failed at this step after its quest's done: what follows it never ran.</summary>
+    /// <summary>A step failed and kept for the person, or the step a run ended failed at, after its quest's done: what follows it never ran.</summary>
     public const string Left = "left";
 }

@@ -60,6 +60,32 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
 
+    /// <summary>The shape of lumachain's pull-request runs: the step failed `no-token` and is kept for the person, its run not ended.</summary>
+    [Theory]
+    [InlineData(null, PersonWaits.Left)]
+    [InlineData(HeldResolutions.Again, null)]
+    [InlineData(HeldResolutions.Stop, null)]
+    public void A_step_failed_and_kept_for_the_person_in_a_run_not_ended_leaves_the_work_until_their_word_is_on_it(string? resolution, string? why)
+    {
+        BoundTo(CopyGraph);
+        var unit = RunUnits.IdOf(RunId);
+        var call = new WorkPerformCall(unit, "return", 1, "i-1", "k-1", "tip-1", [], _now);
+        Files.Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["return"] = new(unit, "return", NodeStates.Failed) { Attempt = 1, Code = "no-token", Since = _now },
+            },
+            Attempts =
+            [
+                new NodeAttempt("return", 1, "acme.deliver", call, AttemptStates.Settled)
+                { RecordedAt = _now, Outcome = "failed", Code = "no-token", Resolution = resolution },
+            ],
+        });
+
+        Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
+    }
+
     [Theory]
     [InlineData(RunOutcomes.Failed, "return", PersonWaits.Left)]
     [InlineData(RunOutcomes.Failed, null, null)]
