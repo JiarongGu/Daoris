@@ -85,7 +85,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
     Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
     application first, then beside the home. (from D103)
-17a. The two pull-request plugins perform one step, `pull-request`, on `work/perform` and answer `work/state`, through their
+17a. The two pull-request plugins perform a `pull-request` step on `work/perform` and answer `work/state`. The Azure DevOps one's step
+    sets the pull request to auto-complete by the token's own identity where its options say `autoComplete: true` (with `mergeStrategy`,
+    `deleteSourceBranch`, `transitionWorkItems`, `mergeCommitMessage`), its evidence saying whether it was set and a refusal never failing it,
+    so a `monitor` reads the merge Azure DevOps makes; its second step, `release`, finds the merged commit's build on the target branch and
+    the classic release made from it, or the pipeline run's own stages, and watches each awaited stage to its end, starting one by `deploy`
+    where nothing started it, a pending approval said and waited on. Both plugins call their
     service's REST API with `DAORIS_HOST_TOKEN`: the API token of the identity serving origin (`PluginHostToken`), set by `HookProcess`
     around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
     serves origin, the identity is read only, Write denies, no API token) is not started: the refusal is logged as `refused`, never as a

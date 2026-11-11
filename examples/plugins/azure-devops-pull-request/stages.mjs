@@ -89,7 +89,7 @@ export async function watchRelease(repo, id, asked, ends, say, commit) {
   if (verdict?.verdict === 'missing') return verdict;
   const all = [...(last?.environments ?? [])].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
   const { list } = awaited(all, asked.stages, (each) => [each.name]);
-  return { verdict: verdict?.verdict ?? 'timeout', words: list.map((environment) => environmentWords(environment, all, seen, asked.deploy)).join('; ') };
+  return { verdict: verdict?.verdict ?? 'timeout', words: list.map((environment) => environmentWords(environment, all, seen, asked.deploy)).join('; ') || 'its stages had not begun' };
 }
 
 const RESULTS = { succeeded: 'succeeded', succeededWithIssues: 'succeeded with issues', failed: 'failed', canceled: 'was canceled', abandoned: 'was abandoned', skipped: 'was skipped' };
@@ -141,5 +141,5 @@ export async function watchRun(repo, build, asked, ends, say) {
   }, ends, asked.every, say);
   if (verdict?.verdict === 'none' || verdict?.verdict === 'missing') return verdict;
   const { list } = awaited(stagesOf(), asked.stages, (each) => [each.name, each.identifier]);
-  return { verdict: verdict?.verdict ?? 'timeout', words: list.map((stage) => stageWords(stage, records, waited)).join('; ') };
+  return { verdict: verdict?.verdict ?? 'timeout', words: list.map((stage) => stageWords(stage, records, waited)).join('; ') || 'its stages had not begun' };
 }
