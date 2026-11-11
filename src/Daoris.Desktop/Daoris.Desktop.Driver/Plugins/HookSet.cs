@@ -400,7 +400,7 @@ public sealed class HookSet(
     /// </summary>
     public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
     {
-        _placed.Await(awaited);
+        _placed.Await(WorkSwitched.Kept(awaited, PluginSwitches.Read(home)));
         _placed.Apply(_work.Watch);
     }
 
@@ -551,7 +551,7 @@ public sealed class HookSet(
     {
         var payload = HookFrames.Consider(start);
 
-        foreach (var (id, channel) in Listening(HookPoints.QuestConsider))
+        foreach (var (id, channel) in Listening(HookPoints.QuestConsider, new PluginPlace(start.Quest.To, start.Workspace)))
         {
             HookDecision decision;
             var took = Stopwatch.StartNew();
@@ -590,7 +590,7 @@ public sealed class HookSet(
         var lines = new LookLines(said ?? LookSaid.None, "plugin");
         var payload = HookFrames.Ended(ended);
 
-        foreach (var (id, channel) in Listening(HookPoints.SessionEnded))
+        foreach (var (id, channel) in Listening(HookPoints.SessionEnded, new PluginPlace(ended.Repository)))
         {
             var took = Stopwatch.StartNew();
             try
@@ -735,12 +735,14 @@ public sealed class HookSet(
         }
     }
 
-    private List<(string Id, IHookChannel Channel)> Listening(string point)
+    private List<(string Id, IHookChannel Channel)> Listening(string point, PluginPlace? place = null)
     {
+        var switches = PluginSwitches.Read(home);
         lock (_running)
         {
             return _running
-                .Where(pair => !PlacedWork.IsPlace(pair.Key) && pair.Value.Channel.Alive && pair.Value.Channel.Points.Contains(point, StringComparer.Ordinal))
+                .Where(pair => !PlacedWork.IsPlace(pair.Key) && pair.Value.Channel.Alive && pair.Value.Channel.Points.Contains(point, StringComparer.Ordinal)
+                    && switches.IsOn(pair.Key, point, place ?? PluginPlace.Machine))
                 .OrderBy(pair => pair.Key, StringComparer.Ordinal)
                 .Select(pair => (pair.Key, pair.Value.Channel))
                 .ToList();

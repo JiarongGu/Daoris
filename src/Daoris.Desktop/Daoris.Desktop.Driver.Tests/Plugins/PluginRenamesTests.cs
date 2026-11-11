@@ -61,7 +61,7 @@ public sealed class PluginRenamesTests : IDisposable
         Directory.CreateDirectory(PluginPrivate.Folder(_home, "acme-tickets"));
         File.WriteAllText(Path.Combine(PluginPrivate.Folder(_home, "acme-tickets"), "token.json"), "{}");
         PluginState.Disable(_home, "acme-tickets");
-        PluginInterfaceSwitch.Set(_home, "acme-tickets", PluginInterfaces.Storage, on: false);
+        PluginSwitches.Set(_home, "acme-tickets", PluginInterfaces.Storage, PluginPlace.MachineKey, on: false);
         File.WriteAllText(HelpGrants.PathIn(_home), """{ "help": [{ "plugin": "acme-tickets", "server": "desk", "allow": ["read"], "writes": [] }] }""");
 
         var moved = PluginRenames.Move(_home);
@@ -75,8 +75,8 @@ public sealed class PluginRenamesTests : IDisposable
         Assert.True(File.Exists(Path.Combine(PluginPrivate.Folder(_home, "acme-desk"), "token.json")));
         Assert.False(Directory.Exists(PluginPrivate.Folder(_home, "acme-tickets")));
         Assert.Equal(["acme-desk"], PluginState.Load(_home).Disabled);
-        Assert.Equal([PluginInterfaces.Storage], PluginInterfaceSwitch.Off(_home, "acme-desk"));
-        Assert.Empty(PluginInterfaceSwitch.Off(_home, "acme-tickets"));
+        Assert.Equal([new PluginSwitchWord(PluginInterfaces.Storage, PluginPlace.MachineKey, false)], PluginSwitches.Read(_home).Words("acme-desk"));
+        Assert.Empty(PluginSwitches.Read(_home).Words("acme-tickets"));
         Assert.Contains("\"plugin\": \"acme-desk\"", File.ReadAllText(HelpGrants.PathIn(_home)), StringComparison.Ordinal);
         Assert.DoesNotContain("acme-tickets", File.ReadAllText(HelpGrants.PathIn(_home)), StringComparison.Ordinal);
         Assert.Equal("acme-desk", Assert.Single(PluginCatalog.Load(_home).Plugins).Manifest.Id);

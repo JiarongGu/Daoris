@@ -60,6 +60,7 @@ public static class HomeMigration
         new TreeRecordsStep(),
         new UnboundRecordsStep(),
         new OldBinStep(),
+        new PluginSwitchesStep(),
     ];
 
 

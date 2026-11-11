@@ -9,9 +9,9 @@ public static class PluginCommandRun
     /// <summary>Starts a plugin's process for one round.</summary>
     public delegate Task<IHookChannel> Starter(PluginEntry plugin, CancellationToken ct);
 
-    /// <summary>The plugin and its command.</summary>
-    /// <exception cref="DriverException">No such plugin, it is off or refused, its commands are off, or it declares no such command.</exception>
-    public static (PluginEntry Plugin, PluginCommandDeclared Command) Find(string home, string id, string command)
+    /// <summary>The plugin and its command, its commands on at <paramref name="place"/> (the machine where none is named).</summary>
+    /// <exception cref="DriverException">No such plugin, it is off or refused, its commands are off there, or it declares no such command.</exception>
+    public static (PluginEntry Plugin, PluginCommandDeclared Command) Find(string home, string id, string command, PluginPlace? place = null)
     {
         var entry = PluginCatalog.Load(home).Plugins.FirstOrDefault(each => string.Equals(each.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new DriverException($"no plugin `{id}` is installed.");
@@ -23,21 +23,22 @@ public static class PluginCommandRun
             ?? throw new DriverException(commands.Count == 0
                 ? $"plugin `{named}` runs no commands."
                 : $"plugin `{named}` has no command `{command}`: one of {string.Join(", ", commands.Select(each => each.Name))}.");
-        if (!PluginInterfaceSwitch.IsOn(home, named, PluginInterfaces.Commands))
-            throw new DriverException($"plugin `{named}`'s commands are switched off: switch them on in Plugins.");
+        if (!PluginSwitches.IsOn(home, named, PluginSwitches.Commands, place))
+        {
+            throw new DriverException(
+                $"plugin `{named}`'s commands are switched off at {(place ?? PluginPlace.Machine).Key}: `daoris plugin switch {named} commands on --place {(place ?? PluginPlace.Machine).Key}` switches them on.");
+        }
         return (entry, declared);
     }
 
     /// <summary>One round: the plugin's process started for it, asked, and stopped.</summary>
     /// <exception cref="DriverException">The process did not start or answer, or answered in another shape.</exception>
-    public static async Task<CommandRound> RoundAsync(
-        string home, PluginEntry plugin, string command, IReadOnlyList<string> args, IReadOnlyDictionary<string, string> answers, string from,
-        CancellationToken ct, Starter? start = null)
+    public static async Task<CommandRound> RoundAsync(string home, PluginEntry plugin, CommandCall call, CancellationToken ct, Starter? start = null)
     {
         var channel = await (start ?? ((entry, token) => HookChannels.StartAsync(entry, home, _ => { }, token)))(plugin, ct).ConfigureAwait(false);
         await using (channel.ConfigureAwait(false))
         {
-            var answer = await channel.CommandAsync(CommandWire.Frame(command, args, answers, from), ct).ConfigureAwait(false);
+            var answer = await channel.CommandAsync(CommandWire.Frame(call), ct).ConfigureAwait(false);
             return CommandWire.Read(plugin.Manifest.Id, answer);
         }
     }

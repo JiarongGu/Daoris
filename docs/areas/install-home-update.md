@@ -220,7 +220,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     check*'s first staffing; and a closed quest's runs whose standing steps cannot move ended by the runtime's own
     judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`; the records nothing reads
     removed uncopied: a tree's files record and install logs whose tree no longer stands (`tree-records`), a run's node record whose
-    binding is gone (`unbound-records`), and the `bin` entry's old place (`old-bin`, rule 23). The
+    binding is gone (`unbound-records`), and the `bin` entry's old place (`old-bin`, rule 23); and `plugins.json`'s `off` lists as
+    the machine's words in `switches` (`plugin-switches`). The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 

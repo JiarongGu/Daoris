@@ -17,7 +17,7 @@ public static class PluginPrivate
     public static string? Handed(string home, PluginEntry plugin)
     {
         var id = plugin.Manifest.Id;
-        if (plugin.Manifest.Interfaces.Storage is null || !PluginInterfaceSwitch.IsOn(home, id, PluginInterfaces.Storage)) return null;
+        if (plugin.Manifest.Interfaces.Storage is null || !PluginSwitches.IsOn(home, id, PluginInterfaces.Storage)) return null;
         var folder = Folder(home, id);
         if (Directory.Exists(folder)) return folder;
         try

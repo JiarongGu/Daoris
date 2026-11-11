@@ -94,6 +94,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1b and c's driver half — per-place switches, a command round whole (2026-11-11, D274)
+
+> **PLUGINEXT1b, PLUGINEXT1c (driver)** (driver, modules): Outcome: a plugin's parts are switched on or off per place (`switches` in `plugins.json`, per plugin, per interface or point, per place; the narrowest place's word wins, `storage` at the machine only, `disabled` over everything), read by one resolver at each door (a command's run, the storage folder, the token adoption, `quest/consider`, `session/ended`, the work units); `PLUGIN_SWITCH` and `daoris plugin switch`; an older home's `off` list moved into machine-level switches once by a migration step (`PluginInterfaceSwitch` deleted); a command's frame carries the run, its arguments by name, the place, the language and the session, its answer `then` and `data`; `PLUGIN_COMMAND`. Proof: `PluginSwitchesTests`, `PluginSwitchesStepTests`, `CommandWireTests`, `DriverModulePluginSwitchTests`, `DriverModulePluginCommandProcessTests`.
+
+---
+
 ## REVIEWUX1g — a session moves through five states: pending, working, needs you, done, failed (2026-11-11, D273)
 
 > **REVIEWUX1g** (driver, modules, web): Outcome: the owner's word that the states were a mess and that there is no landing task any more is met: every session is in one of five states on the wire (`state`, with its finer `reason`), mapped from the old records in D273's table; the driver's suites, the archive and the room use them; `daoris session list` prints Needs you, Working, Pending, Failed, Done and refuses the old `--group` words naming the five; the window's list groups by them in that order, a row's reason on its line, the head leading with the state word; *parts to land* and *landing* words are gone; a line of work whose failure a later part retried reads done; the Ask Daoris places point at `sessions/needs-you` and `sessions/failed`. Words: Needs you 等你处理, Working 工作中, Pending 待开始, Failed 失败, Done 已完成. Proof: `SessionsGroupWordsTests` and the entry-order case (red first), the rail, head and help suites in both languages, `HelpPlacesTests`.
