@@ -272,6 +272,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
 |`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
 |`2026-11-11-ask-daoris-second-check-design.md`|Accepted design: ASKSUPERVISE1, Ask Daoris's acts read by a second model (D272)
+|`2026-11-11-review-for-every-kind-design.md`|Proposed design: REVIEWUX1, the person's review for every kind of work (D273 reserved)
 
 ## UI, browser, tools and plugin contracts
 
