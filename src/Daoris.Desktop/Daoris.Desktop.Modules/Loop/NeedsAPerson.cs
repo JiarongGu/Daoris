@@ -287,6 +287,7 @@ public static class NeedsAPerson
 
 ﻿        rows.AddRange(AttentionSessionRows.Rows(facts, sessions, SessionScope));
         rows.AddRange(AttentionMachineRows.Rows(facts, UnitScope));
+        rows.AddRange(AttentionSecondCheckRows.Rows(facts));
 
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));

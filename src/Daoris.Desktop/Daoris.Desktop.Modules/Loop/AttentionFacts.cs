@@ -126,4 +126,10 @@ public sealed record AttentionFacts
     /// workspace, remote, host, class, session, since when, and whether its door has gone.
     /// </summary>
     public IReadOnlyList<JsonObject> GitAsks { get; init; } = [];
+
+    /// <summary>
+    /// Each flag of the second check the person has not marked seen (<see cref="Daoris.Driver.AskDaorisReadings.Unseen"/>): its
+    /// conversation, range, place among the findings, what it says, its certainty, the call it rests on, its reader and when it was read.
+    /// </summary>
+    public IReadOnlyList<JsonObject> SecondCheck { get; init; } = [];
 }

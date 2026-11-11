@@ -43,6 +43,12 @@ public static class ReadIndependence
 /// </summary>
 public sealed record AskDaorisFinding(string Severity, string Certainty, string Says, string Call, string Instruction)
 {
+    /// <summary>When the person acknowledged the flag (<i>Seen</i>): never accepted, resolved or answered.</summary>
+    public DateTimeOffset? Seen { get; init; }
+
+    /// <summary>The flag's delivery to the conversation: null while pending, else the word it rode ahead of, once written.</summary>
+    public FlagTold? Told { get; init; }
+
     public const string Flag = "flag";
     public const string Note = "note";
     public const string NoInstruction = "none";
@@ -51,6 +57,9 @@ public sealed record AskDaorisFinding(string Severity, string Certainty, string 
 
     public static IReadOnlyList<string> Certainties { get; } = ["sure", "likely", "unsure"];
 }
+
+/// <summary>A flag told to its conversation: the person's word it rode ahead of, and when that word was written.</summary>
+public sealed record FlagTold(string? Word, DateTimeOffset At);
 
 /// <summary>A reader's answer: its findings and how many past the most it did not write, or a leave with its bound and reasons.</summary>
 public sealed record AskDaorisAnswer(

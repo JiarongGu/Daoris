@@ -38,11 +38,29 @@ public sealed class AskDaorisReports(string home)
             .SelectMany(folder => Directory.EnumerateFiles(folder, "*" + Suffix)).Select(ReadFile).OfType<AskDaorisReport>().Where(report => report.State == state)];
     }
 
+    /// <summary>Told each report written, with its home and conversation, so the window's readings and its bell are judged again.</summary>
+    public static event Action<string, string>? Changed;
+
     public void Write(AskDaorisReport report)
     {
         Directory.CreateDirectory(FolderOf(report.Session));
         AtomicFile.WriteText(Path.Combine(FolderOf(report.Session), report.Range + Suffix), JsonSerializer.Serialize(report, Options));
+        try
+        {
+            Changed?.Invoke(home, report.Session);
+        }
+        catch (Exception)
+        {
+            // A listener's failure is its own; the report is written either way.
+        }
     }
+
+    /// <summary>The person's <i>Seen</i> on one flag of a read report, kept once; false where there is no such flag or it is seen already.</summary>
+    public bool See(string session, string range, int finding, DateTimeOffset now) =>
+        Change(session, range, report =>
+            finding >= 0 && finding < report.Findings.Count && report.Findings[finding] is { Severity: AskDaorisFinding.Flag, Seen: null } flag
+                ? report with { Findings = [.. report.Findings.Select((each, at) => at == finding ? flag with { Seen = now } : each)] }
+                : null) is not null;
 
     public AskDaorisReport? Find(string session, string range) => ReadFile(Path.Combine(FolderOf(session), range + Suffix));
 

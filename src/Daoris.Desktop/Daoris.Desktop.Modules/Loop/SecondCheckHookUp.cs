@@ -15,14 +15,18 @@ public sealed class SecondCheckHookUp : IDisposable
     private readonly AskDaorisKept _kept;
     private readonly string _home;
 
-    private SecondCheckHookUp(string home, SessionEvents events, HelpPressRecord? presses, HeldPermissions held, MachineLog? log)
+    private readonly Action<string>? _told;
+
+    private SecondCheckHookUp(string home, SessionEvents events, HelpPressRecord? presses, HeldPermissions held, MachineLog? log, Action<string>? told)
     {
         _home = home;
         _presses = presses;
         _held = held;
+        _told = told;
         _kept = new AskDaorisKept(home);
         if (presses is not null) presses.Moved += Pressed;
         held.Ended += Answered;
+        AskDaorisReports.Changed += Reported;
         _watch = AskDaorisWatch.Of(
             home, events,
             session => _kept.Presses(session, presses?.Now().Where(press => press.Session == session).Select(KeptOf)),
@@ -30,9 +34,18 @@ public sealed class SecondCheckHookUp : IDisposable
             (session, error) => log?.Warn("ask-daoris.select-failed", ("session", session), ("error", error.GetType().Name)));
     }
 
-    /// <summary>Begin watching: the start's catch-up runs at once, in the background.</summary>
-    public static SecondCheckHookUp Start(string home, SessionEvents events, HelpPressRecord? presses, HeldPermissions held, MachineLog? log = null) =>
-        new(home, events, presses, held, log);
+    /// <summary>
+    /// Begin watching: the start's catch-up runs at once, in the background. <paramref name="told"/> hears each conversation whose report
+    /// was written, so the window asks its readings again.
+    /// </summary>
+    public static SecondCheckHookUp Start(
+        string home, SessionEvents events, HelpPressRecord? presses, HeldPermissions held, MachineLog? log = null, Action<string>? told = null) =>
+        new(home, events, presses, held, log, told);
+
+    private void Reported(string home, string session)
+    {
+        if (string.Equals(home, _home, StringComparison.Ordinal)) _told?.Invoke(session);
+    }
 
     /// <summary>Complete once the start's catch-up has run.</summary>
     public Task CaughtUp => _watch.CaughtUp;
@@ -74,6 +87,7 @@ public sealed class SecondCheckHookUp : IDisposable
     {
         if (_presses is not null) _presses.Moved -= Pressed;
         _held.Ended -= Answered;
+        AskDaorisReports.Changed -= Reported;
         _watch.Dispose();
     }
 }

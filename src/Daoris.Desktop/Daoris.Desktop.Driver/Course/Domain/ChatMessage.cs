@@ -76,6 +76,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     internal Action? Went { get; init; }
 
+    /// <summary>Told once the door wrote this message, so what rode ahead of the person's words (a second check's flags) is kept told.</summary>
+    internal Action? Told { get; init; }
+
     /// <summary>Gives back what this message took once, where it is withdrawn and handed back to the person.</summary>
     internal Action? Untaken { get; init; }
 
