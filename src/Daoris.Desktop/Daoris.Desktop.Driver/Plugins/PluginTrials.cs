@@ -156,6 +156,7 @@ public static class PluginTrials
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
 
         if (PluginTrialHand.Step(entry, toolsHome, options.Origin) is { } hand) steps.Add(hand);
+        if (PluginTrialInterfaces.Step(entry.Manifest) is { } interfaces) steps.Add(interfaces);
 
         PluginTrialProcess process;
         try

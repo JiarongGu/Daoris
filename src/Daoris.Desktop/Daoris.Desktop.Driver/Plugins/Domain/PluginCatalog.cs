@@ -24,10 +24,9 @@ namespace Daoris.Driver;
 /// text is parsed and the catalogue judged from what is read; <c>Load</c>, <c>ReadFolder</c> and <c>ReadAsWritten</c> read
 /// the home through that helper, which does the I/O, so this file names none itself.</para>
 ///
-/// <para><c>daoris plugin</c> reads through here. Three fields have readers of
-/// their own, each held by its table: the icon
-/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
-/// with their resources (<see cref="PluginSteps"/>), whose problems do.</para>
+/// <para><c>daoris plugin</c> reads through here. Four fields have readers of their own, each held by its table: the icon (<see cref="PluginIcon"/>),
+/// the tools (<see cref="PluginTools"/>) and the interfaces (<see cref="PluginInterfaces"/>), whose problems never refuse a plugin, and the
+/// steps with their resources (<see cref="PluginSteps"/>), whose problems do.</para>
 /// </remarks>
 public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplacePluginCatalog
 {
@@ -555,7 +554,6 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             var declaredSystems = PluginSystems.Read(root);
             if (declaredSystems.Problem is not null) return (PluginManifest.Empty(id), declaredSystems.Problem);
             var declaredInterfaces = PluginInterfaces.Read(root, hooks is not null);
-            if (declaredInterfaces.Problem is not null) return (PluginManifest.Empty(id), declaredInterfaces.Problem);
             var (formerly, formerlyProblem) = PluginFormerly.Read(id, root);
             if (formerlyProblem is not null) return (PluginManifest.Empty(id), formerlyProblem);
 
@@ -585,7 +583,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 Steps = declaredSteps.Steps,
                 Resources = declaredSteps.Resources,
                 Systems = declaredSystems.Systems,
-                Interfaces = declaredInterfaces.Interfaces,
+                Interfaces = declaredInterfaces,
                 Formerly = formerly,
                 Tools = tools,
                 ToolsProblem = toolsProblem,

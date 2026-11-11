@@ -307,6 +307,7 @@ public static class PluginKit
             new(Test, WireTest()),
             new(Readme, ReadmeOf(id, name, chosen).Replace("\r\n", "\n")),
         };
+        files.AddRange(PluginKitStorage.Files());
         if (Works(chosen)) files.Add(new(WorkScript, WorkLibrary()));
         if (PluginKitSystems.Adapts(chosen)) files.Add(new(PluginKitSystems.Library, PluginKitFiles.Template(PluginKitSystems.Library)));
         if (Performs(chosen))
@@ -373,7 +374,7 @@ public static class PluginKit
           "hooks": {
             "command": ["node", "${plugin}/{{Script}}"],
             "points": [{{string.Join(", ", points.Select(point => Json(point.Name)))}}]
-          },{{Declared(id, points)}}{{PluginKitSystems.Declared(name, points)}}
+          },{{PluginKitInterfaces.Declared(name)}}{{Declared(id, points)}}{{PluginKitSystems.Declared(name, points)}}
           "tools": []
         }
 

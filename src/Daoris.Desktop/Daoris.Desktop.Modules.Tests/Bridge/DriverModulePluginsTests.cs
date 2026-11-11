@@ -322,15 +322,15 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     {
         var module = Module();
         var kit = (await AnswerAsync(module, "PLUGINS")).GetProperty("kit").GetProperty("points").EnumerateArray().ToList();
-        Assert.Equal(["quest/consider", "session/ended", "work/state", "state/changed", "work/watch", "work/step", "work/perform", "work/event"], kit.Select(p => p.GetProperty("name").GetString()!).ToArray());
-        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act", "observation"], kit.Select(p => p.GetProperty("kind").GetString()!).ToArray());
+        Assert.Equal(["quest/consider", "session/ended", "work/state", "state/changed", "work/watch", "work/step", "work/perform", "work/event", "plan/read", "apply/perform"], kit.Select(p => p.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act", "observation", "query", "act"], kit.Select(p => p.GetProperty("kind").GetString()!).ToArray());
 
         var repository = Path.Combine(Home, "a-plugins-repository");
         Directory.CreateDirectory(repository);
         var made = await AnswerAsync(module, "PLUGIN_NEW", new { id = "acme-gate", points = new[] { "quest/consider" }, folder = repository });
         var folder = Path.Combine(repository, "acme-gate");
         Assert.Equal(folder, made.GetProperty("folder").GetString());
-        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"],
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md", "storage.mjs", "storage.test.mjs"],
             made.GetProperty("files").EnumerateArray().Select(f => f.GetString()!).ToArray());
         // Making one installs nothing.
         Assert.Empty((await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray());
@@ -338,7 +338,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
         var tried = await AnswerAsync(module, "PLUGIN_TRY", new { folder });
         Assert.True(tried.GetProperty("passed").GetBoolean(), tried.GetRawText());
         Assert.Equal("acme-gate", tried.GetProperty("plugin").GetString());
-        Assert.Equal(["handshake", "quest/consider", "shutdown", "stdout"],
+        Assert.Equal(["interfaces", "handshake", "quest/consider", "shutdown", "stdout"],
             tried.GetProperty("steps").EnumerateArray().Select(s => s.GetProperty("name").GetString()!).ToArray());
         Assert.Contains("answered as the driver reads it", tried.GetProperty("summary").GetString());
 
@@ -347,10 +347,10 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
         Assert.False(Directory.Exists(Path.Combine(repository, "acme-other")));
 
         // Installed, it is tried by its id, from its own folder under the home.
-        var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
+        var installed = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme-gate");
         Directory.CreateDirectory(installed);
         foreach (var file in Directory.GetFiles(folder)) File.Copy(file, Path.Combine(installed, Path.GetFileName(file)));
-        var byId = await AnswerAsync(module, "PLUGIN_TRY", new { id = "acme.gate" });
+        var byId = await AnswerAsync(module, "PLUGIN_TRY", new { id = "acme-gate" });
         Assert.True(byId.GetProperty("passed").GetBoolean(), byId.GetRawText());
         Assert.Equal(installed, byId.GetProperty("folder").GetString());
 

@@ -372,6 +372,7 @@ public static class PluginCommand
                 Say(world, $"  {manifest.Id,-24} {manifest.Name}{Version(manifest)}{(entry.Enabled ? "" : "  (off)")}");
                 Say(world, $"  {pad} {(entry.Problem is { } problem ? $"⚠ {problem}" : PluginPackageCommand.Describe(manifest))}");
                 foreach (var line in ToolLines(manifest)) Say(world, $"  {pad} {line}");
+                foreach (var line in PluginInterfaceLines.Of(manifest.Interfaces)) Say(world, $"  {pad} {line}");
                 Say(world, $"  {pad} {SourceLine(entry.Folder)}");
                 if (PluginIcon.Read(entry.Folder, manifest).Problem is { } icon) Say(world, $"  {pad} icon not drawn: {icon}");
             }

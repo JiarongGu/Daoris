@@ -118,6 +118,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1 rows h and a's driver half — the kit's locked storage, interfaces read entry by entry (2026-11-11)
+
+> **PLUGINEXT1h and PLUGINEXT1a (driver)** (driver, modules, examples): Outcome: the kit's `storage.mjs` takes a lock file, reads fresh, writes one record and renames it into place (a dead holder's or 30-second-old lock taken over, an unparsable file refused and left), and `work.mjs` keeps its journal through it, so two places' work processes no longer overwrite each other's attempts (FIX-LOG, introduced by 4702a828aa); a new plugin's scaffold declares a sample command, its storage and a view stub, and the trial reads them; a manifest's interfaces are read whole, a problem refusing only its entry, an unknown interface skipped and named, a `forget` naming a refused, missing or interactive command kept disabled with its reason; the `PLUGINS` route answers `interfaces`, the update plan's rows go one per entry with `asksMore`, and a command round's `said` is bound at 8 KiB. The four examples carry the new kit files (local-preview and local-release 0.1.1, Azure DevOps and GitHub 3.0.1). Proof: the contract test's two-process case (red on the old journal), `storage.test.mjs`, `PluginInterfacesTests`, `PluginInterfaceChangesTests`, `PluginKitExampleTests`, `PluginKitInterfacesTests`.
+
+---
+
 ## PLUGINEXT1's first slice — a plugin's own commands, private storage and sign-in (2026-11-11, D274)
 
 > **PLUGINEXT1, first slice** (driver, examples): Outcome: a plugin declares `interfaces` in its manifest — commands (name, words, interactive, tool, `adopts`) run inside its own process over `hook/command/run`, round by round with masked prompts, from `daoris <plugin> <command>`; a private storage folder under the profile handed only to that plugin's processes and removed with it; `plugins.json`'s `off` list per plugin — and Daoris names no plugin; the Azure DevOps (2.2.0) and GitHub (2.1.0) examples sign in through their own `login`, `status` and `logout`, keeping their token in their storage; `DAORIS_HOST_TOKEN` is gone, and an identity's API token is handed once to a command that adopts it, then cleared, logged by ids only. The owner's direction: a plugin's credential is the plugin's, it manages its own tasks, Daoris extends the framework. Proof: `PluginInterfacesTests`, the examples' command tests (seen failing first), `PluginCommandRunTests`, `PlaceHandTests`.

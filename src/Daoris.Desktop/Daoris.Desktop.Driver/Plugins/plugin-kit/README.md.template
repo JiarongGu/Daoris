@@ -18,6 +18,8 @@ repository, with its tests, reviewed as a diff. It is installed only when a pers
 | `plugin.mjs` | the wire script: the handshake, a handler for each point, the shutdown |
 | `plugin.test.mjs` | its wire test: `node --test` here, with nothing of Daoris's installed |
 | `README.md` | this: the wire, the rules, and each point's frame and answer |
+| `storage.mjs` | the kit's record store: a JSON file written one record at a time under a lock; written by the kit, not by hand |
+| `storage.test.mjs` | its test: two processes writing one file at once keep every record either wrote |
 {{files}}
 ## Where it speaks
 
@@ -44,6 +46,10 @@ JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugi
 - **What it keeps goes in its data folder**: `DAORIS_PLUGIN_DATA`, or `${data}` in a manifest command.
   The install folder is replaced whole by the next `daoris plugin add`, and removing a plugin names its
   data folder rather than deleting it.
+- **Keep records with `storage.mjs`.** Several processes of this plugin run at once and share its data
+  folder (one per place that awaits its work, and each command round), so a file each writes whole loses
+  the other's writes. `records(file).put(section, key, value)` writes one record under a lock and keeps
+  every other as it is on disk.
 - **Where it is, is told.** `DAORIS_PLUGIN_ID`, `DAORIS_PLUGIN_FOLDER`, `DAORIS_PLUGIN_DATA` and
   `DAORIS_HOME` are in its environment, and `${plugin}` in a manifest command is its install folder.
   Never work a path out from the working directory.

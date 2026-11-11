@@ -76,6 +76,18 @@ public sealed class PluginCommandRunTests : IDisposable
     }
 
     [Fact]
+    public void A_round_s_lines_are_bounded_in_all_under_every_frame_a_plugin_is_read_in()
+    {
+        static CommandRound Said(params string[] lines) =>
+            CommandWire.Read("acme.tickets", JsonDocument.Parse(JsonSerializer.Serialize(new { said = lines })).RootElement);
+
+        Assert.True(CommandWire.SaidBytes * 4 < WorkBounds.FrameBytes);
+        Assert.Equal(8, Said([.. Enumerable.Repeat(new string('x', CommandWire.SaidBytes / 8), 8)]).Said.Count);
+        Assert.Contains("longer than 8 KiB in all", Assert.Throws<DriverException>(() => Said([.. Enumerable.Repeat(new string('x', 1500), 6)])).Message, StringComparison.Ordinal);
+        Assert.Throws<DriverException>(() => Said(new string('阶', 2000), new string('阶', 2000)));
+    }
+
+    [Fact]
     public async Task The_terminal_asks_what_the_command_asks_hidden_and_never_says_the_value_back()
     {
         Install();
