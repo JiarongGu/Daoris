@@ -37,6 +37,9 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
 
     /// <summary>How the run ended (<see cref="RunOutcomes"/>); null while it goes on.</summary>
     public string? Ended { get; init; }
+
+    /// <summary>A plan's operations, of the plan its record names and held to the digest it read; null on any other kind or a plan that does not read.</summary>
+    public IReadOnlyList<SystemOperation>? Operations { get; init; }
 }
 
 /// <summary>A record newer than the one read: its attempt, its revision and the paths whose content differs from the one read.</summary>

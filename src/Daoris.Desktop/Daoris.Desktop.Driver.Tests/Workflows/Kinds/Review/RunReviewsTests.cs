@@ -57,6 +57,30 @@ public sealed class RunReviewsTests : IDisposable
         Assert.Null(review.Newer);
         var follows = Assert.Single(review.Follows);
         Assert.Equal(("apply", NodeKinds.Land), (follows.Node, follows.Kind));
+        Assert.Null(review.Operations);
+    }
+
+    [Fact]
+    public void A_plans_review_is_read_with_the_operations_of_the_plan_its_record_names()
+    {
+        Recorded(standing: 1);
+        new SystemPlans(_home).Keep("s1", "sample-dns", [new SystemOperation("record/www", "update", "10.0.0.4", "10.0.0.9", new("version", "3"))], T);
+        // The fixture's first record is a folder's; the plan's are the next two attempts.
+        ReviewRecords.Keep(_home, new ReviewRecord("q1", "review", 2, ReviewKinds.Plan, "ccccccc3", T.AddMinutes(2))
+        {
+            Place = "sample-dns", Reference = PlanReview.Reference(_home, ["s1"])!,
+        });
+        ReviewRecords.Keep(_home, new ReviewRecord("q1", "review", 3, ReviewKinds.Plan, "ddddddd4", T.AddMinutes(3))
+        {
+            Place = "sample-dns", Reference = new() { PlanRecord = "s1" },
+        });
+
+        var named = RunReviews.Read(_home, "q1", 2)!;
+        var unread = RunReviews.Read(_home, "q1", 3)!;
+
+        var operation = Assert.Single(named.Operations!);
+        Assert.Equal(("record/www", "update", "10.0.0.9"), (operation.Resource, operation.Op, operation.After));
+        Assert.Null(unread.Operations);
     }
 
     [Fact]

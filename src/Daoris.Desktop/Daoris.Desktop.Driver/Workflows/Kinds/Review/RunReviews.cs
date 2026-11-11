@@ -32,6 +32,7 @@ public static class RunReviews
                 ? new RunReviewNewer(newest.Attempt, newest.Revision, Changed(read, newest)) : null,
             Follows = [.. Following(graph, review.Id).Select(each => Step(record, each.Node, each.Via))],
             Ended = record.Ended?.Outcome,
+            Operations = read?.Kind == ReviewKinds.Plan ? PlanReview.Named(home, read).Plan?.Operations : null,
         };
     }
 
