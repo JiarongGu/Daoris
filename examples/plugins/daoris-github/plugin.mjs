@@ -1,4 +1,4 @@
-// GitHub pull request (`github-pull-request`): a plugin that opens and reads a pull request through GitHub's REST API.
+// GitHub (`daoris-github`): Daoris's own plugin for GitHub, which opens and reads a pull request through GitHub's REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
 // not started where origin is served by a read-only identity or git access denies Write. It signs in itself: its `login` command keeps a
 // token in its own private storage (credential.mjs), and each API call carries that token.
@@ -75,7 +75,7 @@ const TRANSIENT = ['unavailable', 'rate-limited'];
 
 async function call(repo, method, path, body) {
   const token = kept()?.token;
-  if (!token) throw new Refusal('no-token', 'no token is kept: run `daoris github-pull-request login`');
+  if (!token) throw new Refusal('no-token', 'no token is kept: run `daoris daoris-github login`');
   let response;
   try {
     response = await fetch(`${apiOf(repo.host)}${path}`, {
@@ -84,7 +84,7 @@ async function call(repo, method, path, body) {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'daoris-github-pull-request',
+        'User-Agent': 'daoris-github',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,

@@ -1,7 +1,13 @@
-# `github-pull-request` — a pull request on GitHub, through its API
+# `daoris-github` — Daoris's work on GitHub, through its API
+
+Daoris's own GitHub plugin, in Daoris's `daoris-` family of plugins (a plugin's id is `<family>-<name>`; yours takes your own
+family). Today it opens and reads the pull request. It was `github-pull-request`: its manifest says so (`formerly`), and Daoris moves
+that id's sign-in, switches and kept data to this one once, and runs a workflow still naming `github-pull-request/pull-request` on it.
+Its schemas keep their names (`github-pull-request/receipt@1` and `github-pull-request/pull-request@1`), since evidence already kept
+names them.
 
 A plugin is a folder with a `plugin.json` (`docs/2026-09-23-plugin-design.md`, D64). This one performs one step,
-`github-pull-request/pull-request`, on the work wire's `work/perform` (D241 point 5), and answers `work/state`. It runs **no git and no
+`daoris-github/pull-request`, on the work wire's `work/perform` (D241 point 5), and answers `work/state`. It runs **no git and no
 CLI**: Daoris's own `push` node pushes the branch through its doors first, and this process opens and reads the pull request through
 GitHub's REST API.
 
@@ -9,9 +15,9 @@ GitHub's REST API.
 
 Tracked here as an example, it does nothing on its own. It runs only when **both** are true:
 
-1. you installed it: `daoris plugin add examples/plugins/github-pull-request` (or copied the folder under the Daoris home's
+1. you installed it: `daoris plugin add examples/plugins/daoris-github` (or copied the folder under the Daoris home's
    `plugins/`), and it is not switched off;
-2. a place's workflow holds its step, after a `push`: *land* (branch), *push*, *github-pull-request/pull-request*. The shipped
+2. a place's workflow holds its step, after a `push`: *land* (branch), *push*, *daoris-github/pull-request*. The shipped
    *Hosted merge workflow* preset (`pull-request`) is that graph.
 
 ## What it does
@@ -37,7 +43,7 @@ unmerged). **Daoris removes nothing on this word alone**: a branch goes only whe
 
 ## The token
 
-The plugin signs in itself: `daoris github-pull-request login` asks for a token, hidden as you type it (or `--stdin`), and keeps it in
+The plugin signs in itself: `daoris daoris-github login` asks for a token, hidden as you type it (or `--stdin`), and keeps it in
 the plugin's own private storage (`DAORIS_PLUGIN_PRIVATE`), handed to this plugin's processes alone; `status` says whether one is kept
 and whether GitHub last refused it; `logout` forgets it. A git identity serving github.com that already held an API token hands it to
 `login` once. The token is never logged, said back or put in evidence, and is sent only to the API. The plugin is not started where

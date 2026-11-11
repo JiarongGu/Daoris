@@ -1,4 +1,4 @@
-// Azure DevOps pull request (`azure-devops-pull-request`): a plugin that opens and reads a pull request through Azure DevOps' REST API.
+// Azure DevOps (`daoris-azure-devops`): Daoris's own plugin for Azure DevOps, which opens and reads a pull request and follows its release through Azure DevOps' REST API.
 // It runs no git and no CLI. Daoris pushed the branch before this step ran (a `push` node, through its own doors); this process is
 // not started where origin is served by a read-only identity or git access denies Write. It signs in itself: its `login` command keeps a
 // personal access token in its own private storage (credential.mjs), and each API call carries that token.

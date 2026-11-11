@@ -48,11 +48,16 @@ public static class PluginOffers
             problem ??= PluginCatalog.RefusedByThisBuild(manifest, reserved);
             offers.Add(new PluginOffer(
                 name, path, manifest, problem, Needs(path),
-                PluginFolders.HasFile(DaorisHome.Entry(home, HomeEntry.Plugins, name, PluginCatalog.ManifestName))));
+                manifest.Formerly.Prepend(name).Any(id => PluginFolders.HasFile(DaorisHome.Entry(home, HomeEntry.Plugins, id, PluginCatalog.ManifestName)))));
         }
 
         return offers;
     }
+
+    /// <summary>The offer an installed plugin of <paramref name="id"/> is a copy of: the one of its id, else the one declaring it as an old id.</summary>
+    public static PluginOffer? For(IReadOnlyList<PluginOffer> offers, string id) =>
+        offers.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
+        ?? offers.FirstOrDefault(each => each.Manifest.Formerly.Contains(id, StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
     /// What an installed plugin is against the offer of its own id: <see cref="PluginShipped"/> where it is older than the
@@ -60,7 +65,7 @@ public static class PluginOffers
     /// older one); null where it needs no word, and where there is no sound offer of its id.
     /// </summary>
     public static PluginShipped? ShippedOf(string installFolder, PluginManifest installed, PluginOffer? offer) =>
-        offer is { Problem: null } && string.Equals(offer.Id, installed.Id, StringComparison.OrdinalIgnoreCase)
+        offer is { Problem: null } && For([offer], installed.Id) is not null
             ? PluginShipped.Judge(
                 installed.Version,
                 offer.Manifest.Version,

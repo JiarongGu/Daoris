@@ -1,4 +1,7 @@
-# `in-app-browser` — sessions drive Daoris's own browser
+# `daoris-in-app-browser` — sessions drive Daoris's own browser
+
+Daoris's own plugin, in the `daoris-` family (a plugin's id is `<family>-<name>`; yours takes your own family). It was
+`in-app-browser`; its manifest says so, and Daoris moves that id's switch, data and approval to it once.
 
 The desktop shell carries a browser of its own (D78,
 `docs/2026-09-27-in-app-browser-design.md`): a window with an address bar, its profile under the
@@ -8,7 +11,7 @@ the Chrome DevTools Protocol. So what a session opens, clicks and reads is the p
 can see.
 
 ```sh
-daoris plugin add examples/plugins/in-app-browser
+daoris plugin add examples/plugins/daoris-in-app-browser
 daoris agent rules allow mcp__browser            # or --workspace <name> for one workspace
 ```
 
@@ -20,7 +23,7 @@ profile of Daoris's; `${browser}` is the chosen one's endpoint. Signing in is th
 **Ask Daoris uses it once you approve it.** The server is offered to Ask Daoris too (`"to": ["sessions",
 "help"]`), and Ask Daoris is handed it only once you approve its exact tools on the plugin's page
 (Plugins → *In-app browser* → *Ask Daoris* → *Approve*), or press Apply on Ask Daoris's own proposal of
-it, or run `daoris plugin approve in-app-browser browser`. Its reads (`allow`: navigating,
+it, or run `daoris plugin approve daoris-in-app-browser browser`. Its reads (`allow`: navigating,
 reading a page's snapshot, a screenshot, its tabs, its console and its requests) are approved
 whole; each write (`writes`: clicking, typing, filling a form, choosing, dragging, uploading a file,
 answering a dialog) only as you tick it, since it acts on a page as you. The tools that run a
