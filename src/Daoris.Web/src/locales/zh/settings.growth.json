@@ -1,0 +1,22 @@
+{
+  "settings.growth.label": "新仓库与新房间",
+  "settings.growth.body": "智能体的工作需要自己的地方时，可以开设仓库或房间：问道衍、负责人或被驱动的会话，通过一次在写入任何内容之前就停下的操作来开设。这里决定这样的操作是按访问模式处理（完全访问时立即执行，受限模式下等你确认），还是即使在完全访问下也等你确认，或者即使在完全访问下也予以拒绝。只有你能更改：任何模式都不允许智能体按下这个开关。仓库自己的值取代其工作区的值。",
+  "settings.growth.twin.repository": "`daoris settings growth {{workspace}} --repository {{repository}} mode|asked|off`",
+  "settings.growth.twin.workspace": "`daoris settings growth {{workspace}} mode|asked|off`",
+  "settings.growth.says.mode": "智能体开设仓库或房间的操作按访问模式处理：完全访问时立即执行，受限模式下等你确认。",
+  "settings.growth.says.asked": "智能体开设仓库或房间的操作，即使在完全访问下，也要在道衍的窗口里等你确认。",
+  "settings.growth.says.off": "智能体开设仓库或房间的操作会被拒绝，即使在完全访问下也是如此；它只在已有的地方工作。",
+  "settings.growth.from.repository": "为这个仓库设置。",
+  "settings.growth.from.workspace": "来自工作区 {{workspace}}。",
+  "settings.growth.from.default": "道衍的默认值：未设置。",
+  "settings.growth.summary.mode": "新地方按模式处理",
+  "settings.growth.summary.asked": "新地方每次都问",
+  "settings.growth.summary.off": "拒绝开设新地方",
+  "settings.growth.choice": "智能体在 {{name}} 中开设仓库或房间的操作怎么处理",
+  "settings.growth.values.mode": "按模式",
+  "settings.growth.values.asked": "问我",
+  "settings.growth.values.off": "关闭",
+  "settings.growth.saved.mode": "智能体在 {{name}} 中开设仓库或房间的操作，现在按访问模式处理。",
+  "settings.growth.saved.asked": "智能体在 {{name}} 中开设仓库或房间的操作，现在即使在完全访问下也要等你确认。",
+  "settings.growth.saved.off": "智能体在 {{name}} 中开设仓库或房间的操作，现在会被拒绝，即使在完全访问下也是如此。"
+}

@@ -231,9 +231,11 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     const outcome = HELP_PRESS_OUTCOMES.find((known) => known === shaped.outcome);
     if (id === null || route === null || session === null || at === null || !outcome) return [];
     const receipt = receiptOf(shaped.receipt);
+    const why = text(shaped.why);
     return [{
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
       place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true, ...(receipt ? { receipt } : {}),
+      ...(why ? { why } : {}),
     }];
   });
 }

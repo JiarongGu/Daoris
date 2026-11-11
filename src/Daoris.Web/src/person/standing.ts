@@ -44,6 +44,8 @@ export type HelpPressNow = {
   /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
   asked?: boolean;
   receipt?: PressReceiptNow;
+  /** The words a rule refused the press in, before any run or card: the growth switch's among them. */
+  why?: string;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */

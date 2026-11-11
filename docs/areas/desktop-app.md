@@ -301,7 +301,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
 60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration and Files (the files git does not manage there, with the person's rules and permissions); a
-    workspace's are Details, Branches and Workflow. Their setup and rules are the place's, in Agents → Setup. (from D150, D147)
+    workspace's are Details, Branches and Workflow. Their setup and rules are the place's, in Agents → Setup, where each place's sessions fold holds one
+    row, *New repositories and rooms* (`settings/repository/Growth.tsx`, `SET_GROWTH`, `driver.json`'s `growth` and `workspaceGrowth`): whether an agent's
+    press that opens a repository or a room runs as the access mode says, waits for the person's Confirm even in full access, or is refused. A
+    workspace's row is its own value, a repository's its own over its workspace's (`LINES`' `growth` resolves it); the press is the person's alone, never
+    an agent's in any mode (roles-and-supervision 56). (from D150, D147, D276)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds
     its modules in their folders, folded together or one at a time (each open folder's header has its *Fold*); a cycle, across folders too, is one card in the

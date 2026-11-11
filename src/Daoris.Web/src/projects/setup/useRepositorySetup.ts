@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import {
   useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
-  useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanguage, useSetLine,
+  useSetCommits, useSetDrivable, useSetGrowth, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanguage, useSetLine,
   useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetWriteAcross, useWorkflowCurrent, standingOf,
   useGitRemotes, useSetGitAccess, useSetGitUse, useTools,
 } from '../../bridge/shell';
@@ -17,6 +17,7 @@ import { type AccessEdit, accessToast, isFull, resolveAccess } from '../../setti
 import { type CommitEdit, commitToast } from '../../settings/repository/Commits';
 import { heavyToast } from '../../settings/repository/HeavyGates';
 import { type HandOverEdit, handOverToast } from '../../settings/repository/HandOver';
+import { type GrowthValue, growthToast } from '../../settings/repository/Growth';
 import { type HelperEdit, helperToast } from '../../settings/repository/Helpers';
 import { type OpinionEdit, opinionToast } from '../../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../../settings/repository/Reviews';
@@ -61,6 +62,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
   const setHandOver = useSetHandOver();
+  const setGrowth = useSetGrowth();
   const setAccess = useSetAccess();
   const setHeavy = useSetHeavyGates();
   const setChecks = useSetSessionChecks();
@@ -267,6 +269,14 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
+    // Whether an agent's press that opens a room here runs as the mode says, is asked or is refused; where the answer holds none, no row is offered.
+    growth: Array.isArray(lines.data?.growth) ? resolved<NonNullable<NonNullable<RepositorySetupProps['sessions']>['growth']>>(lines.data.growth) ?? { repository, workspace } : undefined,
+    onGrowth: Array.isArray(lines.data?.growth)
+      ? (value: GrowthValue) => setGrowth.mutate({ repository, workspace, value }, {
+          onSuccess: () => notify(growthToast(t, registration.repository, value)),
+          onError: onDriverError,
+        })
+      : undefined,
     standing: (state.standing ?? []).find((row) => same(row.repository)) ?? null,
     onStanding: state.standing === undefined
       ? undefined
@@ -392,7 +402,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     reach,
     git,
     busy: setLine.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setGrowth.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
       || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending
       || setGitAccess.isPending,
   };

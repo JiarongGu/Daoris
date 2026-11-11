@@ -42,6 +42,9 @@ function PressLine({ press, busy, onOpen, onReverse, onOpenTarget }: {
           </Button>
         )}
       </span>
+      {press.why && (
+        <p data-help-why="" className="m-0 basis-full text-ink-soft">{press.why}</p>
+      )}
       {press.receipt && (
         <div className="basis-full">
           <PressReceiptLine receipt={press.receipt} {...(onOpenTarget ? { onOpen: onOpenTarget } : {})} />
