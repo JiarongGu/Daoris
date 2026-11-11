@@ -40,9 +40,10 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Work events' frame and teller | `Plugins/Domain/WorkEventGrammar.cs`, `HookFrames.Event` (`Plugins/Domain/HookPoints.cs`), `Plugins/WorkEventPoint.cs`, `Plugins/RelayBuild.cs` | `work/event`'s parts: the grammar (version 3: `session.parked`, `quest.parked`, `session.ended`, `work.landed`, `events.missed`, the version 2 kinds `quest.published`, `quest.closed`, `quest.close-lost`, `confirmation.ended`, `work.ended`, and version 3's `channel.posted`, each kind's closed list of ids, codes, counts and a UTC time); the frame built by it, an optional field that fails left out and an event whose required field fails told as `events.missed` in its place; the teller, which mints every `seq` under one lock whether or not it tells, tells only while `Held`, keeps a queue of 256 and a teller per plugin that joined (the oldest dropped and counted in the next frame's `missed`), and stops a plugin after three late answers in a row; a build's hash over its whole bundle, 64 zeros where there is none |
 | Systems | `Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/` (`SystemAdapter`, `SystemAdapters`, `SystemReadBack`, `SystemPlanning`, `SystemAdd`), `Service/Domain/SystemPlace.cs`, `HookPoints.System`, `HookPeer.SystemAsync` | A manifest's `systems` read; a system's adapter started from the catalogue and asked to plan and apply; a system department's registration composed from the plugins that adapt it (`SystemAdd`, which the registry door sends whole), a system guarded by `none` read before and after each write (the driving area keeps the plans, the workflows area the apply) |
 | Switch | `Plugins/PluginState.cs`, `Plugins/PluginInterfaceSwitch.cs` | `<home>/plugins.json`: the disabled rows, and `off`, each plugin's interfaces switched off |
-| Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage and approvals moved to the new id once; a saved graph's former kinds read as the new id's |
+| Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
+| Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs`, `Plugins/PluginsAtStart.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
-| Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
+| Doors | `Plugins/PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`, `PluginTryAgain.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 
 Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
@@ -101,7 +102,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     question of the checkout it is run in (`PluginTrialHand`, the step `place-hand`); with no origin to ask it says so and passes. They run no git, `gh` or `az`, and declare
     node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
-    unsound mark and idle stop are its place's own, and `PlaceHands` (given to `HookSet` by the loop and the headless host) reads
+    unsound mark (three unasked exits within an hour, after which it is not started until the person's *Try again*: `try-again` on
+    `PLUGIN_ACTION`, `daoris plugin try-again <id>`, and the button on its page while `PLUGINS` says `unsound`, clearing every place's
+    mark through `HookSet.TryAgain`) and idle stop are its place's own, and `PlaceHands` (given to `HookSet` by `PluginsAtStart`) reads
     that place's origin and judges that process's start. An attempt goes to the place its unit was told for; the runtime
     sees the plugin's id, its generations unique across the places (`GenerationOf(plugin, held)` fences against the process that took
     the attempt). A refused place has no process, and the others are served. (from D241, D242)
@@ -132,7 +135,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 20. `plugins new` writes a self-contained folder (manifest with `tools: []`, `plugin.mjs`, `plugin.test.mjs`, README; `work.mjs`
     for a plugin on a work point, and for one that performs, `plugin.contract.test.mjs` and `cycle.json`; for one on a system point,
     both system points, one system `system` guarded by `etag`, and `system.mjs`, the kit's answers to both over the author's `read()`
-    and `write()` with a stand-in store in the kit's world) and refuses rather than overwrites. It installs nothing and scaffolds no harness. Its samples come from `HookFrames` and `SystemWire`. (from D101, D150)
+    and `write()` with a stand-in store in the kit's world) and refuses rather than overwrites. It asks for the family (rule 30): an id
+    naming none, and one in Daoris's own `daoris-` family anywhere but this repository's `examples/plugins/` (the checkout holding
+    `canon/` and the desktop's source), are refused, each saying why and naming `<your-family>-<name>` (`PluginKitFamily`). It installs nothing and scaffolds no harness. Its samples come from `HookFrames` and `SystemWire`. (from D101, D150)
 21. `plugins try` starts the plugin as the driver would, in scratch under `<home>/plugins/.trials/`, one sentence per
     check; exit 0, 1 or 2. It fails a declared point the process does not listen on. A system point's sample names the plugin's first
     system; `apply/perform`, like `work/perform`, goes only to a plugin that took the kit's stand-in world. (from D101)
@@ -159,7 +164,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     `{ name, about, interactive, tool, adopts }`) and `storage` (`{ for }`). Any problem refuses the plugin; an interface needs `hooks`.
     A command runs one round per process at `hook/command/run` (`{ command, args, answers, from }`, never a point claimed at the
     handshake), answered `{ said, ask: { name, prompt, masked }, open, code, exit }`, at most 8 rounds, 60 s each, the answers so far
-    sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin running commands;
+    sent whole. `daoris <plugin> <command> [args] [--stdin]` is the word no group owns that names an installed plugin running commands
+    (rule 30);
     it asks each value at the terminal, hidden where `masked`, and refuses a session's terminal. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
     nothing in it. Each interface is on until the person switches it off (`plugins.json`'s `off`). A command declaring `adopts`
@@ -168,14 +174,21 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     plugin's answers. (from D274)
 30. A plugin's id is `<family>-<name>`, lowercase with dashes: Daoris's own plugins are the `daoris-` family (`daoris-github`,
     `daoris-azure-devops`, `daoris-in-app-browser`), and anyone else's uses its own family, never `daoris-`. A manifest's `formerly`
-    names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The terminal names a plugin
-    by its id alone (`daoris daoris-azure-devops login`). An installed plugin declaring `formerly` takes over the old id once, at the
-    loop's start and after any install door that put it in (`PluginRenames`): the copy installed under the old id is taken out, and
+    names the ids the plugin was, each a plugin id other than its own, once; a problem refuses the plugin. The family is the word before
+    the id's first dash and its tail the rest (`PluginFamily`). A terminal names a plugin running commands by its id, or by its tail
+    where no other installed plugin running commands has that tail (`daoris azure-devops login` for `daoris-azure-devops`), an id named
+    whole coming first and a tail two of them share refused with each named (`PluginTerminalWord`); the tail is the id's own, never a
+    second name a manifest declares. An installed plugin declaring `formerly` takes over the old id once, at each loop's start, the
+    desktop's and the headless host's (`drive`, `--once` among them), before its plugins start (`PluginsAtStart`), and after any install
+    door that put it in (`PluginRenames`): the copy installed under the old id is taken out, and
     its switches (`disabled`, `off`), `.data/<old>`, `profiles/plugins/<old>/` and its approvals move to the new id, what the new id
-    already keeps never overwritten and said as left; `plugin.renamed` names the ids and the parts moved and left, and a later start
+    already keeps never overwritten and said as left, and each attempt not settled that names the old id names the new one with its
+    step's kind (`PluginRenamedAttempts`), so the new process is asked after it at its next look, written only by the process holding
+    the home's lease, else at the next start; `plugin.renamed` names the ids and the parts moved and left, and a later start
     finds nothing to move. A copy recorded from an offer updates from the offer that was formerly it, its plan's `id` row naming the
     rename, into the new id's folder (`PluginUpdatePlan.Next`). A saved workflow's `<old>/<step>` is read as `<new>/<step>` by the
-    store (`PluginFormerKinds`): the file stays as written and each version keeps the digest it was saved with, so a run pinned to it
+    store (`PluginFormerKinds`), and the graph the editor and `workflow show` are handed is drawn with the new kind, no save asked
+    (`PluginFormerKinds.Drawn`): the file stays as written and each version keeps the digest it was saved with, so a run pinned to it
     reads at the identity it was bound to and goes on, its pull-request and later steps performed by the new id; a landing's recorded
     plugin is asked at `work/state` by its new id. A schema keeps its name across a rename. The old kind ends when no installed plugin
     declares the id it names, after which it binds as any step no plugin performs does. (from D274)
