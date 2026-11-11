@@ -11,7 +11,7 @@ public sealed record SystemPlanAnswer(bool Done, string? Code, string Said)
     /// <summary>The session's department is no system: it has no adapter to plan through.</summary>
     public const string NotSystem = "not-system";
 
-    /// <summary>The changes do not read as a list of resources, each given a value or removed.</summary>
+    /// <summary>The changes do not read as a list of resources, each named once and given a value or removed.</summary>
     public const string Named = "named";
 
     /// <summary>The adapter could not be started, or answered in no shape a plan reads.</summary>
@@ -43,7 +43,7 @@ public sealed class SystemPlanning(
     {
         if (Intents(request.Text) is not { } intents)
         {
-            return SystemPlanAnswer.Refusal(SystemPlanAnswer.Named, "The changes do not read as a list of resources, each given a value or removed.");
+            return SystemPlanAnswer.Refusal(SystemPlanAnswer.Named, "The changes do not read as a list of resources, each named once and given a value or removed.");
         }
 
         if (service() is not { } ledger)
@@ -106,6 +106,7 @@ public sealed class SystemPlanning(
                 var remove = row.TryGetProperty("remove", out var removed) && removed.ValueKind == JsonValueKind.True;
                 var value = row.TryGetProperty("value", out var given) && given.ValueKind == JsonValueKind.String ? given.GetString() : null;
                 if (remove == (value is not null)) return null;
+                if (intents.Any(each => string.Equals(each.Resource, resource, StringComparison.Ordinal))) return null;
                 intents.Add(new SystemIntent(resource, value, remove));
             }
 
