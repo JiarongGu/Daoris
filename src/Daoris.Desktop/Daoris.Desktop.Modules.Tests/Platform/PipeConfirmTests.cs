@@ -228,6 +228,8 @@ public sealed class PipeConfirmTests : Bridge
         grounds.Held["go-ahead"] = "open";
         var drivable = new List<string>();
         grounds.Reads["STATE"] = _ => new { drivable = drivable.ToArray() };
+        // The clean-up's card refuses a workspace the machine does not have, so the workspace the press names is one it holds.
+        grounds.Placed["Games1"] = "games";
         var sweep = "unlanded";
         grounds.Reads["SWEEP_PLAN"] = _ => new { branches = new[] { new { repository = "Lyntai", branch = "quest/x", kind = sweep, commits = 1 } } };
         var (route, payload, move, said) = reason switch

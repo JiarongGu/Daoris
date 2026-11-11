@@ -74,8 +74,8 @@ public sealed class InstancePipeTests : Bridge
         return (provider.GetRequiredService<IMessageDispatcher>(), underWay, provider);
     }
 
-    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null) =>
-        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = new StubGrounds() };
+    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null, StubGrounds? grounds = null) =>
+        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = grounds ?? new StubGrounds() };
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
@@ -726,7 +726,15 @@ public sealed class InstancePipeTests : Bridge
         driver.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, driver);
         using var __ = services;
-        using var pipe = Pipe(dispatcher, log);
+        // The update's card is judged at the ask from an installed plugin and the source it recorded, which the stand-in's machine must hold.
+        var source = Home + "-watch-source";
+        Directory.CreateDirectory(source);        const string Manifest = """{ "id": "acme.watch", "name": "Watch", "version": "1.0.0", "hooks": { "command": ["node", "${plugin}/run.mjs"], "points": ["work/land"] } }""";
+        File.WriteAllText(Path.Combine(source, PluginCatalog.ManifestName), Manifest);
+        PluginInstall.Add(Home, source, []);
+        File.WriteAllText(Path.Combine(source, PluginCatalog.ManifestName), Manifest.Replace("1.0.0", "1.1.0", StringComparison.Ordinal));
+        var grounds = new StubGrounds();
+        grounds.Facts = grounds.Facts with { Home = Home, Plugins = PluginCatalog.Load(Home) };
+        using var pipe = Pipe(dispatcher, log, grounds: grounds);
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
@@ -742,6 +750,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.True(preview.GetProperty("success").GetBoolean(), preview.GetRawText());
         Assert.Equal(2, driver.Ran);
         Assert.Equal(["TOOLS_GIT", "PLUGIN_UPDATE"], pipe.Confirmations.Now().Waiting.Select(each => each.Route));
+        Directory.Delete(source, recursive: true);
     }
 
     /// <summary>A connection's requests under way are bounded: past the bound, one is answered busy and never run.</summary>
