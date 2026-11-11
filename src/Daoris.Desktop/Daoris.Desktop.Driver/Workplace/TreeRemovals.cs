@@ -279,6 +279,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             left = why;
         }
 
+        TreeFilesRecord.Forget(context.Home, full);
+
         // The line has finished: the ignored tops its tree held, read before it went, are what the found layer's finish looks at.
         if (seen is not null) NoteFinished(owner.Repository, seen);
 

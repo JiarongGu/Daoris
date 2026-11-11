@@ -307,7 +307,11 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 /// <param name="Turn">The carry-on's turn key, as the say door kept it (<see cref="CarryKeys"/>).</param>
 /// <param name="Carries">How many times the session has been carried on for this Accept.</param>
 /// <param name="At">When it is kept.</param>
-public sealed record NodeRepair(string Node, string Tip, string Turn, int Carries, DateTimeOffset At);
+public sealed record NodeRepair(string Node, string Tip, string Turn, int Carries, DateTimeOffset At)
+{
+    /// <summary>The review's attempt whose record the person accepted, which the repair stands for alone; null on a repair that names none.</summary>
+    public int? Attempt { get; init; }
+}
 
 /// <summary>
 /// A unit's node record: every node's status on the unit, the attempts

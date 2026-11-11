@@ -266,6 +266,7 @@ public static class RunNodeWords
 
             next = WorkPerformer.Kept(next, moved, word.Source + "-" + word.Act, now);
             if (word is { Act: NodeWordActs.Changes, Part: { } part }) next = next with { Fired = [.. next.Fired, ChangesParts.Key(node.Id, standing.Attempt, part)] };
+            if (word.Act == NodeWordActs.Changes) next = next with { Repairs = [.. next.Repairs.Where(each => each.Node != node.Id)] };
             applied.Add((word, null));
         }
 

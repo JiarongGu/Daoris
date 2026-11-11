@@ -109,7 +109,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
         var record = seams.Open is { } open ? await open(claim, ct).ConfigureAwait(false) : null;
         if (record is null && claim.Kind == TreeClaimKinds.Make)
         {
-            await TreeOpenings.UndoAsync(site.Root, slot.Path, claim.Branch, ours: true).ConfigureAwait(false);
+            await TreeOpenings.UndoAsync(site.Root, slot.Path, claim.Branch, ours: true, home: site.Home).ConfigureAwait(false);
             pool.Complete(fence, null);
             return PoolDone.Not("the record's open did not land, so the new slot was removed");
         }

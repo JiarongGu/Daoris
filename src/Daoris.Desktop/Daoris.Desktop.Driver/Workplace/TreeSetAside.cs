@@ -211,6 +211,7 @@ internal sealed class TreeSetAside(TreeContext context)
         if (code == 0)
         {
             MarkMoved(manifest);
+            TreeFilesRecord.Forget(context.Home, tree);
             if (SetAsideFaults.Current?.StopAfterMove == true) throw new SetAsideStop();
             return (true, to, null, "");
         }

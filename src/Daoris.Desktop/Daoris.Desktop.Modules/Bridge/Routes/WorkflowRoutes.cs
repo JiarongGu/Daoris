@@ -563,7 +563,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// Answers `{ run, node, act, done, refused, message }`, a refusal as an answer with its code (`not-run`, `unread-version`, `not-node`,
     /// `not-act`, `not-review`, `not-task`, `not-waiting`, `ended`, `worded`, the one table's `no-words`,
     /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`, an Accept's `moved` with the `revision` standing and `none-unchecked`) and
-    /// the terminal's sentence; a kept Accept answers the `revision` it is bound to, and `early` where its review has not begun. Asked for its words (`said: true`) by the
+    /// the terminal's sentence; a kept Accept answers the `revision` it is bound to, and `early` where its review has not begun, and where a
+    /// `land` follows the review, the `landing` its try came to within the bound (<see cref="AcceptWaits"/>). A `stop` with `whole` is the
+    /// review's Stop (<see cref="ReviewStops"/>), answering `following`, `stopped`, `happened` and `stays`. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
     [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -587,6 +589,15 @@ public sealed class WorkflowRoutes(DriverContext context)
             return said;
         }
 
+        if (press is { Act: NodeWordActs.Stop, Whole: true })
+        {
+            var stopped = await ReviewStops.StopAsync(records, NodeRuntime.HomeDoor(_loop.Home), run, node, words, () => DateTimeOffset.UtcNow, cancellationToken)
+                .ConfigureAwait(false);
+            if (stopped.Done) _loop.Nudge();
+            return new { stopped.Run, Node = stopped.Review, Act = act, stopped.Done, stopped.Refused, stopped.Following, stopped.Stopped, stopped.Happened,
+                stopped.Stays, Message = ReviewStops.Said(stopped) };
+        }
+
         // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
         var done = press is { Act: NodeWordActs.Accept, Unchecked: true, Revision: { } drawn }
             ? UncheckedAccepts.Keep(records, run, node, drawn)
@@ -597,6 +608,12 @@ public sealed class WorkflowRoutes(DriverContext context)
                 .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
         var revision = done.Done || done.Refused == ReviewAccepts.Moved ? done.Detail : null;
-        return new { done.Run, done.Node, done.Act, done.Done, done.Refused, done.Early, Revision = revision, Message = RunNodeWords.Said(done) };
+        var landing = await AcceptWaits.AwaitAsync(_loop, done, cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            done.Run, done.Node, done.Act, done.Done, done.Refused, done.Early, Revision = revision,
+            Landing = landing is null ? null : new { landing.Landed, landing.Message, Code = landing.Refusal },
+            Message = landing?.Message ?? RunNodeWords.Said(done),
+        };
     }
 }

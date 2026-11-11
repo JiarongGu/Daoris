@@ -217,6 +217,9 @@ internal static class TreeFilesRecord
         try
         {
             File.Delete(PathOf(home, tree));
+            var folder = Path.GetDirectoryName(PathOf(home, tree))!;
+            if (!Directory.Exists(folder)) return;
+            foreach (var log in Directory.EnumerateFiles(folder, IdOf(tree) + ".*.log")) File.Delete(log);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

@@ -82,7 +82,7 @@ internal static class TreeOpenings
     /// <param name="unused">Whether the open made the tree a moment ago and nothing is recorded, copied or told of it: the opening's own
     /// refusal of a tree git binds elsewhere lets go of it so, since git's own removal names a tree by its record and deletes that
     /// folder alone, where the look would leave it for the person to meet.</param>
-    internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false)
+    internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false, string? home = null)
     {
         var done = CancellationToken.None;
         if (!unused && await TreeBinding.RefusalAsync(path, done).ConfigureAwait(false) is not null) return;
@@ -115,6 +115,7 @@ internal static class TreeOpenings
             await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);
         }
 
+        if (home is not null && !Directory.Exists(path)) TreeFilesRecord.Forget(home, path);
         if (!keepBranch) await WorkingTree.GitAsync(root, ["branch", "-D", branch], done).ConfigureAwait(false);
     }
 }

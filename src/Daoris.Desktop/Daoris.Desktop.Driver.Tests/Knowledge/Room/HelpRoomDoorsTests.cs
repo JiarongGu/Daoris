@@ -135,20 +135,11 @@ public sealed class HelpRoomDoorsTests
         Assert.Null(chosen.Ask);
     }
 
-    /// <summary>
-    /// The room teaches one way. The conversion has its door, which opens the page and never proposes the
-    /// apply; no door sets a landing rule, since a place lands as its workflow's <c>land</c> step says; a workflow is made from a default or
-    /// another saved one, never edited, and `current` is chosen for no development route.
-    /// </summary>
+    /// <summary>The room teaches one way: no conversion, no landing rule set, no edited workflow, and `current` is no development route.</summary>
     [Fact]
-    public void The_room_teaches_the_converted_way_and_names_the_conversion()
+    public void The_room_teaches_the_converted_way_and_names_no_conversion()
     {
-        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris convert --plan", StringComparison.Ordinal));
-        Assert.Contains("Convert…", convert.Screen);
-        Assert.Contains("Review conversion…", convert.Screen);
-        Assert.IsType<HelpDoorAsk.Never>(convert.Ask);
-        Assert.Contains("it opens the page and names the plan, and the apply is your press", convert.To);
-
+        Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.Terminal.Contains("daoris convert", StringComparison.Ordinal));
         Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
 
         var show = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris workflow show --repository", StringComparison.Ordinal));

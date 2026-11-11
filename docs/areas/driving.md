@@ -227,7 +227,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `daoris/s-<8 hex>`. It grows from the repository's line, or from the branch a chain's step before landed on. A root
     that is not the top of its own repository is refused. (from D51, D82, D86)
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`), its
-    `post-checkout` hook owed, copying nothing; a failed open removes its tree and branch. The `files` run stage, after
+    `post-checkout` hook owed, copying nothing; a failed open removes its tree, its branch and its record, and so does every other end of a tree (the pool's
+    retire, the tidy's move aside, the press, a removal): the record and the install logs written under its id go with it. The `files` run stage, after
     `open` and before `hand` (and the same step in a conversation's open and a go-on), is the one way a tree gets its
     dependencies: in an unworked tree it writes back what a cut-off start left, then keeps, places from the store
     (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in rule order, the install under
