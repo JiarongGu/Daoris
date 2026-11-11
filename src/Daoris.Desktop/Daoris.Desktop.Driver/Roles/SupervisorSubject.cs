@@ -22,6 +22,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Allow] = "request",
         [SupervisorKinds.Files] = "text",
+        [SupervisorKinds.AskDaoris] = "range",
     };
 
     /// <summary>The kinds whose subject this build reads, in the kinds' order.</summary>

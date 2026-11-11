@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { DeciderLine, DecidersRead, RoleCatalogue, StructurePlaceAsk } from '../../data/wiring';
-import { appointedRows, DECISION_KINDS } from '../roles/appointedHold';
+import { appointedRows, DECISION_KINDS, MACHINE_ONLY } from '../roles/appointedHold';
 import { placeKey } from '../roles/supervisorRulesDraft';
 
 /** The place's own scope, as a role placed here names it. */
@@ -15,15 +15,16 @@ export function decidersAt(deciders: DecidersRead, place: StructurePlaceAsk): De
   const scope = scopeOf(place);
   const named = deciders.places.find((each) => each.place === placeKey(scope.kind, scope.id));
   if (named) return named.kinds;
-  return scope.kind === 'repository' ? deciders.elsewhere : deciders.places.find((each) => each.place === 'machine')?.kinds ?? [];
+  const lines = scope.kind === 'repository' ? deciders.elsewhere : deciders.places.find((each) => each.place === 'machine')?.kinds ?? [];
+  return scope.kind === 'machine' ? lines : lines.filter((line) => !MACHINE_ONLY.includes(line.kind));
 }
 
-/** The kinds no supervisor placed at <scope> decides, in the editor's order: what *Add a supervisor for…* offers. */
+/** The kinds no supervisor placed at <scope> decides, in the editor's order: what *Add a supervisor for…* offers; below the machine, none of the machine's alone. */
 export function offeredKinds(catalogue: RoleCatalogue, scope: { kind: string; id?: string }): string[] {
   const placed = appointedRows(catalogue).filter((row) =>
     row.hold.kind === 'supervisor' && (row.scopeKind ?? 'machine') === scope.kind && (scope.kind === 'machine' || row.scopeId === scope.id));
   const decided = new Set(placed.flatMap((row) => row.hold.decides ?? []));
-  return Object.keys(DECISION_KINDS).filter((kind) => !decided.has(kind));
+  return Object.keys(DECISION_KINDS).filter((kind) => !decided.has(kind) && (scope.kind === 'machine' || !MACHINE_ONLY.includes(kind)));
 }
 
 /** Where a supervisor is set, in the line's words: this machine, or the workspace or repository by its id. */
@@ -40,6 +41,11 @@ export function deciderText(t: TFunction, line: DeciderLine, nameOf: (id: string
   const kind = t(`agents.setup.roles.hold.decides.${line.kind}`);
   if (!line.role) return t('agents.setup.roles.decides.line', { kind, who: t('agents.setup.roles.decides.yours', { why: line.held ?? '' }) });
   const role = nameOf(line.role);
+  if (line.kind === 'ask-daoris') {
+    const who = line.holder === 'rules' ? t('agents.setup.roles.decides.unread', { role })
+      : line.granted.length === 0 ? t('agents.setup.roles.decides.mayNot.ask-daoris', { role }) : t('agents.setup.roles.decides.read', { role });
+    return t('agents.setup.roles.decides.line', { kind, who });
+  }
   const at = scopeWords(t, line.scope);
   const who = line.holder !== 'terminal'
     ? t('agents.setup.roles.decides.byRules', { role, at })

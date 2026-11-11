@@ -22,18 +22,11 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
     /// <summary>The place a call named, or null where it named no workspace or repository, or its tool is none the table classes.</summary>
     public static CallPlace? Of(string? tool, IDictionary<string, JsonElement>? arguments)
     {
-        if (tool is null || ToolClasses.Of(tool) is not { } kind) return null;
+        if (tool is null || ActOf(tool) is not { } act) return null;
         var workspace = Text(arguments, "workspace");
         var repository = Text(arguments, "repository");
         if (workspace is null && repository is null) return null;
 
-        var act = tool switch
-        {
-            "checkout_read" => Read,
-            _ when tool.EndsWith(ProposalSuffix, StringComparison.Ordinal) => Propose,
-            _ when kind == ToolClass.Read => Search,
-            _ => Press,
-        };
         var what = act switch
         {
             Read => Text(arguments, "path"),
@@ -43,6 +36,14 @@ public sealed record CallPlace(string Tool, string Act, string? Workspace, strin
         };
         return new(tool, act, workspace, repository, what);
     }
+
+    public static string? ActOf(string? tool) => tool is null || ToolClasses.Of(tool) is not { } kind ? null : tool switch
+    {
+        "checkout_read" => Read,
+        _ when tool.EndsWith(ProposalSuffix, StringComparison.Ordinal) => Propose,
+        _ when kind == ToolClass.Read => Search,
+        _ => Press,
+    };
 
     private static string? Text(IDictionary<string, JsonElement>? arguments, string name) =>
         arguments is not null && arguments.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String

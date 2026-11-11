@@ -35,8 +35,8 @@ public sealed record RoleFound(RoleRecord? Role, string? Held);
 /// </summary>
 /// <remarks>
 /// <b>The seed</b> reproduces today's start per id: the eight always-on roles, each machine-wide and taking the work of its name, none taking
-/// design, so design falls back to what takes build; then the supervisor, held by the person's rules, and the steward, held by no one, both
-/// machine-wide. <b>An id reads</b> absent (the seed's), set, removed or unreadable; an unreadable seeded working id holds the starts of its
+/// design, so design falls back to what takes build; then the supervisor, held by the person's rules, <i>Second check</i>, deciding Ask
+/// Daoris's acts and held by the rules too, so it reads nothing, and the steward, held by no one, all machine-wide. <b>An id reads</b> absent (the seed's), set, removed or unreadable; an unreadable seeded working id holds the starts of its
 /// work, an unreadable added working record every start in its scope, each said with the record's error; an appointed record holds
 /// no start. A working role's staffing is not in the record: it is read from <c>role_staffing</c> by <see cref="Order"/>.
 /// </remarks>
@@ -47,7 +47,7 @@ public sealed class RoleCatalog
 
     public const string Family = "roles";
 
-    /// <summary>The seeded roles in the screen's order, one per id of <see cref="ActorChoices.Ids"/> and the two appointed: Defaults/roles.json, carried in the assembly.</summary>
+    /// <summary>The seeded roles in the screen's order, one per id of <see cref="ActorChoices.Ids"/> and the three appointed: Defaults/roles.json, carried in the assembly.</summary>
     public static IReadOnlyList<RoleRecord> Seed { get; } = ReadSeed();
 
     /// <summary>Whether <paramref name="id"/> is one the seed holds.</summary>

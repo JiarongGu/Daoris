@@ -92,7 +92,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    and a folder (a copy), `return` in a folder alone, `apply` in a system alone, and every other kind and any other plugin step in
    every kind of place, since no plugin declares where its step runs. The shipped *Work in place* (`in-place`) holds none of the git
    kinds, so every kind of department can follow it: the window's add chooses it for a folder and a system in the press that registers
-   them, and for a repository where the person ticks it, as a set-up's plan of one and its apply (`projects/inPlace.ts`); the
+   them, and for a repository where the person ticks it, as a set-up's plan of one and its apply (`chooseInPlace`, the bridge's set-up domain); the
    terminal's choice is `daoris place <department> --preset in-place --apply`. (from D221, D227, D264, D265)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
@@ -207,7 +207,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. A run's
     branch-side steps bind the tip of the branch its work stands on: the one its tree's agent moved onto, where the look learned it
     (TREEFOLLOW1, the session branch's `now`), else its session branch; the end keeper judges that branch's tip, so a moved tree's
-    `content.holds` reads the tree at its bound commit and its merge is the one `landing` and `line` read. The holds and the gates
+    `content.holds` and `land` read the tree at its bound commit, sharing `tree land --plan`'s `LineHolds` judgement: where the local line holds every commit by content or as the same change, the hold lets go and the landing reaches it without replay, keeping the bound tip and saying the line's proof in the run's words; any commit it lacks still goes through the landing door. Its merge is the one `landing` and `line` read. The holds and the gates
     read the tree of the branch's newest executor, a session whose record names that tree, as the runtime's units join them
     (`WorkUnits.ReadAsync`); a hold that keeps its step active keeps its reading's reason on the node's record (`NodeStatus.Holds`,
     cleared by every move), and `tree land --plan`, `workflow run` and the run's view say it ("Holds the work: …"). Where the

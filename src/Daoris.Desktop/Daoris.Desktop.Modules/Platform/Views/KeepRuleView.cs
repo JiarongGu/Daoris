@@ -15,7 +15,7 @@ public sealed class KeepRuleView : IPressView
 
     public string Route => "SET_KEEP";
 
-    public Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
+    public async Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
         var kind = PressPayload.Text(payload, "kind");
         var days = Number(payload, "days");
@@ -32,16 +32,16 @@ public sealed class KeepRuleView : IPressView
         DriverConfig after;
         try
         {
-            after = KeepRules.Apply(DriverConfig.Empty, set);
+            after = KeepRules.Apply((await world.MachineAsync(cancellationToken).ConfigureAwait(false)).Config, set);
         }
         catch (DriverException refused)
         {
-            return Task.FromResult(PressViewed.Refused(refused.Message));
+            return PressViewed.Refused(refused.Message);
         }
 
         if (days is not null && gb is not null)
         {
-            return Task.FromResult(PressViewed.Refused("set a kind's days and its size one at a time — `daoris settings keep <kind> <days>`, then `<n>GB`."));
+            return PressViewed.Refused("set a kind's days and its size one at a time — `daoris settings keep <kind> <days>`, then `<n>GB`.");
         }
 
         var word = isDefault ? "default"
@@ -53,11 +53,11 @@ public sealed class KeepRuleView : IPressView
             : $"{gb!.Value.ToString(CultureInfo.InvariantCulture)}GB";
         var said = KeepRules.Said(set.Kind, after.Keep);
         var facts = new Dictionary<string, string>(StringComparer.Ordinal) { ["kind"] = set.Kind, ["rule"] = said };
-        return Task.FromResult(PressViewed.Shown(new PressView("keep", facts, $"daoris settings keep {set.Kind} {word}")));
+        return PressViewed.Shown(new PressView("keep", facts, $"daoris settings keep {set.Kind} {word}"));
     }
 
     private static long? Number(JsonElement? payload, string name) =>
-        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.TryGetInt64(out var number) ? number : null;
+        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number) ? number : null;
 
     private static bool Flag(JsonElement? payload, string name) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;

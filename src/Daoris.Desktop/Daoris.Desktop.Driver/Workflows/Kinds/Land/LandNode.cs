@@ -5,10 +5,12 @@ namespace Daoris.Driver;
 /// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s.
 /// </summary>
 [NodeKind(NodeKinds.Land, NodeGroup.Git)]
-internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
+internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding, IAsksReads
 {
+    public PassRead Asks => PassRead.Content;
+
     /// <summary>
-    /// Reached when the landing record holds the bound tip, failed by the landing's own refusal. Never skipped, since a skip would read as landed;
+    /// Reached when the landing record holds the bound tip or the line holds every change, failed by the landing's own refusal. Never skipped, since a skip would read as landed;
     /// the person's doors are stop and Try again.
     /// </summary>
     public override NodeAuthority Row { get; } =
@@ -109,7 +111,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 
     public override bool EndsByTheLine => true;
 
-    /// <summary>Reached where the landing record holds the bound tip, by the landing's authority.</summary>
+    /// <summary>Reached by the landing's authority where its record holds the bound tip or the line holds every change.</summary>
     public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Landing);
 
     /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass.</summary>

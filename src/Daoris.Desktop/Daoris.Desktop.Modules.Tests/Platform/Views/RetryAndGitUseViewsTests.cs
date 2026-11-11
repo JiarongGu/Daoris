@@ -10,6 +10,7 @@ public sealed class RetryAndGitUseViewsTests
     {
         var grounds = new StubGrounds();
         grounds.Placed["engine"] = "work";
+        grounds.Remotes["engine"] = new Dictionary<string, string?> { ["origin"] = "https://github.com/acme/engine.git", ["upstream"] = "git@github.com:acme/engine.git", ["lab"] = "https://gitlab.com/acme/engine.git" };
         grounds.Facts = grounds.Facts with
         {
             Parked = [new ParkedQuest("q1", "engine", 3, 3)],
@@ -65,6 +66,18 @@ public sealed class RetryAndGitUseViewsTests
         Assert.Equal((kind, command), (viewed.View!.Kind, viewed.View.Command));
     }
 
+    [Fact]
+    public async Task A_repository_with_no_checkout_here_is_refused_with_no_card()
+    {
+        var grounds = Grounds();
+        grounds.Remotes.Clear();
+
+        var viewed = await new GitUseView().ViewAsync(grounds, JsonDocument.Parse("""{"scope":"repository","repository":"engine","value":"own"}""").RootElement, CancellationToken.None);
+
+        Assert.Null(viewed.View);
+        Assert.Contains("has no checkout here", viewed.Refusal);
+    }
+
     [Theory]
     [InlineData("""{"scope":"repository","repository":"engine","value":"ghost"}""", "no git identity `ghost`")]
     [InlineData("""{"scope":"repository","repository":"nowhere","value":"work key"}""", "`nowhere` is not registered")]
@@ -72,6 +85,12 @@ public sealed class RetryAndGitUseViewsTests
     [InlineData("""{"scope":"workspace","workspace":"work","host":"gitlab.com","value":"work key"}""", "is for github.com")]
     [InlineData("""{"scope":"machine","host":"github.com","value":"work key"}""", "own sign-ins or nothing")]
     [InlineData("""{"scope":"folder"}""", "not a scope")]
+    [InlineData("""{"scope":"machine","host":"github.com","value":"OWN"}""", "own sign-ins or nothing")]
+    [InlineData("""{"scope":"machine","host":"bad host","value":"own"}""", "is not a host")]
+    [InlineData("""{"scope":"workspace","workspace":"work","host":"https://github.com","value":"own"}""", "is not a host")]
+    [InlineData("""{"scope":"repository","repository":"engine","remote":"lab","value":"work key"}""", "is for github.com, not gitlab.com")]
+    [InlineData("""{"scope":"repository","repository":"engine","remote":"nope","value":"own"}""", "has no remote nope")]
+    [InlineData("""{"scope":"repository","repository":"engine","remote":"nope"}""", "has no remote nope")]
     public async Task A_git_identity_the_machine_would_refuse_is_refused_with_no_card(string json, string says)
     {
         var viewed = await View(new GitUseView(), json);

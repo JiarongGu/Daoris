@@ -19,16 +19,17 @@ public sealed class PlaceStandingView : IPressView
         var scoped = await PlaceScope.ReadAsync(world, payload, "a standing answer", false, cancellationToken).ConfigureAwait(false);
         if (scoped.Refusal is not null) return PlaceScope.Refusal(scoped);
 
-        var says = PressPayload.Text(payload, "says") is { Length: > 0 } text ? text : null;
+        var said = PressPayload.Raw(payload, "says");
         try
         {
-            _ = DriverConfig.Empty.WithStanding(scoped.Repository!, says, DateTimeOffset.UtcNow);
+            _ = DriverConfig.Empty.WithStanding(scoped.Repository!, said, DateTimeOffset.UtcNow);
         }
         catch (DriverException refused)
         {
             return PressViewed.Refused(refused.Message);
         }
 
+        var says = said?.Trim();
         var facts = scoped.Facts();
         if (says is not null) facts["says"] = says;
         var words = says is null ? "--clear" : $"\"{says.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";

@@ -33,7 +33,7 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
     /// </summary>
     public string? By { get; init; }
 
-    /// <summary>The person's words the record keeps with their rejection or their skip; null for every other outcome.</summary>
+    /// <summary>Words kept with an outcome: the line's proof, or the person's reason.</summary>
     public string? Words { get; init; }
 
     /// <summary>Why a hold keeps its node active, kept on the node's record (<see cref="NodeStatus.Holds"/>); null where it holds nothing or is no hold.</summary>

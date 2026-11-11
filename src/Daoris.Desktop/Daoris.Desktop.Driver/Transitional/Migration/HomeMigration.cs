@@ -52,6 +52,7 @@ public static class HomeMigration
         new SupervisorStep(),
         new AbandonedRunsStep(),
         new PlaceWorkStep(),
+        new SecondCheckStep(),
     ];
 
 

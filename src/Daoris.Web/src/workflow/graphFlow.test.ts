@@ -31,9 +31,10 @@ const placedAt = (graph: unknown, rem: number, options: Partial<Parameters<typeo
 describe('the shipped workflows, read from the driver\'s own data', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('are the eight this drawing is proved over, so a default added or changed is looked at here', () => {
+  it('are the nine this drawing is proved over, so a default added or changed is looked at here', () => {
     expect(SHIPPED.map((each) => each.id)).toEqual([
-      'branch-to-push', 'documents', 'integrated-no-press', 'integrated', 'merge-after-accept', 'merge-automatic', 'pull-request', 'release',
+      'branch-to-push', 'documents', 'in-place', 'integrated-no-press', 'integrated', 'merge-after-accept', 'merge-automatic', 'pull-request',
+      'release',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
     expect([release.nodes.length, release.wires.length, release.end]).toEqual([11, 13, 'line']);
@@ -54,13 +55,14 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     }
   });
 
-  it('name sections the landing divides, each from a drawn step', () => {
+  it('name sections the landing divides, each from a drawn step, and one section of steps where nothing lands', () => {
     for (const each of SHIPPED) {
       const flow = draw(each.graph);
       const drawn = new Set(flow.nodes.map((node) => node.id));
       for (const section of flow.sections) expect(drawn.has(section.from), `${each.id}: ${section.title}`).toBe(true);
-      expect(flow.sections.map((section) => section.title)[0], each.id).toBe('Before it lands');
+      expect(flow.sections.map((section) => section.title)[0], each.id).toBe(each.id === 'in-place' ? 'Steps' : 'Before it lands');
     }
+    expect(draw(shipped('in-place').graph).sections).toEqual([{ title: 'Steps', from: 'work' }]);
     expect(draw(shipped('release').graph).sections).toEqual([
       { title: 'Before it lands', from: 'work' }, { title: 'After it lands', from: 'line' },
     ]);

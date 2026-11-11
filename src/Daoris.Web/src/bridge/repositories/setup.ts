@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useShenora } from '@shenora/react';
 import type { PlaceApplied, PlaceApplyAsk, PlaceAsk, PlacePlanned } from '../../agents/setup/placePlan';
 import { type ReconcileApplied, readReconcilePlan } from '../../agents/setup/reconcilePlan';
+import { IN_PLACE } from '../../projects/inPlace';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
@@ -58,6 +59,20 @@ export const usePlaceApply = () => {
     onSettled: () => client.invalidateQueries({ queryKey: ['place-plan'] }),
   });
 };
+
+/**
+ * The add's choice of *Work in place* for a department it just registered: a set-up's plan of one and its apply by the plan's
+ * digest, the add's press being the person's, the twin of `daoris place <department> --preset in-place --apply`. A plan that
+ * refuses is answered as an apply not done, with its refusals' sentences, and nothing is applied.
+ */
+export async function chooseInPlace(repository: string): Promise<PlaceApplied> {
+  const ask: PlaceAsk = { repositories: [repository], preset: IN_PLACE, opinion: false, look: false, adoption: false, drive: false };
+  const plan = await (call('PLACE_PLAN', ask, { timeoutMs: SETUP_BOUND }) as Promise<PlacePlanned>);
+  if (plan.refusals.length > 0) {
+    return { done: false, refused: plan.refusals[0]!.code, message: plan.refusals.map((each) => each.sentence).join(' '), digest: plan.digest, operations: [] };
+  }
+  return call('PLACE_APPLY', { ...ask, digest: plan.digest, accept: [] }, { timeoutMs: SETUP_BOUND }) as Promise<PlaceApplied>;
+}
 
 /** Under its own root, as a place's plan is: a reconcile's plan changes by its press or the repository's own sync, never by a tick. */
 export const reconcilePlanKey = (repository: string) => ['reconcile-plan', repository] as const;
