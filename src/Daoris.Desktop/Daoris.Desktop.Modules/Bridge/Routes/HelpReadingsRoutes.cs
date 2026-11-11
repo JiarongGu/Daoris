@@ -18,7 +18,7 @@ public sealed class HelpReadingsRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     // `{ session, before?, limit?, range? }` answers `{ session, check: { on, pending, today: { readings, tokens, unknown } }, readings,
-    // next }`, 20 a page; a range named answers that one alone with `packet`, what was sent. A read: it declares nothing.
+    // next }`, 20 a page; a range named answers that one alone with its `packet` as sent. A read: it declares nothing.
     [DriverRoute("HELP_READINGS", PipeClass.Open)]
     [ByEvent("HELP_READINGS", Untold = "the second check's reports, which its reading queue writes in the conversation's decisions folder")]
     private async Task<object?> HelpReadingsAsync(HelpReadingsRead read, CancellationToken cancellationToken)

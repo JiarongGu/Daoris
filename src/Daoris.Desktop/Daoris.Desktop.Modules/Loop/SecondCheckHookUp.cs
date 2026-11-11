@@ -34,10 +34,7 @@ public sealed class SecondCheckHookUp : IDisposable
             (session, error) => log?.Warn("ask-daoris.select-failed", ("session", session), ("error", error.GetType().Name)));
     }
 
-    /// <summary>
-    /// Begin watching: the start's catch-up runs at once, in the background. <paramref name="told"/> hears each conversation whose report
-    /// was written, so the window asks its readings again.
-    /// </summary>
+    /// <summary>Begin watching, the start's catch-up at once in the background; <paramref name="told"/> hears each conversation a report is written for.</summary>
     public static SecondCheckHookUp Start(
         string home, SessionEvents events, HelpPressRecord? presses, HeldPermissions held, MachineLog? log = null, Action<string>? told = null) =>
         new(home, events, presses, held, log, told);

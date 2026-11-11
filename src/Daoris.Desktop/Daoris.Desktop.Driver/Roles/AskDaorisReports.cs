@@ -38,7 +38,6 @@ public sealed class AskDaorisReports(string home)
             .SelectMany(folder => Directory.EnumerateFiles(folder, "*" + Suffix)).Select(ReadFile).OfType<AskDaorisReport>().Where(report => report.State == state)];
     }
 
-    /// <summary>Told each report written, with its home and conversation, so the window's readings and its bell are judged again.</summary>
     public static event Action<string, string>? Changed;
 
     public void Write(AskDaorisReport report)
@@ -51,7 +50,6 @@ public sealed class AskDaorisReports(string home)
         }
         catch (Exception)
         {
-            // A listener's failure is its own; the report is written either way.
         }
     }
 

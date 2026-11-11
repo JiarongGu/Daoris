@@ -336,7 +336,6 @@ public static class AttentionStateSlice
             // The parks a supervisor's held or released decision answers for, from the decisions' memory.
             Supervised = loop.Supervisor.Answering(),
             StoppedQuests = StoppedRuns.Quests(loop.Home),
-            // Each flag of the second check not yet seen, from the reports in the conversations' decisions folders.
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
         };
     }

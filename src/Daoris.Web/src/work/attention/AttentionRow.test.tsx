@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { clockOf } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
+import { everyActOf } from './everyAct';
 
 const PARKED: Attention = {
   id: 's1a2b3c4',
@@ -110,14 +111,7 @@ const SIGNED_OUT: Attention = {
 /** What an ask under the row hands its act to say how it ended. */
 const answeredByAct = { done: expect.any(Function), refused: expect.any(Function) };
 
-/** Every act, each a spy. */
-const everyAct =(): Required<AttentionActs> => ({
-  publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
-  acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
-  signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
-  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(), gitSetUp: vi.fn(), gitChoose: vi.fn(), gitKeyPage: vi.fn(), gitReadOnly: vi.fn(), gitAnswer: vi.fn(), quiet: vi.fn(), passOver: vi.fn(), memoryEnd: vi.fn(),
-});
+const everyAct =() => everyActOf(() => vi.fn());
 
 describe('a row in what needs you', () => {
   beforeEach(() => {

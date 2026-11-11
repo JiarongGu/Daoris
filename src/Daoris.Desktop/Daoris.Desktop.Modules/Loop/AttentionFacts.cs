@@ -127,9 +127,6 @@ public sealed record AttentionFacts
     /// </summary>
     public IReadOnlyList<JsonObject> GitAsks { get; init; } = [];
 
-    /// <summary>
-    /// Each flag of the second check the person has not marked seen (<see cref="Daoris.Driver.AskDaorisReadings.Unseen"/>): its
-    /// conversation, range, place among the findings, what it says, its certainty, the call it rests on, its reader and when it was read.
-    /// </summary>
+    /// <summary>Each second-check flag not yet seen, as <see cref="AttentionSecondCheckRows.Unseen"/> reads it.</summary>
     public IReadOnlyList<JsonObject> SecondCheck { get; init; } = [];
 }
