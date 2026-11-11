@@ -336,10 +336,12 @@ public sealed class DriverLoop(
     public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _state.Watch?.DeclarationsOwed ?? [];
 
     /// <summary>
-    /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (<see cref="DriverWatch.PassWholeAsync"/>):
-    /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.
+    /// Ask the loop's runtime for a whole pass judging <paramref name="unit"/> first, and wait for its judgement within <paramref name="bound"/>
+    /// (<see cref="DriverWatch.PassWholeAsync"/>): a press held by a run's graph for a judgement not made yet. False past the bound, and where no
+    /// loop runs.
     /// </summary>
-    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) => _state.Watch?.PassWholeAsync(bound, ct) ?? Task.FromResult(false);
+    public Task<bool> PassWholeAsync(string unit, TimeSpan bound, CancellationToken ct) =>
+        _state.Watch?.PassWholeAsync(unit, bound, ct) ?? Task.FromResult(false);
 
     /// <summary>Cancelled by the loop's stop alone: what work that outlives the window asking it runs under (a landing's press).</summary>
     public CancellationToken Stopping => _state.Stopping.Token;

@@ -12,24 +12,37 @@ internal sealed class NodeOwing(NodeRecordFiles records, Func<IIntegrationDoor?>
     /// <summary>Forgets where the rotation stood, once the runtime disarms.</summary>
     public void Forget() => _after = null;
 
+    /// <summary>The least of a turn the unchanged units keep, so one waiting on what the line or a gate holds is still judged in time.</summary>
+    private const int UnchangedAtLeast = NodeRuntime.UnitsPerPass / 4;
+
     /// <summary>
-    /// The units a pass evaluates, in id order: all of them up to <see cref="NodeRuntime.UnitsPerPass"/>; past it, the next
-    /// <see cref="NodeRuntime.UnitsPerPass"/> after the last unit the pass before reached, round again from the first, so no unit waits behind
-    /// the same prefix at every pass. A unit whose event the hearing held (<paramref name="held"/>) is judged first, outside the rotation, so
-    /// its node rebinds in the pass that heard the event; the rotation fills what is left of the turn, and moves on only by what it took.
+    /// The units a pass evaluates: all of them up to <see cref="NodeRuntime.UnitsPerPass"/>; past it, those <paramref name="first"/> names (a
+    /// door's ask, a held event, a record this pass's answers moved, in that order), so each moves in the pass that asked or heard it; then a
+    /// rotation of those <paramref name="moved"/> names and then of the rest, each in id order from after the last unit the pass before
+    /// reached, so no unit waits behind the same prefix at every pass. The rotation moves on only by what it took.
     /// </summary>
-    public List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned, IReadOnlySet<string> held)
+    public List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned, IReadOnlyList<IReadOnlySet<string>> first, IReadOnlySet<string> moved)
     {
         const int perPass = NodeRuntime.UnitsPerPass;
         var ordered = concerned.OrderBy(each => each.Unit.Id, StringComparer.Ordinal).ToList();
-        var first = ordered.Where(each => held.Contains(each.Unit.Id)).Take(perPass).ToList();
-        var rest = ordered.Where(each => !held.Contains(each.Unit.Id)).ToList();
-        if (ordered.Count <= perPass) return [.. first, .. rest];
-        var next = _after is null ? 0 : rest.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
-        if (next < 0) next = 0;
-        var rotation = rest.Skip(next).Concat(rest.Take(next)).Take(perPass - first.Count).ToList();
+        int Rank(GovernedUnit each) => first.Select((set, at) => set.Contains(each.Unit.Id) ? at : -1).FirstOrDefault(at => at >= 0, -1);
+        var ahead = ordered.Where(each => Rank(each) >= 0).OrderBy(Rank).Take(perPass).ToList();
+        var rest = ordered.Where(each => Rank(each) < 0).ToList();
+        if (ordered.Count <= perPass) return [.. ahead, .. rest];
+        var free = perPass - ahead.Count;
+        var changed = Rotated(rest.Where(each => moved.Contains(each.Unit.Id)).ToList());
+        var unchanged = Rotated(rest.Where(each => !moved.Contains(each.Unit.Id)).ToList());
+        var rotation = changed.Take(free - Math.Min(unchanged.Count, Math.Min(free, UnchangedAtLeast))).ToList();
+        rotation.AddRange(unchanged.Take(free - rotation.Count));
         if (rotation.Count > 0) _after = rotation[^1].Unit.Id;
-        return [.. first, .. rotation];
+        return [.. ahead, .. rotation];
+    }
+
+    private List<GovernedUnit> Rotated(List<GovernedUnit> units)
+    {
+        var next = _after is null ? 0 : units.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
+        if (next < 0) next = 0;
+        return [.. units.Skip(next), .. units.Take(next)];
     }
 
     /// <summary>
