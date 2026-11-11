@@ -52,7 +52,6 @@ internal sealed class LoopRun(
             service, loop.Harnesses.Adapters, homeDirectory, loop.Processes, loop.Output, loop.Harnesses, loop.Events, loop.Usage, browser,
             plugins: new PluginLog(log, loop.Health));
         TellChatMoves(chat);
-        // Each Ask Daoris turn's end is selected for the second check on a task of its own, the start's catch-up first: nothing waits on it.
         using var secondCheck = SecondCheckHookUp.Start(homeDirectory, loop.Events, loop.Pipe?.StandingConfirmation.HelpPresses, HeldPermissions.Of(loop.Events), log);
         await loop.ComeUpAsync(service, chat).ConfigureAwait(false);
         var news = StartBeside(service, sessionLog, homeDirectory, ct);

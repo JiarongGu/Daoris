@@ -72,7 +72,6 @@ public sealed class AcpSession(
     /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
     public IReadingSink? Children { get; init; }
 
-    /// <summary>Where a subagent's tool calls are kept by its stream, beside the session (<see cref="Driver.ChildCalls"/>); null keeps none.</summary>
     public Action<string, SessionEvent>? ChildCalls { get; init; }
 
     /// <summary>

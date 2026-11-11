@@ -13,7 +13,6 @@ public sealed class AskDaorisTurnEnds : IDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly TaskCompletionSource _first = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    /// <param name="first">What runs ahead of every end, once: the start's catch-up.</param>
     public AskDaorisTurnEnds(Func<string, CancellationToken, Task> select, Action<string, Exception>? failed = null, Func<CancellationToken, Task>? first = null) =>
         _ = Task.Run(() => RunAsync(select, failed, first));
 

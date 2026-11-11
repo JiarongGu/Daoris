@@ -45,7 +45,6 @@ public sealed class HelpPressRecord(TimeProvider clock)
     private readonly object _gate = new();
     private readonly List<HelpPressNow> _presses = [];
 
-    /// <summary>A press as it moved (began, asked, placed, answered or ended), told after the record's lock is let go.</summary>
     public event Action<HelpPressNow>? Moved;
 
     /// <summary>A covered press begun on <paramref name="session"/>'s conversation: its id, for <see cref="Ended"/>.</summary>

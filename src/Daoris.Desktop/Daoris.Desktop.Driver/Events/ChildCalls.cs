@@ -36,7 +36,7 @@ public static class ChildCalls
         }
     }
 
-    /// <summary>The child's tool events in order; null where none is kept, so its reading says it was not.</summary>
+    /// <summary>The child's tool events in order; null where none is kept, which its reading then says.</summary>
     public static IReadOnlyList<SessionEvent>? Read(string home, string session, string stream)
     {
         if (PathOf(home, session, stream) is not { } path || !File.Exists(path)) return null;
