@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// A plugin's step whose manifest declares a goal, performed by an agent: its attempt names its plugin and is sent to the step agents, never
 /// the plugin's process; its session is handed the plugin's tools and <c>step_answer</c> alone; the answer is the step's completion under the
-/// plugin, and a session that ends unanswered, or one a restart left behind, fails it <c>no-answer</c>. Unwired, the step stays its plugin's.
+/// plugin, and a session that ends unanswered, or one a restart left behind, fails it <c>no-answer</c>. Unwired, it is sent nowhere.
 /// </summary>
 public sealed class StepAgentPerformTests : IDisposable
 {
@@ -95,15 +95,16 @@ public sealed class StepAgentPerformTests : IDisposable
 
     private NodeAttempt Attempt() => Files.Read(Unit)!.Attempts.Single();
 
-    private async Task<WorkPerformed> StartAsync(WorkPerformer performer)
+    private async Task<WorkPerformed> StartAsync(WorkPerformer performer, NodeDeclaration? declared = null)
     {
+        var step = declared ?? Step;
         var record = Files.Read(Unit);
-        var before = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { [Step.Id] = record?.Statuses.GetValueOrDefault(Step.Id) ?? NodeLifecycle.Start(Unit, Step.Id) };
-        var evaluated = WireEvaluation.Evaluate([Step], [], before,
+        var before = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { [step.Id] = record?.Statuses.GetValueOrDefault(step.Id) ?? NodeLifecycle.Start(Unit, step.Id) };
+        var evaluated = WireEvaluation.Evaluate([step], [], before,
             new WireRun("graph-1", "v-0123456789abcdef") { Revisions = new Dictionary<string, string?> { [Unit] = Tip }, Fired = record?.Fired.ToHashSet(StringComparer.Ordinal) ?? [] });
         Assert.Null(evaluated.Refusal);
         performer.Keep(before, evaluated);
-        return await performer.StartAsync(Step, Assert.Single(evaluated.Starts), CancellationToken.None);
+        return await performer.StartAsync(step, Assert.Single(evaluated.Starts), CancellationToken.None);
     }
 
     [Fact]
@@ -165,18 +166,20 @@ public sealed class StepAgentPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task Unwired_the_goal_step_is_its_plugin_s_on_work_perform()
+    public async Task Unwired_a_goal_step_is_never_sent_to_its_plugin_s_work_perform()
     {
-        await StartAsync(Performer(agents: null));
+        var started = await StartAsync(Performer(agents: null));
 
-        Assert.Equal([Plugin], _plugins.Sent);
+        Assert.Equal(PerformedWhat.Unknown, started.What);
+        Assert.Empty(_plugins.Sent);
         Assert.Empty(_sessions.Ran);
     }
 
     [Fact]
     public async Task An_attempt_begun_on_work_perform_is_settled_by_its_plugin_once_the_agents_are_wired()
     {
-        await StartAsync(Performer(agents: null));
+        await StartAsync(Performer(agents: null), Step with { Goal = null });
+        Assert.Equal([Plugin], _plugins.Sent);
         var invocation = Attempt().Call.Invocation;
 
         await Performer(Agents()).ReconcileAsync(Declared, CancellationToken.None);
