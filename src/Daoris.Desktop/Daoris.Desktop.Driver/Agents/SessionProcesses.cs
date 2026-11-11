@@ -588,7 +588,7 @@ public sealed class SessionProcesses(string? markers = null)
     }
 
     /// <summary>Whether the process a marker names is alive, as the one it marked: its id and its start time.</summary>
-    private static bool MarkerAlive(string marker)
+    internal static bool MarkerAlive(string marker)
     {
         string[] fields;
         try
@@ -735,6 +735,9 @@ public sealed class SessionProcesses(string? markers = null)
             // registry, which is what stops and conversations use.
         }
     }
+
+    /// <summary>The markers of processes gone, of sessions not in <paramref name="active"/>, removed (<see cref="DeadMarkers"/>).</summary>
+    internal int SweepDeadMarkers(IReadOnlySet<string> active) => markers is null ? 0 : DeadMarkers.Sweep(markers, active);
 
     private void Unmark(string sessionId)
     {
