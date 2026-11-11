@@ -56,7 +56,7 @@ public sealed record RunReviewStep(string Node, string Kind, string State)
 
     public string? On { get; init; }
 
-    /// <summary>The outcome it was reached with, and what it reached: a pull request's address, a landed branch, a release's evidence.</summary>
+    /// <summary>The outcome reached, and what it reached: a pull request's address, a landed branch, a release's evidence.</summary>
     public string? Outcome { get; init; }
 
     public string? Door { get; init; }
