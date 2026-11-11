@@ -166,6 +166,10 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 read_at    TEXT NOT NULL
             );
             """, inside).ConfigureAwait(false);
+        // The stamp, and the generation it was written at: a build before it moves the generation and never the stamp, so its
+        // write reads as unstamped.
+        await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanner", "scanner TEXT", inside).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanned", "scanned INTEGER", inside).ConfigureAwait(false);
 
         await ExecuteAsync($"PRAGMA user_version = {SchemaVersion};", inside).ConfigureAwait(false);
         return true;
@@ -191,11 +195,12 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             {
                 write.CommandText =
                     $"""
-                    INSERT INTO {ReadingsTable} (repository, generation, commit_id, newest, files, fed, read_at)
-                    VALUES ($r, $generation, $commit, $newest, $files, $fed, $at)
+                    INSERT INTO {ReadingsTable} (repository, generation, commit_id, newest, files, fed, read_at, scanner, scanned)
+                    VALUES ($r, $generation, $commit, $newest, $files, $fed, $at, $scanner, $generation)
                     ON CONFLICT (repository) DO UPDATE SET generation = $generation, commit_id = $commit, newest = $newest,
-                        files = $files, fed = $fed, read_at = $at;
+                        files = $files, fed = $fed, read_at = $at, scanner = $scanner, scanned = $generation;
                     """;
+                write.Parameters.AddWithValue("$scanner", (object?)reading.Scanner ?? DBNull.Value);
                 write.Parameters.AddWithValue("$r", repository);
                 write.Parameters.AddWithValue("$generation", held + 1);
                 write.Parameters.AddWithValue("$commit", (object?)reading.Commit ?? DBNull.Value);
@@ -300,15 +305,49 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     private async Task<IndexReading?> ReadingInAsync(string repository, CancellationToken ct)
     {
         await using var command = _db.Command();
-        command.CommandText = $"SELECT generation, commit_id, newest, files, fed, read_at FROM {ReadingsTable} WHERE repository = $r;";
+        command.CommandText = $"SELECT {ReadingColumns} FROM {ReadingsTable} WHERE repository = $r;";
         command.Parameters.AddWithValue("$r", repository);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
-
-        var commit = reader.IsDBNull(1) ? null : reader.GetString(1);
-        var signature = reader.IsDBNull(2) || reader.IsDBNull(3) ? null : new RootSignature(commit, reader.GetInt64(2), reader.GetInt32(3));
-        return new IndexReading(repository, reader.GetInt64(0), commit, signature, reader.GetInt64(4) != 0, Moments.ReadRequired(reader.GetString(5)));
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Reading(reader) : null;
     }
+
+    private const string ReadingColumns = "repository, generation, commit_id, newest, files, fed, read_at, CASE WHEN scanned = generation THEN scanner END";
+
+    private static IndexReading Reading(SqliteDataReader reader)
+    {
+        var commit = reader.IsDBNull(2) ? null : reader.GetString(2);
+        var signature = reader.IsDBNull(3) || reader.IsDBNull(4) ? null : new RootSignature(commit, reader.GetInt64(3), reader.GetInt32(4));
+        return new IndexReading(reader.GetString(0), reader.GetInt64(1), commit, signature, reader.GetInt64(5) != 0, Moments.ReadRequired(reader.GetString(6)))
+        {
+            Scanner = reader.IsDBNull(7) ? null : reader.GetString(7),
+        };
+    }
+
+    public Task<IReadOnlyList<IndexReading>> ReadingsAsync(CancellationToken ct = default) =>
+        Refused<IReadOnlyList<IndexReading>>() ?? _db.RunAsync<IReadOnlyList<IndexReading>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = $"SELECT {ReadingColumns} FROM {ReadingsTable};";
+            var readings = new List<IndexReading>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) readings.Add(Reading(reader));
+            return readings;
+        }, ct);
+
+    public Task<IReadOnlyList<HeldCount>> HeldCountsAsync(CancellationToken ct = default) =>
+        Refused<IReadOnlyList<HeldCount>>() ?? _db.RunAsync<IReadOnlyList<HeldCount>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = $"SELECT repository, workspace, provenance, COUNT(*) FROM {EntriesTable} GROUP BY repository, workspace, provenance;";
+            var counts = new List<HeldCount>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                counts.Add(new HeldCount(reader.GetString(0), reader.GetString(1), (Provenance)reader.GetInt32(2), reader.GetInt32(3)));
+            }
+
+            return counts;
+        }, ct);
 
     private async Task ReplaceEntriesInAsync(string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct)
     {

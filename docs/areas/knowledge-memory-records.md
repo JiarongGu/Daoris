@@ -19,6 +19,7 @@ one job each, checked by `verify`.
 |---|---|---|
 | `KnowledgeService` | `Core/Knowledge/KnowledgeService.cs` | The one face every door calls; it keeps the index's reading state (refresh, the registered roots, the registry reload) and one-line doors to the types below |
 | `ReadingBehind` | `Core/Knowledge/ReadingBehind.cs` | The registry's wait on the index: only while it holds nothing; otherwise the reading runs behind it, one at a time |
+| `KeptReadings` | `Core/Knowledge/KeptReadings.cs` | The readings a start takes from the store instead of reading every root again: this build's stamp, and the roots whose stamped reading stands |
 | `KnowledgeAnswers`, `KnowledgeStandings`, `KnowledgeCitations` | `Core/Knowledge/` | Search with its tier and the records merged in; each hit's standing (`RootProbes` asks a root's uncommitted status once, `DecisionMarks` reads a decision's notes); cite and recheck |
 | `KnowledgeFeeds`, `KnowledgeRegistrar`, `KnowledgeCodeMaps` | `Core/Knowledge/` | The feed doors (a declaration, knowledge, a code map) behind one gate; register, retire and re-stamp; a code map read or held |
 | Feed records | `Core/Knowledge/Records/` | `FeedProvenance`, `FeedOutcome`, `FeedRefusal`, `RepositorySummary` |
@@ -77,7 +78,12 @@ one job each, checked by `verify`.
    knowledge; silence keeps them local. (from D21, D47)
 10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
     minute where nothing can be watched). A host over registered roots judges each root's signature at most once a minute and
-    reads only roots that moved, replacing a moved root's repository with nothing where it now reads none. A file or folder the scan
+    reads only roots that moved, replacing a moved root's repository with nothing where it now reads none. Its first use takes the
+    readings an earlier process over the store left where this build stamped them (`KeptReadings`: the scanner's module identity
+    and the documents and index folders it is told, kept with the generation it was written at, so an older build's write reads as
+    unstamped) and the root's signature still stands, and reads every other root; a store holding a repository no registered root
+    here reads takes a whole reading, which retires it. The summary counts what is held by repository, workspace and provenance
+    in the store, never by reading every entry. A file or folder the scan
     cannot read (held by an editor, denied) is left out of its repository's reading, never the reading's end; a manifest or lock
     so held reads as none, a folder import still proposes its repository, and a code map so held answers a problem said. The registry counts what the index holds and waits for a reading only while it holds nothing;
     otherwise the reading runs behind it, so a rescan or a moved root holds no door that resolves a workspace. The repositories'
