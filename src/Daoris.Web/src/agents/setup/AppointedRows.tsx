@@ -4,6 +4,7 @@ import { Button, SettingList, SettingRow } from '../../design/ui';
 import { appointedRows, holdLine } from '../roles/appointedHold';
 import { type Editing, editingOfLine, mayEditLine, roleName, RolesCard } from '../roles/Roles';
 import type { PlaceRoleEditor } from './PlaceRoles';
+import { SECOND_CHECK, SecondCheckTurnOn } from './SecondCheckTurnOn';
 
 /**
  * **A place's appointed roles**: the supervisor and the steward as the catalogue holds them, one row each for the roles placed
@@ -31,6 +32,7 @@ export function AppointedRows({ placed, editor }: { placed: (scope: { kind: stri
             control={!editing && (
               <>
                 <span className="text-body text-ink wrap-anywhere">{holdLine(t, row.hold)}</span>
+                {row.id === SECOND_CHECK && open === null && <SecondCheckTurnOn editor={editor} />}
                 {mayEditLine(line, kept) && (
                   <Button
                     variant="ghost" disabled={editor.busy || open !== null} aria-label={t('settings.ai.roles.editOf', { role: name })}

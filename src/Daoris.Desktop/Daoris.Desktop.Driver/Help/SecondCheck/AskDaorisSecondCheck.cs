@@ -39,7 +39,11 @@ public sealed class AskDaorisSecondCheck(
     }
 
     private IReadOnlyList<ReadTurn> Turns(string session) => AskDaorisSelection.Turns(
-        new TurnEvidence(events.After(session, 0).Events, Lines(ChildLineage.PathOf(home, session)), presses(session)) { Held = held(session) });
+        new TurnEvidence(events.After(session, 0).Events, Lines(ChildLineage.PathOf(home, session)), presses(session))
+        {
+            Held = held(session),
+            Streams = stream => ChildCalls.Read(home, session, stream),
+        });
 
     private bool On()
     {

@@ -138,6 +138,9 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// </summary>
     public string? Operation { get; init; }
 
+    /// <summary>A native permit's call by the harness's id of it, where the hook's input carried one; null otherwise.</summary>
+    public string? Call { get; init; }
+
     /// <summary>
     /// A housekeeping request's repository, by its registered name, null for a look at every one; a language's repository, for a
     /// setting request; the checkout's repository, for a checkout read; null for any other move.
@@ -636,6 +639,7 @@ public sealed partial class SessionRequests(string home)
                 Level = Text("level"),
                 Word = Text("takeBackWord"),
                 Operation = Text("operation"),
+                Call = Text("call"),
                 Repository = Text("repository"),
                 Branches = root.TryGetProperty("branches", out var branches) && branches.ValueKind == JsonValueKind.Array
                     ? [.. branches.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]

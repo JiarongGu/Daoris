@@ -261,9 +261,10 @@ of everything it handed, section by section.
     now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
     in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
     which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
-    another home goes on where it is shown, the window unmoved. Each of its turns' ends queues, on a task of its own that no turn,
-    press or start waits for (`AskDaorisTurnEnds`), the second check's selection of what the turn did that no card or hold put to
-    the person (`AskDaorisSelection`, roles rule 58): a turn runs from the person's words where the session took them to its
+    another home goes on where it is shown, the window unmoved. Each of its turns' ends, heard as its log's `turn` event in a
+    conversation whose start kept a receipt (`AskDaorisWatch`, begun with the window's loop), queues, on a task of its own that no
+    turn, press or start waits for (`AskDaorisTurnEnds`, the start's catch-up first), the second check's selection of what the turn
+    did that no card or hold put to the person (`AskDaorisSelection`, roles rule 58): a turn runs from the person's words where the session took them to its
     `turn` event, or to the log's last event, interrupted; a word shown waiting is no turn, and one taken while a turn runs joins
     it; a call's updates merge by its id; its known reads are counted, never quoted. (from D89, D170, D183, D158, D253, D272)
 43. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest,
