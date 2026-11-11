@@ -198,6 +198,12 @@ public sealed record RunEnd(string Quest, DateTimeOffset At)
 
     /// <summary>Whose stop it is (<see cref="NodeSource"/>).</summary>
     public string? By { get; init; }
+
+    /// <summary>
+    /// Why a run whose quest closed ended with steps still standing (<see cref="ClosedRunEnds"/>): its branch is gone, or the line holds its
+    /// work. Null for a run whose graph settled.
+    /// </summary>
+    public string? Why { get; init; }
 }
 
 /// <summary>What the person may say of a run's node at its door: pass it over, or stop it.</summary>

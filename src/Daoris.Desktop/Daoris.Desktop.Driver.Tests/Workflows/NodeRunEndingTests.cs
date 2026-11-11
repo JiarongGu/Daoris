@@ -91,7 +91,8 @@ public sealed class NodeRunEndingTests : NodeRunFixture
         // The end takes its moment after its read and before its edit: a door's word lands there.
         var runtime = new NodeRuntime(Files, _port, () =>
         {
-            if (!kept && new System.Diagnostics.StackTrace().GetFrames().Any(frame => frame.GetMethod()?.DeclaringType?.Name == nameof(NodeRunKeeping) && frame.GetMethod()?.Name == "End"))
+            if (!kept && new System.Diagnostics.StackTrace().GetFrames().Any(frame =>
+                    frame.GetMethod()?.DeclaringType is { } type && type.DeclaringType?.Name == nameof(NodeRunKeeping) && type.Name.StartsWith("<EndAsync>", StringComparison.Ordinal)))
             {
                 kept = true;
                 Files.Edit(RunUnit, record => (record with { Pending = [new NodeWord("handed", NodeWordActs.Skip, "later", _now)] }, true));

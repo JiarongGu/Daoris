@@ -24,10 +24,17 @@ public sealed class HomeMigrationRun(string home, string migration)
 {
     private readonly List<string> _changed = [];
 
+    private readonly SortedDictionary<string, int> _counts = new(StringComparer.Ordinal);
+
     public string Home => home;
 
     /// <summary>The files changed, relative to the Daoris folder, in the order they were.</summary>
     public IReadOnlyList<string> Changed => _changed;
+
+    /// <summary>What a step counted of what it converted, by <c>&lt;step&gt;.&lt;what&gt;</c>: what the machine log says beside the files.</summary>
+    public IReadOnlyDictionary<string, int> Counts => _counts;
+
+    public void Count(string step, string what) => _counts[$"{step}.{what}"] = _counts.GetValueOrDefault($"{step}.{what}") + 1;
 
     /// <summary>Where this migration's copies go: one folder per migration, the Daoris folder's layout under it.</summary>
     public string Copies => DaorisHome.Entry(home, HomeEntry.Salvage, migration);

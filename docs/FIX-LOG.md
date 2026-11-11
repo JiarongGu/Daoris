@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - Hundreds of runs never ended once their quest closed, and every look paid for them
+
+- **Symptom:** an installed copy held 586 open graph runs, every one on a done quest: most stood at `content.holds` ready with their
+  session branch gone, the rest at `land` active on a tip no branch holds (its work on the line by patch). The look's `nodes` stage took a
+  median of 4.6 s, and most `look.slow` warnings were that stage.
+- **Root cause:** a run ended only when its graph's end settled or no node could move with every attempt settled (`NodeRunKeeping.End`'s
+  `Over`). A step observing the run's branch stays ready or active when that branch is gone (nothing binds it, and the content read needs
+  the branch's tip and tree), so a closed quest's run never satisfied `Over`, was governed at every look and judged again each time. The
+  rule predates 95950acc69 (the move of the workflows' files), which carried it as it was.
+- **Fix:** `ClosedRunEnds` ends a run whose quest closed when every standing step observes its branch and cannot move: the line holds each
+  bound commit whole (`LineHolding.Whole`, asked at the checkout through the look's `OnLine`), ended `on-line`, or no branch of the run
+  stands, ended `branch-gone`; the steps stay as they stood and the end keeps why. The migration step `closed-runs` ends the runs already
+  left by the same judgement and counts them.
+- **Verification:** `ClosedRunEndTests` (whole passes, 300 runs ending and a later pass judging none) and `ClosedRunsStepGitTests` (a real
+  checkout whose line took the work by cherry-pick).
 ## 2026-11-11 - Two places' work processes of one plugin wrote its work journal over each other's attempts
 
 - **Symptom:** a plugin with a pull-request step awaited in a repository and in a workspace runs one work process per place, both in
