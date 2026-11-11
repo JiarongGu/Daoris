@@ -353,8 +353,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
     /// <summary>
     /// An ended record the person's words wait on, whose start the loop's last look held on a cooling
-    /// account, is pending, and its row carries what holds the words with the cool-off's reset, read from the waits that
-    /// look kept beside its verdicts.
+    /// account, is pending, its row carrying what holds the words with the reset, read from the waits that look kept.
     /// </summary>
     [Fact]
     public async Task Words_a_cool_off_holds_are_pending_saying_its_reset()
