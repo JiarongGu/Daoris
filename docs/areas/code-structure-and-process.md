@@ -190,10 +190,12 @@ finishes first and the whole set runs once.
 - `docs/development.md`'s "The CI between releases" still lists an archive move, the changelog and a fix-log entry in every
   merge's records commit, while its "Integrate and record" and `change` ask only for the area document, a decision for a rejected
   alternative, and the fix log for a regression. `change` reads right.
-- The archive and the FIX-LOG hold years of per-row essays. They stay as history and are not read by default.
 
 ## Open
 
+- DOCDIET1 (D278, `docs/2026-11-12-long-lived-repository-design.md` §6, §8): the finished designs filed, each area cut to 4,500
+  words, the backlog to open rows, the examples; the change-cost run against a fresh copy; the history bench; a present scope in search.
+- TESTDIET1: the test code and fixtures hold proofs of removed doors, duplicated stand-ins and goldens; a census, then the cut.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
 - MERGETOOL1: the merge tool, the queue and the rehearsals designed as one component, their run folders under `local/scratch/`
   kept by age and size, and a gate killed from outside said as lost (`docs/2026-11-05-merge-tool-design.md`).

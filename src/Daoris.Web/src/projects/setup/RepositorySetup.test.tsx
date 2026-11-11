@@ -224,8 +224,8 @@ describe("Setup's Work", () => {
     expect(within(landing).queryByRole('button', { name: 'Set for this repository' })).toBeNull();
   });
 
-  it('draws no landing row under Current, which the place head converts', async () => {
-    draw({ ...SETUP_DEFAULTS, lands: { is: 'current', onConvert: vi.fn() } });
+  it('draws no landing row under Current', async () => {
+    draw({ ...SETUP_DEFAULTS, lands: { is: 'current' } });
     await userEvent.click(head('Line and landing'));
 
     expect(screen.queryByText('How work lands')).toBeNull();

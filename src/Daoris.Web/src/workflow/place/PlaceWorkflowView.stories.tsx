@@ -91,8 +91,8 @@ export const SavedDefaultDark: Story = { decorators: [dark] };
 export const SavedDefaultDarkHalf: Story = { decorators: [storyWidths.half, dark] };
 export const SavedDefaultDarkNarrow: Story = { decorators: [storyWidths.narrow, dark] };
 
-/** **Current**: nothing names a workflow for default work, so it follows its old landing rule, with the conversion's door beside the routes. */
-export const CurrentDefault: Story = { args: { route: undefined, current: CURRENT_ANSWER, onConvert: nothing } };
+/** **Current**: nothing names a workflow for default work, so it follows its old landing rule. */
+export const CurrentDefault: Story = { args: { route: undefined, current: CURRENT_ANSWER } };
 export const CurrentDefaultHalf: Story = { ...CurrentDefault, decorators: [storyWidths.half] };
 export const CurrentDefaultNarrowChinese: Story = { ...CurrentDefault, decorators: [storyWidths.narrow, chinese] };
 export const CurrentDefaultDark: Story = { ...CurrentDefault, decorators: [dark] };
@@ -107,7 +107,7 @@ export const LandingByVersionNarrow: Story = { ...LandingByVersion, decorators: 
 export const LandingByVersionChinese: Story = { ...LandingByVersion, decorators: [chinese] };
 export const LandingByVersionChineseNarrow: Story = { ...LandingByVersion, decorators: [storyWidths.narrow, chinese] };
 export const LandingByVersionDark: Story = { ...LandingByVersion, decorators: [dark] };
-export const LandingUnderCurrent: Story = { args: { route: undefined, current: CURRENT_ANSWER, onConvert: nothing, landingOpen: true } };
+export const LandingUnderCurrent: Story = { args: { route: undefined, current: CURRENT_ANSWER, landingOpen: true } };
 export const LandingUnderCurrentHalf: Story = { ...LandingUnderCurrent, decorators: [storyWidths.half] };
 export const LandingUnderCurrentNarrow: Story = { ...LandingUnderCurrent, decorators: [storyWidths.narrow] };
 export const LandingUnderCurrentChinese: Story = { ...LandingUnderCurrent, decorators: [chinese] };
@@ -163,15 +163,11 @@ export const WorkspaceWorkflow: Story = {
 };
 export const WorkspaceWorkflowHalf: Story = { ...WorkspaceWorkflow, decorators: [storyWidths.half] };
 
-/**
- * **A workspace's Landing row**: the same row a repository has, open here. Under a saved version, the version's `land` options;
- * under Current, the old rule as it stands, with the conversion and no editor.
- */
-const workspaceLanding: Pick<PlaceWorkflowProps, 'name' | 'page' | 'doors' | 'landing' | 'onConvert'> = {
+/** **A workspace's Landing row**: the same row a repository has, open here: the version's `land` options, or under Current the old rule and no editor. */
+const workspaceLanding: Pick<PlaceWorkflowProps, 'name' | 'page' | 'doors' | 'landing'> = {
   name: 'aurora',
   page: 'workspace',
   doors: { repository: nothing },
-  onConvert: nothing,
   landing: (hand) => (
     <WorkspaceLandingFolds
       workspace="aurora"

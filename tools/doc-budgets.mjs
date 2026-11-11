@@ -23,8 +23,8 @@
  * A document `daoris.json` declares with a ceiling (`documents`) is measured at that number,
  * which `check` reads too, so it is written in one place. `tools/doc-budgets.json` keeps only the
  * documents no role names (the consuming story, the forward sequence, the contract) and the standing
- * orders, until they become the brief. A role bound to a ceiling alone, the brief or a room,
- * is `check`'s to measure, since only it knows where the region ends. A document with a ceiling in both
+ * orders, until they become the brief. A role bound to a ceiling alone, the brief or a room, and a folder's
+ * ceiling, are `check`'s to measure, since only it knows where the region ends and which documents a folder holds. A document with a ceiling in both
  * lists has two numbers, and that is a fact, so it fails.
  *
  * It does **not** belong on an append-only record — the decision log, the task archive, the fix log,
@@ -53,7 +53,7 @@
  *
  *   node tools/doc-budgets.mjs
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
@@ -76,7 +76,8 @@ const readJson = (file) => (existsSync(file) ? JSON.parse(readFileSync(file, 'ut
 export function ceilings(root) {
   const budgets = [];
   for (const [role, entry] of Object.entries(readJson(join(root, DECLARED)).documents ?? {})) {
-    if (typeof entry === 'object' && entry !== null && typeof entry.path === 'string' && typeof entry.words === 'number') {
+    if (typeof entry === 'object' && entry !== null && typeof entry.path === 'string' && typeof entry.words === 'number'
+      && !(existsSync(join(root, entry.path)) && statSync(join(root, entry.path)).isDirectory())) {
       budgets.push({ document: entry.path, ceiling: entry.words, from: `${DECLARED} (${role})` });
     }
   }

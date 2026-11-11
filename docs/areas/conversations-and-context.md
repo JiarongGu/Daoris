@@ -352,6 +352,9 @@ of everything it handed, section by section.
 
 ## Open
 
+- **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
+  edit and retry, folded thinking and tools). Needs a design.
+- **ASKPUSH1:** a word typed mid-turn waits for the turn's end; nothing delivers it now, into the turn or by stopping it.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move and a conversation's carry through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`, `Course/Chat/ChatLimitCarry.cs`);

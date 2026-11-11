@@ -150,8 +150,9 @@ as a pack.
     rule the region already holds adds only its change in size. (from D23, D117)
 33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` keeps its `CLAUDE.md` pointer and never writes
     its text; a declared room with no text fails. (from D117)
-34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling. `check` fails on a fact
-    (missing, escaping, a link, a stale table) and reports a judgement (a ceiling passed). (from D122)
+34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling; a folder's ceiling measures
+    each document directly in it. `check` fails on a fact (missing, escaping, a link, a stale table) and reports a judgement (a
+    ceiling passed: the read path has grown). (from D122, D278)
 35. This repository uses `claude-code` at `.claude` with the packs `co-working` and `localized-ui`. A canon change is synced
     here and in `examples/engine` and `examples/game`; a generated copy is never patched. (from D39, D59)
 

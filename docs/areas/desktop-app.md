@@ -415,6 +415,7 @@ a probe, git through a counting seam, a source that only names a start, a proces
 
 ## Open
 
+- **THROUGH1f (D277):** the browser's tabs are one set shared by every session's server; decided: a browser context per session for `${browser}`, ended with the session, the person's and Ask Daoris's tabs apart; the click-settle timeouts on the identity and Azure DevOps pages measured first. Not built.
 - **CANVAS1g**: the canvas in the installed window, with FLOWCHART2h.
 - **SETUPUX1x**: the set-up experience seen in the installed window, and its fixes.
 - **AGENTSPLACE1l**: the Agents place seen in the installed window.

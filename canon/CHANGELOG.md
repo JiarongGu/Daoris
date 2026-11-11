@@ -12,6 +12,12 @@ network.
 
 ## Unreleased
 
+- **What a change reads stays the size it was on the first day.** `development-documents` names the read path (the brief,
+  the area document, the backlog row, the index) as what a ceiling holds, says to search the present for a present question
+  and look history up by identifier, and moves a design nothing open names to the folder kept for history; `change` step 1
+  searches the present first. `daoris check` measures each document of a folder declared with a ceiling. **Adopting
+  repositories:** run `daoris sync`; declare a ceiling on the area documents' folder to hear which has grown.
+
 - **A new core knowledge document, `rooms-and-classes`, says how to declare a repository's rooms and the rules for its
   files git does not manage.** A lane that carries `builds` (its units, and what its builds read and write outside them) is a
   room, and lanes that are one build name one `room`. Every file git does not manage is handled by a layered rule file: a

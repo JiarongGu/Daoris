@@ -15,7 +15,10 @@
       "words": 2500
     },
     "index": "docs/index/README.md",
-    "areas": "docs/areas",
+    "areas": {
+      "path": "docs/areas",
+      "words": 4500
+    },
     "decisions": "docs/decisions",
     "backlog": {
       "path": "TASKS.md",

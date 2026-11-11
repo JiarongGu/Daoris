@@ -127,7 +127,7 @@ const small = 'min-h-0 border border-line px-2 py-0.5 text-small';
  * A molecule: the lists arrive as props, and the plan, the save and the choice go out.
  */
 export function ChangeWorkflow({
-  list, error, current, place, route, effective, shown, onShow, using = false, saving = false, onUse, onPlan, onSave, onStartFrom, onConvert, onClose,
+  list, error, current, place, route, effective, shown, onShow, using = false, saving = false, onUse, onPlan, onSave, onStartFrom, onClose,
 }: {
   /** The saved workflows and the presets; null while read. */
   list: WorkflowListAnswer | null;
@@ -151,8 +151,6 @@ export function ChangeWorkflow({
   onSave: (ask: WorkflowSaveAsk) => Promise<WorkflowSaveAnswer>;
   /** Open the step editor from a preset's steps. */
   onStartFrom: (start: PresetStart) => void;
-  /** Opens the conversion, the one way out of Current; none, and the Current tab offers no door. */
-  onConvert?: () => void;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -373,7 +371,7 @@ export function ChangeWorkflow({
         </ul>
       );
     }
-    // Current is no candidate: the rule it reads is converted to a saved workflow, which is the one way out of it.
+    // Current is no candidate: the rule it reads has no saved version to pick.
     return (
       <div className="grid min-w-0 gap-1.5">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -381,11 +379,6 @@ export function ChangeWorkflow({
           <Pill tone="neutral">{t('workflow.place.change.version', { version: current.version })}</Pill>
         </div>
         <span className="block text-small text-ink-soft">{t('workflow.place.change.currentLive')}</span>
-        {onConvert && (
-          <div className="flex flex-wrap gap-1.5">
-            <Button variant="ghost" className={small} onClick={onConvert}>{t('agents.convert.open')}</Button>
-          </div>
-        )}
       </div>
     );
   };

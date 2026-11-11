@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - Three gates red on main: an upward edge, an unclassed route, and two pipe tests whose card was refused at the ask
+
+- **Symptom:** the driver's structure gate found `Agents/SessionServers.cs` naming two Plugins types; `WindowCensusTests` found `PLUGIN_COMMAND`
+  neither held, told by event nor owed; `InstancePipeTests.A_route_classed_by_its_payload_runs_only_in_its_open_form` and
+  `PipeConfirmTests.A_press_whose_ground_moved_while_it_waited` (`plan`) timed out waiting on the Confirm queue.
+- **Root cause:** the tools server's hand-off (PLUGINEXT1 d, 4621545b7c) put `PluginToolsAt` and `PluginToolsHand` in the signature and body of a
+  lower subdomain's file; `PLUGIN_COMMAND` (9976a6d577) declared no change, so it counted as a read; since each press's card became a view
+  judged at the ask (02d710f4fb), a press whose plugin or workspace the stand-in machine did not hold was refused before it was queued.
+- **Fix:** `SessionServers` takes the entry and the loop builds it with `PluginToolsHand.OfQuest`; `PLUGIN_COMMAND` publishes the plugins slice;
+  the two tests give the stand-in the installed plugin with its source and the workspace.
+- **Verification:** the structure, census and the two pipe tests pass.
+
 ## 2026-11-12 - The window never showed the terminal's tier or its record, and the terminal grouped a left-taken quest as a word
 
 - **Symptom:** Settings' terminal row and Notifications' standing read no tier and no record of who changed it on a window's load;

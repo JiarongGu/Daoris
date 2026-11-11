@@ -102,7 +102,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // handed. With Daoris's own browser brought up for a server that drives it, or that server left out and the transcript told why.
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
                 await SessionServers.HandNotedAsync(
-                    home, context.Servers, context.Browser, context.Log, ct, PluginToolsAt.OfQuest(sessionId, config, quest.To, start.Workspace)).ConfigureAwait(false);
+                    home, context.Servers, context.Browser, context.Log, ct, PluginToolsHand.OfQuest(home, sessionId, config, quest.To, start.Workspace)).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             // What waited on the ask's channel for this part's line of work: read for its instruction, never holding the start, and its
             // entry's mark moved once the record works, not before, so a start that fails hands it on.

@@ -36,6 +36,9 @@ public static class PluginToolsHand
             new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Path.GetFullPath(home) });
     }
 
+    public static ServerEntry? OfQuest(string home, string session, DriverConfig config, string repository, string? workspace) =>
+        Entry(home, PluginToolsAt.OfQuest(session, config, repository, workspace), Program(home));
+
     /// <summary>
     /// The desktop's program: the install's beside the home (<c>app/daoris-driver/</c>), else this process where it is that program; null
     /// where neither is (a development shell runs the library inside its own program).
