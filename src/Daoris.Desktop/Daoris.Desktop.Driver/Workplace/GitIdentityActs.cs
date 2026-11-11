@@ -437,8 +437,15 @@ public static partial class GitIdentityActs
         var at = Path.GetFullPath(folder);
         using (GitScheduler.AsPerson())
         {
-            return await GitScheduler.Shared.RunAsync(
-                new GitRunAsk(at, at, GitWait.Outside), _ => StartedAsync(info, file, input, drain), CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                return await GitScheduler.Shared.RunAsync(
+                    new GitRunAsk(at, at, GitWait.Outside), _ => StartedAsync(info, file, input, drain), CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (GitUnplacedException unplaced)
+            {
+                return new GitToolRun(-1, "", unplaced.Message);
+            }
         }
     }
 

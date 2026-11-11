@@ -283,6 +283,27 @@ public sealed class ActRunGitTests : TreeSyncFixture
         Assert.False(Journal("run-a").Act(run.Act!)!.Open);
     }
 
+    /// <summary>A step's bound runs from the moment its git is placed: one that queued past the whole bound still gets it.</summary>
+    [Fact]
+    public async Task A_step_whose_git_queued_past_its_bound_still_has_its_bound_once_placed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (root, tip, _, _) = await CheckoutAsync();
+        var runs = Runs();
+        runs.Bound = _ => TimeSpan.FromSeconds(2);
+        runs.Seam = async (point, _) =>
+        {
+            if (point == ActSeams.BeforeLaunch) await Task.Delay(TimeSpan.FromSeconds(3));
+        };
+
+        var run = await runs.RunAsync(Plan(root, RefStep(tip)), CancellationToken.None);
+
+        Assert.Equal(ActOutcomes.Done, run.Outcome);
+        Assert.Equal(tip, await RefAsync(root, Act));
+        var step = Journal("run-a").Steps(run.Act!).Single();
+        Assert.True(step.Deadline > step.BeganAt.GetValueOrDefault().AddSeconds(3), "the journalled deadline is taken once the git is placed");
+    }
+
     /// <summary>🔴 A step whose processes would not end: said unended with its pid, its outcome unknown, the act held open for a reconciler, never failed.</summary>
     [Fact]
     public async Task A_step_whose_child_would_not_end_is_said_unended_and_the_act_is_held_for_the_reconciler()
