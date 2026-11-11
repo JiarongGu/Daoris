@@ -139,6 +139,59 @@ public sealed class FolderReturnProcessTests : IDisposable
             Directory.GetFiles(Place, "*", SearchOption.AllDirectories).Select(file => Path.GetRelativePath(Place, file).Replace('\\', '/')).Order(StringComparer.Ordinal));
     }
 
+    private FolderReturned Return(FolderCopy copy, IReadOnlyDictionary<string, string> choices) =>
+        FolderReturn.Run(Home, copy, choices, ManifestBounds.Default, ReturnDoor.JournalOf(Home, Unit, copy.Id));
+
+    private IEnumerable<string> KeptTexts(FolderCopy copy)
+    {
+        var journal = ReturnDoor.JournalOf(Home, Unit, copy.Id);
+        return new[] { "kept", "earlier" }.Select(entry => Path.Combine(journal, entry)).Where(Directory.Exists)
+            .SelectMany(folder => Directory.GetFiles(folder, "*", SearchOption.AllDirectories)).Select(File.ReadAllText).ToList();
+    }
+
+    [Fact]
+    public void A_path_written_over_twice_keeps_the_bytes_of_each_write()
+    {
+        var copy = Copy();
+        File.WriteAllText(Path.Combine(copy.Folder, "notes.md"), "the session's\n");
+        Return(copy);
+        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's edit after\n");
+
+        Return(copy, new Dictionary<string, string> { ["notes.md"] = ReturnChoices.TakeSession });
+
+        Assert.Equal("the session's\n", File.ReadAllText(Path.Combine(Place, "notes.md")));
+        var kept = KeptTexts(copy).ToList();
+        Assert.Contains("first\n", kept);
+        Assert.Contains("the person's edit after\n", kept);
+    }
+
+    [Fact]
+    public async Task A_copy_file_that_could_not_be_read_is_never_taken_as_a_removal_of_the_folder_s()
+    {
+        var copy = Copy();
+        var held = Path.Combine(copy.Folder, "notes.md");
+        File.WriteAllText(held, "the session's\n");
+        await using var lockedOpen = new FileStream(held, FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var returned = Return(copy, new Dictionary<string, string> { ["notes.md"] = ReturnChoices.TakeSession });
+
+        Assert.Equal("first\n", File.ReadAllText(Path.Combine(Place, "notes.md")));
+        Assert.Contains("notes.md", returned.Waiting);
+    }
+
+    [Fact]
+    public void A_keep_both_that_could_not_write_beside_waits_on_the_path_the_person_chose_for()
+    {
+        var copy = Copy();
+        File.WriteAllText(Path.Combine(copy.Folder, "notes.md"), "the session's\n");
+        File.WriteAllText(Path.Combine(Place, "notes.md"), "the person's\n");
+        Directory.CreateDirectory(Path.Combine(Place, FolderReturn.Beside("notes.md", copy.Id)));
+
+        var returned = Return(copy, new Dictionary<string, string> { ["notes.md"] = ReturnChoices.KeepBoth });
+
+        Assert.Equal(["notes.md"], returned.Waiting);
+    }
+
     [Fact]
     public async Task A_junction_in_the_folder_is_refused_and_nothing_is_written_through_it()
     {

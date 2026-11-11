@@ -45,7 +45,10 @@ public static class FolderReturn
                 continue;
             }
 
-            if (unread && !choices.ContainsKey(path))
+            // A copy's file that could not be read has no bytes to take: only Keep yours settles it, since every other choice would read
+            // it as a removal or as nothing, and the copy goes once the return is done.
+            var copyUnread = copied.Listed(path) is not null && session is null;
+            if ((copyUnread && choices.GetValueOrDefault(path) != ReturnChoices.KeepYours) || (unread && !choices.ContainsKey(path)))
             {
                 waiting.Add(path);
                 continue;
@@ -63,7 +66,8 @@ public static class FolderReturn
                     var beside = Beside(path, copy.Id);
                     var there = place.Listed(beside)?.Sha256;
                     if (there is not null && !string.Equals(there, session, StringComparison.Ordinal)) refused[path] = ReturnRefusal.Collision;
-                    else if (there is null) Settle(beside, writes.Write(new(beside, null, session, From: path)), written, waiting);
+                    // A write that did not hold waits on the path the person chose for, not on the name beside it, which has no choice to make.
+                    else if (there is null) Settle(path, writes.Write(new(beside, null, session, From: path)), written, waiting, wrote: beside);
                     break;
                 case ReturnChoices.KeepBoth:
                     break;
@@ -85,7 +89,8 @@ public static class FolderReturn
         return dot > 0 ? $"{folder}{name[..dot]} ({copy}){name[dot..]}" : $"{folder}{name} ({copy})";
     }
 
-    private static void Settle(string path, bool done, List<string> written, List<string> waiting) => (done ? written : waiting).Add(path);
+    private static void Settle(string path, bool done, List<string> written, List<string> waiting, string? wrote = null) =>
+        (done ? written : waiting).Add(done ? wrote ?? path : path);
 }
 
 /// <summary>What a return came to: the folder's paths it wrote or removed, those that wait for the person, and whether the copy changed nothing.</summary>
