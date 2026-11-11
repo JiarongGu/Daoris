@@ -227,8 +227,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `authority`, `holder` (`rules`, `terminal`, or `agent` with its choices and policy as a working role's) and `window`. A press is
     refused `not-converted` until the home's `supervisor-kinds` step is recorded, the role door's judge refuses the rest (an
     unknown kind or act, an act of a kind not decided, an agent holder with no choices, two of a kind in one scope, choices its
-    holder walks none of, work), and the Confirm card's view (`RoleChangeView`) says the supervisor's kinds, holder, acts and window
-    before and after in the catalogue's words (`SupervisorChange`), applied by the person's press through the one door. The act judge reads the catalogue at each act, answer and admission. One resolver
+    holder walks none of, work, and `machine-only`: a kind whose every subject is the machine's, `ask-daoris`, decided by a supervisor
+    placed below the machine), and the Confirm card's view (`RoleChangeView`) says the supervisor's kinds, holder, acts and window
+    before and after in the catalogue's words (`SupervisorChange`), applied by the person's press through the one door; a change that
+    has an agent granted `ask-daoris.report` adds whom Ask Daoris's acts are sent to, each choice's agent and maker in order, and the
+    starts a day its choices may take on the person's accounts (`SecondCheckOnSaid`). The act judge reads the catalogue at each act, answer and admission. One resolver
     (`SupervisorResolution.Find`, `RoleCatalog.Supervising`) names who decides a decision of a kind at a place, kind first: the
     repository's, the workspace's, then the machine's supervisor deciding the kind, else the repository's, the workspace's, then
     the machine's generic one, the repository placed in the workspace `repository_workspaces` keeps. An unreadable appointed
@@ -242,12 +245,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     act, so a grant taken away by any process stops the next step. `ROLES` answers the same
     resolution as `deciders` (`SupervisorDeciders`): for the machine, each place an appointed role's scope or `repository_workspaces`
     names, and a repository no place names, a line per kind naming the supervisor, its place, its holder and the kind's granted acts,
-    or the resolver's sentence. A place's Roles words them as *Who decides here* (`WhoDecidesHere`): the supervisor and where it is
+    or the resolver's sentence; a kind of the machine's alone has its line at the machine and nowhere below it. A place's Roles words them as *Who decides here* (`WhoDecidesHere`): the supervisor and where it is
     set, *your rules, then you* where the person's rules hold it, *you (… may not …)* where it is granted none of the kind's acts, or
-    *you* with the sentence; *Add a supervisor for…* offers the kinds no supervisor placed there decides and opens the role editor
+    *you* with the sentence, and *Ask Daoris's acts* as *read by Second check* or *not read (Second check off)*; *Add a supervisor for…* offers the kinds no supervisor placed there decides, none of the machine's alone below it, and opens the role editor
     with that kind, the place and nothing ticked. The editor shows the machine's generic supervisor's *Decides* fixed, said. An
     appointed press names its `kind`. The steward is the catalogue's one steward. Ask Daoris may explain the supervisor, never
-    overrule it. (from D233)
+    overrule it. The seed holds *Second check* (`second-check`, 复核): the machine's supervisor deciding `ask-daoris`, *Ask
+    Daoris's acts* in the editor (apart from the working role `ask-daoris`, which is Ask Daoris itself), granted its one act
+    `ask-daoris.report` and held by the person's rules, so it reads nothing until the person turns it on (`SecondCheck.On`). The
+    home's `second-check` step gives it its first choices once, in one transaction (Codex at its account's default, then Claude
+    Code · opus · high, each 40 starts a day as its policy's budget), and writes nothing where the role has a staffing row or a
+    policy, where its record is the person's (changed, turned off or removed), or where a supervisor of the person's decides the
+    kind. (from D233, D272)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
     is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`; a catalogue that cannot be read ends no hold, which stands until it reads, an act's step and a terminal's start saying `role-changed` meanwhile and withdrawing no grant. Unstaffed is off. A
     supervisor decides for a place exactly where its holder is a started terminal or an agent: the holder is the person's
@@ -483,7 +492,21 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     under *Asked you*, each row opening its conversation and a pause that ran offering *Resume*. A terminal's press under the
     terminal's tier `act` is kept apart, in the tier's own record (desktop-app 15). A proof that does not hold, a nonce used already or a session
     holding no key is refused `delegate-unproved`. Only the person chooses it (Settings, the panel's chip, `help mode`), never
-    Ask Daoris. A change of mode or access takes the next turn and is said. (from D183, D253, D271)
+    Ask Daoris. A change of mode or access takes the next turn and is said. In either mode, after each turn and off the turn's
+    path, the second check selects what ran with no yes of the person's (`AskDaorisSelection`): a harness card of an acting kind
+    (edit, delete, move, execute), a press of Daoris's connector as its door words the call's act on its line of the session's
+    `lineage.jsonl` (`CallPlace.ActOf`: a search, a read under the person's grant or a proposal is not selected), matched to its
+    card by the harness's id of the call (Claude Code's) or else by count, every card no line accounts for, unknown, and a
+    delegation, its child read by the same table where its stream is kept and said *delegated, not read* where not; a press that
+    ran with no card (full access, or a granted family's) is selected, while one asked on the person's card and allowed, and a call
+    held for them and answered, are their yes, kept as such and never selected; known reads are counted. A cut input or output, a
+    child not kept, a match by count, a turn with no end and a turn over the bound are limits of its reading, which is then
+    partial, never clean. A selected turn joins its conversation's queued range (`AskDaorisRanges`, one report per range in its
+    decisions folder, `AskDaorisReports`), whose packet is bounded at 40,000 characters: past it, or once a reader took the range,
+    the next opens, and a turn alone over it is a range of its own, marked. While the check is off a selected turn is kept in a
+    report closed *disabled*; a range queued 24 hours closes *unread* with why; a turn that only read is written nowhere. At a
+    start the conversations seen before are caught up from where they were seen, and one never seen is taken from that start on.
+    The reading itself is not built: a range stays queued, and the door lists none. (from D183, D253, D271, D272)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A proposal kind, a route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one
     of every action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
