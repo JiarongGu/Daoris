@@ -23,7 +23,8 @@ internal sealed class SessionWrites(SessionStore store)
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
-        IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null) => _db.RunAsync<Session>(async () =>
+        IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null, string? decides = null,
+        string? performs = null) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link: the three are kept together or not at all.
         var continues = Blank(from);
@@ -42,6 +43,7 @@ internal sealed class SessionWrites(SessionStore store)
             // A piece means nothing without the lead it serves: kept together or not at all.
             Piece = Blank(serves) is null ? null : Blank(piece),
             Decides = Blank(decides),
+            Performs = Blank(performs),
             From = continues,
             FromWhy = continues is null ? null : Blank(fromWhy),
             FromBy = continues is null ? null : Blank(fromBy),
@@ -56,10 +58,11 @@ internal sealed class SessionWrites(SessionStore store)
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
-            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, door, state, note, evidence, transcript, created, updated, workspace, kind, door_version, profile, tree, base_commit, ask, opinion, serves, piece, decides, performs, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
+            VALUES ($id, $quest, $repository, $door, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $doorVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $decides, $performs, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
             """;
         command.Parameters.AddWithValue("$decides", (object?)session.Decides ?? DBNull.Value);
+        command.Parameters.AddWithValue("$performs", (object?)session.Performs ?? DBNull.Value);
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
         command.Parameters.AddWithValue("$actor", (object?)session.Actor ?? DBNull.Value);
         command.Parameters.AddWithValue("$access", (object?)SessionAccess.Written(session.Access) ?? DBNull.Value);

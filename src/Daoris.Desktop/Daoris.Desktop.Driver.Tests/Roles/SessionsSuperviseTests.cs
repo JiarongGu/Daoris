@@ -439,7 +439,7 @@ public sealed class SessionsSuperviseTests : SuperviseHarness
     [
         new { kind = "allow", subject = new { session = "s1", request = "r1", held = "2026-11-08T10:00:00Z" }, repository = "engine", generation = "g-a", acts = new[] { "once", "reject" } },
         new { kind = "allow", subject = new { proposal = "p1" }, repository = "", generation = "g-b", acts = new[] { "standing", "reject" } },
-        new { kind = "allow", subject = new { ask = "k1" }, repository = "engine", generation = "g-c", acts = new[] { "steward" }, act = "land" },
+        new { kind = "allow", subject = new { ask = "k1" }, repository = "engine", generation = "g-c", acts = new[] { "steward" }, act = "clean" },
     ];
 
     [Fact]
@@ -454,7 +454,7 @@ public sealed class SessionsSuperviseTests : SuperviseHarness
         Assert.Equal(0, exit);
         Assert.Contains("s1  engine  allow permission request r1  generation g-a  (decide with --kind allow --subject r1 --do once|reject", said, StringComparison.Ordinal);
         Assert.Contains("-    allow widening p1  generation g-b  (decide with --kind allow --subject p1 --do standing|reject", said, StringComparison.Ordinal);
-        Assert.Contains("-  engine  allow the steward's land k1  generation g-c  (decide with --kind allow --subject k1 --do steward", said, StringComparison.Ordinal);
+        Assert.Contains("-  engine  allow the steward's clean k1  generation g-c  (decide with --kind allow --subject k1 --do steward", said, StringComparison.Ordinal);
     }
 
     [Theory]

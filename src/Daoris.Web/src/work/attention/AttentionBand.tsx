@@ -11,6 +11,7 @@ import {
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
 import { useSay } from '../../bridge/sessions/conversation';
+import { useSeeReading } from '../../bridge/helpReadings';
 import { SignIn } from '../../agents/SignIn';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, SkeletonRows } from '../../design/ui';
@@ -116,6 +117,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const gitTryAgain = useGitTryAgain();
   const gitIdentity = useGitIdentity();
   const gitAnswer = useGitAnswer();
+  const seeReading = useSeeReading();
   const quietCarryOn = useQuietCarryOn();
   const quietLeave = useQuietLeave();
   const stopSession = useStopSession();
@@ -334,6 +336,11 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     gitAnswer: (item, allow) => {
       run(item, () => gitAnswer.mutateAsync({ ask: item.id, answer: allow ? 'allow' : 'refuse' }),
         (answer) => notify(t(!allow ? 'work.wait.gitAsk.refused' : answer.waiting ? 'work.wait.gitAsk.allowed' : 'work.wait.gitAsk.kept')));
+    },
+    // A second check's flag acknowledged, kept on its report; the row leaves as the slice judges again.
+    secondCheckSeen: (item) => {
+      const flag = item.secondCheck;
+      if (flag) run(item, () => seeReading.mutateAsync({ session: flag.session, range: flag.range, finding: flag.index }), () => {});
     },
     // The host's own page for SSH keys, in the system's browser, as Settings → Git's link opens it.
     gitKeyPage: (item) => { if (item.git?.keyPage) window.open(item.git.keyPage, '_blank', 'noreferrer'); },

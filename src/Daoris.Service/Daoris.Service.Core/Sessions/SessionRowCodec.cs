@@ -37,6 +37,7 @@ internal static class SessionRowCodec
         Serves = reader.IsDBNull(reader.GetOrdinal("serves")) ? null : reader.GetString(reader.GetOrdinal("serves")),
         Piece = reader.IsDBNull(reader.GetOrdinal("piece")) ? null : reader.GetString(reader.GetOrdinal("piece")),
         Decides = reader.IsDBNull(reader.GetOrdinal("decides")) ? null : reader.GetString(reader.GetOrdinal("decides")),
+        Performs = reader.IsDBNull(reader.GetOrdinal("performs")) ? null : reader.GetString(reader.GetOrdinal("performs")),
         From = reader.IsDBNull(reader.GetOrdinal("from_session")) ? null : reader.GetString(reader.GetOrdinal("from_session")),
         FromWhy = reader.IsDBNull(reader.GetOrdinal("from_why")) ? null : reader.GetString(reader.GetOrdinal("from_why")),
         FromBy = reader.IsDBNull(reader.GetOrdinal("from_by")) ? null : reader.GetString(reader.GetOrdinal("from_by")),

@@ -5,6 +5,7 @@ import { keys } from '../../data/queries';
 import { readUnderWay } from '../driver';
 import { HELP_HISTORY, HELP_PUBLISHED, HELP_WIRED } from '../help';
 import { HELP_BEYOND } from '../helpBeyond';
+import { HELP_READINGS } from '../helpReadings';
 import { ALL_HISTORY } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { notPushed } from './slices';
@@ -52,7 +53,7 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['tools', () => [ALL_TOOLS]],
   // And the receipts *What it has* shows, so one a resume or a change of mode records while it is open appears
   // (only an enabled query, the open panel's, asks again). And what a conversation published, which a press adds.
-  ['help', () => [HELP_HISTORY, HELP_WIRED, HELP_PUBLISHED]],
+  ['help', () => [HELP_HISTORY, HELP_WIRED, HELP_PUBLISHED, HELP_READINGS]],
   ['browser', () => [keys.browserSettings]],
   // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends, and by the Downloads
   // row's clearing, with that row's list; and the Disk space card, told as each kind's walk ends.

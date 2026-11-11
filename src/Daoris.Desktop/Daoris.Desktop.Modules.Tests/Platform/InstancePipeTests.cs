@@ -130,8 +130,8 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead,
-    /// and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
+    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window, as
+    /// <c>PipeConfirmTests</c> holds, so here it is shown and never run.
     /// </summary>
     [Fact]
     public async Task A_window_route_and_a_module_nobody_classed_are_refused_and_a_person_route_runs_nothing_unconfirmed()
@@ -148,13 +148,13 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        await client.SendAsync(DriverModule.Name, "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+        await client.SendAsync(DriverModule.Name, "DISCARD_SESSION_TREE", new { id = "s1a2b3c4" });
         var window = await client.AnswerAsync(await client.SendAsync("DAORIS.WINDOWS", "OPEN", new { name = "session:s1a2b3c4" }));
         var nobody = await client.AnswerAsync(await client.SendAsync("TEST.ELSEWHERE", "ANYTHING"));
 
         Assert.Equal(InstancePipe.WindowOnly, Code(window));
         Assert.Equal(InstancePipe.Unclassed, Code(nobody));
-        Assert.Equal("LAND_SESSION_TREE", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
+        Assert.Equal("DISCARD_SESSION_TREE", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
         Assert.Equal(0, driver.Ran);
         Assert.Equal(0, windows.Ran);
         Assert.Equal(0, elsewhere.Ran);
@@ -452,7 +452,7 @@ public sealed class InstancePipeTests : Bridge
 
         var routes = answer.GetProperty("data").GetProperty("routes").EnumerateArray().ToList();
         Assert.Equal(Census.Routes.Count, routes.Count);
-        Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"LAND_SESSION_TREE","class":"person"}""");
+        Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"DISCARD_SESSION_TREE","class":"person"}""");
         Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"SESSION_GROUPS","class":"open"}""");
         Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.WINDOWS","class":"window"}""");
     }

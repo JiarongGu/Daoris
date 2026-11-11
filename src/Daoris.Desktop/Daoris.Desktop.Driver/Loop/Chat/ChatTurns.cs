@@ -89,6 +89,13 @@ internal sealed class ChatTurns : IChatTurns
         set => _state.Unsent = value;
     }
 
+    /// <inheritdoc cref="TurnState.Ahead"/>
+    public Func<ChatMessage, ChatMessage>? Ahead
+    {
+        get => _state.Ahead;
+        set => _state.Ahead = value;
+    }
+
     /// <summary>
     /// The record's door for words kept there before this queue took them: a helper's answer, kept by the driver, taken off by
     /// its id once its turn is on the wire, in the same order as the person's words. The first door named stays.

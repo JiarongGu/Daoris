@@ -238,7 +238,7 @@ public static class QuestReviewCommand
     private static string Gate(QuestView quest, string said, QuestSetUpView? shown) => said switch
     {
         ReviewVerdicts.Reviewed =>
-            $"work up to `{Short(shown!.Commit)}` in `{quest.To}` may land: the review's Accept, `daoris tree land <session>`, or "
+            $"work up to `{Short(shown!.Commit)}` in `{quest.To}` may land: the review's Accept, `daoris workflow accept <run> <node>`, or "
             + "the next look where it is accepted automatically. Work added after it waits for its own review.",
         ReviewVerdicts.NotYet =>
             $"it waits for the set-up `#{quest.Id}` shows next, in `{quest.SetUpIn}`.",

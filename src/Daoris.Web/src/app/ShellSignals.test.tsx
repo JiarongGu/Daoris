@@ -425,7 +425,7 @@ describe('the shell push channel (ShellSignals)', () => {
     view.rerender(<QueryClientProvider client={client}><Window showing /></QueryClientProvider>);
     expect(await screen.findByText('lands in next')).toBeInTheDocument();
 
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
   });
 
   /** A notification is a door: clicking it names the session to attend. */

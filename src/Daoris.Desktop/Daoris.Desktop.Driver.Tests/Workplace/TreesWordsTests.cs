@@ -3,10 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each <c>trees</c> press's route answers the verb's own words beside the
-/// page's fields (<c>said</c>), and the verb that becomes a client prints them. Per verb, the text a stand-in's answer is printed
-/// as equals the alone path's, case for case, refusals included: the alone path prints through <see cref="TreesWords"/> too, which
-/// <c>TreesConsoleUsesTheWords</c> holds by reading the console's source.
+/// Each <c>trees</c> press's route answers the verb's own words beside the page's fields (<c>said</c>), and the verb that becomes a
+/// client prints them: the text equals the alone path's, case for case, refusals included, as that path prints through <see cref="TreesWords"/> too.
 /// </summary>
 /// <remarks>Windows only, as the pipe is: each test serves its own stand-in in process, on its own home's name.</remarks>
 public sealed class TreesWordsTests : IAsyncLifetime
@@ -80,7 +78,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     public Task A_refusal_that_preserves_work_is_exit_1_in_the_same_words() =>
         AssertSameAsync(TreesWords.Remove(new TreeRemoval(false, "Not removed: it holds 2 commit(s) no branch of yours holds.")));
 
-    // trees land <session>: LAND_SESSION_TREE, with the plugin's lines beside the loop's output.
+    // A landing's words, with the plugin's lines beside the loop's output.
     [Fact]
     public Task A_landing_is_its_sentence() =>
         AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed on `main`."), []));
@@ -238,20 +236,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
         Assert.Null(TreesWords.TreeNamedForSession(records, "s1a2b3c4"));
     }
 
-    [Fact]
-    public async Task A_landing_the_review_reads_as_landed_says_not_again_on_the_output_exit_1()
-    {
-        var entry = new LandedBranch("engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero));
-        var review = new LandedReview(entry, LandedState.Standing);
-
-        var said = TreesWords.NotAgain("s1a2b3c4", review, treeGone: false);
-
-        Assert.Equal([$"trees: {LandedReviewWords.NotAgain("s1a2b3c4", review, false)}"], said.Out);
-        Assert.Empty(said.Error);
-        Assert.Equal(1, said.Code);
-        await AssertSameAsync(said);
-    }
-
     // The presses that land carry the registry's followed lines (RPC1b5): said after the sentence, as the alone path says them.
     private sealed class EmptyRegistry : HttpMessageHandler
     {
@@ -311,7 +295,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.EntryLand(")]
     [InlineData("TreesWords.EntryNone(")]
     [InlineData("TreesWords.Unlanded(")]
-    [InlineData("TreesWords.NotAgain(")]
     [InlineData("TreesWords.NoTreeToLand(")]
     [InlineData("TreesWords.LandedBeforeAsync(")]
     // The reads' words, which the routes answer as `said` and the verb prints as a client of the running Daoris.
@@ -320,8 +303,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesPlanWords.LandPlanAsync(")]
     [InlineData("TreesPlanWords.LandedPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
-    // The press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
-    [InlineData("TreesWords.AcceptedForPass(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));

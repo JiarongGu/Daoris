@@ -209,7 +209,7 @@ public static class AttentionStateSlice
             [
                 wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake),
                 wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake), wake => HearGitAsks(loop.Home, wake),
-                wake => HearQuiet(SessionWatch.Of(loop.Events), wake),
+                wake => HearQuiet(SessionWatch.Of(loop.Events), wake), wake => AttentionSecondCheckRows.Hear(loop.Home, wake),
             ],
             loop.Log, new HeldCallAnnouncements(bus, () => NotifyRule.Tells(NewsKind.HeldCall, loop.Notifying())));
 
@@ -336,6 +336,7 @@ public static class AttentionStateSlice
             // The parks a supervisor's held or released decision answers for, from the decisions' memory.
             Supervised = loop.Supervisor.Answering(),
             StoppedQuests = StoppedRuns.Quests(loop.Home),
+            SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
         };
     }
 

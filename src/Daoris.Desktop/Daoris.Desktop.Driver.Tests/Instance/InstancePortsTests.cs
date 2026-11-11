@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ports the instance declares and the subdomains above it answer: how a verb's own command reads its lease. Each
-/// subdomain that owns a command installs its answer when the driver's assembly loads, so every verb holds exactly what it always did; a
-/// verb nobody answers is unclassed and holds the lease.
+/// How a verb's own command reads its lease: each subdomain that owns a command installs its answer when the driver's assembly
+/// loads, and a verb nobody answers is unclassed and holds the lease.
 /// </summary>
 public sealed class InstancePortsTests
 {
@@ -129,7 +128,6 @@ public sealed class InstancePortsTests
     {
         (string Mark, string Told, string Text)[] each =
         [
-            (TreesMarks.Land, PressesTold.Land, "LAND_SESSION_TREE"),
             (TreesMarks.DiscardTree, PressesTold.DiscardTree, "DISCARD_SESSION_TREE"),
             (TreesMarks.DiscardBranch, PressesTold.DiscardBranch, "DISCARD_SESSION_BRANCH"),
             (TreesMarks.WithdrawLanding, PressesTold.WithdrawLanding, "WITHDRAW_LANDING_BRANCH"),

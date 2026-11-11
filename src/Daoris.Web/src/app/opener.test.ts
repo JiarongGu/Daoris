@@ -210,15 +210,9 @@ describe('the opener', () => {
   });
 });
 
-// A press's card opens the page its plan is shown on, scoped to the
-// press's own session, repository, workspace, quest or ask.
+// A press's card opens the page its plan is shown on, scoped to the press's own repository, workspace, quest or ask.
 describe("a press's plan door", () => {
   const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
-
-  it("opens a land's session at its review", () => {
-    expect(planOpening({ plan: 'land', session: '3f2a91c4' }, 'forge', holding))
-      .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
-  });
 
   it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {
     expect(planOpening({ plan: 'sweep', workspace: 'studio' }, 'forge', holding))

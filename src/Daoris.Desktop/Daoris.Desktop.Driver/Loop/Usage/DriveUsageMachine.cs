@@ -35,7 +35,7 @@ internal static class DriveUsageMachine
               session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.
           tree list  ·  tree remove <path|session|branch> [--repository <name>] [--force]
           tree remove <landing branch> [--repository <name>] --why "…" [--plan]
-          tree clean [--workspace <name>] [--yes]  ·  tree land <session> [--plan] [--branch <name>]
+          tree clean [--workspace <name>] [--yes]  ·  tree land <session> --plan [--branch <name>]
           tree land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
           tree state [--entries]  ·  tree state <session|branch> [--repository <name>]
           tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]  ·  tree build <path>

@@ -6,8 +6,9 @@ import { type SettingsAnchor, type SettingsSection } from '../../settings/Settin
 import { type Attention } from '../../work/attention/AttentionRow';
 import { type FrameIntent, type View } from '../../menus/commands';
 
-export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings }: {
+export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings, openHelp }: {
   attached: boolean;
+  openHelp?: () => void;
   openInWork: (session: string) => void;
   openAsk: (id: string) => void;
   openQuest: (id: string) => void;
@@ -47,6 +48,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     } : {}),
     // A git go-ahead opens its session, whose head draws it; one no session's marker named has its row alone.
     ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
+    ...(attached && openHelp ? { 'second-check': () => openHelp() } : {}),
     // A go-ahead opens the ask it is asked on, where every go-ahead of it is listed.
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what is required and how its done answered are quoted.

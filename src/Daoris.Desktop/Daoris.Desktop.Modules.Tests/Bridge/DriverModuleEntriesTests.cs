@@ -109,8 +109,8 @@ public sealed class DriverModuleEntriesTests
         new(id, "engine", "completed") { Entry = entry, Created = new DateTimeOffset(2026, 10, 16, 9, minute, 0, TimeSpan.Zero) };
 
     /// <summary>
-    /// A part's own Accept is its entry's for that part alone, so <c>LANDING</c> and
-    /// <c>LAND_SESSION_TREE</c> name its landing for its run's first part in the entry, oldest by its record's <c>created</c> then id.
+    /// A part's own Accept is its entry's for that part alone, so <c>LANDING</c>
+    /// names its landing for its run's first part in the entry, oldest by its record's <c>created</c> then id.
     /// </summary>
     [Fact]
     public async Task A_parts_own_accept_is_named_for_its_entrys_first_part()

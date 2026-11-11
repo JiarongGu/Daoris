@@ -269,7 +269,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         Entries.JoinAsync(path, session, entry, ct, process);
 
     /// <summary>
-    /// What one session's landing is named for, at every door that lands one session: the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
+    /// What one session's landing is named for, at every door that lands one session: the review's <c>LANDING</c> plan and a run's <c>land</c>, the terminal's <c>trees land --plan</c> and the look's
     /// landing at done. A part of an entry with others of its run (<see cref="RunParts.LeadOfAsync"/>) is its entry's Accept for that part alone:
     /// named for the run's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the

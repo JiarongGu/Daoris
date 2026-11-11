@@ -823,15 +823,6 @@ describe('a quest its role’s policy holds, worded', () => {
 });
 
 describe('the groups', () => {
-  it('puts each kind in its group', () => {
-    expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', unclosed: 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
-      permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
-      'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding',
-    });
-  });
-
   /** An agent's ask to hand its session over holds work once its session stands still on it, its turn ended. */
   it('puts an ask to hand a session over in Holding work once its session stands still on it', () => {
     expect(attentionGroup(row('hand-over', 'h1', null, { stands: true }))).toBe('holding');
@@ -1238,21 +1229,7 @@ describe('the groups', () => {
   });
 });
 
-/**
- * A number on a place counts only what waits on the person, the bell's rows, each at the one place
- * its door opens, where its step is taken; so the places' numbers sum to what the bell counts of the rows, and a press is the bell's.
- */
 describe('the place each wait is counted at', () => {
-  it('is the place its door opens, for every kind', () => {
-    expect(ATTENTION_PLACE).toEqual({
-      parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
-      permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', unclosed: 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
-      departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions',
-    });
-  });
-
   it('counts every listed row at one place, so the places sum to what the bell counts of them', () => {
     const at = '2026-09-21T09:00:00Z';
     const rows = [

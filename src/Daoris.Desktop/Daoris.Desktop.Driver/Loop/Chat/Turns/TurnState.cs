@@ -190,11 +190,20 @@ internal sealed class TurnState(Action<ChatQueue> changed)
     }
 
     /// <summary>A word as these turns hand it to the door at its next step: a kept one to be attempted before the wire and taken off once written.</summary>
-    internal ChatMessage Dispatched(ChatMessage message) =>
-        SaidDoor.Dispatched(message, Door, word =>
+    internal ChatMessage Dispatched(ChatMessage message)
+    {
+        var dispatched = SaidDoor.Dispatched(message, Door, word =>
         {
             lock (Gate) TakeOff([word]);
         });
+        if (!message.Theirs || Ahead?.Invoke(dispatched) is not { Told: { } told } ahead) return dispatched;
+        // A steered word is told written by its door's went; a pumped one by its take, which runs its told.
+        var went = dispatched.Went;
+        return ahead with { Went = () => { went?.Invoke(); told(); } };
+    }
+
+    /// <summary>What rides ahead of the person's words at their dispatch, whichever way they go: an Ask Daoris conversation's flags. Null adds nothing.</summary>
+    internal Func<ChatMessage, ChatMessage>? Ahead { get; set; }
 
     /// <summary>
     /// Kept words on their way to the wire, handed back to the person or taken back: off the record by their ids, after

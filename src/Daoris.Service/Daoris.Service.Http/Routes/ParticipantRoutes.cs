@@ -20,7 +20,20 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
         routes.Map<OpenPartner, HelperActionResponse>(OpenPartnerAsync);
         routes.Map<HandPartner, HelperActionResponse>(HandPartnerAsync);
         routes.Map<OpenSupervise, HelperActionResponse>(OpenSuperviseAsync);
+        routes.Map<OpenStepSession, HelperActionResponse>(OpenStepSessionAsync);
     }
+
+    private async Task<Answer<HelperActionResponse>> OpenStepSessionAsync(OpenStepSession request, HttpContext http, CancellationToken ct) =>
+        host.MachineLocal(http)
+            ? await ReplyAsync(
+                await Service.StepSessions.OpenAsync(
+                    new StepSessionOpen(request.Performs ?? "", request.Repository ?? "", request.Workspace, request.Door ?? "")
+                    {
+                        Account = request.Account, DoorVersion = request.DoorVersion,
+                    },
+                    DateTimeOffset.UtcNow, ct),
+                http)
+            : OffMachine;
 
     private async Task<Answer<HelperActionResponse>> OpenSuperviseAsync(OpenSupervise request, HttpContext http, CancellationToken ct) =>
         host.MachineLocal(http)

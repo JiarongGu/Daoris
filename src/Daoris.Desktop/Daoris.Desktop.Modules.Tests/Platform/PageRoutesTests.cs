@@ -44,7 +44,7 @@ public sealed class PageRoutesTests
         var published = Section("export const PUBLISHES", "\n};\n");
 
         Assert.Contains("    'SET_DRIVABLE': { scopes: ['driver'] },", published);
-        Assert.Contains("    'LAND_SESSION_TREE': { scopes: ['sessions', 'landing', 'diff', 'sweep', 'treesSync'], session: 'id' },", published);
+        Assert.Contains("    'DISCARD_SESSION_TREE': { scopes: ['sessions', 'landing', 'diff', 'sweep', 'treesSync'], session: 'id' },", published);
         Assert.Contains("    'LAND_ENTRY': { scopes: ['sessions', 'landing', 'diff', 'sweep', 'treesSync'], subject: 'entry' },", published);
         Assert.DoesNotContain("'STATE':", published);
         foreach (var route in DriverModule.Routes)

@@ -60,7 +60,7 @@ public sealed class QuestReviewCommandTests
             + "  look: http://localhost:4200/reports\n"
             + "  again: open reports\n"
             + "daoris: Reviewed set-up step `#q2` in `local` at `01234567`: what its review held goes on.\n"
-            + "daoris: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris tree land <session>`, "
+            + "daoris: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris workflow accept <run> <node>`, "
             + "or the next look where it is accepted automatically. Work added after it waits for its own review.\n",
             output.ToString().ReplaceLineEndings("\n"));
         var (path, body) = heard.Single(each => each.Path.EndsWith("/review", StringComparison.Ordinal));

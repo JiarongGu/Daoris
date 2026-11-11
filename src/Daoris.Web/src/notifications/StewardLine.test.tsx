@@ -18,7 +18,7 @@ vi.mock('@shenora/react', async () => ({
 
 import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
-import type { DeskRequestNow, RoleHoldNow, StandingConfirmationNow, StewardActNow, StewardLandNow } from '../person/standing';
+import type { DeskRequestNow, RoleHoldNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
 import { NotificationsStanding } from './NotificationsStanding';
 import { StewardLine } from './StewardLine';
 
@@ -38,10 +38,8 @@ const ACTS: StewardActNow[] = [
   act('a1', 'drive', '2026-10-25T10:01:00Z', { repository: 'engine' }),
 ];
 const STANDING: StandingConfirmationNow = {
-  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [], stewardLands: [], helpPresses: [],
+  holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [], helpPresses: [],
 };
-/** A landing a supervisor allowed, waiting its window. */
-const LAND: StewardLandNow = { ask: 'k1', act: 'land', repository: null, quest: null, session: 's9', landsAt: '2026-10-25T10:20:00Z' };
 /** The steward's desk this run, newest first: one waiting, one declined with a reason, one answered by an act. */
 const DESK: DeskRequestNow[] = [
   {
@@ -116,19 +114,19 @@ describe("Notifications' steward line", () => {
     expect(document.querySelector('[data-steward-act]')?.textContent).toBe('选择了工作流：');
   });
 
-  it("STEWARDROLE1d says a quest's pause, an update and a tree's land by the steward in English and Chinese, with no reverse press", async () => {
+  it("STEWARDROLE1d says a quest's pause, an update and a tree's clean by the steward in English and Chinese, with no reverse press", async () => {
     const did = {
       ...STANDING,
       stewardActs: [
         act('b1', 'pause', '2026-10-25T10:10:00Z', { quest: 'q1' }),
         act('b2', 'updatenow', '2026-10-25T10:11:00Z', {}),
-        act('b3', 'land', '2026-10-25T10:12:00Z', { quest: 'q1', session: 's1' }),
+        act('b3', 'clean', '2026-10-25T10:12:00Z', { quest: 'q1', session: 's1' }),
       ],
     };
     const { unmount } = render(<StewardLine standing={did} onReverse={vi.fn()} />);
     await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
     expect(acts().map((row) => row.querySelector('[data-steward-act]')?.textContent)).toEqual([
-      'Paused', 'Installed the staged update', 'Landed the tree of',
+      'Paused', 'Installed the staged update', 'Cleaned the tree of',
     ]);
     for (const row of acts()) expect(within(row).queryByRole('button')).toBeNull();
     unmount();
@@ -136,7 +134,7 @@ describe("Notifications' steward line", () => {
     await i18n.changeLanguage('zh');
     render(<StewardLine standing={did} onReverse={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: '显示管家的操作' }));
-    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '让工作树落地了：']);
+    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '清理了工作树：']);
   });
 
   it("says a session the steward handed over in English and Chinese, with no reverse press: the owner hands back with their own", async () => {
@@ -187,7 +185,6 @@ describe("Notifications' steward line", () => {
     expect(region.getAllByText('管家代你')).toHaveLength(8);
     expect(region.getByRole('button', { name: '停止驱动' })).toBeInTheDocument();
     expect(region.getAllByRole('button', { name: '重试' })).toHaveLength(2);
-    // The turn-off is the role's, not the line's (as the English line's).
     expect(region.queryByRole('button', { name: '停用' })).toBeNull();
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|\{\{|undefined/);
   });
@@ -285,44 +282,19 @@ describe("Notifications' steward line", () => {
   });
 
   it.each([
-    ['en', 'A supervisor allowed it', /^A supervisor allowed the steward to land session s9; it lands at .+\.$/, 'Overrule the landing of session s9'],
-    ['zh', '由主管允许', /^主管已允许管家落地 会话 s9；将于 .+ 落地。$/, '否决 会话 s9 的落地'],
-  ])('says which act a supervisor allowed and offers Overrule on an allowed landing waiting its window (%s)', async (language, mark, says, overrule) => {
+    ['en', 'A supervisor allowed it'],
+    ['zh', '由主管允许'],
+  ])('says which act a supervisor allowed (%s)', async (language, mark) => {
     await i18n.changeLanguage(language);
-    const onOverrule = vi.fn();
     render(
       <StewardLine
-        standing={{ ...STANDING, stewardActs: [act('a9', 'delete', '2026-10-25T10:09:00Z', { quest: 'q4', allowed: true }), ...ACTS], stewardLands: [LAND] }}
-        onReverse={vi.fn()} onOverrule={onOverrule}
+        standing={{ ...STANDING, stewardActs: [act('a9', 'delete', '2026-10-25T10:09:00Z', { quest: 'q4', allowed: true }), ...ACTS] }}
+        onReverse={vi.fn()}
       />);
 
     await userEvent.click(screen.getAllByRole('button').find((each) => each.getAttribute('aria-expanded') === 'false')!);
     const marked = within(screen.getByRole('list', { name: language === 'en' ? "The steward's acts" : '管家的操作' })).getAllByText(mark);
     expect(marked).toHaveLength(1);
-    expect(screen.getByText(says)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: overrule }));
-    expect(onOverrule).toHaveBeenCalledExactlyOnceWith(LAND);
-  });
-
-  it('draws the landing a supervisor allowed even where the steward made no act, and no Overrule where nothing can press it', () => {
-    render(<StewardLine standing={{ ...STANDING, holds: [], stewardActs: [], stewardLands: [LAND] }} onReverse={vi.fn()} />);
-    expect(screen.getByText(/^A supervisor allowed the steward to land session s9; it lands at .+\.$/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Overrule/ })).toBeNull();
-  });
-
-  it('sends the Overrule of an allowed landing with its request and its session, and says so when the window had closed', async () => {
-    const state = { drivable: [], holds: [], trees: [], running: [], standingConfirmation: { ...STANDING, stewardLands: [LAND] } };
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'STEWARD_LAND_OVERRULE' ? { done: false } : state));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} onOpenHelp={() => {}} />
-      </QueryClientProvider>);
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Overrule the landing of session s9' }));
-
-    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STEWARD_LAND_OVERRULE', { payload: { ask: 'k1', session: 's9' } }));
-    expect(await screen.findByText('It already landed or was withdrawn, so it cannot be overruled.')).toBeInTheDocument();
   });
 
   it('sends Resume for a standing hold', async () => {

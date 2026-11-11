@@ -30,6 +30,8 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
 
     public RunReviewNewer? Newer { get; init; }
 
+    public RunReviewSupervisor? Supervisor { get; init; }
+
     /// <summary>The steps an Accept may start, in the graph's order, each as it stands.</summary>
     public IReadOnlyList<RunReviewStep> Follows { get; init; } = [];
 
@@ -56,7 +58,7 @@ public sealed record RunReviewStep(string Node, string Kind, string State)
 
     public string? On { get; init; }
 
-    /// <summary>The outcome it was reached with, and what it reached: a pull request's address, a landed branch, a release's evidence.</summary>
+    /// <summary>The outcome reached, and what it reached: a pull request's address, a landed branch, a release's evidence.</summary>
     public string? Outcome { get; init; }
 
     public string? Door { get; init; }

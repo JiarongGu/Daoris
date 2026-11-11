@@ -20,7 +20,7 @@ import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'src/report/compare.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1,2 @@\n-a\n+b' }];
 const DIFF = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: null, files: FILES, source: 'tree' };
-const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-gap', source: 'workspace' };
+const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-gap', source: 'workspace', accept: { run: 'q1', node: 'review' } };
 
 function answer(plan: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {

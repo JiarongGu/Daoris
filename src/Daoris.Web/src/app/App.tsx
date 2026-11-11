@@ -124,8 +124,7 @@ export function App() {
   useLayoutEffect(() => pageShows(view), [view]);
 
   // Whether the view in front has a list pane, whose four doors — the strip's toggle, the View
-  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
-  // keeps a view's list too; Sessions, the one view that needs a shell, is never in front there.
+  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
   const listed = isListed(view);
 
   // A region toggled: the side bar and the panel are the frame's on every view, and
@@ -178,7 +177,7 @@ export function App() {
     onClose: () => closings.setDock(true),
     onGo: go,
   };
-  const { attentionDoors } = useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings });
+  const { attentionDoors } = useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings, openHelp });
   const { renderView, contextDoors } = useViewLayouts({ notify, settingsSection, chooseSettings, settingsAnchor, setSettingsAnchor, settingsGitHost, setSettingsGitHost, go, attached, askSetup, driving, openInWork, plugins, quests, projects, knowledge, agents, t, openings, setSearchAsked, open, askQuickly, openBrowser, copyText, view, openQuest, presses, showNotifications, onRefresh, refresh, mapCode });
 
   return (
@@ -396,13 +395,8 @@ export function App() {
                   update={attached ? update.data : undefined}
                   onSayUpdate={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
                   names={pressNames}
-                  // A press's door to its plan: the plan's own page, scoped as the press is; a land's at its review.
-                  onOpenPlan={(door) => {
-                    const plan = planOpening(door, circle, (repository) =>
-                      holdings.data?.find((each) => each.members.includes(repository))?.name ?? null);
-                    apply(plan.opening);
-                    if (plan.review) setWorkIntent('review');
-                  }}
+                  onOpenPlan={(door) => apply(planOpening(door, circle, (repository) =>
+                    holdings.data?.find((each) => each.members.includes(repository))?.name ?? null).opening)}
                   at={notificationsAt}
                   onVisible={setNotificationsOpen}
                   notices={notices}

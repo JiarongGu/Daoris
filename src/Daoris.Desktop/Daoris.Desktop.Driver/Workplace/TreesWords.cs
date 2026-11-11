@@ -42,20 +42,6 @@ public static class TreesWords
         new([.. pluginLines, $"trees: {landed.Message}"], [],
             landed.Landed ? 0 : 1);
 
-    /// <summary>
-    /// <c>trees land &lt;session&gt;</c> with no running Daoris: the verb never lands. For a run
-    /// whose <c>land</c> the runtime performs, the review's word is kept under the verb's lease (<see cref="VerbLeases"/>), exit 0 once kept;
-    /// what holds the work, or why no run's land lands it (<see cref="RunLandHolds"/>), is said as a press says it, exit 1.
-    /// </summary>
-    public static TreesSaid AcceptedForPass(string home, IWorkplaceGate gate)
-    {
-        if (gate.Process is not { LandsByRuntime: true } process || gate.Refusal is not null) return Land(RunLandHolds.Of(gate), []);
-        var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, process, DateTimeOffset.UtcNow);
-        return word.HasReview && !word.Kept && word.Said is { } refused
-            ? new([$"trees: {refused}"], [], 1)
-            : new(["trees: accepted; Daoris lands it at its next pass."], [], 0);
-    }
-
     /// <summary>The sentence for a branch name that stands in more than one repository, so the person says which.</summary>
     public static string NamesSeveral(string named, IEnumerable<string> repositories) =>
         $"`{named}` names a landed branch in {string.Join(", ", repositories.Select(r => $"`{r}`"))} — say which with `--repository <name>`.";
@@ -148,13 +134,6 @@ public static class TreesWords
 
     /// <summary>A look or a press that took no checkout, or a workspace the registry does not name: a sentence on the error, exit 1.</summary>
     public static TreesSaid Refused(string sentence) => new([], [sentence], 1);
-
-    /// <summary>
-    /// A landing the review already reads as landed: <c>trees land</c> says why nothing is landed again, on its output,
-    /// exit 1, and the route that answers the press says the same.
-    /// </summary>
-    public static TreesSaid NotAgain(string session, LandedReview review, bool treeGone) =>
-        new([$"trees: {LandedReviewWords.NotAgain(session, review, treeGone)}"], [], 1);
 
     /// <summary>
     /// The session's press, its plan and the terminal's verb on a partner's record: <see cref="PieceLandings.Refusal"/>'s sentence on the

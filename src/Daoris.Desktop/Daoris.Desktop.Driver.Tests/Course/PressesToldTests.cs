@@ -36,7 +36,7 @@ public sealed class PressesToldTests : IDisposable
     {
         var presses = new PressesTold(_home);
         Assert.True(presses.Tell(new PressTold(PressesTold.Sweep, null, Now.AddSeconds(-2))));
-        Assert.True(presses.Tell(new PressTold(PressesTold.Land, "s1a2b3c4", Now.AddSeconds(-5))));
+        Assert.True(presses.Tell(new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now.AddSeconds(-5))));
         var heard = new List<PressTold>();
         await using var watch = Hearing(heard);
 
@@ -44,7 +44,7 @@ public sealed class PressesToldTests : IDisposable
         Assert.Empty(watch.Hear());
 
         Assert.Equal(
-            [new PressTold(PressesTold.Land, "s1a2b3c4", Now.AddSeconds(-5)), new PressTold(PressesTold.Sweep, null, Now.AddSeconds(-2))],
+            [new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now.AddSeconds(-5)), new PressTold(PressesTold.Sweep, null, Now.AddSeconds(-2))],
             heard);
         Assert.Empty(Told());
     }
@@ -53,7 +53,7 @@ public sealed class PressesToldTests : IDisposable
     public async Task A_loop_that_hears_none_leaves_them_for_one_that_does_and_drops_one_nobody_took_in_time()
     {
         var presses = new PressesTold(_home);
-        presses.Tell(new PressTold(PressesTold.Land, "s1a2b3c4", Now.AddSeconds(-5)));
+        presses.Tell(new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now.AddSeconds(-5)));
         presses.Tell(new PressTold(PressesTold.Sweep, null, Now - PressesTold.Lifetime - TimeSpan.FromSeconds(1)));
         await using var headless = Deaf();
 
@@ -64,13 +64,13 @@ public sealed class PressesToldTests : IDisposable
         var heard = new List<PressTold>();
         await using var shell = Hearing(heard);
         shell.Hear();
-        Assert.Equal([new PressTold(PressesTold.Land, "s1a2b3c4", Now.AddSeconds(-5))], heard);
+        Assert.Equal([new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now.AddSeconds(-5))], heard);
     }
 
     [Fact]
     public async Task One_told_long_ago_is_dropped_unheard_by_the_loop_that_hears_them()
     {
-        new PressesTold(_home).Tell(new PressTold(PressesTold.Land, "s1a2b3c4", Now.AddMinutes(-2)));
+        new PressesTold(_home).Tell(new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now.AddMinutes(-2)));
         var heard = new List<PressTold>();
         await using var watch = Hearing(heard);
 
@@ -104,14 +104,14 @@ public sealed class PressesToldTests : IDisposable
         File.WriteAllText(Path.Combine(Folder, "a1b2c3d4e5f6" + PressesTold.Suffix), "not json");
         File.WriteAllText(Path.Combine(Folder, "b1b2c3d4e5f6" + PressesTold.Suffix), """{"session":"s1"}""");
         File.WriteAllText(Path.Combine(Folder, "c1b2c3d4e5f6" + PressesTold.Suffix),
-            """{"route":"LAND_SESSION_TREE","session":"../../somewhere","at":"2026-10-16T08:59:59Z"}""");
+            """{"route":"DISCARD_SESSION_TREE","session":"../../somewhere","at":"2026-10-16T08:59:59Z"}""");
         var heard = new List<PressTold>();
         await using var watch = Hearing(heard);
 
         watch.Hear();
 
         // Read without the path a session cannot be: the change is about any session, never a path on the wire.
-        Assert.Equal([new PressTold(PressesTold.Land, null, Now.AddSeconds(-1))], heard);
+        Assert.Equal([new PressTold(PressesTold.DiscardTree, null, Now.AddSeconds(-1))], heard);
         Assert.Empty(Told());
     }
 
@@ -135,6 +135,6 @@ public sealed class PressesToldTests : IDisposable
         var file = Path.Combine(_home, "a-file");
         File.WriteAllText(file, "");
 
-        Assert.False(new PressesTold(file).Tell(new PressTold(PressesTold.Land, "s1a2b3c4", Now)));
+        Assert.False(new PressesTold(file).Tell(new PressTold(PressesTold.DiscardTree, "s1a2b3c4", Now)));
     }
 }

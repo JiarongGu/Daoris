@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// A press under way is the window's and the driver's, never the one component's that pressed. The
-// review's *Accept* reads *Landing…* while its session's landing runs, after a tab switch remounted it and where another window
-// pressed it; so too its *Discard* and its hand-off.
+// A press under way is the window's, never the one component's that pressed. The review's *Accept* is the review record's word
+// (`WORKFLOW_NODE`'s `accept`), and it says it waits for the pass that lands it after a tab switch remounted it; a part's Accept holds
+// while its line of work's or its ask's landing runs, and its *Discard* while another window discards its tree.
 
 const { invoke, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -29,19 +29,20 @@ import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'notes.txt', status: 'added', added: 1, removed: 0, patch: '@@ -0,0 +1 @@\n+notes' }];
 const DIFF = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: null, files: FILES, source: 'tree' };
-const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-gap', source: 'workspace' };
-const LANDED = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/0fda18-fix-the-gap` — 1 commit(s).' };
+const ACCEPT = { run: 'q1', node: 'review', attempt: 2, revision: 'feedc0de' };
+const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-gap', source: 'workspace', accept: ACCEPT };
+const ACCEPTED = { run: 'q1', node: 'review', act: 'accept', done: true, message: 'put its work on `feature/0fda18-fix-the-gap`.' };
 
-/** The routes the review reads; a landing answers only when the test lets it. */
+/** The routes the review reads; an Accept answers only when the test lets it. */
 function answer() {
-  let land: (value: unknown) => void = () => {};
+  let accepted: (value: unknown) => void = () => {};
   invoke.mockImplementation((_module: string, type: string) => {
     if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
     if (type === 'LANDING') return Promise.resolve(PLAN);
-    if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { land = resolve; });
+    if (type === 'WORKFLOW_NODE') return new Promise((resolve) => { accepted = resolve; });
     return Promise.resolve({});
   });
-  return { land: (value: unknown) => land(value) };
+  return { accept: (value: unknown) => accepted(value) };
 }
 
 function Hub() {
@@ -72,88 +73,38 @@ describe('a press under way, in the review', () => {
     eventHandlers.clear();
   });
 
-  it('still says Landing… once a tab switch remounted it mid-press, and Accept again once the landing answered', async () => {
+  it('presses the record drawn, still waits once a tab switch remounted it mid-press, and offers Accept again once it answered', async () => {
     const pressed = answer();
     const { show } = root();
     await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
-    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Awaiting its pass…' })).toBeDisabled();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE',
+      expect.objectContaining({ payload: { run: 'q1', node: 'review', act: 'accept', attempt: 2, revision: 'feedc0de' } }));
 
     show(false);
-    expect(screen.queryByRole('button', { name: 'Landing…' })).toBeNull();
     show(true);
 
-    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Awaiting its pass…' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
 
-    await act(async () => pressed.land(LANDED));
+    await act(async () => pressed.accept(ACCEPTED));
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
   });
 
-  it('says Landing… while another window’s landing of its session is under way, and nothing for another session’s', async () => {
-    answer();
-    root();
-    await screen.findByRole('button', { name: 'Accept' });
-
-    told({ seq: 1, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface' }] });
-    await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
-    expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
-
-    told({ seq: 2, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface' }, { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' }] });
-    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
-
-    told({ seq: 3, presses: [] });
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
-    // Nothing is pressed here: the press is the other window's.
-    expect(invoke.mock.calls.filter(([, type]) => type === 'LAND_SESSION_TREE')).toHaveLength(0);
-  });
-
-  /** The driver says the landing is at its gate, and the review's press says so, then *Landing…* once it moves on. */
-  it('says Checking… while the driver says the landing is at its gate, and Landing… once it has moved on', async () => {
-    answer();
-    root();
-    await screen.findByRole('button', { name: 'Accept' });
-    const landing = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
-
-    told({ seq: 1, presses: [{ ...landing, step: 'gate' }] });
-    expect(await screen.findByRole('button', { name: 'Checking…' })).toBeDisabled();
-
-    told({ seq: 2, presses: [{ ...landing, step: 'landing' }] });
-    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
-
-    // A step the page has no word for is the plain *Landing…*, and the press's end puts Accept back.
-    told({ seq: 3, presses: [{ ...landing, step: 'replaying' }] });
-    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
-    told({ seq: 4, presses: [] });
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
-  });
-
-  /**
-   * An Accept whose landing the runtime performs waits for the pass that lands it, never behind a tree's hold: the button
-   * and the note beside it say so and say the pass's bound, in the page's language. Another session's wait is not this one's.
-   */
+  /** An Accept waits for the pass that lands it, never behind a tree's hold: the button and the note say so and the pass's bound. */
   it.each([
-    ['en', 'Awaiting its pass…', 'Landing…', /Accepted\. Daoris lands it at its next pass\. This waits up to 20 seconds/],
-    ['zh', '等待落地…', '落地中…', /Daoris 会在它的下一轮检查时落地它；这里最多等待 20 秒/],
-  ])('says it waits for the pass that lands it and for how long, in %s', async (language, waiting, landing, note) => {
+    ['en', 'Accept', 'Awaiting its pass…', /Accepted\. Daoris lands it at its next pass\. This waits up to 20 seconds/],
+    ['zh', '采纳', '等待落地…', /Daoris 会在它的下一轮检查时落地它；这里最多等待 20 秒/],
+  ])('says it waits for the pass that lands it and for how long, in %s', async (language, accept, waiting, note) => {
     await i18n.changeLanguage(language);
     try {
       answer();
       root();
-      await screen.findByRole('button', { name: language === 'en' ? 'Accept' : '采纳' });
-      const press = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
-
-      told({ seq: 1, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface', step: 'pass' }] });
-      await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
-      expect(screen.queryByRole('button', { name: waiting })).toBeNull();
       expect(screen.queryByText(note)).toBeNull();
+      await userEvent.click(await screen.findByRole('button', { name: accept }));
 
-      told({ seq: 2, presses: [{ ...press, step: 'pass' }] });
       expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
       expect(screen.getByText(note)).toBeInTheDocument();
-
-      told({ seq: 3, presses: [{ ...press, step: 'landing' }] });
-      expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
-      expect(screen.queryByText(note)).toBeNull();
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -181,7 +132,7 @@ describe('a press under way, in the review', () => {
     expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
     told({ seq: 5, presses: [] });
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
-    expect(invoke.mock.calls.filter(([, type]) => type === 'LAND_SESSION_TREE')).toHaveLength(0);
+    expect(invoke.mock.calls.filter(([, type]) => type === 'WORKFLOW_NODE')).toHaveLength(0);
   });
 
   it('holds its Discard while another window discards its tree', async () => {
@@ -193,5 +144,17 @@ describe('a press under way, in the review', () => {
     told({ seq: 1, presses: [{ route: 'DISCARD_SESSION_TREE', session: 's1a2b3c4' }] });
 
     await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Discard tree' })).toBeDisabled());
+  });
+
+  it('offers no Accept where the run holds no review to accept', async () => {
+    invoke.mockImplementation((_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
+      if (type === 'LANDING') return Promise.resolve({ ...PLAN, accept: null });
+      return Promise.resolve({});
+    });
+    root();
+    await screen.findByRole('button', { name: 'Discard tree' });
+
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ const PRESSES: HelpPressNow[] = [
   press('h2', 'SET_HOLD', { target: 'engine', at: '2026-11-10T10:02:00Z', outcome: 'failed' }),
   press('h1', 'WORK_PAUSE', { scope: 'quest', target: 'q1' }),
 ];
-const STANDING: StandingConfirmationNow = { holds: [], holders: [], stewardActs: [], stewardDesk: [], stewardLands: [], helpPresses: PRESSES };
+const STANDING: StandingConfirmationNow = { holds: [], holders: [], stewardActs: [], stewardDesk: [], helpPresses: PRESSES };
 
 const group = () => within(screen.getByRole('region', { name: 'What was pressed for you' }));
 const rows = () => within(screen.getByRole('list', { name: 'Presses Ask Daoris made' })).getAllByRole('listitem');

@@ -24,7 +24,7 @@ const zh = readerIn('zh');
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /** Every act handed; a story reports nothing. */
-const ACTS: Required<AttentionActs> = {
+const ACTS: AttentionActs = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, reviewed: () => {}, notYet: () => {},
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},

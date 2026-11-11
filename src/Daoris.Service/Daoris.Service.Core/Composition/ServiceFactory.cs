@@ -198,6 +198,9 @@ public sealed record ComposedService(
     /// <summary>A supervisor's turn's record: a local host's door; a shared host's refuses.</summary>
     public SuperviseDesk Supervising { get; init; } = null!;
 
+    /// <summary>The record of the session that performs a plugin's step: a local host's door; a shared host's refuses.</summary>
+    public StepSessionDesk StepSessions { get; init; } = null!;
+
     /// <summary>An ask's channel: the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
@@ -438,6 +441,7 @@ public static class ServiceFactory
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
             Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
             Supervising = new SuperviseDesk(sessions, local: mode == ServiceMode.Local),
+            StepSessions = new StepSessionDesk(sessions, local: mode == ServiceMode.Local),
         };
     }
 

@@ -44,7 +44,7 @@ public static class SessionAnswers
         TookQuest: loopback ? s.TookQuest : null,
         Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
         Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
-        Work: loopback ? ParticipantWork.Of(s) : null, Decides: loopback ? s.Decides : null,
+        Work: loopback ? ParticipantWork.Of(s) : null, Decides: loopback ? s.Decides : null, Performs: loopback ? s.Performs : null,
         HoldsPlace: loopback ? s.HoldsPlace : null);
 
     public static SaidWordResponse ToSaid(SaidWord word) =>

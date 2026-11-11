@@ -62,6 +62,7 @@
   "work.identity.helper": "Helper",
   "work.identity.partner": "Partner",
   "work.identity.supervise": "Supervisor's decision",
+  "work.identity.step": "Workflow step",
   "work.kind.driven": "driven",
   "work.kind.chat": "chat",
   "work.group.held": "held",

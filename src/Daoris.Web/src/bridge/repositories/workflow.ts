@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
@@ -140,6 +140,8 @@ export const useVerify = () => useMutation({
  * the refusal's code and the driver's sentence, never thrown; the run's view is asked again by the state hub under the driver's key.
  */
 export const useRunNodeWord = () => useMutation({
+  // Keyed by its route, so every view reads an Accept under way, a review remounted mid-press too.
+  mutationKey: ['WORKFLOW_NODE'],
   mutationFn: async (ask: NodeWordAsk): Promise<NodeWordAnswer> => {
     const answer = (await call('WORKFLOW_NODE', nodeWordPayload(ask), ask.act === 'accept' ? { timeoutMs: pressBound(1) } : undefined)) as Partial<NodeWordAnswer> | null;
     return {
@@ -149,6 +151,15 @@ export const useRunNodeWord = () => useMutation({
     };
   },
 });
+
+/** Whether this window's Accept of `run`'s review is under way, read alike by every view of the run. */
+export const useAcceptUnderWay = (run: string | null) => useIsMutating({
+  mutationKey: ['WORKFLOW_NODE'],
+  predicate: (mutation) => {
+    const asked = mutation.state.variables as NodeWordAsk | undefined;
+    return run !== null && asked?.run === run && asked.act === 'accept';
+  },
+}) > 0;
 
 /** What `WORKFLOW_NODE` is sent for a word: only the fields given, so a skip or a stop sends what it always sent. */
 export const nodeWordPayload = ({ run, node, act, words, attempt, revision, answers, unchecked, part, whole }: NodeWordAsk) => ({

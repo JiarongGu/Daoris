@@ -41,9 +41,9 @@ public sealed class StepAgentPerformTests : IDisposable
 
         public List<string> Stopped { get; } = [];
 
-        public Task RunAsync(StepAgentAsk ask, ServerEntry tools, CancellationToken ct)
+        public Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, CancellationToken ct)
         {
-            Ran.Add((ask, tools));
+            Ran.Add((ask, tools("s-step")));
             if (Answer is { } answer) Assert.Null(StepAnswer.Answer(home, ask, JsonDocument.Parse(answer).RootElement.Clone()));
             return Task.CompletedTask;
         }
@@ -79,12 +79,12 @@ public sealed class StepAgentPerformTests : IDisposable
 
     private NodeRecordFiles Files => new(_home, () => true);
 
-    private StepAgents Agents() => new(_home, _sessions, (unit, attempt, node) => new StepAgentAsk(
+    private StepAgents Agents() => new(_home, _sessions, (unit, attempt, node, _) => Task.FromResult<StepAgentAsk?>(new StepAgentAsk(
         attempt.Call.Invocation, unit, node.Id, attempt.Attempt, Plugin, "open", node.Goal!.AsWritten, "engine", "games", "feature/x",
         "https://tickets.example/acme/engine.git", "main", attempt.Call.SubjectRevision)
     {
         Outcomes = node.Outcomes, Evidence = node.Evidence,
-    }, program: "daoris-driver");
+    }), program: "daoris-driver");
 
     private WorkPerformer Performer(StepAgents? agents) =>
         new(Files, _plugins, () => _now) { Doors = agents is null ? NodeDoors.None : NodeDoors.None.With(StepAgents.Door, agents) };
@@ -123,7 +123,8 @@ public sealed class StepAgentPerformTests : IDisposable
         Assert.Equal("Open the ticket for the pushed branch.", ask.Goal);
         Assert.Contains("step_answer", ask.Prompt());
         Assert.Equal(PluginToolsServer.Name, tools.Name);
-        Assert.Equal([Plugin, attempt.Call.Invocation], [tools.Arguments[tools.Arguments.ToList().IndexOf("--plugin") + 1], tools.Arguments[tools.Arguments.ToList().IndexOf("--step") + 1]]);
+        string Word(string name) => tools.Arguments[tools.Arguments.ToList().IndexOf(name) + 1];
+        Assert.Equal([Plugin, attempt.Call.Invocation, "s-step"], [Word("--plugin"), Word("--step"), Word("--session")]);
 
         await performer.ReconcileAsync(Declared, CancellationToken.None);
         var status = Status();

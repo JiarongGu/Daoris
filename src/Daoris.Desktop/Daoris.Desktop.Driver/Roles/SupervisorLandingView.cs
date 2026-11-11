@@ -13,6 +13,13 @@ public sealed record SupervisorLandingView(
 {
     public SupervisorSubject Subject => SupervisorSubject.Landing(Session, Run, Node, Attempt);
 
+    public string? Revision { get; init; }
+
+    /// <summary>An Accept's kind of work (<see cref="ReviewKinds"/>), as its attempt's review record holds it, which the card's sentence is worded by.</summary>
+    public string? Work { get; init; }
+
+    internal SupervisorLandingView Over(SupervisorLandingDecision live) => this with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false };
+
     /// <summary>A landing decision read from its file and state lines (<see cref="SupervisorLandings"/> writes both), or null where the file is not one.</summary>
     internal static SupervisorLandingView? Read(SupervisorDecisionFiles files, string session, string id)
     {
@@ -39,7 +46,11 @@ public sealed record SupervisorLandingView(
             }
 
             return new SupervisorLandingView(
-                id, session, run, node, attempt, act, SupervisorHolders.Read(root), kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why, Earlier: true);
+                id, session, run, node, attempt, act, SupervisorHolders.Read(root), kept, Moments.Read(root, "goesOnAt") ?? kept, state, at, why, Earlier: true)
+            {
+                Revision = Json.Text(landing, "revision"),
+                Work = act == SupervisorLandingActs.Accept ? ReviewRecords.Read(files.Home, run, node, attempt)?.Kind : null,
+            };
         }
         catch (JsonException)
         {

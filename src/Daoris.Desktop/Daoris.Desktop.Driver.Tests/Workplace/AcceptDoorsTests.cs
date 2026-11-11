@@ -8,21 +8,21 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AcceptDoorsTests
 {
     [Fact]
-    public void No_accept_door_lands_in_place_and_the_terminal_keeps_the_word_for_the_pass()
+    public void No_accept_door_lands_in_place_and_the_terminal_presses_nothing()
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesLandDesk.cs"));
-        var chat = File.ReadAllText(SourceFiles.Driver("ChatLandCommand.cs"));
+        var chat = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "ChatAccepts.cs"));
 
         foreach (var door in new[] { console, route, chat })
         {
             Assert.DoesNotContain(".LandAsync(tree, subject", door);
             Assert.DoesNotContain("quests.PressedAsync(", door);
-            Assert.Contains("RunLandHolds.Of(gate)", door == console ? File.ReadAllText(SourceFiles.Driver("TreesWords.cs")) : door);
         }
 
-        Assert.Contains("TreesWords.AcceptedForPass(home, gate)", console);
-        Assert.Contains("TreesWords.AcceptedForPass(world.Home, gate)", chat);
+        Assert.Contains("RunLandHolds.Of(gate)", chat);
+        Assert.Contains("daoris workflow accept <run>", console);
+        Assert.DoesNotContain("KeepReviewWord(", console);
     }
 
     private static string SourceRoot()

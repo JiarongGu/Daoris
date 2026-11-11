@@ -41,7 +41,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorCourses`, `ReferredPoint`, `ReferredPoints`, `SupervisorCourseView`, `SupervisePointPrint` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoint.cs`, `WorkOrders/ReferredPoints.cs` (it reads Course's go-on marks and the planner's considerations), `Roles/SupervisorCourseView.cs`, `Roles/SupervisePointPrint.cs` | A `refer` point's course decision kept, held, released or overruled; the open point (answers alone's mark, or a quest's parked or asking verdict), the line's earlier points (`Passed`) and its release door; the decision read back from memory and its files (`SupervisorReads.CoursesOf`); the holder's print of a point. A quest's go-on is released by `CourseReleaseLook` (`Loop/Look/`) |
 | `SupervisorDecisionDoor`, `ISupervisorKind`, `QuestionKind`, `CourseKind`, `SupervisedParks`, `SupervisorSubject`, `SupervisorDecideForm`, `SupervisorLeaveForm` | `Modules/Bridge/SupervisorDecisionDoor.cs`, `Modules/Bridge/SupervisorKinds/`, `Modules/Bridge/Routes/SupervisorDecisionRoutes.cs`, `Roles/SupervisorSubject.cs`, `Roles/SupervisorDecisionForms.cs` | The supervisor's one decision door: `SUPERVISOR_DECIDE`, `SUPERVISOR_LEAVE` and `SUPERVISOR_WAITING`; each kind one row with its waiting subjects, its keeping and so its release; the question kind's park read; the typed subject per kind; the two exact forms the proof is over |
-| `SupervisorAllows`, `SupervisorAllowView`, `StewardAllows`, `StewardLandRoutes`, `SupervisorAllowCard` | `Roles/SupervisorAllows.cs`, `Roles/SupervisorAllowView.cs`, `Modules/Platform/StewardAllows.cs`, `Modules/Bridge/Routes/StewardLandRoutes.cs`, `Web/work/head/SupervisorAllowCard.tsx` | The allow decisions kept, moved and read back as `SESSION_SUPERVISOR`'s `allows`; the steward's request waiting for the allow supervisor and its allowed `land` in its window with the person's *Overrule* |
+| `SupervisorAllows`, `SupervisorAllowView`, `StewardAllows`, `SupervisorAllowCard` | `Roles/SupervisorAllows.cs`, `Roles/SupervisorAllowView.cs`, `Modules/Platform/StewardAllows.cs`, `Web/work/head/SupervisorAllowCard.tsx` | The allow decisions kept and read back as `SESSION_SUPERVISOR`'s `allows`; the steward's request waiting for the allow supervisor |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads`, `SupervisorAttempts` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state; an agent supervisor's attempts beside the decisions |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/HolderKey.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key and the role terminal's verbs; the proof |
 | `KeyedProof`, `DelegateKey`, `SessionDelegates`, `DelegateProof`, `PipeDelegate` | `Platform/KeyedProof.cs`, `Platform/DelegateKey.cs`, `Agents/SessionDelegates.cs`, `Instance/DelegateProof.cs`, `Modules/Platform/PipeDelegate.cs` | The key and the HMAC proof the holder and a session share (`KeyedProof`, which `HolderKey` and `SupervisorProof` call); the key every session's start is handed (`DAORIS_DELEGATE_KEY`) and its verb takes; the hashes kept by session; the proof over a press's route, payload and key; the pipe's tier for a proved press |
@@ -384,32 +384,35 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     on a review it reads the review record's facts on every kind alike (`LandingReviewFacts`: the work's kind, the revision, the rows with
     their marks, what was not read, how far back the rows reach, every handback with its checks), and the decision is kept naming that
     record's revision (`SupervisorReviewBinding`). The look after the courses
-    (`LandingReleaseLook`) reads the step, the record, the admission and `OwnerHolds` again, so a decision whose record moved, or one
+    (`LandingReleaseLook`, by `LandingReleaseLine`) reads the step, the record, the admission and `OwnerHolds` again, so a decision whose record moved, or one
     naming no revision on work that is no branch, goes `stale` `moved`, and keeps the node's own word on the run's
     record through `RunNodeWords.Word`, carrying its author (`NodeWordBy`: role and decision), attempt and revision; the decision is live,
     `released`, until the node pass applies the word as the supervisor's (`went-on`) or drops it `stale` where the attempt has
     moved, the work read afresh holds another revision (`moved`, `ReviewAccepts.MovedFrom`), or the decision is not live in this run. A
     `return`'s per-file choice offers a supervisor no act. A person's word on the node replaces a supervisor's pending one and the
     decision moves `superseded`. A restart empties memory, so the first pass drops a word it left, and the start's sweep records a
-    decision whose word the record shows applied as made and closes the rest stale. The head's card says *The supervisor
-    accepted this; it lands at 14:10.* with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`).
+    decision whose word the record shows applied as made and closes the rest stale. The head's card says an Accept by the kind of
+    work its attempt's record holds (`work`: *The supervisor accepted the files changed in this folder, which are there already; it goes on
+    at 14:10.*), and only when it goes on, never what follows, since a `go-ahead` after the review still holds the write for the person;
+    with *Overrule* while it is held (`SupervisorLandingCard`, `SESSION_SUPERVISOR`'s `landings`); the run's review carries the same
+    decision on the attempt it reads (`RUN_REVIEW`'s `supervisor`).
     (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of seventeen with no card: drive, undrive,
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive,
     hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
-    session's tree land and clean, a staged update's now and cancel, and a session's hand-over, each one exact form over
-    `ROLE_ACT`, logged `role.act` and said on its line; `setup` only where the person lists it. A route act (`StewardRouteAct`:
-    workflow, done, delete, land, clean; `StewardHandOverAct`) runs its person's route inside the role's door, a refusal of the
+    session's tree clean, a staged update's now and cancel, and a session's hand-over, each one exact form over
+    `ROLE_ACT`, logged `role.act` and said on its line; `setup` only where the person lists it. A session's work lands only through
+    its run's review, never by a steward's act. A route act (`StewardRouteAct`:
+    workflow, done, delete, clean; `StewardHandOverAct`) runs its person's route inside the role's door, a refusal of the
     route refusing the act with its code and its words. The hand-over is `SESSION_HAND_OVER { id, agent[, account] }` over a
     quest's own session (`steward hand-over <id> --agent <a> [--account <x>]`): its session's line says the steward asked
     (`handover.asked-steward`) while the move it keeps is the route's own, and it is refused `owner-held` where its quest is held
     by what only the owner releases (a stop not the steward's own of this run, an outage past its tries, the strikes, a pause, a
     role policy's bound), since a hand-over releases that hold. Outside the grants its route's judge refuses the press before any
     card, and the steward's verb says the judge's words; done and
-    delete are `QUEST_DONE` and `QUEST_DELETE`, the service's doors sent as the person's records; land is `LAND_SESSION_TREE`
-    and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone and judged by the session's own tree
-    alone (`StewardTargets.OwnTreeAsync`): neither ever pushes to a remote, a push being its own `push` step. The pause (`StewardPauseAct`) never writes the
+    delete are `QUEST_DONE` and `QUEST_DELETE`, the service's doors sent as the person's records; clean is the unforced
+    `DISCARD_SESSION_TREE`, over the session alone and judged by the session's own tree alone (`StewardTargets.OwnTreeAsync`). The pause (`StewardPauseAct`) never writes the
     person's stop: the sessions it stops carry `stopped.paused-quest-steward` (a steward's stop to every reader of the
     person's), its log says `by: steward`, and its unpause, only of a pause the steward made this run and the owner has not
     touched, releases them as the steward's own role release. The update acts (`StewardUpdateAct`) say the install's own
@@ -419,20 +422,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     holder's act outside them that asks (`StewardAsk`, `role.asked`) is first an `allow` subject `{ ask }` at its target's
     place, read as `ActAsync` reads it (`StewardPlaces`): one pending entry on the press's reservation (`StewardAllows`,
     `PendingAllow`), settled once by the first of the allow supervisor's `allow.steward` (the act admitted once as the steward's
-    own, `owner-set` read first, logged `by: steward` naming the decision; an allowed `land` held for the supervisor's window
-    and still the entry through it), its leave, ten minutes from the raise, the person's overrule of a held `land`, each of
+    own, `owner-set` read first, logged `by: steward` naming the decision), its leave, or ten minutes from the raise, each of
     which falls to the card, or the steward's withdrawal, which answers `withdrawn` with no card. A target that does not
     resolve, no supervisor there, or a supervisor whose terminal's holder is the steward's own goes to the card at once. The card
     is the act's row's person's route, in *Notifications*, and confirmed it is the person's own press; a process that does not
-    prove the key is refused, nothing asked. Everything else is never a role's act. The held `land` is the steward's line in
-    *Notifications* saying when it lands (`STATE`'s `stewardLands`, `STEWARD_LANDS`), with the person's *Overrule*
-    (`STEWARD_LAND_OVERRULE { ask, session }`, the window's alone, marking the session the land names as the owner's; refused as
-    `done: false` where the window ended, the steward withdrew it or the session is not the land's), which hands it to the card
-    (`StewardAllows.Overrule`); an act a supervisor allowed says so on its line (`stewardActs`' `allowed`). Each allow a supervisor
+    prove the key is refused, nothing asked. Everything else is never a role's act. An act a supervisor allowed says so on its
+    line (`stewardActs`' `allowed`). Each allow a supervisor
     takes, of a held request, a widening or a steward's act, is kept as an allow decision (`SupervisorAllows`): a file beside the
-    session's other decisions (the proposing session's for a widening, the land's session for a land, else the machine's), `went-on`
-    at its keeping, and for an allowed `land` `held` until it lands (`went-on`), is overruled, or the steward withdraws it
-    (`stale`, `withdrawn`); the start's sweep closes a held one `stale`. A leave of any of the three, or of a `files` ask, is kept
+    session's other decisions (the proposing session's for a widening, the act's session where it names one, else the machine's),
+    `went-on` at its keeping; the start's sweep closes one whose state line was never written `stale`. A leave of any of the three, or of a `files` ask, is kept
     the same way as a decision `left` at once (`do: leave`, with its bound and reasons; a `files` one, which names no session, in the
     machine's folder), and the subject stays the person's. It reads back as `SESSION_SUPERVISOR`'s `allows`, and the
     line's card says *The supervisor allowed this once* (or refused it, or left it to you) for a held request, with no *Overrule*
@@ -564,7 +562,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     role's revision, and a taken range whose next choice cannot run, close *unread* with why, logged `ask-daoris.unread` and never
     said in the conversation; with the check off the queued ranges close *unread*, and the start's sweep closes a running one
     *unread: Daoris restarted*. A terminal holder of the kind reads nothing: its ranges stay queued, and the door lists none.
-    (from D183, D253, D271, D272)
+    The window reads the reports alone (`AskDaorisReadings`, `HELP_READINGS { session, before?, limit?, range? }`, newest first,
+    20 a page): each range's state (queued with the walk's sentence, reading, read, *partial* where any evidence limit stands,
+    could not judge, not read with why, off) is one line under the last turn it covers, its *Details* the reader as its harness
+    reported it with its standing to the writer, the limits and the findings, and *What was sent* the packet, asked once opened;
+    beside the access chip, *Second check on · N pending* (the conversation's ranges queued or read now), *on* or *off*, its
+    popover today's readings on the machine and their reported tokens, those that reported none counted apart. Each flag not yet
+    seen is a `second-check` row of *What needs you*, counted on the bell, opening Ask Daoris and offering *Seen*
+    (`HELP_READING_SEEN`, the window's alone), kept on its flag as an acknowledgment; a note is never a row. A flag is told to
+    Ask Daoris once, as a line ahead of the person's next words at their dispatch, kept told with the word it rode once written
+    (`AskDaorisTold`; conversations rule 42). (from D183, D253, D271, D272)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
     action. The room's doors table says where each change is and, where Ask Daoris never asks it on the card, why

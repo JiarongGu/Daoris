@@ -287,6 +287,7 @@ public static class NeedsAPerson
 
 ﻿        rows.AddRange(AttentionSessionRows.Rows(facts, sessions, SessionScope));
         rows.AddRange(AttentionMachineRows.Rows(facts, UnitScope));
+        rows.AddRange(AttentionSecondCheckRows.Rows(facts));
 
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
@@ -339,7 +340,7 @@ public static class NeedsAPerson
             .Where(session => Text(session, "id") is { Length: > 0 } id && !Elsewhere(id) && Active.Contains(Text(session, "state") ?? "")
                 && ActiveSessions.HoldsSlot(
                     Text(session, "kind"), Text(session, "repository"), Text(session, "ask"), Text(session, "serves"), Text(session, "opinion"),
-                    Text(session, "decides")))
+                    Text(session, "decides"), Text(session, "performs")))
             .Select(session => ($"session:{Text(session, "id")}", new JsonObject { ["workspace"] = Text(session, "workspace") ?? "default" })),
     ];
 

@@ -131,7 +131,6 @@
   "notifications.steward.did.delete": "Deleted",
   "notifications.steward.did.updatenow": "Installed the staged update",
   "notifications.steward.did.updatecancel": "Put the staged update away",
-  "notifications.steward.did.land": "Landed the tree of",
   "notifications.steward.did.clean": "Cleaned the tree of",
   "notifications.steward.did.handover": "Handed over",
   "notifications.steward.target.session": "session {{session}} of #{{quest}}",
@@ -143,11 +142,6 @@
   "notifications.steward.reverse.hold": "Hold",
   "notifications.steward.reverse.retry": "Try again",
   "notifications.steward.allowed": "A supervisor allowed it",
-  "notifications.steward.land.list": "Landings a supervisor allowed",
-  "notifications.steward.land.says": "A supervisor allowed the steward to land {{target}}; it lands at {{at}}.",
-  "notifications.steward.land.overrule": "Overrule",
-  "notifications.steward.land.overruleLabel": "Overrule the landing of {{target}}",
-  "notifications.steward.land.closed": "It already landed or was withdrawn, so it cannot be overruled.",
   "notifications.helpPressed.label": "What was pressed for you",
   "notifications.helpPressed.line": "Ask Daoris pressed {{count}} act for you in full access, with no card, since Daoris started",
   "notifications.helpPressed.line_other": "Ask Daoris pressed {{count}} acts for you in full access, with no card, since Daoris started",
@@ -220,7 +214,6 @@
   "notifications.steward.desk.act.delete": "Delete",
   "notifications.steward.desk.act.updatenow": "Install the update",
   "notifications.steward.desk.act.updatecancel": "Put the update away",
-  "notifications.steward.desk.act.land": "Land the tree",
   "notifications.steward.desk.act.clean": "Clean the tree",
   "notifications.steward.desk.act.handover": "Hand over"
 }

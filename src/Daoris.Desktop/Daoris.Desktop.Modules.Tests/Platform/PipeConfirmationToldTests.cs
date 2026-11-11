@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class PipeConfirmationToldTests : Bridge
 {
-    private const string Land = "LAND_SESSION_TREE";
+    private const string Land = "DISCARD_SESSION_TREE";
 
     [Fact]
     public async Task A_press_its_terminal_left_is_told_to_the_plugin_with_the_pipe_s_id_and_its_end_and_a_waited_one_is_not()

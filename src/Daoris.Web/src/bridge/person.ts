@@ -7,14 +7,13 @@ import type { PipeAsker } from '../person/askerSaid';
 import { helpCardPlaceOf } from '../person/helpPlaceSaid';
 import {
   type DeskRequestNow, HELP_PRESS_OUTCOMES, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow,
-  type StewardActNow, type StewardLandNow,
+  type StewardActNow,
 } from '../person/standing';
 import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
 
 // The person's door in the window: the person key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
-// and, once the page holds the key, what waits at the service's own confirmations, as the shell tells it. Every route here is the window's alone: the
-// pipe's census refuses each to a terminal, which asks and never answers.
+// and, once the page holds the key, what waits at the service's own confirmations. Every route here is the window's alone.
 
 /** A press a terminal sent over the pipe, waiting for the window, as `PERSON_CONFIRMATIONS` answers it and `CONFIRMATIONS` tells it. */
 export type PipeConfirmation = {
@@ -149,11 +148,9 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
 }
 
 /**
- * The person's Confirm or Refuse: a terminal's press by its confirmation's id over the bridge, the service's
- * at its own door with the key. One that no longer waits is answered, never thrown, for the card to say where it is pressed:
- * the bridge's code (`gone`), or the host's own sentence. A terminal's Confirm is answered once its grounds are
- * judged, so it waits as long as the press says that may take: `changed` with the
- * ground's reason and its values, or `unread` where they could not be read just now.
+ * The person's Confirm or Refuse: a terminal's press by its confirmation's id over the bridge, the service's at its own door with
+ * the key. One that no longer waits is answered, never thrown: the bridge's code (`gone`), or the host's own sentence. A terminal's
+ * Confirm waits for its grounds to be judged: `changed` with the ground's reason and its values, or `unread` where they could not be read.
  */
 export function useAnswerConfirmation() {
   return useMutation({
@@ -182,9 +179,8 @@ export function useAnswerConfirmation() {
 }
 
 /**
- * The window's word that a terminal's press is in front of the person: kept once by the shell, which tells every window
- * by `CONFIRMATIONS`; it moves no clock. A service's confirmation has none: its door counts its
- * own. Answered, never thrown: one no longer waiting is `gone`, which says nothing here, since the telling takes its card away.
+ * The window's word that a terminal's press is in front of the person: kept once by the shell, which tells every window by
+ * `CONFIRMATIONS`; it moves no clock. Answered, never thrown: one no longer waiting is `gone`, which says nothing here.
  */
 export function useConfirmationShown() {
   return useMutation({
@@ -212,7 +208,6 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     stewardActs: stewardActsOf(shaped.stewardActs),
     // A missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
-    stewardLands: stewardLandsOf(shaped.stewardLands),
     helpPresses: helpPressesOf(shaped.helpPresses),
   };
 }
@@ -233,20 +228,6 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
       place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
     }];
-  });
-}
-
-/** The allowed lands waiting their window, each read field by field; one with no id, act, session or time is left out. */
-function stewardLandsOf(raw: unknown): StewardLandNow[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((each): StewardLandNow[] => {
-    if (typeof each !== 'object' || each === null) return [];
-    const shaped = each as Record<string, unknown>;
-    const ask = text(shaped.ask);
-    const act = text(shaped.act);
-    const landsAt = text(shaped.landsAt);
-    if (ask === null || act === null || landsAt === null) return [];
-    return [{ ask, act, landsAt, repository: text(shaped.repository), quest: text(shaped.quest), session: text(shaped.session) }];
   });
 }
 

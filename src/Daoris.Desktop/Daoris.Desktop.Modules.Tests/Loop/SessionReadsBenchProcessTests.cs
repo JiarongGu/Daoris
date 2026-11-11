@@ -7,13 +7,12 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// What the shell asks of the service's session records on a home of a working machine's size (<see cref="BenchHome"/>, 3,000
-/// records), each held to its budget: a slice's push after one record moved, and a landing's plan and press. Each reads every record at
-/// most once, and only as its change since the kept list's mark, never the whole list with its closed records again.
+/// records), each held to its budget: a slice's push after one record moved, and a landing's plan. Each reads every record at most once,
+/// only as its change since the kept list's mark.
 /// </summary>
 /// <remarks>
 /// The reads are counted at the client's doors (<see cref="BenchDoors"/>), so a read through any of the shell's doors is counted, and a
-/// read is held by how often it asked, which a neighbour's load does not move. Each runs once cold and is counted warm, the second time,
-/// as a running shell reads it at every move after its first.
+/// read is held by how often it asked, which a neighbour's load does not move. Each runs once cold and is counted warm, the second time.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SessionReadsBenchProcessTests(ITestOutputHelper output) : DriverModuleBridge, IAsyncLifetime
@@ -66,20 +65,16 @@ public sealed class SessionReadsBenchProcessTests(ITestOutputHelper output) : Dr
     }
 
     [Fact]
-    public async Task A_landing_s_plan_and_its_press_each_read_every_record_once()
+    public async Task A_landing_s_plan_reads_every_record_once()
     {
         var (_, module) = await UpAsync();
         var session = Bench.Trees[^1].Session;
         await AskAsync(module, "LANDING", new { id = session });
 
         var planned = await CountedAsync("the landing's plan", () => AskAsync(module, "LANDING", new { id = session }));
-        var pressed = await CountedAsync("the landing's press", () => AskAsync(module, "LAND_SESSION_TREE", new { id = session }));
 
-        foreach (var (what, asked) in new[] { ("the plan", planned), ("the press", pressed) })
-        {
-            Assert.True(BenchDoors.ListReads(asked) <= 1, $"{what} read every record {BenchDoors.ListReads(asked)} times");
-            Assert.Equal(0, asked.GetValueOrDefault(BenchDoors.WholeList));
-        }
+        Assert.True(BenchDoors.ListReads(planned) <= 1, $"the plan read every record {BenchDoors.ListReads(planned)} times");
+        Assert.Equal(0, planned.GetValueOrDefault(BenchDoors.WholeList));
     }
 
     [Fact]

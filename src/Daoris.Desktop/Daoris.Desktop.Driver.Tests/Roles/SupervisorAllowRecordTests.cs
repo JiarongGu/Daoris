@@ -4,9 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The allow supervisor's decision record: each allow kept as a file beside the session's other decisions and read back by the line,
-/// <c>went-on</c> at its keeping; an allowed <c>land</c> <c>held</c> until it moves; a decision with no session kept with the machine's; and
-/// a restart closing a held one <c>stale</c>. Each seen failing first with its guard taken out.
+/// The allow supervisor's decision record: each allow kept beside the session's other decisions and read back by the line,
+/// <c>went-on</c> at its keeping; one with no session kept with the machine's; a restart closing one with no state line <c>stale</c>.
 /// </summary>
 public sealed class SupervisorAllowRecordTests : IDisposable
 {
@@ -29,9 +28,9 @@ public sealed class SupervisorAllowRecordTests : IDisposable
 
     private QuestionSupervisorDecisions Decisions() => new(_home, new Admits());
 
-    private static SupervisorAllowed Allowed(string id, string shape, string? session, string act, DateTimeOffset? landsAt = null) =>
-        new(id, shape, "r1", session, "engine", act, "supervisor-allows", shape == SupervisorAllowShapes.Steward ? "land" : null,
-            new SupervisorHolder(RoleHolders.Terminal, null), Reasons, landsAt);
+    private static SupervisorAllowed Allowed(string id, string shape, string? session, string act) =>
+        new(id, shape, "r1", session, "engine", act, "supervisor-allows", shape == SupervisorAllowShapes.Steward ? StewardActNames.Clean : null,
+            new SupervisorHolder(RoleHolders.Terminal, null), Reasons);
 
     [Fact]
     public void An_allow_is_read_back_by_its_session_went_on_at_its_keeping()
@@ -48,23 +47,12 @@ public sealed class SupervisorAllowRecordTests : IDisposable
     }
 
     [Fact]
-    public void An_allowed_land_is_held_until_it_moves_and_a_move_after_that_changes_nothing()
+    public void A_restart_closes_an_allow_whose_state_line_was_never_written_stale_and_leaves_a_went_on_one()
     {
-        var decisions = Decisions();
-        decisions.AllowKept(Allowed("d2", SupervisorAllowShapes.Steward, "s1", "steward", landsAt: At.AddMinutes(5)), At);
-        Assert.Equal((SupervisorState.Held, At.AddMinutes(5)), (decisions.AllowsOf("s1").Single().State, decisions.AllowsOf("s1").Single().GoesOnAt));
-
-        decisions.AllowMoved("d2", SupervisorState.Overruled, At.AddMinutes(1));
-        decisions.AllowMoved("d2", SupervisorState.WentOn, At.AddMinutes(6));
-
-        Assert.Equal(SupervisorState.Overruled, decisions.AllowsOf("s1").Single().State);
-    }
-
-    [Fact]
-    public void A_restart_closes_a_held_allow_stale_and_leaves_a_went_on_one()
-    {
-        Decisions().AllowKept(Allowed("d3", SupervisorAllowShapes.Steward, "s1", "steward", landsAt: At.AddMinutes(5)), At);
+        Decisions().AllowKept(Allowed("d3", SupervisorAllowShapes.Steward, "s1", "steward"), At);
+        File.Delete(new SupervisorDecisionFiles(_home).StatesOf("s1", "d3"));
         Decisions().AllowKept(Allowed("d4", SupervisorAllowShapes.Widening, "s1", "standing"), At);
+        Assert.Equal(SupervisorState.Held, Decisions().AllowsOf("s1").Single(each => each.Id == "d3").State);
 
         var restarted = Decisions();
         restarted.SweepAtStart(At.AddMinutes(1));
@@ -81,7 +69,6 @@ public sealed class SupervisorAllowRecordTests : IDisposable
         var bound = SupervisorBounds.All[0];
         decisions.AllowKept(Allowed("d6", SupervisorAllowShapes.Request, "s1", SupervisorAllowActs.Leave) with { Bound = bound }, At);
 
-        decisions.AllowMoved("d6", SupervisorState.Overruled, At.AddMinutes(1));
         var restarted = Decisions();
         restarted.SweepAtStart(At.AddMinutes(2));
 
