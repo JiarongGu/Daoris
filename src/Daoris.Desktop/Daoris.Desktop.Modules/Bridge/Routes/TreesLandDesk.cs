@@ -113,7 +113,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
             var uncommitted = TreesReviewWires.UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             // only a part of an entry with others can have been left out.
             return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id), new CarriedAccepts(_loop.Home).Of(id),
-                LandingDelivery.Newest(_loop.Home, id));
+                LandingDelivery.Newest(_loop.Home, id), ReviewDrawn.Of(_loop.Home, gate.Process is WorkflowProcess { BoundRun: { } bound } ? bound : chatRun));
         }
 
         // The press answers what it showed beside Accept: a dispute or commits nobody read,

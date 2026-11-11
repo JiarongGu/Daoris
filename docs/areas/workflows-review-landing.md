@@ -162,7 +162,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     second word on a node is refused `worded`, but the person's replaces a supervisor's pending one, which the pass settles
     `superseded`; the pass drops a supervisor's word whose attempt has lapsed or whose decision is not live in this run (`stale`). The
     person's Accept names the review record it is given on, by attempt and revision (`WORKFLOW_NODE`'s `attempt` and `revision`, the
-    terminal's `--at <revision>`, whole or its first seven characters or more), and is checked twice (`ReviewAccepts`): as it is kept, against the record of the
+    terminal's `--at <revision>`, whole or its first seven characters or more), as the landing's plan draws it for the window's Accept
+    (`LANDING`'s `accept`: the run, its review step, and the attempt and revision of the record under way, neither before it begins;
+    `ReviewDrawn`), and is checked twice (`ReviewAccepts`): as it is kept, against the record of the
     attempt the review stands on, a word on another refused `moved` with the revision standing; and as the pass applies it, against the
     run's work read afresh that pass (its branch at the tip read then, its turns, its plans, its handbacks), a word whose work moved since
     dropped `moved`, said with both revisions. An Accept naming none is bound to the record standing as it is kept, which the terminal
@@ -240,7 +242,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`TreeNamedRefusals`), as the terminal's alone path does. (from D227, D228)
 24. An entry's or an ask's one Accept keeps each part's word where its run's `land` is the runtime's, and lands it at the pass. A
     part no `land` node performs is held, said. Each part's word names the review record the press drew for it (`LAND_ENTRY`'s
-    `revisions`, by session) and is kept as the node door keeps it; it is not atomic across runs: a run whose review stands on another
+    `revisions`, by session, as `ENTRY_LANDING` names each part's `revision`) and is kept as the node door keeps it; it is not atomic across runs: a run whose review stands on another
     record is refused `moved` alone, the others go on, and the answer says which landed, which accepted, which moved and which failed
     (`EntryRunAccepts`). A part's own landing is named for the first part of its run in its entry and joins
     that run's branch; each quest an ask sent to the repository is a run of its own unless its chain leads back to an earlier one

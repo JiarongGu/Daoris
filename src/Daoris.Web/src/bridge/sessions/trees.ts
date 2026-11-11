@@ -205,6 +205,9 @@ export function readDiff(client: QueryClient, session: string, signal: AbortSign
 /** What the review keeps a session's answer by: its record's last move, and whether it still runs. */
 export type ReviewRecord = { updated: string; live: boolean };
 
+/** The review an Accept is pressed on: its run and step, and the attempt and revision of the record drawn, absent before it begins. */
+export type ReviewAccept = { run: string; node: string; attempt?: number | null; revision?: string | null };
+
 /**
  * What a session actually did.
  *
@@ -403,6 +406,11 @@ export const useLanding = (id: string | null, branch?: string | null) => {
        * kept.
        */
       carried?: { carries: number; awaiting: boolean } | null;
+      /**
+       * The review the window's Accept is pressed on (`WORKFLOW_NODE`'s `accept`): its run and step, and the attempt and revision of the
+       * record drawn, absent where the review has not begun. Null where the run holds no review.
+       */
+      accept?: ReviewAccept | null;
     }>,
     enabled: isAvailable && id !== null,
   });

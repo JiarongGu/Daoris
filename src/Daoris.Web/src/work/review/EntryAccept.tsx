@@ -25,6 +25,8 @@ export type EntryAcceptPart = {
   superseded?: { by: string; says: string; conflicts: boolean } | null;
   /** A later part it conflicts with while having work of its own: never redone, so never offered for leaving out. */
   clash?: { by: string; says: string } | null;
+  /** The revision of the review record its run stands on, which the Accept names for it, so a moved run is refused alone. */
+  revision?: string | null;
 };
 
 /** The session's press as its hosts are handed it: the props of `EntryAccept`, the frame's. */

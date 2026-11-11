@@ -67,6 +67,21 @@ public sealed class DriverModuleEntriesTests
         Assert.Equal("feature/x", parts[1].GetProperty("target").GetString());
     }
 
+    /// <summary>Each part names the revision of the review record its run stands on, which the entry's Accept sends back as <c>revisions</c>.</summary>
+    [Fact]
+    public void Each_part_names_the_review_revision_its_run_stands_on()
+    {
+        var plan = new EntryPlan(LandingForm.Branch, "feature/x", [
+            new EntryPartPlan("s1", new LandingPlan(LandingForm.Branch, "feature/x", "repository")) { Run = "q1" },
+            new EntryPartPlan("s2", null) { SameTreeAs = "s1" },
+        ]);
+
+        var parts = Read(EntriesRoutes.Plan("ask:a3/engine", "engine", plan, revisionOf: run => run == "q1" ? "feedc0de" : null))
+            .GetProperty("parts").EnumerateArray().ToList();
+
+        Assert.Equal(("feedc0de", JsonValueKind.Null), (parts[0].GetProperty("revision").GetString(), parts[1].GetProperty("revision").ValueKind));
+    }
+
     [Fact]
     public void The_press_goes_on_the_wire_with_each_parts_outcome_and_its_own_words()
     {

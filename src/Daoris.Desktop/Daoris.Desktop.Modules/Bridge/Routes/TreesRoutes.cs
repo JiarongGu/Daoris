@@ -311,8 +311,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// </param>
     public static object Planned(
         string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null,
-        LandingDelivery? delivery = null) => new
+        LandingDelivery? delivery = null, ReviewDrawn? accept = null) => new
     {
+        // The review the window's Accept is pressed on, the record's attempt and revision it names; null where the run holds no review.
+        Accept = accept,
         // the session's newest delivery, where one is written: who authorized it and when, the phase
         // an unresolved one stands at, and when it is delivered; each null where there is none.
         Authorized = delivery is null ? null : new { delivery.Record.Authorization.Authority, delivery.Record.At },
