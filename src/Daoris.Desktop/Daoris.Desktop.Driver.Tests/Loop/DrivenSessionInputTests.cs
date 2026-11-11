@@ -6,17 +6,14 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>
-/// A driven quest session takes no person's line, on either door, as an intake takes none,
-/// for the session the driver starts on a quest.
-/// </summary>
+/// <summary>A driven quest session takes no person's line, on either door, as an intake takes none,
+/// for the session the driver starts on a quest.</summary>
 /// <remarks>
 /// <para>A driven session is handed its whole quest at once and works it in one turn. On the pipe door
 /// it has no stdin; on the protocol door its stdin is open, because the driver writes the protocol's
 /// frames into it — so a person's line sent there would land in the middle of the JSON-RPC
 /// stream. The page offers such a session no box, but `SESSION_INPUT` names a session by id, so the
 /// registry must not track a driven one as taking input.</para>
-///
 /// <para>Driven through a REAL tick: a real process — node, the stand-in harness every gate already
 /// needs — spawned by the executor against a stand-in service on a loopback port. The spawn, the door
 /// and the registry entry are exactly what a fake would get wrong. No model anywhere, and no account.</para>
@@ -34,12 +31,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "driven@example.com");
-        Git("config", "user.name", "INT4i");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "driven@example.com", "INT4i");
     }
 
     public void Dispose()

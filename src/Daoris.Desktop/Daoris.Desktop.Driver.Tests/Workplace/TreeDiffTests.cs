@@ -338,15 +338,16 @@ public sealed class TreeDiffTests : IDisposable
     private async Task<string> MakeRepositoryAsync()
     {
         var root = Path.Combine(_scratch, "engine");
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "# engine\n");
-        await File.WriteAllTextAsync(Path.Combine(root, "gone.txt"), "delete me\n");
-        await GitAsync(root, "add", ".");
-        await GitAsync(root, "commit", "-m", "first");
-        return root;
+        return await GitSeed.MadeAsync(root, "tree-diff", async made =>
+        {
+            await GitAsync(made, "init", "--quiet");
+            await GitAsync(made, "config", "user.email", "fixture@example.test");
+            await GitAsync(made, "config", "user.name", "Fixture");
+            await File.WriteAllTextAsync(Path.Combine(made, "README.md"), "# engine\n");
+            await File.WriteAllTextAsync(Path.Combine(made, "gone.txt"), "delete me\n");
+            await GitAsync(made, "add", ".");
+            await GitAsync(made, "commit", "-m", "first");
+        });
     }
 
     private static string RepoRoot() => GitSeed.RepoRoot();

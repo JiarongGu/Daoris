@@ -17,8 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is handed and what its record's note says while it runs.</para>
 /// <para>Then on the protocol door, where the limit is the door's own failure: the protocol stub runs as the
 /// stub's accounts, so its refused turn cools stub account 1 through the driver's own conclusion, and the carry-on opens
-/// on stub account 2.</para>
-/// </remarks>
+/// on stub account 2.</para></remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AccountRotationTickTests : IDisposable
 {
@@ -42,12 +41,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "rotation@example.com");
-        Git("config", "user.name", "TOOL4f");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "rotation@example.com", "TOOL4f");
 
         foreach (var account in new[] { "account-1", "account-2" })
         {

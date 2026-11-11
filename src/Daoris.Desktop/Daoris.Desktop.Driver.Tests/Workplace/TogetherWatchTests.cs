@@ -29,13 +29,15 @@ public sealed class TogetherWatchTests : IDisposable
     {
         if (_base.Length == 0)
         {
-            Directory.CreateDirectory(Root);
-            await GitFixture.GitAsync(Root, "init", "-q", "-b", "main");
-            await GitFixture.GitAsync(Root, "config", "user.email", "t@example.test");
-            await GitFixture.GitAsync(Root, "config", "user.name", "t");
-            File.WriteAllText(Path.Combine(Root, "a.txt"), "0\n");
-            await GitFixture.GitAsync(Root, "add", "-A");
-            await GitFixture.GitAsync(Root, "commit", "-q", "-m", "base");
+            await GitSeed.MadeAsync(Root, "together-watch", async root =>
+            {
+                await GitFixture.GitAsync(root, "init", "-q", "-b", "main");
+                await GitFixture.GitAsync(root, "config", "user.email", "t@example.test");
+                await GitFixture.GitAsync(root, "config", "user.name", "t");
+                File.WriteAllText(Path.Combine(root, "a.txt"), "0\n");
+                await GitFixture.GitAsync(root, "add", "-A");
+                await GitFixture.GitAsync(root, "commit", "-q", "-m", "base");
+            });
             _base = await TipAsync(Root);
         }
 

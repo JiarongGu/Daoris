@@ -36,10 +36,8 @@ public sealed class HelpTreesReadTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>
-    /// The part's step at 145 trees, the home's read first, again with nothing moved, which asks one
-    /// <c>git status</c> a tree, and once the line moved on; each says what the fixture holds of every tree.
-    /// </summary>
+    /// <summary>The part's step at 145 trees, the home's read first, again with nothing moved, which asks one
+    /// <c>git status</c> a tree, and once the line moved on; each says what the fixture holds of every tree.</summary>
     [Fact]
     public async Task A_part_of_a_hundred_and_forty_five_trees_reads_each_unchanged_tree_with_one_git_start()
     {
@@ -329,16 +327,7 @@ public sealed class HelpTreesReadTests : IDisposable
     private static IReadOnlyDictionary<string, (int?, int?)> Said(HelpTrees read) =>
         read.Trees.ToDictionary(each => each.Key, each => (each.Value.Commits, each.Value.Uncommitted), StringComparer.OrdinalIgnoreCase);
 
-    private async Task<string> RepositoryAsync(string name)
-    {
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}");
-        return root;
-    }
+    private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content)
     {
