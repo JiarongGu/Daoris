@@ -109,8 +109,8 @@ it, which the present-first search (M2) answers and a cut cannot. The largest ar
 
 **The next three areas cut (2026-11-12).** Workflows, review and landing went from 15,216 words (99 KB) to 5,421, roles and
 supervision from 12,670 (84 KB) to 5,558 and plugins from 7,361 (51 KB) to 4,303, each rule kept under its number. The first two
-stay above 4,500: sixty-one and sixty-two rules, a dozen of the first's lifted out of its parts table, where they had been told
-as files. The mechanisms the designs already hold (the arriving git kinds, an agent supervisor's attempt, the second check's
+stay above 4,500: sixty and sixty-two rules, eleven of the first's lifted out of its parts table, where they had been told as
+files. The mechanisms the designs already hold (the arriving git kinds, an agent supervisor's attempt, the second check's
 packet, the events relay) are named there; the packet-only reader's measurements went to D272's note. A rule cut to fewer words
 lost the words its question is asked in (*which workflow does a chain's work follow*), and its first hit with them, until its own
 phrasing came back. `tools/read-path-bench.mjs`, before and after:
