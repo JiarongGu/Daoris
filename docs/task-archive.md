@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## STARTPERF1 (part) — the window's first screen no longer waits on itself (2026-11-11)
+
+> **STARTPERF1, measured and the self-wait removed** (web, driver, docs): Outcome: measured from the installed copy's starts (`docs/2026-11-11-start-load-measurements.md`): the page's first-screen signal waited on *What needs you*, which waits on the machine facts that start only on that signal or a 30 s timeout, costing 45–65 s every start — now *What needs you* and the repositories load after the first screen, each shown loading until it arrives (`app/splash.ts`); the Sessions list's trees are walked four at once; `SESSION_SPENT` reads only the lines a log gained since its last read and the next event number from the file's end (`SessionSpentKept`), ending a 775 ms stall on the window's thread. Left: the service's knowledge index at first use (22–29 s), the process-start queue, every reader fetching all quests (needs a change marker), and the proposed per-session summary index (`docs/2026-11-11-start-load-database-design.md`, D275 reserved, a database narrowly called for: records and quests are already in SQLite). Proof: `splash` test, `HelpTreeWalkTests`, `SessionSpentKeptTests`, each seen failing first.
+
+---
+
 ## PLUGINEXT1's first slice — a plugin's own commands, private storage and sign-in (2026-11-11, D274)
 
 > **PLUGINEXT1, first slice** (driver, examples): Outcome: a plugin declares `interfaces` in its manifest — commands (name, words, interactive, tool, `adopts`) run inside its own process over `hook/command/run`, round by round with masked prompts, from `daoris <plugin> <command>`; a private storage folder under the profile handed only to that plugin's processes and removed with it; `plugins.json`'s `off` list per plugin — and Daoris names no plugin; the Azure DevOps (2.2.0) and GitHub (2.1.0) examples sign in through their own `login`, `status` and `logout`, keeping their token in their storage; `DAORIS_HOST_TOKEN` is gone, and an identity's API token is handed once to a command that adopts it, then cleared, logged by ids only. The owner's direction: a plugin's credential is the plugin's, it manages its own tasks, Daoris extends the framework. Proof: `PluginInterfacesTests`, the examples' command tests (seen failing first), `PluginCommandRunTests`, `PlaceHandTests`.
