@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Small defects: the keeper for a node-started npx server, the pull-request examples, the version, the settings verb (2026-11-11)
+
+> **Defects found by the install and by reviews** (driver, cli, examples, web): Outcome: a server started as `node … -- npx …` gets the toolchain install and the 512 MB keeper as an `npx` command does (`ServerNpx`; plugins rule 24, agents rule 13); both pull-request examples at 2.0.1 answer each frame as it settles, answer `running` for a down or rate-limited platform and kill the plugin their tests start; the system-department files sit in the subdomains their types allow (`IRegistryRow`, `CourseSystems`; FIX-LOG); the publish stamps the build into the CLI and `daoris --version` says `0.0.1 (build …, commit …)`; plain `daoris settings` says each machine setting with its value and verb, `daoris settings <name>` alone says that one, and the usage names every verb; the presentational boundary and the choices table hold again. Proof: `ServerNpxTests`, the examples' held-check and down-platform tests, the structure tests, the CLI version test and the settings text fixtures, each seen failing first.
+
+---
+
 ## The terminal tier shown: who set it, and each press with its outcome (2026-11-11, D271's note)
 
 > **TERMTIER1, visibility** (driver, modules, web): Outcome: the terminal tier's changes and a terminal's presses are kept in `data/terminal-acts.json` (`Settings/TerminalActs.cs`, the newest 20 changes and 100 presses): a change keeps its tier, time and door (window, card, Ask Daoris, a session, a terminal, alone), logged `terminal.tier`; a press keeps its route, target, command, admission time and outcome (done, failed with its code, unknown, or interrupted when Daoris stopped under it); Notifications' `TerminalTierLine` says who turned `act` on and when, offers a one-press *Back to ask*, and lists each press opening what it changed, and the Settings row says the same. Codex's narrowing (an attached controller, a carded grant) is deferred to restricted mode's opt-in hardening (TERMTIER2), the owner's rule being that visibility is the key and a security improvement never blocks development. Proof: `TerminalActsTests`, the Settings row and `TerminalTierLine` vitests (seen failing first), `PipeTerminalTierTests`, `DriverModuleTerminalTests`.

@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { isFolder, type Registration } from '../data/api';
 import { FolderExcludesSection } from './FolderExcludesSection';
 import { FolderNoGit } from './FolderNoGit';
-import { unguardedSystems } from './SystemChoiceField';
-import { usePlugins } from '../bridge/plugins';
+import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
@@ -19,7 +18,7 @@ import { useQuests, useRegistry, useRepositories, useSessions } from '../data/qu
 import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
 import {
-  useDriver, useLines, useHeavySlot, useSweepPlan,
+  useDriver, useLines, useHeavySlot, useSetFolderExcludes, useSweepPlan,
 } from '../bridge/shell';
 import { useOpenDepartmentFolder } from '../bridge/repositories/registry';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
@@ -27,6 +26,10 @@ import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
+
+/** The systems, `<plugin>/<system>`, whose adapter declares no precondition: the departments the list says are unguarded. */
+export const unguardedSystems = (plugins: readonly PluginEntry[]): ReadonlySet<string> =>
+  new Set(plugins.flatMap((plugin) => (plugin.systems ?? []).filter((each) => each.preconditions === 'none').map((each) => `${plugin.id}/${each.id}`)));
 
 /**
  * **The Repositories view**: what it hands the frame, its list pane and its main
@@ -155,6 +158,7 @@ export function useProjectsView({
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one.
   const sweep = useSweepPlan();
   const openFolder = useOpenDepartmentFolder();
+  const setExcludes = useSetFolderExcludes();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
   // And every branch of Daoris's it holds, sessions' and landings' (§4.1): its row says how many. Absent where the driver
@@ -298,7 +302,16 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
-          excludes={attached && isFolder(shown) ? <FolderExcludesSection registration={shown} notify={notify} /> : undefined}
+          excludes={attached && isFolder(shown) ? (
+            <FolderExcludesSection
+              registration={shown}
+              busy={setExcludes.isPending}
+              onSave={(change) => setExcludes.mutate({ repository: shown.repository, add: change.add, remove: change.remove }, {
+                onSuccess: () => notify(t('projects.folder.excludesSaved', { name: shown.repository })),
+                onError: failure(notify),
+              })}
+            />
+          ) : undefined}
           // Its branches and its line's history: a shell's, each read only while its tab shows.
           branches={attached && isFolder(shown)
             ? <FolderNoGit />

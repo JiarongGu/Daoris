@@ -16,7 +16,7 @@ public sealed class CommandTreeTests
         foreach (var group in CommandWords.Groups)
         {
             var bare = CommandTree.Route([group.Name]);
-            Assert.Equal(group.Whole || group.Takes is not null ? TreeRouteKind.Run : TreeRouteKind.Usage, bare.Kind);
+            Assert.Equal(group.Whole || group.Takes is not null || group.Bare ? TreeRouteKind.Run : TreeRouteKind.Usage, bare.Kind);
             Assert.Equal(group.Name, bare.Group);
             foreach (var verb in group.Verbs)
             {
@@ -39,6 +39,8 @@ public sealed class CommandTreeTests
     [InlineData("place checks engine light", "checks engine light")]
     [InlineData("place engine --preset keep --plan", "place engine --preset keep --plan")]
     [InlineData("settings notify off", "driver notify off")]
+    [InlineData("settings", "driver settings")]
+    [InlineData("settings terminal", "driver terminal")]
     [InlineData("role", "driver role")]
     [InlineData("role set build", "driver role set build")]
     [InlineData("role brief", "roles brief")]
@@ -111,5 +113,14 @@ public sealed class CommandTreeTests
         Assert.Equal((TreeRouteKind.Usage, "session", false), (bare.Kind, bare.Group, bare.Asked));
         var unknown = CommandTree.Route(["help", "sessionz"]);
         Assert.Equal((TreeRouteKind.Usage, "no group `sessionz`."), (unknown.Kind, unknown.Said));
+    }
+
+    [Fact]
+    public void The_settings_usage_names_each_of_its_verbs_and_the_group_alone_runs()
+    {
+        var usage = DriverCommand.UsageOf("settings")!;
+        Assert.All(CommandWords.Group("settings")!.Verbs, verb => Assert.Contains($"settings {verb}", usage, StringComparison.Ordinal));
+        Assert.DoesNotContain("actor", usage, StringComparison.Ordinal);
+        Assert.Equal(TreeRouteKind.Run, CommandTree.Route(["settings"]).Kind);
     }
 }

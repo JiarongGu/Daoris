@@ -12,7 +12,7 @@ public sealed record SystemPlace(string Plugin, string System)
         var slash = word?.IndexOf('/', StringComparison.Ordinal) ?? -1;
         if (word is null || slash <= 0 || slash == word.Length - 1 || word.IndexOf('/', slash + 1) >= 0) return null;
         var (plugin, system) = (word[..slash], word[(slash + 1)..]);
-        return PluginCatalog.IsId(plugin) && PluginSteps.NameShape.IsMatch(system) ? new SystemPlace(plugin, system) : null;
+        return PluginIds.IsId(plugin) && PluginIds.NameShape.IsMatch(system) ? new SystemPlace(plugin, system) : null;
     }
 
     public override string ToString() => $"{Plugin}/{System}";

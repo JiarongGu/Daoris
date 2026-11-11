@@ -7,7 +7,7 @@ public sealed record ChoicesRegistry(IReadOnlyList<(string Repository, string? W
     public IReadOnlyDictionary<string, string> Kinds { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The registry's rows as the choices read them: each checkout, and each department's kind.</summary>
-    public static ChoicesRegistry Of(IEnumerable<RepoView> rows)
+    public static ChoicesRegistry Of(IEnumerable<IRegistryRow> rows)
     {
         var listed = rows.ToList();
         return new([.. listed.Select(row => (row.Repository, (string?)row.Workspace, row.Root))], null)

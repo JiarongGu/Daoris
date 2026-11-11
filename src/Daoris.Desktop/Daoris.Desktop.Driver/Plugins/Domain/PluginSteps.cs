@@ -51,9 +51,6 @@ public static class PluginSteps
     /// <summary>The point a plugin removes what it created on: a resource's <c>cleanup</c> names it.</summary>
     public const string CleanupPoint = "work/cleanup";
 
-    /// <summary>A step's or a port's name: lowercase letters, digits and dashes, at most 40. Twin: the CLI's <c>STEP_NAME</c>.</summary>
-    public static readonly Regex NameShape = new(@"^[a-z0-9][a-z0-9-]{0,39}\z", RegexOptions.CultureInvariant);
-
     /// <summary>
     /// A schema's name, <c>&lt;owner&gt;/&lt;name&gt;@&lt;version&gt;</c> (<c>acme.deploy/receipt@1</c>, <c>daoris/quest.close@1</c>): its
     /// owner a plugin id by <see cref="PluginCatalog.IsId"/>, the one owner of that shape; its name words of lowercase letters
@@ -127,7 +124,7 @@ public static class PluginSteps
         var name = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String
             ? id.GetString()!
             : null;
-        if (name is null || !NameShape.IsMatch(name)) return (null, PluginStepCodes.Id, null);
+        if (name is null || !PluginIds.NameShape.IsMatch(name)) return (null, PluginStepCodes.Id, null);
         var kind = KindOf(plugin, name);
         if (read.Any(step => step.Kind == kind)) return (null, PluginStepCodes.StepTwice, name);
 
@@ -266,7 +263,7 @@ public static class PluginSteps
         return PluginStepRules.Current.Problem(step) is { } problem ? Broken(problem) : (step, null, name);
     }
 
-    /// <summary>A port map: absent is none; otherwise each name of <see cref="NameShape"/> with its schema, the last of a name written twice.</summary>
+    /// <summary>A port map: absent is none; otherwise each name of <see cref="PluginIds.NameShape"/> with its schema, the last of a name written twice.</summary>
     private static Dictionary<string, string>? Ports(JsonElement row, string field)
     {
         var ports = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -278,7 +275,7 @@ public static class PluginSteps
         foreach (var port in declared.EnumerateObject()) last[port.Name] = port.Value;
         foreach (var (name, value) in last)
         {
-            if (!NameShape.IsMatch(name) || Schema(value) is not { } schema) return null;
+            if (!PluginIds.NameShape.IsMatch(name) || Schema(value) is not { } schema) return null;
             ports[name] = schema;
         }
 

@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '../locales/i18n';
 import type { PluginEntry } from '../bridge/plugins';
-import { SystemChoiceField, systemsOffered, unguardedSystems } from './SystemChoiceField';
+import { systemsOffered } from './ProjectManage';
+import { unguardedSystems } from './ProjectsView';
+import { SystemChoiceField } from './SystemChoiceField';
 
 // A system added as a department: one an installed adapter declares, named by its id unless the person names it.
 

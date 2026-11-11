@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// a work account for the work circle, a personal one at home.
 /// </param>
 public sealed record RepoView(
-    string Repository, bool Adopted, string? Root, string Workspace = RemoteTarget.DefaultWorkspace)
+    string Repository, bool Adopted, string? Root, string Workspace = RemoteTarget.DefaultWorkspace) : IRegistryRow
 {
     /// <summary>
     /// The ids of the lanes the repository declares, as the registry answers them; none from a host without lanes.
