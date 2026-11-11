@@ -126,7 +126,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <b>Unlisted is INFORMATION</b>, in the review's class: a record from another machine names no
     /// tree here, and a tree that is gone or not a repository of its own has nothing git will answer
     /// for. One code for both, because the person's next move is the same — type the path, which both
-    /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
+    /// doors expand as typed (`docs/archive/2026-09-25-message-content-evidence.md`).
     /// </remarks>
     [DriverRoute("SESSION_FILES", PipeClass.Open)]
     private async Task<object?> FilesAsync(SessionFiles press, CancellationToken cancellationToken)

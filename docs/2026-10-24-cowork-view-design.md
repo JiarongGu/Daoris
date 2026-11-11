@@ -3,7 +3,7 @@
 **Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23), and built; **round 11 (2026-11-02), the routing half, accepted by the steward the same day after Codex's read, whose findings its rows carry** (*Round 11*, before §0; §R11.5). Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
 (lanes) and D167 (sessions and their parts). The design is two scopes with a standing each:
 - **Row a, *a chat's subagents seen*: the scope round 10 settles.** Its whole contract is §7 row a's table, each rule with where
-  it is specified and its proof. Both makers have read round 9 at `a30797bce` (`docs/2026-10-24-cowork-view-reads.md`): Codex
+  it is specified and its proof. Both makers have read round 9 at `a30797bce` (`docs/archive/2026-10-24-cowork-view-reads.md`): Codex
   (*Codex, round 9*: 7 findings, 6 blocking, one point seen from five sides; *another round* for row a) and the Opus foundation
   reader (*Opus (foundation), round 9*: 7 findings, 1 blocking; *accept row a after named changes*). **Round 10** is written by
   Claude Opus 5.5 from the code on main at `c5e038828`, whose `src/` differs from `a30797bce`'s only in FOUNDATION1's row z-i
@@ -37,7 +37,7 @@ would accept after named changes (11 findings, 3 blocking), and Codex asks anoth
 written by Claude Opus 5.5 from the code on main at `b4f096cc0`, whose `src/` differs from `308edb13d`'s only in the supervisor's
 and the steward's rows, which move lines this design cites in `DriverLoop.cs` and the driver host's `Program.cs` and change
 nothing it reads, and answers every finding of both in §14; places it changes are marked *(O3-Fn)* for the Opus read's finding n and *(C3-n.m)* for Codex's §n finding m. Every read is
-verbatim in `docs/2026-10-24-cowork-view-reads.md`. §1 to §13 keep their rounds' citations; a passage round 4 changes cites
+verbatim in `docs/archive/2026-10-24-cowork-view-reads.md`. §1 to §13 keep their rounds' citations; a passage round 4 changes cites
 `b4f096cc0`'s lines. The Opus foundation reader read round 4 at `953ae0c48` (12 findings, 4 blocking, *accept row a after named
 changes*), placed in §15, and Codex read it with those changes at `eced2688e` (11 findings, 7 blocking, *another round* for row a).
 **Round 5** answers Codex's read in §16; a passage it changes cites `eced2688e`'s lines, which are `9f48860ba`'s. Both makers read
@@ -288,7 +288,7 @@ in §7's table (O4-F5 to F12).
   COWORKUX1a and opens the thread where COWORKUX1b has landed; row d gains the ask's terminal twin; row f adds its files' wakes (§7).
 
 **Round 2's named changes** (2026-10-24) take the Opus foundation reader's read of round 2, read at `eb11f2f5f` and kept verbatim in
-`docs/2026-10-24-cowork-view-reads.md`: 13 findings, 3 blocking, *accept after named changes* the steward checks without another
+`docs/archive/2026-10-24-cowork-view-reads.md`: 13 findings, 3 blocking, *accept after named changes* the steward checks without another
 read. Codex's read is owed, so under D191's note of 2026-10-24 only the first row is built on this until it lands, and nothing
 carrying a row of it is staged. Each finding is taken as the read names it, checked against the code on main at `0d3af537b`, whose
 `src/` is `eb11f2f5f`'s. Each place a finding changes is marked *(R2-On)*, `R2-O1` being the read's finding 1, and §12's table says
@@ -704,7 +704,7 @@ Two things went wrong, and this design answers both:
   - a conversation's blocks have no parent or nesting (`Web/work/conversation/conversation.ts:231-261`), so a child is one
     `ToolCard` (`Web/work/conversation/ToolCard.tsx:82`).
 - **The ids.** The CONSOLE2 evidence records that `subagentSessionId` is "the harness's agent id, seventeen hex characters", and that
-  a re-run of the same task gets `<id>:generation:<n>` (`docs/2026-09-28-console2-streams-evidence.md:61-64`). The adapter's end
+  a re-run of the same task gets `<id>:generation:<n>` (`docs/archive/2026-09-28-console2-streams-evidence.md:61-64`). The adapter's end
   states are `completed`, `failed`, `cancelled` and `disconnected` (`:69-70`). The hook's `agent_id` is Claude Code's agent id, the
   same id as the stream's `task_id` (`D173.md:100-102`). Whether the hook reaches Daoris over the adapter at all (`SubagentStart` on
   the protocol door) is unmeasured: FABRIC-ACP1 saw no native child (`D173.md:5177-5180`, `:131-133`).
@@ -750,7 +750,7 @@ restarts.
   same branch (ACCEPTALL1b, ACCEPTALL1f).
 - **Co-workers** (D203, accepted 2026-10-23): a record of this machine's whose `serves` names a part of another session's line. Its
   role is read as reviewer (`opinion`), partner (`serves` with `piece`) or helper (`serves` alone) (`D203.md` point 1; the design
-  `docs/2026-10-23-coworker-design.md` §2.1). A helper and a reviewer keep their own entry and are no part of the line they serve
+  `docs/archive/2026-10-23-coworker-design.md` §2.1). A helper and a reviewer keep their own entry and are no part of the line they serve
   (`SessionEntries.cs:76-77`).
   - A helper's ask is three files under `<home>/data/helpers` (`Core/Platform/DaorisHome.cs:340`): the ask (`id`, `asker`,
     `question`, `agent`, `askedBy`, `urgent`, `at`), its state (`waiting`, `approved`, `started`, `answered`, `refused`, `cooling`)
@@ -827,7 +827,7 @@ drawn.
 A brainstorm is `<home>/brainstorms/<id>/`, with its request `(Id, Question, Repository, Agents, At)` and its state
 (`Driver/…/BrainstormFiles.cs:8`, `:13`, `:35-40`). A meeting is `<home>/brainstorms/meetings/<id>/`, its request the same shape and
 its state with a round (`Driver/…/MeetingFiles.cs:9`, `:15`). **Neither request names the session, ask or quest that started it.**
-Neither has a place on the page: *no place in the frame, no state on any screen* (`docs/2026-10-20-ui-ux-design.md:110`). Their page
+Neither has a place on the page: *no place in the frame, no state on any screen* (`docs/archive/2026-10-20-ui-ux-design.md:110`). Their page
 is MEETUX1a-d's, and a caller from a session is BRAINSTORM1d's and AGENTROOM1b's.
 
 ### 1.6 Work units, the running view and the flow
@@ -841,12 +841,12 @@ is MEETUX1a-d's, and a caller from a session is BRAINSTORM1d's and AGENTROOM1b's
 - **The running view.** `Flow` is built (`Web/design/Flow.tsx:147`) and draws a quest, a session's line and states, a landing and a
   workflow's run (FLOWCHART1a1-1d, archived; `Web/workflow/WorkflowChart.tsx:363`). FABRIC-GRAPHVIEW1 is open: each node's §E2
   state, each wire's condition and what waits on what, drawn from the units in the side bar's *Workflow* view
-  (`docs/2026-10-20-flowchart-design.md` §2.5, §10). That design rejects *a second running view beside the Workflow view* and *a path
+  (`docs/archive/2026-10-20-flowchart-design.md` §2.5, §10). That design rejects *a second running view beside the Workflow view* and *a path
   inferred from a conversation, or a state the record does not keep* (§8).
 - **No fabric event names a child.** The chain's events are wakes naming a subject (`Driver/Platform/Chain.cs:5-59`). The session's
   event log has user, message, thought, tool, plan, usage, turn, note, transient, raw and receipt
   (`Driver/Sessions/Domain/SessionEvents.cs:13-54`). The design's typed envelope is not built
-  (`docs/2026-10-16-fabric-events-design.md:1204-1213`).
+  (`docs/archive/2026-10-16-fabric-events-design.md:1204-1213`).
 
 ### 1.7 The session's record and page while its agent works
 
@@ -861,7 +861,7 @@ is MEETUX1a-d's, and a caller from a session is BRAINSTORM1d's and AGENTROOM1b's
   - The session's events keep each turn's end as a `turn` event with its stop reason (`SessionEvents.cs:33-34`), emitted at each
     prompt's response on the protocol door (`Driver/Agents/Acp/Acp.cs:1999-2005`).
   - On that door the adapter holds the parent's turn open until the children it spawned end: CONSOLE2 measured it, and the
-    adapter's source defers settling a turn for its subagents (`docs/2026-09-28-console2-streams-evidence.md:74-77`).
+    adapter's source defers settling a turn for its subagents (`docs/archive/2026-09-28-console2-streams-evidence.md:74-77`).
   - A chat on the protocol door keeps one agent process across its turns, taking each new message into that process
     (`ChatRunner.cs:1804`, `:1826`, `:2397-2399`). Its lineage gets an end line only when the process lets go (`:2486-2497`), and
     no lineage line names a turn. A child whose stop the hook missed stays `active` through later turns. Grouping children by turn
@@ -2261,7 +2261,7 @@ Kept as round 3 wrote it, for the routing half to start from, with round 4's cor
 
 *(C4-3.2.)* FOUNDATION1 Part A, accepted (D212), maps the driver's subdomains bottom to top, each naming only its own types and
 those listed before it; where a lower one needs a higher one, the lower declares a port, the higher implements it, and Loop wires
-it (`docs/2026-10-25-foundation-design.md` §14.2, §14.3). Its §5.1 has row a wait for nothing there, and row a needs nothing of its
+it (`docs/archive/2026-10-25-foundation-design.md` §14.2, §14.3). Its §5.1 has row a wait for nothing there, and row a needs nothing of its
 Part B: no journal, move record, desktop store or routing contract. Row a's pieces sit where the map puts what each extends:
 
 | Piece | Subdomain (its place in the map) | Why there |
@@ -2395,7 +2395,7 @@ ask's section, the co-workers' rows and the *Workflow* link are the routing half
    where there are any (§3.6, C4.1), or, for a Codex lead, the line that its subagents appear only when they call Daoris; and *its
    subagents could not be read* where its lineage was unreadable. On the protocol door, with a child working, the heading adds
    *its turn waits for them* (R2-O4); *(O4-F1)* on `claude-code-acp` alone, the one adapter CONSOLE2 measured holding the turn
-   (`docs/2026-09-28-console2-streams-evidence.md:74-77`), and never for an `unsaid` run, which is not working.
+   (`docs/archive/2026-09-28-console2-streams-evidence.md:74-77`), and never for an `unsaid` run, which is not working.
 4. **Co-workers**: D203's rows from its exchange read, read-only here (§3.9).
 5. **Asked through quests**: one row per quest: *#a1b2 · core lane · {title}*, then its session (*Claude Code · working · 12 min*,
    or *not taken yet: {the tick's reason}*, or *taken, by no session recorded here*), then its own *waits on*, then its routing in
@@ -2411,7 +2411,7 @@ alone (D41). Every row is one button reaching the member, in the order drawn, so
 ### 5.3 At each width, theme and language
 
 The side bar is 45% of the window, never under 300 px, and the whole frame under 768 px (`Web/work/frame/layout.ts:44`). A region
-lays out by its own width (`docs/2026-09-19-platform-ux.md:304-311`).
+lays out by its own width (`docs/archive/2026-09-19-platform-ux.md:304-311`).
 
 | The view's width | Where | How it lays out |
 |---|---|---|
@@ -3347,7 +3347,7 @@ amendments below come with the routing half's acceptance.
 
 ## 11. Round 2: the read's findings and their answers
 
-Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-cowork-view-reads.md` §4), each checked against the code on main
+Every finding of the Opus foundation read of round 1 (`docs/archive/2026-10-24-cowork-view-reads.md` §4), each checked against the code on main
 at `426ed2b73`. This table is round 2's record and is kept as written; where round 2's read changed an answer (the `work` scope and its
 narrowing, the turn, the strip's order, trees as a bound), §12 says so and the sections above carry the change. *Taken* means the design now says it. *Answered* means it is not taken as written, for the reason given. *Deferred*
 means a later row carries it. The read's §1 to §3 corrections are findings below.
@@ -3379,7 +3379,7 @@ means a later row carries it. The read's §1 to §3 corrections are findings bel
 
 ## 12. Round 2's read: its named changes, and where each went
 
-Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 2* §4),
+Every finding of the Opus foundation read of round 2 (`docs/archive/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 2* §4),
 taken as the read names it and checked against the code on main at `0d3af537b`, whose `src/` is `eb11f2f5f`'s (it differs from
 round 2's `426ed2b73` in `WorkflowRun.Read.cs` and its tests only, which this design does not touch). Each place is marked *(R2-On)*
 in the text.
@@ -3405,7 +3405,7 @@ nothing carrying a row of it is staged. *(It landed on 2026-10-25, asking anothe
 
 ## 13. Round 3: Codex's read answered
 
-Every finding of Codex's read of round 2 with its named changes (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round 2*), each
+Every finding of Codex's read of round 2 with its named changes (`docs/archive/2026-10-24-cowork-view-reads.md`, *Codex, round 2*), each
 checked against the code on main at `972b17577`, the commit it read. Codex numbers its findings by section, so `2.1` is its §2
 finding 1, marked *(C2.1)* in the text above. *Taken* means the design now says it, and where; *disputed* would give the code line
 that shows why, and no finding is disputed: each was confirmed in the code.
@@ -3428,7 +3428,7 @@ that shows why, and no finding is disputed: each was confirmed in the code.
 | 4.3 | The remaining boundaries hold; three disagreements with the Opus reads | the reads record, *Opus (foundation), round 2*, findings 3 and 8 and its verdict | **Taken**: the boundaries stand as checked. The disagreements are decided below. |
 | **5.1** | **Row a needs the lifecycle and watch contracts** | §7 row a | **Taken**: row a builds and proves C2.1 to C2.4, C2.6, C4.1 and C4.2, and its trap names the end code read alone (§7). |
 | **5.2** | **Row e cannot precede observable routing eligibility** | §6.2; `KnowledgeSearchTools.cs:288-330` | **Taken**: row e builds the standing's judge and its line first, then the skill section that reads it, and waits on no other row; it stays second, its hints after row a. Row b follows a with C2.1's predicate and C2.5's reads (§7). |
-| **5.3** | **Row c promises a thread another feature has not supplied** | coworker design §6.4, §12 rows 1 and 3 (`docs/2026-10-23-coworker-design.md:661-673`) | **Taken**: row c follows COWORKUX1a and takes its co-workers from that row's exchange read; each row opens COWORKUX1b's thread where it has landed and the member's own session page until then; row c writes no reader of its own (§3.1, §3.9, §5.1, §7). |
+| **5.3** | **Row c promises a thread another feature has not supplied** | coworker design §6.4, §12 rows 1 and 3 (`docs/archive/2026-10-23-coworker-design.md:661-673`) | **Taken**: row c follows COWORKUX1a and takes its co-workers from that row's exchange read; each row opens COWORKUX1b's thread where it has landed and the member's own session page until then; row c writes no reader of its own (§3.1, §3.9, §5.1, §7). |
 | 5.4 | Row d needs an ask terminal twin | `D185.md:24-25`; `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs:470-475` | **Taken**: `daoris-driver ask at-work <ask> [--json]`, routed as `ask channel` is, its words and JSON tested (§7 row d). |
 | **5.5** | **Row f adds records without adding their wakes** | `MeetingFiles.cs:29-38` | **Taken**: the watch's topic gains a fixed brainstorms part hearing `*/request.json` and `*/state.json`; row f's files are dependencies at their stamps; its proof moves a meeting's state alone (§3.1, §4, §7 row f). |
 | 6.1 | A smaller shape with the same outcome | `AttendedSession.tsx:323-324`; coworker design `:661`; `RouteFlights.cs:22-34` | **Taken where the outcome holds**: the read answers only what no reader holds; the co-workers are D203's exchange read and thread, the channel the panel's read, why a quest sits the tick's, a meeting a link; the service's two reads are shared across a burst's held reads, each payload keeping its own answer and `calls.heard` kept (§2 points 1 and 7, §3.3, §3.8, §3.9, §4, §5). **Not taken:** links alone in place of the one place, under §8, since the case was work spread over places nobody looked at together. |
@@ -3452,7 +3452,7 @@ findings are taken; until then nothing of it is built, and nothing carrying a ro
 
 ## 14. Round 4: the reads of round 3 answered
 
-Every finding of the Opus foundation reader's read of round 3 and of Codex's (`docs/2026-10-24-cowork-view-reads.md`, *Opus
+Every finding of the Opus foundation reader's read of round 3 and of Codex's (`docs/archive/2026-10-24-cowork-view-reads.md`, *Opus
 (foundation), round 3* and *Codex, round 3*), each checked against the code on main at `b4f096cc0`. Marked *(O3-Fn)* and *(C3-n.m)*
 in the text. *Taken* means the design now says it, and where; *carried* means it is the routing half's, corrected in its text and
 settled in its own round. No finding is disputed: each was confirmed in the code it cites.
@@ -3520,7 +3520,7 @@ Codex's is owed.)*
 
 ## 15. Round 4's named changes, and where each went
 
-The Opus foundation reader's read of round 4 (`docs/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 4*), read at
+The Opus foundation reader's read of round 4 (`docs/archive/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 4*), read at
 `953ae0c48`: 12 findings, 4 blocking; *accept row a after named changes the steward can check without another read*. Each is
 taken as the read names it, checked against the code on main at `deb766f20`. That commit's `src/` differs from `b4f096cc0`'s,
 among the files this design reads, only in `ChatRunner.cs` (MODELROLE1d2's pending starts), which moves its spawn to `:1546`, its
@@ -3552,7 +3552,7 @@ asking another round for row a; round 5 answers it in §16.)*
 
 ## 16. Round 5: Codex's read of round 4 answered
 
-Codex's read of round 4, with §15's named changes, at `eced2688e` (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round 4*): 11
+Codex's read of round 4, with §15's named changes, at `eced2688e` (`docs/archive/2026-10-24-cowork-view-reads.md`, *Codex, round 4*): 11
 findings, 7 of them blocking; *another round* for row a. Each is checked against the code on main at `9f48860ba`, the commit round
 5 is written from. **Whether the cited lines moved**: `src/` is the same at both commits (`git diff eced2688e 9f48860ba -- src/` is
 empty), so every line of code the read cites holds where it says, and so do its `Design:` lines, the design being unchanged
@@ -3594,7 +3594,7 @@ after named changes; round 6 answers both in §17.)*
 
 ## 17. Round 6: both reads of round 5 answered
 
-Both makers' reads of round 5, each at `6736d2db9` (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round 5* and *Opus
+Both makers' reads of round 5, each at `6736d2db9` (`docs/archive/2026-10-24-cowork-view-reads.md`, *Codex, round 5* and *Opus
 (foundation), round 5*): Codex's, 10 findings, 4 of them blocking, *another round* for row a; the Opus foundation reader's, 9
 findings, 2 of them blocking, *accept row a after named changes the steward can check without another read*. Each finding is
 checked against the code on main at `bdc1b03a2`, the commit round 6 is written from. Marked *(C5-n.m)* and *(O5-Fn)* in the text.
@@ -3669,7 +3669,7 @@ it; round 7 answers both in §18.)*
 
 ## 18. Round 7: both reads of round 6 answered
 
-Both makers' reads of round 6, each at `7341acf9f` (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round 6* and *Opus
+Both makers' reads of round 6, each at `7341acf9f` (`docs/archive/2026-10-24-cowork-view-reads.md`, *Codex, round 6* and *Opus
 (foundation), round 6*): Codex's, 9 findings, 3 of them blocking, *another round* for row a; the Opus foundation reader's, 8
 findings, none blocking, *accept*, asking that its findings 1 and 2 be written into the contract before the row is filed. Each
 finding is checked against the code on main at `abf03ea26`, the commit round 7 is written from. Marked *(C6-n.m)* and *(O6-Fn)* in
@@ -3767,7 +3767,7 @@ places; Codex's read of round 7 is owed.)*
 
 ## 19. Round 7's named changes, and where each went
 
-The Opus foundation reader's read of round 7 (`docs/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 7*), read at
+The Opus foundation reader's read of round 7 (`docs/archive/2026-10-24-cowork-view-reads.md`, *Opus (foundation), round 7*), read at
 `0d8e25085`: 8 findings, none blocking; *accept row a after named changes the steward can check without another read*, its
 findings 1, 2 and 3 to be written into §3.6, §4.1 and rules 4, 15 and 20 before the row is filed, and findings 4 to 8 smaller
 orderings and records. Each is checked against the code on main at `74725d604`, and each place a finding changes is marked
@@ -3816,7 +3816,7 @@ lines shifted where mod-i took Platform's entries and census rows off: `HarnessC
 | F5 | The brainstorm pass is placed in neither list | `DriverBrainstorms.cs:664`, `:665-667`, `:761`; `ChildLineage.cs:44`; `Driver.cs:3671` (a pass reads no record) | **Taken as named.** §1.1 lists the pass among the runs held `movedFirst`, with no record; §3.6 says it writes a taken `start` and its `end`, which no composition reads, rule 3 never running for it, and that its `start` makes its folder's file, which every pass that answers already makes through the connector. Rule 4's case (§1.1, §3.6, §4.3; rule 4). |
 | F6 | Placement on the map is under-proved | `StructureCheck.cs:205-210`, `:217-222`, `:225-229`; `fixtures/structure.json:75`, `:291`, `:1395`; `Platform/ChildMarks.cs`; `Quests/IntakeRoom.cs:32` | **Taken, the first of the read's two ways.** Row a's new files are written in their subdomains' folders and left off the map's list, which places them by folder; rule 23's proof finds none of them listed. `DAORIS_LINEAGE_PROC`'s name is declared in Platform's `ChildMarks`, beside the child marks mod-i placed there, so `Adapters` names it downward and the census gains nothing; the hook and the connector are its twins (§3.6, §4.3; rules 21, 23). |
 | F7 | A chat's `end` follows its record's conclusion | `ChatRunner.cs:2935`, `:2954`, `:2963`, `:2967`, then `:2977`; `Driver.cs:3894-3906`, then `:3910` | **Taken, the read's second way.** A recorded generation's own `end` closes it wherever it sits in the file, before rules 2 and 3; a go-on's or a resume's taken `start` landing in the gap reads it `lost` only until that `end` lands, which §9 names. The check found the same gap on a driven run, which this covers. Writing the chat's `end` before its conclusion is rejected in §8 (§3.6, §8, §9; rule 5). |
-| F8 | Records | `ChatGoOn.cs:667`, `:756`; `ChatRunner.cs:2892-2893`; `docs/2026-10-25-foundation-design.md:1180` | **Taken.** §1.1 and §9 cite the go-on's move at `ChatGoOn.cs:667`, Ask Daoris's at `:756`. FOUNDATION1's §5.1 COWORKVIEW1 row names round 7, its Opus read's named changes taken and Codex's read owed, a one-line edit of that design's row. |
+| F8 | Records | `ChatGoOn.cs:667`, `:756`; `ChatRunner.cs:2892-2893`; `docs/archive/2026-10-25-foundation-design.md:1180` | **Taken.** §1.1 and §9 cite the go-on's move at `ChatGoOn.cs:667`, Ask Daoris's at `:756`. FOUNDATION1's §5.1 COWORKVIEW1 row names round 7, its Opus read's named changes taken and Codex's read owed, a one-line edit of that design's row. |
 
 **The verdict.** The Opus read accepts row a after named changes: its findings 1, 2 and 3 are now in §3.6, §4.1 and rules 4, 15
 and 20, as it asks, and findings 4 to 8 are taken where it names them, none changing row a's shape.
@@ -3834,7 +3834,7 @@ at `26ef34d80`, asking another round on one point, the closure taken from findin
 
 ## 20. Round 8: Codex's read of round 7 answered
 
-Codex's read of round 7 with the Opus foundation reader's named changes (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round
+Codex's read of round 7 with the Opus foundation reader's named changes (`docs/archive/2026-10-24-cowork-view-reads.md`, *Codex, round
 7*), read at `26ef34d80`: 8 findings, 2 of them blocking, which are one point, the closure §19 took from the Opus read's finding 4,
 seen as a protocol (its 2.1) and as D173's rule (its 3.1), its §0 reopening round 6's 2.4 and 3.1 under it; *another round* for
 row a. Every finding is checked against the code on main at `26ef34d80`, the commit Codex read and round 8 is written from, and
@@ -3919,7 +3919,7 @@ findings, 1 blocking, which §21 answers.)*
 
 ## 21. Round 9: both reads of round 8 answered
 
-Both makers read round 8 at `103fc1aa6` (`docs/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 8*): 6 findings, 4 of
+Both makers read round 8 at `103fc1aa6` (`docs/archive/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 8*): 6 findings, 4 of
 them blocking, on two points, a foreign issuer's death read as its agent's (its 1.1 and 2.2) and a competitor admitted late as a
 go-on after a later run's taking (its 2.3), each also against D173's truthful partial visibility (its 3.1); *another round* for
 row a. The Opus foundation reader (*Opus (foundation), round 8*): 5 findings, 1 blocking, its finding 1 the same late go-on;
@@ -4019,7 +4019,7 @@ answers. The registry's defect was filed as SESSPROC1 at that commit.)*
 
 ## 22. Round 10: both reads of round 9 answered
 
-Both makers read round 9 at `a30797bce` (`docs/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 9*): 7 findings, 6 of
+Both makers read round 9 at `a30797bce` (`docs/archive/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 9*): 7 findings, 6 of
 them blocking, one point seen from five sides, a close resting on evidence that is not proof of a process's exit (a record
 leaving `working`, its 1.1; a later taking, its 2.1; a false stop and an issuer's crash, its 2.2), a foreign issuer's life read
 as its child's (its 2.3), rule 5's prefixes held only against fresh compositions (its 2.4), each against D173's truthful partial
@@ -4147,7 +4147,7 @@ sweep's other causes §9 names are for their owners to file beside SESSPROC1; th
 
 ## 23. Round 10's named changes, and where each went
 
-Both makers read round 10 at `9c7b0f72c` (`docs/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 10*): 6 findings, 2 of
+Both makers read round 10 at `9c7b0f72c` (`docs/archive/2026-10-24-cowork-view-reads.md`). Codex (*Codex, round 10*): 6 findings, 2 of
 them blocking on one point, an unclean historical chat `end` read as proof of its process's exit (its 2.1, and its 3.1 against
 D173's truthful partial visibility), and 4 not blocking; *accept row a after named changes*, two of them. The Opus foundation
 reader (*Opus (foundation), round 10*): 9 findings, none blocking; *accept row a after named changes the steward can check

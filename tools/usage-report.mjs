@@ -28,7 +28,7 @@
  * ## Outcomes
  *
  * With `--service <url>` naming this machine's local host, it also says how each quest the period touched
- * went (`docs/2026-10-03-future-directions-review.md` §3, row 4): its sessions and how each ended, its
+ * went (`docs/archive/2026-10-03-future-directions-review.md` §3, row 4): its sessions and how each ended, its
  * carry-ons, the person's answers on it, its departures and the person's yes, its strikes, the limits it met counted apart, how and when it closed and the time from publish
  * to close; then the same rolled up by repository and by agent and account. It is derived from the stores
  * that hold each fact: the host's quests and session records, each ask's words (three GETs, `RECORD_ROUTES`),

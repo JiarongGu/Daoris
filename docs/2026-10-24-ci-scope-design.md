@@ -5,7 +5,7 @@
 reads it and an independent Opus reader reads it as a foundation; the steward accepts after both. Codex read rounds 1 to 4; its
 read of the final text is owed when its workspace's credits return, and a blocking finding of it becomes an amendment to D207.
 
-**Round 6** (2026-10-24), the final round, answers round 5's one read (`docs/2026-10-24-ci-scope-reads.md`, *Opus (foundation),
+**Round 6** (2026-10-24), the final round, answers round 5's one read (`docs/archive/2026-10-24-ci-scope-reads.md`, *Opus (foundation),
 round 5*, at `9a48b7f3d`: 10 findings, 3 blocking, *accept after named changes the steward can check without another read*;
 Codex's workspace was out of credits, so round 5 has no Codex read). Every finding was checked against the code on main at
 `0f086f0e4`, where nothing the design or the read cites has changed since `cdf6d5f55`, and each held. Round 6 makes exactly the
@@ -26,7 +26,7 @@ What moved:
   the scoped run's light lane below normal while its Process tier runs, D180's priority split kept (§4.4, §5.1, §9); recall's
   walk first (§3.5); and the slips.
 
-**Round 5** (2026-10-24) answers round 4's two reads (`docs/2026-10-24-ci-scope-reads.md`, both at `e89f00ca4`: Codex's, 8
+**Round 5** (2026-10-24) answers round 4's two reads (`docs/archive/2026-10-24-ci-scope-reads.md`, both at `e89f00ca4`: Codex's, 8
 findings, 3 blocking, *another round*; the Opus foundation read, 10 findings, 3 blocking, *accept after named changes*). Every
 finding was checked against the code on main at `cdf6d5f55`, where no file the design cites has changed since `a6991805f` (only
 `docs/development.md`'s landing paragraph, which the design does not cite), and each held; §11.4 tables each. What moved:
@@ -57,7 +57,7 @@ finding was checked against the code on main at `cdf6d5f55`, where no file the d
   the install's residual exposure stated; `recordMatcher`'s purpose; *records only* by its three rules; the frozen tip bound to
   the preview; the expiry counted per test; and the slips.
 
-**Round 4** (2026-10-24) answers round 3's two reads (`docs/2026-10-24-ci-scope-reads.md`, both at `22427ff95`: Codex's, 12
+**Round 4** (2026-10-24) answers round 3's two reads (`docs/archive/2026-10-24-ci-scope-reads.md`, both at `22427ff95`: Codex's, 12
 findings, 6 blocking, *another round*; the Opus foundation read, 12 findings, 2 blocking, *accept after named changes*). Every
 finding was checked against the code on main at `a6991805f`, where no file the design cites has changed since `22427ff95`, and each
 held; §11.3 tables each. What moved:
@@ -85,7 +85,7 @@ held; §11.3 tables each. What moved:
   workflow's real shape, clearing known red by main's lineage, the recall proof's range start, price and threshold, row f's one
   concurrency limit, and the reversed D180 and CIFAST1 rejections named (§9).
 
-**Round 3** (2026-10-24) answers round 2's two reads (`docs/2026-10-24-ci-scope-reads.md`: Codex's, 15 findings, 11 blocking,
+**Round 3** (2026-10-24) answers round 2's two reads (`docs/archive/2026-10-24-ci-scope-reads.md`: Codex's, 15 findings, 11 blocking,
 *another round*; the Opus foundation read, 17 findings, 6 blocking, *accept after named changes*). Every finding was checked against
 the code on main at `b0d68c641`, where every line the reads cite is where they cite it; §11.2 tables each. What moved:
 
@@ -107,7 +107,7 @@ the code on main at `b0d68c641`, where every line the reads cite is where they c
   record; the sweep's due record consulted by the stage; every stage entry point held to it.
 - **D207's body and its Changes paragraph rewritten** to the design as it now stands.
 
-**Round 2** (2026-10-24) answers round 1's two reads (`docs/2026-10-24-ci-scope-reads.md`: Codex's, 17 findings, 14 blocking;
+**Round 2** (2026-10-24) answers round 1's two reads (`docs/archive/2026-10-24-ci-scope-reads.md`: Codex's, 17 findings, 14 blocking;
 the Opus foundation read, 21 findings, 8 blocking; both *another round*). Every finding was checked against the code on main at
 `b61325e6c`, CIFAST1 merged (`0613afde2`); §11 tables each, and where round 2 answers it. What moved:
 
@@ -1544,7 +1544,7 @@ amendment to D207. It is asked round 5's questions, as round 6 answers them:
 
 ### 11.1 Round 1's reads, answered in round 2
 
-Both reads are verbatim in `docs/2026-10-24-ci-scope-reads.md`. Every finding was checked against the code on main at `b61325e6c`
+Both reads are verbatim in `docs/archive/2026-10-24-ci-scope-reads.md`. Every finding was checked against the code on main at `b61325e6c`
 (CIFAST1 merged) and held; none was answered by disagreeing with its facts. *Taken* means the read's named fix, or the fix both
 reads agree on; *taken, narrowed* or *answered* says how round 2 differs. Where the steward's direction for round 2 settles a
 finding, the verdict says so.
@@ -1605,7 +1605,7 @@ Round 2 rewrote §4.1, §4.2, §5.3 and §8, which both round-1 reads named as d
 
 ### 11.2 Round 2's reads, answered in round 3
 
-Both reads are verbatim in `docs/2026-10-24-ci-scope-reads.md` (*Codex, round 2*; *Opus (foundation), round 2*), both at
+Both reads are verbatim in `docs/archive/2026-10-24-ci-scope-reads.md` (*Codex, round 2*; *Opus (foundation), round 2*), both at
 `aceced648`. Every finding was checked against the code on main at `b0d68c641`, where each line they cite is unchanged, and each
 held; none is answered by disagreeing with its facts. The Opus read's six blocking findings are taken as it names them. The round-1
 findings each read left open (Codex's §1 *Open* rows, the Opus read's *incomplete* rows) point to findings below and are answered
@@ -1658,7 +1658,7 @@ strictly more than today's, which waits on `BLOCKING` alone, holds and is kept.
 
 ### 11.3 Round 3's reads, answered in round 4
 
-Both reads are verbatim in `docs/2026-10-24-ci-scope-reads.md` (*Codex, round 3*; *Opus (foundation), round 3*), both at
+Both reads are verbatim in `docs/archive/2026-10-24-ci-scope-reads.md` (*Codex, round 3*; *Opus (foundation), round 3*), both at
 `22427ff95`. Every finding was checked against the code on main at `a6991805f`; no file the design cites changed since `22427ff95`
 (`git diff --stat 22427ff95 HEAD` over `tools/`, `daoris.gates.json`, `package.json`, `.github/` and D180 is empty), each line
 they cite is where they cite it, and each finding held. None is answered by disagreeing with its facts. The Opus read's two
@@ -1708,7 +1708,7 @@ background proof (8); each is resolved in the row named.
 
 ### 11.4 Round 4's reads, answered in round 5
 
-Both reads are verbatim in `docs/2026-10-24-ci-scope-reads.md` (*Codex, round 4*; *Opus (foundation), round 4*), both at
+Both reads are verbatim in `docs/archive/2026-10-24-ci-scope-reads.md` (*Codex, round 4*; *Opus (foundation), round 4*), both at
 `e89f00ca4`. Every finding was checked against the code on main at `cdf6d5f55`: `git diff --stat a6991805f HEAD` over `tools/`,
 `daoris.gates.json`, `daoris.lanes.json`, `package.json`, `.github/`, D115, D180 and `src/Daoris.Cli/tool-test` is empty, and
 `docs/development.md` changed only in its landing paragraph, which the design does not cite. Each line the reads cite is where they
@@ -1755,7 +1755,7 @@ price referring to later admission; `recordMatcher`) is its findings 7, 5 and 6.
 
 ### 11.5 Round 5's read, answered in round 6
 
-The one read is verbatim in `docs/2026-10-24-ci-scope-reads.md` (*Opus (foundation), round 5*), at `9a48b7f3d`; Codex's
+The one read is verbatim in `docs/archive/2026-10-24-ci-scope-reads.md` (*Opus (foundation), round 5*), at `9a48b7f3d`; Codex's
 workspace was out of credits, so round 5 has no Codex read. Every finding was checked against the code on main at `0f086f0e4`:
 `git diff --stat cdf6d5f55 HEAD` over `tools/`, `daoris.gates.json`, `daoris.lanes.json`, `package.json`, `.github/`, D115, D180,
 `src/Daoris.Cli/tool-test`, `ProcessJob.cs` and `UpdateCommand.cs` is empty, each line the read cites is where it cites it

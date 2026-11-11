@@ -1,5 +1,5 @@
 // `@` a file in the session's tree. The mention is TEXT, and both doors expand it as typed
-// (`docs/2026-09-25-message-content-evidence.md`), so all the page adds is help writing it: where the
+// (`docs/archive/2026-09-25-message-content-evidence.md`), so all the page adds is help writing it: where the
 // mention being written is, which files it could mean, and how to spell the one chosen. Pure.
 
 /** How many files the list offers at once. The rest are one more letter away. */

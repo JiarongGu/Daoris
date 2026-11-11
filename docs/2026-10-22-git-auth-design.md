@@ -30,12 +30,12 @@ Read from the code; each fact with its file and line.
   allowed key is kept and handed to no git.
 - **D121 rejected the command scope.** `GIT_CONFIG_COUNT` and `GIT_SSH_COMMAND` were rejected because "their command-line scope
   overrides a repository's own configuration" (`D121.md:109`), so a repository's own deploy-key `core.sshCommand` keeps winning
-  (`docs/2026-10-01-tools-design.md:248-249`). This design reverses that for authentication, and says why (§4.1, §13).
+  (`docs/archive/2026-10-01-tools-design.md:248-249`). This design reverses that for authentication, and says why (§4.1, §13).
 - **Git for Windows' launcher is started past where its layout is recognised** (GITSTART1-5): a `cmd\git.exe` with a git under
   `mingw64`, `clangarm64` or `mingw32`, `usr\bin`, and no `etc\git-bash.config` (`GitForWindows.cs:31, 47-68`). The real git then
   gets the launcher's variables, among them `HOME` where unset, from `HOMEDRIVE` and `HOMEPATH`, else `USERPROFILE`
   (`GitForWindows.cs:70-96`). The managed MinGit holds its git under `ucrt64`, which the rule does not name, so it still starts
-  through its launcher (GITSTART6; `docs/2026-10-01-tools-resources-evidence.md:52`). MinGit carries an ssh of its own and no bash
+  through its launcher (GITSTART6; `docs/archive/2026-10-01-tools-resources-evidence.md:52`). MinGit carries an ssh of its own and no bash
   (`:47-50`); whether it carries an `sh` or Git Credential Manager is not recorded.
 
 ### 0.2 What a session's git sees
@@ -84,12 +84,12 @@ Read from the code; each fact with its file and line.
   as `git -C . push` and `git -c <key>=<value> push` (`Permissions.cs:152-159`).
 - **WSR7 measured the cause.** On the owner's workspace every fetch failed with *Could not read from remote repository*: the git on
   the path could not use the key the person's own Git client used (`docs/task-archive.md:8817-8825`;
-  `docs/2026-10-01-tools-design.md:70-78`). WSR7 said it once per look; it could not make it work, and it did not measure which ssh
+  `docs/archive/2026-10-01-tools-design.md:70-78`). WSR7 said it once per look; it could not make it work, and it did not measure which ssh
   the person's client used.
 
 ### 0.5 What is already decided that this rests on
 
-- **D121 §2.5** (`docs/2026-10-01-tools-design.md:219-263`): Daoris's git settings travel in a global file named by
+- **D121 §2.5** (`docs/archive/2026-10-01-tools-design.md:219-263`): Daoris's git settings travel in a global file named by
   `GIT_CONFIG_GLOBAL`, which **includes the person's own global configuration, unchanged, and never writes it**; the `ssh` choice is
   git's own, Windows', or a command the person names. `credential.helper` was to join "by a row with its reason once a real fetch
   needs it". This design is that row, and it amends §2.5's precedence (§13).
@@ -114,7 +114,7 @@ Read from the code; each fact with its file and line.
   `profiles/` is kept as private as the machine, and losing it costs signing in again.
 - **D67's key accounts**: an API key is plaintext at rest in `profiles/keys.json`, shown only by its last four characters, never
   over the bridge back; DPAPI was rejected there because the CLI twin could not write it without native code
-  (`docs/2026-09-23-api-key-accounts.md:24-31, 52-54`). The shell already seals the browser's kept sign-in with DPAPI
+  (`docs/archive/2026-09-23-api-key-accounts.md:24-31, 52-54`). The shell already seals the browser's kept sign-in with DPAPI
   (`DpapiSeal.cs:7-17`).
 - **Words that are kept today**: git's failure text is kept in an Ask Daoris sync proposal's file (`HelpSyncProposals.cs:243-247`)
   and said in sync and landing words; a plugin's last stderr line is its answer (`land.mjs:62-67`). The machine log never holds a

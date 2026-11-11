@@ -117,7 +117,7 @@ its use over its curve, and marks a reading over the scope's curve with the curv
 greeting and a host key is trusted only at your press; `git use <repository> <identity>` points a repository at one. The list
 (`data/git-identities.json`) holds no secret. They take effect only on an install published with Daoris's git doors, which
 are left out until their measurements pass on an install; until then a remote keeps your own git as it was.
-`docs/2026-09-22-toolchain-design.md` is the contract.
+`docs/archive/2026-09-22-toolchain-design.md` is the contract.
 
 **`repository connect`, `repository retire` and `repository import` are management commands** — opt-in, they talk to a
 service, and no gate ever runs them; `brainstorm` too, to this machine's own service only. Every group the desktop's program

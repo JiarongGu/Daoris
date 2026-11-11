@@ -30,7 +30,7 @@ public sealed class HarnessWords
     }
 
     /// <summary>
-    /// A reading of the session's own background work (docs/2026-09-30-console3-native-streams-evidence.md): a command it
+    /// A reading of the session's own background work (docs/archive/2026-09-30-console3-native-streams-evidence.md): a command it
     /// backgrounded started (<see cref="WireReading.TaskStarted"/>, never a subagent, which is a child), and that command ended after its turn's
     /// result in a kill's or a stop's word (<see cref="WireReading.TaskEnded"/>), which only the harness does there, since the door has no stop
     /// for one task. Work that ended before the turn did is no cut. Told as each reading is said, whether or not a console keeps the streams

@@ -841,7 +841,7 @@ So nothing in the order still waits on the foundation. What waits is this design
    - **Where:** Design:246-247 (a slot handed on holds nothing ignored but `node_modules`); :892-915 (*what it saves*: "npm's install (the
      measured 170 to 221 s) … a new line's .NET, Rust, Angular and Next builds start cold"); §1.1 row 1; §18. Against it:
      - the direction's point 2: "its ignored dependency and build folders kept, so the session starts clean and pays no setup it already paid"
-       (`docs/2026-10-26-tree-pool-brief.md:17-18`);
+       (`docs/archive/2026-10-26-tree-pool-brief.md:17-18`);
      - TREEDEPS1's copy at every open (`Workplace/TreeDependencies.cs:1-19`; driving area rule 21);
      - D51's note of 2026-10-19: the web's `node_modules`, 228 MB, copied in 5.9 s, against its `npm ci` at 70 s warm
        (`docs/decisions/D51.md:85-88`).
@@ -1801,8 +1801,8 @@ rows marked ⚖ are built only after both makers' reads find nothing blocking in
 publishes or deletes.
 
 **Round 1's standing, as it was written (proposed under D191, D214):** the synthesis of the two sealed proposals, Codex's
-(`docs/2026-10-26-tree-pool-proposal-codex.md`, *X*) and the independent Opus reader's (`docs/2026-10-26-tree-pool-proposal-opus.md`, *O*),
-each written from the brief (`docs/2026-10-26-tree-pool-brief.md`) and the survey (`docs/2026-10-26-tree-pool-survey.md`) alone and sealed
+(`docs/archive/2026-10-26-tree-pool-proposal-codex.md`, *X*) and the independent Opus reader's (`docs/archive/2026-10-26-tree-pool-proposal-opus.md`, *O*),
+each written from the brief (`docs/archive/2026-10-26-tree-pool-brief.md`) and the survey (`docs/archive/2026-10-26-tree-pool-survey.md`) alone and sealed
 before its author read the other. It is written by Claude Opus 5.5, the voice the brief's §2 point 2 gives Claude, which wrote neither
 proposal. Where the two agree it is said once; where they differ the choice names whose it follows, why, and the case the other gets wrong
 (§1.1). **One choice is neither proposal's, and both makers are asked to weigh it first:** both keep a slot at a stable path of its own and
@@ -1845,7 +1845,7 @@ them. So every line the survey and the proposals cite holds at `f8fbb1bb7` but t
 the brief's question n and *O-n* the Opus reader's; *X §n* and *O §n* a section of each. A home's places are written `<home>/...`. Read for
 it: the brief, the survey and both proposals whole; D51, D88, D164, D167, D178, D189 and D195 at the points this cites; FOUNDATION1's design
 §13 (the desktop store) and §14 (the module map; `Trees/` is Workplace, row mod-x) and D212's note of 2026-10-26 on module-initializer seams;
-`.claude/knowledge/compatible-builds.md`; the working surface's rules (`docs/2026-09-21-working-surface-design.md:70-107`) and SWITCHCTX1
+`.claude/knowledge/compatible-builds.md`; the working surface's rules (`docs/archive/2026-09-21-working-surface-design.md:70-107`) and SWITCHCTX1
 §1.5 (`docs/2026-10-24-switch-context-design.md:184-198`).
 
 ### 22. Round 2: both reads of round 1 answered

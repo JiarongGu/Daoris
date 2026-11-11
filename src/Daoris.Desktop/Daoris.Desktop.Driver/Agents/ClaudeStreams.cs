@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// stream of its own.
 /// </summary>
 /// <remarks>
-/// <para><b>Read off the wire, never inferred</b> (docs/2026-09-30-console3-native-streams-evidence.md).
+/// <para><b>Read off the wire, never inferred</b> (docs/archive/2026-09-30-console3-native-streams-evidence.md).
 /// Each subagent's and each command's start and end is the reading the capture said of it
 /// (<see cref="WireReading.ChildSeen"/> and <see cref="WireReading.ChildEnded"/>, <see cref="WireReading.TaskStarted"/>
 /// and <see cref="WireReading.TaskEnded"/>), in the wire's word. A subagent's lines ride the session's stdout
