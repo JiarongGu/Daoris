@@ -104,7 +104,7 @@ public sealed class HelpRoomDoorsTests
         Assert.StartsWith("Agents → the agent's page → What it may do", Screen("allow, ask or deny"));
 
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("drive a repository"));
-        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("hold one"));
+        Assert.Equal("Agents → Setup → the repository's place → *Hold*, *Resume* in its header", Screen("hold one"));
         Assert.Equal(
             "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line",
             Screen("set the line"));

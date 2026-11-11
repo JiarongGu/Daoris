@@ -39,6 +39,14 @@ public sealed class HelpRoomFullReadsTests
         }
     }
 
+    [Fact]
+    public void The_room_sends_a_hold_s_resume_to_the_place_page_that_has_it()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("Agents → Setup → the repository's place → *Hold*, *Resume* in its header", room);
+    }
+
     /// <summary>With nothing readable, nothing is said.</summary>
     [Fact]
     public void Nothing_readable_says_nothing()
