@@ -4,9 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The allow supervisor's decision record: each allow kept as a file beside the session's other decisions and read back by the line,
-/// <c>went-on</c> at its keeping; a decision with no session kept with the machine's; and a restart closing one with no state line
-/// <c>stale</c>. Each seen failing first with its guard taken out.
+/// The allow supervisor's decision record: each allow kept beside the session's other decisions and read back by the line,
+/// <c>went-on</c> at its keeping; one with no session kept with the machine's; a restart closing one with no state line <c>stale</c>.
 /// </summary>
 public sealed class SupervisorAllowRecordTests : IDisposable
 {

@@ -6,9 +6,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Where a piece of work stands in its workflow, over the bridge:
-/// `WORKFLOW_RUN` answers <see cref="WorkflowRunReader"/> read from the service's quests, sessions and ask and this machine's
-/// landing record, each step Current's cell beside where it stands; the same run for a session, its quest and its ask; a chat's
-/// no run, with the driver's sentence; and the refusals.
+/// `WORKFLOW_RUN` answers <see cref="WorkflowRunReader"/> read from the service's quests, sessions and ask and this machine's landing record,
+/// each step Current's cell beside where it stands; the same run for a session, its quest and its ask; a chat's no run; and the refusals.
 /// </summary>
 public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
 {

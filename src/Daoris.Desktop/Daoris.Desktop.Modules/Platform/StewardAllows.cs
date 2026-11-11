@@ -4,18 +4,15 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A steward's act outside its grants, first offered to the allow supervisor that answers its target's place. The request waits on the
-/// pipe as one pending entry (<see cref="PendingAllow"/>) under the pipe's gate and is settled once, by the first of: the supervisor's
-/// allow, which admits the act as the steward's own; its leave, or ten minutes from the raise, each of which falls to the person's card;
-/// and the terminal's withdrawal, which ends the reservation under it. Only that settlement runs the act or asks the card, outside the
-/// gate, so either happens once.
+/// A steward's act outside its grants, first offered to the allow supervisor that answers its target's place. The request waits as one
+/// pending entry (<see cref="PendingAllow"/>) under the pipe's gate and is settled once, by the first of: the supervisor's allow, its
+/// leave or ten minutes from the raise (each falls to the person's card), and the terminal's withdrawal. Only that settlement runs the
+/// act or asks the card, outside the gate.
 /// </summary>
 public sealed class StewardAllows(InstancePipe pipe)
 {
-    /// <summary>How long a steward's request waits for the supervisor before it falls to the person's card.</summary>
     public static readonly TimeSpan Ten = TimeSpan.FromMinutes(10);
 
-    /// <summary>The wait, ten minutes unless a test shortens it.</summary>
     public TimeSpan Limit { get; set; } = Ten;
 
     /// <summary>Where an act's target is decided (<see cref="StewardPlaces"/>); null where nothing reads it, and the person's card is asked.</summary>
@@ -68,7 +65,6 @@ public sealed class StewardAllows(InstancePipe pipe)
             ? new RoleScope(row.TargetKind, row.Target(form.Form))
             : null;
 
-    /// <summary>What the request's act acts on.</summary>
     internal RoleScope? TargetOf(PendingAllow entry) => TargetOf(entry.Original, entry.Asked);
 
     /// <summary>The requests waiting for a supervisor now, oldest first; one the pipe no longer holds is forgotten.</summary>
@@ -94,10 +90,7 @@ public sealed class StewardAllows(InstancePipe pipe)
     private bool Live(PendingAllow entry) =>
         State.Reserved.TryGetValue(entry.Original.Id, out var held) && ReferenceEquals(held, entry.Reserved);
 
-    /// <summary>
-    /// The supervisor's allow: settled once, then the act admitted as the steward's own (the owner's marks read first) and run. Null where
-    /// kept, else why not.
-    /// </summary>
+    /// <summary>The supervisor's allow: settled once, then the act admitted as the steward's own and run. Null where kept, else why not.</summary>
     public string? Allow(string ask, string decision, Action<PendingAllow>? kept = null)
     {
         PendingAllow entry;

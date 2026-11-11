@@ -42,7 +42,6 @@ describe('the standing confirmation over the bridge', () => {
 
   it('reads STATE’s standingConfirmation field by field, a null the bridge left out read as none', () => {
     expect(standingOf({})).toEqual({ holds: [], holders: [], stewardActs: [], stewardDesk: [], helpPresses: [] });
-    // The roles a terminal holds this run, each read field by field; one with no role, kind or holder left out.
     expect(standingOf({
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }, { roles: ['steward'] }],
       holds: [

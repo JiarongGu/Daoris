@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The trees presses' routes take what their verbs name and answer the
-/// verb's words (<c>said</c>) beside the page's own fields, which keep their names and their values. The routes stay the person's
-/// (<c>PipeCensusTests</c>); these hold what a verb that becomes their client would send and print.
+/// The trees presses' routes take what their verbs name and answer the verb's words (<c>said</c>) beside the page's own fields. The
+/// routes stay the person's (<c>PipeCensusTests</c>); these hold what a verb that becomes their client would send and print.
 /// </summary>
 public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
 {
@@ -239,8 +238,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A tree's name given where the doors take a session names the session whose tree it is, at the plan, the
-    /// discard and the review, as the terminal's alone path says it; never that the session names no tree here.
+    /// A tree's name given where the doors take a session names the session whose tree it is, at the plan, the discard and the review, as the terminal's alone path says it.
     /// </summary>
     [Fact]
     public async Task A_trees_name_given_for_a_session_names_the_session_whose_tree_it_is_at_every_tree_door()

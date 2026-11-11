@@ -5,9 +5,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the steward's acts read and change: the driver's file, the registry, a session's record,
-/// this instance's processes, the planner's verdicts and the moves of a parked session. The real one is the driver bridge's
-/// (<see cref="DriverStewardWorld"/>); a test hands a stand-in, so no act starts a process, a window or an agent.
+/// What the steward's acts read and change: the driver's file, the registry, a session's record, this instance's processes, the
+/// planner's verdicts and the moves of a parked session. The real one is <see cref="DriverStewardWorld"/>; a test hands a stand-in.
 /// </summary>
 public interface IStewardWorld
 {

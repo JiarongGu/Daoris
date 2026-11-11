@@ -15,8 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// Each test has its own scratch home under the checkout's <c>_fixtures</c>, handed by path: no test sets <c>DAORIS_HOME</c>, starts a
 /// window, a console or an agent. The acts run over a stand-in world (<see cref="World"/>), so no process is stopped and no service is
-/// asked; the pipe is served in this process, as <c>OwnerSetTests</c>' is, and the judge's build offers the steward, which only a test's
-/// judge does in this build.
+/// asked; the pipe is served in this process, as <c>OwnerSetTests</c>' is.
 /// </remarks>
 public sealed class RoleActTests : IDisposable
 {

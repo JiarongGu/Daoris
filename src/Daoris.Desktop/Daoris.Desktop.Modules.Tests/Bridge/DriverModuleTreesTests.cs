@@ -496,8 +496,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// There is no merge-alone route: the work lands through its run's `land`, which merges
-    /// where the repository's rule says merge, and a door that merged whatever the rule said would be a door past it.
+    /// There is no merge-alone route: the work lands through its run's `land`, which merges where the repository's rule says merge.
     /// </summary>
     [Fact]
     public async Task The_merge_alone_is_no_route()

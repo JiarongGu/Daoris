@@ -57,7 +57,6 @@ public sealed class WorkplaceContextPortsTests : IDisposable
         var factory = WorkplaceEventRecords.Current;
         try
         {
-            // A supplied record does not consult the standalone factory or replace its numbering cache.
             WorkplaceEventRecords.Current = null!;
             new SessionHomeFiles(_home).Remove(["s1"], record);
         }

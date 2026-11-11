@@ -3,9 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run's <c>land</c> is the one way to land, so a door whose work no run's land performs lands nothing in place. It
-/// answers the gate's own refusal where a part holds, else why the work's process lands nothing, as <see cref="LandingCode.Refused"/>; the
-/// terminal's press says the same, exit 1.
+/// A door whose work no run's <c>land</c> performs lands nothing, and answers the gate's refusal or why the process lands nothing (<see cref="LandingCode.Refused"/>), exit 1 at the terminal.
 /// </summary>
 public sealed class RunLandHoldsTests
 {

@@ -96,8 +96,7 @@ export function useSessionLanding({
     },
     onError: (error: unknown) => answered.refused(sentence(error)),
   });
-  // The Accept is the review record's word on the record the plan drew (`WORKFLOW_NODE`'s `accept`), carrying the second opinion's
-  // token it answers; none where the run holds no review.
+  // The Accept is the review record's word on the record the plan drew, carrying the second opinion's token; none where the run holds no review.
   const drawn = landing.data?.accept ?? null;
   const acceptsNow = useAcceptUnderWay(drawn?.run ?? null);
   const accept = drawn ? (answered: Answered, answers?: string | null) => runNodeWord.mutate({

@@ -91,9 +91,8 @@ export function routeKey(module: string | undefined, route: string): string {
 }
 
 /**
- * The page a terminal's press's plan is shown on, scoped as the press is:
- * a sweep's or a sync's workspace, or a sync's repository; a clear's
- * workspace, quest or ask. A workspace a sweep or a sync names none of is null, the one in view.
+ * The page a terminal's press's plan is shown on, scoped as the press is: a sweep's or a sync's workspace (null, the one in view,
+ * where it names none), a sync's repository, or a clear's workspace, quest or ask.
  */
 export type PlanDoor =
   | { plan: 'sweep'; workspace: string | null }
@@ -101,9 +100,8 @@ export type PlanDoor =
   | { plan: 'clear'; scope: 'workspace' | 'quest' | 'ask'; id: string };
 
 /**
- * The door to a press's plan: the driver's routes whose grounds read a plan the person looks at on a page (a land,
- * a set-up, a sweep, a sync, a clear; `PipeTargetRows`), scoped by the press's own fields. None for any other press, a service's, or
- * one whose plan names nothing to open.
+ * The door to a press's plan: the driver's routes whose grounds read a plan the person looks at on a page (a set-up, a sweep, a sync,
+ * a clear; `PipeTargetRows`), scoped by the press's own fields. None for any other press, a service's, or one whose plan names nothing.
  */
 export function planDoor(waiting: Confirmation): PlanDoor | null {
   if (waiting.source !== 'pipe' || (waiting.module ?? 'DAORIS.DRIVER').toUpperCase() !== 'DAORIS.DRIVER') return null;

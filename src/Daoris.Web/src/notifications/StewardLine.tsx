@@ -70,12 +70,10 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  * started*, opening to the run's acts newest first: each its act in words, its target, its time and the mark *By the steward, on your
  * behalf*, and only while it stands, the owner's own reverse press, none for a finish or a Try again. A stop whose quest still
  * waits on a *Try again* is said above them as *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row
- * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's. Who holds the
- * steward is its role's, among the roles.
+ * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's.
  *
  * Under it, the steward's desk (kept across a restart): what any caller asked the steward to do, *n waiting*, folded until
- * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own
- * presses are elsewhere, and a request is the steward's to answer.
+ * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press.
  *
  * A molecule: drawn from props; the application holds the presses.
  */

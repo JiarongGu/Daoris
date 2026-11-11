@@ -53,8 +53,7 @@ export function helpReverse(press: HelpPressNow): HelpReverse | null {
 /**
  * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it:
  * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it is
- * filed; whether it still waits, is answered by the steward's act, is declined by the steward with a reason, or is left open when
- * Daoris stops (the desk is kept across a restart, and nothing answers a request from before it). Never the caller.
+ * filed; whether it still waits, is answered, is declined with a reason, or is left open when Daoris stops. Never the caller.
  */
 export type DeskRequestNow = {
   id: string;

@@ -248,10 +248,9 @@ export function doorOpening(door: StarterDoor, here: string | null = null): Open
 }
 
 /**
- * Where a press's plan door leads: the page that shows the plan the
- * press rests on, as it stands now, scoped as the press is. A sweep or a sync opens its workspace's Branches, a repository's
- * sync the workspace holding it (`holding`), and either naming none the one in view (`here`); a clear its workspace's Details,
- * where *Kept on this machine* is, or its quest's or its ask's page.
+ * Where a press's plan door leads: the page that shows the plan the press rests on, scoped as the press is. A sweep or a sync opens
+ * its workspace's Branches, a repository's sync the workspace holding it (`holding`), and either naming none the one in view (`here`);
+ * a clear its workspace's Details, where *Kept on this machine* is, or its quest's or its ask's page.
  */
 export function planOpening(
   door: PlanDoor, here: string | null, holding: (repository: string) => string | null,

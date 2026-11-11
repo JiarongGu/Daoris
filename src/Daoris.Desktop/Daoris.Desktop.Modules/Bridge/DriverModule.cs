@@ -28,8 +28,7 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press.
-    /// Null finds them beside the running application, else beside the home; a test names
-    /// its own, since every test's home shares one parent. Held by the context, which Plugins reads at each request.
+    /// Null finds them beside the running application, else beside the home; a test names its own. Held by the context.
     /// </summary>
     public string? Offers
     {
@@ -107,8 +106,7 @@ public sealed class DriverModule : ModuleBase
     /// where the host carries none, and the answer says so.
     /// </param>
     /// <param name="account">
-    /// The person's account's variables, for This Daoris's set-up presses: the application hands in the Windows account's.
-    /// Null where the host keeps none: then those presses are refused as data.
+    /// The person's account's variables, for This Daoris's set-up presses; null where the host keeps none, and those presses are refused as data.
     /// </param>
     public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null, IAccountEnvironment? account = null)
         : base(events: events)
@@ -116,13 +114,11 @@ public sealed class DriverModule : ModuleBase
         _context = new DriverContext(events, loop, openFolder, pickFile, account);
         _held = Registering(new HeldAnswers(events));
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
-        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it, from the facts the
-        // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
+        // Ask Daoris's room as START_HELP writes it, from the facts the judges keep on the loop, written again as the facts it said not read yet land.
         HelpMachineDesk.KeepFacts(_context);
         loop.DescribeHelp = cancellationToken => HelpMachineDesk.HelpMachineNowAsync(_context, cancellationToken);
         // A change told from elsewhere (the terminal's press, the loop's own) overtakes the reads under way as this module's
-        // presses do. The bus does not wait for its subscribers, so this is the backstop; a press made here
-        // forgets them before it answers.
+        // presses do; the bus does not wait for its subscribers, so this is the backstop.
         _ = events.Subscribe(StatePublisher.Module, StatePublisher.Type, _ =>
         {
             _flights.Forget();

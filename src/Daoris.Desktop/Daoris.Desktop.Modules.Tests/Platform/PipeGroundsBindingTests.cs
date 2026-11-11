@@ -19,8 +19,7 @@ public sealed class PipeGroundsBindingTests
         row.ReadAsync(world, payload, TimeProvider.System, CancellationToken.None);
 
     /// <summary>
-    /// Finding 1: each plan read whose rows name branches binds each branch's full tip, so a branch rewritten to as many commits (its count,
-    /// kind and short id kept) reads moved, and the same tips read again hold.
+    /// Each plan read whose rows name branches binds each branch's full tip, so a branch rewritten to as many commits reads moved.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rewrites))]

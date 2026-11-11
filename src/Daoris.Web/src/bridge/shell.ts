@@ -4,8 +4,7 @@
 //
 // The bridge by domain: each domain's types and calls live in `bridge/<domain>.ts`, or a scope's
 // `bridge/<scope>/<domain>.ts`, and this file is only the barrel. It re-exports every domain and holds no
-// code of its own, which `bridge/bridge.test.ts` holds. `bridge/call.ts` is the domains' own helper
-// and is re-exported by nothing.
+// code of its own, which `bridge/bridge.test.ts` holds. `bridge/call.ts` is re-exported by nothing.
 export * from './agents/accounts';
 export * from './repositories/across';
 export * from './repositories/files';

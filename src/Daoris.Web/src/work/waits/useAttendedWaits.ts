@@ -90,8 +90,7 @@ export function useAttendedWaits({
   const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
   const approveHandOver = useApproveHandOver();
   const declineHandOver = useDeclineHandOver();
-  // The head's helpers: the asks read above, the yes and the no through the acts' one owner, and a door
-  // to each helper.
+  // The head's helpers: the asks read above, the yes and the no through the acts' one owner, and a door to each helper.
   // Its team: the lead, the pass, *Bring in another agent…*'s doors, and a member's thread, each on this machine's files.
   const team = useTeam({
     attended, here,

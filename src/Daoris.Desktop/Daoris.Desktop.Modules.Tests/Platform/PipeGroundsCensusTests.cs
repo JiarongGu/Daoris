@@ -3,11 +3,10 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The grounds census beside the pipe's: every route the census makes the person's,
-/// in every form its rule gives, names its grounds or is timeless with its reason; a timeless route is none that deletes, closes or moves
-/// anything; each field a ground names is one the route's handler reads; and each plan read's fingerprint takes what its row names and
-/// none of the words, times and versions beside them, so two reads of an unchanged world across a moved clock and a new day give one
-/// fingerprint and one moved item gives another.
+/// The grounds census beside the pipe's: every route the census makes the person's, in every form its rule gives, names its grounds or
+/// is timeless with its reason; a timeless route is none that deletes, closes or moves anything; each field a ground names is one the
+/// route's handler reads; and each plan read's fingerprint takes what its row names and none of the words, times and versions beside
+/// them, so two reads of an unchanged world give one fingerprint and one moved item gives another.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class PipeGroundsCensusTests

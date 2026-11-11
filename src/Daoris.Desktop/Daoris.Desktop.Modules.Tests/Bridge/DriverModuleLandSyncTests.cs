@@ -4,10 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The <c>LANDING</c> plan carries what the
-/// landing leaves out because the line holds it, beside the answer's fields as they were, and a conflict with the words the review
-/// offers to say to the session. Each is absent where the line holds none of the tree's commits, so the answer reads as before.
-/// What the landing leaves out over real git is held by the driver's <c>LineHoldsLandingTests</c>.
+/// The <c>LANDING</c> plan carries what the landing leaves out because the line holds it, and a conflict with the words the review
+/// offers to say to the session; each is absent where the line holds none of the tree's commits. Over real git: the driver's <c>LineHoldsLandingTests</c>.
 /// </summary>
 public sealed class DriverModuleLandSyncTests
 {

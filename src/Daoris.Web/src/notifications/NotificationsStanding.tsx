@@ -14,9 +14,8 @@ import { StewardLine } from './StewardLine';
 /**
  * The steward's line as *Notifications* holds it: each act's reverse press sent as the window sends
  * the owner's ordinary press today: `SET_DRIVABLE`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
- * it. Who holds the supervisor and the steward is their roles'. The view draws it in its slot (`NotificationsView`'s
- * `standing`), so the view presses no hook itself. Above them, the terminal's tier with its *Back to ask*, sent as Settings' row sends it
- * (`SET_TERMINAL`), and what a terminal pressed under act, each opening what it named.
+ * it. The view draws it in its slot (`NotificationsView`'s `standing`), so the view presses no hook itself. Above them, the terminal's
+ * tier with its *Back to ask*, sent as Settings' row sends it (`SET_TERMINAL`), and what a terminal pressed under act.
  */
 export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
   notify: Notify;

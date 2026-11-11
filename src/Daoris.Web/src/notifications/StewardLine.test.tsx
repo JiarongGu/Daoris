@@ -185,7 +185,6 @@ describe("Notifications' steward line", () => {
     expect(region.getAllByText('管家代你')).toHaveLength(8);
     expect(region.getByRole('button', { name: '停止驱动' })).toBeInTheDocument();
     expect(region.getAllByRole('button', { name: '重试' })).toHaveLength(2);
-    // The turn-off is the role's, not the line's (as the English line's).
     expect(region.queryByRole('button', { name: '停用' })).toBeNull();
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|\{\{|undefined/);
   });

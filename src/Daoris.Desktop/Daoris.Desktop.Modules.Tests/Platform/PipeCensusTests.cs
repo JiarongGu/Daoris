@@ -326,8 +326,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "UNDER_WAY", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "SYNC_NOW", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "ACCOUNTS_READ", PipeClass.Open)]
-    // Changed after a second agent's review: a trees sync fast-forwards lines and deletes branches, a second opinion runs on an
-    // account, and Read again lets a refused account through and ends a cool-off; each is the person's.
+    // A trees sync fast-forwards lines and deletes branches, a second opinion runs on an account, and Read again lets a refused account through; each is the person's.
     [InlineData("DAORIS.DRIVER", "TREES_SYNC", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "ASK_OPINION", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "HARNESSES_REFRESH", PipeClass.Person)]

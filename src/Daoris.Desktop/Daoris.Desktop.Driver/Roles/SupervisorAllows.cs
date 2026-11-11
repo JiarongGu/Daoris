@@ -39,7 +39,7 @@ public sealed record SupervisorAllowed(
 /// <summary>
 /// The allow supervisor's decision record: each allow taken, whether of a held request, a widening or a steward's act, written once as a
 /// file beside the session's other decisions and read back by the line and the page. An allow takes effect at its keeping, so it is
-/// <c>went-on</c> at once. A record with no state line reads <c>held</c>, so the start's sweep closes it <c>stale</c>.
+/// <c>went-on</c> at once.
 /// </summary>
 internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog? log)
 {
@@ -69,7 +69,7 @@ internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog
         ];
     }
 
-    /// <summary>The start's sweep: a decision still <c>held</c> belongs to a run that is gone, so it is closed <c>stale</c>.</summary>
+    /// <summary>The start's sweep: a record with no state line (a run ended between its file and its line) reads <c>held</c> and is closed <c>stale</c>.</summary>
     public void SweepAtStart(DateTimeOffset now)
     {
         foreach (var folder in files.Folders())

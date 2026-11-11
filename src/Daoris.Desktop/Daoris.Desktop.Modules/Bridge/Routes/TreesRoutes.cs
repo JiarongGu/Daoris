@@ -5,9 +5,8 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's
-/// diff, the files a composer offers, a file's preview, discard, landing
-/// and the second opinion's gate.
+/// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's diff, the files a composer
+/// offers, a file's preview, discard, landing and the second opinion's gate.
 /// </summary>
 public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 {
@@ -15,9 +14,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     private readonly ReadLeaves _reads = reads;
 
     /// <summary>
-    /// What a landing changes: the session, every plan and gate (the line it merged into is what each
-    /// session's plan judges against, so `landing` is never only its own), its review, the clean-up's
-    /// list, and which repositories hold Daoris's branches.
+    /// What a landing changes: the session, every plan and gate (the line it merged into is what each session's plan judges
+    /// against), its review, the clean-up's list, and which repositories hold Daoris's branches.
     /// </summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
@@ -190,7 +188,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
     // Discarding a reviewed session's tree: the PERSON's act, since nothing
     // deletes itself, so its own route rather than anything the diff route could do as a side effect.
-    // The work lands through its run's review and `land`, which merges where the repository's rule says merge.
     /// <summary>
     /// Discard a session's tree.
     /// </summary>
@@ -252,15 +249,12 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
     private readonly TreesLandDesk _land = new(loop);
 
-    // How a reviewed session's work would land: merge into the line, or the branch the rule names for this session, said before its
-    // review's Accept, which is the record's word at the node door (`WORKFLOW_NODE`'s `accept`); the run's `land` lands it.
     /// <summary>
     /// A reviewed session's landing plan, and the review record its Accept is pressed on.
     /// </summary>
     /// <remarks>
     /// The pattern is expanded from the session's quest and its title, or for a conversation from the
     /// session and what the person first said — this machine's own record, never the session record's.
-    /// A refusal is an answer, as the merge door's are.
     /// </remarks>
     [DriverRoute("LANDING", PipeClass.Open)]
     private Task<object?> LandingAsync(LandingRead read, CancellationToken cancellationToken) =>

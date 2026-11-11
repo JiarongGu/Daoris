@@ -65,7 +65,6 @@ public static class StewardActNames
     public const string UpdateNow = "updatenow";
     public const string UpdateCancel = "updatecancel";
 
-    /// <summary>A session's tree cleaned unforced.</summary>
     public const string Clean = "clean";
     public const string HandOver = "handover";
     public const string Setup = "setup";

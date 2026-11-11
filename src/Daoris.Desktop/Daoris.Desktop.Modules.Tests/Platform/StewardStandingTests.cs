@@ -8,15 +8,11 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's standing over the real pipe: a press its
-/// proved holder makes within the acts the person granted runs with no card and is logged; one outside them asks the person as its
-/// route's own press; an act the person takes back asks again at the next press; and a process that does not prove the holder's key
-/// is refused, nothing asked.
+/// The steward's standing over the real pipe: a press its proved holder makes within the acts the person granted runs with no card and
+/// is logged; one outside them asks the person as its route's own press; an act the person takes back asks again at the next press;
+/// and a process that does not prove the holder's key is refused, nothing asked.
 /// </summary>
-/// <remarks>
-/// Each test serves its own pipe in this process, named by its own scratch home's id; where the terminal's process stands and the
-/// holder's configuration walk are stand-ins, as <c>PipeStandingTests</c>' are. Windows only.
-/// </remarks>
+/// <remarks>Each test serves its own pipe in this process; the terminal's process and the holder's configuration walk are stand-ins. Windows only.</remarks>
 public sealed class StewardStandingTests : Bridge
 {
     /// <summary>A driver module whose <c>ROLE_ACT</c> is the door's own handler and whose every other route says it ran, and under which door.</summary>

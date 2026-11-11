@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The shell's half of the plugin record: the loop keeps one record of its plugins' health, and hands it and
-/// the shell's machine log to its hook set and to every landing a route builds, so what a landing or a hand-off does
-/// with a plugin is the loop's to know and the log's to keep.
+/// The shell's half of the plugin record: the loop keeps one record of its plugins' health, and hands it and the shell's machine log
+/// to its hook set and to every landing a route builds.
 /// </summary>
 /// <remarks>
 /// Read from the modules' sources, as a reviewer would: the hook set is built only once the loop's host is up, and a
@@ -49,9 +48,8 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The plan and an Accept whose run's <c>land</c> Daoris performs are a read and the review's word and a wait, so they
-    /// build no plugin wire and call no landing: a run's land is the one way to land. Read from the source, as a reviewer would,
-    /// since a landing needs git and a plugin's process.
+    /// The plan and an Accept are a read and the review's word, so they build no plugin wire and call no landing: a run's land is the
+    /// one way to land. Read from the source, since a landing needs git and a plugin's process.
     /// </summary>
     [Fact]
     public void The_plan_and_an_accept_on_a_run_whose_land_is_performed_build_no_plugin_wire_and_call_no_landing()

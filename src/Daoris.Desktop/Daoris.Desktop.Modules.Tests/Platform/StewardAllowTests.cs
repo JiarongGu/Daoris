@@ -11,10 +11,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A steward's act outside its grants as an <c>allow</c> subject <c>{ ask }</c> over the real pipe: raised at its target's place, allowed
-/// once as the steward's own act, left or unanswered for ten minutes to the person's card once, withdrawn by the steward, and never
-/// offered to a supervisor sharing the steward's holder.
+/// once, left or unanswered for ten minutes to the person's card once, withdrawn, and never offered to a supervisor sharing its holder.
 /// </summary>
-/// <remarks>Each test serves its own pipe in this process over the real driver module. Windows only.</remarks>
 public sealed class StewardAllowTests : DriverModuleBridge
 {
     private const string Supervisor = "supervisor-allows";

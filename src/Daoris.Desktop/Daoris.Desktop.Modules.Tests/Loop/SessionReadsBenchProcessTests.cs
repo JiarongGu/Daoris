@@ -7,13 +7,12 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// What the shell asks of the service's session records on a home of a working machine's size (<see cref="BenchHome"/>, 3,000
-/// records), each held to its budget: a slice's push after one record moved, and a landing's plan and press. Each reads every record at
-/// most once, and only as its change since the kept list's mark, never the whole list with its closed records again.
+/// records), each held to its budget: a slice's push after one record moved, and a landing's plan. Each reads every record at most once,
+/// only as its change since the kept list's mark.
 /// </summary>
 /// <remarks>
 /// The reads are counted at the client's doors (<see cref="BenchDoors"/>), so a read through any of the shell's doors is counted, and a
-/// read is held by how often it asked, which a neighbour's load does not move. Each runs once cold and is counted warm, the second time,
-/// as a running shell reads it at every move after its first.
+/// read is held by how often it asked, which a neighbour's load does not move. Each runs once cold and is counted warm, the second time.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SessionReadsBenchProcessTests(ITestOutputHelper output) : DriverModuleBridge, IAsyncLifetime

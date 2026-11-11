@@ -4,9 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The review's foot says what Accept leaves out because the line holds it and
-// what it replays, before the press; where replaying conflicts, the plan's trial or the press's refusal, Accept's place holds the words
-// its session is asked to rebase with, and one press says them through the say door.
+// The review's foot says what Accept leaves out because the line holds it and what it replays; where replaying conflicts, Accept's
+// place holds the words its session is asked to rebase with, and one press says them through the say door.
 
 const { invoke, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),

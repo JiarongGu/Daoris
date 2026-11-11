@@ -74,8 +74,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A partner's record lands nothing at the press, the plan or the verb; each
-    /// refuses it in the words that name its lead's merge of the frozen ref.
+    /// A partner's record lands nothing at the press, the plan or the verb; each refuses it in the words that name its lead's merge of the frozen ref.
     /// </summary>
     [Fact]
     public async Task A_partners_record_is_refused_at_the_plan_and_the_verb()

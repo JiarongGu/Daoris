@@ -4,14 +4,12 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The read grounds a person's press names by <see cref="GroundReadAttribute"/>: the read each calls, the payload's fields it names,
-/// and what its projection takes. A plan's projection takes the fields it names and none of the words, times and versions beside
-/// them, so a press confirmed the next morning or after an update is refused only where what it acts on moved.
+/// and what its projection takes: those fields, none of the words, times and versions beside them.
 /// </summary>
 /// <remarks>
-/// Where the read answers no field the press names (the landings' commits are cut to eight characters, the sweep's and the sync's
-/// rows carry no tip), the projection takes what the answer does carry: each commit's short id, a row's count of commits and its
-/// kind; the session's tree head and a branch's tip are the <c>branch</c> grounds that see a commit itself. Where no read of the
-/// bridge lists a wait by the press's id, the loop reads its own record (<see cref="LoopGround"/>).
+/// Where the read answers no field the press names (commits are cut to eight characters, the sweep's and the sync's rows carry no
+/// tip), the projection takes what the answer does carry; a branch's tip is the <c>branch</c> ground. Where no read lists a wait by
+/// the press's id, the loop reads its own record (<see cref="LoopGround"/>).
 /// </remarks>
 internal static class PipeReads
 {

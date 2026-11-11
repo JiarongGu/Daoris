@@ -210,8 +210,7 @@ describe('the opener', () => {
   });
 });
 
-// A press's card opens the page its plan is shown on, scoped to the
-// press's own session, repository, workspace, quest or ask.
+// A press's card opens the page its plan is shown on, scoped to the press's own repository, workspace, quest or ask.
 describe("a press's plan door", () => {
   const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
 

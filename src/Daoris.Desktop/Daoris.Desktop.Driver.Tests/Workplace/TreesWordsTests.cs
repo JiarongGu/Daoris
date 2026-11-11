@@ -3,10 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each <c>trees</c> press's route answers the verb's own words beside the
-/// page's fields (<c>said</c>), and the verb that becomes a client prints them. Per verb, the text a stand-in's answer is printed
-/// as equals the alone path's, case for case, refusals included: the alone path prints through <see cref="TreesWords"/> too, which
-/// <c>TreesConsoleUsesTheWords</c> holds by reading the console's source.
+/// Each <c>trees</c> press's route answers the verb's own words beside the page's fields (<c>said</c>), and the verb that becomes a
+/// client prints them: the text equals the alone path's, case for case, refusals included, as that path prints through <see cref="TreesWords"/> too.
 /// </summary>
 /// <remarks>Windows only, as the pipe is: each test serves its own stand-in in process, on its own home's name.</remarks>
 public sealed class TreesWordsTests : IAsyncLifetime

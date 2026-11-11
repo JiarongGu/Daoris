@@ -179,8 +179,7 @@ export function DiffPane({
   const leftOutOf = plannable ? landing.data?.leftOutOf ?? null : null;
   const say = useSay();
   const discard = useDiscardSessionTree();
-  // What is under way for this session: its Accept, which waits for the pass that lands it, and its line of work's one Accept, or
-  // its ask's, which lands this part too, whichever view or window pressed those.
+  // What is under way for this session, whichever view or window pressed it: its Accept, and its line of work's or its ask's, which lands this part too.
   const underWay = {
     accept: useAcceptUnderWay(accept?.run ?? null),
     discard: useUnderWay('DISCARD_SESSION_TREE', session),

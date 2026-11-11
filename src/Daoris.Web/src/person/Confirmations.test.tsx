@@ -11,8 +11,7 @@ import {
   regionShown, routeKey,
 } from './Confirmations';
 
-// The window's confirmation of a terminal's press, as *Notifications*
-// draws it: in plain words that keep what tells one session and one
+// The window's confirmation of a terminal's press, as *Notifications* draws it: in plain words that keep what tells one session and one
 // file from another, every value in the card's view, the route's name under *Details*; its decision region bounded, and *shown*
 // once that region is in view in a window in front of the person. A terminal's press waits until the person answers:
 // its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
@@ -434,7 +433,7 @@ describe("the window's confirmation of a terminal's press", () => {
 });
 
 // A terminal's press that rests on a plan is confirmed hours later from
-// its card, so the card opens that plan's own page, scoped to the press's own session, repository, workspace, quest or ask.
+// its card, so the card opens that plan's own page, scoped to the press's own repository, workspace, quest or ask.
 describe("the door to a press's plan", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 

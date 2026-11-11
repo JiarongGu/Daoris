@@ -151,7 +151,6 @@ internal static class TreesConsole
 
                 // A session whose review reads as landed — its landed branch stands, or its tree is gone —
                 // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
-                // The reading is the route's too: both doors refuse a second landing in the same words.
                 var before = await TreesWords.LandedBeforeAsync(trees, service, session).ConfigureAwait(false);
                 var gone = TreeFolders.TreeGone(tree);
                 if (before is not null && before.ReadsAsLanded(gone))
@@ -177,21 +176,17 @@ internal static class TreesConsole
                 }
 
                 var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
-                // A chat that took a quest is gated by that quest's chain, as the window's press reads it.
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false) ?? ChatRuns.TakenOf(session, recordsJson);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-                // No plugin wire: this verb lands nothing, so no plugin is told.
                 var landing = new SessionTrees(home);
 
                 // A chat in a tree of its own is gated by its chat run; its plan reads that gate and writes nothing.
                 var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
 
-                // The landing gate: the second opinion, then the review, read once for the plan, and handed to
-                // the landing, which refuses the first that holds.
+                // The second opinion, then the review, read once for the plan.
                 var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session, run: chatRun).ConfigureAwait(false);
                 // Named for the chain's first quest, as the review's press names it, and a part of an entry with others for its
                 // entry's first part, on the entry's one branch: the driver's one call.
-                // Its quests are read once, as the route reads them.
                 var quests = new PressQuests(service.FindQuestAsync);
                 var subject = await landing.OwnSubjectAsync(
                     tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => quests.FindAsync(quest),

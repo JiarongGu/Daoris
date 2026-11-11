@@ -43,8 +43,7 @@ public sealed record StewardActNow(
 public sealed record StandingChange(bool Done, string? Why, string? Message);
 
 /// <summary>
-/// A role a terminal holds this run, as the window reads it: the role's catalogue id, its kind, the living holder, since when, and how
-/// many acts it made. Never its generation, its key nor its hash.
+/// A role a terminal holds this run, as the window reads it: its catalogue id, kind, living holder, since when, and how many acts it made.
 /// </summary>
 public sealed record RoleHoldNow(string Role, string Kind, string Holder, DateTimeOffset Since, int Answers);
 

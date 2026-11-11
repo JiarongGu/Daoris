@@ -366,8 +366,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The landing family: what each press declares it changes, and which payload field names the session
-    /// where the change is one session's; the plans, gates and lists beside them declare nothing.
+    /// The landing family: what each press declares it changes, and which payload field names the session; the plans, gates and lists declare nothing.
     /// </summary>
     [Theory]
     [InlineData("LAND_ENTRY", "sessions,landing,diff,sweep,treesSync", null)]

@@ -4,8 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The allow kind's third subtype, a steward's act outside its grants <c>{ ask }</c>: listed with <c>allow.steward</c> for the supervisor
-/// that answers its target's place, unless that supervisor's holder is the steward's own; allowed once through the pipe's one pending
-/// entry (<see cref="StewardAllows"/>), or left to the person's card.
+/// that answers its target's place, unless its holder is the steward's own; allowed once (<see cref="StewardAllows"/>), or left to the person's card.
 /// </summary>
 internal static class StewardAllowSubjects
 {

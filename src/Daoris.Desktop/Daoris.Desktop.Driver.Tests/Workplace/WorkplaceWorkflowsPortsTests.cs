@@ -6,9 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Workplace-names-Workflows cut: the seams the cut adds. Workplace declares the run's files and ids, the process
-/// facet it reads, the operations it asks of the workflows (the landed declaration, a quest's process, a chat run's bind and press) and the
-/// gate's two; Workflows keeps and installs them. The cases that need no new seam are <see cref="WorkplaceWorkflowsBoundaryTests"/>'.
+/// The Workplace-names-Workflows cut's seams: Workplace declares the run's files and ids, the process facet it reads, the operations
+/// it asks of the workflows (the landed declaration, a quest's process, a chat run's bind and press) and the gate's two; Workflows installs them.
 /// </summary>
 [Collection("agent operation ports")]
 public sealed class WorkplaceWorkflowsPortsTests : IDisposable
