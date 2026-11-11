@@ -82,6 +82,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## The plugin family's follow-ups and FABRIC-TRYAGAIN1 — the kit's family rule, the short command, try again (2026-11-11)
+
+> **Plugins, follow-ups** (driver, modules, web): Outcome: `daoris plugin new` refuses an id with no family and the `daoris-` family outside Daoris's own examples, and its form asks `<family>-<name>`; a plugin's commands answer to the id's tail where one installed plugin has it (`daoris azure-devops login`), an ambiguous tail refused naming both (D274's note); both loops and the headless `drive --once` start plugins through the rename first, an unsettled attempt moves to the new id with its step kind, and the editor and `workflow show` read the new kind; **FABRIC-TRYAGAIN1:** `daoris plugin try-again <id>` restarts an unsound plugin in the running Daoris, and the plugin's page shows *Try again* (重试) while it is unsound, with why. Left: the remaining tests and stories that use the old example ids as sample strings. Proof: `PluginFamilyTests`, `PluginRenameGapsTests` (seen failing first), `DriverModulePluginTryAgainTests`, `PluginPage.tryAgain.test`.
+
+---
+
 ## ASKFULL1g-ix — the proposal box gone, `go` a link of its own (2026-11-11, D261)
 
 > **ASKFULL1g-ix** (service, driver, modules, web): Outcome: the last proposal kind, `go`, is a link in Ask Daoris's words (`daoris:go?view=…`) that its panel draws as a press opening the place (`help/goLink.tsx`), plain words anywhere else; the box is removed whole — `go_propose`, its writer, `HelpProposalBox`, `HelpProposals`, `HelpProposalKinds`, `Help/Proposals/`, `HELP_PROPOSALS`, `HELP_APPLY`, `HELP_DISMISS`, `HelpScreenDoors`, `ProposalCard`, their words — and the room's *What you may do* names the verbs alone (`HelpRoomVerbs`); a run-once home step salvages and clears the proposals folder. Every way Ask Daoris asks the person is now a press viewed on the Confirm card (D261). Proof: the service registration, call-table and brainstorm tests, the web call-table twin and `goLink.test` (seen failing first), `HelpProposalsStepTests`, the room goldens.

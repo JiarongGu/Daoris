@@ -411,7 +411,8 @@ public static class WorkflowOperations
     private static JsonNode RawOf(WorkflowFileFound found, int index)
     {
         var version = found.File!["versions"]![index]!;
-        return (version["graph"] ?? version["steps"])!;
+        if (version["graph"] is not { } graph) return version["steps"]!;
+        return found.Read.Versions[index].Graph is { } read ? PluginFormerKinds.Drawn(graph, read) : graph;
     }
 
     /// <summary>One version of a saved workflow as the file keeps it (the newest where none is named), with its line and, for a graph, its problems.</summary>

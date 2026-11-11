@@ -10,6 +10,9 @@ internal static class DriveUsageIntro
           <command> …  ·  --version
               a word no group below owns is the CLI's, a doctrine command, offline: run by the CLI this install
               carries, on the node PATH finds (Node.js 22 or later); `daoris help` ends with the CLI's usage.
+          <plugin> <command> … [--stdin]
+              a command an installed plugin declares, the plugin named by its id, or by its id without its family where no
+              other installed plugin's id ends the same (`daoris azure-devops login` for `daoris-azure-devops`).
           help [<group>]
               this usage, or one group's.
           agent list  ·  agent install|update|pin|unpin|which <agent> …  ·  agent login|key <agent> …

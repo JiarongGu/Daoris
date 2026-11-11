@@ -1337,6 +1337,48 @@
       }
     },
     {
+      "name": "try-again with no Daoris running",
+      "argv": [
+        "try-again",
+        "acme.agent"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: Daoris is not running, so nothing holds plugin `acme.agent` back: it starts with Daoris."
+      ],
+      "err": [],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "changed": "a verb of the driver's alone: the running Daoris starts an unsound plugin again (`HookSet.TryAgain`), and with none running nothing holds it"
+    },
+    {
+      "name": "try-again what is not there",
+      "argv": [
+        "try-again",
+        "nobody"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no plugin `nobody` on this machine — `daoris plugin list` shows what there is."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "data/plugins/acme.agent/plugin.json": "{ \"id\": \"acme.agent\" }"
+      },
+      "changed": "a verb of the driver's alone, refused as a switch of what is not there is"
+    },
+    {
       "name": "disable over a plugins.json that does not read",
       "argv": [
         "disable",
@@ -1462,7 +1504,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable (and new, try: the kit)"
+        "daoris: unknown plugin verb 'frobnicate' — one of: list, add, update, remove, enable, disable, try-again (and new, try: the kit)"
       ],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n"

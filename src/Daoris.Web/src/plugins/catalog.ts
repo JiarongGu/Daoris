@@ -133,8 +133,9 @@ export type PluginShown = {
   harnesses: string[];
   /** The points it listens on, when it speaks. */
   points: string[];
-  /** Whether its hook process is up right now. */
+  /** Whether its hook process is up right now, and whether three unasked exits within an hour hold it back until *Try again*. */
   running: boolean;
+  unsound?: boolean;
   /** Its install folder. */
   folder: string;
   /** Where what it keeps lives, which an update never touches and a removal leaves. */

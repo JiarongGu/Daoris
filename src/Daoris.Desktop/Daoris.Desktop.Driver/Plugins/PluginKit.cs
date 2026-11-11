@@ -271,8 +271,10 @@ public static class PluginKit
         {
             throw new DriverException(
                 $"`{id}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like "
-                + "`acme.quiet-hours`, and it names the plugin's folder.");
+                + "`acme-quiet-hours`, and it names the plugin's folder.");
         }
+
+        if (PluginKitFamily.Refusal(id, parent) is { } family) throw new DriverException(family);
 
         var named = points.Select(point => point.Trim()).Where(point => point.Length > 0).Distinct(StringComparer.Ordinal).ToList();
         if (named.Count == 0)
@@ -351,10 +353,10 @@ public static class PluginKit
     /// <returns>The names written, in the plan's order.</returns>
     public static IReadOnlyList<string> Write(ScaffoldPlan plan) => PluginKitFiles.Write(plan);
 
-    /// <summary>A readable name from an id: its last part, words for dashes, the first letter raised — `acme.quiet-hours` is "Quiet hours".</summary>
+    /// <summary>A readable name from an id: its last part after its family, words for dashes, the first letter raised — `acme-quiet-hours` is "Quiet hours".</summary>
     private static string NameOf(string id)
     {
-        var last = id.Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? id;
+        var last = (PluginFamily.Tail(id) ?? id).Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? id;
         var words = last.Replace('-', ' ').Trim();
         return words.Length == 0 ? id : char.ToUpperInvariant(words[0]) + words[1..];
     }

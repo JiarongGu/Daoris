@@ -27,11 +27,11 @@ public sealed class PluginCycleStaleTests : IDisposable
     [Fact]
     public async Task A_performer_whose_step_declares_no_receipt_passes_the_cycle_s_stale_step()
     {
-        var plan = PluginKit.Plan("acme.bare", [HookPoints.Perform], _scratch);
+        var plan = PluginKit.Plan("acme-bare", [HookPoints.Perform], _scratch);
         PluginKit.Write(plan);
         var manifest = Path.Combine(plan.Folder, "plugin.json");
         var text = File.ReadAllText(manifest);
-        var receipt = "\"evidence\": { \"schema\": \"acme.bare/receipt@1\" },";
+        var receipt = "\"evidence\": { \"schema\": \"acme-bare/receipt@1\" },";
         Assert.Contains(receipt, text);
         File.WriteAllText(manifest, text.Replace(receipt, "", StringComparison.Ordinal));
 

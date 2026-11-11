@@ -31,7 +31,7 @@ public sealed class PluginKitSystemTests : IDisposable
     [Fact]
     public void Naming_one_system_point_scaffolds_an_adapter_with_both_its_system_and_the_kit_s_library()
     {
-        var plan = PluginKit.Plan("acme.store", [HookPoints.PlanRead], _scratch);
+        var plan = PluginKit.Plan("acme-store", [HookPoints.PlanRead], _scratch);
 
         Assert.Equal(HookPoints.System, plan.Points);
         Assert.Contains(plan.Files, file => file.Name == PluginKitSystems.Library);
@@ -48,7 +48,7 @@ public sealed class PluginKitSystemTests : IDisposable
     [Fact]
     public async Task The_scaffold_passes_its_trial_at_both_points_in_the_stand_in_world()
     {
-        var plan = PluginKit.Plan("acme.store", [HookPoints.ApplyPerform], _scratch);
+        var plan = PluginKit.Plan("acme-store", [HookPoints.ApplyPerform], _scratch);
         PluginKit.Write(plan);
         var home = Path.Combine(_scratch, "home");
         Directory.CreateDirectory(home);

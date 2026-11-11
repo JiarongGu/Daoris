@@ -98,7 +98,7 @@ public static class WorkflowEffectives
         // The refusal a run's bind makes, said on the chart too, so the page shows why no run starts on it.
         if (!verifies && PullRequestUnserved.Of(held, plugins, id, newest.Version) is { } unserved) return Unread(unserved);
 
-        var graph = found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!.DeepClone();
+        var graph = PluginFormerKinds.Drawn(found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!, held);
         var cells = held.Nodes.Select(node => new EffectiveCell(node.Id, WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();
         return new(route, id, found.Read.Name, newest.Version, newest.Digest, WorkflowNamed.GraphSchema, source, verifies, graph, cells, null,
             WorkflowDefaults.NewerThan(newest.From, newest.Graph));
