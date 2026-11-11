@@ -101,6 +101,12 @@ internal static class AgentAccountsCommand
                     }
                 }
 
+                foreach (var stray in HarnessSettings.StrayAgents(home, context.Agents))
+                {
+                    world.Instance.Out.WriteLine($"  left over: {stray} — no agent; `daoris agent account remove {ShellWord.Of(stray, ShellWord.Account)}` "
+                        + "takes the folder, every account and sign-in in it included.");
+                }
+
                 return null;
             case "add":
                 return Add(context);
@@ -165,6 +171,7 @@ internal static class AgentAccountsCommand
     /// </summary>
     private static AgentPress Remove(AccountVerbContext at)
     {
+        if (at.Operand(2) is { } folder && at.Operand(3) is null && StrayAgentFolders.Is(at.Home, at.Agents, folder)) return RemoveStrayAgent(at, folder);
         var owner = at.Owner();
         var profile = at.Account(owner, at.Bare(3, "<agent> <profile>"));
         var where = Folder(at.Home, owner, profile);
@@ -206,6 +213,35 @@ internal static class AgentAccountsCommand
                 return 0;
             });
     }
+
+    /// <summary><c>profile remove &lt;folder&gt;</c> for a folder no agent names (<see cref="StrayAgentFolders"/>): taken here, whole.</summary>
+    private static AgentPress RemoveStrayAgent(AccountVerbContext at, string folder) =>
+        new(at.Verb, null, at.Isolated, null,
+            _ =>
+            {
+                try
+                {
+                    return Task.FromResult<object?>(StrayAgentFolders.Remove(at.Home, at.Agents, folder) ? "removed" : "gone");
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    return Task.FromResult<object?>(error.Message);
+                }
+            },
+            _ => null,
+            done =>
+            {
+                if (done is "removed" or "gone")
+                {
+                    at.Say(done is "removed"
+                        ? $"{Prefix}: removed the folder `{folder}`, no agent's, with every account and sign-in in it."
+                        : $"{Prefix}: `{folder}` is no folder here now — there was nothing to remove.");
+                    return 0;
+                }
+
+                at.World.Instance.Error.WriteLine($"{Prefix}: `{folder}` was not removed — a process may hold a file open in it; stop it and remove it again. Part of it may already be gone.");
+                return 1;
+            });
 
     /// <summary>
     /// <c>profile order &lt;agent&gt; &lt;account&gt;…|--clear</c>: the set's order, the

@@ -32,6 +32,7 @@ public static class SpaceKinds
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
         new("deps", "days", null, KeepKinds.Deps),
+        new("salvage", "days", null, KeepKinds.Salvage),
         new("browser-cache", "own", "browser", KeepKinds.BrowserCache),
         new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, KeepKinds.History),
@@ -78,6 +79,8 @@ public static class SpaceKinds
                     [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name]);
             case "deps":
                 return new([DependencyStore.RootOf(home)], [], [HomeEntry.Deps.Name]);
+            case "salvage":
+                return new([DaorisHome.Entry(home, HomeEntry.Salvage)], [], [HomeEntry.Salvage.Name]);
             case "browser-cache":
                 return new(caches, [], [HomeEntry.BrowserEngine.Name]);
             case "logs":
@@ -550,6 +553,9 @@ public static class SystemSpace
                 rule["gb"] = policy.Limits.DepsGb;
                 rule["default"] = policy.Limits.DepsGb == KeepPolicy.Default.Limits.DepsGb;
                 break;
+            case "salvage":
+                rule["days"] = (int)policy.SalvageDays.TotalDays;
+                break;
             case "browser-cache":
                 rule["gb"] = policy.Limits.BrowserCacheGb;
                 rule["default"] = policy.Limits.BrowserCacheGb == KeepPolicy.Default.Limits.BrowserCacheGb;
@@ -599,6 +605,7 @@ public static class SystemSpace
                 "downloads" => DownloadsNext(world, policy, record, now),
                 "logs" => LogsNext(world.Home, policy),
                 "deps" => (DepsKeeping.Next(world.Home, policy), null),
+                "salvage" => (SalvageKeeping.Next(world.Home, policy), null),
                 _ => (null, null),
             };
         }

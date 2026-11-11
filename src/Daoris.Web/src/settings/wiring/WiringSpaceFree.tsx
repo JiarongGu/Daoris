@@ -8,7 +8,7 @@ type T = (key: string, options?: Record<string, unknown>) => string;
 
 /** Each kind's and group's word in `settings.daoris.space.kind.*`, by its id. */
 export const FREE_KIND: Record<string, string> = {
-  'set-aside': 'setAside', downloads: 'downloads', logs: 'logs', 'browser-cache': 'browserCache', 'left-over': 'leftOver',
+  'set-aside': 'setAside', downloads: 'downloads', logs: 'logs', salvage: 'salvage', 'browser-cache': 'browserCache', 'left-over': 'leftOver',
   'update-failed': 'updateFailed',
 };
 

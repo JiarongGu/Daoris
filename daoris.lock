@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "dac80d2111361584b6d2c5427f11e50212f2f6be16e8342e37d495459e88ccf4",
+  "canonDigest": "b13f19a66aa2bd6f114dce48ee4473ffa42f73bdb434596c3a0c265cc03a66ea",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "8e2fd8580d1aa0d8772ed566ce60dc3890a68c1c2bd636cd4a7db95b7a5cb2c5"
+      "sha256": "7c947e6723b4a46c106c5e0c4c9e3fa2d5b40ad089ba9144e37f2c08f1e228ae"
     },
     {
       "pack": "core",
@@ -138,7 +138,7 @@
       "source": "core/skills/change/SKILL.md",
       "target": "skills/change/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "56015ba87d43c18a74d9bbb6788f85f731e8184848921b63009f0b50d1bc24b2"
+      "sha256": "ac732ba3f044aca7e83e9c2980b709b198251f21550f5a1a5bf3769ce7332940"
     },
     {
       "pack": "co-working",

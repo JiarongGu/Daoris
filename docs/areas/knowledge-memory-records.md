@@ -191,8 +191,11 @@ one job each, checked by `verify`.
     file with a heading not its own or a glued note label. (from D106, D134)
 38. The index of where things are is written in each checkout and never committed: the checkout hooks and the knowledge server
     write it, and `orient-index --check` fails a stale file or a refused note mark. (from D151, D220)
-39. A present fact has one home and is rewritten in place; a superseded way is removed with it. History is appended and read by
-    lookup. Tests pin rules, never counts, except where the count is a budget. (from D220, D228)
+39. A present fact has one home and is rewritten in place; a superseded way is removed with it. History is appended, kept whole in
+    files and looked up by its identifier; a question about how something works now is searched in the brief, the areas, the index,
+    the code and the knowledge, never the records. A design no open row and no area cites is filed under `docs/archive/` and its
+    router, its citations rewritten in the same commit. Tests pin rules, never counts, except where the count is a budget. (from
+    D220, D228, D278)
 40. The backlog holds open rows of a line or two. A finished row leaves for one archive line. A regression gets a fix-log
     entry, and a fix's commit body names the root cause. (from D127, D220)
 41. Versions and release headings are stamped by the release workflow, never by hand. The glossary is the authority for names.
