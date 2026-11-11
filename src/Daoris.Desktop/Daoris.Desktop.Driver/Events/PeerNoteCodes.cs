@@ -57,7 +57,8 @@ public static class PeerNoteCodes
     public static readonly NoteCode IntakeAskAnswered = new("intake.ask-answered", ["ask", "quests"]);
     public static readonly NoteCode IntakeTurnFailed = new("intake.turn-failed", ["ask"]);
     public static readonly NoteCode IntakeAsks = new("intake.asks", ["ask"]);
-    public static readonly NoteCode IntakeExit = new("intake.exit", ["ask", "exit"]);
+    public static readonly NoteCode IntakeUnowned = new("intake.unowned", ["ask"]);
+    public static readonly NoteCode IntakeExit =new("intake.exit", ["ask", "exit"]);
     public static readonly NoteCode IntakePersonAnswered = new("intake.person-answered", ["ask", "quests"]);
     public static readonly NoteCode IntakePersonClosed = new("intake.person-closed", ["ask"]);
     public static readonly NoteCode IntakePersonDeleted = new("intake.person-deleted", ["ask"]);

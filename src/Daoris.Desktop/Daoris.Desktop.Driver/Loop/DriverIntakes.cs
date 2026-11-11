@@ -347,10 +347,15 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     // What became of the ask is the observation — the intake's own account of it is not.
                     var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
                     var byPerson = _context.Processes.WasStopRequested(sessionId);
+                    // Its last message is read for the verdict *no department owns this*, only where it could change what the end says.
+                    var unowned = !byPerson && exitCode == 0 && turnFailed is not { Length: > 0 } && after is not null
+                                  && after.Quests.Count == ask.Quests.Count
+                        ? IntakeUnowned.Read(SessionLastWords.ParkedWords(_context.Events, sessionId, transcript))
+                        : null;
                     var conclusion = byPerson
                         ? SessionConclusion.Of("stopped", _context.Processes.StopNote(sessionId) ?? Observation.Stopped)
                         : exitCode is int code
-                            ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
+                            ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed, unowned)
                             : SessionConclusion.Of("failed", _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                                 ? Observation.Quiet(quietMinutes)
                                 : Observation.TimedOut(config.TestBound ?? 0));

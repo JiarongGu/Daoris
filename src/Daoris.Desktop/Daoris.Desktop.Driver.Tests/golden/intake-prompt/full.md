@@ -64,4 +64,11 @@ When they do not settle it — nothing points at one repository, or more than on
 do not guess, and publish nothing. End by saying plainly what you would need to know; the
 person decides.
 
+When no repository owns it at all — no declaration covers the work and no repository's own files fit it, so it
+needs a department or a room that does not exist yet — that is different from not being settled between
+owners. Publish nothing, and end your last message with one line, alone, reading exactly
+`no-department-owns-this: <the work, and why nothing here owns it, in one sentence>`. Daoris holds the ask with
+that sentence for Ask Daoris, which can open a department or a room for it; you never create one, and you
+never send it to the nearest repository for want of an owner.
+
 Never edit a repository, and never write outside this room: publishing is the whole of your work.

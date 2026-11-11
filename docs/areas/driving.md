@@ -454,7 +454,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     and a requirement must quote them. (from D65, D133)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat that names its
     ask. It reads the declarations and publishes quests. It runs only where an Intake actor is set, one per ask, in
-    slots the quests leave. A parked intake ends when the person answers the ask. An ask asks each receiver once: a publish to a
+    slots the quests leave. A parked intake ends when the person answers the ask. Where no repository owns the work (no declaration covers it and no
+    repository's own files fit it) the intake publishes nothing and ends its last message with one line, `no-department-owns-this: <the work, and why
+    nothing here owns it>`, which the driver reads (`IntakeUnowned`) where the exit was clean and nothing was published: the same park then carries
+    the sentence `intake.unowned`, naming Ask Daoris as the one that can open a department or a room for the ask (`repository create`,
+    `place --room`) beside the person's own publish or close, and the intake's words under it. The intake creates nothing and routes the ask
+    nowhere on it; a verdict with no work named, past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a
     receiver it holds an open, taken or done quest for, by another hand than that quest's publisher, answers that quest and
     publishes nothing; one publisher's several quests to a receiver are its pieces of the work. While its intake is queued, starting
     or working, or before any intake has served it, a session's publish other than the intake's is refused, naming the intake; the
@@ -550,7 +555,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a rule file's layer, the floor, the permissions or the analysis | `Workplace/Files/`; the signatures in `Defaults/file-signatures.json` | `Workplace/Files/FileRulesTests`, `PersonFilesTests`, `FilesLookTests`, `RepositoryFilesTests`, `FileAnalysisTests` (Process, git: a fixture per toolchain) |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
 | a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestMovesTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
-| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |
+| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, `WorkOrders/IntakeUnownedTests`, `WorkOrders/IntakeUnownedRunTests`, service `Asks/IntakeTests` |
 
 Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; service tests under
 `src/Daoris.Service/Daoris.Service.Tests/`.
