@@ -87,7 +87,13 @@ internal static class NodeEvaluations
                     subjects[node.Id] = landed?.Unit.Id;
                     if (landed is { } at) own[node.Id] = at.Tip;
                     break;
+                case RunSubject.Record when !ReviewWork.OnBranch(scope):
+                    // Work with no branch is the run itself at its review record's revision, read this pass; withheld only where the pass read none.
+                    if (git?.Reviewed is { } work) own[node.Id] = work.Revision;
+                    else subjects[node.Id] = null;
+                    break;
                 case RunSubject.Branch:
+                case RunSubject.Record:
                     subjects[node.Id] = scope.Branch?.Id;
                     // A branch whose tip is not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
                     // only a moved subject lapses it; one not bound yet takes the commit its session branch records the line holding, so work

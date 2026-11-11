@@ -21,4 +21,7 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
 
     /// <summary>What a run's <c>resolve</c> came to and waits on, by run, node and attempt, as its door wrote it (<see cref="ResolveRecords"/>); null where none is read.</summary>
     public Func<string, string, int, (ResolveAttempt? Made, string? Waits)>? Resolved { get; init; }
+
+    /// <summary>A run's work with no branch as its review reads it this pass (<see cref="ReviewWork"/>); null where it is not read.</summary>
+    public ReviewWork? Reviewed { get; init; }
 }

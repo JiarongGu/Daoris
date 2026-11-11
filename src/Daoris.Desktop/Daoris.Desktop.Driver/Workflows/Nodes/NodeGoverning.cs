@@ -287,6 +287,7 @@ internal static class NodeGoverning
             Requests = WorkRequestsReading.Published(quests,
                 work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal),
                 work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
+            Sessions = [.. work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal)],
             Root = root,
             Identity = identity,
         };

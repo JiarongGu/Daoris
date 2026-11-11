@@ -12,19 +12,20 @@ public static class PlaceTurns
     /// <returns>What the session is told, or null where the place reads no manifest.</returns>
     public static async Task<PlaceTold?> StartAsync(
         string home, string workspace, string department, string root, string record, string? continues, CancellationToken ct,
-        PlaceExcludes? excludes = null, IReadOnlyList<SessionEvent>? events = null)
+        PlaceExcludes? excludes = null, IReadOnlyList<SessionEvent>? events = null, string? run = null)
     {
         var prior = new ManifestStore(home, workspace, department).Read(record, ManifestMoment.End) is not null ? record : continues;
         var unattributed = prior is null ? [] : TurnUnattributed.Of(home, prior, events);
-        return await StartReadAsync(home, workspace, department, root, record, continues, excludes, ct).ConfigureAwait(false) is { } told
+        return await StartReadAsync(home, workspace, department, root, record, continues, excludes, run, ct).ConfigureAwait(false) is { } told
             ? told with { Unattributed = unattributed }
             : null;
     }
 
     private static async Task<PlaceTold?> StartReadAsync(
-        string home, string workspace, string department, string root, string record, string? continues, PlaceExcludes? excludes, CancellationToken ct)
+        string home, string workspace, string department, string root, string record, string? continues, PlaceExcludes? excludes, string? run,
+        CancellationToken ct)
     {
-        if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes);
+        if (PlaceKind.At(root) == PlaceKind.Folder) return FolderTurns.Start(home, workspace, department, root, record, null, excludes, run);
         var store = new ManifestStore(home, workspace, department);
         var last = store.Last() is { Kind: PlaceKind.Git } git ? git : null;
         RunManifest start;
@@ -39,9 +40,11 @@ public static class PlaceTurns
 
         var carried = (store.Read(record, ManifestMoment.End) ?? (continues is null ? null : store.Read(continues, ManifestMoment.End)))?.Own ?? [];
         var own = carried.Where(path => start.Listed(path) is not null).ToList();
-        store.Keep(record, ManifestMoment.Start, start with { Root = root, Own = own });
         var committed = last is null ? [] : await ManifestReader.CommittedBetweenAsync(root, last.Head, start.Head, ct).ConfigureAwait(false);
         var outside = last is null ? [] : PlaceChangesSince.Between(last, start, committed).All;
+        var kept = start with { Root = root, Own = own, Run = run, Outside = outside };
+        store.Keep(record, ManifestMoment.Start, kept);
+        RunTurns.Began(store, kept);
         return new PlaceTold(outside, Others(start, own));
     }
 
@@ -69,7 +72,9 @@ public static class PlaceTurns
         var own = PlaceChangesSince.OwnUncommitted(start, end)
             .Concat((start.Own ?? []).Where(path => end.Listed(path) is not null))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-        store.Keep(record, ManifestMoment.End, end with { Root = root, Own = own });
+        var kept = end with { Root = root, Own = own };
+        store.Keep(record, ManifestMoment.End, kept);
+        RunTurns.Ended(home, store, record, start, kept);
         return own;
     }
 

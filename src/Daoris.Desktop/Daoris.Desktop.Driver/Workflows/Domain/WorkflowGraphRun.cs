@@ -273,7 +273,7 @@ public static class WorkflowGraphRuns
                 case RunSubject.Quest:
                     var quest = observes is not null && observes.StartsWith("quest:", StringComparison.Ordinal) ? observes["quest:".Length..] : work.LastOrDefault()?.Id;
                     return quest is null ? step : step with { On = WorkflowGraphSubjects.Quest, Quest = quest };
-                case RunSubject.Branch:
+                case RunSubject.Branch or RunSubject.Record:
                     var branch = observes is null ? runBranch : BranchName(observes, facts.Branches);
                     return branch is null ? step : step with
                     {

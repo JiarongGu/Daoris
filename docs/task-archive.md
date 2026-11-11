@@ -82,6 +82,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1a — one immutable review record per run attempt, for every kind of work (2026-11-11, D273)
+
+> **REVIEWUX1a** (driver): Outcome: a review binds a record written once per run, review node and attempt (`Workflows/Kinds/Review/ReviewRecord*`): its kind (a branch at its tip; a checkout's turns by start and end `HEAD` with the run's own uncommitted paths; a folder's files from the run's baseline to its newest turn, a path changed between turns marked; a copy's files against its base; a system's plan record, number and digest; an answer's handbacks), a revision hashing the reference and each handback, what is incomplete and how far it reaches; the run's turns are kept under its place (`RunTurns`) and the baseline is a named manifest record the tidy keeps; a branchless run's review binds to the run at the record's revision, never withheld `no-subject`, and an empty branch waits for the person. Proof: `ReviewRecordRunTests` — seven full graph runs (the folder review and the empty branch seen failing first; an Accept keeping the revision, a moved revision and a same-content corrected answer each making a new record, a folder's whole interval, the baseline surviving the tidy).
+
+---
+
 ## The cleanup census — the superseded ways' remnants removed (2026-11-11)
 
 > **Cleanup census** (driver, web, docs; D228): Outcome: a census of what the day's changes superseded (`docs/2026-11-11-cleanup-census.md`), and the remnants nothing reads removed by family: the trees switch's verb, `TreesMoved` and its help words (`place trees` is now an unknown word); the landing door's room row, the refusals pointing at `daoris place landing` and its route words (the refusals now name the workflow's `land` step); the workflow-draft prompt's call to the removed `workflow_propose`; 53 dead supervisor keys in both catalogues; a stray merge file; install rule 54 listing all 28 migration steps. Kept with their end condition and row: the migration steps, the `--kind api` token setter (PLUGINEXT1), the current landing read, the older build's move boxes, and the review groups and nine session states for REVIEWUX1. Proof: `npm run quick`, `test-map --check`, `i18n:check`, the filtered driver and web suites.

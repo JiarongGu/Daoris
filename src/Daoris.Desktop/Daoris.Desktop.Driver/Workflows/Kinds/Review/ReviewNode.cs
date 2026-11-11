@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// nothing (<i>Work in place</i>). Never skipped, since a skip would read as accepted.
 /// </summary>
 [NodeKind(NodeKinds.Review, NodeGroup.You)]
-internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
+internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed, IReadsSteps
 {
     /// <summary>
     /// The person's Accept reaches it and nothing fails it. Their changes, with words, are its rejection, so an <c>after</c> from it still
@@ -17,7 +17,17 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
             ObservedBy = NodeSource.Git,
         };
 
-    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
+    /// <summary>The run's work read as its review record (<see cref="ReviewWork"/>): a branch at its tip, else the run at the record's revision.</summary>
+    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Record;
+
+    /// <summary>A run's work with no branch, read for the pass so its review binds at the record's revision.</summary>
+    public Task<NodeGitReads> ReadAsync(GovernedUnit governed, string home, NodeGitReads reads, CancellationToken ct) =>
+        Task.FromResult(governed.Scope is { } scope && !ReviewWork.OnBranch(scope) ? reads with { Reviewed = ReviewWork.Read(home, scope, null) } : reads);
+
+    /// <summary>Nothing: a run's review records outlast its end, read after its trees and sessions are gone.</summary>
+    public void Release(string home, string run)
+    {
+    }
 
     public override NodePart Part(NodeDeclaration node) => new(NodeKinds.Review, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept);
 
@@ -32,8 +42,8 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 
     public override IReadOnlyList<string> LandingActs(NodeDeclaration node) => [NodeWordActs.Accept];
 
-    /// <summary>Reached where its landing is seen made, as a <c>land</c>'s reach is, as the landing record's: a landing seen is not a press.</summary>
-    public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading, NodeSource.Git);
+    /// <summary>Reached by what it reads only where a branch's landing is seen made, as the landing record's: a landing seen is not a press.</summary>
+    public NodeObservation Observe(NodeReading reading) => ReviewReading.Observe(reading);
 
     /// <summary>The person's Accept, and their changes with their words.</summary>
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Accept, NodeWordActs.Changes];
