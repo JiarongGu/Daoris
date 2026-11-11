@@ -441,7 +441,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Deps = new("deps", HomeCategory.Work, "work/deps/*", "work/deps/*");
     public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
     public static readonly HomeEntry Places = new("places", HomeCategory.Work, "work/places/*/*", "work/places/*/*");
-    // A system place's change sets, one folder per session record: each plan kept whole beside what its apply came to.
     public static readonly HomeEntry Plans = new("plans", HomeCategory.Work, "work/plans/*", "work/plans/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");

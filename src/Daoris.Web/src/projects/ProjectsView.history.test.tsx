@@ -23,10 +23,6 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
 ];
 
-/**
- * The section once its plan is in. It is drawn while the plan is asked, saying so, and the answer settles a render later:
- * a file's first case, which loads the modules, finds the section before it.
- */
 async function keptRead(page: HTMLElement) {
   const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
   await waitFor(() => expect(kept).not.toHaveTextContent('Reading what this machine keeps…'));
