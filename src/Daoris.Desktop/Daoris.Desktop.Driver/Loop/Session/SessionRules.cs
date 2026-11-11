@@ -32,7 +32,7 @@ internal static class SessionRules
         string home, ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job, AcrossReach? across, string? said,
         bool opinion, bool helper, IReadOnlyList<string>? plugins, string? brainstorm,
-        IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner, bool supervise = false)
+        IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner, bool supervise = false, bool step = false)
     {
         // The record of the git access this session holds, begun at its start for every harness; the doors judge by it.
         GitSessionAccess.Begin(home, sessionId, repository, workspace);
@@ -68,6 +68,9 @@ internal static class SessionRules
         // A helper's session is the reviewer's shape with its own one tool.
         if (opinion || helper) composed = OpinionPermissions.Shape(composed, helper);
         if (supervise) composed = SupervisePermissions.Shape(composed);
+        // A step's session is a supervisor's read-only shape that calls its one server's tools.
+        if (step) composed = StepPermissions.Shape(composed);
+        var held = supervise || step;
 
         // A partner's session writes its copy and calls its reading tools and its answer; the server's refusals by role beside it.
         if (partner) composed = PartnerPermissions.Shape(composed);
@@ -84,17 +87,18 @@ internal static class SessionRules
         // What Daoris keeps for git is no session's to read, whatever shape its rules take.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 
-        var shaped = opinion || helper || supervise || partner || brainstorm is not null || job is { Count: > 0 };
+        var shaped = opinion || helper || held || partner || brainstorm is not null || job is { Count: > 0 };
         var own = OwnTools.Machine(home, info, connectorOnly: opinion || helper);
         var file = language.Write(home, sessionId, new HandedRules(
             composed,
             brainstorm is not null ? [.. pushTold, BrainstormPermissions.HardDeny]
             : supervise ? [.. pushTold, SupervisePermissions.HardDeny]
+            : step ? [.. pushTold, StepPermissions.HardDeny]
             : partner ? [.. pushTold, PartnerPermissions.HardDeny]
             : helper ? [.. pushTold, OpinionPermissions.HelperHardDeny]
             : opinion ? [.. pushTold, OpinionPermissions.HardDeny] : [.. pushTold, .. heavyTold],
             // A partner and a supervisor's turn are held to their copy whatever the person's defaults say.
-            PermissionRules.GuardsTree(rules) || partner || supervise ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
+            PermissionRules.GuardsTree(rules) || partner || held ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop: the part's children bound by its lineage.
             ChildLineage.PathOf(home, sessionId))
         {
@@ -109,11 +113,11 @@ internal static class SessionRules
         if (!adapter.Can.RulesOnWire)
         {
             adapter.Spawned().HandSettings(info, file);
-            if (supervise) adapter.Spawned().HandSourcesAlone(info);
+            if (held) adapter.Spawned().HandSourcesAlone(info);
             return (file, null, handed);
         }
 
-        return (file, supervise ? adapter.AcpSourcesAloneMeta(file, plugins ?? [], own) : adapter.AcpSessionMeta(file, plugins ?? [], own), handed);
+        return (file, held ? adapter.AcpSourcesAloneMeta(file, plugins ?? [], own) : adapter.AcpSessionMeta(file, plugins ?? [], own), handed);
     }
 
     /// <summary>

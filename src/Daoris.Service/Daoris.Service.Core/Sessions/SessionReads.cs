@@ -219,7 +219,7 @@ internal sealed class SessionReads(SessionStore store)
         await using var command = _db.Command();
         command.CommandText = $"""
             SELECT * FROM sessions
-            WHERE repository = $repository AND state IN ({ActiveStates}) AND origin IS NULL
+            WHERE repository = $repository AND state IN ({ActiveStates}) AND origin IS NULL AND performs IS NULL
               AND ($tree IS NULL OR tree IS NULL OR tree = $tree)
             LIMIT 1
             """;

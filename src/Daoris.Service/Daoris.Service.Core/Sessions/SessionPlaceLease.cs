@@ -24,7 +24,7 @@ internal sealed class SessionPlaceLease(SessionStore store)
             SELECT * FROM sessions
             WHERE repository = $repository AND origin IS NULL
               AND ($root IS NULL OR tree IS NULL OR tree = $root)
-              AND ask IS NULL AND opinion IS NULL AND serves IS NULL AND decides IS NULL
+              AND ask IS NULL AND opinion IS NULL AND serves IS NULL AND decides IS NULL AND performs IS NULL
               AND ($except IS NULL OR id <> $except)
               AND (state IN ('Queued', 'Starting', 'Working')
                    OR (holds_place IS NOT NULL AND state = 'AwaitingPerson')

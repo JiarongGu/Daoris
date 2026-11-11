@@ -116,6 +116,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1e's session start — the loop starts a goal step's session (2026-11-12, D274)
+
+> **PLUGINEXT1e, the session start** (driver, service, web): Outcome: `WatchNodes` wires the step agents with `StepSessionTurn` and `NodeRuntime.StepAskAsync`, so a plugin step declaring a `goal` is performed by a session the loop starts, staffed as the place's builds are, its record opened at `POST /api/step-sessions` (a chat at the run's place with no tree, marked `performs`, the work `step`, out of the place's lease, its active sessions and the cap), run at the checkout under `StepPermissions` with its one `daoris-plugins` server naming the real session, its ask carrying the checkout, origin read there and the landing's evidence, its note `step.performs` while it works and `step.reached` or `step.failed` at its end, titled *Workflow step* 工作流步骤; a goal step is started only once the step agents are wired.
+
+---
+
 ## REVIEWUX1h's second part — a run's step outcomes in Done and failed (2026-11-12, D273)
 
 > **REVIEWUX1h, second part** (driver, web): Outcome: each watched step after a run's review, once reached or failed, is one *Done and failed* line keyed `outcome:<run>/<node>/<attempt>` (`RunOutcomeNotices`), read from the run's record at every look and claimed once through the news by the look's last pass (`RunOutcomesLook`), so a dismissed one stays dismissed and one a lost write left is kept at the next look; it is said by its step's kind and its run in both languages. Proof: `RunOutcomeNoticesTests` and the outcome words test, each seen failing first; the look's pass order census.

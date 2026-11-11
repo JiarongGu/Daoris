@@ -143,4 +143,8 @@ public static class EndNoteCodes
     // agent's words, which may hold a path.
     public static readonly NoteCode RefusedLead = new("refused.lead", []);
     public static readonly NoteCode RefusedGoverns = new("refused.governs", []);
+
+    // ——— A step's session's end, by the step's answer.
+    public static readonly NoteCode StepReached = new("step.reached", ["step", "message"]);
+    public static readonly NoteCode StepFailed = new("step.failed", ["step", "code", "message"]);
 }

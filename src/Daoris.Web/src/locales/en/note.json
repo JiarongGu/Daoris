@@ -1,6 +1,9 @@
 {
   "note.ended.awaits": "Asked #{{awaits}} of another repository and waits for its answer; the quest goes on in the same tree once it is answered.",
   "note.ended.exit": "It exited with code {{exit}}.",
+  "note.step.performs": "Performs the step `{{step}}` of `{{plugin}}` for {{unit}}, attempt {{attempt}}.",
+  "note.step.reached": "It reached the step `{{step}}`: {{message}}",
+  "note.step.failed": "The step `{{step}}` failed ({{code}}): {{message}}",
   "note.ended.turn-failed-taken": "The agent's turn failed with the quest still taken:",
   "note.ended.turn-failed-open": "The agent's turn failed before it took its quest:",
   "note.ended.provider-refused": "Its model's provider refused its turn, so the run failed and goes on as a failed run does:",

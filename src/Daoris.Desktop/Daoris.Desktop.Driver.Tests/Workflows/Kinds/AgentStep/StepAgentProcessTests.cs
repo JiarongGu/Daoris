@@ -82,8 +82,9 @@ public sealed class StepAgentProcessTests : IDisposable
     /// <summary>The step's session as a harness runs one: the stand-in agent, handed the server entry with the built program in its place.</summary>
     private sealed class StandInSessions(string agent, List<string> said) : IStepSessions
     {
-        public async Task RunAsync(StepAgentAsk ask, ServerEntry tools, CancellationToken ct)
+        public async Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> toolsOf, CancellationToken ct)
         {
+            var tools = toolsOf("s-stand-in");
             var info = new ProcessStartInfo("node")
             {
                 UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, StandardOutputEncoding = Encoding.UTF8,
@@ -121,9 +122,9 @@ public sealed class StepAgentProcessTests : IDisposable
     public async Task A_stand_in_agent_holding_the_plugin_s_tools_answers_the_step_through_step_answer_and_the_step_is_reached()
     {
         var files = new NodeRecordFiles(_home, () => true);
-        var agents = new StepAgents(_home, new StandInSessions(_agent, _said), (unit, attempt, node) => new StepAgentAsk(
+        var agents = new StepAgents(_home, new StandInSessions(_agent, _said), (unit, attempt, node, _) => Task.FromResult<StepAgentAsk?>(new StepAgentAsk(
             attempt.Call.Invocation, unit, node.Id, attempt.Attempt, Plugin, "pull-request", node.Goal!.AsWritten, "engine", "games", "feature/x",
-            "https://dev.azure.com/acme/Proj/_git/app", "main", attempt.Call.SubjectRevision) { Evidence = node.Evidence }, program: "dotnet");
+            "https://dev.azure.com/acme/Proj/_git/app", "main", attempt.Call.SubjectRevision) { Evidence = node.Evidence }), program: "dotnet");
         var performer = new WorkPerformer(files, new NoPlugins(), () => DateTimeOffset.UtcNow) { Doors = NodeDoors.None.With(StepAgents.Door, agents) };
         var before = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { [Step.Id] = NodeLifecycle.Start(Unit, Step.Id) };
         var evaluated = WireEvaluation.Evaluate([Step], [], before,

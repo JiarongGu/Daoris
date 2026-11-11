@@ -115,6 +115,9 @@ public sealed record Session(
     /// <summary>The attempt a supervisor's turn decides for, read before every other mark; this machine's own, as <see cref="Serves"/> is.</summary>
     public string? Decides { get; init; }
 
+    /// <summary>The plugin step's attempt a step's session performs; this machine's own, as <see cref="Serves"/> is.</summary>
+    public string? Performs { get; init; }
+
     /// <summary>The uncommitted paths of its own a parked line keeps its git place with (<see cref="SessionPlaceLease"/>); this machine's own.</summary>
     public IReadOnlyList<string>? HoldsPlace { get; init; }
 

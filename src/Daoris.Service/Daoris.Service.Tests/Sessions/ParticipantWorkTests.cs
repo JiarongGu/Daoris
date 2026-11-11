@@ -47,7 +47,7 @@ public sealed class ParticipantWorkTests : McpToolsFixture
         var kept = await sessions.CreateAsync(
             null, row.Marks.Repository ?? "Owner", "stub", Now,
             kind: row.Marks.Kind == "chat" ? SessionKind.Chat : SessionKind.Driven,
-            ask: row.Marks.Ask, opinion: row.Marks.Opinion, serves: row.Marks.Serves, piece: row.Marks.Piece, decides: row.Marks.Decides);
+            ask: row.Marks.Ask, opinion: row.Marks.Opinion, serves: row.Marks.Serves, piece: row.Marks.Piece, decides: row.Marks.Decides, performs: row.Marks.Performs);
 
         var work = await new SessionWorks(ledger, new IntakeScope(null, kept.Id)).ReadAsync(default);
 
@@ -70,7 +70,7 @@ public sealed class ParticipantWorkTests : McpToolsFixture
             Assert.All(row.Disagrees.Values, decision => Assert.Contains(decision, table.Decisions));
         }
 
-        Assert.Equal(["partner-drawn", "supervise-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
+        Assert.Equal(["partner-drawn", "supervise-drawn", "step-drawn"], table.Rows.SelectMany(row => row.Disagrees.Where(each => each.Key == "drawn")).Select(each => each.Value).Distinct());
     }
 
     private static Session Record(Marks marks) =>
@@ -78,10 +78,11 @@ public sealed class ParticipantWorkTests : McpToolsFixture
             Kind: marks.Kind == "chat" ? SessionKind.Chat : SessionKind.Driven)
         {
             Origin = marks.Mirror ? "alice-laptop" : null,
-            Ask = marks.Ask, Opinion = marks.Opinion, Serves = marks.Serves, Piece = marks.Piece, Decides = marks.Decides,
+            Ask = marks.Ask, Opinion = marks.Opinion, Serves = marks.Serves, Piece = marks.Piece, Decides = marks.Decides, Performs = marks.Performs,
         };
 
-    private sealed record Marks(bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null);
+    private sealed record Marks(
+        bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion, string? Decides = null, string? Performs = null);
 
     private sealed record Answers(bool HoldsSlot, string Drawn, bool ConnectorPartner, bool Help)
     {
