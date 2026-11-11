@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKFULL1g-vi's clear and sync — pressed, their kinds gone (2026-11-11)
+
+> **ASKFULL1g-vi, clear and sync** (driver, modules, service, web): Outcome: a clear presses `HISTORY_CLEAR`, its card the route's view (`HistoryClearView`, refusing at the ask what the verb would keep, in its words, then counting the plain list); `daoris tree sync --yes` presses the running Daoris's `TREES_SYNC` with fetch and follow (`Driver.Host/TreesSyncVerb.cs`), its card listing each row the route's list moves and refusing a place this machine lacks (`TreesSyncView`); both proposal kinds are gone whole (tools, writers, judges, doors, room lines, goldens, call tables, card parts, words, README rows). Proof: `HistoryClearViewTests`, `TreesSyncViewTests`, `HistoryClear.test` and `TreesSync.test` in both languages, seen failing first; the room, proposal, tool and `CoreSetTests`.
+
+---
+
 ## PLACEWORK1e's manifest bounds and a folder's excludes edited after the add (2026-11-11)
 
 > **PLACEWORK1e, bounds and excludes** (driver, service, modules, web): Outcome: how many files and minutes a folder's manifest read spends is a machine setting (`driver.json`'s `manifest`, files 1,000 to 10,000,000 and minutes 1 to 60), pressed by `daoris settings manifest files|minutes <n>` (`SET_MANIFEST`, `MachineSettingView.Manifest`) and read by the first manifest, the folder's turns and the place's changes (`ManifestBounds.Of`), with its Settings row; a folder department's excludes are edited after the add through the service's person door (`POST /api/registry/{repository}/excludes`), `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (`REGISTRY_EXCLUDES`, `FolderExcludesView`) and the folder page's *Files to leave out* row, the manifest read again after a change. Proof: `ManifestSettingTests`, `DriverModuleManifestTests`, `FolderExcludesPressTests`, `FolderExcludesViewTests`, `FolderExcludesHostTests`, `FolderExcludesRow.test`, the census tests.

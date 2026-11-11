@@ -96,38 +96,6 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal("dismissed", HelpProposals.Find(Home, "g1a2b3c4")!.State);
     }
 
-    /// <summary>
-    /// A looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
-    /// <c>HelpSyncShown</c> reads: each repository not fetched with git's reason, when it last heard from origin and how
-    /// origin is reached, and the repositories the look left apart. Before a look, both are empty.
-    /// </summary>
-    [Fact]
-    public void A_sync_card_carries_what_was_not_fetched_and_the_repositories_left_apart_in_the_pages_shape()
-    {
-        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var then = new DateTimeOffset(2026, 9, 29, 8, 0, 0, TimeSpan.Zero);
-        var looked = new HelpSyncPlan(true, [new HelpSyncRow("engine:main", "line", true, "engine  main  fast-forwards 1 commit(s)")])
-        {
-            Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222")], ["docs"]),
-        };
-
-        var shown = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(looked), camel);
-
-        Assert.True(shown.GetProperty("looked").GetBoolean());
-        Assert.Equal("engine:main", shown.GetProperty("rows")[0].GetProperty("key").GetString());
-        var line = Assert.Single(shown.GetProperty("notFetched").EnumerateArray());
-        Assert.Equal(
-            ("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222"),
-            (line.GetProperty("repository").GetString(), line.GetProperty("fetch").GetString(), line.GetProperty("lastFetch").GetDateTimeOffset(),
-                line.GetProperty("reach").GetString(), line.GetProperty("host").GetString()));
-        Assert.Equal(["docs"], shown.GetProperty("apart").EnumerateArray().Select(name => name.GetString()));
-
-        var before = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(new HelpSyncPlan(false, [])), camel);
-        Assert.Empty(before.GetProperty("notFetched").EnumerateArray());
-        Assert.Empty(before.GetProperty("apart").EnumerateArray());
-        Assert.Null(HelpRoutes.SyncShown(null));
-    }
-
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -247,24 +215,6 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal(sessions, HelpProposalFacts.JudgedAgainstSessions([proposal]));
         Assert.False(HelpProposalFacts.JudgedAgainstRecords([]));
         Assert.False(HelpProposalFacts.JudgedAgainstSessions([]));
-    }
-
-    /// <summary>
-    /// A sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
-    /// <c>proposal.settled</c> for it; a look that found nothing to do settled the card, and says that.
-    /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void An_answer_says_whether_the_card_still_stands(bool stands)
-    {
-        var proposal = new HelpProposal("p11", "sync", "sync", null, null, null, null, "why", "h1", "proposed");
-
-        var answer = JsonSerializer.SerializeToElement(
-            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(false, "looked") { Stands = stands }),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-        Assert.Equal(stands, answer.GetProperty("stands").GetBoolean());
     }
 
     [Fact]

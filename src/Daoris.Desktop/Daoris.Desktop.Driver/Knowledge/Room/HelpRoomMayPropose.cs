@@ -64,12 +64,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  `daoris plugins approve <id> <server>` asks the person's approval of what a plugin's server offers you, with\n");
         text.Append("  `--writes <tool>,…` naming only the writes outside Daoris they said they accept, or `--reads-only`; its card names every\n");
         text.Append("  tool, and you are handed it from your next conversation. `daoris plugins withdraw <id> <server>` takes one back.\n");
-        // Bring up to date, whose look fetches and so is the person's press, as on the screen.
-        text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →\n");
-        text.Append("  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at\n");
-        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace\n");
-        text.Append("  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
-        text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n");
+        // Bring up to date, judged at the ask by its list (TREES_SYNC's view).
+        text.Append("- Repositories are brought up to date after a pull request merged by pressing, never proposed, as the workspace's page →\n");
+        text.Append("  Branches → Updates does: `daoris tree sync --yes`, with `--repository <name>` or `--workspace <name>` to take those alone,\n");
+        text.Append("  or `--all` for every one with a checkout here. Each line is fetched from `origin` as the person and fast-forwarded, the\n");
+        text.Append("  branches still at work replayed onto it, the landed branches whose work reached it deleted. Its card shows the person each\n");
+        text.Append("  row that moves. Daoris never pushes.\n");
         // A quest's yes and a landed branch's hand-off stay in their own place, which a go reaches.
         text.Append("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
         text.Append("  person's own presses, on the quest's page and in the review, where `go_propose` takes them.\n");
@@ -104,15 +104,13 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  another pause over a quest of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
         text.Append("  ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.\n");
-        // The pages' clears, judged by their first press, a closed quest's failed
-        // sessions alone being the `failed` door.
-        text.Append("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n");
-        text.Append("  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest\n");
-        text.Append("  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).\n");
-        text.Append("  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged\n");
-        text.Append("  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still\n");
-        text.Append("  open or taken, a session still running and anything waiting on the person are never cleared, and the route\n");
-        text.Append("  refuses them.\n");
+        // The pages' clears, judged at the ask by their first press's list (HISTORY_CLEAR's view).
+        text.Append("- Finished history is cleared from this machine by pressing, never proposed, as the pages' *Clear from this machine…* do:\n");
+        text.Append("  `daoris quest clear <id> --yes` (a closed quest's work), `daoris ask clear <id> --yes` (an ask's work with every quest it\n");
+        text.Append("  became), `daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone, the quest and its other sessions\n");
+        text.Append("  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it\n");
+        text.Append("  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and\n");
+        text.Append("  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.\n");
         // A whole version judged as the editor judges it; changes, kinds and imports are
         // another door's, and a merge with nobody is a decision of its own.
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
@@ -156,11 +154,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
         text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
         text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
-        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*, and a bring-up-to-date card's first is the look. A go card's second
+        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*. A go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
-        text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
         text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
         text.Append("A press of not now comes back to you as the person's next message;\n");
         text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");

@@ -20,10 +20,8 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
-        // A bring-up-to-date card's first press is the look; a delete has no card of its own, being pressed.
         Assert.DoesNotContain("a delete card", agents);
-        Assert.Contains("a bring-up-to-date card **look for updates** until the person has looked, then **apply**", agents);
-        Assert.Contains("**查看更新**", agents);
+        Assert.DoesNotContain("**查看更新**", agents);
     }
 
     /// <summary>
@@ -63,14 +61,14 @@ public sealed class HelpRoomMayProposeTests
     /// the person's and fetches, and the Apply, on the rows the look listed only.
     /// </summary>
     [Fact]
-    public void The_room_says_how_bringing_repositories_up_to_date_is_proposed()
+    public void The_room_says_how_bringing_repositories_up_to_date_is_pressed()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `sync_propose`: bring repositories up to date after a pull request merged", proposes);
-        Assert.Contains("Name a repository, a workspace\n  to look within, or none for every one with a checkout here.", proposes);
-        Assert.Contains("Its card asks the person to look first, which fetches each line as them", proposes);
-        Assert.Contains("apply acts on those rows only. Daoris never pushes.", proposes);
+        Assert.Contains("- Repositories are brought up to date after a pull request merged by pressing, never proposed", proposes);
+        Assert.Contains("`daoris tree sync --yes`, with `--repository <name>` or `--workspace <name>`", proposes);
+        Assert.Contains("row that moves. Daoris never pushes.", proposes);
+        Assert.DoesNotContain("sync_propose", proposes);
     }
 
     /// <summary>
@@ -235,20 +233,19 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// A clear names one quest, one ask or one workspace; its card lists and Apply clears exactly
-    /// that, what runs or waits on the person is never cleared; the `failed` door clears a closed quest's failed sessions alone.
+    /// A clear is pressed by the verbs that name one quest, one ask or one workspace; what runs or waits on the person is never
+    /// cleared, and `--failed` clears a closed quest's failed sessions alone. No tool proposes one.
     /// </summary>
     [Fact]
-    public void The_room_says_how_a_clear_is_proposed_and_what_it_never_takes()
+    public void The_room_says_how_a_clear_is_pressed_and_what_it_never_takes()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n", proposes);
-        Assert.Contains("one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest\n", proposes);
-        Assert.Contains("and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name)", proposes);
-        Assert.Contains("Its card lists what would go and what stays and why; apply clears exactly what the card listed", proposes);
+        Assert.Contains("- Finished history is cleared from this machine by pressing, never proposed", proposes);
+        Assert.Contains("`daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone", proposes);
+        Assert.Contains("`daoris history clear --workspace <name> --yes`", proposes);
         Assert.Contains("A quest an ask asked is cleared with its ask, never alone", proposes);
-        Assert.DoesNotContain("Clearing a quest's failed sessions alone is never proposed", proposes);
+        Assert.DoesNotContain("clear_propose", proposes);
     }
 
     /// <summary>

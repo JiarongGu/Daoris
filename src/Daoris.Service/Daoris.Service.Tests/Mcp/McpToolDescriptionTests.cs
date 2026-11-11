@@ -174,7 +174,7 @@ public sealed partial class McpToolDescriptionTests
 
     /// <summary>
     /// Removing a record is a person's act, so no connector tool clears history, and none is handed the
-    /// desk that would. Ask Daoris may only propose one, as it proposes a delete.
+    /// desk that would. Ask Daoris presses the clear, as it presses a delete.
     /// </summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
@@ -182,10 +182,7 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames();
 
         Assert.Contains("quest_publish", tools);
-        Assert.DoesNotContain(
-            tools.Where(name => name != "clear_propose"),
-            name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
-        Assert.Contains("clear_propose", tools);
+        Assert.DoesNotContain(tools, name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
         Assert.DoesNotContain(
             KnowledgeServer.ToolTypes.SelectMany(type => type.GetConstructors()).SelectMany(constructor => constructor.GetParameters()),
             parameter => parameter.ParameterType == typeof(Daoris.Knowledge.HistoryDesk)
@@ -497,8 +494,7 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
     }
 
-    // Not after `#`: an entry id's anchor is in the reader's own
-    // repository, not a citation of this one's.
+    // Not after `#`: an entry id's anchor is in the reader's own repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]
     private static partial Regex DecisionNumber();
 }

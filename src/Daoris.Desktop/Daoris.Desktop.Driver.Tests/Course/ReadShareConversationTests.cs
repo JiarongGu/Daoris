@@ -354,53 +354,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("dismissed", "engine", "the person asked"), (settled.State, settled.Target, settled.Why));
     }
 
-    /// <summary>
-    /// <see cref="HelpProposals.Drawn"/> (HelpClearProposals.Drawn) holds a clear card's units in the proposal's file it
-    /// reads while its move into place still holds it.
-    /// </summary>
-    [Fact]
-    public async Task A_clear_cards_units_are_held_in_the_file_its_move_into_place_still_holds()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Proposal("p7", "clear", "quest", "q1done00");
-        var proposal = HelpProposals.Find(_home, "p7")!;
-        var unit = new HistoryUnitPlan(HistoryKinds.Quest, "q1done00", "work")
-        {
-            Quests = ["q1done00"], Sessions = ["s1ended0"], Bytes = new HistoryBytes(1024, 0, 0, 0, 0),
-        };
-        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Facts with { History = [new HistoryPlan(HistoryScope.Quest, "q1done00", [unit])] });
-        Assert.Null(plan.Refusal);
 
-        await HeldWhileRead(path, () => HelpProposals.Drawn(_home, proposal, plan));
-
-        var drawn = HelpProposals.Find(_home, "p7")!;
-        Assert.Equal([new HistoryUnitName(HistoryKinds.Quest, "q1done00")], drawn.Units);
-        Assert.Equal(("proposed", "the person asked"), (drawn.State, drawn.Why));
-    }
-
-    /// <summary>
-    /// A sync card's look (HelpSyncProposals.Keep) keeps the rows it listed in the proposal's file it reads while its move
-    /// into place still holds it.
-    /// </summary>
-    [Fact]
-    public async Task A_sync_looks_rows_are_kept_in_the_file_its_move_into_place_still_holds()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Proposal("p11", "sync", "sync", "engine");
-        var proposal = HelpProposals.Find(_home, "p11")!;
-        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Facts);
-        var doors = new HelpStandInDoors
-        {
-            Listed = new SyncPlan([new LinePull("engine", "work", "main", PullKind.FastForward, "aaaaaaaa", "bbbbbbbb", 1, null, null)], [], []),
-        };
-
-        var looked = await HeldWhileReadAsync(path, () => HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None));
-
-        Assert.True(looked.Stands);
-        var kept = HelpProposals.Find(_home, "p11")!;
-        Assert.Equal([("engine:main", "line", true)], kept.Listed!.Select(row => (row.Key, row.Step, row.Moves)));
-        Assert.Equal(("proposed", "the person asked"), (kept.State, kept.Why));
-    }
 
     // ——— A brainstorm's files.
 
