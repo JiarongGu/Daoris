@@ -475,6 +475,7 @@
   "person.route.QUEST_REVIEW": "对一个委托的审查给出你的结论",
   "person.route.QUEST_WORKFLOW": "选择一个委托的类型和工作流",
   "person.route.REGISTRY_IMPORT": "注册一个文件夹中找到的仓库",
+  "person.route.REGISTRY_CREATE": "开设一个新部门：创建它的文件夹和空历史，注册它，并委托它自己的会话完成搭建",
   "person.route.REGISTRY_RETIRE": "将一个仓库从注册表中移除",
   "person.route.REGISTRY_EXCLUDES": "更改文件夹的清单跳过哪些文件",
   "person.route.REGISTRY_REWIRE":"将一个仓库接到另一个工作区",

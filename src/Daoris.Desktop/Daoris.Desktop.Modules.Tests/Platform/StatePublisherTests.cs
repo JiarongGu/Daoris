@@ -617,6 +617,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]
+    [InlineData("REGISTRY_CREATE", "quests,asks,driver,rules,registry", null)]
     [InlineData("TOOLS_USE", "tools", null)]
     [InlineData("TOOLS_DOWNLOAD", "tools", null)]
     [InlineData("TOOLS_DELETE", "tools", null)]

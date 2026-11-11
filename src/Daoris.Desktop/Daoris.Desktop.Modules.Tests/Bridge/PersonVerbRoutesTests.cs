@@ -95,6 +95,25 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         Assert.Equal(Key, Assert.Single(standIn.Heard).Key);
     }
 
+    /// <summary>A creation is judged again at the press: refused in the verb's words (exit 1, naming <c>--under</c>), or as <c>{ done, message }</c>.</summary>
+    [Fact]
+    public async Task A_create_press_is_judged_at_the_press_and_refuses_in_the_verbs_words_with_nothing_made()
+    {
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(new KeyRecording(_ => "[]")), personKey: Key));
+        var module = new DriverModule(Bus, loop);
+
+        var said = (await AnswerAsync(module, "REGISTRY_CREATE", new { name = "scratch", purpose = "a try", said = true })).GetProperty("said");
+        var plain = await AnswerAsync(module, "REGISTRY_CREATE", new { name = "scratch", purpose = "a try" });
+
+        Assert.Equal(1, said.GetProperty("code").GetInt32());
+        var lines = string.Join('\n', said.GetProperty("out").EnumerateArray().Select(each => each.GetString()));
+        Assert.Contains("refused:", lines);
+        Assert.Contains("--under", lines);
+        Assert.False(plain.GetProperty("done").GetBoolean());
+        Assert.Contains("--under", plain.GetProperty("message").GetString());
+    }
+
     /// <summary>An installed plugin is replaced wholesale by its own route, the window's add refusing it.</summary>
     [Fact]
     public async Task A_replace_of_an_installed_plugin_is_its_own_route_and_the_add_still_refuses_it()

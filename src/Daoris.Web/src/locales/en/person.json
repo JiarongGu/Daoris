@@ -475,6 +475,7 @@
   "person.route.QUEST_REVIEW": "give your verdict on a quest's review",
   "person.route.QUEST_WORKFLOW": "choose a quest's kind and workflow",
   "person.route.REGISTRY_IMPORT": "register the repositories found in a folder",
+  "person.route.REGISTRY_CREATE": "open a new department: make its folder and empty history, register it and ask its own session to set it up",
   "person.route.REGISTRY_RETIRE": "take a repository off the registry",
   "person.route.REGISTRY_EXCLUDES": "change what a folder leaves out of its manifest",
   "person.route.REGISTRY_REWIRE":"wire a repository to another workspace",

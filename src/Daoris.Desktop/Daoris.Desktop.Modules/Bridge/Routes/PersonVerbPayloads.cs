@@ -39,5 +39,10 @@ public sealed record RegistryExcludesPress(string Repository, IReadOnlyList<stri
 /// <summary>What an absolute <c>Folder</c>'s subdirectories propose registered, or the service's own knowledge root where none is given.</summary>
 public sealed record RegistryImportPress(string? Folder = null, string? Workspace = null, bool Said = false);
 
+/// <summary>A department made (<c>repository create</c>); <c>Digest</c> is the plan the person read, none plans again.</summary>
+public sealed record RegistryCreatePress(
+    string Name, string Purpose, string? Kind = null, string? Workspace = null, string? Under = null, string? Line = null, string? Work = null, string? Digest = null,
+    bool Said = false);
+
 /// <summary>An installed plugin replaced from <c>Folder</c>; <c>Offer</c> names the install's own offer that folder is, which is recorded as its source.</summary>
 public sealed record PluginReplacePress(string Folder, string? Offer = null);

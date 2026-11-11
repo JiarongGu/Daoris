@@ -113,6 +113,11 @@ internal static class DriveUsagePlace
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.
+          repository create <name> --purpose "…" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work "…"] [--plan]
+              open a new department: its folder beside the workspace's repositories (or under --under), an empty
+              history with one commit as the identity they use, its registration, its drive and its set-up quest,
+              and nothing pushed. --plan says what it would do and writes nothing; a press of the same words goes
+              on from a receipt, and a failure leaves the folder, which retire does not remove.
           role [<id>]  ·  role set|remove|default|policy|rules <id> …
               the role catalogue: a role takes a work in a place, on its choices.
           role brief
