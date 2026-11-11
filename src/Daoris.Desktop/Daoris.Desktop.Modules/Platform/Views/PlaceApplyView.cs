@@ -43,6 +43,15 @@ public sealed class PlaceApplyView : IPressView
 
         IReadOnlyList<PlaceAccept> accepted = [.. PressPayload.Rows(payload ?? default, "accept")
             .Select(row => new PlaceAccept(PressPayload.Field(row, "repository"), PressPayload.Field(row, "purpose")))];
+        // Each acceptance must be one the plan offers for that repository's declaration, as the apply judges them before it writes.
+        foreach (var accept in accepted)
+        {
+            var row = PressPayload.Rows(plan, "repositories").FirstOrDefault(each => string.Equals(PressPayload.Field(each, "repository"), accept.Repository, StringComparison.OrdinalIgnoreCase));
+            var offered = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("declaration", out var declaration)
+                && PressPayload.Rows(declaration, "acceptances").Any(each => PressPayload.Field(each, "purpose") == accept.Purpose);
+            if (!offered) return PressViewed.Refused($"the plan offers no `{accept.Purpose}` acceptance for `{accept.Repository}`, so nothing was written.");
+        }
+
         var workspaces = PressPayload.Rows(plan, "repositories").Select(row => PressPayload.Field(row, "workspace"))
             .Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase);
         var facts = new Dictionary<string, string>(StringComparer.Ordinal)
