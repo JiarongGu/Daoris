@@ -46,7 +46,7 @@ public sealed class SessionSpentKeptTests : IDisposable
         events.Append("again1", Turn(7));
         Assert.Equal(new SessionSpent(1, 1, 7, 1, null, null), events.Spent("again1"));
 
-        // Replaced by a longer record whose end the last read never saw: read whole, never added to what was kept.
+        // Replaced by a longer record whose end the last read never saw: read whole, never added to the kept sum.
         var path = events.PathOf("again1");
         var other = new SessionEvents(Path.Combine(_directory, "other"));
         foreach (var input in new long[] { 1, 2, 3 }) other.Append("again1", Turn(input));

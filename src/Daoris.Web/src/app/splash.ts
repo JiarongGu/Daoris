@@ -15,13 +15,10 @@ import { WindowCommands } from '@shenora/react';
 export const SPLASH_QUIET_MS = 150;
 
 /**
- * The roots of the queries the first screen draws: a start lands on Overview or
- * Sessions (`rememberedView`), and those views and the frame around them read the service's status and the registry, the
- * driver's state, the quests, asks and sessions (the list's groups among them), and the notices. Not what waits on work this
- * word itself releases or on the service's index: what needs the person is judged over the machine's facts, which start on this
- * word, so waiting on it held the word to the driver's bound at every start; the repositories' first answer waits on the
- * service reading every checkout's index; the harnesses' probes and the lines (`['driver', 'lines']`) queue behind the
- * driver's first looks. Each draws as loading until it lands.
+ * The roots of the queries the first screen draws on Overview or Sessions (`rememberedView`): the service's status, the
+ * registry, the driver's state, the quests, asks, sessions (the list's groups among them) and notices. Not what needs the
+ * person, judged over the machine's facts that start on this word; nor the repositories, whose first answer waits on the
+ * service reading every checkout's index; nor the probes and lines (`['driver', 'lines']`), queued behind the first looks.
  */
 const FIRST_SCREEN_ROOTS: ReadonlySet<string> = new Set([
   'status', 'registry', 'quests', 'asks', 'sessions', 'notices',

@@ -464,11 +464,8 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         _ => (bool?)null,
     }) ?? false;
 
-    /// <summary>
-    /// The newest readable event's answer to <paramref name="read"/>, read from the file's end, so a list asking it of many records
-    /// reads a line of each rather than the whole of each; an event it answers null for is passed over. Null for no record, an
-    /// unreadable one, one with no event answered for, or an id that is not one.
-    /// </summary>
+    /// <summary>The newest readable event's answer to <paramref name="read"/>, read from the file's end (a line of each record, never the
+    /// whole), one answered null passed over; null for no record, an unreadable one, none answered, or an id that is not one.</summary>
     private T? Newest<T>(string sessionId, Func<SessionEvent, T?> read) where T : struct
     {
         if (!SessionEventText.IsId(sessionId)) return null;
@@ -482,7 +479,6 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         }
     }
 
-    /// <summary><see cref="Newest{T}"/> of the file at <paramref name="path"/>, its failure to read thrown.</summary>
     private static T? NewestIn<T>(string path, Func<SessionEvent, T?> read) where T : struct
     {
         if (!File.Exists(path)) return null;
@@ -532,10 +528,8 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>
-    /// What a session spent, by its record: its turns that ended, those whose door said
-    /// what they consumed, and each of the four counts summed over those. A part's cost on the *Parts* strip's own row, so a moved
-    /// session reads as one. Nothing for no record, an unreadable one, or an id that is not one. Read on from where the last read
-    /// of the record stopped (<see cref="SessionSpentKept"/>).
+    /// What a session spent, by its record (<see cref="SessionSpentKept"/>): its turns ended, those whose door said what they consumed and
+    /// the four counts summed, a part's cost on the *Parts* strip's own row. None for no record, an unreadable one, or no id.
     /// </summary>
     public SessionSpent Spent(string sessionId)
     {
@@ -647,8 +641,6 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         return stream.ReadByte() == '\n';
     }
 
-    // The newest readable line's number, read from the end: a running conversation's first word after a start read its whole
-    // record for it.
     private static long Last(string path) => NewestIn(path, e => (long?)e.Seq) ?? 0;
 
     /// <summary>Every readable event in a file, in order; a line that is not one is skipped.</summary>

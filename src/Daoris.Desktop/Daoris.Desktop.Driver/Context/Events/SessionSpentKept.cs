@@ -4,12 +4,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What each conversation record spent, kept by how far its file was read: a read takes only the whole lines written since the
-/// last, so the Parts strip's ask of a long conversation reads what it said since, never its whole record again.
+/// What each conversation record spent, kept with how far into its file the reading reached: a read takes only the whole lines
+/// written since the last, so the Parts strip's ask of a long conversation reads what it said since, never its whole record again.
 /// </summary>
 /// <remarks>
 /// <para><b>Shared by every reader</b>, as the numbering is (<see cref="SessionEvents"/>): callers each build their own instance over one
-/// folder. The record is append-only; a file that is shorter than what was read, or whose last line read no longer stands where it
+/// folder. The record is append-only; a file shorter than the reading reached, or whose last line read no longer stands where it
 /// stood (forgotten and written again, or replaced), is read whole.</para>
 ///
 /// <para><b>A torn last line</b> waits: only lines ended by their newline are counted, so a line still being written is read once whole.</para>
@@ -22,7 +22,7 @@ internal sealed class SessionSpentKept
     private readonly Dictionary<string, Kept> _kept = new(StringComparer.OrdinalIgnoreCase);
 
     /// <param name="LineStart">Where the last whole line read begins.</param>
-    /// <param name="Read">How far the file was read: just past the last whole line's newline.</param>
+    /// <param name="Read">How far into the file the reading reached: just past the last whole line's newline.</param>
     /// <param name="LastLine">The last whole line's hash, which says the file read on is the one read before.</param>
     private sealed record Kept(long LineStart, long Read, byte[] LastLine, SessionSpent Spent);
 
@@ -47,7 +47,7 @@ internal sealed class SessionSpentKept
         }
     }
 
-    /// <summary>Let go of what was read of <paramref name="path"/>: its record is gone.</summary>
+    /// <summary>Let go of the reading of <paramref name="path"/>: its record is gone.</summary>
     public void Forget(string path)
     {
         lock (_gate) _kept.Remove(path);

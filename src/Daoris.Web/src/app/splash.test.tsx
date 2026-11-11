@@ -100,9 +100,7 @@ describe('the splash lifts once the first screen has its data', () => {
   });
 
   it('waits on nothing that waits on the word itself or on the index being read', () => {
-    // What needs you is judged over the machine's facts, which start on this word: waiting on it waited out the bound at every start.
     expect(isFirstScreen(['attention'])).toBe(false);
-    // The repositories' first answer waits on the service reading every checkout's index, 22-29 s after a start.
     expect(isFirstScreen(['repositories'])).toBe(false);
   });
 
