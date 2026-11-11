@@ -46,6 +46,11 @@ public sealed class ManifestStore
     /// <summary>The place's newest manifest, of any line, or null: what a turn's start compares with.</summary>
     public RunManifest? Last() => Kept().Select(ReadFile).OfType<RunManifest>().MaxBy(manifest => manifest.At);
 
+    /// <summary>The newest manifest read at <paramref name="root"/>, so a copy's turns and the folder's are each compared with their own.</summary>
+    public RunManifest? Last(string root) => Kept().Select(ReadFile).OfType<RunManifest>()
+        .Where(manifest => manifest.Root is { } read && string.Equals(Path.GetFullPath(read), Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+        .MaxBy(manifest => manifest.At);
+
     /// <summary>Keep the newest 20 and every manifest of a record in <paramref name="named"/>, and the blobs those name.</summary>
     public void Tidy(IReadOnlySet<string> named)
     {

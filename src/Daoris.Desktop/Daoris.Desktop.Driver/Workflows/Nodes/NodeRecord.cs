@@ -235,7 +235,15 @@ public static class NodeWordActs
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject];
+    /// <summary>
+    /// The person's choice for one file a folder's return found changed in both the folder and the session's copy, its path as the
+    /// word's words: the folder's version kept, the session's taken, or the session's written beside it. Kept as a mark, as a send is.
+    /// </summary>
+    public const string KeepYours = "keep-yours", TakeSession = "take-session", KeepBoth = "keep-both";
+
+    public static readonly IReadOnlyList<string> Choices = [KeepYours, TakeSession, KeepBoth];
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
 }
 
 /// <summary>
