@@ -47,6 +47,16 @@ test('a role bound to a ceiling alone is check\'s to measure, not this tool\'s',
   fx.cleanup();
 });
 
+test('a folder\'s ceiling is check\'s to measure, document by document, not this tool\'s', () => {
+  const fx = makeFixture('doc-budgets-folder');
+  fx.write('docs/areas/driving.md', '# Driving\n');
+  fx.write('daoris.json', JSON.stringify({ documents: { areas: { path: 'docs/areas', words: 4500 } } }));
+  fx.write(BUDGETS, JSON.stringify({}));
+
+  assert.deepEqual(ceilings(fx.root).budgets, []);
+  fx.cleanup();
+});
+
 test('a document given a ceiling in both lists is named, since two numbers for one file is a fact', () => {
   const fx = makeFixture('doc-budgets-twice');
   fx.write('daoris.json', JSON.stringify({ documents: { backlog: { path: 'TASKS.md', words: 6600 } } }));

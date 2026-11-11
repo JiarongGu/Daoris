@@ -1,7 +1,7 @@
 import type { CommandArgs } from '../platform/types.ts';
 import type { DriftReport, Lock, Manifest } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareOrdinal, digestBytes, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { readLock, readManifest } from './config.ts';
@@ -277,7 +277,6 @@ export function inspect(
   const linked = new Set(documentLinksFound.map((link) => link.declared));
   const documentsMissing = declaredPaths(documents).filter((doc) => !linked.has(doc.path) && present(root, doc.path) === null);
   const documentsOver: { label: string; words: number; ceiling: number }[] = [];
-  const ceilingsUnmeasured: { role: string; path: string; ceiling: number }[] = [];
   const measure = (label: string, text: string, ceiling: number) => {
     const words = wordCount(text);
     if (words > ceiling) documentsOver.push({ label, words, ceiling });
@@ -301,7 +300,11 @@ export function inspect(
     } else if (doc.path !== null && !linked.has(doc.path)) {
       const kind = present(root, doc.path);
       if (kind === 'file') measure(`${doc.path} (${doc.role})`, readText(join(root, doc.path)), doc.words);
-      else if (kind === 'folder') ceilingsUnmeasured.push({ role: doc.role, path: doc.path, ceiling: doc.words });
+      else if (kind === 'folder') {
+        const names = readdirSync(join(root, doc.path), { withFileTypes: true })
+          .filter((entry) => entry.isFile() && entry.name.endsWith('.md')).map((entry) => entry.name).sort(compareOrdinal);
+        for (const name of names) measure(`${doc.path}/${name} (${doc.role})`, readText(join(root, doc.path, name)), doc.words);
+      }
     }
   }
   const recordsUndeclared = documents.length
@@ -323,7 +326,7 @@ export function inspect(
     drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
     links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
-    documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
+    documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, recordsUndeclared,
     ok,
   };
 }
@@ -388,10 +391,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   }
   for (const over of report.documentsOver) {
     write(`  words     ${over.label} is ${over.words} words of ${over.ceiling} — over by ${over.words - over.ceiling}; `
-      + 'relocate, condense, then raise — advisory, not a gate');
-  }
-  for (const doc of report.ceilingsUnmeasured) {
-    write(`  ceiling   ${doc.path} (${doc.role}) is a folder; its ceiling of ${doc.ceiling} words measures nothing — advisory`);
+      + 'the read path has grown: move its history to its record, condense, then raise — advisory, not a gate');
   }
   if (report.recordsUndeclared.length) {
     write(`  records   ${report.recordsUndeclared.map((role) => `no ${role}`).join(' and ')} declared in daoris.json's `

@@ -59,6 +59,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-04-orientation-everywhere-design.md`|Contract: indexes, ranges
 |`2026-10-24-ci-scope-design.md`|Accepted design: CI by reach (D207)
 |`2026-10-24-ci-scope-reads.md`|Reads: CISCOPE1
+|`2026-11-12-long-lived-repository-design.md`|Accepted design: what a change reads, measured (D278)
 
 ## Driver, sessions, sharing and landing contracts
 
