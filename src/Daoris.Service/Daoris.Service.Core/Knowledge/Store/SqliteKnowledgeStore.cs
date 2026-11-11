@@ -166,7 +166,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 read_at    TEXT NOT NULL
             );
             """, inside).ConfigureAwait(false);
-        // The stamp, and the generation it was written at: a build before it moves the generation and never the stamp, so its
+        // The stamp, and the generation it is written at: a build before it moves the generation and never the stamp, so its
         // write reads as unstamped.
         await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanner", "scanner TEXT", inside).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanned", "scanned INTEGER", inside).ConfigureAwait(false);

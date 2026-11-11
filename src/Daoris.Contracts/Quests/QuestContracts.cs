@@ -14,11 +14,7 @@ public sealed record ListQuests(string? Repository = null, bool? IncludeClosed =
     public static string Path => "/api/quests";
 }
 
-/// <summary>
-/// The widest list (every repository, closed included, every workspace) as its change since a mark this door answered: a reader that
-/// keeps the quests lays the change over them and reads the list whole no more.
-/// </summary>
-/// <param name="Since">The mark of the answer the reader holds; none, or one this host no longer holds, is answered every quest.</param>
+/// <summary>Every quest as its change since <c>Since</c>, a mark this door answered; none, or one it no longer holds, is every quest.</summary>
 public sealed record ListQuestChanges(string? Since = null) : IRoute<QuestChangesResponse>
 {
     public static string Method => "GET";

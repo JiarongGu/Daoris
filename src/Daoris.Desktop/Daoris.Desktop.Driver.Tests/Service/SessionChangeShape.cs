@@ -10,7 +10,6 @@ internal static class SessionChangeShape
     public const string QuestChangesPath = "/api/quests/changes";
     public const string QuestListDoor = "/api/quests?includeClosed=true";
 
-    /// <summary>The whole list a change door is answered from, or null for a path that is no change door.</summary>
     public static string? ListDoorOf(string path) => path switch
     {
         ChangesPath => ListDoor,

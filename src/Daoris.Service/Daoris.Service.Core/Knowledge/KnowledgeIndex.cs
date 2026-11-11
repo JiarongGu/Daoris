@@ -8,7 +8,6 @@ namespace Daoris.Knowledge;
 /// material is already in the store and one forgotten filter discloses it; withholding at ingest
 /// means it is never there to leak.
 /// </remarks>
-/// <param name="scanner">What reads the roots, stamped on each reading that carries a root's signature; null stamps none.</param>
 public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? disclosure = null, TimeProvider? time = null, string? scanner = null)
 {
     private readonly IDisclosurePolicy _disclosure = disclosure ?? DisclosurePolicy.LocalOnly;

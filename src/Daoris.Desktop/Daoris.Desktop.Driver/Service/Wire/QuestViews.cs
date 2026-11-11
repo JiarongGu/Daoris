@@ -21,10 +21,7 @@ public static class QuestViews
     public static async Task<QuestView?> FindQuestAsync(this ServiceClient service, string id, CancellationToken ct = default) =>
         await service.QuestList.OneAsync(id.TrimStart('#'), ct).ConfigureAwait(false) is { } quest ? View(quest) : null;
 
-    /// <summary>
-    /// Every quest as the service wrote it: what a trace reads a quest's answers, its yes and its moments from, which
-    /// <see cref="QuestView"/> leaves out because no planner needs them.
-    /// </summary>
+    /// <summary>Every quest as the service wrote it, what a trace reads a quest's answers, its yes and its moments from.</summary>
     /// <exception cref="DriverException">A refused read, in the service's words.</exception>
     public static Task<string> QuestsJsonAsync(this ServiceClient service, CancellationToken ct = default) => service.QuestList.JsonAsync(ct);
 

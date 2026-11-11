@@ -62,7 +62,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     public SessionListDoors SessionList { get; }
 
-    /// <summary>Every quest held on this side and kept by its change, for the readers of every quest.</summary>
     public QuestListKept QuestList { get; }
 
     public SessionWordDoors Words { get; }

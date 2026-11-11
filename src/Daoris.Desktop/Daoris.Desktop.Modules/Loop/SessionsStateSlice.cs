@@ -74,10 +74,7 @@ public static class SessionsStateSlice
         new("DRIVER_READY"),
     ];
 
-    /// <summary>
-    /// The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers. The kept list is the same object
-    /// while nothing moved, which is judged once (<see cref="JudgedOnce{TList}"/>): a period with no change does no work.
-    /// </summary>
+    /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus)
     {
         var judged = new JudgedOnce<IReadOnlyList<JsonObject>>(Judge);

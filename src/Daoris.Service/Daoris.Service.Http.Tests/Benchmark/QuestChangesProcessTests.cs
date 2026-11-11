@@ -4,9 +4,9 @@ using Xunit.Abstractions;
 namespace Daoris.Service.Http.Tests.Benchmark;
 
 /// <summary>
-/// What a reader of every quest costs at an install's count (950 quests of about four kilobytes each): the whole list made again, as
-/// every read made it before the list was kept by the store's mark, the whole list answered again while nothing moved, and the change
-/// since the reader's mark, which is what each of the desktop's readers asks now.
+/// What a reader of every quest costs at an install's count (950 quests of about four kilobytes each): the whole list made, which a
+/// read with no kept answer costs, the whole list answered again while nothing moved, and the change since the reader's mark, which is
+/// what each of the desktop's readers asks.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class QuestChangesProcessTests(LocalHost host, ITestOutputHelper output) : IClassFixture<LocalHost>

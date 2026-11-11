@@ -383,7 +383,6 @@ public static class ServiceFactory
             records: mode == ServiceMode.Local ? records : null,
             // A citation's recheck asks of the cited file alone.
             fileUncommitted: readsLocalCheckouts ? UncommittedRecords.OfFile : null,
-            // What it kept is what a start reads, where this build read it and its root has not moved since.
             scanner: options.Repository is null && readsLocalCheckouts ? KeptReadings.Stamp(options.Documents, options.Index) : null);
 
         // The bootstrap: a store that has never been managed imports its configured root ONCE

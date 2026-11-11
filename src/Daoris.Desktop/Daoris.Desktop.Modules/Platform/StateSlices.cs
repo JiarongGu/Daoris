@@ -105,8 +105,6 @@ public sealed class StateSlice
         new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite, SingleReader = true });
     private bool _judged;
     private long _judgements;
-
-    /// <summary>The last judgement compared; read and written only within a judgement's turn.</summary>
     private IReadOnlyList<SliceJudged>? _lastJudged;
 
     /// <summary>Whether the last judgement failed; read and written only within a judgement's turn.</summary>

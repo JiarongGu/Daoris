@@ -66,10 +66,7 @@ public static class QuestsStateSlice
         new("DRIVER_READY"),
     ];
 
-    /// <summary>
-    /// The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers: the kept list's text, the same
-    /// string while nothing moved, judged once (<see cref="JudgedOnce{TList}"/>).
-    /// </summary>
+    /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus)
     {
         var judged = new JudgedOnce<string>(Judge);
