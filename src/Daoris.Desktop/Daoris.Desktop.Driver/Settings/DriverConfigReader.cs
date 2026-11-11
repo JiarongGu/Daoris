@@ -42,6 +42,7 @@ internal static class DriverConfigReader
             ActorErrors = actorErrors,
             // Restricted unless the file names full: never widened by a value it does not know.
             HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
+            Terminal = TerminalTiers.Read(Json.NonEmpty(root, TerminalTiers.File)),
             // Absent, or less than a minute, or not a whole number, is the default hour: never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,

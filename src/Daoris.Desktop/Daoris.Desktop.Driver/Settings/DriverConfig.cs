@@ -394,6 +394,9 @@ public sealed record DriverConfig(
                 ?? throw new DriverException($"Ask Daoris's mode is `{HelpModeNames.Restricted}` or `{HelpModeNames.Full}`, not `{mode}`."),
         };
 
+    /// <summary>The tier of a person's press from a terminal no Daoris session owns (<see cref="TerminalTiers"/>): ask unless the file names act.</summary>
+    public string Terminal { get; init; } = TerminalTiers.Ask;
+
     /// <summary>
     /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe:
     /// <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file — is the default,

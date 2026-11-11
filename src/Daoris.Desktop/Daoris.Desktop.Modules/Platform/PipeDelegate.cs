@@ -54,10 +54,10 @@ internal enum PipeDelegateTier
     Refused,
 }
 
-/// <summary>A proved press's tier, who its card names as asking, and, for one run with no card, its session and where it is said; <paramref name="Own"/> is a working session's.</summary>
+/// <summary>A press's tier, who its card names as asking, and, run with no card, its session and where it is said; <paramref name="Own"/> is a working session's, <paramref name="Terminal"/> a terminal's (<see cref="PipeTerminalTier"/>).</summary>
 internal sealed record PipeDelegateJudgement(
     PipeDelegateTier Tier, PipeAsker? Asker = null, string? Session = null, Action<string>? Say = null, bool Own = false,
-    string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null);
+    string? Repository = null, Func<IpcRequest, CancellationToken, Task<HelpPressPlace?>>? PlaceOf = null, bool Terminal = false);
 
 /// <summary>
 /// A person's press a session's verb sends with the proof of the delegate key handed to its start (<see cref="DelegateKey"/>), judged
@@ -77,6 +77,8 @@ public sealed class PipeDelegate(InstancePipe pipe)
 
     /// <summary>The machine log's event for a press a working session made as its own, with no card.</summary>
     public const string SessionPressedEvent = "session.pressed";
+
+    public const string TerminalPressedEvent = "terminal.pressed";
 
     /// <summary>The refusal's words, which say nothing of which check failed.</summary>
     public const string UnprovedSentence =
@@ -110,7 +112,7 @@ public sealed class PipeDelegate(InstancePipe pipe)
         };
     }
 
-    /// <summary>A press run with no card, in the machine log: Ask Daoris's as the person's, a working session's as its own.</summary>
+    /// <summary>A press run with no card, in the machine log: Ask Daoris's and a terminal's as the person's, kept for the window's list, a working session's as its own.</summary>
     internal void Pressed(PipeDelegateJudgement judgement, IpcRequest request, Task<string> answer)
     {
         var route = $"{request.Module}.{request.Type}";
@@ -120,11 +122,12 @@ public sealed class PipeDelegate(InstancePipe pipe)
             return;
         }
 
-        pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
+        if (judgement.Terminal) pipe.Log.Info(TerminalPressedEvent, ("route", route), ("by", "terminal"), ("door", PipeDoor.Terminal));
+        else pipe.Log.Info(PressedEvent, ("session", judgement.Session ?? ""), ("route", route), ("door", PipeDoor.Terminal));
         judgement.Say?.Invoke(route);
         // Kept for the window's list, which is told at the press and again at its answer.
         var presses = pipe.StandingConfirmation.HelpPresses;
-        var kept = presses.Began(request, judgement.Session ?? "");
+        var kept = presses.Began(request, judgement.Session ?? "", judgement.Terminal);
         pipe.TellDriverState();
         if (judgement.PlaceOf is { } placeOf) _ = PlaceAsync(placeOf, request, kept);
         _ = answer.ContinueWith(done =>

@@ -17,6 +17,7 @@
         "  manifest   250000 files and 5 minutes before a folder is too large to follow  (the default — `daoris settings manifest files|minutes <n>` changes either)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
+        "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -29,7 +30,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
     },
     {
       "name": "list, the bare family word",
@@ -45,6 +46,7 @@
         "  manifest   250000 files and 5 minutes before a folder is too large to follow  (the default — `daoris settings manifest files|minutes <n>` changes either)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
+        "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -57,7 +59,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The timeout line is gone, and the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
     },
     {
       "name": "list, a home holding every choice",
@@ -79,6 +81,7 @@
         "  manifest   250000 files and 5 minutes before a folder is too large to follow  (the default — `daoris settings manifest files|minutes <n>` changes either)",
         "  cooloff    45 minutes an account cools when its agent names no time for its limit",
         "  notify     off  (a session parking, or ending without you asking — not said)",
+        "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  drivable   engine",
         "  drivable   game  (held by you — `daoris place resume` releases it)",
         "  line       engine  develop",
@@ -107,7 +110,7 @@
       ],
       "err": [],
       "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is no setting and is said nowhere; the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is no setting and is said nowhere; the quiet line says how long a session may say nothing before Daoris looks in (SESSWATCH1c). ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it. D271: the terminal line says the tier of a terminal's presses."
     },
     {
       "name": "drive",
@@ -531,6 +534,51 @@
         "daoris: `driver quiet` needs a whole number of minutes from 5 to 120 — e.g. `daoris settings quiet 15`."
       ],
       "after": null
+    },
+    {
+      "name": "terminal act, alone",
+      "argv": [
+        "terminal",
+        "act"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: a terminal's presses run at once only once you confirm it in Daoris's window, and Daoris is not running: start it and run this again; nothing was done."
+      ],
+      "after": null,
+      "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb."
+    },
+    {
+      "name": "terminal ask",
+      "argv": [
+        "terminal",
+        "ask"
+      ],
+      "before": "{\n  \"cap\": 3,\n  \"terminal\": \"act\"\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a press from a terminal on this machine waits for your Confirm in Daoris's window.",
+        "  Written to <config> — read at each press, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"cap\": 3\n}\n",
+      "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb."
+    },
+    {
+      "name": "terminal, no tier",
+      "argv": [
+        "terminal"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `settings terminal` needs ask or act — e.g. `daoris settings terminal act`."
+      ],
+      "after": null,
+      "changed": "D271: the tier of a terminal's presses is a setting of its own, new with this verb."
     },
     {
       "name": "line",

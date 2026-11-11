@@ -268,6 +268,7 @@ internal sealed class LoopRun(
             served.Confirmations.Answered = (id, answer) => loop.PressedEnds.Answered(id, answer, tellChat(), keepPublished);
             served.Grounds = new LoopGrounds(loop, served);
             served.Delegates = session => DelegateTiers.Of(loop, session);
+            served.TerminalTier = () => DelegateTiers.Terminal(loop);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
             // the owner's own releases are kept whole.
             RoleStarts.Sweep(served.StandingConfirmation, loop.ConfigPath);

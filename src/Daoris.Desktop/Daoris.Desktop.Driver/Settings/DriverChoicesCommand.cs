@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms")]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms", "terminal")]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -25,7 +25,7 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
-        "brainstorms", "workflow", "keep", "role",
+        "brainstorms", "workflow", "keep", "role", "terminal",
     ];
 
     /// <summary>What the gone <c>trees</c> verb answers: where a place's sessions are set apart now.</summary>
@@ -39,7 +39,7 @@ public static class DriverChoicesCommand
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
                daoris place notify on|off · trees (gone: a workflow's `isolate` step)
-               daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>
+               daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
