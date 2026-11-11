@@ -5,16 +5,13 @@
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the active one already
 //  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
-//  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
-//  by the tip it is made at.
-//  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words, with
-//  the merge commit where it completed.
+//  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it.
+//  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
 //  DAORIS_HOST_TOKEN the identity's personal access token: never logged, never written, sent only to the API as Basic's password
 //  DAORIS_HOST_API the API's base address where it is not Azure DevOps' (a test's stand-in), put before the organization's name
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { Refusal, TRANSIENT, addressOf, call, choose, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { work } from './work.mjs';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
@@ -22,126 +19,12 @@ const say = (text) => console.error(text);
 
 const RECEIPT = 'azure-devops-pull-request/receipt@1';
 const PULL_REQUEST = 'azure-devops-pull-request/pull-request@1';
-const VERSION = 'api-version=7.1';
 
 /** The awaited units `work/watch` last told, which a step's attempt is matched to. */
 let units = [];
 
-/** `origin`'s address as the checkout's git configuration writes it: read as a file, never by running git. */
-function originOf(root) {
-  try {
-    let folder = join(root, '.git');
-    if (statSync(folder).isFile()) {
-      // A linked work tree's `.git` is a file naming its own folder, whose `commondir` holds the configuration.
-      const gitdir = /^gitdir:\s*(.+)$/m.exec(readFileSync(folder, 'utf8'))?.[1].trim();
-      if (!gitdir) return null;
-      folder = isAbsolute(gitdir) ? gitdir : resolve(root, gitdir);
-      const common = join(folder, 'commondir');
-      if (existsSync(common)) folder = resolve(folder, readFileSync(common, 'utf8').trim());
-    }
-    const config = readFileSync(join(folder, 'config'), 'utf8');
-    const section = /\[remote "origin"\]([^[]*)/.exec(config)?.[1] ?? '';
-    return /^\s*url\s*=\s*(.+?)\s*$/m.exec(section)?.[1] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** `{ base, project, repository }` from an Azure DevOps address (HTTPS, a `visualstudio.com` one, or SSH v3), `base` being the organization's API root; else null. */
-function azureOf(origin) {
-  if (typeof origin !== 'string') return null;
-  const text = origin.trim().replace(/^daoris::/, '');
-  const decode = (part) => { try { return decodeURIComponent(part); } catch { return part; } };
-  const named = process.env.DAORIS_HOST_API?.replace(/\/+$/, '');
-  let m = /^https?:\/\/(?:[^@/]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?#]+?)\/?$/i.exec(text);
-  if (m) return { base: `${named ?? 'https://dev.azure.com'}/${m[1]}`, project: decode(m[2]), repository: decode(m[3]) };
-  m = /^https?:\/\/(?:[^@/]+@)?([^./]+)\.visualstudio\.com\/(?:DefaultCollection\/)?([^/]+)\/_git\/([^/?#]+?)\/?$/i.exec(text);
-  if (m) return { base: named ? `${named}/${m[1]}` : `https://${m[1]}.visualstudio.com`, project: decode(m[2]), repository: decode(m[3]) };
-  m = /^(?:ssh:\/\/)?(?:[^@/]+@)?(ssh\.dev\.azure\.com|vs-ssh\.visualstudio\.com)[:/]v3\/([^/]+)\/([^/]+)\/([^/]+?)\/?$/i.exec(text);
-  if (m) {
-    const base = m[1].toLowerCase() === 'ssh.dev.azure.com' ? `${named ?? 'https://dev.azure.com'}/${m[2]}` : (named ? `${named}/${m[2]}` : `https://${m[2]}.visualstudio.com`);
-    return { base, project: decode(m[3]), repository: decode(m[4]) };
-  }
-  return null;
-}
-
-/** A thrown reason with the code the step fails with; a transient code is one the manifest lets Daoris retry. */
-class Refusal extends Error {
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-  }
-}
-
-const TRANSIENT = ['unavailable', 'rate-limited'];
-
-async function call(repo, method, path, body) {
-  const token = process.env.DAORIS_HOST_TOKEN;
-  if (!token) throw new Refusal('no-token', 'no API token was handed to this process');
-  const url = `${repo.base}/${encodeURIComponent(repo.project)}/_apis/git/repositories/${encodeURIComponent(repo.repository)}${path}`;
-  let response;
-  try {
-    response = await fetch(`${url}${url.includes('?') ? '&' : '?'}${VERSION}`, {
-      method,
-      headers: {
-        Authorization: `Basic ${Buffer.from(`:${token}`).toString('base64')}`,
-        Accept: 'application/json',
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(30000),
-    });
-  } catch (error) {
-    throw new Refusal('unavailable', `Azure DevOps could not be reached: ${error?.message ?? error}`);
-  }
-  let json = null;
-  try {
-    json = await response.json();
-  } catch { /* an answer with no body, or a sign-in page */ }
-  // A refused personal access token is sent on to a sign-in page (203) as often as it is answered 401.
-  if ([401, 403, 203].includes(response.status) || (response.status === 200 && json === null)) {
-    throw new Refusal('unauthorized', `Azure DevOps refused the token (${response.status})`);
-  }
-  if (response.status === 429) throw new Refusal('rate-limited', 'Azure DevOps is limiting this token for now');
-  if (response.status >= 500) throw new Refusal('unavailable', `Azure DevOps answered ${response.status}`);
-  return { status: response.status, json };
-}
-
-const heads = (branch) => `refs/heads/${branch}`;
-const withoutHeads = (ref) => (typeof ref === 'string' ? ref.replace(/^refs\/heads\//, '') : null);
-
-/** The pull requests from a branch, all statuses. */
-async function fromBranch(repo, branch) {
-  const found = await call(repo, 'GET', `/pullrequests?searchCriteria.sourceRefName=${encodeURIComponent(heads(branch))}&searchCriteria.status=all`);
-  return found.status === 200 && Array.isArray(found.json?.value) ? found.json.value : [];
-}
-
-/** The address a person opens: the repository's web address and the pull request's id. */
-const addressOf = (repo, pr) => `${pr.repository?.webUrl ?? `${repo.base}/${encodeURIComponent(repo.project)}/_git/${encodeURIComponent(repo.repository)}`}/pullrequest/${pr.pullRequestId}`;
-
 const HOW = { noFastForward: 'merge', squash: 'squash', rebase: 'rebase', rebaseMerge: 'rebase-merge' };
 const STATE = { active: 'open', completed: 'completed', abandoned: 'abandoned' };
-
-/**
- * Which of the pull requests from a branch is the one asked about: among those into the line where there are
- * any, a completed one, else an active one, else the newest abandoned one.
- */
-function choose(found, line) {
-  const into = found.filter((each) => withoutHeads(each?.targetRefName) === line);
-  const pool = line && into.length > 0 ? into : found;
-  const newest = (list) => [...list].sort((a, b) => String(b.closedDate ?? b.creationDate ?? '').localeCompare(String(a.closedDate ?? a.creationDate ?? ''))
-    || Number(b.pullRequestId) - Number(a.pullRequestId))[0];
-  return newest(pool.filter((each) => each?.status === 'completed'))
-    ?? newest(pool.filter((each) => each?.status === 'active'))
-    ?? newest(pool.filter((each) => each?.status === 'abandoned'))
-    ?? null;
-}
-
-function located(unit) {
-  const repo = azureOf(originOf(unit.root));
-  if (!repo) throw new Refusal('no-origin', `${unit.root} has no origin that names an Azure DevOps repository`);
-  return repo;
-}
 
 /** The `pull-request` step: the active pull request from the pushed branch, opened here where there is none. */
 async function pullRequest(attempt) {
@@ -190,7 +73,7 @@ function failed(code, message) {
 async function state(frame) {
   const repo = azureOf(frame.origin) ?? azureOf(originOf(frame.root));
   if (!repo) return { state: 'unknown', pullRequest: frame.pullRequest ?? null, message: 'origin names no Azure DevOps repository.' };
-  let id = typeof frame.pullRequest === 'string' ? /\/pullrequest\/(\d+)\/?$/i.exec(frame.pullRequest)?.[1] : undefined;
+  let id = idOf(frame.pullRequest);
   if (id === undefined) {
     const chosen = choose(await fromBranch(repo, frame.branch), frame.line);
     if (!chosen) return { state: 'unknown', pullRequest: null, message: `no pull request from \`${frame.branch}\` was found in Azure DevOps.` };
