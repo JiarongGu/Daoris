@@ -474,31 +474,36 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         if (!SessionEventText.IsId(sessionId)) return null;
         try
         {
-            var path = PathOf(sessionId);
-            if (!File.Exists(path)) return null;
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            var length = stream.Length;
-            // A window from the end, grown until it holds a line answered for: a line longer than the window is read in a later one.
-            for (var window = 4096L; ; window *= 4)
-            {
-                var start = Math.Max(0, length - window);
-                var bytes = new byte[length - start];
-                stream.Seek(start, SeekOrigin.Begin);
-                stream.ReadExactly(bytes);
-                var lines = Utf8.GetString(bytes).Split('\n');
-
-                // A window's first line is part of one unless the window starts the file.
-                for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
-                {
-                    if (Event(lines[at]) is { } e && read(e) is { } answered) return answered;
-                }
-
-                if (start == 0) return null;
-            }
+            return NewestIn(PathOf(sessionId), read);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return null;
+        }
+    }
+
+    /// <summary><see cref="Newest{T}"/> of the file at <paramref name="path"/>, its failure to read thrown.</summary>
+    private static T? NewestIn<T>(string path, Func<SessionEvent, T?> read) where T : struct
+    {
+        if (!File.Exists(path)) return null;
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var length = stream.Length;
+        // A window from the end, grown until it holds a line answered for: a line longer than the window is read in a later one.
+        for (var window = 4096L; ; window *= 4)
+        {
+            var start = Math.Max(0, length - window);
+            var bytes = new byte[length - start];
+            stream.Seek(start, SeekOrigin.Begin);
+            stream.ReadExactly(bytes);
+            var lines = Utf8.GetString(bytes).Split('\n');
+
+            // A window's first line is part of one unless the window starts the file.
+            for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
+            {
+                if (Event(lines[at]) is { } e && read(e) is { } answered) return answered;
+            }
+
+            if (start == 0) return null;
         }
     }
 
@@ -529,20 +534,15 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     /// <summary>
     /// What a session spent, by its record: its turns that ended, those whose door said
     /// what they consumed, and each of the four counts summed over those. A part's cost on the *Parts* strip's own row, so a moved
-    /// session reads as one. Nothing for no record, an unreadable one, or an id that is not one.
+    /// session reads as one. Nothing for no record, an unreadable one, or an id that is not one. Read on from where the last read
+    /// of the record stopped (<see cref="SessionSpentKept"/>).
     /// </summary>
     public SessionSpent Spent(string sessionId)
     {
         if (!SessionEventText.IsId(sessionId)) return SessionSpent.None;
         try
         {
-            var spent = SessionSpent.None;
-            foreach (var e in Lines(PathOf(sessionId)))
-            {
-                if (e.Kind == SessionEventKind.Turn) spent = spent.With(e.Tokens);
-            }
-
-            return spent;
+            return SessionSpentKept.Shared.Of(PathOf(sessionId));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -621,6 +621,7 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         {
             var path = PathOf(sessionId);
             _latest.Remove(path);
+            SessionSpentKept.Shared.Forget(path);
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;
@@ -646,11 +647,9 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
         return stream.ReadByte() == '\n';
     }
 
-    private static long Last(string path)
-    {
-        var all = Read(path);
-        return all.Count == 0 ? 0 : all[^1].Seq;
-    }
+    // The newest readable line's number, read from the end: a running conversation's first word after a start read its whole
+    // record for it.
+    private static long Last(string path) => NewestIn(path, e => (long?)e.Seq) ?? 0;
 
     /// <summary>Every readable event in a file, in order; a line that is not one is skipped.</summary>
     private static List<SessionEvent> Read(string path) => [.. Lines(path)];

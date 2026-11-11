@@ -83,7 +83,9 @@ of everything it handed, section by section.
 4. A line has one key, `LineKeys.Of`: walk back by `from` on this machine; the quest's id for a driven part, else the first
    part's id. Moves, counts and the go-on admission all read it. (from D229)
 5. A session's events (`<id>.events.jsonl`) and verbatim transcript stay on the machine. No HTTP surface reads them.
-   (from D76)
+   The next event's number, when its record was last written and whether its turn ended are read from the record's end; what
+   a part spent is read on from where its last read stopped (`SessionSpentKept`), the whole record again only where it no
+   longer stands as it was read. (from D76)
 
 **Two contexts**
 
