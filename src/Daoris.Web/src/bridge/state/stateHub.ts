@@ -3,7 +3,7 @@ import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, us
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { readUnderWay } from '../driver';
-import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED } from '../help';
+import { HELP_HISTORY, HELP_PUBLISHED, HELP_WIRED } from '../help';
 import { HELP_BEYOND } from '../helpBeyond';
 import { ALL_HISTORY } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
@@ -48,12 +48,11 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['plugins', () => [keys.plugins]],
   // The agents' roster, with what each start would run on and the accounts, which sit under its key.
   ['harnesses', () => [keys.harnesses]],
-  // The tools, with what a switch of git would change; Ask Daoris's history and what each
-  // conversation proposed; the browser's settings and favorites.
+  // The tools, with what a switch of git would change; Ask Daoris's history; the browser's settings and favorites.
   ['tools', () => [ALL_TOOLS]],
   // And the receipts *What it has* shows, so one a resume or a change of mode records while it is open appears
-  // (only an enabled query, the open panel's, asks again). And what a conversation published, which an Apply adds.
-  ['help', () => [HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED, HELP_PUBLISHED]],
+  // (only an enabled query, the open panel's, asks again). And what a conversation published, which a press adds.
+  ['help', () => [HELP_HISTORY, HELP_WIRED, HELP_PUBLISHED]],
   ['browser', () => [keys.browserSettings]],
   // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends, and by the Downloads
   // row's clearing, with that row's list; and the Disk space card, told as each kind's walk ends.

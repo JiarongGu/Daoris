@@ -1,7 +1,8 @@
 import type { ComponentProps } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ExternalLink } from '../../design/links';
+import { GoLink, goPlace } from '../../help/goLink';
 import { CodeBlock } from './CodeBlock';
 
 /**
@@ -15,7 +16,8 @@ import { CodeBlock } from './CodeBlock';
  * **A link leaves the application**, through `ExternalLink`: in the system's browser, or in Daoris's
  * where the person chose that. A plain link would navigate the whole window away, which is the
  * drop-a-file failure in another form. **An image is never fetched** — it is
- * a link to what it names, opened only on purpose.
+ * a link to what it names, opened only on purpose. **A go link stays in the window** (`daoris:go?…`, which Ask Daoris writes):
+ * it opens the place it names where the panel provides an opener, and is words alone anywhere else.
  *
  * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
  * wrote, and nothing here translates it.
@@ -30,7 +32,7 @@ import { CodeBlock } from './CodeBlock';
 export function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown text-body leading-relaxed text-ink wrap-break-word [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-      <ReactMarkdown remarkPlugins={[remarkGfm, keepLineBreaks]} components={COMPONENTS}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, keepLineBreaks]} components={COMPONENTS} urlTransform={keepGoLinks}>
         {text}
       </ReactMarkdown>
     </div>
@@ -61,10 +63,13 @@ function keepLineBreaks() {
   return walk;
 }
 
+/** The renderer's own address rule, but for a link's go address, whose scheme it would blank. */
+const keepGoLinks = (url: string, key: string) => (key === 'href' && goPlace(url) ? url : defaultUrlTransform(url));
+
 type Components = ComponentProps<typeof ReactMarkdown>['components'];
 
 const COMPONENTS: Components = {
-  a: ({ href, children }) => (
+  a: ({ href, children }) => goPlace(href) ? <GoLink href={href}>{children}</GoLink> : (
     <ExternalLink href={href} className="text-accent underline underline-offset-2">
       {children}
     </ExternalLink>

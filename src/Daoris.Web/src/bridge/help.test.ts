@@ -1,5 +1,5 @@
 import { createElement, type ReactNode } from 'react';
-import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -25,105 +25,9 @@ vi.mock('@shenora/react', async (importOriginal) => {
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import {
-  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, useHelpPublished, useHelpWired, useSettleHelp,
-  wiredAnswer, type HelpSettled,
+  HELP_PUBLISHED, helpModeOf, publishedAnswer, useHelpPublished, useHelpWired, wiredAnswer,
 } from './help';
-import { useStateHub } from './state/stateHub';
 
-/** `proposal.settled` is the person's Apply or Not now once the proposal settles. */
-describe('what settling a proposal writes to the machine log', () => {
-  const settle = async (answer: HelpSettled, apply = true) => {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? answer : undefined));
-    const client = new QueryClient();
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
-    await act(async () => { await result.current.mutateAsync({ id: 'p11', apply }); });
-    return invoke.mock.calls
-      .filter(([module]) => module === 'DAORIS.LOG')
-      .map(([, , request]) => (request as { payload: unknown }).payload);
-  };
-
-  it('writes proposal.settled for an Apply and a Not now that settled the proposal', async () => {
-    expect(await settle({ message: 'Applied.', applied: true })).toEqual([{ event: 'proposal.settled', data: { applied: true } }]);
-    expect(await settle({ message: 'Not now.' }, false)).toEqual([{ event: 'proposal.settled', data: { applied: false } }]);
-  });
-});
-
-/** An Apply stands for the card the person saw, so it carries that card's revision to the host. */
-describe('what an Apply carries', () => {
-  it('sends the revision of the card the conversation holds for the proposal', async () => {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
-    const client = new QueryClient();
-    client.setQueryData(['help-proposals', 's1'], [{ id: 'p13', kind: 'role', revision: 'abc123' }]);
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
-
-    await act(async () => { await result.current.mutateAsync({ id: 'p13', apply: true }); });
-
-    const sent = invoke.mock.calls.find(([, type]) => type === 'HELP_APPLY');
-    expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p13', revision: 'abc123' });
-  });
-
-});
-
-/**
- * What an Apply or a Not now changes is published by its route, and the window's state hub asks it again, as
- * every other window's does; the hook asks nothing again itself. Each family below is one the hook would otherwise ask by hand.
- */
-describe('what an Apply reads again', () => {
-  /** A client holding an answer under each key, the hub mounted beside the hook as `ShellSignals` mounts it, and an Apply made. */
-  async function settled(settle: { id: string; apply: boolean }, ...held: QueryKey[]) {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
-    const client = new QueryClient();
-    for (const key of held) client.setQueryData(key, { held: true });
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => { useStateHub(); return useSettleHelp(); }, { wrapper });
-
-    await act(async () => { await result.current.mutateAsync(settle); });
-
-    return (key: QueryKey) => client.getQueryState(key)?.isInvalidated ?? false;
-  }
-
-  /**
-   * ENTRY1d1: a move to a workspace changes the registry, so an Apply reads it again at once, as the Manage drawer's own
-   * *Move to workspace* does, rather than waiting for the driver's watch to say it moved.
-   */
-  it('reads the registry again, which a move to a workspace changed', async () => {
-    const invalid = await settled({ id: 'p12', apply: true }, keys.registry(null), keys.repositories(null));
-
-    await waitFor(() => expect(invalid(keys.registry(null))).toBe(true));
-    expect(invalid(keys.repositories(null))).toBe(true);
-  });
-
-  // A clear card's Apply removes history, so the history plan is read again, as the Clear history press does.
-  it('reads the history plan again, which a clear changed', async () => {
-    const plan = ['history', 'workspace', 'aurora'];
-    const invalid = await settled({ id: 'p20', apply: true }, plan);
-
-    await waitFor(() => expect(invalid(plan)).toBe(true));
-  });
-
-  // And the rest an Apply's doors may move, each read again.
-  it('reads the proposals, the sessions, quests and asks, the agents, the plugins and the browser’s settings again', async () => {
-    const moved = [[...HELP_PROPOSALS, 's1'], keys.allSessions, keys.allQuests, keys.allAsks, keys.harnesses, keys.plugins,
-      keys.browserSettings, keys.sweep];
-    const invalid = await settled({ id: 'p30', apply: true }, ...moved);
-
-    await waitFor(() => { for (const key of moved) expect(invalid(key)).toBe(true); });
-  });
-
-  // A Not now settles the proposal and nothing else.
-  it('reads only the proposals again after a Not now', async () => {
-    const invalid = await settled({ id: 'p31', apply: false }, [...HELP_PROPOSALS, 's1'], keys.driver, keys.allSessions);
-
-    await waitFor(() => expect(invalid([...HELP_PROPOSALS, 's1'])).toBe(true));
-    expect(invalid(keys.driver)).toBe(false);
-    expect(invalid(keys.allSessions)).toBe(false);
-  });
-});
 
 /**
  * Ask Daoris's mode, set over `SET_HELP_MODE`, and what each start of a conversation handed, read

@@ -80,7 +80,6 @@ function bridge(start: (payload: Payload) => Start | Promise<Start> = () => ({ s
       case 'SESSION_HISTORY': return { session: payload.id, events: [], earlier: false, latest: 0 };
       case 'SESSION_QUEUE': return { session: payload.id, queued: [], taking: false };
       case 'HELP_CONVERSATIONS': return listing(payload);
-      case 'HELP_PROPOSALS': return { session: payload.session, proposals: [] };
       default: return {};
     }
   });

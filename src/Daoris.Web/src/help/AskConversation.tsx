@@ -16,6 +16,7 @@ import { type ChatLimitHeld } from '../work/waits/limitWait';
 import { type FirstWords, type Sent, type Draft, NO_DRAFT, NEW_DRAFT, type AskOpening } from './ask/askTypes';
 import { useHelpSlotParts } from './ask/useHelpSlotParts';
 import { useHelpFollow } from './ask/useHelpFollow';
+import { GoOpener } from './goLink';
 import { AskHeld } from './ask/AskHeld';
 import { useHelpMode } from './ask/useHelpMode';
 import { useHelpSend } from './ask/useHelpSend';
@@ -233,7 +234,8 @@ export function useAskConversation(
   // What each turn of the one shown looked at beyond its focus, drawn under that turn.
   const beyond = useHelpBeyond(shown?.id ?? null);
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
-  const conversation = shown ? (<>
+  // A go link in Ask Daoris's words opens its place as the starters' doors open theirs.
+  const conversation = shown ? (<GoOpener.Provider value={onGo ?? null}>
     {earlierParts.map((id) => (
       <SessionConversation key={id} session={id} adapter={helpSessions.find((part) => part.id === id)?.door ?? shown.door}
         mode="earlier" chat live={false} scroller={scroller} />
@@ -253,7 +255,7 @@ export function useAskConversation(
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}
     />
-  </>) : null;
+  </GoOpener.Provider>) : null;
 
   // The words on their way shown with the conversation they were said to, or with none while the list has not listed it yet.
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
@@ -294,7 +296,7 @@ export function useAskConversation(
       onStop={() => { if (shown) stop.mutate(shown.id); }}
     />
   );
-  const { proposed, published } = useHelpFollow({ shown, live, setRefusal, onGo, t });
+  const { published } = useHelpFollow({ shown, onGo });
 
   // What the next words do, said right above the box: where one started from; whether one
   // that ended goes on in itself; that one the person chose is being checked, or cannot go on, with a new conversation from
@@ -313,7 +315,7 @@ export function useAskConversation(
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
-    body: conversation, proposals: <><AskHeld session={shown?.id} live={live} />{proposed}</>, published, composer, ended,
+    body: conversation, held: <AskHeld session={shown?.id} live={live} />, published, composer, ended,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
       : limitLine ? <>{limitLine}{note}</> : note,
     // A new conversation from the head takes the shown one's applied focus.

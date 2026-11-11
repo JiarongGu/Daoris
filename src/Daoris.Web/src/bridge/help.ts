@@ -1,15 +1,10 @@
-import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
-import type { HelpProposal } from '../help/ProposalCard';
-import type { HelpPlace } from '../help/places';
 import { type Place, placeSaid } from '../help/focus';
 import type { HelpPublishedEntry } from '../help/published/published';
 import { call } from './call';
-import { logEvent } from './log';
-import { usePollUnlessTold } from './state/published';
-import { askHeld } from './state/held';
 
 /**
  * Ask Daoris's conversation: the one this machine is running, carried on, or a new one in
@@ -84,58 +79,6 @@ export const useHelpReadied = () => {
     })),
   };
 };
-
-export const HELP_PROPOSALS = ['help-proposals'] as const;
-
-/**
- * What one conversation of Ask Daoris's proposed that waits for the person, each already
- * judged with the route's own code: one the route would refuse never arrives here, and its agent is told
- * why. A proposal lands mid-turn, written by the connector in another process: the driver tells the windows `help` as it arrives,
- * so a desktop window asks no more than that; a window with no bus asks again every few seconds while it runs.
- */
-export const useHelpProposals = (session: string | null, live: boolean) => {
-  const { isAvailable } = useShenora();
-  const every = usePollUnlessTold(4000);
-  const client = useQueryClient();
-  return useQuery({
-    queryKey: [...HELP_PROPOSALS, session],
-    queryFn: () => readProposals(client, session!),
-    enabled: isAvailable && session !== null,
-    refetchInterval: live ? every : false,
-  });
-};
-
-/** One conversation's proposals. Told by event: the shell answers what it holds, and its judgement of each comes as `ANSWERED`. */
-const readProposals = (client: QueryClient, session: string) =>
-  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer): HelpProposal[] => {
-    const proposals = (answer as { proposals?: unknown } | null)?.proposals;
-    return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
-  });
-
-/**
- * What the person's Apply did: the driver's sentence, whether it is applied, where a go
- * takes the person, and the agent action an update or a pin started.
- */
-export type HelpSettled = {
-  message: string;
-  applied?: boolean;
-  /**
-   * Where a go takes the person: a place, the one quest or ask in it (`item`), and the
-   * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
-   */
-  go?: HelpPlace | null;
-  /** The plan is no longer the one the card showed: nothing is applied, `message` says what it is now, and the card stands. */
-  changed?: boolean;
-};
-
-/**
- * The revision of the plan the card for this proposal shows: an Apply carries it, and the host applies only a plan
- * still that one. Undefined when the conversation holds no such card, which the host refuses for the card to be drawn again.
- */
-export const shownRevision = (client: QueryClient, id: string): string | undefined =>
-  client.getQueriesData<HelpProposal[]>({ queryKey: HELP_PROPOSALS })
-    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
-    .find((each) => each.id === id)?.revision;
 
 export const HELP_HISTORY = ['help-conversations'] as const;
 const HISTORY = HELP_HISTORY;
@@ -320,23 +263,3 @@ export const useHelpStartFrom = () =>
     mutationFn: ({ id, workspace }: { id: string; workspace?: string }) =>
       call('HELP_START_FROM', workspace ? { id, workspace } : { id }) as Promise<{ sessionId: string | null; message: string; from: string }>,
   });
-
-/**
- * The person's Apply and Not now on a proposal: the result goes back into the conversation.
- * What it changed is published by its route, and the state hub asks it again in every window: a Not now the
- * proposals; an Apply every family a door it holds may move, the driver's file and what reads it (the workflow tabs' Current
- * and runs among them), an ask, a quest or a session it made or deleted, an account's settings or an agent's pin, a plugin, the
- * browser's settings or favorites, what bringing up to date moved, a repository moved to a workspace, and finished history.
- */
-export const useSettleHelp = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (settle: { id: string; apply: boolean }) =>
-      (settle.apply
-        ? call('HELP_APPLY', { id: settle.id, revision: shownRevision(client, settle.id) })
-        : call('HELP_DISMISS', { id: settle.id })) as Promise<HelpSettled>,
-    // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
-    retry: false,
-    onSuccess: (_answer, settle) => logEvent('proposal.settled', { applied: settle.apply }),
-  });
-};

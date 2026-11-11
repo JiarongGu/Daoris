@@ -63,8 +63,8 @@ let world: World = FRESH;
  * them, unless a test hands it one.
  */
 let conversing = false;
-let proposals: unknown[] = [];
-let settled: unknown = { message: '', applied: false };
+/** What Ask Daoris's conversation holds, as its history answers it. */
+let said: unknown[] = [];
 
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {
@@ -98,10 +98,8 @@ function machine(next: World) {
       case 'LINES': return { lines: world.lines, landings: world.landings };
       case 'START_HELP': return { sessionId: HELP.id, message: 'opened' };
       case 'SESSION_INPUT': return { sent: true };
-      case 'SESSION_HISTORY': return { session: HELP.id, events: [], earlier: false, latest: 0 };
+      case 'SESSION_HISTORY': return { session: HELP.id, events: said, earlier: false, latest: said.length };
       case 'SESSION_QUEUE': return { session: HELP.id, queued: [], taking: false };
-      case 'HELP_PROPOSALS': return { session: HELP.id, proposals };
-      case 'HELP_APPLY': return settled;
       default: return {};
     }
   });
@@ -130,8 +128,7 @@ describe('the setup guide, at start', () => {
     invoke.mockReset();
     window.localStorage.clear();
     conversing = false;
-    proposals = [];
-    settled = { message: '', applied: false };
+    said = [];
   });
 
   it('opens a fresh machine on Get started, and counts the setup in the status bar', async () => {
@@ -180,26 +177,20 @@ describe('the setup guide, at start', () => {
   });
 
   /**
-   * The setup's repositories through Ask Daoris. Its go to Add repository carries the
-   * workspace the driver judged, and the window opens the drawer with it filled, before the folder, which stays the
-   * person's to pick.
+   * The setup's repositories through Ask Daoris. A go link in its words to Add repository carries the workspace, and the
+   * window opens the drawer with it filled, before the folder, which stays the person's to pick.
    */
-  it("opens Add repository with the workspace Ask Daoris's go names filled", async () => {
+  it("opens Add repository with the workspace Ask Daoris's go link names filled", async () => {
     machine({ ...FRESH, state: { ...FRESH.state, helperAgent: 'claude-code-acp' } });
     conversing = true;
-    proposals = [{
-      id: 'g5a6d7d8', kind: 'go', describe: 'Open Repositories → Add repository, its workspace `work` filled.', terminal: '',
-      why: 'the person asked to add a repository to work',
+    said = [{
+      seq: 1, at: '2026-10-22T09:00:00Z', kind: 'message',
+      text: 'Add it under [Add repository](daoris:go?view=projects&part=add&workspace=work).',
     }];
-    settled = {
-      message: 'Applied: `#g5a6d7d8` — Open Repositories → Add repository, its workspace `work` filled. Nothing else changed.',
-      applied: true, go: { view: 'projects', domain: null, part: 'add', item: null, workspace: 'work' },
-    };
     start();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Set up with Ask Daoris' }));
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add repository' }));
 
     const drawer = await screen.findByRole('dialog', { name: 'Add a repository to this machine' });
     expect(within(drawer).getByLabelText('Workspace')).toHaveValue('work');

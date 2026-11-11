@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import {
   keepPreviousData, type QueryClient, type QueryKey, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions,
 } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { notPushed, readPushed, usePushedLive } from '../bridge/state/slices';
+import { notPushed, readPushed } from '../bridge/state/slices';
 import {
   api, type Ask, type AskAction, HELP_REPOSITORY, type Quest, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef,
   type SyncStanding, type Verdict,
@@ -414,27 +414,6 @@ export const useEverySession = (enabled: boolean) => {
 };
 
 export const useReleasePlace = () => useMutation({ mutationFn: (session: string) => api.releasePlace(session) });
-
-/**
- * A mark that moves when any quest's status, any ask's state or its quests, or any session's state moves, read from
- * the slices the shell pushes and only while all three are pushed: never a pull, so nothing is asked on its account. Null while
- * they are not pushed, or not `enabled`. What a go card's sentence says of its quest, ask or session moves with it, so the card
- * is drawn again at the push rather than its Apply finding a plan other than the one shown.
- */
-export function useStandingsMark(enabled: boolean): string | null {
-  const live = [usePushedLive(QUESTS_SLICE), usePushedLive(ASKS_SLICE), usePushedLive(SESSIONS_SLICE)].every(Boolean);
-  const quests = useEveryQuest(enabled && live);
-  const asks = useEveryAsk(enabled && live);
-  const sessions = useEverySession(enabled && live);
-  return useMemo(() => {
-    if (!enabled || !live || !quests.data || !asks.data || !sessions.data) return null;
-    return [
-      ...quests.data.map((quest) => `q:${quest.id}:${quest.status}:${quest.held === true}`),
-      ...asks.data.map((ask) => `a:${ask.id}:${ask.state}:${ask.quests.length}`),
-      ...sessions.data.map((session) => `s:${session.id}:${session.state}`),
-    ].join(' ');
-  }, [enabled, live, quests.data, asks.data, sessions.data]);
-}
 
 /**
  * The second opinions on this machine, asked only where the sessions list holds a reviewer (`enabled`). A 404 (a

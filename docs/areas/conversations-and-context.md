@@ -65,7 +65,7 @@ of everything it handed, section by section.
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
-| `HelpRoom`, `HelpMode`, `HelpProposals` | `Help/` | Ask Daoris's room, access mode and proposals |
+| `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
 | `LineEvents`, `SessionEntries` | `src/Daoris.Service/Daoris.Service.Core/Sessions/` | The connector's `line_read`; the entry key and `from` on the service's records |
@@ -232,15 +232,16 @@ of everything it handed, section by section.
 
 **Ask Daoris**
 
-42. Ask Daoris is a conversation in its own room, one at a time per workspace. It proposes, and the person applies every
-    change. A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
+42. Ask Daoris is a conversation in its own room, one at a time per workspace. It presses Daoris's verbs, and the person
+    says yes on the card to every change (roles-and-supervision 56); a place it names is a go link in its answer, which the
+    window opens (roles-and-supervision 55). A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
     its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository
     (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its name and pin with the one
     waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for the focus
     (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
     repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
     the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
-    workspace by naming it, or every workspace with `all`, and proposes, reads checkouts and presses the families of acts the
+    workspace by naming it, or every workspace with `all`, and presses, reads checkouts and presses with no card the families of acts the
     person granted (pauses, clean-up, discarding a session branch, the chosen settings: verbs of the `daoris` command, with
     no `housekeeping_*` or `settings_*` tool) in any workspace's repositories, each judged by its own judge and none refused
     for the workspace it names. What a turn looked at
