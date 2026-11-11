@@ -9,6 +9,7 @@ import {
   type DeskRequestNow, HELP_PRESS_OUTCOMES, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow,
   type StewardActNow, type StewardLandNow,
 } from '../person/standing';
+import type { PressReceiptNow } from '../person/pressReceipt';
 import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
 
@@ -229,11 +230,24 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
     const at = text(shaped.at);
     const outcome = HELP_PRESS_OUTCOMES.find((known) => known === shaped.outcome);
     if (id === null || route === null || session === null || at === null || !outcome) return [];
+    const receipt = receiptOf(shaped.receipt);
     return [{
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
-      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
+      place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true, ...(receipt ? { receipt } : {}),
     }];
   });
+}
+
+/** What a press made, field by field; null for one that is not a department's or a room's receipt with the repository it names. */
+function receiptOf(raw: unknown): PressReceiptNow | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const shaped = raw as Record<string, unknown>;
+  const repository = text(shaped.repository);
+  if ((shaped.kind !== 'opened' && shaped.kind !== 'room') || repository === null) return null;
+  return {
+    kind: shaped.kind, repository, workspace: text(shaped.workspace), folder: text(shaped.folder), line: text(shaped.line), room: text(shaped.room),
+    quests: Array.isArray(shaped.quests) ? shaped.quests.flatMap((each) => text(each) ?? []) : [], done: shaped.done === true,
+  };
 }
 
 /** The allowed lands waiting their window, each read field by field; one with no id, act, session or time is left out. */

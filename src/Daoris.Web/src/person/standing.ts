@@ -2,6 +2,7 @@
 // steward's acts and desk, and the roles a terminal holds. The reader is the bridge's (`standingOf`, `bridge/person.ts`).
 
 import { type Place } from '../help/focus';
+import type { PressReceiptNow } from './pressReceipt';
 
 /**
  * The roles' judge as `STATE`'s `standingConfirmation` says it (the modules' `StandingNow`): the terminals that hold a role this run,
@@ -42,6 +43,7 @@ export type HelpPressNow = {
   beyond?: boolean;
   /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
   asked?: boolean;
+  receipt?: PressReceiptNow;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */

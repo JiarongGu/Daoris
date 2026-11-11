@@ -18,7 +18,7 @@ public sealed class QuestHeadsTests
 
         var setup = Assert.Single(heads);
         Assert.Equal(("setup", "Set up this repository for every agent (2026-11-12)"), (setup.Role, setup.Title));
-        Assert.Equal(QuestHeads.Plain(SetupBrief.Request(SetupCase.Whole)), setup.Head);
+        Assert.Equal(QuestHeads.Plain(SetupRequest.Of(SetupCase.Whole)), setup.Head);
         Assert.StartsWith("What is asked, and whose it is. Take up the shared doctrine", setup.Head);
         Assert.DoesNotContain("**", setup.Head);
     }

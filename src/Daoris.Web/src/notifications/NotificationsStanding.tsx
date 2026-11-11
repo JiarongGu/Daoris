@@ -78,7 +78,13 @@ export function NotificationsStanding({ notify, onOpenHelp, onOpenTarget }: {
         })}
         onOpen={openPressed}
       />
-      <HelpPressLine standing={standing} busy={resumeWork.isPending} onOpen={() => onOpenHelp()} onReverse={reverseHelp} />
+      <HelpPressLine
+        standing={standing}
+        busy={resumeWork.isPending}
+        onOpen={() => onOpenHelp()}
+        onReverse={reverseHelp}
+        {...(onOpenTarget ? { onOpenTarget: (scope: string, id: string) => onOpenTarget(scope, id) } : {})}
+      />
       <StewardLine
         standing={standing}
         refused={stewardRefused}

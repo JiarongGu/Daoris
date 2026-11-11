@@ -26,7 +26,6 @@ public sealed record HelpPressNow(
     /// <summary>What a press that opened a place says it made, once its answer is known: the line under its row and under its turn.</summary>
     public PressReceipt? Receipt { get; init; }
 
-    /// <summary>The card an asked press waited on, which the answer of its confirmed run is found by; never told.</summary>
     [JsonIgnore]
     public string? Card { get; init; }
 }
@@ -70,7 +69,6 @@ public sealed class HelpPressRecord(TimeProvider clock)
         _ => Unanswered,
     });
 
-    /// <summary>What a press that ran with no card made, once its answer is known.</summary>
     public void Received(string id, PressReceipt receipt) => Change(id, press => press with { Receipt = receipt });
 
     /// <summary>What an asked press made, found by the card it waited on; a card this run holds no press for says nothing.</summary>

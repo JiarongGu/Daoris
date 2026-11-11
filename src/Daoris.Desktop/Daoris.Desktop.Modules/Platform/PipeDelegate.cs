@@ -138,7 +138,6 @@ public sealed class PipeDelegate(InstancePipe pipe)
         if (judgement.PlaceOf is { } placeOf) _ = PlaceAsync(placeOf, request, kept);
         _ = answer.ContinueWith(done =>
         {
-            // What it made is kept first, so the line that says it is there when the press reads as done.
             if (done.IsCompletedSuccessfully && PressReceipts.Of(done.Result) is { } receipt) presses.Received(kept, receipt);
             presses.Ended(kept, done.IsCompletedSuccessfully && HelpPressRecord.Succeeded(done.Result));
             pipe.TellDriverState();

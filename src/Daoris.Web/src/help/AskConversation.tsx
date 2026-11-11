@@ -6,6 +6,7 @@ import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
+import { useHelpReceipts } from './receipt/useHelpReceipts';
 import { useHelpBeyond } from '../bridge/helpBeyond';
 import { BackToBottom, SessionConversation, type TailState } from '../work/conversation/SessionConversation';
 import { AskHistory } from './AskHistory';
@@ -233,6 +234,8 @@ export function useAskConversation(
 
   // What each turn of the one shown looked at beyond its focus, drawn under that turn.
   const beyond = useHelpBeyond(shown?.id ?? null);
+  // What its presses made, under the turn that pressed them, beside what it looked at beyond its focus.
+  const madeBeneath = useHelpReceipts(shown?.id ?? null, onGo);
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   // A go link in Ask Daoris's words opens its place as the starters' doors open theirs.
   const conversation = shown ? (<GoOpener.Provider value={onGo ?? null}>
@@ -250,7 +253,11 @@ export function useAskConversation(
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
       dividers={focusDividers(shownRow?.marks)}
-      beneath={beyondBeneath(beyond.data, { focus: focusing.focus, next: focusing.next, onFocus: focusing.choose })}
+      beneath={(ask, until) => {
+        const looked = beyondBeneath(beyond.data, { focus: focusing.focus, next: focusing.next, onFocus: focusing.choose })(ask, until);
+        const made = madeBeneath(ask, until);
+        return looked || made ? <>{looked}{made}</> : null;
+      }}
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}

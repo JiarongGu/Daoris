@@ -151,7 +151,6 @@ public sealed class PipeDelegateTests : Bridge
 
     private static readonly object Creation = new { name = "ledger", purpose = "keeps the books", workspace = "aurora" };
 
-    /// <summary>A department Ask Daoris opens in full access is kept in its press record with what it made, which Notifications and the conversation say.</summary>
     [Fact]
     public async Task A_full_access_press_that_opens_a_department_keeps_what_it_made_with_its_record()
     {
@@ -173,7 +172,6 @@ public sealed class PipeDelegateTests : Bridge
         Assert.Equal(1, driver.Ran("REGISTRY_CREATE"));
     }
 
-    /// <summary>The same press in restricted mode waits on its card, and what its confirmed run made is found by that card.</summary>
     [Fact]
     public async Task A_restricted_press_that_opens_a_department_keeps_what_it_made_once_its_card_is_confirmed()
     {
@@ -501,7 +499,6 @@ public sealed class PipeDelegateTests : Bridge
         {
             _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
             Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
-            // A department's creation answers what it made, as the route puts it in its data.
             return Task.FromResult<object?>(request.Type == "REGISTRY_CREATE"
                 ? new { Done = true, Receipt = new { Kind = "opened", Repository = "ledger", Workspace = "aurora", Folder = "/work/aurora/ledger", Line = "main", Quests = new[] { "q7" }, Done = true } }
                 : new { Done = true });

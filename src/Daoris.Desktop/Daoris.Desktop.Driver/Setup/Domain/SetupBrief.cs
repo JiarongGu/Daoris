@@ -93,36 +93,7 @@ public static class SetupBrief
         return (SetupQuests.Title(stem, input.Day), body.ToString().TrimEnd() + "\n");
     }
 
-    private static void Asked(StringBuilder body, SetupBriefInput input) => body.Append(Request(input.Case, input.Facts.Declares)).Append("\n\n");
-
-    /// <summary>
-    /// The brief's opening paragraph for <paramref name="kind"/>: what is asked and whose it is. <paramref name="declares"/> is whether the line
-    /// already declares what it owns, which a move's wording turns on. The one source of the words: composed into the body, and shown on a
-    /// card before the quest is asked.
-    /// </summary>
-    public static string Request(SetupCase kind, bool declares = false)
-    {
-        var what = kind switch
-        {
-            SetupCase.Whole =>
-                "Take up the shared doctrine in the layout every agent reads, and write down what this repository owns "
-                + "and promises, so that a session here, or in a neighbouring repository, finds its answers in files "
-                + "rather than asking a person.",
-            SetupCase.Move =>
-                "Move this repository's doctrine to the layout every agent reads"
-                + (declares ? "" : ", and write down what this repository owns and promises")
-                + ", so that a session here, or in a neighbouring repository, finds its answers in files rather than "
-                + "asking a person.",
-            _ =>
-                "Write down what this repository owns and promises, so that a session in a neighbouring repository finds "
-                + "its answers here rather than asking a person. The doctrine is already taken up here, on the layout "
-                + "every agent reads: this is the knowledge step alone.",
-        };
-
-        return "**What is asked, and whose it is.** " + what
-            + " This is this repository's own change, made by its own session on its own branch: nothing was "
-            + "written here from outside, and nothing outside this tree is this session's to change.";
-    }
+    private static void Asked(StringBuilder body, SetupBriefInput input) => body.Append(SetupRequest.Of(input.Case, input.Facts.Declares)).Append("\n\n");
 
     private static void Read(StringBuilder body, SetupBriefInput input)
     {
@@ -210,11 +181,8 @@ public static class SetupBrief
         $"**The tool.** Run `daoris --version`. It prints `{version}`. If it prints anything else, or `daoris` is not "
         + "found, stop and decline: *the doctrine command could not run here*, with what it printed.";
 
-    /// <remarks>
-    /// <c>init</c> writes a <c>.gitattributes</c> where there is none and keeps one already there byte for byte,
-    /// so the step says it, as the playbook's does: a set-up bound to change no build file would
-    /// otherwise find a file it did not ask for in its diff.
-    /// </remarks>
+    /// <remarks><c>init</c> writes a <c>.gitattributes</c> where there is none and keeps one already there byte for byte, so the step says it, as the
+    /// playbook's does: a set-up bound to change no build file would otherwise find a file it did not ask for in its diff.</remarks>
     private static string TakeUp(LayoutFacts facts) =>
         "**Take up the doctrine.** Run `daoris init --harness agents`, and read what it prints: the packs, this "
         + "repository's own documents, and the records it seems to keep by role (`daoris analyze --json` says the same "
@@ -352,10 +320,8 @@ public static class SetupBrief
     internal static string Commit() =>
         "**Commit** on this branch as each step lands: the branch is what is reviewed, and this session never pushes it.";
 
-    /// <remarks>
-    /// Only the whole set-up runs <c>daoris init</c>, so only its bounds name the <c>.gitattributes</c> init writes
-    /// where there is none, and keep one already there as the tool keeps it.
-    /// </remarks>
+    /// <remarks>Only the whole set-up runs <c>daoris init</c>, so only its bounds name the <c>.gitattributes</c> init writes
+    /// where there is none, and keep one already there as the tool keeps it.</remarks>
     private static void Bounds(StringBuilder body, SetupBriefInput input)
     {
         var init = input.Case == SetupCase.Whole;

@@ -503,7 +503,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     ends the chain, and the quest found by its key on a re-press is the chain found with it. The step goes to a place whose row may still
     read unadopted: the planner starts it over the protocol door and sits it over the pipe door (`NotAdopted`, a wait) until the driver's
     follow registers the adoption, and sits it `NotDrivable` where the drive was left off (rule 9). No `daoris.json`, brief or code is
-    written and nothing is pushed.
+    written and nothing is pushed. The plan is also `REGISTRY_CREATE_PLAN` (open; the ask resolved, the folder, line and identity, the steps, every
+    refusal, the digest and the first lines of each quest, `CreatePlanWire`, `CreateQuests`), the press's own ground and its view's one judge. The
+    apply's answer carries the `PressReceipt` it made (the department, workspace, folder, line and set-up quest, and whether it is done), which Ask
+    Daoris's press record keeps (roles-and-supervision 56).
 52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one repository
     with its receiver named, as the person's, carrying `SetupPlan.Then`, a `SetupThen` (title and body) the service chains behind the quest as
     its one step to the same repository, or none. `place --adoption`, a workspace plan's tick, `repository create` and `place --room` publish through it;
@@ -517,8 +520,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `.claude`, through a link or a submodule on the line, or onto a file), a room already there (`room-exists`: the line's `daoris.json` `rooms`, a folder
     with its own `AGENTS.md`, or a room the lanes file declares, read as git objects at its tip by `IPlaceWorld.RoomAsync`), a repository not registered,
     not adopted on the registry or its line, with no checkout here, held (`held`) or with a set-up open, and a line that cannot be read (`unread`). Its one
-    change is `ROOM_PRESS` (a second line says the quest is admitted alone where the repository is not driven), so the card, `--plan` and the receipt say it
-    with no case of their own; its receipt is the quest's one `room` operation, found by the plan's key on a retry, judged again where it is asked, with no
+    change is `ROOM_PRESS` (a second line says the quest is admitted alone where the repository is not driven), so `--plan` and the receipt say it
+    with no case of their own, and the card is its own kind (`place-room`, naming the room, the reason and the first lines of the quest, which are
+    `RoomBrief`'s opening); its receipt is the quest's one `room` operation, found by the plan's key on a retry, judged again where it is asked, with no
     configuration written and no chain. The quest's body (`RoomBrief`) names the repository, the path, the person's reason, the canon's `rooms-and-classes`
     convention (four of its lines quoted, which a test holds to the canon's text) and the repository's own declaration as its line holds it, and asks only
     for `daoris --version`, `sync` and `check` (`SetupPressRules.RoomRules`, added to the repository's scope beside the rules its set-up added).

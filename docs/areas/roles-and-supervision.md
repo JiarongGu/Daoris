@@ -486,12 +486,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     repositories up to date (`tree sync [--repository|--workspace <name>|--all] --yes`, the running Daoris's `TREES_SYNC` pressed by the
     verb, the view of it listing each row its ground's list, `TREES_SYNC_PLAN`, moves, and wording its scope as the route takes it: the repositories holding a branch of Daoris's, every checkout with `--all`), a place's set-up applied (`place
     <repository>… --preset <id> … --apply`, the view of `PLACE_APPLY` saying each change its plan, `PLACE_PLAN`, makes and refusing what
-    the plan refuses and an acceptance it does not offer), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
+    the plan refuses and an acceptance it does not offer; a room asked of a repository, `place <repository> --room <path> --purpose "…"`, is the same
+    route's view with a card of its own, naming the room, the reason and the first lines of the quest it asks), a department opened (`repository create
+    <name> --purpose "…" [--kind] [--workspace] [--under] [--line] [--work "…"]`, the view of `REGISTRY_CREATE` judging the press as its plan,
+    `REGISTRY_CREATE_PLAN`, does and giving the card every value, the steps in order and the first lines of each quest it publishes), and a new ask (`daoris ask [--workspace <name>] [--to <repo>] … "…"`, the person route `ASK_NEW` the verb presses,
     its view judged by the verb's own judges, `AskNewCommand.Unfit`, a workspace no registered repository is in (the default's name included) and a `--file` this machine lacks, so Ask Daoris makes an ask in full access with no card and in
     restricted on a card naming it; an unknown flag or `--help` sends nothing). A press of Ask Daoris's that
     no line waits on is said in its conversation once it settles, as Daoris's word (`SettledSaid`); an update or a pin says its end there,
     a failure before it starts and an end before the settle registers it included, and an ask or a quest a pressed verb's answer names is
-    kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A working session's tier is its repository's access setup, read at the press from the place its key was handed for
+    kept with the conversation (`HelpPublished`) and named in its line (`PressedEnds`). A press that opened a place (a department's creation, a room's
+    quest) answers its `PressReceipt`, which its press record keeps in either mode (`HelpPressNow.Receipt`, found for a card's press by the card,
+    `HelpAskedPress.Answered`) and which the windows draw once as a line, *Opened `<name>` in `<workspace>`: folder, line, set-up quest* (a room's the quest's
+    line alone), with a press to the repository's page and to the quest (`PressReceiptLine`), under the turn that pressed it and under its row in
+    *Notifications*. A working session's tier is its repository's access setup, read at the press from the place its key was handed for
     (`SessionDelegates.PlaceOf`, `DelegateTiers`): unrestricted runs its proved press at once as its own (rule 52); asking and the
     judged default put it on a card naming the session. Every change Ask Daoris asks for is a press of the verb, and it has no
     proposal tool; the room's *What you may do* names the verbs alone (`HelpRoomVerbs`). A workflow's version: the agent writes the

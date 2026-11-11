@@ -113,6 +113,50 @@ const BEYOND: Confirmation = {
 export const AskDaorisBeyondItsFocus: Story = { args: { waiting: [BEYOND] } };
 export const AskDaorisBeyondItsFocusChineseDark: Story = { args: { waiting: [BEYOND] }, decorators: [chinese, dark] };
 
+/** A department Ask Daoris opens, on its card in restricted mode: every value, each step in order, the quests it asks and the command it is. */
+const CREATE: Confirmation = {
+  ...STOP, id: 'c10', route: 'REGISTRY_CREATE', asker: { process: null, pid: 77, session: 'h1', help: true },
+  fields: [{ name: '/name', type: 'string', value: 'ledger' }, { name: '/purpose', type: 'string', value: 'keeps the books' }],
+  view: {
+    kind: 'repository-create',
+    facts: {
+      name: 'ledger', workspace: 'aurora', folder: 'D:/work/aurora/ledger', purpose: 'keeps the books', line: 'main', author: 'Fixture <fixture@example.test>',
+    },
+    command: 'daoris repository create ledger --workspace aurora --purpose "keeps the books" --work "Build the first screen."',
+    also: [
+      { kind: 'repository-create-no-remote', facts: {} },
+      { kind: 'repository-create-step-folder', facts: { n: '1', folder: 'D:/work/aurora/ledger' } },
+      { kind: 'repository-create-step-history', facts: { n: '2', line: 'main', author: 'Fixture <fixture@example.test>' } },
+      { kind: 'repository-create-step-registration', facts: { n: '3', name: 'ledger', workspace: 'aurora' } },
+      { kind: 'repository-create-step-driving-off', facts: { n: '4', name: 'ledger', step: 'push' } },
+      { kind: 'repository-create-step-setup', facts: { n: '5', name: 'ledger' } },
+      {
+        kind: 'repository-create-quest-setup',
+        facts: { title: 'Set up this repository for every agent (2026-11-12)', head: 'What is asked, and whose it is. Take up the shared doctrine in the layout every agent reads.' },
+      },
+      { kind: 'repository-create-quest-work', facts: { title: 'Build the first screen.', head: 'Build the first screen with totals by month.' } },
+    ],
+  },
+};
+export const AskDaorisOpensADepartment: Story = { args: { waiting: [CREATE] } };
+export const AskDaorisOpensADepartmentChineseDark: Story = { args: { waiting: [CREATE] }, decorators: [chinese, dark] };
+
+/** A room Ask Daoris asks of a repository, on its card: whose it is, the folder and the reason, the one quest it asks and the command it is. */
+const ROOM: Confirmation = {
+  ...CREATE, id: 'c11', route: 'PLACE_APPLY',
+  fields: [{ name: '/repositories/0', type: 'string', value: 'engine' }, { name: '/room', type: 'string', value: 'tools/web' }],
+  view: {
+    kind: 'place-room',
+    facts: { repositories: 'engine', workspace: 'aurora', room: 'tools/web', purpose: 'the web app needs its own conventions' },
+    command: 'daoris place engine --room tools/web --purpose "the web app needs its own conventions" --apply',
+    also: [
+      { kind: 'place-room-quest', facts: { title: 'Add a room for tools/web', head: 'What is asked, and whose it is. Give `tools/web` a room of its own in this repository.' } },
+    ],
+  },
+};
+export const AskDaorisAsksForARoom: Story = { args: { waiting: [ROOM] } };
+export const AskDaorisAsksForARoomChineseDark: Story = { args: { waiting: [ROOM] }, decorators: [chinese, dark] };
+
 /**
  * A Confirm held by an update's drain: the card says what the drain waits on and since when, and offers *Install later*
  * beside Refuse and Confirm. The story presses Confirm, as a person would, so the held answer is drawn.

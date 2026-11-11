@@ -43,5 +43,18 @@ export const RanAndAskedDark: Story = { decorators: inTheme('dark') };
 /** The same in 中文, at the 400 px floor. */
 export const RanAndAskedChinese: Story = { decorators: [storyWidths.narrow, chinese] };
 
+const OPENED = press('h6', 'REGISTRY_CREATE', 2, {
+  receipt: { kind: 'opened', repository: 'ledger', workspace: 'aurora', folder: 'D:/work/aurora/ledger', line: 'main', room: null, quests: ['q41'], done: true },
+});
+const ROOM = press('h7', 'PLACE_APPLY', 4, {
+  scope: 'repository', target: 'engine', receipt: { kind: 'room', repository: 'engine', workspace: null, folder: null, line: null, room: 'tools/web', quests: ['q42'], done: true },
+});
+const WITH_RECEIPTS: StandingConfirmationNow = { ...STANDING, helpPresses: [OPENED, ROOM, ...PRESSES.slice(2)] };
+
+/** A department Ask Daoris opened and a room it asked for, each with what it made said under its row and the places it made one press away. */
+export const OpenedAndRoom: Story = { args: { standing: WITH_RECEIPTS, onOpenTarget: () => {} } };
+
+export const OpenedAndRoomChineseDark: Story = { args: { standing: WITH_RECEIPTS, onOpenTarget: () => {} }, decorators: [chinese, ...inTheme('dark')] };
+
 /** Folded, only presses that asked the person this run. */
 export const OnlyAsked: Story = { args: { standing: { ...STANDING, helpPresses: PRESSES.slice(0, 2) }, defaultOpen: false } };

@@ -12,12 +12,8 @@ internal static class TerminalSaid
     /// <summary>
     /// <see cref="RunAsync(Func{TextWriter, Task{int}})"/> for a verb that says its refusals on its error, which the terminal prints on its own
     /// error. Not asked for its words (<paramref name="said"/> false) a press answers <c>{ done, message }</c>: whether the verb exited 0, and
-    /// every line it said.
+    /// every line it said. What a press that opens a place made (<paramref name="made"/>, read once the verb has run) rides beside them as <c>receipt</c>.
     /// </summary>
-    /// <remarks>
-    /// A press that opens a place says what it made beside the verb's words, as <c>receipt</c> (<paramref name="made"/>, read once the verb has run);
-    /// none made, or none asked for, leaves the answer as it is.
-    /// </remarks>
     public static async Task<object> RunAsync(Func<TextWriter, TextWriter, Task<int>> run, bool said = true, Func<PressReceipt?>? made = null)
     {
         var output = new StringWriter { NewLine = "\n" };

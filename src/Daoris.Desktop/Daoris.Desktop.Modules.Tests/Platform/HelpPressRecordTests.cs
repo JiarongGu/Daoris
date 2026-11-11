@@ -62,7 +62,6 @@ public sealed class HelpPressRecordTests : IDisposable
 
     private static readonly PressReceipt Opened = new(PressReceipt.KindOpened, "ledger", "aurora", "/work/aurora/ledger", "main", null, ["q7"], true);
 
-    /// <summary>A press that opened a place keeps what it made beside its outcome, and the windows are told it.</summary>
     [Fact]
     public void A_press_that_opened_a_place_keeps_what_it_made_and_tells_it()
     {
@@ -80,7 +79,6 @@ public sealed class HelpPressRecordTests : IDisposable
         Assert.Equal(Opened, told[1].Receipt);
     }
 
-    /// <summary>A press asked on a card is found by its card's id, which is all the answer of its confirmed run knows.</summary>
     [Fact]
     public void A_press_asked_on_a_card_is_found_by_its_card_for_what_it_made()
     {
