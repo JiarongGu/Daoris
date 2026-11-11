@@ -282,6 +282,7 @@ internal static class NodeGoverning
             Quests = work,
             Branch = branch,
             Branches = branches,
+            Attributed = read.Unread.Count == 0,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             Requests = WorkRequestsReading.Published(quests, sessions, work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),

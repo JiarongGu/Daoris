@@ -94,6 +94,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## KEEPDATA1's first part — a closed quest's run ends, a history clear takes its node record (2026-11-11)
+
+> **KEEPDATA1 A and B** (driver): Outcome: a run whose quest is Done or Declined ends once every step still standing watches only the run's branch and nothing waits on the person, as `on-line` when the line holds each bound commit whole or `branch-gone` when none of its branches stands, its steps kept as they stand and the reason kept with its outcome (`ClosedRunEnds`, behind the settled-graph end); a `closed-runs` migration step judges the install's old open runs the same way before any look runs (an audit of the install found 586 open runs, every one on a Done quest); a history clear and its left-over sweep delete the run's node record with its binding, its bytes counted in the plan. Proof: `ClosedRunEndTests` (300 runs ended, none evaluated on the next pass), `ClosedRunsStepGitTests` on a real checkout whose line took the work by cherry-pick, `HistoryClearRunRecordsTests`, each seen failing first.
+
+---
+
 ## REVIEWUX1b — completion and effects: a run ends when nothing moves, effects follow their review (2026-11-11, D273)
 
 > **REVIEWUX1b** (driver): Outcome: a run ends when nothing can move and keeps its outcome; effects are ordered after their review and fed its accepted record by reference; a return settles every outcome, a partial one waiting on both-changed files with its choices bound to hashes, a choice lapsing when its file moves; a copy changed after its review fails the return `moved` and reopens the review; a stale plan fails its node `stale`, keeps its receipt and is reviewed again as the next plan. A defect the run proofs exposed is fixed: once a return removed its copy the next pass read the work as a plain folder, the revision moved and the accepted review reopened, so the run never ended; the review now reads a turn's copy by its folder name (`FolderCopies.IdAt`). Proof: full graph runs in `CopyReturnRunTests`, `RunCompletionTests` (a plugin step after the landing) and `PlanReviewApplyRunTests`, and the five folder and system process suites.

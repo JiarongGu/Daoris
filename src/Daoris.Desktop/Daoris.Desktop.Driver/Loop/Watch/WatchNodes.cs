@@ -230,6 +230,7 @@ internal sealed class WatchNodes
                 Gates = gates.ReadAsync,
                 // What the line holds of a run's branch, where its `content.holds` waits.
                 Content = gates.ContentAsync,
+                OnLine = gates.OnLineAsync,
                 Bound = NodeRuntime.BoundIn(home),
             }, token), beside: true).ConfigureAwait(false);
         }

@@ -53,4 +53,18 @@ internal sealed class NodeGates(string home, ServiceClient service)
             return null;
         }
     }
+
+    /// <summary>Whether the line of the checkout at <paramref name="root"/> holds <paramref name="tip"/> whole (<see cref="LineHolding.Whole"/>); null where git cannot say.</summary>
+    public async Task<bool?> OnLineAsync(string root, string repository, string workspace, string tip, CancellationToken ct)
+    {
+        if (root.Length == 0 || !Directory.Exists(root)) return null;
+        try
+        {
+            return (await LineHolding.ReadInAsync(new SessionTrees(home).Context, root, repository, workspace, tip, ct).ConfigureAwait(false))?.Whole;
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 }

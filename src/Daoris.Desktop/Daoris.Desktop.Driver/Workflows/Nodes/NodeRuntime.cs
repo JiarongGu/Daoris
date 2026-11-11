@@ -341,7 +341,10 @@ public sealed class NodeRuntime(
 
             // The look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where a node
             // waits on them; the gates likewise, once a pass for a unit whose opinion or look waits on them.
-            var git = new PassReads(new PassGit(look.Remotes,NodeEvaluations.Pushing(governed.Values)), new PassGates(look.Gates), NodeEvaluations.Once(look.Content));
+            var git = new PassReads(new PassGit(look.Remotes,NodeEvaluations.Pushing(governed.Values)), new PassGates(look.Gates), NodeEvaluations.Once(look.Content))
+            {
+                OnLine = look.OnLine,
+            };
 
             // One count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
@@ -544,7 +547,8 @@ public sealed class NodeRuntime(
             Keeping.StartDoors(governed, run);
             Keeping.KeepReviews(governed, run);
             Keeping.KeepPullRequests(governed);
-            Keeping.End(governed, run, said);
+            await Keeping.EndAsync(governed, run, said, (commit, token) => git.OnLine(run.Root, run.Run.Binding.Repository, run.Run.Binding.Workspace, commit, token), ct)
+                .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
         }
     }

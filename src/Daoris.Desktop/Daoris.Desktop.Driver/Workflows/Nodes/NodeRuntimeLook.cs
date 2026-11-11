@@ -48,6 +48,9 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// </summary>
     public Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Content { get; init; } = (_, _, _) => Task.FromResult<HoldContent?>(null);
 
+    /// <summary>Whether a checkout's line (root, repository, workspace) holds a commit whole (<see cref="ClosedRunEnds"/>); null where it cannot say.</summary>
+    public Func<string, string, string, string, CancellationToken, Task<bool?>> OnLine { get; init; } = (_, _, _, _, _) => Task.FromResult<bool?>(null);
+
     /// <summary>
     /// The named workflow's version a quest unit's run is bound to (the decoder's read for a run, through <see cref="WorkflowRunNodes.VersionOf"/>),
     /// given the quests the pass read for its chain; null where its run follows Current or has no binding. A unit bound to one is governed by

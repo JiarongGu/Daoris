@@ -22,7 +22,7 @@ internal static class HistoryHome
         var home = files.Home;
         var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.QuestFiles, quest)))
                    + asks.Where(Plain).Sum(ask => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.AskFiles, ask)))
-                   + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkplaceRunFiles.PathOf(home, run)));
+                   + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkplaceRunFiles.PathOf(home, run)) + HistoryBytes.Of(WorkplaceRunFiles.RecordPathOf(home, run)));
         return new HistoryBytes(0, 0, 0, kept, 0);
     }
 
@@ -164,6 +164,7 @@ internal static class HistoryHome
                 && (WorkplaceRunFiles.RecordOf(run) is { } record ? Gone(record) : !quests.Contains(run)))
             {
                 Add(file, folder: false);
+                if (File.Exists(WorkplaceRunFiles.RecordPathOf(world.Home, run))) Add(WorkplaceRunFiles.RecordPathOf(world.Home, run), folder: false);
             }
         }
 

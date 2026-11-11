@@ -58,25 +58,41 @@ internal sealed class NodeRunKeeping(
 
     /// <summary>
     /// A run's end, judged once its pass's rounds are kept: its newest quest here names no step still to come here, and no node of its graph
-    /// can move again, with no attempt unsettled. Kept on its record with how it came out (<see cref="RunOutcomes"/>), said once; the run then
-    /// arms nothing until its chain comes back here.
+    /// can move again, with no attempt unsettled; or its quest closed and none of the steps still standing can move again
+    /// (<see cref="ClosedRunEnds"/>), its steps kept as they stand. Kept on its record with how it came out (<see cref="RunOutcomes"/>), said
+    /// once; the run then arms nothing until its chain comes back here.
     /// </summary>
-    public void End(GovernedUnit governed, RunScope scope, List<string> said)
+    /// <param name="onLine">Whether the line holds a commit whole, asked only of a closed quest's run with steps standing.</param>
+    public async Task EndAsync(GovernedUnit governed, RunScope scope, List<string> said, Func<string, CancellationToken, Task<bool?>> onLine, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         if (scope.Quest?.Records.Quest is not { } newest || records.Read(unit) is not { } record || record.Ended?.Quest == newest.Id) return;
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
-        if (!Over(governed, record)) return;
+        string? why = null;
+        IReadOnlySet<string> held = new HashSet<string>();
+        var stands = ClosedRunEnds.BranchStands(scope);
+        if (!Over(governed, record))
+        {
+            if (!ClosedRunEnds.Closed(newest.Status) || Waits(governed.Graph, record)) return;
+            held = await ClosedRunEnds.OnLineAsync(ClosedRunEnds.Bound(governed.Graph, record), onLine, ct).ConfigureAwait(false);
+            if ((why = ClosedRunEnds.Why(governed.Graph, record, false, stands, held)) is null) return;
+        }
 
         var at = clock();
         RunEnd? ended = null;
         var (refused, kept) = records.Edit<bool>(unit, current =>
-            Over(governed, current) ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) }, true) : (null, false));
+            (why is null ? Over(governed, current) : ClosedRunEnds.Why(governed.Graph, current, Waits(governed.Graph, current), stands, held) == why)
+                ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) with { Why = why } }, true) : (null, false));
         if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
-        said.Add($"work  {unit}: its run ended at #{newest.Id}, {ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}: no step of its chain is "
-                 + "still to come here, and nothing of its graph moves again; it is judged again once its chain comes back here.");
+        var outcome = $"{ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}";
+        said.Add(why is null
+            ? $"work  {unit}: its run ended at #{newest.Id}, {outcome}: no step of its chain is still to come here, and nothing of its graph moves "
+              + "again; it is judged again once its chain comes back here."
+            : $"work  {unit}: its run ended at #{newest.Id}, {outcome}, its quest closed: "
+              + (why == ClosedRunEnds.OnLine ? "the line holds the work its standing steps wait on" : "no branch of it stands for its standing steps to read")
+              + ", so they stay as they are; it is judged again once its chain comes back here.");
     }
 
     /// <summary>A run's step refs let go of at its settled end (<see cref="StepRefs.Releases"/>); one git refuses is let go of at the next pass.</summary>
@@ -87,20 +103,24 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and no node of its graph able to move, its end or not.</summary>
-    private static bool Over(GovernedUnit governed, NodeRecord record)
-    {
-        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return false;
-        // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
-        if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return false;
-        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return false;
-        var settled = !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
+    private static bool Over(GovernedUnit governed, NodeRecord record) =>
+        !Waits(governed.Graph, record)
+        && !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
             is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
+
+    /// <summary>Whether an attempt, a word, a kept failure, a declined request or a review's changes still waits on the record.</summary>
+    internal static bool Waits(NodeGraph graph, NodeRecord record)
+    {
+        if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return true;
+        // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
+        if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return true;
+        if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return true;
         // A declined request waits on the person's word, so the run is not over while one stands.
-        var held = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop
+        var held = graph.Nodes.Any(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop
             && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode });
         // A review's changes wait on the work's next commit, which runs the review again, so the run is not over while they stand.
-        var changes = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Review && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Rejected);
-        return settled && !held && !changes;
+        var changes = graph.Nodes.Any(node => node.Kind == NodeKinds.Review && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Rejected);
+        return held || changes;
     }
 
     /// <summary>

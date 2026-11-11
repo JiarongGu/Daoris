@@ -214,8 +214,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     six-character id; terminals' `*.turn` marks; the desktop store's names (store step 22: a binding's `door`, the staffing's
     projection tables dropped); the binding files into the store; the wired, usage, lineage and brainstorm files' door names;
     a stored standing confirmation grant, removed; configured access's old lists as families of acts; the supervisors' records with
-    their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; and *Second
-    check*'s first staffing. The
+    their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; *Second
+    check*'s first staffing; and a closed quest's runs whose standing steps cannot move ended by the runtime's own
+    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`. The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 
@@ -271,4 +272,6 @@ drains, swaps, rolls back and refuses.
   the flat service host ended.
 - **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
 - **HISTCLEAR1**: a workspace's history clear stops at the client's read bound on a long history and needs several presses.
+- **KEEPDATA1**: tree file records, salvage, the knowledge store's WAL, the old `bin` place, sign-ins under `data/`, leftover account folders,
+  plugin data and pid markers are each kept with no rule that ends them.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

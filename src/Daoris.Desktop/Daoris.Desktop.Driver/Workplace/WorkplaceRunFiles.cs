@@ -34,6 +34,19 @@ public static class WorkplaceRunFiles
     public static string PathOf(string home, string run) =>
         IsRunId(run) ? Path.Combine(RunsFolder(home), run + ".json") : throw new DriverException($"`{run}` is not a run's id.");
 
+    /// <summary>What a run's unit id begins with: its node record is the unit <c>run:&lt;run&gt;</c>'s.</summary>
+    public const string RunUnitPrefix = "run:";
+
+    /// <summary>The folder of the node records, one per unit, beside the runs.</summary>
+    public static string UnitsFolder(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
+
+    /// <summary>A unit's node record's key: its id's digest, so no unit id is read as a path.</summary>
+    public static string UnitKey(string unit) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(unit)))[..32];
+
+    /// <summary>A run's node record's file, which goes with its binding.</summary>
+    public static string RecordPathOf(string home, string run) => Path.Combine(UnitsFolder(home), UnitKey(RunUnitPrefix + run) + ".json");
+
     /// <summary>Whether a run is bound here: its id is a run's, and its file is there.</summary>
     public static bool Bound(string home, string run) => IsRunId(run) && File.Exists(PathOf(home, run));
 
