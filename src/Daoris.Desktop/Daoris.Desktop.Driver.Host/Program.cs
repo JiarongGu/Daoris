@@ -68,7 +68,6 @@ args = [.. route.Words];
 // nothing else: no person's press and no verb acting alone. Those it runs refuse their own alone paths (`InstanceDoor`).
 if (RoleTerminal.AtEntry(args, Console.Error) is { } roleRefused) return roleRefused;
 
-// A word no group owns that names an installed plugin running commands is that plugin's: `daoris <plugin> <command>`.
 if (route.Kind == TreeRouteKind.Doctrine && args.Length > 0 && DaorisHome.Resolve() is { } pluginHome && PluginCommandConsole.Names(pluginHome, args[0]))
     return await PluginCommandConsole.RunAsync(pluginHome, args, PluginCommandConsole.Console(), CancellationToken.None);
 

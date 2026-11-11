@@ -153,7 +153,6 @@ const points = {
   'work/state': state,
 };
 
-// Its declared commands, asked at `command/run` alone, never a point it claims at the handshake.
 const answers = { ...points, ...kit.calls, 'command/run': run };
 
 const answer = async (frame) => {

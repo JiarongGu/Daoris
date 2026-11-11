@@ -405,7 +405,6 @@ public static class PluginInstall
         // Aside is a dot-folder, which the catalogue never reads, so a delete that cannot finish leaves nothing that looks like a plugin.
         PluginFolders.Forget(aside);
         PluginState.Enable(home, entry.Manifest.Id);
-        // Its private storage, its credentials among it, goes with it; its data stays for the person to throw away.
         PluginPrivate.Remove(home, entry.Manifest.Id);
         return entry;
     }

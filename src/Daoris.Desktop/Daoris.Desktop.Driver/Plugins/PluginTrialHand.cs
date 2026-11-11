@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The trial's step for the hand the desktop's start asks first: whether the place's origin may be written, asked through
-/// <see cref="PlaceHands"/>, so <c>plugin try</c> and the start agree on a plugin the start would refuse. Only a plugin with a
-/// work process per place has the step; with no origin to ask about it says so and passes.
+/// The trial's step for the place's hand (<see cref="PlaceHands"/>), so <c>plugin try</c> and the start agree on a plugin the start would
+/// refuse; only a plugin with a work process per place has it.
 /// </summary>
 internal static class PluginTrialHand
 {

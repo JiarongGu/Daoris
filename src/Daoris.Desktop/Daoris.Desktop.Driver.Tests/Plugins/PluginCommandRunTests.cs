@@ -27,7 +27,7 @@ public sealed class PluginCommandRunTests : IDisposable
             $$"""{ "id": "acme.tickets", "hooks": { "command": ["node", "plugin.mjs"], "points": ["work/state"] }, "interfaces": {{interfaces}} }""");
     }
 
-    /// <summary>A plugin's process that answers each round as <see cref="Answer"/> says, and keeps every frame it was sent.</summary>
+    /// <summary>A plugin's process that answers each round as <see cref="Answer"/> says, and keeps every frame sent to it.</summary>
     private sealed class Channel(Func<JsonElement, string> answer, List<string> frames) : IHookChannel
     {
         public IReadOnlyList<string> Points => [];

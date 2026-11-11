@@ -240,7 +240,6 @@ public sealed class HookSet(
                 var took = Stopwatch.StartNew();
                 try
                 {
-                    // The place's own hand: whether its origin may be written, or the refusal that leaves it unstarted.
                     var judged = hand is not null && _placed.PlaceOf(key) is { } place ? await hand(plugin, place, ct).ConfigureAwait(false) : null;
                     if (judged?.Refusal is { } refused) throw _refused.Refused(key, now, id, refused);
                     IHookChannel channel;

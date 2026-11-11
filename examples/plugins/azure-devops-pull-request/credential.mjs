@@ -30,7 +30,7 @@ function write(held) {
 /** Keep a token, any earlier refusal of the one before it forgotten. */
 export const keep = (token) => write({ token, kept: new Date().toISOString() });
 
-/** Forget the kept token; whether there was one. */
+/** Forget the kept token, answering whether one is gone. */
 export function forget() {
   const at = folder();
   if (!at || !existsSync(join(at, FILE))) return false;

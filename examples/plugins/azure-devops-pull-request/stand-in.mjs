@@ -128,7 +128,6 @@ export function checkout(origin) {
   return root;
 }
 
-/** A private storage holding `token` as `login` keeps it: what Daoris hands the process as DAORIS_PLUGIN_PRIVATE. */
 export function signedIn(token) {
   const at = mkdtempSync(join(scratch, 'private-'));
   writeFileSync(join(at, 'credential.json'), `${JSON.stringify({ token, kept: '2026-11-11T09:00:00.000Z' })}\n`);

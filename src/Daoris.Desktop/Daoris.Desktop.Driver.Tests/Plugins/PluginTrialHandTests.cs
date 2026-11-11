@@ -2,7 +2,6 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>`plugin try` asks the question the desktop's start asks: whether the place's origin may be written, through <see cref="PlaceHands"/>.</summary>
 public sealed class PluginTrialHandTests : IDisposable
 {
     private const string Host = "git.example.invalid";

@@ -74,7 +74,6 @@ public sealed class PlacedWorkTests : IDisposable
         }
     }
 
-    // The place the hand was last asked for: the start that follows it is that place's process.
     private string? _handed;
 
     private HookSet Set(Func<PluginEntry, WorkPlace, CancellationToken, Task<PlaceHand>>? hand)

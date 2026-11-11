@@ -415,7 +415,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry EdgeCookies = new("edge-cookies", HomeCategory.Profiles, "profiles/browser/edge-session-cookies.bin", "browser/edge-session-cookies.bin");
     public static readonly HomeEntry GitKeys = new("git-keys", HomeCategory.Profiles, "profiles/git/keys", "profiles/git/keys");
     public static readonly HomeEntry GitTokens = new("git-tokens", HomeCategory.Profiles, "profiles/git/tokens", "profiles/git/tokens");
-    // Each plugin's private storage, a folder limited to the account, handed to that plugin's process alone (PluginPrivate).
     public static readonly HomeEntry PluginPrivate = new("plugin-private", HomeCategory.Profiles, "profiles/plugins", "profiles/plugins");
     public static readonly HomeEntry GitSshConfig = new("git-ssh-config", HomeCategory.Profiles, "profiles/git/ssh_config", "profiles/git/ssh_config");
     public static readonly HomeEntry GitKnownHosts = new("git-known-hosts", HomeCategory.Profiles, "profiles/git/known_hosts", "profiles/git/known_hosts");
