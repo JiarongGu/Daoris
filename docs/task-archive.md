@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## A terminal's presses at a tier the person sets (2026-11-11, D271)
+
+> **TERMTIER1** (driver, modules, web): Outcome: a machine setting decides whether a person's press from a terminal no Daoris session owns waits on the Confirm card (`ask`, the default) or runs at once as the person's (`act`): `daoris settings terminal ask|act`, itself pressed so turning on `act` is confirmed once (`Settings/TerminalTiers.cs`, `TerminalVerb.cs`, `TerminalTierRoutes`, the Settings row); under `act` such a press goes through the delegate's no-card path (`PipeTerminalTier`), logged `terminal.pressed` and listed in Notifications as a terminal's; a process inside an agent's job, or one the pipe cannot place, still gets a card, and a session's own press keeps its tier. Left: a `hold: true` start and `HOLD` still ask under `act`. Proof: `PipeTerminalTierTests` (seen failing first), `TerminalTiersTests`, the route, view and census tests, the text fixtures, the web tests in both languages.
+
+---
+
 ## A quest its finished session left taken waits on the person; the plugin kit answers each frame as it settles (2026-11-11)
 
 > **Unclosed quests and the kit's findings** (driver, web, examples): Outcome: a quest whose last session was finished by the person or the steward, or went on and ended, with the quest still taken, gets the planner's `Unclosed` verdict (`UnclosedQuests`) and an `unclosed` row in *What needs you* whose door opens its *Mark done…*; a word to the session still goes on with it, and work in its tree stays to review (FIX-LOG; driving rule 37). Found in the install: a code review's session parked, was finished from a terminal, and its quest stayed taken three days with no reader. The plugin kit's template and examples answer each frame as it settles, so a slow read no longer holds the others past the platform's patience; a check that cannot reach its platform answers `running` with the reason on stderr, a refused credential stops the step. Proof: the planner, groups, pausing, kit contract and attention tests, the page tests in both languages, each new test seen failing first.

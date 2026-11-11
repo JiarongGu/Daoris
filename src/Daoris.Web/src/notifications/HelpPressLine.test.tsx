@@ -29,7 +29,7 @@ const PRESSES: HelpPressNow[] = [
 ];
 const STANDING: StandingConfirmationNow = { holds: [], holders: [], stewardActs: [], stewardDesk: [], stewardLands: [], helpPresses: PRESSES };
 
-const group = () => within(screen.getByRole('region', { name: 'What Ask Daoris pressed' }));
+const group = () => within(screen.getByRole('region', { name: 'What was pressed for you' }));
 const rows = () => within(screen.getByRole('list', { name: 'Presses Ask Daoris made' })).getAllByRole('listitem');
 
 describe("Notifications' group of what Ask Daoris pressed", () => {
@@ -45,7 +45,9 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
 
   it('reads the presses field by field and leaves out one it cannot read', () => {
     expect(standingOf({ helpPresses: [{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest' }, { id: 'b' }, 'x'] })?.helpPresses)
-      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false, asked: false }]);
+      .toEqual([{ id: 'a', module: 'DAORIS.DRIVER', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', target: 'q1', scope: 'quest', place: null, beyond: false, asked: false, terminal: false }]);
+    expect(standingOf({ helpPresses: [{ id: 't', route: 'SET_HOLD', session: '', at: '2026-11-10T10:00:00Z', outcome: 'done', terminal: true }, { id: 'u', route: 'SET_HOLD', session: '', at: '2026-11-10T10:00:00Z', outcome: 'done' }] })?.helpPresses)
+      .toMatchObject([{ id: 't', session: '', terminal: true }]);
     expect(standingOf({ helpPresses: [{ id: 'a', route: 'WORK_PAUSE', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'refused', asked: true }] })?.helpPresses[0])
       .toMatchObject({ outcome: 'refused', asked: true });
     expect(standingOf({ helpPresses: [{ id: 'a', route: 'SET_HOLD', session: 's1', at: '2026-11-10T10:00:00Z', outcome: 'done', place: { kind: 'workspace', workspace: 'Work' }, beyond: true }] })?.helpPresses[0])
@@ -91,6 +93,23 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
     expect(onOpen).toHaveBeenCalledWith(asked);
   });
 
+  it.each([
+    ['en', 'A terminal on this machine pressed 1 act for you, with no card, since Daoris started', 'Presses from a terminal on this machine', 'Done', 'What was pressed for you'],
+    ['zh', '自 Daoris 启动以来，本机终端已为你直接执行 1 项操作，未经确认卡', '本机终端执行的操作', '已完成', '为你代按的操作'],
+  ])("lists a terminal's presses apart, with no conversation to open (%s)", async (language, said, heading, state, label) => {
+    await i18n.changeLanguage(language);
+    const terminal = press('t1', 'SET_HOLD', { session: '', target: 'engine', terminal: true });
+    render(<HelpPressLine standing={{ ...STANDING, helpPresses: [terminal, ...PRESSES] }} onOpen={vi.fn()} onReverse={vi.fn()} defaultOpen />);
+
+    expect(screen.getByRole('region', { name: label })).toBeInTheDocument();
+    expect(screen.getByText(said)).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('notifications.helpPressed.line', { count: 2 }))).toBeInTheDocument();
+    const row = within(screen.getByRole('list', { name: heading })).getByRole('listitem');
+    expect(row.querySelector('[data-help-outcome]')?.textContent).toBe(state);
+    expect(within(row).queryAllByRole('button')).toHaveLength(0);
+    expect(within(screen.getByRole('list', { name: i18n.t('notifications.helpPressed.list') })).getAllByRole('listitem')).toHaveLength(2);
+  });
+
   it('draws the line for presses that only asked the person', () => {
     const asked = press('h6', 'WORK_PAUSE', { outcome: 'waiting', asked: true });
     render(<HelpPressLine standing={{ ...STANDING, helpPresses: [asked] }} onOpen={vi.fn()} onReverse={vi.fn()} />);
@@ -105,9 +124,9 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
   });
 
   it.each([
-    ['en', 'Ask Daoris pressed 2 acts for you in full access, with no card, since Daoris started', 'Show what Ask Daoris pressed',
+    ['en', 'Ask Daoris pressed 2 acts for you in full access, with no card, since Daoris started', 'Show what was pressed for you',
       ['hold a repository\'s work, or let it go', 'pause the work on this machine'], ['Not done', 'Done'], 'Open the conversation', 'Resume'],
-    ['zh', '自 Daoris 启动以来，Ask Daoris 已在完全访问下为你直接执行 2 项操作，未经确认卡', '显示 Ask Daoris 代按的操作',
+    ['zh', '自 Daoris 启动以来，Ask Daoris 已在完全访问下为你直接执行 2 项操作，未经确认卡', '显示为你代按的操作',
       ['暂停一个仓库的工作，或将其放开', '暂缓本机上的这项工作'], ['未完成', '已完成'], '打开该对话', '恢复'],
   ])('lists each press with its words, outcome, conversation and reverse press (%s)', async (language, said, show, words, outcomes, open, resume) => {
     await i18n.changeLanguage(language);
@@ -138,7 +157,7 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
         <NotificationsStanding notify={() => {}} onOpenHelp={onOpenHelp} />
       </QueryClientProvider>);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show what Ask Daoris pressed' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Show what was pressed for you' }));
     const pause = rows()[1]!;
     await userEvent.click(within(pause).getByRole('button', { name: 'Open the conversation that pressed: pause the work on this machine' }));
     expect(onOpenHelp).toHaveBeenCalledTimes(1);

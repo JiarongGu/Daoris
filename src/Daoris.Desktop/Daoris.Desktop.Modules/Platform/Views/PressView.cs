@@ -77,6 +77,7 @@ public static class PressViews
         MachineSettingView.CoolOff(),
         MachineSettingView.Quiet(),
         MachineSettingView.Manifest(),
+        MachineSettingView.Terminal(),
         new KeepRuleView(),
         new PlaceLineView(),
         new PlaceLanguageView(),

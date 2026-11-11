@@ -74,6 +74,8 @@ export type DriverState = {
   manifestFiles?: number;
   manifestMinutes?: number;
   cap?: number;
+  /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
+  terminal?: string;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;
   /**
@@ -354,6 +356,9 @@ export const useSetFolderExcludes = () => useMutation({
 
 /** How many sessions Daoris starts at once: the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');
+
+/** Whether a terminal's press waits for the Confirm or runs at once as the person's: the same `terminal` `daoris settings terminal ask|act` edits. */
+export const useSetTerminal = () => useDriverChange('SET_TERMINAL');
 
 /**
  * One kind's keep rule: the same `keep` `daoris settings keep` edits. A value out of its

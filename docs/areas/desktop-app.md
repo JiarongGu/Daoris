@@ -102,7 +102,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
-    takes it back. A main window says a press by a toast as it comes where it is in front of the person; a terminal's press is
+    takes it back; a terminal's press under the terminal's tier `act` runs with no row (rule 15). A main window says a press by a toast as it comes where it is in front of the person; a terminal's press is
     asked from the terminal, so one heard out of focus is said once the window comes in front, where it still waits unshown
     (`useInFront`). The route's name and raw values sit under *Details*. A start sent with
     `hold: true`, or the pipe's `HOLD { session }`, is carded saying so; confirmed, it
@@ -120,11 +120,17 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     page lists what waits at the service only where it holds the person key, as the shell tells it (`SERVICE_CONFIRMATIONS`); a browser
     holds none, so it lists none and never polls (`useServiceConfirmations`).
     (from D156, D196, D238)
-15. A terminal's stop, finish, hold and resume with no card are the steward's acts alone: the person appoints the steward to the
-    terminal and grants its acts in the window, and its terminal's press proved by the role's key makes them, and its other
-    acts, outside Daoris's agents. Each use is logged and said on the steward's line in *Notifications*, and taking an act back
-    holds from the next press, which asks as the person's own. There is no grant of the terminal's own beside the role door, and
-    a stored one an older build left is removed at the start. (from D201, D209)
+15. A terminal's press runs with no card in two ways. The steward's acts: the person appoints the steward to the terminal and
+    grants its acts in the window, its terminal's press proved by the role's key makes them, and its other acts, outside Daoris's
+    agents; each use is logged and said on the steward's line in *Notifications*, and taking an act back holds from the next press,
+    which asks as the person's own. And the terminal's tier, a machine setting (`driver.json`'s `terminal`, `daoris settings terminal
+    ask|act`, Settings → Agents and sessions), read at each press: `ask`, the default, puts every press on the card; under `act` a
+    person's press that proves no session's key, from a process the pipe places outside every agent Daoris runs, runs at once as the
+    person's own on the delegate's path (`PipeTerminalTier`, `PipeDelegate.Pressed`), logged `terminal.pressed` and listed with Ask
+    Daoris's presses in *Notifications*, marked a terminal's. A process in an agent's job or one the pipe cannot place asks; a
+    session's terminal keeps its own tier. `SET_TERMINAL` is itself a press, so `act` is set from a terminal only on the person's
+    Confirm; the verb acting alone, with no Daoris running, writes `ask` and refuses `act`. A stored `data/standing-confirmation.json`
+    an older build left is removed at the start. (from D201, D209, D271)
 
 **The windows**
 

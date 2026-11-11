@@ -117,12 +117,16 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // no card, so nothing is shaped for one; every other press asks as before.
         var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
-        // A press proving its session's delegate key is judged by that session's tier: run with no card, asked naming it, or refused.
+        // A press proving its session's delegate key is judged by that session's tier, and one proving none by the terminal's tier.
         PipeDelegateJudgement? delegated = null;
         if (claim is not null && @class == PipeClass.Person && !holding && !asked && !covered)
         {
             delegated = pipe.Delegate.Judge(request, key!, claim, connection);
             if (delegated.Tier == PipeDelegateTier.Refused) return (IpcJson.Serialize(pipe.Refuse(request, PipeDelegate.Unproved, PipeDelegate.UnprovedSentence)), null);
+        }
+        else if (claim is null && @class == PipeClass.Person && !holding && !asked && !covered)
+        {
+            delegated = PipeTerminalTier.Judge(pipe, connection);
         }
 
         // A person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
