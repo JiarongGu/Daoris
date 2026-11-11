@@ -7,13 +7,16 @@ namespace Daoris.Driver;
 /// <c>both-changed</c> while a file changed on both sides waits for the person's choice, offered per path as its own acts.
 /// </summary>
 [NodeKind(NodeKinds.Return, NodeGroup.Others, NodeKinds.Apply)]
-internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
+internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed, IWritesWork
 {
     /// <summary>The wait while a session's turn runs in the folder.</summary>
     public const string PlaceBusy = "place-busy";
 
     /// <summary>The wait while a file changed on both sides waits for the person's choice.</summary>
     public const string BothChanged = "both-changed";
+
+    /// <summary>The failure of a return whose copy changed after its review read it: nothing is brought back until that work is reviewed.</summary>
+    public const string Moved = "moved";
 
     /// <summary>Reached by Daoris's return alone; never the person's skip, which would read as brought back.</summary>
     public override NodeAuthority Row { get; } =
@@ -41,19 +44,19 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
             $"node `{node.Id}`: a `{NodeKinds.Return}` brings back the copy an `{NodeKinds.Isolate}` made, and this graph sets no work apart.");
     }
 
-    /// <summary>The wait an active node's status names: its paths changed on both sides as <c>paths</c>, those refused as <c>refused</c>.</summary>
+    /// <summary>The wait an active node's status names: <c>paths</c> changed on both sides, <c>refused</c> ones (path, tab, code) and the count <c>returned</c>.</summary>
     public override WorkflowRunWait? WaitOf(NodeStatus status)
     {
         if (status.State != NodeStates.Active || status.Code is not (PlaceBusy or BothChanged)) return null;
-        var lines = (status.Holds ?? "").Split('\n');
-        var values = new Dictionary<string, string> { ["paths"] = string.Join("\n", lines.Where(line => !line.Contains('\t'))) };
-        if (lines.Any(line => line.Contains('\t'))) values["refused"] = string.Join("\n", lines.Where(line => line.Contains('\t')));
+        if (status.Code == PlaceBusy) return new WorkflowRunWait(status.Code, new Dictionary<string, string> { ["paths"] = status.Holds ?? "" }, status.Since);
+        var holds = ReturnHolds.Read(status.Holds);
+        var values = new Dictionary<string, string>
+        {
+            ["paths"] = string.Join("\n", holds.Waiting.Keys.Where(path => !holds.Refused.ContainsKey(path))), ["returned"] = $"{holds.Returned}",
+        };
+        if (holds.Refused.Count > 0) values["refused"] = string.Join("\n", holds.Refused.Select(each => $"{each.Key}\t{each.Value}"));
         return new WorkflowRunWait(status.Code, values, status.Since);
     }
-
-    /// <summary>The words a return waiting on the person holds: a line for each path, a refused one followed by a tab and its <see cref="ReturnRefusal"/> code.</summary>
-    public static string HoldsOf(FolderReturned returned) =>
-        string.Join("\n", returned.Waiting.Concat(returned.Refused.Select(each => $"{each.Key}\t{each.Value}")));
 
     public INodeDoor? Door(NodeDoorWiring wiring) => new ReturnDoor(wiring.Home, said => wiring.Say("return.run", said), wiring.Turning, wiring.MayStart);
 
@@ -64,9 +67,10 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
     public void Keep(NodeKept kept)
     {
         if (kept.Doors.Door<IReturnDoor>(Row.Kind) is not { } door) return;
-        var start = ReturnStart.Of(kept.Governed.Unit, kept.Node, kept.Status, kept.Record, kept.Authority);
+        var start = ReturnStart.Of(kept.Governed.Unit, kept.Node, kept.Status, kept.Record, kept.Authority) with { Reviewed = EffectRecord.Of(kept) };
         // Waiting on the person, the folders are read again only once they chose for a path it waits on, not at every pass.
-        if (kept.Status.Code == BothChanged && !(kept.Status.Holds ?? "").Split('\n').Any(line => start.Choices.ContainsKey(line.Split('\t')[0]))) return;
+        var holds = ReturnHolds.Read(kept.Status.Holds);
+        if (kept.Status.Code == BothChanged && !holds.Waiting.Keys.Concat(holds.Refused.Keys).Any(start.Choices.ContainsKey)) return;
         door.Start(start);
     }
 
@@ -81,19 +85,30 @@ internal sealed class ReturnNode : BuiltInNode, IStarts, IPressed
     /// <summary>A choice moves nothing: it is kept as a mark of the attempt, which the door reads.</summary>
     public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => null;
 
-    /// <summary>The record's mark of the person's <paramref name="act"/> for <paramref name="path"/> on <paramref name="node"/>'s attempt.</summary>
-    public static string ChoiceKey(string node, int attempt, string act, string path) => $"choice:{node}:{attempt}:{act}:{path}";
+    /// <summary>The record's mark of the person's <paramref name="act"/> for <paramref name="path"/>, bound to the versions shown (<c>act@copy/folder</c>, none <c>-</c>).</summary>
+    public static string ChoiceKey(string node, int attempt, string act, string path, ReturnShown? shown = null) =>
+        $"choice:{node}:{attempt}:{act}{(shown is null ? "" : $"@{shown.Copy ?? "-"}/{shown.Folder ?? "-"}")}:{path}";
 
     /// <summary>The choices marked on <paramref name="node"/>'s attempt, by path, the newest for each.</summary>
-    public static IReadOnlyDictionary<string, string> Choices(NodeRecord record, string node, int attempt)
+    public static IReadOnlyDictionary<string, string> Choices(NodeRecord record, string node, int attempt) =>
+        Marked(record, node, attempt).ToDictionary(each => each.Key, each => each.Value.Act, StringComparer.Ordinal);
+
+    /// <summary>The versions each newest choice on <paramref name="node"/>'s attempt names, by path.</summary>
+    public static IReadOnlyDictionary<string, ReturnShown> Bound(NodeRecord record, string node, int attempt) =>
+        Marked(record, node, attempt).Where(each => each.Value.Shown is not null).ToDictionary(each => each.Key, each => each.Value.Shown!, StringComparer.Ordinal);
+
+    private static Dictionary<string, (string Act, ReturnShown? Shown)> Marked(NodeRecord record, string node, int attempt)
     {
         var prefix = $"choice:{node}:{attempt}:";
-        var chosen = new Dictionary<string, string>(StringComparer.Ordinal);
+        var chosen = new Dictionary<string, (string, ReturnShown?)>(StringComparer.Ordinal);
         foreach (var mark in record.Fired.Where(mark => mark.StartsWith(prefix, StringComparison.Ordinal)))
         {
             var rest = mark[prefix.Length..];
             var colon = rest.IndexOf(':');
-            if (colon > 0 && NodeWordActs.Choices.Contains(rest[..colon], StringComparer.Ordinal)) chosen[rest[(colon + 1)..]] = rest[..colon];
+            if (colon <= 0) continue;
+            var (act, versions) = rest[..colon].Split('@', 2) is [var named, var at] ? (named, at.Split('/', 2)) : (rest[..colon], null);
+            if (!NodeWordActs.Choices.Contains(act, StringComparer.Ordinal)) continue;
+            chosen[rest[(colon + 1)..]] = (act, versions is [var copy, var folder] ? new ReturnShown(copy == "-" ? null : copy, folder == "-" ? null : folder) : null);
         }
 
         return chosen;

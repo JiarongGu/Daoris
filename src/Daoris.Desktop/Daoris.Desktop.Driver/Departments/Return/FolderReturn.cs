@@ -10,7 +10,8 @@ public static class FolderReturn
     /// <summary>Bring <paramref name="copy"/>'s changes back into its folder, a file changed on both sides settled by <paramref name="choices"/>.</summary>
     /// <param name="choices">The person's choice by path, one of <see cref="ReturnChoices.All"/>.</param>
     public static FolderReturned Run(
-        string home, FolderCopy copy, IReadOnlyDictionary<string, string> choices, ManifestBounds bounds, string journal, Action<string>? passed = null)
+        string home, FolderCopy copy, IReadOnlyDictionary<string, string> choices, ManifestBounds bounds, string journal, Action<string>? passed = null,
+        IReadOnlyDictionary<string, ReturnShown>? bound = null)
     {
         var writes = new ReturnWrite(copy, new ReturnJournal(journal), passed);
         // Taken up before either side is read, so nothing a cut-off write left beside a file reads as the person's.
@@ -24,6 +25,9 @@ public static class FolderReturn
         if (copied.TooLarge || place.TooLarge) throw new DriverException($"copy `{copy.Id}` or its folder could not be read whole, so nothing is brought back yet.");
         var inCopy = FolderChanges.Between(based, copied).All;
         if (inCopy.Count == 0) return new(written, [], Nothing: written.Count == 0);
+        ReturnShown Present(string path) => new(copied.Listed(path)?.Sha256, place.Listed(path)?.Sha256);
+        var lapsed = choices.Keys.Where(path => bound?.GetValueOrDefault(path) is { } shown && shown != Present(path)).ToList();
+        choices = choices.Where(choice => !lapsed.Contains(choice.Key)).ToDictionary(StringComparer.Ordinal);
 
         var inPlace = FolderChanges.Between(based, place).All.ToHashSet(StringComparer.Ordinal);
         var refusals = ReturnRefusal.Of(copy, based, copied, place, inCopy);
@@ -74,7 +78,11 @@ public static class FolderReturn
             }
         }
 
-        return new(written, waiting, Nothing: false) { Refused = refused };
+        return new(written, waiting, Nothing: false)
+        {
+            Refused = refused, Lapsed = lapsed,
+            Shown = waiting.Concat(refused.Keys).Distinct(StringComparer.Ordinal).ToDictionary(path => path, Present, StringComparer.Ordinal),
+        };
     }
 
     /// <summary>The name the session's version of <paramref name="path"/> is written under beside the folder's: <c>&lt;name&gt; (&lt;copy&gt;)&lt;ext&gt;</c>.</summary>
@@ -95,4 +103,9 @@ public sealed record FolderReturned(IReadOnlyList<string> Written, IReadOnlyList
 {
     /// <summary>The paths refused rather than guessed at, by what the return found there (<see cref="ReturnRefusal"/>).</summary>
     public IReadOnlyDictionary<string, string> Refused { get; init; } = new Dictionary<string, string>();
+
+    public IReadOnlyDictionary<string, ReturnShown> Shown { get; init; } = new Dictionary<string, ReturnShown>();
+
+    /// <summary>The paths whose choice lapsed: a side holds another version than the choice named.</summary>
+    public IReadOnlyList<string> Lapsed { get; init; } = [];
 }

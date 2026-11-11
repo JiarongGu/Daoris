@@ -17,6 +17,10 @@
   "workflow.shipped.release.for": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
   "workflow.shipped.in-place.name": "In-place workflow",
   "workflow.shipped.in-place.for": "For any department, a folder or a system included: one session at a time works in its own place, and once the work's requests are answered you review it there; nothing lands.",
+  "workflow.shipped.plan-review-apply.name": "Plan, review and apply workflow",
+  "workflow.shipped.plan-review-apply.for": "For a system: one session at a time plans its change, you review the plan, and the plan you accepted is applied; a plan gone stale goes back to the work, which plans again from what the system holds.",
+  "workflow.shipped.in-copy.name": "In-copy workflow",
+  "workflow.shipped.in-copy.for": "For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
 
   "workflow.shipped.delivery.merge-after-accept.name": "Merge after you accept",
   "workflow.shipped.delivery.merge-after-accept.for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",

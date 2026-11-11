@@ -1,8 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>An <c>apply</c> the runtime starts: the run's unit, whose executors planned the change set, the node and its attempt.</summary>
+/// <summary>An <c>apply</c> the runtime starts: the run's unit, the node, its attempt and the review record whose plan it applies.</summary>
 public sealed record ApplyStart(WorkUnit Unit, NodeDeclaration Node, int Attempt) : NodeDoorStart
 {
+    public ReviewRecord? Record { get; init; }
+
     /// <summary>Once per node and attempt: a stale plan's way back starts the next attempt.</summary>
     public override string Key => $"{Unit.Id}\n{Node.Id}\n{Attempt}";
 }

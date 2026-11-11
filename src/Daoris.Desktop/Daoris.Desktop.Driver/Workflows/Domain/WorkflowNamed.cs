@@ -171,29 +171,21 @@ public static class WorkflowNamed
             : null;
 
     /// <summary>
-    /// Why a named version's graph is not one landing or one Accept in place, or null: it holds one <c>land</c> and does not end at a
-    /// <c>review</c> before it, or no <c>land</c> and ends at a <c>review</c>, its work done in its department's place and accepted there;
-    /// and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
-    /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
-    /// <c>workflow-graph-versions.json</c>.
+    /// Why a named version's graph is not one landing at most, or null: at most one <c>land</c>, a <c>claimed</c> where it holds none, and at
+    /// most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each; where it ends is <see cref="EffectOrder"/>'s.
+    /// Judged after the graph holds, so a save is refused and a stored version is read as unreadable. Held to <c>workflow-graph-versions.json</c>.
     /// </summary>
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {
         string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
         var landings = graph.Nodes.Count(node => node.Kind == NodeKinds.Land);
-        var end = graph.Nodes.FirstOrDefault(node => node.Id == graph.End);
-        if (landings == 0 && end?.Kind != NodeKinds.Review)
+        if (landings == 0 && graph.Nodes.All(node => node.Kind != NodeKinds.Claimed))
         {
-            return $"v{number}: its graph holds no landing (`{NodeKinds.Land}`) and ends at `{graph.End}`, a `{end?.Kind}`: a named workflow's graph "
-                + $"lands its work once, or lands nothing and ends at your review (`{NodeKinds.Review}`).";
+            return $"v{number}: its graph holds no landing (`{NodeKinds.Land}`) and observes no chain's work (`{NodeKinds.Claimed}`): a named workflow's "
+                + "development graph lands a chain's work, or carries it out where it was done.";
         }
 
         if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Land)}, and a named workflow's graph lands its work once.";
-        if (landings == 1 && end?.Kind == NodeKinds.Review)
-        {
-            return $"v{number}: its graph ends at your review `{end.Id}`, before its landing {Named(NodeKinds.Land)}: a graph that lands ends after its landing.";
-        }
-
         foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })
         {
             var count = graph.Nodes.Count(node => node.Kind == kind);

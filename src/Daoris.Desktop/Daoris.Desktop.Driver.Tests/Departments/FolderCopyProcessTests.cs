@@ -36,7 +36,8 @@ public sealed class FolderCopyProcessTests : IDisposable
     {
         var door = new ReturnDoor(Home, holdsLease: () => true);
         var status = Records.Read(unit)!.Statuses[Return.Id];
-        await door.PerformAsync(ReturnStart.Of(Run(unit, record), Return, status, Records.Read(unit)!, StepAuthority.OfDoor(unit, Return.Id, 1)), CancellationToken.None);
+        await door.PerformAsync(ReturnStart.Of(Run(unit, record), Return, status, Records.Read(unit)!, StepAuthority.OfDoor(unit, Return.Id, 1))
+            with { Reviewed = EffectRecords.Copied(Home, [record]) }, CancellationToken.None);
         return Records.Read(unit)!.Statuses[Return.Id];
     }
 
@@ -58,7 +59,8 @@ public sealed class FolderCopyProcessTests : IDisposable
         var door = new ReturnDoor(Home, holdsLease: () => true, turning: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string> { copy.Folder }));
         var status = Records.Read("run:a")!.Statuses[Return.Id];
 
-        await door.PerformAsync(ReturnStart.Of(Run("run:a", "rec-a"), Return, status, Records.Read("run:a")!, StepAuthority.OfDoor("run:a", Return.Id, 1)), CancellationToken.None);
+        await door.PerformAsync(ReturnStart.Of(Run("run:a", "rec-a"), Return, status, Records.Read("run:a")!, StepAuthority.OfDoor("run:a", Return.Id, 1))
+            with { Reviewed = EffectRecords.Copied(Home, ["rec-a"]) }, CancellationToken.None);
 
         var held = Records.Read("run:a")!.Statuses[Return.Id];
         Assert.Equal((NodeStates.Active, ReturnNode.PlaceBusy), (held.State, held.Code));
@@ -91,7 +93,7 @@ public sealed class FolderCopyProcessTests : IDisposable
 
         Active("run:b");
         var waiting = await ReturnAsync("run:b", "rec-b");
-        Assert.Equal((NodeStates.Active, ReturnNode.BothChanged, "summary.md"), (waiting.State, waiting.Code, waiting.Holds));
+        Assert.Equal((NodeStates.Active, ReturnNode.BothChanged, "summary.md"), (waiting.State, waiting.Code, string.Join("\n", ReturnHolds.Read(waiting.Holds).Waiting.Keys)));
         Assert.Equal([0x89, 0x50, 0x4e, 0x47, 9, 9, 9, 9], File.ReadAllBytes(Path.Combine(Place, "q4", "chart.png")));
         Assert.True(Directory.Exists(second.Folder));
 

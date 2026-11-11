@@ -94,6 +94,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## REVIEWUX1b — completion and effects: a run ends when nothing moves, effects follow their review (2026-11-11, D273)
+
+> **REVIEWUX1b** (driver): Outcome: a run ends when nothing can move and keeps its outcome; effects are ordered after their review and fed its accepted record by reference; a return settles every outcome, a partial one waiting on both-changed files with its choices bound to hashes, a choice lapsing when its file moves; a copy changed after its review fails the return `moved` and reopens the review; a stale plan fails its node `stale`, keeps its receipt and is reviewed again as the next plan. A defect the run proofs exposed is fixed: once a return removed its copy the next pass read the work as a plain folder, the revision moved and the accepted review reopened, so the run never ended; the review now reads a turn's copy by its folder name (`FolderCopies.IdAt`). Proof: full graph runs in `CopyReturnRunTests`, `RunCompletionTests` (a plugin step after the landing) and `PlanReviewApplyRunTests`, and the five folder and system process suites.
+
+---
+
 ## REVIEWUX1a — one immutable review record per run attempt, for every kind of work (2026-11-11, D273)
 
 > **REVIEWUX1a** (driver): Outcome: a review binds a record written once per run, review node and attempt (`Workflows/Kinds/Review/ReviewRecord*`): its kind (a branch at its tip; a checkout's turns by start and end `HEAD` with the run's own uncommitted paths; a folder's files from the run's baseline to its newest turn, a path changed between turns marked; a copy's files against its base; a system's plan record, number and digest; an answer's handbacks), a revision hashing the reference and each handback, what is incomplete and how far it reaches; the run's turns are kept under its place (`RunTurns`) and the baseline is a named manifest record the tidy keeps; a branchless run's review binds to the run at the record's revision, never withheld `no-subject`, and an empty branch waits for the person. Proof: `ReviewRecordRunTests` — seven full graph runs (the folder review and the empty branch seen failing first; an Accept keeping the revision, a moved revision and a same-content corrected answer each making a new record, a folder's whole interval, the baseline surviving the tidy).
