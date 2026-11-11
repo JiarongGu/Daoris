@@ -8,15 +8,14 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A person's press from a terminal is confirmed in the window
-/// and waits until the person answers: a <c>person</c> route sent over
-/// the pipe is shown to the window as a card naming the terminal, the press and every value it carries, and runs once on the person's
+/// A person's press from a terminal is confirmed in the window and waits until the person answers: a <c>person</c> route sent over
+/// the pipe is shown as a card naming the terminal, the press and every value it carries, and runs once on the person's
 /// <b>Confirm</b>, its grounds still holding; refused, changed, withdrawn, closed or past the ten that may wait, nothing runs. The
 /// terminal is told it waits, and how it ended; <c>RESULT</c> says <c>waiting</c> while it does.
 /// </summary>
 /// <remarks>
-/// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris. The
-/// window's answer is the confirmations' own, as the bridge's <c>PERSON_CONFIRM</c> gives it (<c>DriverModulePersonTests</c>); the
+/// Each test serves its own pipe in this process, named by its scratch home's id, so nothing here meets a running Daoris. The
+/// window's answer is the confirmations' own, as <c>PERSON_CONFIRM</c> gives it (<c>DriverModulePersonTests</c>); the
 /// grounds are read from a stand-in for the loop's readers (<see cref="StubGrounds"/>), and any clock is held (<see cref="HeldClock"/>).
 /// The pipe is Windows': elsewhere a test returns at once.
 /// </remarks>
@@ -206,7 +205,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(["asked", "refused"], Confirmations().Select(line => JsonDocument.Parse(line).RootElement.GetProperty("state").GetString()));
     }
 
-    /// <summary>One press per ground moved between its ask and its Confirm runs nothing; its terminal hears <c>changed</c>, its reason's code and values.</summary>
+    /// <summary>A press whose ground moved between its ask and Confirm runs nothing; its terminal hears <c>changed</c>, its reason's code and values.</summary>
     [Theory]
     [InlineData("turn")]
     [InlineData("session")]
@@ -228,8 +227,7 @@ public sealed class PipeConfirmTests : Bridge
         grounds.Held["go-ahead"] = "open";
         var drivable = new List<string>();
         grounds.Reads["STATE"] = _ => new { drivable = drivable.ToArray() };
-        // The clean-up's card refuses a workspace the machine does not have, so the workspace the press names is one it holds.
-        grounds.Placed["Games1"] = "games";
+        grounds.Workspace("games");
         var sweep = "unlanded";
         grounds.Reads["SWEEP_PLAN"] = _ => new { branches = new[] { new { repository = "Lyntai", branch = "quest/x", kind = sweep, commits = 1 } } };
         var (route, payload, move, said) = reason switch
