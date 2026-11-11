@@ -77,10 +77,12 @@ public sealed partial class SystemPlanBox(string? home)
     {
         if (changes is not { Count: > 0 }) return "It names no change: a plan is one or more resources, each given a value or removed.";
         if (changes.Count > Most) return $"It names {changes.Count} changes, and one plan carries at most {Most}: plan them in parts.";
+        var named = new HashSet<string>(StringComparer.Ordinal);
         foreach (var change in changes)
         {
             if (string.IsNullOrWhiteSpace(change.Resource) || change.Resource.Any(char.IsControl)) return "A change names no resource, or one holding a control character.";
             if (change.Remove == (change.Value is not null)) return $"`{change.Resource}` is given neither a value nor a removal, or both: say one.";
+            if (!named.Add(change.Resource.Trim())) return $"`{change.Resource.Trim()}` is named twice: say each resource once, with the value it should end holding.";
         }
 
         return null;

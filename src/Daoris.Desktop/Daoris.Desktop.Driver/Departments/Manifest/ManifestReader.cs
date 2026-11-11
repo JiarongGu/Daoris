@@ -8,6 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 public static class ManifestReader
 {
+    private const int Kept = 1 << 20;
+
     /// <summary>The manifest of the git place at <paramref name="root"/>.</summary>
     /// <exception cref="InvalidOperationException">git could not read its status.</exception>
     public static async Task<RunManifest> OfPlaceAsync(string root, ContentStore content, CancellationToken ct)
@@ -42,7 +44,7 @@ public static class ManifestReader
                 '?' => ("??", field[2..]),
                 _ => ("", ""),
             };
-            if (field.StartsWith('2')) i++;
+            if (field.StartsWith('2') && ++i < fields.Length && fields[i].Length > 0) entries.Add(new ManifestEntry(fields[i], status, null, null));
             if (path.Length == 0) continue;
             entries.Add(Entry(root, path, status, content));
         }
@@ -61,10 +63,25 @@ public static class ManifestReader
     private static ManifestEntry Entry(string root, string path, string status, ContentStore content)
     {
         var full = Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(full)) return new ManifestEntry(path, status, null, null);
-        var bytes = AtomicFile.ReadBytes(full);
-        var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-        content.Keep(sha, bytes);
-        return new ManifestEntry(path, status, sha, bytes.LongLength);
+        var file = new FileInfo(full);
+        if (!file.Exists) return new ManifestEntry(path, status, null, null);
+        try
+        {
+            if (file.Length > Kept)
+            {
+                using var stream = AtomicFile.OpenRead(full);
+                return new ManifestEntry(path, status, Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant(), file.Length);
+            }
+
+            var bytes = AtomicFile.ReadBytes(full);
+            var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            content.Keep(sha, bytes);
+            return new ManifestEntry(path, status, sha, bytes.LongLength);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A file another program holds is still there: listed under a hash of its size and time, which names no stored text, never as gone.
+            return new ManifestEntry(path, status, $"unread-{file.Length}-{file.LastWriteTimeUtc.Ticks}", file.Length);
+        }
     }
 }

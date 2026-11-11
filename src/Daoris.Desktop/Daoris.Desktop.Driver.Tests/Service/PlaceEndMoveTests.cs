@@ -25,6 +25,7 @@ public sealed class PlaceEndMoveTests
         PlaceEnds = (id, _) =>
         {
             _ended.Add(id);
+            if (id == "s-b0b0b0b0") throw new IOException("a file in the place is held");
             return Task.FromResult<IReadOnlyList<string>?>(id == "s-1a2b3c4d" ? ["draft.md"] : null);
         },
     };
@@ -43,6 +44,18 @@ public sealed class PlaceEndMoveTests
         Assert.Equal(["draft.md"], bodies[0].GetProperty("holdsPlace").EnumerateArray().Select(path => path.GetString()));
         Assert.False(bodies[1].TryGetProperty("holdsPlace", out _));
         Assert.False(bodies[2].TryGetProperty("holdsPlace", out _));
+    }
+
+    [Fact]
+    public async Task A_turn_s_end_that_cannot_be_read_still_moves_the_record_marking_nothing()
+    {
+        using var service = Client();
+
+        await service.AdvanceAsync("s-b0b0b0b0", "stopped", interrupted: true);
+
+        var body = JsonDocument.Parse(Assert.Single(_posted).Body).RootElement;
+        Assert.Equal("stopped", body.GetProperty("state").GetString());
+        Assert.False(body.TryGetProperty("holdsPlace", out _));
     }
 
     private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)> answer) : HttpMessageHandler

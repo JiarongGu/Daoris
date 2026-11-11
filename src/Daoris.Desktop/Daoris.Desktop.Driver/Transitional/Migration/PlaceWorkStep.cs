@@ -17,7 +17,7 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
         var file = DaorisHome.Entry(run.Home, HomeEntry.DriverConfig);
         if (!File.Exists(file) || JsonNode.Parse(AtomicFile.ReadText(file)) is not JsonObject root) return;
         var trees = (root["trees"] as JsonArray ?? []).Select(HomeMigrationRun.Text).OfType<string>().ToList();
-        var waits = Waiting(root);
+        var (waits, owns) = Waiting(root);
         if (root["trees"] is null && waits.Count == 0) return;
 
         var store = WorkflowPorts.Store(run.Home);
@@ -41,7 +41,8 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
             var apart = flow.Where(each => trees.Any(name => Same(name, each.Repository))).ToList();
             if (apart.Count == 0 || store.Load(flow.Key) is not { File: JsonObject saved }) continue;
             string Overlap((string Repository, string? Workspace, string Workflow) each) =>
-                waits.Contains(each.Repository) || (each.Workspace is { } workspace && waits.Contains($"workspace:{workspace}")) ? IsolateStep.Wait : IsolateStep.Go;
+                (owns.Contains(each.Repository) ? waits.Contains(each.Repository)
+                    : each.Workspace is { } workspace && waits.Contains($"workspace:{workspace}")) ? IsolateStep.Wait : IsolateStep.Go;
             var overlaps = apart.Select(Overlap).Distinct(StringComparer.Ordinal).ToList();
             if (apart.Count == flow.Count() && overlaps.Count == 1)
             {
@@ -51,8 +52,10 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
 
             foreach (var overlap in overlaps)
             {
-                var copy = $"{flow.Key}-apart{(overlap == IsolateStep.Wait ? "-wait" : "")}";
+                var suffix = overlap == IsolateStep.Wait ? "-apart-wait" : "-apart";
+                var copy = flow.Key[..Math.Min(flow.Key.Length, 40 - suffix.Length)].TrimEnd('-') + suffix;
                 if (store.Load(copy) is null && IsolatedFiles.Copy(saved, copy, overlap) is { } made) store.Write(copy, made);
+                if (IsolateSteps.In(store.Load(copy)?.Read.Versions.LastOrDefault()?.Graph) is null) continue;
                 foreach (var each in apart.Where(each => Overlap(each) == overlap))
                 {
                     config = WorkflowSelection.Apply(config, new WorkflowUse(copy, each.Repository, null, null));
@@ -69,10 +72,12 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
 
     private static bool Same(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The repositories, and the workspaces as <c>workspace:&lt;name&gt;</c>, whose line policy says <c>overlap: wait</c>.</summary>
-    private static HashSet<string> Waiting(JsonObject root)
+    /// <summary>Those whose line policy says <c>overlap: wait</c> (a workspace as <c>workspace:&lt;name&gt;</c>), and the repositories whose own policy replaces their workspace's.</summary>
+    private static (HashSet<string> Waits, HashSet<string> Owns) Waiting(JsonObject root)
     {
         var waits = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var owns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (root["linePolicies"] is JsonObject own) owns.UnionWith(own.Select(each => each.Key));
         foreach (var (key, prefix) in new[] { ("linePolicies", ""), ("workspaceLinePolicies", "workspace:") })
         {
             if (root[key] is not JsonObject policies) continue;
@@ -82,7 +87,7 @@ public sealed class PlaceWorkStep : IHomeMigrationStep
             }
         }
 
-        return waits;
+        return (waits, owns);
     }
 
     /// <summary>Every line policy's <c>integrate</c> object in <paramref name="root"/>.</summary>

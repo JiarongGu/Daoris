@@ -4,8 +4,8 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The writer's lease on a place: the one in-place record of this machine's that holds a repository's own checkout. A record holds
-/// it while its turn runs (queued, starting or working there), and in a git place also while it is parked or waiting with
-/// uncommitted paths of its own marked (<see cref="Session.HoldsPlace"/>). The passes (a helper, a partner, a second opinion, a
+/// it while its turn runs (queued, starting or working there), and in a git place also while it is parked, or ended waiting on its
+/// own helper, with uncommitted paths of its own marked (<see cref="Session.HoldsPlace"/>). The passes (a helper, a partner, a second opinion, a
 /// supervisor's turn) and an intake write nothing in the place and hold none. The ledger reads it in the write that opens a record or
 /// moves one into a running state, and writes the mark in the move out of one; nothing renews it on a clock.
 /// </summary>
@@ -27,13 +27,15 @@ internal sealed class SessionPlaceLease(SessionStore store)
               AND ask IS NULL AND opinion IS NULL AND serves IS NULL AND decides IS NULL
               AND ($except IS NULL OR id <> $except)
               AND (state IN ('Queued', 'Starting', 'Working')
-                   OR (holds_place IS NOT NULL AND state IN ('AwaitingPerson', 'Completed')))
+                   OR (holds_place IS NOT NULL AND state = 'AwaitingPerson')
+                   OR (holds_place IS NOT NULL AND state = 'Completed' AND quest IS NOT NULL AND note_parts LIKE $helper))
             ORDER BY created
             LIMIT 1
             """;
         command.Parameters.AddWithValue("$repository", repository);
         command.Parameters.AddWithValue("$root", (object?)Trees.Normalize(root) ?? DBNull.Value);
         command.Parameters.AddWithValue("$except", (object?)except ?? DBNull.Value);
+        command.Parameters.AddWithValue("$helper", $"%\"{SessionHolders.EndedAwaitsHelper}\"%");
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);

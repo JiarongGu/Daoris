@@ -116,4 +116,33 @@ public sealed class ManifestTests : IDisposable
         Assert.NotNull(store.Read("s-00000003", ManifestMoment.Start));
         Assert.Equal(21, Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Places, "default", "reports", "manifests")).Length);
     }
+
+    [Fact]
+    public async Task A_renamed_path_lists_the_old_name_as_gone_beside_the_new()
+    {
+        var root = await RepositoryAsync();
+        var store = new ManifestStore(Home, "default", "reports");
+        await GitFixture.RunAsync(root, "mv", "notes.md", "renamed.md");
+
+        var manifest = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
+
+        Assert.Null(manifest.Listed("notes.md")!.Sha256);
+        Assert.NotNull(manifest.Listed("renamed.md")!.Sha256);
+    }
+
+    [Fact]
+    public async Task A_listed_file_another_program_holds_open_is_listed_with_a_hash_of_its_own_and_the_read_does_not_throw()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await RepositoryAsync();
+        var store = new ManifestStore(Home, "default", "reports");
+        var held = Path.Combine(root, "held.md");
+        File.WriteAllText(held, "being written\n");
+        using var lease = new FileStream(held, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        var manifest = await ManifestReader.OfPlaceAsync(root, store.Content, CancellationToken.None);
+
+        Assert.NotNull(manifest.Listed("held.md")!.Sha256);
+        Assert.Equal(14, manifest.Listed("held.md")!.Size);
+    }
 }

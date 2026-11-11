@@ -42,7 +42,7 @@ public static class FolderManifestReader
             var path = Path.GetRelativePath(root, file.FullName).Replace(Path.DirectorySeparatorChar, '/');
             if (excludes.Passes(path)) continue;
             var time = new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero);
-            var sha = known.TryGetValue(path, out var was) && was.Size == file.Length && was.Time == time && last!.At - time > Racy
+            var sha = known.TryGetValue(path, out var was) && was.Sha256 is not null && was.Size == file.Length && was.Time == time && last!.At - time > Racy
                 ? was.Sha256
                 : Hash(file, content);
             entries.Add(new ManifestEntry(path, "", sha, file.Length) { Time = time });
