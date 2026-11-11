@@ -92,6 +92,8 @@ public static class EntryPartOutcome
     /// pass: nothing is landed here, and the part is not refused.
     /// </summary>
     public const string Accepted = "accepted";
+
+    public const string Moved = ReviewAccepts.Moved;
 }
 
 /// <summary>One part's outcome at an entry's Accept, with its landing's answer where it is tried.</summary>

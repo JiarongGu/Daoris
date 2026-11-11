@@ -61,7 +61,8 @@ public sealed class EntriesRoutes(DriverContext context)
 
         // What `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
         var plugins = new List<string>();
-        var landed = await LandingAsync(Accepts(service, plugins), entry, rows, LeaveOut(press.LeaveOut), cancellationToken).ConfigureAwait(false);
+        var drawn = press.Revisions?.GroupBy(part => part.Session, StringComparer.Ordinal).ToDictionary(part => part.Key, part => part.Last().Revision, StringComparer.Ordinal);
+        var landed = await LandingAsync(Accepts(service, plugins, drawn), entry, rows, LeaveOut(press.LeaveOut), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
         // The lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
         var followed = entries.Count > 0 ? await FollowAsync(press.Follow, service, cancellationToken).ConfigureAwait(false) : null;
@@ -237,12 +238,12 @@ public sealed class EntriesRoutes(DriverContext context)
     /// own: a plugin says its lines on the console under its name, as a landing's do.
     /// </summary>
     /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words; null keeps none.</param>
-    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null) => new(
+    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, IReadOnlyDictionary<string, string>? revisions = null) => new(
         service, _loop.Home,
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
         _loop.Events)
     {
-        Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token),
+        Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token), Revisions = revisions,
     };
 
     /// <summary>A plugin's lines, said on the loop's output under its name and kept in <paramref name="lines"/> as the terminal says them.</summary>

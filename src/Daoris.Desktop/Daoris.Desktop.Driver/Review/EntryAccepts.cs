@@ -78,11 +78,9 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
         }
 
         return new EntryLanding(
-            accepted.Count > 0 && outcomes.All(each => each.Outcome is not EntryPartOutcome.Refused)
+            accepted.Count > 0 && outcomes.All(each => each.Outcome is not (EntryPartOutcome.Refused or EntryPartOutcome.Moved))
                 && accepted.All(part => part.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.BroughtInto),
-            accepted.Any(part => part.Outcome == EntryPartOutcome.Accepted) ? "Accepted; Daoris lands each part at its next pass."
-                : outcomes.Any(each => each.Outcome == EntryPartOutcome.Refused) ? "Nothing more was landed: see each part."
-                : "Landed.", null, outcomes);
+            EntryRunAccepts.Said(outcomes), null, outcomes);
     }
 
     /// <summary>
@@ -90,6 +88,9 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
     /// (<see cref="LandOutcomes"/>). Null where the surface has no loop (the terminal alone), or the landing has not ended by the bound.
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<TreeLanding?>>? Performs { get; init; }
+
+    /// <summary>The review record the page drew for each part, by session: a run standing on another is refused <c>moved</c> alone, the rest go on.</summary>
+    public IReadOnlyDictionary<string, string>? Revisions { get; init; }
 
     /// <summary>
     /// The parts whose run's <c>land</c> the runtime performs, accepted: each head's
@@ -124,7 +125,14 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
             var heads = operation is not null && TogetherOperation.SameTree(operation.Head.Tree, part.Tree);
             var word = WorkplaceWorkflows.Current.KeepReviewWord(
                 home, null, part.Gate!.Process!, DateTimeOffset.UtcNow,
-                heads ? $"brought together with {string.Join(", ", operation!.Members.Select(each => each.Session))}, operation {operation.Id}" : null);
+                heads ? $"brought together with {string.Join(", ", operation!.Members.Select(each => each.Session))}, operation {operation.Id}" : null,
+                Revisions?.GetValueOrDefault(part.Session));
+            if (word.Moved is { } standing)
+            {
+                accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Moved, new TreeLanding(false, EntryRunAccepts.MovedSaid(part.Session, standing))));
+                continue;
+            }
+
             var tip = ((LandingGate)part.Gate).Tip ?? ((LandingGate)part.Gate).GraphPart()?.Commit;
             var outcome = word.Kept && word.Unit is { } unit && tip is not null && Performs is { } waits
                 ? await waits(part.Session, unit, tip, ct).ConfigureAwait(false) : null;
