@@ -24,11 +24,12 @@ public static class PlaceChanges
         if (end is null) return null;
         if (start.TooLarge || end.TooLarge) return new TreeDiff([], TooLarge, "");
 
-        var changes = FolderChanges.Between(start, end);
+        var from = FolderCopies.At(home, root) is { } copy ? FolderCopies.Base(home, copy) ?? start : start;
+        var changes = FolderChanges.Between(from, end);
         var files = changes.All.Select(path => File(
             path,
             changes.Added.Contains(path) ? "added" : changes.Removed.Contains(path) ? "deleted" : "modified",
-            start.Listed(path),
+            from.Listed(path),
             end.Listed(path),
             store.Content));
         return new TreeDiff([.. files], null, "");

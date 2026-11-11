@@ -63,6 +63,9 @@ public static class NodeKinds
     /// <summary>A system place's apply of its reviewed change set, under each operation's precondition: <see cref="ApplyNode"/>.</summary>
     public const string Apply = "apply";
 
+    /// <summary>A folder's return of the copy its session worked in, file by file against the copy's base: <see cref="ReturnNode"/>.</summary>
+    public const string Return = "return";
+
     /// <summary>
     /// The hold on the work's own requests: observed from the quests the run's sessions published,
     /// placed after <c>claimed</c> and before the landing. A kind and no option of <c>claimed</c>, because an older build reads an option as
@@ -252,6 +255,9 @@ public static class NodeSource
     /// person's branches hold. A hold that does not let go reaches nothing and fails nothing: it keeps the node active with its reason.
     /// </summary>
     public const string Holds = "holds";
+
+    /// <summary>A folder's return as its door writes it: every file of the copy back in the folder, or nothing to bring back.</summary>
+    public const string Return = "return";
 }
 
 /// <summary>

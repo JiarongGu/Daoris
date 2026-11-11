@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1f — a folder's sessions in copies of their own, brought back file by file (2026-11-11, D265)
+
+> **PLACEWORK1f** (driver, modules, web): Outcome: the isolate step's `copy` kind gives a folder session a copy of its own under the place's copies folder (`Departments/Isolation/FolderCopies.cs`, `CopyStart`); over the bound (size, 20,000 files, or less than twice its size free) the start is held with words saying how to go on, never worked in place; the `return` kind writes back each file changed only in the copy, against the copy's bytes hashed fresh, keeps each changed only in the folder, and leaves each changed on both sides, an unread one or a binary, to the person per path (*Keep yours* / *Take the session's* / *Keep both*, `ReturnChoice`); supervisors get no act over it; the bound is `daoris settings manifest`'s `copy`. Proof: `FolderCopyTests`, `ReturnDoorTests` (seen failing first), `FolderCopyProcessTests`, `ReturnChoice.test`.
+>
+> **PLACEWORK1i, measured by the installed Daoris** (docs): a quest the install's own session took measured jj 0.46 workspaces as an isolation kind (`docs/2026-11-11-jj-workspaces-measurements.md`), reviewed by the steward and landed by Daoris's workflow.
+
+---
+
 ## PLACEWORK1e's *Work in place* — a graph that lands nothing ends at your review (2026-11-11)
 
 > **PLACEWORK1e, Work in place** (driver, web): Outcome: a graph with a `land` holds exactly one and does not end at a review; a graph with no `land` must end at a `review`, its holds checked before it (`GraphStanding.Judged`), binds as usual (`InPlaceProcess`), and ends on the review's Accept, a landing press under it refused saying nothing lands it (D264's note, workflows rules 5, 8, 22); `in-place.json` ships as *In-place workflow*, delivered as *Work in place* (原处工作流 / 在原处工作), and a folder or system follows it at the window's add while a git repository gets a tick (`projects/inPlace.ts`, PLACE_PLAN then PLACE_APPLY). Proof: the fixture rows, the proposals and drawer tests (seen failing first), `InPlaceProcessTests`, `inPlace.test`. Codex's read found the review still binds a branch and landing-dependent nodes pass with no `land`: both are on the row.

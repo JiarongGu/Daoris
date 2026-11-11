@@ -16,8 +16,8 @@ public static class FolderTurns
     {
         if (Directory.Exists(Path.Combine(root, ".jj")) || !Directory.Exists(root)) return null;
         var store = new ManifestStore(home, workspace, department);
-        var last = store.Last();
-        if (last is { Kind: not PlaceKind.Folder }) return null;
+        if (store.Last() is { Kind: not PlaceKind.Folder }) return null;
+        var last = store.Last(root);
         var start = FolderManifestReader.Read(root, store.Content, last, bounds ?? ManifestBounds.Of(home), excludes);
         store.Keep(record, ManifestMoment.Start, start with { Own = [] });
         var outside = last is null ? [] : FolderChanges.Between(last, start).All;
