@@ -82,6 +82,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## HISTCLEAR1 — a workspace's history clear finishes in one press (2026-11-11)
+
+> **HISTCLEAR1** (driver): Outcome: the history clear sends its units to the service in presses of at most five (`HistoryDoors.PressUnits`), one after another within one call, so each answer comes well within the client's 30-second bound and a history of any length is cleared by one `daoris history clear --workspace <w> --yes`, which says what it removed as before; the service judged each unit against every record, so one press naming a long history ran past the bound and stopped `SERVICE_BUSY`, part cleared. Proof: `HistoryClearBatchesTests` (`A_workspaces_clear_of_a_history_longer_than_the_clients_bound_finishes_in_one_press`) (60 units against a service that stalls past 20), seen failing first with the stall.
+
+---
+
 ## The plugin family's follow-ups and FABRIC-TRYAGAIN1 — the kit's family rule, the short command, try again (2026-11-11)
 
 > **Plugins, follow-ups** (driver, modules, web): Outcome: `daoris plugin new` refuses an id with no family and the `daoris-` family outside Daoris's own examples, and its form asks `<family>-<name>`; a plugin's commands answer to the id's tail where one installed plugin has it (`daoris azure-devops login`), an ambiguous tail refused naming both (D274's note); both loops and the headless `drive --once` start plugins through the rename first, an unsettled attempt moves to the new id with its step kind, and the editor and `workflow show` read the new kind; **FABRIC-TRYAGAIN1:** `daoris plugin try-again <id>` restarts an unsound plugin in the running Daoris, and the plugin's page shows *Try again* (重试) while it is unsound, with why. Left: the remaining tests and stories that use the old example ids as sample strings. Proof: `PluginFamilyTests`, `PluginRenameGapsTests` (seen failing first), `DriverModulePluginTryAgainTests`, `PluginPage.tryAgain.test`.
