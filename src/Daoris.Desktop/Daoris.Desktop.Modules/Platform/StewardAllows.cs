@@ -6,9 +6,9 @@ namespace Daoris.Desktop;
 /// <summary>
 /// A steward's act outside its grants, first offered to the allow supervisor that answers its target's place. The request waits on the
 /// pipe as one pending entry (<see cref="PendingAllow"/>) under the pipe's gate and is settled once, by the first of: the supervisor's
-/// allow, which admits the act as the steward's own; its leave, ten minutes from the raise, or the person's overrule of a held
-/// <c>land</c>, each of which falls to the person's card; and the terminal's withdrawal, which ends the reservation under it. Only that
-/// settlement runs the act or asks the card, outside the gate, so either happens once.
+/// allow, which admits the act as the steward's own; its leave, or ten minutes from the raise, each of which falls to the person's card;
+/// and the terminal's withdrawal, which ends the reservation under it. Only that settlement runs the act or asks the card, outside the
+/// gate, so either happens once.
 /// </summary>
 public sealed class StewardAllows(InstancePipe pipe)
 {
@@ -17,9 +17,6 @@ public sealed class StewardAllows(InstancePipe pipe)
 
     /// <summary>The wait, ten minutes unless a test shortens it.</summary>
     public TimeSpan Limit { get; set; } = Ten;
-
-    /// <summary>The window a <c>land</c> is held for in place of the allowing role's, where a test names one.</summary>
-    public TimeSpan? Window { get; set; }
 
     /// <summary>Where an act's target is decided (<see cref="StewardPlaces"/>); null where nothing reads it, and the person's card is asked.</summary>
     public Func<RoleScope, CancellationToken, Task<RolePlace?>>? Places { get; set; }
@@ -74,41 +71,17 @@ public sealed class StewardAllows(InstancePipe pipe)
     /// <summary>What the request's act acts on.</summary>
     internal RoleScope? TargetOf(PendingAllow entry) => TargetOf(entry.Original, entry.Asked);
 
-    /// <summary>The allowed <c>land</c>s held for their window now, soonest first: what the steward's line says and offers <i>Overrule</i> on.</summary>
-    public IReadOnlyList<StewardLandNow> Lands()
-    {
-        lock (State.Gate)
-        {
-            return
-            [
-                .. State.StewardAsks.Values.Where(each => each.State == PendingAllowState.Holding && each.LandsAt is not null && Live(each)).OrderBy(each => each.LandsAt)
-                    .Select(each => LandOf(each, TargetOf(each))),
-            ];
-        }
-    }
-
-    private static StewardLandNow LandOf(PendingAllow entry, RoleScope? target) => new(
-        entry.Id, entry.Asked.Act ?? "", target?.Kind == OwnerKinds.Repository ? target.Name : null, target?.Kind == OwnerKinds.Quest ? target.Name : null,
-        target?.Kind == OwnerKinds.Session ? target.Name : null, entry.LandsAt!.Value);
-
     /// <summary>The requests waiting for a supervisor now, oldest first; one the pipe no longer holds is forgotten.</summary>
     public IReadOnlyList<PendingAllow> Waiting()
     {
-        List<PendingAllow> gone;
-        IReadOnlyList<PendingAllow> waiting;
         lock (State.Gate)
         {
-            gone = [.. State.StewardAsks.Values.Where(each => !Live(each))];
-            foreach (var each in gone) State.StewardAsks.Remove(each.Id);
-            waiting = [.. State.StewardAsks.Values.Where(each => each.State == PendingAllowState.Pending).OrderBy(each => each.Raised)];
+            foreach (var gone in State.StewardAsks.Values.Where(each => !Live(each)).ToList()) State.StewardAsks.Remove(gone.Id);
+            return [.. State.StewardAsks.Values.OrderBy(each => each.Raised)];
         }
-
-        // A land the steward withdrew inside its window leaves its decision stale, said outside the gate.
-        foreach (var each in gone.Where(each => each.State == PendingAllowState.Holding && each.Decision is not null)) Moved?.Invoke(each.Decision!, SupervisorState.Stale, "withdrawn");
-        return waiting;
     }
 
-    /// <summary>A request still held, waiting or an allowed <c>land</c> in its window; null where something settled it.</summary>
+    /// <summary>A request still waiting; null where something settled it.</summary>
     public PendingAllow? Find(string ask)
     {
         lock (State.Gate)
@@ -122,64 +95,36 @@ public sealed class StewardAllows(InstancePipe pipe)
         State.Reserved.TryGetValue(entry.Original.Id, out var held) && ReferenceEquals(held, entry.Reserved);
 
     /// <summary>
-    /// The supervisor's allow: settled once, then the act admitted as the steward's own (the owner's marks read first) and run. A
-    /// <c>land</c> is held for <paramref name="window"/> first, still the pending entry. Null where kept, else why not.
+    /// The supervisor's allow: settled once, then the act admitted as the steward's own (the owner's marks read first) and run. Null where
+    /// kept, else why not.
     /// </summary>
-    public async Task<string?> AllowAsync(string ask, string decision, TimeSpan window, Action<PendingAllow>? kept = null)
-    {
-        PendingAllow entry;
-        var hold = false;
-        lock (State.Gate)
-        {
-            if (!State.StewardAsks.TryGetValue(ask, out entry!) || !Live(entry) || entry.State != PendingAllowState.Pending) return SupervisorWhy.Answered;
-            window = Window ?? window;
-            hold = entry.Asked.Act == StewardActNames.Land && window > TimeSpan.Zero;
-            if (hold)
-            {
-                entry.State = PendingAllowState.Holding;
-                entry.Decision = decision;
-                entry.LandsAt = pipe.Clock.GetUtcNow() + window;
-            }
-            else
-            {
-                State.Reserved.Remove(entry.Original.Id);
-                State.StewardAsks.Remove(ask);
-            }
-        }
-
-        entry.Clock.Cancel();
-        kept?.Invoke(entry);
-        if (!hold)
-        {
-            RunAllowed(entry, decision);
-            return null;
-        }
-
-        entry.Clock = new CancellationTokenSource();
-        _ = HoldAsync(entry, window);
-        return null;
-    }
-
-    /// <summary>The supervisor's leave: the request falls to the person's card. False where something settled it first.</summary>
-    public bool Leave(string ask) => Fall(ask, PendingAllowState.Pending);
-
-    /// <summary>The person's overrule of an allowed <c>land</c> held for its window: the person's card follows. False where something settled it first.</summary>
-    public bool Overrule(string ask) => Fall(ask, PendingAllowState.Holding);
-
-    /// <summary>Told where an allowing decision ends up, for its record: <c>overruled</c>, <c>went-on</c> where the window ran out, or <c>stale</c> where the steward withdrew.</summary>
-    public Action<string, SupervisorState, string?>? Moved { get; set; }
-
-    private bool Fall(string ask, PendingAllowState from)
+    public string? Allow(string ask, string decision, Action<PendingAllow>? kept = null)
     {
         PendingAllow entry;
         lock (State.Gate)
         {
-            if (!State.StewardAsks.TryGetValue(ask, out entry!) || !Live(entry) || entry.State != from) return false;
+            if (!State.StewardAsks.TryGetValue(ask, out entry!) || !Live(entry)) return SupervisorWhy.Answered;
+            State.Reserved.Remove(entry.Original.Id);
             State.StewardAsks.Remove(ask);
         }
 
         entry.Clock.Cancel();
-        if (from == PendingAllowState.Holding && entry.Decision is { } decision) Moved?.Invoke(decision, SupervisorState.Overruled, null);
+        kept?.Invoke(entry);
+        RunAllowed(entry, decision);
+        return null;
+    }
+
+    /// <summary>The supervisor's leave: the request falls to the person's card. False where something settled it first.</summary>
+    public bool Leave(string ask)
+    {
+        PendingAllow entry;
+        lock (State.Gate)
+        {
+            if (!State.StewardAsks.TryGetValue(ask, out entry!) || !Live(entry)) return false;
+            State.StewardAsks.Remove(ask);
+        }
+
+        entry.Clock.Cancel();
         _ = entry.Card();
         return true;
     }
@@ -196,37 +141,7 @@ public sealed class StewardAllows(InstancePipe pipe)
         }
 
         // The ten minutes close the subject for the supervisor before the card is reserved: a later answer is dropped.
-        if (Fall(entry.Id, PendingAllowState.Pending)) pipe.Log.Info("supervisor.dropped", ("kind", SupervisorKinds.Allow), ("why", "expired"));
-    }
-
-    private async Task HoldAsync(PendingAllow entry, TimeSpan window)
-    {
-        try
-        {
-            await Task.Delay(window, pipe.Clock, entry.Clock.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        bool withdrawn;
-        lock (State.Gate)
-        {
-            if (!State.StewardAsks.TryGetValue(entry.Id, out var held) || !ReferenceEquals(held, entry) || entry.State != PendingAllowState.Holding) return;
-            withdrawn = !Live(entry);
-            if (!withdrawn) State.Reserved.Remove(entry.Original.Id);
-            State.StewardAsks.Remove(entry.Id);
-        }
-
-        if (withdrawn)
-        {
-            Moved?.Invoke(entry.Decision ?? "", SupervisorState.Stale, "withdrawn");
-            return;
-        }
-
-        Moved?.Invoke(entry.Decision ?? "", SupervisorState.WentOn, null);
-        RunAllowed(entry, entry.Decision ?? "");
+        if (Leave(entry.Id)) pipe.Log.Info("supervisor.dropped", ("kind", SupervisorKinds.Allow), ("why", "expired"));
     }
 
     // Outside the gate, the entry's reservation claimed: admitted as the steward's own, or answered with the refusal.

@@ -598,7 +598,7 @@ public sealed class StewardStandingTests : Bridge
 
     public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["hold", "engine"],
         ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"],
-        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"],
+        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["clean", "s1"],
         ["hand-over", "s1", "--agent", "codex"], ["hand-over", "s1", "--agent", "codex", "--account", "work"]];
 
     /// <summary>Each act the steward's verb makes asks outside its acts as a person's route that takes the verb's form as its own press.</summary>

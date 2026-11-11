@@ -16,8 +16,6 @@ export type StandingConfirmationNow = {
   stewardActs: StewardActNow[];
   /** The steward's desk this run, newest first, from Daoris's memory: what the line shows under its acts. */
   stewardDesk: DeskRequestNow[];
-  /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
-  stewardLands: StewardLandNow[];
   /** What Ask Daoris pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
   helpPresses: HelpPressNow[];
 };
@@ -51,19 +49,6 @@ export type HelpReverse = 'resume';
 export function helpReverse(press: HelpPressNow): HelpReverse | null {
   return press.route === 'WORK_PAUSE' && press.outcome === 'done' && (press.scope === 'quest' || press.scope === 'ask') && press.target ? 'resume' : null;
 }
-
-/**
- * A `land` of the steward's that a supervisor allowed and that waits its window, as `STATE`'s `standingConfirmation.stewardLands` says
- * it: the request's id, what it acts on and when it lands. *Overrule* names the request and its session.
- */
-export type StewardLandNow = {
-  ask: string;
-  act: string;
-  repository: string | null;
-  quest: string | null;
-  session: string | null;
-  landsAt: string;
-};
 
 /**
  * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it:
@@ -101,7 +86,7 @@ export type StewardActNow = {
 };
 
 /** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */
-export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
+export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'clean', 'handover'] as const;
 
 /** Whether the page has words for this act. */
 export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);

@@ -53,7 +53,6 @@ public sealed class RoleActTests : IDisposable
         { "delete", """{"quest":"q1"}""" },
         { "updatenow", "{}" },
         { "updatecancel", "{}" },
-        { "land", """{"id":"s1"}""" },
         { "clean", """{"id":"s1"}""" },
         { "handover", """{"id":"s1","agent":"codex"}""" },
         { "handover", """{"id":"s1","agent":"codex","account":"work"}""" },
@@ -67,7 +66,7 @@ public sealed class RoleActTests : IDisposable
 
         Assert.Equal(
             ["drive", "undrive", "hold", "resume", "stop", "finish", "retry", "workflow",
-             "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"],
+             "pause", "unpause", "done", "delete", "clean", "updatenow", "updatecancel", "handover"],
             StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);

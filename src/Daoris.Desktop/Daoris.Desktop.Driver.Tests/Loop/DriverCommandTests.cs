@@ -200,10 +200,9 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// The terminal's `trees land` refuses work the line holds by content where every door does, in the landing
-    /// itself, and its <c>--plan</c> says so before the press in the same sentence, asked of the driver's own judgement, as the
-    /// review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its own. <c>ContentLandingTests</c>
-    /// holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
+    /// The terminal's `trees land --plan` says work the line holds by content in the landing's own sentence, asked of the
+    /// driver's own judgement, as the review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its
+    /// own. <c>ContentLandingTests</c> holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
     /// </summary>
     [Fact]
     public void The_terminals_landing_plan_says_work_the_line_holds_by_content_in_the_landings_own_sentence()
@@ -216,19 +215,19 @@ public sealed class DriverCommandTests
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
             File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
         // The terminal lands nothing and presses nothing: the work is accepted on its review.
-        Assert.Contains("daoris workflow accept <run>", program);
+        Assert.Contains("daoris workflow accept <run> <node>", program);
         Assert.DoesNotContain("landing.LandAsync(", program);
         Assert.DoesNotContain("WorkAsync(", program);
         Assert.DoesNotContain("ContentHold", program);
     }
 
     /// <summary>
-    /// `trees land` takes <c>--branch &lt;name&gt;</c> for the plan and the press alike, and the usage says so. A
-    /// <c>--branch</c> with no name is the usage, never the rule's name quietly: the person would think theirs is used.
-    /// <c>LandingTests</c> holds what the name does over real git.
+    /// `trees land --plan` takes <c>--branch &lt;name&gt;</c>, and the usage says so. A <c>--branch</c> with no name is the
+    /// usage, never the rule's name quietly: the person would think theirs is used. <c>LandingTests</c> holds what the name does
+    /// over real git.
     /// </summary>
     [Fact]
-    public void The_terminals_landing_takes_an_entered_branch_for_the_plan_and_the_press()
+    public void The_terminals_landing_plan_takes_an_entered_branch()
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));

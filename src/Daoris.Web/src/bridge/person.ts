@@ -7,7 +7,7 @@ import type { PipeAsker } from '../person/askerSaid';
 import { helpCardPlaceOf } from '../person/helpPlaceSaid';
 import {
   type DeskRequestNow, HELP_PRESS_OUTCOMES, type HelpPressNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingConfirmationNow,
-  type StewardActNow, type StewardLandNow,
+  type StewardActNow,
 } from '../person/standing';
 import { readPlace } from '../help/focus';
 import { call, confirmBound } from './call';
@@ -212,7 +212,6 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     stewardActs: stewardActsOf(shaped.stewardActs),
     // A missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
-    stewardLands: stewardLandsOf(shaped.stewardLands),
     helpPresses: helpPressesOf(shaped.helpPresses),
   };
 }
@@ -233,20 +232,6 @@ function helpPressesOf(raw: unknown): HelpPressNow[] {
       id, route, session, at, outcome, module: text(shaped.module) ?? 'DAORIS.DRIVER', scope: text(shaped.scope), target: text(shaped.target),
       place: readPlace(shaped.place), beyond: shaped.beyond === true, asked: shaped.asked === true,
     }];
-  });
-}
-
-/** The allowed lands waiting their window, each read field by field; one with no id, act, session or time is left out. */
-function stewardLandsOf(raw: unknown): StewardLandNow[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((each): StewardLandNow[] => {
-    if (typeof each !== 'object' || each === null) return [];
-    const shaped = each as Record<string, unknown>;
-    const ask = text(shaped.ask);
-    const act = text(shaped.act);
-    const landsAt = text(shaped.landsAt);
-    if (ask === null || act === null || landsAt === null) return [];
-    return [{ ask, act, landsAt, repository: text(shaped.repository), quest: text(shaped.quest), session: text(shaped.session) }];
   });
 }
 

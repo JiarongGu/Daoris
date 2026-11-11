@@ -27,8 +27,6 @@ public sealed record StandingNow(IReadOnlyList<RoleHoldNow> Holds, IReadOnlyList
     /// <summary>The steward's desk, newest first: what the line shows under the role's acts.</summary>
     public IReadOnlyList<DeskRequestNow> StewardDesk { get; init; } = [];
 
-    public IReadOnlyList<StewardLandNow> StewardLands { get; init; } = [];
-
     /// <summary>The presses Ask Daoris made in full access this run, newest first, from memory alone: the line's second group.</summary>
     public IReadOnlyList<HelpPressNow> HelpPresses { get; init; } = [];
 }

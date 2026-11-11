@@ -238,20 +238,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
         Assert.Null(TreesWords.TreeNamedForSession(records, "s1a2b3c4"));
     }
 
-    [Fact]
-    public async Task A_landing_the_review_reads_as_landed_says_not_again_on_the_output_exit_1()
-    {
-        var entry = new LandedBranch("engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero));
-        var review = new LandedReview(entry, LandedState.Standing);
-
-        var said = TreesWords.NotAgain("s1a2b3c4", review, treeGone: false);
-
-        Assert.Equal([$"trees: {LandedReviewWords.NotAgain("s1a2b3c4", review, false)}"], said.Out);
-        Assert.Empty(said.Error);
-        Assert.Equal(1, said.Code);
-        await AssertSameAsync(said);
-    }
-
     // The presses that land carry the registry's followed lines (RPC1b5): said after the sentence, as the alone path says them.
     private sealed class EmptyRegistry : HttpMessageHandler
     {

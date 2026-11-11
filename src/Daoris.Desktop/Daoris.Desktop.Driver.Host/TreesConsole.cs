@@ -207,7 +207,7 @@ internal static class TreesConsole
             }
 
             case ["land", _, ..]:
-                return Usage("`trees land <session>` says its plan with `--plan`; its work is accepted on its review: `daoris workflow accept <run>`.");
+                return Usage("`trees land <session>` says its plan with `--plan`; its work is accepted on its review: `daoris workflow accept <run> <node>`.");
 
             // The milestone of every unit before the plugin's ask below, which takes a name.
             case ["state"] or ["state", "--entries"]:

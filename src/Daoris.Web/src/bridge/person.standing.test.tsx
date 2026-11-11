@@ -41,7 +41,7 @@ describe('the standing confirmation over the bridge', () => {
   });
 
   it('reads STATE’s standingConfirmation field by field, a null the bridge left out read as none', () => {
-    expect(standingOf({})).toEqual({ holds: [], holders: [], stewardActs: [], stewardDesk: [], stewardLands: [], helpPresses: [] });
+    expect(standingOf({})).toEqual({ holds: [], holders: [], stewardActs: [], stewardDesk: [], helpPresses: [] });
     // The roles a terminal holds this run, each read field by field; one with no role, kind or holder left out.
     expect(standingOf({
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }, { roles: ['steward'] }],
@@ -79,14 +79,6 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf({})).toMatchObject({ stewardActs: [], holds: [] });
     expect(standingOf({ stewardActs: [{ id: 'a3', act: 'delete', at: '2026-10-25T10:03:00Z', allowed: true }, { id: 'a4', act: 'hold', at: '2026-10-25T10:04:00Z' }] })
       ?.stewardActs.map((each) => each.allowed)).toEqual([true, false]);
-  });
-
-  it('reads the allowed lands waiting their window field by field', () => {
-    expect(standingOf({
-      stewardLands: [
-        { ask: 'k1', act: 'land', session: 's9', landsAt: '2026-10-25T10:20:00Z' }, { ask: 'k2', act: 'land' }, { act: 'land', landsAt: '2026-10-25T10:20:00Z' }, 'land',
-      ],
-    })?.stewardLands).toEqual([{ ask: 'k1', act: 'land', repository: null, quest: null, session: 's9', landsAt: '2026-10-25T10:20:00Z' }]);
   });
 
   // The steward's desk, each request read field by field, its words as the caller wrote them; one with a

@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -32,44 +31,29 @@ public static class SupervisorAllowActs
 /// <param name="Subject">The subject's own id: the request's, the proposal's, the steward's ask or a rule file's held act.</param>
 /// <param name="Do">The act: <c>once</c>, <c>reject</c>, <c>standing</c>, <c>steward</c> or <c>leave</c>.</param>
 /// <param name="Act">The steward's act a supervisor allowed, or the kind of act a files ask held.</param>
-/// <param name="LandsAt">Set for an allowed <c>land</c>, which waits the role's window before it runs; the decision is held until then.</param>
 /// <param name="Bound">Set for a leave, which is <c>left</c> at its keeping.</param>
 public sealed record SupervisorAllowed(
     string Id, string Shape, string Subject, string? Session, string Repository, string Do, string? Role, string? Act, SupervisorHolder Holder,
-    IReadOnlyList<SupervisorReason> Reasons, DateTimeOffset? LandsAt = null, string? Bound = null);
+    IReadOnlyList<SupervisorReason> Reasons, string? Bound = null);
 
 /// <summary>
 /// The allow supervisor's decision record: each allow taken, whether of a held request, a widening or a steward's act, written once as a
 /// file beside the session's other decisions and read back by the line and the page. An allow takes effect at its keeping, so it is
-/// <c>went-on</c> at once; only an allowed <c>land</c> waits its window, <c>held</c> until it lands, is overruled or is withdrawn. A restart
-/// empties the pipe's memory of a waiting <c>land</c>, so the start's sweep closes it <c>stale</c>.
+/// <c>went-on</c> at once. A record whose state line was never written reads <c>held</c>, so the start's sweep closes it <c>stale</c>.
 /// </summary>
 internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog? log)
 {
     /// <summary>The folder a decision with no session is kept in.</summary>
     public const string Machine = "machine";
 
-    // The folder of each decision still held in this run, which its move finds it by.
-    private readonly ConcurrentDictionary<string, string> _held = new(StringComparer.Ordinal);
-
     /// <summary>Keep <paramref name="allow"/> as decided at <paramref name="now"/>.</summary>
     public void Keep(SupervisorAllowed allow, DateTimeOffset now)
     {
         var folder = allow.Session ?? Machine;
-        var held = allow.LandsAt is not null;
         Directory.CreateDirectory(files.FolderOf(folder));
         AtomicFile.WriteText(files.FileOf(folder, allow.Id), Json(allow, now));
-        Append(folder, allow.Id, allow.Bound is not null ? SupervisorState.Left : held ? SupervisorState.Held : SupervisorState.WentOn, now, null);
-        if (held) _held[allow.Id] = folder;
+        Append(folder, allow.Id, allow.Bound is not null ? SupervisorState.Left : SupervisorState.WentOn, now, null);
         log?.Info(allow.Bound is null ? "supervisor.allowed" : "supervisor.left", ("shape", allow.Shape), ("do", allow.Do));
-    }
-
-    /// <summary>Move a held decision of this run on to where it ended up; one already past <c>held</c> stays as it is.</summary>
-    public void Move(string id, SupervisorState to, DateTimeOffset now, string? why)
-    {
-        if (!_held.TryRemove(id, out var folder)) return;
-        Append(folder, id, to, now, why);
-        log?.Info($"supervisor.{SupervisorStates.Spell(to)}", ("shape", SupervisorAllowShapes.Steward));
     }
 
     /// <summary>A session's allow decisions, oldest first.</summary>
@@ -115,6 +99,6 @@ internal sealed class SupervisorAllows(SupervisorDecisionFiles files, MachineLog
         },
         ["reasons"] = new JsonArray([.. allow.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),
         ["keptAt"] = now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-        ["goesOnAt"] = (allow.LandsAt ?? now).ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+        ["goesOnAt"] = now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
     }.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
 }

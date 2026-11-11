@@ -104,9 +104,6 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>Keep an allow decision (<see cref="SupervisorAllows.Keep"/>).</summary>
     public void AllowKept(SupervisorAllowed allow, DateTimeOffset now) => _allows.Keep(allow, now);
 
-    /// <summary>Move a held allow decision on (<see cref="SupervisorAllows.Move"/>).</summary>
-    public void AllowMoved(string decision, SupervisorState to, DateTimeOffset now, string? why = null) => _allows.Move(decision, to, now, why);
-
     /// <summary>A session's allow decisions as the page reads them (<see cref="SupervisorAllows.AllowsOf"/>).</summary>
     public IReadOnlyList<SupervisorAllowView> AllowsOf(string session) => _allows.AllowsOf(session);
 

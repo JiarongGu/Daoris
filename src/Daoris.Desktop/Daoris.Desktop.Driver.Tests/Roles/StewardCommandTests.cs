@@ -28,7 +28,6 @@ public sealed class StewardCommandTests : IDisposable
     [InlineData("unpause q1", "unpause", """{"quest":"q1"}""")]
     [InlineData("done q1", "done", """{"quest":"q1"}""")]
     [InlineData("delete q1", "delete", """{"quest":"q1"}""")]
-    [InlineData("land s1", "land", """{"id":"s1"}""")]
     [InlineData("clean s1", "clean", """{"id":"s1"}""")]
     [InlineData("update now", "updatenow", "{}")]
     [InlineData("update cancel", "updatecancel", "{}")]

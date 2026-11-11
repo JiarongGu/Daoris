@@ -53,9 +53,6 @@ internal static class PipeReads
     public static PipeGround AnswerAloneWait() => Wait("ANSWER_WAITS", ["session"], _ => null,
         (a, p) => Text(At(Each(At(a, "waits")).FirstOrDefault(each => Text(At(each, "session")) == Text(p, "session")), "since")) ?? "");
 
-    public static PipeGround StewardLand() => Wait("STEWARD_LANDS", ["ask"], _ => null,
-        (a, p) => Each(At(a, "lands")).Any(each => Text(At(each, "ask")) == Text(p, "ask")) ? "open" : "");
-
     public static PipeGround SupervisorDecision() => Wait("SESSION_SUPERVISOR", ["id", "decision"], p => new { id = Text(p, "id") },
         (a, p) => Text(At(Each(At(a, "decisions")).FirstOrDefault(each => Text(At(each, "id")) == Text(p, "decision")), "state")) ?? "");
 

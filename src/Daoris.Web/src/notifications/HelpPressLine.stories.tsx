@@ -22,7 +22,7 @@ const PRESSES: HelpPressNow[] = [
   press('h2', 'SET_HOLD', 6, { scope: 'repository', target: 'engine', place: { kind: 'repository', workspace: 'Games', repository: 'engine' } }),
   press('h1', 'WORK_PAUSE', 9, { scope: 'quest', target: 'q1', place: { kind: 'workspace', workspace: 'Work' }, beyond: true }),
 ];
-const STANDING: StandingConfirmationNow = { holds: [], holders: [], stewardActs: [], stewardDesk: [], stewardLands: [], helpPresses: PRESSES };
+const STANDING: StandingConfirmationNow = { holds: [], holders: [], stewardActs: [], stewardDesk: [], helpPresses: PRESSES };
 
 const meta = {
   title: 'Notifications/HelpPressLine',

@@ -136,13 +136,6 @@ public static class TreesWords
     public static TreesSaid Refused(string sentence) => new([], [sentence], 1);
 
     /// <summary>
-    /// A landing the review already reads as landed: <c>trees land</c> says why nothing is landed again, on its output,
-    /// exit 1, and the route that answers the press says the same.
-    /// </summary>
-    public static TreesSaid NotAgain(string session, LandedReview review, bool treeGone) =>
-        new([$"trees: {LandedReviewWords.NotAgain(session, review, treeGone)}"], [], 1);
-
-    /// <summary>
     /// The session's press, its plan and the terminal's verb on a partner's record: <see cref="PieceLandings.Refusal"/>'s sentence on the
     /// error, exit 1. Null for every record that is no partner's.
     /// </summary>
