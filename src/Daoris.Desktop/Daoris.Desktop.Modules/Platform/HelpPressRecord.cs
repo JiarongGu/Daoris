@@ -5,9 +5,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One press Ask Daoris made this run: the route as the window words it, its
-/// conversation, what it named, when, and <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c> for one run with no
-/// card; for one <see cref="Asked"/> on a card its state, <c>waiting</c>, <c>allowed</c>, <c>refused</c>, <c>changed</c> or <c>unanswered</c>.
+/// One press Ask Daoris made this run: the route as the window words it, its conversation, what it named, when, and <paramref name="Outcome"/>:
+/// <c>running</c>, <c>done</c> or <c>failed</c> for one run with no card; for one <see cref="Asked"/> on a card its state.
 /// </summary>
 /// <param name="Scope">The field that named what the press acted on (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), which a reverse press carries back.</param>
 /// <param name="Target">What the press named in that field.</param>

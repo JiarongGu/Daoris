@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// run with no card on the delegate's path (<see cref="PipeDelegate.Pressed"/>) and attributed to a terminal. Under <c>ask</c>, and from
 /// a process inside an agent's job or one the pipe cannot place, it is asked on the card as before: a session's process that left its
 /// key off is still a session's. Each press run under act is kept in the tier's record (<see cref="TerminalActs"/>): what it named,
-/// the command it is, when it was admitted and how it ended.
+/// the command it is, its admission and its end.
 /// </summary>
 internal static class PipeTerminalTier
 {
@@ -41,7 +41,7 @@ internal static class PipeTerminalTier
 
     /// <summary>
     /// How an answer ended the press: <c>done</c> where it succeeded; <c>unknown</c> where no answer reads or Daoris stopped under it, so
-    /// whether it was done is not known; else <c>failed</c>, with its refusal's code.
+    /// its end is not known; else <c>failed</c>, with its refusal's code.
     /// </summary>
     internal static (string Outcome, string? Code) Outcome(Task<string> done)
     {

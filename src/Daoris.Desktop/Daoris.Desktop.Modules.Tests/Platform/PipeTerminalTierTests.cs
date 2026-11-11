@@ -188,7 +188,7 @@ public sealed class PipeTerminalTierTests : Bridge
 
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
 
-        /// <summary>Who each press was pressed by, as the route reads it.</summary>
+        /// <summary>Who pressed each press, as the route reads it.</summary>
         public ConcurrentQueue<(string By, string? Session)> By { get; } = new();
 
         public int Ran(string route) => _ran.GetValueOrDefault(route);

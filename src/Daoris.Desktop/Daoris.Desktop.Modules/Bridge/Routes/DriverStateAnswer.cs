@@ -74,7 +74,6 @@ internal static class DriverStateAnswer
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
             config.Terminal,
-            // Who changed that tier and what a terminal pressed under act, newest first, kept across a restart.
             TerminalActs = loop.TerminalActs.Now(),
             // Restricted mode's access as the person chose it: each grant by its id, with the operations chosen and those it acts on,
             // so the page offers no other, and whether a running conversation is handed another choice its next turn takes. The

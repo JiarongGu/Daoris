@@ -29,7 +29,7 @@ public sealed record TerminalTierChange(string Tier, DateTimeOffset At, string B
 
 /// <summary>
 /// One press a terminal made under the tier's act, run with no card: the route, the field that named what it acted on and its value,
-/// when it was admitted, and how it ended (<see cref="TerminalActs"/>'s outcomes).
+/// its admission, and its end (<see cref="TerminalActs"/>'s outcomes).
 /// </summary>
 public sealed record TerminalPress(string Id, string Module, string Route, string? Scope, string? Target, DateTimeOffset At, string Outcome)
 {
@@ -49,7 +49,7 @@ public sealed record TerminalActsNow(IReadOnlyList<TerminalTierChange> Changes, 
 /// <summary>
 /// The record of the terminal's tier (<see cref="TerminalTiers"/>): each change of it, who made it and from which door, and each press a
 /// terminal made under <c>act</c> with no card, kept across a restart in <c>data/terminal-acts.json</c>. A press still running when
-/// Daoris stopped is read back <see cref="Interrupted"/>: whether it was done is not known. The newest are kept.
+/// Daoris stopped is read back <see cref="Interrupted"/>: its end is not known. The newest are kept.
 /// </summary>
 public sealed class TerminalActs
 {
@@ -60,7 +60,7 @@ public sealed class TerminalActs
     public const string Done = "done";
     public const string Failed = "failed";
 
-    /// <summary>Answered, but whether it was done is not known: the run broke off or Daoris was stopping.</summary>
+    /// <summary>Answered, its end not known: the run broke off, or Daoris stopped under it.</summary>
     public const string Unknown = "unknown";
 
     /// <summary>Running when Daoris stopped, read back at the next start.</summary>

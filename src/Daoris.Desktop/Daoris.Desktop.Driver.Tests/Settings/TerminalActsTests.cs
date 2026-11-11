@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The record of the terminal's tier, kept across a restart in <c>data/terminal-acts.json</c>: each change of the tier with who made it
-/// and from which door, and each press a terminal made under <c>act</c> with what it named, when it was admitted and how it ended. A
+/// and from which door, and each press a terminal made under <c>act</c> with what it named, its admission and its end. A
 /// press still running when Daoris stopped is read back interrupted; the verb acting alone records its own change.
 /// </summary>
 public sealed class TerminalActsTests : IDisposable

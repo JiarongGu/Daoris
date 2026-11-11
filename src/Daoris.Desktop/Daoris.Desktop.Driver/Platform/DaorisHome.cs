@@ -406,7 +406,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // Which release's migration converted the home, and the copies it took of each file before it changed it.
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
-    // Who changed the terminal's tier and what a terminal pressed under act, kept across a restart so an interrupted press is said.
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json", "data/terminal-acts.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
