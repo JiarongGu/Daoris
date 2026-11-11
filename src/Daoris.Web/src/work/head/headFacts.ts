@@ -73,23 +73,16 @@ export type SessionFactsOf = {
   integration?: { state: string; line: string } | null;
   /** The reader's clock for `retrying`; the moment it is read where absent. */
   now?: Date;
-  /**
-   * Where the work stands: how many of its parts offer work to land, and whether a landing
-   * is on its way. Present, the line is led by *now*; absent (a row, a browser), the line has no phase.
-   */
-  flow?: { parts: number; landing: boolean } | null;
 };
 
 /**
- * *Now*, one word for the phase. Integrating is its integration fact, which is read and never said twice, and landed
- * is an ended session's own landing fact; so neither is said here.
+ * The state the driver's reader placed it in, one of the five, said first after the repository; its finer reason is the
+ * line `placedFact` says. Integrating is its integration fact, which is read and never said twice, so it is not said here;
+ * nor is any state before a reader has answered, which the page never guesses for the head.
  */
-function nowFact(t: TFunction, { session, shown, flow, integration }: SessionFactsOf): string | null {
-  if (!flow || integration) return null;
-  if (flow.landing) return t('work.facts.now.landing');
-  if (flow.parts > 0) return t('work.facts.now.parts', { count: flow.parts });
-  if (session.state === 'awaiting-person') return t('work.facts.now.waits', { time: elapsed(session.updated) });
-  return shown === 'working' && SESSION_ACTIVE.has(session.state) ? t('work.facts.now.working') : null;
+function stateFact(t: TFunction, { grouping, integration }: SessionFactsOf): string | null {
+  if (!grouping?.state || integration) return null;
+  return t(`work.state.${grouping.state}`);
 }
 
 /** The press *next* names: the first wait's, in the words of its button; none for a wait with no door to its line. */
@@ -199,7 +192,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   const facts: (string | null)[] = [
     session.repository,
-    nowFact(t, of),
+    stateFact(t, of),
     // The agent the line is on now, where its parts ran on more than one.
     of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
     ...linkFacts(t, session, of),
@@ -218,7 +211,7 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
 
   if (session.state === 'awaiting-person') {
     // Waiting on the person: how long it has waited, from when its record last moved; the card below says what it asks.
-    if (!of.flow || of.integration) facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
+    facts.push(t('work.facts.waiting', { time: elapsed(session.updated) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

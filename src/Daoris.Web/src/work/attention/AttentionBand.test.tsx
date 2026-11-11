@@ -62,7 +62,7 @@ const WIDENING: RuleProposal = {
 };
 
 const review = (session: string): SessionGrouping => ({
-  session, group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
+  session, group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
 });
 
 // The rows as the shell pushes them: each as `NeedsAPerson` judges it from the facts above.

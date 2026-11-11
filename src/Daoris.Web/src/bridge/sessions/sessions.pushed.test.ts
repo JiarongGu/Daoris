@@ -167,15 +167,16 @@ const row = (session: string, group: SessionGrouping['group']): SessionGrouping 
 
 /** What `SESSION_GROUPS` answers for the rows below, in its order: each group's rule, and each tie by the session's id by unit. */
 const PULLED: SessionGrouping[] = [
-  // Waiting on you, oldest move first: 09:00 at +02:00 is 07:00, before 08:00 though later as a string; 'Yb' before 'ya' by unit.
-  row('yz', 'you'), row('Yb', 'you'), row('ya', 'you'),
-  // To review, by repository without case ('alpha' before 'Engine' before 'Zeta'), then when each began, to the tick.
-  row('r-alpha', 'review'), row('r-eng-early', 'review'), row('r-Eng-late', 'review'), row('r-zeta', 'review'),
-  // Working, by repository then when each began as an instant: 10:00 at +02:00 is 08:00, before 09:00.
-  row('w-2', 'working'), row('w-1', 'working'),
-  // Resumes later, oldest move first; ended and archived newest first, a tie by id.
-  row('l-old', 'later'), row('l-new', 'later'),
-  row('e-new', 'ended'), row('e-tie-a', 'ended'), row('e-tie-b', 'ended'), row('e-old', 'ended'),
+  // Needs you, oldest move first: 09:00 at +02:00 is 07:00, before 08:00 though later as a string; 'Yb' before 'ya' by unit.
+  row('yz', 'needs-you'), row('Yb', 'needs-you'), row('ya', 'needs-you'),
+  // Working, by repository without case ('alpha' before 'Engine' before 'Zeta'), then when each began as an instant (10:00 at
+  // +02:00 is 08:00, before 09:00), to the tick.
+  row('r-alpha', 'working'), row('w-2', 'working'), row('r-eng-early', 'working'), row('r-Eng-late', 'working'), row('w-1', 'working'),
+  row('r-zeta', 'working'),
+  // Pending, oldest move first; failed, done and archived newest first, a tie by id.
+  row('l-old', 'pending'), row('l-new', 'pending'),
+  row('f-new', 'failed'), row('f-old', 'failed'),
+  row('e-new', 'done'), row('e-tie-a', 'done'), row('e-tie-b', 'done'), row('e-old', 'done'),
   row('a-new', 'archived'), row('a-old', 'archived'),
 ];
 
@@ -192,6 +193,8 @@ const ORDER: Record<string, Record<string, string>> = {
   'w-2': { repository: 'engine', created: '2026-10-19T10:00:00+02:00' },
   'l-new': { updated: '2026-10-19T10:00:00+00:00' },
   'l-old': { updated: '2026-10-19T06:00:00+00:00' },
+  'f-new': { updated: '2026-10-19T09:00:00+00:00' },
+  'f-old': { updated: '2026-10-19T05:00:00+00:00' },
   'e-old': { updated: '2026-10-19T06:00:00+00:00' },
   'e-tie-b': { updated: '2026-10-19T08:00:00+00:00' },
   'e-tie-a': { updated: '2026-10-19T08:00:00+00:00' },
@@ -205,14 +208,14 @@ const part = (session: string, group: SessionGrouping['group']) =>
 
 /** The entries `SESSION_GROUPS` answers beside them, each placed by its leading row's place. */
 const ENTRIES: SessionEntry[] = [
-  { entry: 'session:yz/engine', origin: 'session:yz', repository: 'engine', group: 'you', leading: 'yz', parts: [part('yz', 'you')] },
+  { entry: 'session:yz/engine', origin: 'session:yz', repository: 'engine', group: 'needs-you', leading: 'yz', parts: [part('yz', 'needs-you')] },
   {
     entry: 'quest:q1/engine', origin: 'quest:q1', repository: 'engine', group: 'working', leading: 'w-1',
     parts: [part('w-2', 'working'), part('w-1', 'working')],
   },
   {
-    entry: 'ask:k1/intake', origin: 'ask:k1', repository: 'intake', group: 'ended', leading: 'e-new',
-    parts: [part('e-old', 'ended'), part('e-new', 'ended')],
+    entry: 'ask:k1/intake', origin: 'ask:k1', repository: 'intake', group: 'done', leading: 'e-new',
+    parts: [part('e-old', 'done'), part('e-new', 'done')],
   },
 ];
 
@@ -240,9 +243,9 @@ describe('the session groups, pushed (PUSH1c3b)', () => {
     expect(groupsSlice.compose(new Map([['rows', {}], ['entries', {}]]), true)).toEqual({ sessions: [], entries: [] });
     // A malformed row or entry is left out rather than guessed at.
     expect(groupsSlice.compose(new Map<string, unknown>([
-      ['rows', { yz: { ...row('yz', 'you'), ...ORDER.yz }, bad: { group: 'you' } }],
+      ['rows', { yz: { ...row('yz', 'needs-you'), ...ORDER.yz }, bad: { group: 'needs-you' } }],
       ['entries', { 'session:yz/engine': ENTRIES[0], empty: { ...ENTRIES[0], entry: 'empty', parts: [] } }],
-    ]), true)).toEqual({ sessions: [row('yz', 'you')], entries: [ENTRIES[0]] });
+    ]), true)).toEqual({ sessions: [row('yz', 'needs-you')], entries: [ENTRIES[0]] });
   });
 
   it("reads a variant for some sessions as the reader's `only` answers it: their rows, and each entry holding one whole", () => {

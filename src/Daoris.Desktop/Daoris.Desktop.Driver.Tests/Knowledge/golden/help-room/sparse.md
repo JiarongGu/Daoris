@@ -272,7 +272,7 @@ space written `%20`: `[Settings → Git](daoris:go?view=settings&domain=git)`. A
 
 - Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
 - Settings domains: `start` (Get started), `appearance` (Appearance), `driver` (Driver), `ai` (AI features), `git` (Git), `browser` (Browser), `space` (Disk space), `updates` (Updates), `wiring` (This Daoris), `logs` (Machine log).
-- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).
+- Parts of `sessions`: `needs-you` (Needs you), `failed` (Failed), `new` (New conversation).
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).

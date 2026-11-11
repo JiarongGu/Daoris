@@ -648,7 +648,7 @@ describe('a departure that waits for your yes, worded', () => {
 
 describe('work to review, worded', () => {
   const placed: SessionGrouping = {
-    session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 3, uncommitted: 0 },
+    session: 'r3v13w00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 3, uncommitted: 0 },
   };
 
   it('names the session from its record, and says what its tree holds', () => {
@@ -667,7 +667,7 @@ describe('work to review, worded', () => {
    */
   it('says a held record’s wait as a limit’s wait, in both languages', async () => {
     const held: SessionGrouping = {
-      ...placed, group: 'later', holds: { why: 'cooling', reason: 'every account is cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' },
+      ...placed, group: 'pending', state: 'pending', reason: 'cooling', holds: { why: 'cooling', reason: 'every account is cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' },
     };
     const detail = () => words(row('review', 'r3v13w00', '2026-09-21T11:00:00Z', { where: 'engine', placed: held })).detail;
     expect(detail()).toMatch(/^Waiting for a limit to reset: it resumes by itself at .+, on Work\.$/);
