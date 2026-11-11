@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "3.1.0",
-  "changes": "Three tools for an agent working a pull-request step: create-pull-request opens one from a pushed branch (or finds the active one), pull-request-status says how one stands with its address, complete-pull-request completes it by the merge strategy asked.",
+  "version": "3.2.0",
+  "changes": "Its pull-request step declares a goal, so a Daoris that starts a step's agent has an agent open the pull request with the plugin's own tools; elsewhere the step is performed on work/perform as before, and an attempt begun there is settled by its own check.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -51,6 +51,7 @@
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
       "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the personal access token its own login keeps.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用它自己登录时保存的个人访问令牌。" },
+      "goal": { "en": "Open an Azure DevOps pull request from the pushed branch into the line with create-pull-request (finding the active one where there is one), check it with pull-request-status, and answer reached with its address as the evidence's url and its id as the pull-request output; answer failed with the code a tool's refusal names where it cannot be opened.", "zh": "用 create-pull-request 从已推送的分支向主线创建 Azure DevOps 拉取请求（已有进行中的则找到它），用 pull-request-status 确认，然后回答 reached，证据的 url 为其地址，pull-request 输出为其编号；无法创建时回答 failed，代码取工具拒绝时给出的代码。" },
       "reach": "performed",
       "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },

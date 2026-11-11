@@ -171,6 +171,7 @@ public sealed class PluginInterfacesTests : IDisposable
             manifest.Interfaces.Commands.Select(command => command.Name));
         Assert.True(manifest.Interfaces.Commands[0].Interactive);
         Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool && !command.Interactive && command.Args.Count > 0));
+        Assert.All(manifest.Steps, step => Assert.Equal(step.Kind.EndsWith("/pull-request", StringComparison.Ordinal), step.Goal is not null));
         Assert.NotNull(manifest.Interfaces.Storage);
         Assert.Empty(manifest.Interfaces.Refused);
     }

@@ -138,6 +138,9 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// <summary>A sentence of what the step does, or null; read like <see cref="Title"/>.</summary>
     public AuthoredText? About { get; init; }
 
+    /// <summary>What an agent performing the step is to bring about, or null: a step that declares one is performed by an agent (<see cref="StepAgents"/>).</summary>
+    public AuthoredText? Goal { get; init; }
+
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
     /// <summary>
@@ -245,6 +248,8 @@ public static class StepWords
 
     /// <summary>The longest about, in characters: a sentence or two.</summary>
     public const int AboutMost = 240;
+
+    public const int GoalMost = 1200;
 }
 
 /// <summary>The names a decision's outcomes keep, and whether a reach's outcome fits its node.</summary>
