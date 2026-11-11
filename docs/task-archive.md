@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## ASKSCOPE2's last counts and a restored card's place line, built by Codex (2026-11-11)
+
+> **ASKSCOPE2, the rest of its code** (service, modules): Outcome: the registry, a knowledge get, the summary and the memory search say how many they found through `CallFound`, one way; a waiting press's record keeps the card's place and focus, so a card brought back after a restart draws the same *outside this conversation's focus* line (`PipeWaiting`, `PipeRestore`). Built by Codex (gpt-6.1-sol) in its sandbox, which could not write git's metadata; reviewed and committed by the steward. Proof: 50 service tests (`McpHelpCircleTests`, `McpMemoryToolsTests`) and 86 modules tests (`PipeDelegateTests`' restored card), the new ones seen failing first; `npm run quick`.
+
+---
+
 ## ASKFULL1g-vi whole — the setup and ask proposal kinds gone (2026-11-11)
 
 > **ASKFULL1g-vi, the kinds removed** (service, driver, modules, web): Outcome: `setup_propose` and `ask_propose` with their writers, judges, box entries, call-table rows, the ask door, the go's set-up seed and the web's set-up card are gone; the room names `daoris ask --workspace <name> "…"` and `daoris place … --apply` as presses, which Ask Daoris in full access makes with no card; the card is down to `go | workflow` (rule 56). Proof: the kinds tables, tool registration, call-table twin, room and card tests (edited first, seen failing), `HelpProposalClaimTests`, `PipeDelegateTests`' new-ask case, the census and `HelpDoorsTests`.

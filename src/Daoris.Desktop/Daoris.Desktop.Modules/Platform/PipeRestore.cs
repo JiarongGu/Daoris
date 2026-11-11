@@ -147,7 +147,7 @@ internal sealed class PipeRestore(InstancePipe pipe)
         var shown = Confirmations.Ask(
             place, record.Module, record.Route, fields, record.Asker,
             judge: row.Grounds.Count == 0 ? null : ct => pipe.Asking.JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, record.ShownAt, Restored: true, WaitedOn: false));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, record.ShownAt, Restored: true, WaitedOn: false, HelpPlace: record.HelpPlace));
         lock (_state.Gate)
         {
             _state.Running[id] = (record.Binding, line.Task);

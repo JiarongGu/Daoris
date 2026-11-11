@@ -153,6 +153,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
     {
         var (entry, refusedIndex) = await FromIndexAsync(service.FindAsync(id, ct)).ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
+        CallFound.Say(entry is null ? 0 : 1);
         if (entry is null) return $"No entry with id `{id}`. Ids come from `knowledge_search`.";
 
         // The same line a hit carries, so what a search said of its standing holds when the entry is read.
@@ -198,6 +199,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
         var (summarized, refusedIndex) = await FromIndexAsync(service.SummarizeAsync(scope, ct)).ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
         var summary = summarized!;
+        CallFound.Say(summary.Count);
         if (summary.Count == 0)
         {
             return scope is null
@@ -243,6 +245,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
             .ConfigureAwait(false);
         if (refusedIndex is not null) return refusedIndex;
         var candidates = found!;
+        CallFound.Say(candidates.Count);
 
         var failed = candidates.SemanticFailure is { Length: > 0 } failure
             ? $"_The semantic comparison did not run ({failure.TrimEnd('.')}.), so only copies and restatements are shown._\n\n"
@@ -304,6 +307,7 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
     {
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var registered =await service.RegistryAsync(scope, ct).ConfigureAwait(false);
+        CallFound.Say(registered.Count);
         if (registered.Count == 0)
         {
             return scope is null
