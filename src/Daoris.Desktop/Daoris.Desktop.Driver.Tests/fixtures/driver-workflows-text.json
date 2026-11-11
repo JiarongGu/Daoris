@@ -4192,7 +4192,7 @@
     },
     {
       "name": "a verb the family does not have",
-      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d), and `driver role suggested`, the choices Daoris suggests for each role (MODELROLE1g). ONEWAY1a: the staffing verbs are retired, `role set` naming the one door, its choices or `off`.",
+      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d), and `driver role suggested`, the choices Daoris suggests for each role (MODELROLE1g). ONEWAY1a: the staffing verbs are retired, `role set` naming the one door, its choices or `off`. `notify` is a setting's verb, and `daoris settings` with no verb, or a setting's verb with no value, says the settings.",
       "argv": [
         "frobnicate"
       ],
@@ -4203,8 +4203,9 @@
         "daoris: `frobnicate` is not a verb of this program's.",
         "usage: daoris place list",
         "       daoris place drive|undrive|hold|resume <repository>",
-        "       daoris place notify on|off · trees (gone: a workflow's `isolate` step)",
-        "       daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act",
+        "       daoris place trees (gone: a workflow's `isolate` step)",
+        "       daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)",
+        "       daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act",
         "       daoris quest retry <quest> [--at <n> | --session <id>]",
         "       daoris place line <repository>|--workspace <name> <branch>|--clear",
         "       daoris place across <repository>|--workspace <name> read on|off|--clear",

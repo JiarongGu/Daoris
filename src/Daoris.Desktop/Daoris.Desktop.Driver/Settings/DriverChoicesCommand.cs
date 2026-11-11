@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms", "terminal")]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "brainstorms", "terminal", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -25,7 +25,7 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
-        "brainstorms", "workflow", "keep", "role", "terminal",
+        "brainstorms", "workflow", "keep", "role", "terminal", MachineSettingsSaid.Every,
     ];
 
     /// <summary>What the gone <c>trees</c> verb answers: where a place's sessions are set apart now.</summary>
@@ -38,8 +38,9 @@ public static class DriverChoicesCommand
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris place notify on|off · trees (gone: a workflow's `isolate` step)
-               daoris settings cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act
+               daoris place trees (gone: a workflow's `isolate` step)
+               daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
+               daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n> · terminal ask|act
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
@@ -96,7 +97,8 @@ public static class DriverChoicesCommand
         var verb = args.Count > 0 ? args[0] : "list";
         return verb switch
         {
-            "list" => false,
+            "list" or MachineSettingsSaid.Every => false,
+            _ when args.Count == 1 && MachineSettings.Of(verb) is not null => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read.
@@ -140,12 +142,14 @@ public static class DriverChoicesCommand
         }
 
         if (verb == "list") return List(before, world);
+        if (verb == MachineSettingsSaid.Every) return MachineSettingsSaid.All(before, world);
         if (Registered(world, verb)?.RunAsync(args, before, world, ct) is { } running) return await running.ConfigureAwait(false);
 
         ChoicePress press;
         try
         {
             if (!Changes(args) && Registered(world, verb)?.Said(args, before, world) is { } exit) return exit;
+            if (!Changes(args) && MachineSettingsSaid.One(args, before, world) is { } one) return one;
             press = Plan(args, before, world);
         }
         catch (ChoiceWords refused)

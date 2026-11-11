@@ -69,11 +69,13 @@ internal static class DriveUsageSession
           session supervise [<id>]  ·  session supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
               the supervisor's holder's verb (D208), only in the terminal Daoris started for it: what waits, one
               question's fenced print, and the answer or the question left to the owner. No alone path.
-          settings notify on|off  ·  settings cooloff <minutes>  ·  settings cap <n>
-          settings quiet <minutes>  ·  settings keep [<kind> <rule>]  ·  settings handover …  ·  settings brainstorms …
-          settings actor found [take|dismiss <n>]
-              this machine's standing choices: whether a park or an end you did not ask for is said, how long an
-              account cools, how long a silent session runs before it is looked in on, the cap, how long each kind is kept, a hand-over's and a brainstorm's rules, and the
-              staffing copy's found changes; the agents each kind of work runs on are `role set`'s.
+          settings  ·  settings notify on|off  ·  settings cooloff <minutes>  ·  settings cap <n>  ·  settings quiet <minutes>
+          settings manifest files|minutes <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
+          settings handover …  ·  settings brainstorms …
+              this machine's standing choices: whether a park or an end you did not ask for is said, how long an account
+              cools, how long a silent session runs before it is looked in on, the cap, a folder's manifest bounds, whether a
+              terminal's press asks or acts, how long each kind is kept, a hand-over's and a brainstorm's rules; the agents each
+              kind of work runs on are `role set`'s. With no verb, each machine setting and its value; a setting's verb with no
+              value says that one.
         """;
 }
