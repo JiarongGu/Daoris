@@ -202,7 +202,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, its settings
     file with the tree guard's and the lineage hook's entries and the hard denials, for its two doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
-    standing block and the access setup say so, and the git doors judge its push, force and delete. (from D72, D213, D233)
+    standing block and the access setup say so, and the git doors judge its push, force and delete; a packet's reader on it is
+    `not-enforced` and passed, never started holding its tools (roles rule 42). (from D72, D213, D233, D272)
 20. A session may propose a rule change with `permission_propose`. A narrowing applies at the next look; a widening waits for
     the person's yes, or for the yes of an allow supervisor at its rule's reach (a default's switch at the machine). A proposal
     settles once whoever answers (`ProposalSettlement.Settle`: the person's press and verb, a supervisor's keeping): the rules
