@@ -50,7 +50,8 @@ public sealed class ReturnDoorTests : IDisposable
 
     private Task PerformAsync(ReturnDoor door) =>
         door.PerformAsync(
-            ReturnStart.Of(Run(), Return, Status(), new NodeRecordFiles(Home, () => true).Read(Unit)!, StepAuthority.OfDoor("r1", Return.Id, 1)), CancellationToken.None);
+            ReturnStart.Of(Run(), Return, Status(), new NodeRecordFiles(Home, () => true).Read(Unit)!, StepAuthority.OfDoor("r1", Return.Id, 1))
+                with { Reviewed = EffectRecords.Copied(Home, ["rec-1"]) }, CancellationToken.None);
 
     [Fact]
     public async Task The_copy_s_changes_are_brought_back_the_node_reached_and_the_copy_removed()
@@ -77,7 +78,7 @@ public sealed class ReturnDoorTests : IDisposable
         await PerformAsync(Door());
 
         var waiting = Status();
-        Assert.Equal((NodeStates.Active, ReturnNode.BothChanged, "notes.md"), (waiting.State, waiting.Code, waiting.Holds));
+        Assert.Equal((NodeStates.Active, ReturnNode.BothChanged, "notes.md"), (waiting.State, waiting.Code, string.Join("\n", ReturnHolds.Read(waiting.Holds).Waiting.Keys)));
         Assert.Equal([NodeWordActs.KeepYours, NodeWordActs.TakeSession, NodeWordActs.KeepBoth], new ReturnNode().Acts(Return, waiting));
         Assert.Equal(ReturnNode.BothChanged, new ReturnNode().WaitOf(waiting)!.Code);
         Assert.Equal("notes.md", new ReturnNode().WaitOf(waiting)!.Values["paths"]);

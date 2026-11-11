@@ -60,7 +60,10 @@ public sealed class SystemPlanProcessTests : IDisposable
 
     private Task ApplyAsync(int attempt) =>
         new ApplyDoor(_home, SystemAdapters.Starter(_home), _said.Add, holdsLease: () => true)
-            .PerformAsync(new ApplyStart(Run(), Apply, attempt) { Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt) }, CancellationToken.None);
+            .PerformAsync(new ApplyStart(Run(), Apply, attempt)
+            {
+                Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt), Record = EffectRecords.Planned(_home, Run().Executors),
+            }, CancellationToken.None);
 
     private string? Held() => global::System.Text.Json.JsonDocument.Parse(File.ReadAllText(State)).RootElement.GetProperty("items").GetProperty("release").GetProperty("value").GetString();
 

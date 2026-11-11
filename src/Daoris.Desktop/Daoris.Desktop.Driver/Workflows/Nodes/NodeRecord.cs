@@ -185,10 +185,20 @@ public sealed record ObservedEvent(string Plugin, string Repository, string Step
 }
 
 /// <summary>
-/// Where a run bound to a graph version ended: its newest quest here when its end is judged, and
-/// when. Kept by the runtime on the run's record; a quest of its chain coming back here moves it, and the run goes on.
+/// Where a run bound to a graph version ended: its newest quest here when its end is judged, when, and how it came out
+/// (<see cref="RunOutcomes"/>). Kept by the runtime on the run's record; a quest of its chain coming back here moves it, and the run goes on.
 /// </summary>
-public sealed record RunEnd(string Quest, DateTimeOffset At);
+public sealed record RunEnd(string Quest, DateTimeOffset At)
+{
+    /// <summary>One of <see cref="RunOutcomes"/>; null on an end kept before its outcome was.</summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>The step a failed or stopped run came out at.</summary>
+    public string? Node { get; init; }
+
+    /// <summary>Whose stop a stopped run's was (<see cref="NodeSource"/>).</summary>
+    public string? By { get; init; }
+}
 
 /// <summary>What the person may say of a run's node at its door: pass it over, or stop it.</summary>
 public static class NodeWordActs

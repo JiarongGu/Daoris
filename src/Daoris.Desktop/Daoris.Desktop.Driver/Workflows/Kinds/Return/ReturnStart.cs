@@ -1,14 +1,27 @@
 namespace Daoris.Driver;
 
-/// <summary>A <c>return</c> the runtime starts: the run's unit, whose executors worked in the copy, the node, its attempt and the person's choices.</summary>
+/// <summary>
+/// A <c>return</c> the runtime starts: the run's unit, the node, its attempt, the person's choices with the versions each was made on, and the
+/// review record naming the copy it brings back.
+/// </summary>
 public sealed record ReturnStart(WorkUnit Unit, NodeDeclaration Node, int Attempt, IReadOnlyDictionary<string, string> Choices) : NodeDoorStart
 {
-    /// <summary>Once per node, attempt and choices made: each choice the person marks starts the return again.</summary>
-    public override string Key => $"{Unit.Id}\n{Node.Id}\n{Attempt}\n{Choices.Count}";
+    /// <summary>The versions each choice was made on, by path (<see cref="ReturnNode.Bound"/>).</summary>
+    public IReadOnlyDictionary<string, ReturnShown> Bound { get; init; } = new Dictionary<string, ReturnShown>();
+
+    /// <summary>The record its review accepted, or the run's work read at its start where no review feeds it (<see cref="EffectRecord"/>).</summary>
+    public ReviewRecord? Reviewed { get; init; }
+
+    /// <summary>Once per node, attempt and choices made: each choice the person marks, a path chosen again on new versions included, starts it again.</summary>
+    public override string Key =>
+        $"{Unit.Id}\n{Node.Id}\n{Attempt}\n{Choices.Count}\n{string.Join("\n", Bound.OrderBy(each => each.Key, StringComparer.Ordinal).Select(each => $"{each.Key}@{each.Value}"))}";
 
     /// <summary>The start of <paramref name="node"/> standing at <paramref name="status"/>, with the choices <paramref name="record"/> marks.</summary>
     public static ReturnStart Of(WorkUnit unit, NodeDeclaration node, NodeStatus status, NodeRecord record, StepAuthority authority) =>
-        new(unit, node, status.Attempt, ReturnNode.Choices(record, node.Id, status.Attempt)) { Authority = authority };
+        new(unit, node, status.Attempt, ReturnNode.Choices(record, node.Id, status.Attempt))
+        {
+            Authority = authority, Bound = ReturnNode.Bound(record, node.Id, status.Attempt),
+        };
 }
 
 /// <summary>The door a run's <c>return</c> is performed through: the folder's merge, one return at a time.</summary>

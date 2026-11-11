@@ -43,6 +43,30 @@ internal static class PlanReview
     public static IReadOnlyList<ReviewGap> Gaps(string home, ReviewReference reference) =>
         reference.Plan is null ? [new ReviewGap(ReviewGaps.NotRead, null, $"The plan its session `{reference.PlanRecord}` kept does not read.")] : [];
 
+    /// <summary>
+    /// The plan <paramref name="record"/> names, by its record, number and digest, so what is applied is what was read; else why there is none
+    /// to apply: no record, work that kept no plan, a plan that did not read, one no longer kept or not the one read.
+    /// </summary>
+    public static (SystemChangeSet? Plan, string? None) Named(string home, ReviewRecord? record)
+    {
+        if (record is null) return (null, "no record of its work reads");
+        if (record.Kind != ReviewKinds.Plan) return (null, "its work kept no plan: it answered in its handback alone");
+        var reference = record.Reference;
+        if (reference is not { PlanRecord: { } kept, Plan: { } number }) return (null, $"the plan its session `{reference.PlanRecord}` kept does not read");
+        SystemChangeSet? plan;
+        try
+        {
+            plan = new SystemPlans(home).Of(kept, number);
+        }
+        catch (JsonException)
+        {
+            plan = null;
+        }
+
+        if (plan is null) return (null, $"plan {number} of its session `{kept}` does not read");
+        return DigestOf(plan) == reference.PlanDigest ? (plan, null) : (null, $"plan {number} of its session `{kept}` is not the plan its review read");
+    }
+
     private static string DigestOf(SystemChangeSet plan) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(plan.Operations, Json))));
 }

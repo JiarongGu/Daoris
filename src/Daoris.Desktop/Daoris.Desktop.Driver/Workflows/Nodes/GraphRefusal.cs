@@ -137,4 +137,13 @@ public static class GraphRefusal
 
     /// <summary>A <c>tidy</c> no monitor's <c>when merged</c> way reaches: it ends a chain only once its pull request merges.</summary>
     public const string TidyMerged = "tidy-merged";
+
+    /// <summary>A step writing the work (<see cref="IWritesWork"/>) that a way reaches around the graph's review (<see cref="EffectOrder"/>).</summary>
+    public const string ReviewOrder = "review-order";
+
+    /// <summary>A step writing the work that two reviews feed, each by a way of its own: which accepted record it writes is not one.</summary>
+    public const string ReviewAmbiguous = "review-ambiguous";
+
+    /// <summary>A step writing the work that lies past the graph's end, whose outcome is read after what carried it out.</summary>
+    public const string EffectPastEnd = "effect-past-end";
 }

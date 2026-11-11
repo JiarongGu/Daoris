@@ -1,0 +1,26 @@
+{
+  "id": "in-copy",
+  "order": 11,
+  "name": "In-copy workflow",
+  "for": "For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
+  "setUp": false,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["apart"],
+    "end": "return",
+    "nodes": [
+      { "id": "apart", "kind": "isolate", "version": 1, "reach": "observed", "options": { "kind": "copy" } },
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+      { "id": "return", "kind": "return", "version": 1, "reach": "performed" }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "apart", "to": "work" },
+      { "id": "b", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "c", "kind": "after", "from": "requests", "to": "review" },
+      { "id": "d", "kind": "after", "from": "review", "to": "return" },
+      { "id": "e", "kind": "back", "from": "review", "on": "rejected", "to": "work" }
+    ]
+  }
+}

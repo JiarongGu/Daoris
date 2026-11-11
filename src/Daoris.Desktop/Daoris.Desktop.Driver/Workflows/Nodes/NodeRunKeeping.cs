@@ -21,7 +21,7 @@ internal sealed class NodeRunKeeping(
         foreach (var node in governed.Declared.Values)
         {
             if (NodeKit.Of(node.Kind) is not IStarts starts || WorkPerformer.StatusOf(record, node.Id) is not { State: NodeStates.Active } status) continue;
-            starts.Keep(new NodeKept(governed, scope, node, status, record, wired));
+            starts.Keep(new NodeKept(governed, scope, node, status, record, wired) { Home = records.Home, At = clock() });
         }
     }
 
@@ -57,9 +57,9 @@ internal sealed class NodeRunKeeping(
     }
 
     /// <summary>
-    /// A run's end, judged once its pass's rounds are kept: its newest quest here names no step still to come here, and either its graph's end
-    /// node is settled or no node of it can move again, with no attempt unsettled. Kept on its record, said once; the run then arms nothing
-    /// until its chain comes back here.
+    /// A run's end, judged once its pass's rounds are kept: its newest quest here names no step still to come here, and no node of its graph
+    /// can move again, with no attempt unsettled. Kept on its record with how it came out (<see cref="RunOutcomes"/>), said once; the run then
+    /// arms nothing until its chain comes back here.
     /// </summary>
     public void End(GovernedUnit governed, RunScope scope, List<string> said)
     {
@@ -69,12 +69,14 @@ internal sealed class NodeRunKeeping(
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
         if (!Over(governed, record)) return;
 
-        var ended = new RunEnd(newest.Id, clock());
-        var (refused, kept) = records.Edit<bool>(unit, current => Over(governed, current) ? (current with { Ended = ended }, true) : (null, false));
-        if (refused is not null || kept != true) return;
+        var at = clock();
+        RunEnd? ended = null;
+        var (refused, kept) = records.Edit<bool>(unit, current =>
+            Over(governed, current) ? (current with { Ended = ended = RunOutcomes.Of(governed.Graph, current, newest.Id, at) }, true) : (null, false));
+        if (refused is not null || kept != true || ended is null) return;
         graphRuns.Ended(scope.Run.Run, ended);
-        said.Add($"work  {unit}: its run ended at #{newest.Id}: no step of its chain is still to come here, and nothing of its graph moves again; "
-                 + "it is judged again once its chain comes back here.");
+        said.Add($"work  {unit}: its run ended at #{newest.Id}, {ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}: no step of its chain is "
+                 + "still to come here, and nothing of its graph moves again; it is judged again once its chain comes back here.");
     }
 
     /// <summary>A run's step refs let go of at its settled end (<see cref="StepRefs.Releases"/>); one git refuses is let go of at the next pass.</summary>
@@ -84,16 +86,18 @@ internal sealed class NodeRunKeeping(
         if ((await StepRefs.ReleaseAsync(scope.Root, scope.Run.Run, ct).ConfigureAwait(false)).Done) NodeStepReads.Release(records.Home, scope.Run.Run);
     }
 
-    /// <summary>Whether nothing on the record is still to come: no attempt or word pending, and its graph's end settled or no node of it able to move.</summary>
+    /// <summary>
+    /// Whether nothing on the record is still to come: no attempt or word pending, and no node of its graph able to move, its end settled or
+    /// not, so a step after the end runs to its settle before the run is over.
+    /// </summary>
     private static bool Over(GovernedUnit governed, NodeRecord record)
     {
         if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || record.RetryPending(attempt))) return false;
         // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
         if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return false;
         if (record.Pending.Count > 0 || record.Attempts.Any(attempt => attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Again } && attempt.Plugin != QuestClosing.Sender)) return false;
-        var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
-                      || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
-                          is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
+        var settled = !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
+            is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
         // A declined request waits on the person's word, so the run is not over while one stands.
         var held = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop
             && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode });

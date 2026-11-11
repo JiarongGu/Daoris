@@ -81,7 +81,10 @@ public sealed class SystemReadBackProcessTests : IDisposable
             ? starter
             : async (place, ct) => new Raced(await starter(place, ct), between);
         await new ApplyDoor(_home, adapters, _said.Add, holdsLease: () => true)
-            .PerformAsync(new ApplyStart(Run(), Apply, attempt) { Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt) }, CancellationToken.None);
+            .PerformAsync(new ApplyStart(Run(), Apply, attempt)
+            {
+                Authority = StepAuthority.OfDoor(Unit, Apply.Id, attempt), Record = EffectRecords.Planned(_home, Run().Executors),
+            }, CancellationToken.None);
         return new NodeRecordFiles(_home, () => true).Read(Unit)!.Statuses[Apply.Id];
     }
 
