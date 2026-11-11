@@ -132,6 +132,25 @@ public sealed class RoleChangeViewTests : DriverModuleBridge
         Assert.Equal("daoris role set gatekeeper --name Gatekeeper --scope workspace:w1 --decides allow --acts allow.once --holder terminal --window 10", view.Command);
     }
 
+    [Theory]
+    [InlineData("terminal", "terminal")]
+    [InlineData(null, "none")]
+    public async Task A_steward_set_is_spelled_as_the_verb_takes_it_no_decides_and_no_holder_as_none(string? holder, string spelled)
+    {
+        var viewed = await View(new
+        {
+            change = "set", id = "steward", revision = 0,
+            role = new
+            {
+                name = new { en = "Tidier" }, scope = new { kind = "machine" }, filled = "appointed", kind = "steward",
+                authority = new[] { "drive" }, holder, window = 5,
+            },
+        });
+
+        Assert.True(viewed.View is not null, viewed.Refusal);
+        Assert.Equal($"daoris role set steward --name Tidier --scope machine --acts drive --holder {spelled} --window 5", viewed.View!.Command);
+    }
+
     [Fact]
     public async Task Turning_the_second_check_on_names_its_readers_providers_in_order_and_what_they_spend()
     {
