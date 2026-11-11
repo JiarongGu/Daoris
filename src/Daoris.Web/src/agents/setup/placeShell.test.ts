@@ -137,31 +137,6 @@ describe('the route and step a place shows', () => {
   });
 });
 
-// A draft card's door asks a place's Workflow editor to open on a draft, once, for that place alone.
-describe('the editor a door asked a place to open', () => {
-  const held = () => renderHook(() => usePlaceShell());
-  const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', base: 2 };
-
-  it('is the draft the door named, held until the editor has opened, and for that place alone', () => {
-    const { result } = held();
-    expect(result.current.editOf('p1')).toBeNull();
-
-    act(() => result.current.arrive('p1', { section: 'workflow', edit }));
-    expect(result.current.editOf('p1')).toEqual(edit);
-    expect(result.current.editOf('p2')).toBeNull();
-    expect(result.current.isOpen('p1', 'workflow', false)).toBe(true);
-
-    act(() => result.current.editOpened('p1'));
-    expect(result.current.editOf('p1')).toBeNull();
-  });
-
-  it('is not asked by a door that names none', () => {
-    const { result } = held();
-    act(() => result.current.arrive('p1', { section: 'workflow', row: 'defaults' }));
-    expect(result.current.editOf('p1')).toBeNull();
-  });
-});
-
 // The step editor's draft outlives the section that drew it, for its place alone, until the editor is closed.
 describe('the draft the step editor keeps above the mount', () => {
   const kept = { route: 'default', editor: null };

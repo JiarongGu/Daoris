@@ -11,7 +11,6 @@ namespace Daoris.Knowledge.Mcp;
 /// <para>Each tool class takes only the services its tools use, and the SDK builds it from the host's services for each
 /// call. A new class of tools is one new file and one line in <see cref="ToolTypes"/>; nothing finds one by scanning. The
 /// tool names are the wire and belong to each method, whichever class holds it.</para>
-///
 /// <para>Descriptions are what a model matches when it decides whether a tool applies: they say what the tool answers.</para>
 ///
 /// <para>Results are markdown rather than JSON on purpose: the caller is a language model, and a table it can read beats a
@@ -39,7 +38,6 @@ public static class KnowledgeServer
         typeof(OpinionTools),
         typeof(BrainstormTools),
         typeof(HelpGoTool),
-        typeof(HelpWorkflowTool),
         // Ask Daoris's housekeeping and chosen settings: requests the driver judges at every call, refused unless the person granted it.
         typeof(HousekeepingTools),
         typeof(ChosenSettingsTools),

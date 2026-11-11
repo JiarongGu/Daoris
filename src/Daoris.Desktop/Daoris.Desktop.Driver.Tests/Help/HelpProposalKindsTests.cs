@@ -12,28 +12,7 @@ public sealed partial class HelpProposalKindsTests
     private static readonly (string Kind, string Tool)[] Table =
     [
         ("go", "go_propose"),
-        ("workflow", "workflow_propose"),
     ];
-
-    /// <summary>
-    /// The workflow kind's file names no door. Its judge reads <c>new</c> from a <c>base</c> written null, <c>edit</c>
-    /// from one written as a number, and <c>use</c> from <c>choose</c>, so its twin is held to writing those.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, string> WorkflowDoorsWritten = new Dictionary<string, string>
-    {
-        ["new"] = """WriteNull("base")""",
-        ["edit"] = """WriteNumber("base",""",
-        ["use"] = """WriteBoolean("choose",""",
-        ["draft"] = """WriteString("draft",""",
-    };
-
-    [Fact]
-    public void The_workflow_writer_writes_its_name()
-    {
-        var writer = File.ReadAllText(CoreFile("HelpWorkflowProposalWriter.cs"));
-
-        Assert.Contains("""WriteString("name",""", writer);
-    }
 
     internal static string RepositoryRoot()
     {
@@ -110,7 +89,7 @@ public sealed partial class HelpProposalKindsTests
             var writer = File.ReadAllText(CoreFile($"Help{Pascal(kind.Kind)}ProposalWriter.cs"));
             foreach (var door in kind.Doors)
             {
-                Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
+                Assert.Contains($"\"{door}\"", writer);
             }
         }
     }

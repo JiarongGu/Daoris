@@ -10,7 +10,6 @@ namespace Daoris.Driver;
 /// <see cref="HelpProposalKinds.All"/> by one line. Its file also adds to <see cref="HelpProposal"/>,
 /// <see cref="HelpMachineFacts"/>, <see cref="HelpPlan"/> and <see cref="IHelpDoors"/> what only it needs, so a
 /// new kind edits none of theirs.</para>
-///
 /// <para>Its twins are the service's writer of the same kind (<c>Help&lt;Kind&gt;ProposalWriter.cs</c>) and the
 /// page's card; the kinds' structural test holds the three together, so a kind cannot be half-added.</para>
 /// </remarks>
@@ -72,7 +71,6 @@ internal static class HelpProposalKinds
     public static readonly IReadOnlyList<IHelpProposalKind> All =
     [
         new HelpGoProposals(),
-        new HelpWorkflowProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

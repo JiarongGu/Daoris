@@ -10,7 +10,7 @@ import { SESSION_ACTIVE } from '../../design/ui';
 import { type ChatMessage, type Level } from '../../work/conversation/conversation';
 import { type HelpConversationRow, sameWorkspace, type HelpListing } from '../history';
 import { type HelpWhere, prefaceOf } from '../where';
-import { draftToTell, draftWhere, noteTold, openDraftNow, type DraftSent } from '../openDraft';
+import { draftToTell, draftWhere, openDraftNow, type DraftSent } from '../openDraft';
 import { SAID_SKEW, type FirstWords, type Sent, type Draft, NO_DRAFT, NEW_DRAFT, type AskOpening } from './askTypes';
 import { type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
 import { type WordsAnswer, type SessionTurns } from '../../bridge/sessions/conversation';
@@ -108,11 +108,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
           return;
         }
         if (preface) told.current.set(id, preface);
-        if (draft) {
-          toldDraft.current.set(id, draft.fingerprint);
-          // Kept by its fingerprint, which a proposal against it names, and the editor takes its changes against.
-          noteTold(id, draft);
-        }
+        if (draft) toldDraft.current.set(id, draft.fingerprint);
         // A conversation the history has not listed yet is listed once it is spoken in, and named by its first question: the
         // word said declares the history, which the state hub asks again.
         // Kept on an ended record: the same conversation goes on with them once the driver takes them up, which

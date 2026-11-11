@@ -1,6 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import { type AgentsMode, MACHINE, repositoryId, workspaceId } from '../agents/modes';
-import type { PlaceAt, PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
+import type { PlaceAt, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -64,8 +64,6 @@ export type OpenPart = {
   /** The repository whose place a door opens in the Agents place's Setup mode, at the section and row it names. */
   placeSection?: PlaceSection;
   placeRow?: string;
-  /** A place's Workflow with its editor opened on a draft: a conversation's draft card's door. */
-  placeEdit?: PlaceEdit;
   /** The host Settings → Git's add form opens filled with: a held remote's door, Ask Daoris's screen door. */
   gitHost?: string;
 };
@@ -92,9 +90,7 @@ export type Opening = {
    * still picks the folder there. Only with a form.
    */
   drawerWorkspace?: string;
-  /**
-   * The tab a repository's page opens at, remembered for whichever repository the view shows.
-   */
+  /** The tab a repository's page opens at, remembered for whichever repository the view shows. */
   tab?: ProjectTab;
   /** The repository whose place the Setup mode opens at: `placeOpening` names the place by the workspace the registry holds it in. */
   placeOf?: string;
@@ -196,12 +192,8 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
   if (view === 'agents' && part.placeOf) {
     plan.placeOf = part.placeOf;
-    // The place's Workflow with its editor asked on a draft: the section opens, and the page opens the editor once it has the draft's graph.
-    if (part.placeEdit) plan.placeAt = { section: 'workflow', edit: part.placeEdit };
-    else if (part.placeSection) plan.placeAt = { section: part.placeSection, ...(part.placeRow ? { row: part.placeRow } : {}) };
+    if (part.placeSection) plan.placeAt = { section: part.placeSection, ...(part.placeRow ? { row: part.placeRow } : {}) };
   }
-  // A workspace's Workflow with its editor asked on a draft.
-  if (view === 'projects' && part.placeEdit) plan.placeAt = { section: 'workflow', edit: part.placeEdit };
   return plan;
 }
 
@@ -229,10 +221,6 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
   if (plan.view !== 'projects') return plan;
   if (plan.chosen?.view !== 'projects') return plan;
   const named = projectsItem(plan.chosen.item);
-  // A conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
-  if (plan.workspaceTab === 'workflow' && plan.placeAt?.edit && 'workspace' in named) {
-    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: plan.placeAt };
-  }
   if (plan.workspaceSection && 'workspace' in named) {
     // Each section of a workspace's setup has its home on its place. The remote is Repositories', a row of its Details.
     if (plan.workspaceSection === 'remote') return { ...plan, workspaceTab: 'details' };

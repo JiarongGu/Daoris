@@ -72,10 +72,7 @@
         "asks.record.quests", "browser.driving.menu", "chain.title", "convergence.methods.Convergent.label",
         "convergence.methods.Identical.label", "convergence.methods.Restatement.label", "harness.accounts",
         "harness.doors", "harness.use.title",
-        "help.proposal.title",
         "help.proposal.titleGo",
-        "help.proposal.titleDraft", "help.proposal.workflow.draftChanges", "help.proposal.workflow.draftProblems", "workflow.edit.proposal.title",
-        "workflow.edit.proposal.changes",
         "help.history.title", "help.history.group.*", "help.mode.title", "help.wired.title", "help.grants.title", "quests.requirements.title",
         "map.asks", "map.when.title", "overview.outstanding.title",
         "overview.repositories.title", "menu.run.quest", "menu.run.session", "palette.title", "plugin.group.*",
@@ -235,7 +232,7 @@
         "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.goOn", "help.history.open",
         "help.history.save", "help.history.deleteMeanIt", "help.history.back", "help.history.retry", "help.history.start",
         "help.history.clearSearch", "help.history.more", "help.history.useOriginal", "projects.git.history.more",
-        "help.proposal.apply", "help.proposal.dismiss", "help.proposal.dismissGo", "help.proposal.go",
+        "help.proposal.dismissGo", "help.proposal.go",
         "quests.requirements.accept",
         "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",
         "help.mode.restricted", "help.mode.full", "help.mode.confirm.enable", "help.wired.open", "help.wired.close", "help.wired.door.mode", "help.grants.door.*",
@@ -310,8 +307,7 @@
         "workflow.run.node.changes", "workflow.run.node.changesMeanIt",
         "workflow.compose.open", "workflow.edit.way.remove", "workflow.edit.add.open", "workflow.edit.undo", "workflow.edit.redo",
         "workflow.edit.next.remove", "workflow.edit.next.insert", "workflow.edit.next.pick", "workflow.edit.next.new", "workflow.edit.act.*",
-        "workflow.edit.move.apply", "workflow.edit.remove.only", "workflow.edit.save.new", "workflow.edit.save.append", "workflow.edit.use",
-        "workflow.edit.proposal.act.*", "help.proposal.workflow.openEditor"
+        "workflow.edit.move.apply", "workflow.edit.remove.only", "workflow.edit.save.new", "workflow.edit.save.append", "workflow.edit.use"
       ]
     },
     "status": {
@@ -323,7 +319,7 @@
         "settings.git.test.never", "settings.git.test.refused", "settings.git.test.host-unknown",
         "settings.git.test.host-changed", "settings.git.test.unreachable", "settings.git.readOnly", "settings.git.ownNotUsed", "settings.git.ownUsed",
         "settings.git.remotes.ownMark",
-        "work.limit.word", "work.notStarted.word", "work.role.chip.*", "workflow.edit.proposal.mark.*",
+        "work.limit.word", "work.notStarted.word", "work.role.chip.*",
         "settings.daoris.pill.*", "help.grants.state.*", "help.grants.pending", "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "help.history.full", "agents.state.*",
         "agents.now.sessions", "projects.tidied.why.*", "projects.tidied.cause.*", "projects.git.branch.kind.*",
         "asks.goAhead.state.*", "asks.goAhead.stale.pill", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",

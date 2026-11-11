@@ -36,10 +36,9 @@ import { sessionsSlice } from '../bridge/sessions/sessions';
 const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
 import { moved } from '../test/sliceShell';
-import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
-import { registerOpenDraft, toldGraph, toldSessions } from './openDraft';
+import { registerOpenDraft } from './openDraft';
 import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const HELP = {
@@ -758,9 +757,6 @@ describe('Ask Daoris, with an agent named', () => {
       await waitFor(() => expect(sentDraft()).toEqual([{ ...draft, fingerprint: fingerprintOf(graph) }]));
       const first = invoke.mock.calls.find(([, type]) => type === 'SESSION_INPUT')![2].payload;
       expect(first.preface).toContain('editing a workflow draft of `release-flow` from v2 for `engine`, not saved: 1 steps;');
-      // Kept as told, by its fingerprint, for a proposal against it to be taken against that graph.
-      await waitFor(() => expect(toldGraph(fingerprintOf(graph))).toEqual(graph));
-      expect(toldSessions().at(-1)).toBe(HELP.id);
 
       await userEvent.type(box, 'and then?');
       await userEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -923,19 +919,19 @@ describe('Ask Daoris, with an agent named', () => {
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'p1a2b3c4', kind: 'role', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
-      terminal: 'daoris place drive engine', why: 'the person asked for engine to be driven',
+      id: 'p1a2b3c4', kind: 'go', describe: 'Open Repositories → `engine`, its Setup.',
+      terminal: '', why: 'the person asked where engine is driven',
     }];
     bridge();
     show();
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText(code('daoris place drive engine'))).toBeInTheDocument();
+    expect(within(cards).getByText(code('engine'))).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id, held: expect.any(String) } });
 
-    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Not now' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
     PROPOSALS = [];
   });
@@ -1098,32 +1094,6 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
-    PROPOSALS = [];
-    APPLIED = APPLIED_SETTING;
-  });
-
-  /**
-   * A draft card's Open in the editor takes the person to the place's Workflow with its editor asked on the draft
-   * the card is against, not to the place alone: the driver's go names no repository, so the page names the place from the card.
-   */
-  it("opens the editor on the draft a conversation's draft card is against, for the repository the card names", async () => {
-    SESSIONS = [HELP];
-    PROPOSALS = [{ ...RELEASE_CARD, id: 'd1r2a3f4' }];
-    APPLIED = {
-      message: 'Applied: `#d1r2a3f4` is a change to your workflow draft: it is shown in the draft\'s editor.',
-      applied: true, go: { view: 'projects', domain: null, part: null },
-    };
-    bridge();
-    const onGo = vi.fn();
-    show(undefined, null, onGo);
-
-    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'Open in the editor' }));
-
-    // The card is of a new workflow: it names no workflow, no name and no version.
-    await waitFor(() => expect(onGo).toHaveBeenCalledWith({
-      view: 'agents', placeOf: 'engine', placeEdit: { draft: 'g1-0123456789abcdef' },
-    }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
   });

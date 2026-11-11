@@ -3,38 +3,12 @@ import { VIEWS } from '../menus/commands';
 import { askItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';
-import { draftDoor, PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
+import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
 // The places Ask Daoris's go may name, a twin of the driver's `HelpPlaces`: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
 
 const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');
-
-// The draft card's Apply, which the driver answers with the place's Workflow (a repository's page, or the workspace's part).
-// The page opens that place's editor on the draft the card is against, and names the place itself, since a go names no repository.
-describe("a draft card's door", () => {
-  const card = { draft: 'g1-0123456789abcdef', scope: 'engine', id: 'release', name: 'Release for engine', base: 2 };
-
-  it("is the repository's Workflow, with its editor asked on the draft told", () => {
-    expect(draftDoor(card, { view: 'projects', part: null })).toEqual({
-      view: 'agents', placeOf: 'engine',
-      placeEdit: { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 },
-    });
-  });
-
-  it("is the workspace's Workflow where the driver's go names the workspace's part", () => {
-    expect(draftDoor({ ...card, scope: 'aurora' }, { view: 'projects', part: 'workspace-workflow' })).toEqual({
-      view: 'projects', item: 'workspace:aurora', workspaceTab: 'workflow',
-      placeEdit: { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 },
-    });
-  });
-
-  it('names no workflow or version for a new workflow, and is no door for a card that is no draft', () => {
-    expect(draftDoor({ ...card, id: '', base: null }, null)?.placeEdit).toEqual({ draft: 'g1-0123456789abcdef', name: 'Release for engine' });
-    expect(draftDoor({ ...card, draft: null }, null)).toBeNull();
-    expect(draftDoor({ ...card, scope: '' }, null)).toBeNull();
-  });
-});
 
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
@@ -80,18 +54,14 @@ describe('the places a go may name', () => {
 
   it('open where the starters\' doors open: a domain at its card or step, a view, a drawer, a tab, a section', () => {
     expect(placeDoor({ view: 'quests' })).toEqual({ view: 'quests' });
-    // Agents is a place the twins name, its parts the agent's page's; with no agent named, the one that has it opens.
     expect(placeDoor({ view: 'agents' })).toEqual({ view: 'agents' });
     expect(placeDoor({ view: 'agents', part: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts' });
     expect(placeDoor({ view: 'agents', part: 'rules' })).toEqual({ view: 'agents', agentPart: 'rules' });
     expect(placeDoor({ view: 'agents', part: 'usage' })).toEqual({ view: 'agents', agentPart: 'usage' });
-    // The Roles mode is a part of the Agents place, a mode and no part of an agent's page.
     expect(placeDoor({ view: 'agents', part: 'roles' })).toEqual({ view: 'agents', agentsMode: 'setup' });
-    // A repository's own values are its place's, chosen in the Setup mode's list.
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
-    // Knowledge alone opens as it is left, a part in that mode; Plugins is a place with no parts.
     expect(placeDoor({ view: 'knowledge' })).toEqual({ view: 'knowledge' });
     expect(placeDoor({ view: 'knowledge', part: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(placeDoor({ view: 'knowledge', part: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
@@ -110,7 +80,6 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
-    // A repository's Branches and History tabs, named apart from a workspace's Branches.
     expect(placeDoor({ view: 'projects', part: 'branches' })).toEqual({ view: 'projects', tab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'history' })).toEqual({ view: 'projects', tab: 'history' });
     expect(placeDoor({ view: 'projects', part: 'branches', workspace: 'work' })).toEqual({ view: 'projects', tab: 'branches' });
@@ -246,7 +215,6 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'agents' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'proposals' })).toBeNull();
     expect(placeDoor({ view: 'agents', part: 'workspaces' })).toBeNull();
-    // Knowledge's parts are its two modes, and Plugins has none.
     expect(placeDoor({ view: 'knowledge', part: 'findings' })).toBeNull();
     expect(placeDoor({ view: 'plugins', part: 'kit' })).toBeNull();
   });

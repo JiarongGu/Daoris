@@ -1,8 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import type { PlaceEdit } from '../agents/setup/placeShell';
-import { askItem, questsItem, type OpenGroup, workspaceItem } from '../app/opener';
+import { askItem, questsItem, type OpenGroup } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
@@ -22,12 +21,10 @@ export type HelpPlace = {
  * already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a domain's
  * cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two modes, an
  * agent's page's sections — and the places a go named before they moved.
- *
  * @remarks
  * A twin (`.claude/knowledge/twins.md`) of the driver's `HelpPlaces`, which judges a go before the person
  * sees its card and lists these places in Ask Daoris's room. They share no code; each side's test holds
  * the same table, and they change together.
- *
  * The bar's eight places and Settings, in the bar's order. The table holds the window's views only (its
  * test holds it to the bar); Knowledge's modes are parts within it (`PLACE_PARTS`), and a kept go that
  * names a mode as a view lands through `PLACE_KEPT`.
@@ -91,24 +88,6 @@ const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
   'quests/held': 'held',
 };
 
-/**
- * The door of a conversation's draft card: the place's Workflow, its editor opened on the draft the card is against.
- * The driver's go for such a card names the workspace's part, or for a repository no part and no repository, so the place is named from
- * the card's own scope. None for a card that is no draft or names no place.
- */
-export function draftDoor(
-  card: { draft?: string | null; scope: string; id: string; name: string; base?: number | null }, go: HelpPlace | null,
-): StarterDoor | null {
-  const scope = card.scope.trim();
-  if (!card.draft || !scope) return null;
-  const placeEdit: PlaceEdit = {
-    draft: card.draft, ...(card.id ? { workflow: card.id } : {}), ...(card.name ? { name: card.name } : {}), ...(card.base != null ? { base: card.base } : {}),
-  };
-  return go?.part === 'workspace-workflow'
-    ? { view: 'projects', item: workspaceItem(scope), workspaceTab: 'workflow', placeEdit }
-    : { view: 'agents', placeOf: scope, placeEdit };
-}
-
 const same = (one: HelpPlace, other: HelpPlace) =>
   one.view === other.view && (one.domain ?? null) === (other.domain ?? null) && (one.part ?? null) === (other.part ?? null);
 
@@ -116,7 +95,6 @@ const same = (one: HelpPlace, other: HelpPlace) =>
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   // What waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
   // Overview has no part, since what waits on the person leads it.
-  // New conversation, the composer; `placeDoor` opens it, though it is no group's part.
   { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' }, { within: 'sessions', part: 'new' },
   { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
   // A repository's Setup, where its own values are set; a go names no repository.
@@ -142,7 +120,6 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * step it names, a view, Sessions or Quests with a group of its list brought into view, one of Repositories' drawers, a
  * repository's Setup, Branches or History tab or a workspace's page at a tab or a section, Knowledge in a mode, or a section of an agent's page — or
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
- *
  * @remarks
  * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup, Branches and History open on the repository its list
  * has chosen, an agent's part on the agent that has it, a workspace's part on the workspace in view's page,

@@ -10,8 +10,8 @@ public sealed record StartHelp(string? Workspace, JsonElement? Focus = null);
 /// <summary>The place a conversation is to be about, as `help/focus.ts` spells it.</summary>
 public sealed record HelpFocusPress(string Session, JsonElement? Focus, bool Said = false);
 
-/// <summary>No revision is a press with no card to stand for, which the driver refuses; <c>Taken</c> and <c>Left</c> are the draft editor's changes.</summary>
-public sealed record HelpApply(string Id, string? Revision, IReadOnlyList<string>? Taken, IReadOnlyList<string>? Left);
+/// <summary>No revision is a press with no card to stand for, which the driver refuses.</summary>
+public sealed record HelpApply(string Id, string? Revision);
 
 public sealed record HelpDismiss(string Id);
 

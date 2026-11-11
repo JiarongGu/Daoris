@@ -7,10 +7,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>
-/// The tools the connector's host advertises, through the SDK's own listing: the names are the wire, which the driver's
-/// connector and the family rehearsal call by name, so none is lost or offered twice.
-/// </summary>
+/// <summary>The tools the connector's host advertises, through the SDK's own listing: the names are the wire, called by name, so none is lost or offered twice.</summary>
 public sealed class McpToolRegistrationTests : McpToolsFixture
 {
     private static readonly string[] Advertised =
@@ -24,7 +21,6 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
         "review_ready", "review_serve", "settings_cap", "settings_cooloff",
         "settings_language", "settings_notify", "settings_quiet", "system_plan",
-        "workflow_propose",
     ];
 
     /// <summary>A host registered as <c>Program.cs</c> registers its tools, over whatever services the test hands it.</summary>
@@ -79,7 +75,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(
             [
                 "BrainstormTools", "ChannelTools", "CheckoutTools", "ChosenSettingsTools", "GoAheadTools", "HandOverTools", "HandbackTools",
-                "HelpGoTool", "HelpWorkflowTool", "HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
+                "HelpGoTool","HelperTools", "HousekeepingTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
                 "ReviewTools", "RuleProposalTools", "SystemPlanTools",
             ],

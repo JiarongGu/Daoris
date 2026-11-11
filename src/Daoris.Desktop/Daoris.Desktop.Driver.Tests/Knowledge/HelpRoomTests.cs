@@ -174,8 +174,11 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__workflow_propose", allowed);
+        Assert.Contains("Edit(./drafts/**)", allowed);
+        Assert.True(Directory.Exists(Path.Combine(room, "drafts")));
         Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
-            || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+            || (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -211,7 +214,7 @@ public sealed class HelpRoomTests : IDisposable
         var rules = HelpRoom.Rules(PermissionFile.Empty, kept, [new("console-ui", "work", "/work/console-ui")]);
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), $"mcp__{KnowledgeConnector.ServerName}__checkout_read"], rules.Allow);
-        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+        Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
         Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
             || rule.Contains("console-ui", StringComparison.Ordinal));
     }
@@ -233,7 +236,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
         Assert.DoesNotContain(rules.Allow, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
-            || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+            || (rule.StartsWith("Edit", StringComparison.Ordinal) && rule != HelpRoom.DraftsRule) || rule.StartsWith("Write", StringComparison.Ordinal));
     }
 
     /// <summary>
