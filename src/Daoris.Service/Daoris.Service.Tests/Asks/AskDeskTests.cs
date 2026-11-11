@@ -239,6 +239,28 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Single(await _desk.ListAsync("work"));
     }
 
+    /// <summary>The registry matches a workspace ignoring case, so the same words at `Work` are the ask already made at `work`, kept under the workspace's own spelling.</summary>
+    [Fact]
+    public async Task A_workspace_spelled_in_another_case_is_the_same_workspace_and_the_same_ask()
+    {
+        var first = await _desk.AskAsync(new AskRequest("work", Sentence), Now);
+        var second = await _desk.AskAsync(new AskRequest(" WORK ", Sentence), Now.AddMinutes(1));
+
+        Assert.Equal(first.Ask!.Id, second.Ask!.Id);
+        Assert.Contains("already asked", second.Message);
+        Assert.Equal("work", second.Ask.Workspace);
+        Assert.Single(await _desk.ListAsync("work"));
+    }
+
+    [Fact]
+    public async Task An_ask_made_at_a_workspace_in_another_case_is_kept_under_the_workspace_s_own_spelling()
+    {
+        var made = await _desk.AskAsync(new AskRequest("Work", Sentence + " again"), Now);
+
+        Assert.Equal("work", made.Ask!.Workspace);
+        Assert.Single(await _desk.ListAsync("work"));
+    }
+
     private sealed class LandingRemotes(Func<Task> landing) : IRemotes
     {
         private bool _landed;

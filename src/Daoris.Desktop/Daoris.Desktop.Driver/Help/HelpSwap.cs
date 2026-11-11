@@ -1,18 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A change of Ask Daoris's access under a conversation that runs: its mode or its configured access
-/// (the housekeeping grant, the chosen settings and the checkouts turned off, <see cref="ConfiguredAccess"/>) chosen otherwise than its start handed. Every such change takes the
-/// conversation's next turn: its agent ends at its turn's end, never mid-turn, or at once where it is idle, and its next words resume
-/// the same conversation under the access chosen then, its history kept, since a start hands its access five ways (its harness's
-/// posture, its rules, its tree guard, its servers and its room) and none of them is changed while it runs.
+/// A change of Ask Daoris's mode or checkouts turned off (<see cref="ConfiguredAccess"/>) under a conversation that runs. It takes
+/// the next turn: the agent ends at its turn's end, or at once where idle, and its next words resume the same conversation under
+/// the access chosen then, since a start hands its access five ways and none is changed while it runs.
 /// </summary>
 public static class HelpSwap
 {
-    /// <summary>
-    /// What changed, in clauses joined for a sentence (<c>its mode is now full access, and its housekeeping grants `inspect` now</c>),
-    /// or null where the conversation runs under the access chosen.
-    /// </summary>
+    /// <summary>What changed, in clauses joined for a sentence (<c>its mode is now full access</c>), or null where none did.</summary>
     /// <param name="mode">The mode its start got.</param>
     /// <param name="handed">The configured access its start handed, each grant in its built order.</param>
     /// <param name="chosenMode">The mode the person chose now.</param>
@@ -25,20 +20,6 @@ public static class HelpSwap
             changed.Add($"its mode is now {(HelpModes.Recorded(chosenMode) == HelpModes.Full ? "full access" : "restricted")}");
         }
 
-        if (!handed.Housekeeping.SequenceEqual(chosen.Housekeeping, StringComparer.Ordinal))
-        {
-            changed.Add(chosen.Housekeeping.Count == 0
-                ? "its housekeeping grants nothing now"
-                : $"its housekeeping grants {Named(chosen.Housekeeping)} now");
-        }
-
-        // The chosen settings, said the same way.
-        if (!handed.Settings.SequenceEqual(chosen.Settings, StringComparer.Ordinal))
-        {
-            changed.Add($"its chosen settings are {(chosen.Settings.Count == 0 ? "none" : Named(chosen.Settings))} now");
-        }
-
-        // The checkouts turned off, the grant being on by default.
         if (!handed.CheckoutsOff.SequenceEqual(chosen.CheckoutsOff, StringComparer.OrdinalIgnoreCase))
         {
             changed.Add(chosen.CheckoutsOff.Count == 0
@@ -51,10 +32,7 @@ public static class HelpSwap
 
     private static string Named(IReadOnlyList<string> codes) => string.Join(", ", codes.Select(code => $"`{code}`"));
 
-    /// <summary>
-    /// What the running conversation's console is told: what changed, and when it applies: its agent ends now where it
-    /// is idle, else at its turn's end, never mid-turn; and its next words resume this conversation under the new access.
-    /// </summary>
+    /// <summary>What the running conversation's console is told: what changed, and when its agent ends.</summary>
     /// <param name="changed">What <see cref="Changed"/> said.</param>
     /// <param name="idle">Whether no turn runs, so it ends now.</param>
     public static string Said(string changed, bool idle) =>

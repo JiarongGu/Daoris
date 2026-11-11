@@ -128,6 +128,12 @@ export function checkout(origin) {
   return root;
 }
 
+export function signedIn(token) {
+  const at = mkdtempSync(join(scratch, 'private-'));
+  writeFileSync(join(at, 'credential.json'), `${JSON.stringify({ token, kept: '2026-11-11T09:00:00.000Z' })}\n`);
+  return { DAORIS_PLUGIN_PRIVATE: at };
+}
+
 /** The plugin started as the driver starts it over `journal`, the kit's, and killed when the test ends, so a failure holds no run open. */
 export function start(t, env, journal = null) {
   const data = mkdtempSync(join(scratch, 'data-'));

@@ -104,18 +104,15 @@ public sealed class HookProcess : IHookChannel
         info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
         info.Environment[DaorisHome.Variable] = home;
         Tools.Hand(info, tools, home);
-        // The identity's API token goes to the one process started for a pull-request step; one the desktop inherited never does.
-        info.Environment.Remove(PluginHostToken.Variable);
-        if (HostToken.Value is { } hostToken) info.Environment[PluginHostToken.Variable] = hostToken;
+        // The plugin's own private storage goes to its own processes alone; a folder the desktop inherited never does.
+        info.Environment.Remove(PluginPrivate.Variable);
+        if (PluginPrivate.Handed(home, plugin) is { } storage) info.Environment[PluginPrivate.Variable] = storage;
         // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
         // is held to the shim rule about its arguments rather than started bare and not found.
         info.FileName = HarnessActions.WindowsShim(
             info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
         return info;
     }
-
-    /// <summary>The API token for the plugin process one start makes (<see cref="PluginHostToken"/>), set by <see cref="HookSet"/> around that start alone.</summary>
-    internal static readonly AsyncLocal<string?> HostToken = new();
 
     /// <summary>The <c>work/event</c> handshake for the one start <see cref="HookSet"/> makes of a plugin on that point, set around that start alone.</summary>
     internal static readonly AsyncLocal<WorkEventHandshake?> Events = new();

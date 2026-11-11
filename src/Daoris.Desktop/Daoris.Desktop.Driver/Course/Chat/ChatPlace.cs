@@ -15,9 +15,8 @@ internal sealed record ChatPlace(
     string? Posture)
 {
     /// <summary>
-    /// What its standing block is composed from as this start found it: told to its agent with a new
-    /// conversation's first message, a hand-over's with the memory its brief hands on, and never at a go-on, which resumes the same
-    /// conversation. A repository's routing among it; Ask Daoris's the workspace's part alone.
+    /// What its standing block is composed from as this start found it: told with a new conversation's first message, a hand-over's
+    /// with the memory its brief hands on, and never at a go-on. A repository's routing among it; Ask Daoris's the workspace's part alone.
     /// </summary>
     public StandingFacts? Block { get; init; }
 
@@ -57,8 +56,7 @@ internal sealed record ChatPlace(
     public bool EveryServer { get; init; }
 
     /// <summary>
-    /// Whether it is handed the tree guard where the person's rules keep it on: every conversation, but Ask Daoris in full
-    /// access, whose housekeeping is outside its room.
+    /// Whether it is handed the tree guard where the person's rules keep it on: every conversation but Ask Daoris in full access.
     /// </summary>
     public bool Guarded { get; init; } = true;
 
@@ -71,13 +69,4 @@ internal sealed record ChatPlace(
 
     /// <summary>The checkouts the person turned off as its start is composed, what a later narrowing is compared with.</summary>
     public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
-
-    /// <summary>
-    /// The housekeeping operations its start is handed: Ask Daoris's, as the person chooses them when the place is
-    /// composed, in either mode; none for a repository's conversation. Its receipt keeps them, which each call is judged by.
-    /// </summary>
-    public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-    /// <summary>The chosen settings its start is handed, as <see cref="Housekeeping"/> is.</summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
 }

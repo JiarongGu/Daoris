@@ -7,7 +7,7 @@ namespace Daoris.Service.Tests;
 /// <summary>
 /// Ask Daoris reads the checkouts through one typed tool,
 /// <c>checkout_read</c>, for every agent. Each call is a keyed request in the home's session requests for the conversation's own
-/// session, as a chosen setting's is, which the loop running it takes, judges and answers beside; the tool says the answer's words,
+/// session, which the loop running it takes, judges and answers beside; the tool says the answer's words,
 /// then what is read. The connector judges only what it can: that it speaks for an Ask Daoris conversation, and that the call names
 /// what its read needs. Which checkout, the path and what git ignores are the driver's.
 /// </summary>

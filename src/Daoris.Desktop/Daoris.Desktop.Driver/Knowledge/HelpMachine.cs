@@ -16,20 +16,14 @@ public sealed record HelpMachine
     public string Mode { get; init; } = HelpModeNames.Restricted;
 
     /// <summary>
-    /// The housekeeping operations the person granted it (<see cref="ConfiguredAccess"/>), read from the record as the
-    /// room is written at a start (<see cref="HelpRoom.Prepare"/>); none where none is chosen, as a machine described by hand has.
+    /// The families of acts the person granted it (<see cref="ConfiguredAccess.Acts"/>), read from the record as the room is written
+    /// at a start (<see cref="HelpRoom.Prepare"/>); none where none is chosen, as a machine described by hand has.
     /// </summary>
-    public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-    /// <summary>
-    /// The chosen settings the person granted it (<see cref="ConfiguredAccess.Settings"/>), read as
-    /// <see cref="Housekeeping"/> is; none where none is chosen.
-    /// </summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
+    public IReadOnlyList<string> Acts { get; init; } = [];
 
     /// <summary>
     /// The checkouts the person turned off for it (<see cref="ConfiguredAccess.CheckoutsOff"/>), read as
-    /// <see cref="Housekeeping"/> is: the room lists the readable ones less these, and names these apart.
+    /// <see cref="Acts"/> are: the room lists the readable ones less these, and names these apart.
     /// </summary>
     public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
 

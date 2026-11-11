@@ -91,7 +91,8 @@ internal sealed class LoopRun(
 
         // A plugin's word goes to the console under `plugin:<id>`; what the set does with each plugin goes to the machine log without
         // its words, and into the loop's record of its health.
-        shared.Hooks = new HookSet(homeDirectory, loop.Output, log: log, health: loop.Health, hostToken: PlaceHostTokens.For(homeDirectory));
+        shared.Hooks = new HookSet(homeDirectory, loop.Output, log: log, health: loop.Health, hand: PlaceHands.For(homeDirectory));
+        _ = Task.Run(() => PluginTokenAdoption.RunAsync(homeDirectory, log, CancellationToken.None));
         // Each change the publisher tells the windows reaches the plugins at `state/changed` too, queued by the set, so no press's answer
         // waits on a plugin; while another loop drives the home this set runs no plugin, and a change is told to nobody.
         using var observing = StatePublisher.Observe(eventBus, change => shared.Hooks?.Tell(change));

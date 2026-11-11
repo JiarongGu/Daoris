@@ -77,18 +77,6 @@ public sealed record HelpReceipt
     /// <summary>What the door said it loaded at this start, from its init frame (<see cref="HelpLoaded"/>); null until it said, and on a start before it.</summary>
     public WireLoaded? Loaded { get; init; }
 
-    /// <summary>
-    /// The housekeeping operations its start handed (<see cref="ConfiguredAccess"/>), whatever its agent: each tool's
-    /// call is judged by these and by the record at the call, so a grant chosen since takes the next start, at the conversation's next
-    /// turn. None for a start before.
-    /// </summary>
-    public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-    /// <summary>
-    /// The chosen settings its start handed (<see cref="ConfiguredAccess.Settings"/>), whatever its agent, judged by
-    /// as housekeeping's are (<see cref="HelpSettings"/>). None for a start before.
-    /// </summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
 
     /// <summary>The focus its room is written for; null on a start before.</summary>
     public HelpFocus? Focus { get; init; }
@@ -156,12 +144,6 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transp
 
     /// <summary>The note that says a browser server is withheld, or null.</summary>
     public Noted? Withheld { get; init; }
-
-    /// <summary>The housekeeping operations the place is composed with.</summary>
-    public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-    /// <summary>The chosen settings the place is composed with.</summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
 
     /// <summary>The workspace its connector is bound to (<see cref="HelpCircle"/>); null for the whole machine.</summary>
     public string? Circle { get; init; }
@@ -397,8 +379,6 @@ public sealed class HelpWired(string home)
             // The checkouts `checkout_read` may read, whatever its agent, since Daoris judges each read, not a rule.
             Checkouts = handed.Reads,
             Lacks = full ? [] : Lacking(servers, catalog),
-            Housekeeping = handed.Housekeeping,
-            Settings = handed.Settings,
         };
     }
 
@@ -592,8 +572,6 @@ public sealed class HelpWired(string home)
         }
 
         writer.WriteEndArray();
-        Strings(writer, "housekeeping", receipt.Housekeeping);
-        Strings(writer, "settings", receipt.Settings);
         HelpLoaded.Write(writer, receipt.Loaded);
         writer.WriteEndObject();
     }
@@ -652,8 +630,6 @@ public sealed class HelpWired(string home)
                 .Select(lack => new HelpWiredLack(
                     Json.NonEmpty(lack, "kind")!, Json.Text(lack, "name") ?? "", Json.NonEmpty(lack, "door")!, Json.Text(lack, "why") ?? "",
                     Json.NonEmpty(lack, "plugin")))],
-            Housekeeping = Json.Strings(element, "housekeeping"),
-            Settings = Json.Strings(element, "settings"),
             Loaded = HelpLoaded.Read(element),
         };
     }

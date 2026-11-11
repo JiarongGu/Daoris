@@ -4,12 +4,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The run of a conversation whose record is open: its process spawned with its rules and servers, its door's turns held, and its watch
-/// started, or, when the spawn fails, its record concluded. It is one run for every kind of conversation: the kinds differ in what they hand
-/// it, a place, a selection and the entry of the order they run.
+/// started, or, when the spawn fails, its record concluded. One run for every kind of conversation.
 /// </summary>
 /// <remarks>
-/// It stays one method: the steps share the process, the rules and the servers each failure lets go of, and the stages they would make are
-/// not yet drawn.
+/// It stays one method: the steps share the process, the rules and the servers each failure lets go of.
 /// </remarks>
 internal sealed class ChatRun(
     IExecutorWiring wiring, ChatTold told, AttentionWatch answers, ChatOptions options, ChatAccountReads accounts, ChatServers chatServers,
@@ -203,8 +201,6 @@ internal sealed class ChatRun(
                     Servers = offered,
                     ServersHanded = !pipe || (servers is not null && HelpWired.Names(info, servers)),
                     Withheld = browserNotice,
-                    Housekeeping = place.Housekeeping,
-                    Settings = place.Settings,
                     Circle = place.Circle,
                 });
             }
@@ -276,7 +272,7 @@ internal sealed class ChatRun(
         // The access it got, its mode and its configured access, which a change of the person's is compared with while it runs.
         if (helpMode is not null)
         {
-            Context.AccessHanded[sessionId] = new ConfiguredAccess(place.Housekeeping) { Settings = place.Settings, CheckoutsOff = place.CheckoutsOff };
+            Context.AccessHanded[sessionId] = new ConfiguredAccess { CheckoutsOff = place.CheckoutsOff };
             Context.HelpModes[sessionId] = helpMode;
         }
 

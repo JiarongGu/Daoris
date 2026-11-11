@@ -20,24 +20,27 @@ public sealed class AskNewView : IPressView
 
     public async Task<PressViewed> ViewAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
-        var ask = new AskNew(Named(payload, "workspace") ?? "default", PressPayload.Text(payload, "sentence"), Named(payload, "to"),
+        var asked = new AskNew(Named(payload, "workspace") ?? "default", PressPayload.Text(payload, "sentence"), Named(payload, "to"),
             List(payload, "links"), List(payload, "files"), Named(payload, "review"), Named(payload, "reviewWords"), Named(payload, "kind"),
             Named(payload, "workflow"), Named(payload, "workflowWords"), Named(payload, "short"));
-        if (ask.Sentence.Trim().Length == 0) return PressViewed.Refused("an ask needs its words.");
+        if (asked.Sentence.Trim().Length == 0) return PressViewed.Refused("an ask needs its words.");
 
         var machine = await world.MachineAsync(cancellationToken).ConfigureAwait(false);
-        if (!machine.Facts.Workspaces.Contains(ask.Workspace, StringComparer.OrdinalIgnoreCase))
+        var registry = (await world.RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(row => (row.Repository, row.Workspace)).ToList();
+        var held = registry.Select(row => string.IsNullOrWhiteSpace(row.Workspace) ? "default" : row.Workspace.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal).ToList();
+        if (held.FirstOrDefault(name => string.Equals(name, asked.Workspace, StringComparison.OrdinalIgnoreCase)) is not { } workspace)
         {
-            var known = string.Join(", ", machine.Facts.Workspaces.Order(StringComparer.Ordinal).Select(name => $"`{name}`"));
-            return PressViewed.Refused($"there is no workspace `{ask.Workspace}` on this machine — one of {known}.");
+            var known = string.Join(", ", held.Select(name => $"`{name}`"));
+            return PressViewed.Refused($"there is no workspace `{asked.Workspace}` on this machine — one of {known}.");
         }
 
+        var ask = asked with { Workspace = workspace };
         if (ask.To is { } to && await world.RegistrationAsync(to, cancellationToken).ConfigureAwait(false) is null)
         {
             return PressViewed.Refused($"`{to}` is not registered on this machine — name a receiver as Repositories lists it.");
         }
 
-        var registry = (await world.RegistryAsync(cancellationToken).ConfigureAwait(false)).Select(row => (row.Repository, row.Workspace));
         if (AskNewCommand.Unfit(ask, machine.Config, machine.Facts.Home ?? "", registry, out _) is { } unfit) return PressViewed.Refused(unfit);
 
         foreach (var path in ask.Files ?? [])

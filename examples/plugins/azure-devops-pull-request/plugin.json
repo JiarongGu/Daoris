@@ -2,18 +2,26 @@
   "id": "azure-devops-pull-request",
   "apiVersion": 1,
   "name": "Azure DevOps pull request",
-  "version": "2.1.0",
-  "changes": "The pull-request step sets auto-complete where its options ask (autoComplete, mergeStrategy, deleteSourceBranch, transitionWorkItems, mergeCommitMessage), so Azure DevOps merges it once its policies pass; a new release step, after the merge, watches the merged commit's build and its classic release or pipeline stages to their end, and can start a stage no trigger starts.",
-  "description": "Two performed steps through Azure DevOps' REST API, with the API token of the identity serving origin: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release watches the merged commit's release to its end.",
+  "version": "2.2.0",
+  "changes": "It signs in itself: `login` keeps a personal access token in the plugin's own private storage (the one a git identity serving Azure DevOps held is taken over once), `status` says whether one is kept and whether Azure DevOps last refused it, and `logout` forgets it; no git identity's token is read any more.",
+  "description": "Two performed steps through Azure DevOps' REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release watches the merged commit's release to its end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
     "points": ["work/watch", "work/step", "work/perform", "work/state"]
+  },
+  "interfaces": {
+    "commands": [
+      { "name": "login", "about": "Keeps a personal access token for Azure DevOps' REST API in this plugin's own storage.", "interactive": true, "adopts": { "hosts": ["dev.azure.com", "visualstudio.com"], "answer": "token" } },
+      { "name": "logout", "about": "Forgets the kept token." },
+      { "name": "status", "about": "Says whether a token is kept, since when, and whether Azure DevOps last refused it.", "tool": true }
+    ],
+    "storage": { "for": "The personal access token login keeps, and when Azure DevOps last refused it." }
   },
   "steps": [
     {
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
-      "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
+      "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the personal access token its own login keeps.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用它自己登录时保存的个人访问令牌。" },
       "reach": "performed",
       "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },

@@ -42,9 +42,9 @@ public sealed class HookSet(
     Func<bool>? holdsHome = null,
     // The clock the work wire's waits and bounds are read on.
     Func<DateTimeOffset>? clock = null,
-    // The API token a place's work process is handed, or the refusal that stops it. A plugin with a pull-request step is
-    // started per place when this is given (PlacedWork); null starts every plugin as one process, handed none.
-    Func<PluginEntry, WorkPlace, CancellationToken, Task<HostTokenHand>>? hostToken = null) : IAsyncDisposable, IWorkRuntimePort
+    // Whether a place's work process may start, or the refusal that stops it. A plugin with a pull-request step is
+    // started per place when this is given (PlacedWork); null starts every plugin as one process.
+    Func<PluginEntry, WorkPlace, CancellationToken, Task<PlaceHand>>? hand = null) : IAsyncDisposable, IWorkRuntimePort
 {
     private readonly PlacedWork _placed = new();
 
@@ -129,7 +129,7 @@ public sealed class HookSet(
             lock (_running) exited = [.. _running.Where(pair => pair.Value.Work && !pair.Value.Channel.Alive).Select(pair => pair.Key)];
             var waits = exited.ToDictionary(id => id, id => _work.Exited(id, now), StringComparer.Ordinal);
             // A plugin that takes the host's token is placed, its work process one per place awaiting it.
-            _placed.Place(hostToken is null ? [] : catalog.Contributing.Where(PlacedWork.Takes).Select(p => p.Manifest.Id));
+            _placed.Place(hand is null ? [] : catalog.Contributing.Where(PlacedWork.Takes).Select(p => p.Manifest.Id));
             _placed.Apply(_work.Watch);
             var contributing = catalog.Contributing.ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
             _work.Keep(catalog.Contributing.Select(p => (p.Manifest.Id, Build(p)))
@@ -240,11 +240,9 @@ public sealed class HookSet(
                 var took = Stopwatch.StartNew();
                 try
                 {
-                    // The place's own hand: the token of the identity serving its origin, or the refusal that leaves it unstarted.
-                    var hand = hostToken is not null && _placed.PlaceOf(key) is { } place ? await hostToken(plugin, place, ct).ConfigureAwait(false) : null;
-                    if (hand?.Refusal is { } refused) throw _refused.Refused(key, now, id, refused);
+                    var judged = hand is not null && _placed.PlaceOf(key) is { } place ? await hand(plugin, place, ct).ConfigureAwait(false) : null;
+                    if (judged?.Refusal is { } refused) throw _refused.Refused(key, now, id, refused);
                     IHookChannel channel;
-                    HookProcess.HostToken.Value = hand?.Token;
                     HookProcess.Events.Value = holds && WorkEventPlugins.Declares(plugin) ? WorkEventPlugins.Join(Events, key, home) : null;
                     try
                     {
@@ -257,7 +255,6 @@ public sealed class HookSet(
                     }
                     finally
                     {
-                        HookProcess.HostToken.Value = null;
                         HookProcess.Events.Value = null;
                     }
 

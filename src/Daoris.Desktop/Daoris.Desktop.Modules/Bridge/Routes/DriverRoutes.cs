@@ -514,11 +514,10 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Restricted mode's configured access: the person's choice of one housekeeping operation, or
-    // one chosen setting, or one checkout turned off or on by its repository, set on Ask Daoris's screen,
-    // written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
-    // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
-    // next words resuming it with this one. No proposal names it: a helper never widens its own access. A grant or an
+    // Restricted mode's configured access: the person's choice of one family of acts, or one checkout turned off or on by its
+    // repository, set on Ask Daoris's screen, written to the home's own file. Each press is judged by the families it grants then, so a
+    // revoke cards the next press; a conversation running with other checkouts ends at its turn's end, its next words resuming it with
+    // these. No proposal names it: a helper never widens its own access. A grant or an
     // operation this build does not act on is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_GRANT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_GRANT", None = OwnerNone.MachineSetting)]
@@ -528,7 +527,8 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var operation = press.Operation
             ?? throw new DriverException("A grant's press names the operation it chooses; this one named none.");
-        ConfiguredAccess.Choose(_loop.Home, press.Grant ?? ConfiguredAccess.HousekeepingGrant, operation, press.Chosen);
+        var grant = press.Grant ?? throw new DriverException("A grant's press names the grant it chooses under; this one named none.");
+        ConfiguredAccess.Choose(_loop.Home, grant, operation, press.Chosen);
         _loop.Chat?.HelpAccessChosen(DriverConfig.Load(_loop.ConfigPath).HelpMode);
         return State(_loop);
     }

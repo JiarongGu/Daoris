@@ -79,7 +79,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotMatch(DecisionNumber(), lexical);
     }
 
-    /// <summary>Removing a record is a person's act, so no connector tool clears history, and none is handed the desk that would.</summary>
+    /// <summary>Removing a record is a person's act, so no connector tool clears history; Ask Daoris presses the clear, as it presses a delete.</summary>
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
     {
@@ -326,48 +326,14 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// HELPMODE1c2a (the Ask Daoris modes design §4.1): the housekeeping tools are Ask Daoris's alone and act only as the person
-    /// granted them; the two that remove take a repository and branch names, never a path, and say each target is judged again
-    /// and nothing is forced. No tool drops a recovery ref.
+    /// Housekeeping and the chosen settings are presses of their verbs, granted as families of acts, so the connector has no tool of
+    /// its own for either, and none drops a recovery ref or forces.
     /// </summary>
     [Fact]
-    public void The_housekeeping_tools_say_whose_they_are_and_what_holds_them()
+    public void Housekeeping_and_the_chosen_settings_have_no_tool_of_their_own()
     {
-        var tools = ToolNames().Where(name => name.StartsWith("housekeeping_", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToList();
-        string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
-
-        Assert.Equal(["housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect"], tools);
-        Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
-        foreach (var act in new[] { "housekeeping_clean_up", "housekeeping_discard_branch" })
-        {
-            Assert.Contains("never a path", Said(act));
-            Assert.Contains("judged again", Said(act));
-            Assert.Contains("never forced", Said(act));
-        }
-
+        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("housekeeping_", StringComparison.Ordinal) || name.StartsWith("settings_", StringComparison.Ordinal));
         Assert.DoesNotContain(ToolNames(), name => name.Contains("recovery") || name.Contains("force"));
-    }
-
-    /// <summary>
-    /// HELPMODE1c3 (the Ask Daoris modes design §4.1): the chosen settings' tools are Ask Daoris's alone and act only as the person
-    /// granted each setting; each changes it with no Apply, through the checks and writer Settings uses, and the change is recorded.
-    /// The five ordinary settings and nothing else: never the mode, a grant, an account or a safeguard.
-    /// </summary>
-    [Fact]
-    public void The_chosen_settings_tools_say_whose_they_are_and_that_each_change_is_recorded()
-    {
-        var tools = ToolNames().Where(name => name.StartsWith("settings_", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToList();
-        string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
-
-        Assert.Equal(["settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_quiet"], tools);
-        Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("no Apply", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("recorded", Said(tool)));
-        Assert.Contains("repository or a workspace", Said("settings_language"));
-        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("settings_", StringComparison.Ordinal)
-            && (name.Contains("mode") || name.Contains("grant") || name.Contains("account")));
     }
 
     /// <summary>

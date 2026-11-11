@@ -148,6 +148,9 @@ public sealed record PluginManifest(
     /// <summary>The systems it adapts, each reached only through its console (<see cref="PluginSystems"/>); none for a refused plugin.</summary>
     public IReadOnlyList<PluginSystem> Systems { get; init; } = [];
 
+    /// <summary>The interfaces it implements, each reached only as declared (<see cref="PluginInterfaces"/>); none for a refused plugin.</summary>
+    public PluginInterfacesDeclared Interfaces { get; init; } = PluginInterfacesDeclared.None;
+
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
 }

@@ -12,8 +12,7 @@ internal static class DriverStateAnswer
     /// <param name="shownAgain">What *Show it again* said, on the answer to <c>SHOW_REVIEW_AGAIN</c> alone.</param>
     /// <param name="parksAt">On a *Try again*'s mark, the failed sessions the quest's line's failures rule parks it at again; else the machine's rule is said.</param>
     /// <remarks>
-    /// A read of the loop alone, so the domains whose standing choices answer with it (Across, Lines) reach it by name over
-    /// their loop, holding no other domain's class.
+    /// A read of the loop alone, so the domains whose standing choices answer with it reach it over their loop.
     /// </remarks>
     public static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null, int? parksAt = null)
     {
@@ -81,8 +80,6 @@ internal static class DriverStateAnswer
             // browser's is read only from its plugin's approval, with no `built`, so the page offers nothing to choose.
             HelpGrants = new[]
             {
-                Grant(loop, ConfiguredAccess.HousekeepingGrant, access, ConfiguredAccess.HousekeepingBuilt),
-                Grant(loop, ConfiguredAccess.SettingsGrant, access, ConfiguredAccess.SettingsBuilt),
                 new HelpGrantRow(ConfiguredAccess.ActsGrant, access.Acts, ActFamilies.Built, false, false, null),
                 new HelpGrantRow(
                     ConfiguredAccess.CheckoutsGrant, [.. readable.Where(access.Reads)], readable,
@@ -181,8 +178,4 @@ internal static class DriverStateAnswer
                 .ToArray(),
         };
     }
-
-    /// <summary>A grant kept in the home's record, as <c>helpGrants</c> answers it: chosen, built, and pending a running conversation's next turn.</summary>
-    private static HelpGrantRow Grant(DriverLoop loop, string grant, ConfiguredAccess access, IReadOnlyList<string> built) =>
-        new(grant, access.Of(grant), built, loop.Chat?.GrantPending(grant, access) == true, false, null);
 }

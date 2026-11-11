@@ -408,8 +408,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     so no look goes on with it and no carry-on resumes from it), is settled at the come-up (`UncertainWords`) where a crash left it on
     an ended record, and is marked on its event (`SessionEvent.Watcher`) so it resets no answers-alone count. Q is `quietMinutes` in
     `driver.json`, 10 by default and 5 to 120, written only when set and read at each look; it is set at Settings → Driver, by
-    `daoris settings quiet <minutes>`, through `SET_QUIET`, by Ask Daoris's `quiet` door and, where the person granted it, by
-    Ask Daoris's `settings_quiet` tool, and `driver list` says it. Ask Daoris answers *how long may a session run?* from its room: as
+    `daoris settings quiet <minutes>`, through `SET_QUIET`, which Ask Daoris presses with no card where the person granted it the
+    `settings` family, and `driver list` says it. Ask Daoris answers *how long may a session run?* from its room: as
     long as it works, and Daoris looks in on one quiet for Q minutes. (from D200)
 33. An account's limit is read from the agent's own words. It cools that account until the reset it names, and is
     never a strike. The record ends `failed` with its `limited` flag and reads as *limited*. (from D125, D206)

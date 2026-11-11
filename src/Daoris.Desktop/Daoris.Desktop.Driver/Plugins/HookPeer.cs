@@ -201,6 +201,9 @@ public sealed class HookPeer(
         return await InFlightAsync($"hook/{point}", payload, ct).ConfigureAwait(false);
     }
 
+    public async Task<JsonElement> CommandAsync(object frame, CancellationToken ct) =>
+        await RequestAsync(CommandWire.Method, frame, ct, CommandWire.Patience).ConfigureAwait(false);
+
     public IReadOnlyList<string> Capabilities { get; private set; } = [];
 
     /// <summary>The calls sent and not yet answered.</summary>

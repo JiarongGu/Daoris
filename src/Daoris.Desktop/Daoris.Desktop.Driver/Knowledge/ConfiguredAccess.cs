@@ -4,33 +4,25 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Restricted mode's configured access as the person chose it: the
-/// home's <c>configured-access.json</c>, the operations chosen per grant by the page's codes. Housekeeping is the grant built
-/// first, the chosen settings next; the browser's grant is its plugin's approval
-/// (<see cref="HelpGrants"/>), never kept here.
+/// Restricted mode's configured access as the person chose it: the home's <c>configured-access.json</c>, the families of acts granted
+/// (<see cref="ActFamilies"/>) and the checkouts turned off. The browser's grant is its plugin's approval (<see cref="HelpGrants"/>),
+/// never kept here.
 /// </summary>
 /// <remarks>
-/// <para><b>Read at every start and at every call</b> (the trap of a grant read once and reused): each start of Ask Daoris
-/// composes its allow-list, its receipt and its room from it, and each housekeeping or settings request is judged by it again
-/// (<see cref="HelpHousekeeping"/>, <see cref="HelpSettings"/>), so a revoke refuses the next call.</para>
+/// <para><b>Read at every start and at every press</b> (the trap of a grant read once and reused): each start of Ask Daoris composes
+/// its room from it, and each press of Ask Daoris's is judged by the families it grants now (<see cref="ActFamilies.Covers"/>), so a
+/// revoke puts the next press on a card.</para>
 ///
 /// <para><b>Absence is none chosen</b>, each grant on its own: no file, one that does not read, a grant that is no list. A code this
-/// build does not act on (dropping recovery refs, the mode) grants nothing, and is never dropped from the file by a reader.</para>
+/// build does not act on grants nothing, and is never dropped from the file by a reader.</para>
 ///
 /// <para><b>The checkouts are the one grant on by default</b> (on, inherited), the readable
 /// set within the conversation's workspace. So the file keeps the person's narrowing, the checkouts turned off by repository
 /// (<c>checkouts-off</c>), and absence is every readable checkout on; the set handed is computed at each start from the readable
 /// set, never kept here.</para>
 /// </remarks>
-/// <param name="Housekeeping">The housekeeping operations chosen, in <see cref="HousekeepingBuilt"/>'s order, once each.</param>
-public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
+public sealed record ConfiguredAccess
 {
-    /// <summary>The grant's name in the file, the page's <c>HelpGrantId</c>.</summary>
-    public const string HousekeepingGrant = "housekeeping";
-
-    /// <summary>The chosen settings' grant's name in the file, the page's <c>HelpGrantId</c>.</summary>
-    public const string SettingsGrant = "settings";
-
     /// <summary>The checkouts' grant, the page's <c>HelpGrantId</c>: its operations are the repositories, each on or off.</summary>
     public const string CheckoutsGrant = "checkouts";
 
@@ -52,80 +44,24 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>Whether the person left <paramref name="repository"/>'s checkout on: not turned off, its name matched without case.</summary>
     public bool Reads(string repository) => !CheckoutsOff.Contains(repository.Trim(), StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether a session parking, or ending unasked, is said: <c>daoris settings notify</c>.</summary>
-    public const string Notify = "notify";
-
-    /// <summary>A repository's or a workspace's session language: <c>daoris place language</c>.</summary>
-    public const string Language = "language";
-
-    /// <summary>How many sessions run at once on this machine: <c>daoris settings cap</c>.</summary>
-    public const string Cap = "cap";
-
-    /// <summary>How long an account whose limit names no time cools: <c>daoris settings cooloff</c>.</summary>
-    public const string CoolOff = "cooloff";
-
-    /// <summary>How long a session may say nothing and run nothing before Daoris looks in on it: <c>daoris settings quiet</c>.</summary>
-    public const string Quiet = "quiet";
-
     /// <summary>
-    /// The settings this build changes under the grant, in the page's order: the five ordinary ones, and never the mode, the grants,
-    /// accounts or a safeguard. The timeout is not among them: a grant of it kept in the file
-    /// is read as none.
-    /// </summary>
-    public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Cap, CoolOff, Quiet];
-
-    /// <summary>The settings chosen, in <see cref="SettingsBuilt"/>'s order, once each; none by default.</summary>
-    public IReadOnlyList<string> Settings { get; init; } = [];
-
-    /// <summary>The connector's tool for a chosen setting, as it is named on the wire: <c>settings_cooloff</c>.</summary>
-    public static string SettingToolOf(string setting) => $"settings_{setting}";
-
-    /// <summary>The tools of the settings chosen, in their order.</summary>
-    public IReadOnlyList<string> SettingsTools => [.. Settings.Select(SettingToolOf)];
-
-    /// <summary>
-    /// What the record keeps of one grant by its name: the operations chosen, and for the checkouts, on by default, those turned off
+    /// What the record keeps of one grant by its name: the families chosen, and for the checkouts, on by default, those turned off
     /// (<see cref="CheckoutsOff"/>); none for a grant not kept here. What a running conversation's start is compared with.
     /// </summary>
     public IReadOnlyList<string> Of(string grant) => grant switch
     {
-        HousekeepingGrant => Housekeeping,
-        SettingsGrant => Settings,
         CheckoutsGrant => CheckoutsOff,
         ActsGrant => Acts,
         _ => [],
     };
 
-    /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order; the acts are read at each press, so are left out.</summary>
-    public bool Same(ConfiguredAccess other) =>
-        Housekeeping.SequenceEqual(other.Housekeeping, StringComparer.Ordinal) && Settings.SequenceEqual(other.Settings, StringComparer.Ordinal)
-        && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);
+    /// <summary>Whether <paramref name="other"/> turned off the same checkouts; the acts are read at each press, so are left out.</summary>
+    public bool Same(ConfiguredAccess other) => CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>A look at what the cleanup would remove and what it keeps.</summary>
-    public const string Inspect = "inspect";
-
-    /// <summary>Removing the session and landed branches named, with their trees, where the cleanup's judges clear them.</summary>
-    public const string CleanUp = "clean-up";
-
-    /// <summary>Discarding one session branch by name, unforced.</summary>
-    public const string DiscardBranch = "discard-branch";
-
-    /// <summary>The housekeeping operations this build acts on, in the page's order; the page's <c>drop-recovery</c> is not yet one.</summary>
-    public static readonly IReadOnlyList<string> HousekeepingBuilt = [Inspect, CleanUp, DiscardBranch];
-
-    public static readonly ConfiguredAccess None = new([]);
+    public static readonly ConfiguredAccess None = new();
 
     /// <summary>Where the record is kept: the home's <see cref="HomeEntry.ConfiguredAccess"/>.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.ConfiguredAccess);
-
-    /// <summary>The connector's tool for a housekeeping operation, as it is named on the wire: <c>housekeeping_clean_up</c>.</summary>
-    public static string ToolOf(string operation) => $"housekeeping_{operation.Replace('-', '_')}";
-
-    /// <summary>The tools of the operations chosen, in their order.</summary>
-    public IReadOnlyList<string> HousekeepingTools => [.. Housekeeping.Select(ToolOf)];
-
-    /// <summary>Every housekeeping code the page draws, in its order: the built ones, then dropping recovery refs, not built.</summary>
-    private static readonly string[] HousekeepingDrawn = [Inspect, CleanUp, DiscardBranch, "drop-recovery"];
 
     // One writer at a time in this process: two presses from two windows would otherwise each drop the other's choice.
     private static readonly object Gate = new();
@@ -140,33 +76,23 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// </exception>
     public static ConfiguredAccess Choose(string home, string grant, string operation, bool chosen)
     {
-        if (grant is not (HousekeepingGrant or SettingsGrant or CheckoutsGrant or ActsGrant))
+        if (grant is not (CheckoutsGrant or ActsGrant))
         {
-            throw new DriverException(grant == "browser"
-                ? "The browser's grant is its plugin's approval, made on the plugin's own page; nothing is chosen for it here."
-                : $"`{grant}` is not built yet as a grant of Ask Daoris's configured access; only `{HousekeepingGrant}`, `{SettingsGrant}`, "
-                  + $"`{CheckoutsGrant}` and `{ActsGrant}` are chosen here.");
+            throw new DriverException(grant switch
+            {
+                "browser" => "The browser's grant is its plugin's approval, made on the plugin's own page; nothing is chosen for it here.",
+                "housekeeping" or "settings" => $"Housekeeping and the chosen settings are families of acts: grant `{ActFamilies.CleanUp}`, "
+                                                + $"`{ActFamilies.Discard}` or `{ActFamilies.Settings}` under `{ActsGrant}`.",
+                _ => $"`{grant}` is not built yet as a grant of Ask Daoris's configured access; only `{CheckoutsGrant}` and `{ActsGrant}` are chosen here.",
+            });
         }
 
         if (grant == CheckoutsGrant) return ChooseCheckout(home, operation, chosen);
 
-        var (built, drawn) = grant switch
-        {
-            SettingsGrant => (SettingsBuilt, SettingsBuilt.ToArray()),
-            ActsGrant => (ActFamilies.Built, ActFamilies.Built.ToArray()),
-            _ => (HousekeepingBuilt, HousekeepingDrawn),
-        };
+        var built = ActFamilies.Built;
         if (!built.Contains(operation))
         {
-            var named = string.Join(", ", built.Select(each => $"`{each}`"));
-            throw new DriverException(drawn.Contains(operation)
-                ? $"`{operation}` is not built yet, so it cannot be granted: {grant} grants {named}."
-                : grant switch
-                {
-                    SettingsGrant => $"`{operation}` is no setting Ask Daoris may be granted: they are {named}.",
-                    ActsGrant => $"`{operation}` is no family of acts Ask Daoris may be granted: they are {named}.",
-                    _ => $"`{operation}` is no housekeeping operation: they are {named}.",
-                });
+            throw new DriverException($"`{operation}` is no family of acts Ask Daoris may be granted: they are {string.Join(", ", built.Select(each => $"`{each}`"))}.");
         }
 
         lock (Gate)
@@ -177,7 +103,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
             listed.Remove(operation);
             if (chosen) listed.Add(operation);
             var ordered = listed.Distinct(StringComparer.Ordinal)
-                .OrderBy(each => Array.IndexOf(drawn, each) < 0 ? drawn.Length : Array.IndexOf(drawn, each)).ToList();
+                .OrderBy(each => built.Contains(each) ? built.ToList().IndexOf(each) : built.Count).ToList();
             file[grant] = new JsonArray([.. ordered.Select(each => (JsonNode)JsonValue.Create(each))]);
             JsonFile.Write(path, file);
         }
@@ -233,8 +159,8 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
             : [];
 
     /// <summary>
-    /// The record as the home holds it now, each grant read on its own (a housekeeping that is no list does not hide
-    /// the settings chosen); <see cref="None"/> where it holds none or it does not read.
+    /// The record as the home holds it now, each grant read on its own (acts that are no list do not hide the checkouts turned off);
+    /// <see cref="None"/> where it holds none or it does not read.
     /// </summary>
     public static ConfiguredAccess Read(string home)
     {
@@ -245,12 +171,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
             using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (document.RootElement.ValueKind != JsonValueKind.Object) return None;
             var root = document.RootElement;
-            return new ConfiguredAccess(Chosen(root, HousekeepingGrant, HousekeepingBuilt))
-            {
-                Settings = Chosen(root, SettingsGrant, SettingsBuilt),
-                Acts = Chosen(root, ActsGrant, ActFamilies.Built),
-                CheckoutsOff = Off(root),
-            };
+            return new ConfiguredAccess { Acts = Chosen(root, ActsGrant, ActFamilies.Built), CheckoutsOff = Off(root) };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

@@ -242,8 +242,10 @@ of everything it handed, section by section.
     (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
     repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
     the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
-    workspace by naming it, or every workspace with `all`, and proposes, inspects, reads checkouts and sets settings in any
-    workspace's repositories, each judged by its own judge and none refused for the workspace it names. What a turn looked at
+    workspace by naming it, or every workspace with `all`, and proposes, reads checkouts and presses the families of acts the
+    person granted (pauses, clean-up, discarding a session branch, the chosen settings: verbs of the `daoris` command, with
+    no `housekeeping_*` or `settings_*` tool) in any workspace's repositories, each judged by its own judge and none refused
+    for the workspace it names. What a turn looked at
     or did beyond its focus is one folded receipt under that turn (`help/focus/BeyondReceipt.tsx`, `HELP_BEYOND`), only as
     Daoris's doors saw it: each call its connector answered naming a workspace or a repository, noted in the session's
     `places.jsonl` (`CallPlaceFilter`) with how many entries, repositories, convergence groups or quests its answer found,

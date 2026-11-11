@@ -101,6 +101,8 @@ public static class PressViews
         new PluginActionView(),
         new HistoryClearView(),
         new TreesSyncView(),
+        new SweepView(),
+        new SessionBranchDiscardView(),
         new AskNewView(),
         new PlaceApplyView(),
         new WorkflowSaveView(),
