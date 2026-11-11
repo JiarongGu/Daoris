@@ -88,6 +88,18 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     }
 
     /// <summary>
+    /// The answer an Accept on the review makes to what it showed (its <c>answers</c>), kept as <see cref="PressedAsync"/> keeps it, with the
+    /// gate read for the session's work; null where the work is not read here.
+    /// </summary>
+    public async Task<LandingGate?> AnswerAsync(string session, string? token, CancellationToken ct = default, string door = ReviewDoors.Screen)
+    {
+        var (work, _) = await WorkAsync(session, ct).ConfigureAwait(false);
+        if (work is null) return null;
+        var gate = await GateOfAsync(work, ct).ConfigureAwait(false);
+        return await PressedAsync(session, gate, token, work.Tree, work.Quest, ct, work.ChatRun, door).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> and the person's ask: a first pass on the session's work,
     /// started at the driver's next look and never capped. <paramref name="reviewer"/> names one of the rule's reviewers;
     /// <paramref name="sameAgent"/> asks the working agent in a fresh conversation, which is never an independent reading and says

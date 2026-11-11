@@ -34,10 +34,10 @@ public sealed class LandEndsTests
     [Theory]
     [InlineData(LandingCode.Unreviewed)]
     [InlineData(LandingCode.Opinion)]
-    [InlineData(LandingCode.Refused)]
+    [InlineData(LandingCode.Moved)]
     public void An_end_refused_with_a_sentence_keeps_it(string code)
     {
-        var held = new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = LandingCode.Refused };
+        var held = new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = LandingCode.Moved };
 
         var end = LandEnds.Of(code, held, "the try's own line");
 

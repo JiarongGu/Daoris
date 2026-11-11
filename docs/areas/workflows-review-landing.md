@@ -64,7 +64,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Review/EntryRunAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/RunParts.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan; the first part of a part's own run, which its landing is named for |
-| The window's press | modules `Bridge/Routes/TreesLandDesk.cs`, `LandPresses.cs`, `Bridge/PerformedWaits.cs`, `Bridge/PerformedAnswers.cs`, `Bridge/AcceptWaits.cs` | `LAND_SESSION_TREE` and the plan behind it, and the node door's Accept waiting as it does; the press run once per session under the loop's lifetime and always answered, held in words past its bound, and logged as `landing.pressed` |
+| The window's press | modules `Bridge/Routes/TreesLandDesk.cs`, `LandPresses.cs`, `Bridge/PerformedWaits.cs`, `Bridge/PerformedAnswers.cs`, `Bridge/AcceptWaits.cs`, `Bridge/AcceptAnswers.cs`, `Bridge/ChatAccepts.cs` | `LAND_SESSION_TREE` and the plan behind it, and the node door's Accept waiting as it does, carrying the opinion's answer, and pressing a conversation's work; the press run once per session under the loop's lifetime and always answered, held in words past its bound, and logged as `landing.pressed` |
 | Verification check | `Workflows/Kinds/Check/` (`CheckNode`, `ICheckPort`, `CheckExecution`, `CheckResults`), `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Workflows/LineBatching.cs`, `Workflows/VerifyHelds.cs`, `Workflows/VerifyFixAsks.cs` (with `VerifyBatchSessions.cs`, `VerifyFixStanding.cs`), `Review/Heavy/GateReach.cs`, `Workflows/LandedRunsLeft.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/verify/` (`VerifyRuns.tsx`, `lineSaid.ts`), `work/attention/heldWorded.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots, whole in its folder: its declaration, perform and options (`CheckNode`), its port and the executor behind it, and its results read back; a landed run bound per batch of a line at a whole look (`LineBatching`, called from `WatchNodes` before the pass); a person's verification of a branch or a commit bound as a run of its own; a check with `reach: paths` runs the gates its batch's changed paths reach, by each gate's `paths` in the accepted declaration (`GateReach`), and names the rest as *kept*; a failed check's *Ask for a fix…* publishes one ask per gate (`VerifyFixAsks`), and a check set to `failed: ask` has the look ask it with no press (`VerifyFixStanding`); the history clear takes a landed run's files once a newer run on its line has a verdict (`LandedRunsLeft`); a held check named by what it verifies (`HeldAttempt.Verification`) and worded on *What needs you*; a line's runs read with their verdicts and batches (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
@@ -162,7 +162,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     second word on a node is refused `worded`, but the person's replaces a supervisor's pending one, which the pass settles
     `superseded`; the pass drops a supervisor's word whose attempt has lapsed or whose decision is not live in this run (`stale`). The
     person's Accept names the review record it is given on, by attempt and revision (`WORKFLOW_NODE`'s `attempt` and `revision`, the
-    terminal's `--at <revision>`, whole or its first seven characters or more), and is checked twice (`ReviewAccepts`): as it is kept, against the record of the
+    terminal's `--at <revision>`, whole or its first seven characters or more), as the landing's plan draws it for the window's Accept
+    (`LANDING`'s `accept`: the run, its review step, and the attempt and revision of the record under way, neither before it begins;
+    `ReviewDrawn`), and is checked twice (`ReviewAccepts`): as it is kept, against the record of the
     attempt the review stands on, a word on another refused `moved` with the revision standing; and as the pass applies it, against the
     run's work read afresh that pass (its branch at the tip read then, its turns, its plans, its handbacks), a word whose work moved since
     dropped `moved`, said with both revisions. An Accept naming none is bound to the record standing as it is kept, which the terminal
@@ -210,10 +212,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     ends under its place's `turns/<key>/` (`RunTurns`), and its first turn's start manifest as the named record `run-<key>-base` in the
     place's manifest store, kept by the store's tidy while a review record names it (`ReviewRecords.Manifests`). (from D273)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for what the try
-    came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, a moved tip, uncommitted work), each said as
+    came to: the landing, or why nothing landed (closed, nothing to land, a gate's wait, uncommitted work, or a head moved past the tip
+    judged, answered `moved` as the return and the apply answer a moved record, and tried again once the tree moves), each said as
     the try said it, and a carry-on as *accepted; its session was carried on* (`PerformedAnswers`). Only where no try ended within the
     bound does it answer *accepted; landing*. `WORKFLOW_NODE`'s Accept on a review a `land` follows waits the same way and answers its
-    `landing` (`AcceptWaits`). The carried Accept stands for its landing's repair alone (`CarriedRepairs`): the repair names the review
+    `landing` (`AcceptWaits`); the second opinion's token it carries (`answers`) is kept at the gate before the Accept (`AcceptAnswers`), and
+    an Accept on a conversation's run is that conversation's press, its submission and then the same keep (`ChatAccepts`), answering the
+    `press` code a refusal is worded by (`busy`, `elsewhere`, `moved`, `asked`). The carried Accept stands for its landing's repair alone (`CarriedRepairs`): the repair names the review
     attempt accepted, and the review begun again at a tip continuing that one is accepted again, its words naming the record and the tip
     carried to, only while its parts and their handbacks are the accepted record's; a new handback or a send-back lapses it, and the review
     asks again. A gate held only by the review the press itself just accepted, read before the pass it
@@ -237,7 +242,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`TreeNamedRefusals`), as the terminal's alone path does. (from D227, D228)
 24. An entry's or an ask's one Accept keeps each part's word where its run's `land` is the runtime's, and lands it at the pass. A
     part no `land` node performs is held, said. Each part's word names the review record the press drew for it (`LAND_ENTRY`'s
-    `revisions`, by session) and is kept as the node door keeps it; it is not atomic across runs: a run whose review stands on another
+    `revisions`, by session, as `ENTRY_LANDING` names each part's `revision`) and is kept as the node door keeps it; it is not atomic across runs: a run whose review stands on another
     record is refused `moved` alone, the others go on, and the answer says which landed, which accepted, which moved and which failed
     (`EntryRunAccepts`). A part's own landing is named for the first part of its run in its entry and joins
     that run's branch; each quest an ask sent to the repository is a run of its own unless its chain leads back to an earlier one
