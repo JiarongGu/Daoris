@@ -27,7 +27,7 @@ public sealed record SetQuiet(long? Minutes);
 public sealed record SetCap(long? Cap);
 
 /// <summary>One of the two bounds of a folder's manifest read; both, or neither, or one out of its bounds is the driver's refusal.</summary>
-public sealed record SetManifest(long? Files, long? Minutes);
+public sealed record SetManifest(long? Files, long? Minutes, long? Copy = null);
 
 /// <summary>One kind's keep rule, each value one of its kind's: <c>KeepRules.Apply</c> judges which a kind takes.</summary>
 public sealed record SetKeep(

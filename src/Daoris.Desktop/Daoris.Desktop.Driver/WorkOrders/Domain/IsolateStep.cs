@@ -16,10 +16,12 @@ public sealed record IsolateStep(string Kind, int? AtOnce, bool OverlapWaits)
 
     public const string OverlapOption = "overlap";
 
-    /// <summary>The place kind's first isolation that can make a copy: a git place's worktree.</summary>
+    /// <summary>The place kind's first isolation that can make a copy: a git place's worktree, a folder's copy.</summary>
     public const string Auto = "auto";
 
     public const string Worktree = "worktree";
+
+    public const string Copy = "copy";
 
     public const string Any = "any";
 
@@ -32,7 +34,9 @@ public sealed record IsolateStep(string Kind, int? AtOnce, bool OverlapWaits)
     private const int Most = 24;
 
     /// <summary>The kinds a step may name: those this build makes a copy with.</summary>
-    public static IReadOnlyList<string> Kinds { get; } = [Auto, Worktree];
+    public static IReadOnlyList<string> Kinds { get; } = [Auto, Worktree, Copy];
+
+    public bool Serves(string place) => Kind == Auto || Kind == (place == PlaceKind.Folder ? Copy : Worktree);
 
     public static IReadOnlyList<string> Counts { get; } =
         [Any, .. Enumerable.Range(Fewest, Most - Fewest + 1).Select(count => count.ToString(CultureInfo.InvariantCulture))];
