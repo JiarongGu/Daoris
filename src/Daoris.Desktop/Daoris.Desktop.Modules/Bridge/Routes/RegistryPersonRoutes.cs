@@ -31,6 +31,16 @@ public sealed class RegistryPersonRoutes(DriverContext context)
     private Task<object?> RegistryRewireAsync(RegistryRewirePress press, CancellationToken cancellationToken) =>
         SaidAsync(press.Said, (output, error) => RepositoryPresses.WireAsync(press.Repository.Trim(), press.Workspace.Trim(), Service(), output, error, cancellationToken));
 
+    /// <summary>A folder department's excludes changed, and its manifest read again with them.</summary>
+    [DriverRoute("REGISTRY_EXCLUDES", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("REGISTRY_EXCLUDES", Repository = "repository")]
+    [GroundRepository("REGISTRY_EXCLUDES", "repository")]
+    [Says("REGISTRY_EXCLUDES", "repository:repository")]
+    [Publishes("REGISTRY_EXCLUDES", StateScopes.Registry)]
+    private Task<object?> RegistryExcludesAsync(RegistryExcludesPress press, CancellationToken cancellationToken) =>
+        SaidAsync(press.Said, (output, error) => RepositoryPresses.ExcludesAsync(
+            press.Repository.Trim(), press.Add ?? [], press.Remove ?? [], _loop.Home, Service(), output, error, cancellationToken));
+
     /// <summary>Every repository an absolute folder's subdirectories propose registered, into the workspace named where one is.</summary>
     [DriverRoute("REGISTRY_IMPORT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("REGISTRY_IMPORT", Workspace = "workspace")]

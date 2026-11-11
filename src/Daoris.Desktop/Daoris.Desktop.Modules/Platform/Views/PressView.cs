@@ -60,6 +60,7 @@ public static class PressViews
     public static readonly IReadOnlyList<IPressView> All =
     [
         new RegistryRewireView(),
+        new FolderExcludesView(),
         new SessionArchiveView(),
         new SessionDeleteView(),
         new QuestDeleteView(),
@@ -120,5 +121,5 @@ public static class PressViews
     }
 }
 
-/// <summary>A registry row as a view reads it: the repository as the registry spells it, and the workspace it is in.</summary>
-public sealed record PipeRegistered(string Repository, string? Workspace);
+/// <summary>A registry row as a view reads it: the repository as the registry spells it, the workspace it is in, its kind and a folder's own excludes.</summary>
+public sealed record PipeRegistered(string Repository, string? Workspace, string? Kind = null, IReadOnlyList<string>? Excludes = null);

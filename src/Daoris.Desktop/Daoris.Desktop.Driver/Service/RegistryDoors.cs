@@ -114,6 +114,25 @@ public sealed class RegistryDoors
     }
 
     /// <summary>
+    /// Rewrite a folder department's excludes whole, which the Setup row and <c>daoris repository excludes</c> send: the service's
+    /// words where it refuses (not registered, not a folder), and a host older than the door is said to be.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> SetFolderExcludesAsync(string repository, IReadOnlyList<string> excludes, CancellationToken ct = default)
+    {
+        var sent = await _service.SendAsync(new SetFolderExcludes(repository, excludes), ct).ConfigureAwait(false);
+        if (AnswerOf(sent.Reply.Payload) is null)
+        {
+            return (false, $"the service at {_service.BaseUrl} has no excludes door for a folder ({sent.Reply.Status}) — is it older than this driver?");
+        }
+
+        return sent.Answer is { } set
+            ? (true, excludes.Count == 0
+                ? $"`{set.Repository}` leaves out nothing of its own now, beside the defaults."
+                : $"`{set.Repository}` leaves out {string.Join(", ", excludes)}, beside the defaults.")
+            : (false, ErrorWords(sent.Reply.Payload) ?? sent.Reply.Payload);
+    }
+
+    /// <summary>
     /// A repository's first registration from its working tree at <paramref name="root"/>, at this client's service,
     /// which may be any address: what <see cref="RegistryConnect.Plan"/> composes, taken or refused in the service's own words. The workspace
     /// the service says it took is read back, since silence preserves whatever the row held.
