@@ -76,7 +76,7 @@ test('a stage waiting on an approval is said and waited on, never approved here,
   const { plugin, step } = await released(t, api, { stages: 'Production' });
 
   assert.equal(step.params.state, 'reached');
-  assert.match(step.params.evidence.message, /: Production succeeded after an approval by Release Approvers\.$/);
+  assert.match(step.params.evidence.message, /: Production succeeded after an approval by Release Approvers\. Way: the token\.$/);
   assert.match(await plugin.stop(), /Production waits on an approval by Release Approvers/);
   assert.equal(api.calls.some((call) => call.method === 'PATCH'), false);
 });

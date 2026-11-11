@@ -1,6 +1,8 @@
 // The pull request's own commands, which an agent performing a workflow's pull-request step calls as tools: open one from a pushed
 // branch, read how it stands, and complete it. Each names the repository by its origin's address, as `git remote get-url origin`
 // says it, since a command's round carries no checkout. Each answers its lines and, for the agent, `data` with the pull request.
+import { wayOf, wayWords, within } from './browser.mjs';
+import { autoComplete } from './auto-complete.mjs';
 import { Refusal, addressOf, azureOf, call, choose, fromBranch, heads, idOf, withoutHeads } from './azure.mjs';
 
 const STATE = { active: 'open', completed: 'completed', abandoned: 'abandoned' };
@@ -36,17 +38,31 @@ async function named(repo, args) {
   return args.branch ? choose(await fromBranch(repo, args.branch), args.target) : null;
 }
 
+/** The step's auto-complete options as the arguments give them, in the names the step's own options use. */
+const optionsOf = (args) => ({
+  autoComplete: args['auto-complete'],
+  mergeStrategy: STRATEGY[args['merge-strategy']] ?? args['merge-strategy'],
+  deleteSourceBranch: args['delete-source-branch'],
+  transitionWorkItems: args['transition-work-items'],
+  mergeCommitMessage: args['merge-commit-message'],
+});
+
+/** The pull request as opened or found, with auto-complete set where the arguments ask, and that said in the line. */
+async function opened(repo, pr, args, line) {
+  return answered(`${line} ${await autoComplete(repo, pr, optionsOf(args))}`, 0, pr, repo);
+}
+
 async function create(args) {
   const repo = repoOf(args);
   const active = (await fromBranch(repo, args.branch)).find((pr) => pr.status === 'active');
-  if (active) return answered(`Pull request ${active.pullRequestId} is already active from \`${args.branch}\`: ${addressOf(repo, active)}`, 0, active, repo);
+  if (active) return opened(repo, active, args, `Pull request ${active.pullRequestId} is already active from \`${args.branch}\`: ${addressOf(repo, active)}`);
   const target = args.target ? heads(args.target) : (await call(repo, 'GET', '')).json?.defaultBranch;
   if (!target) return answered(`Azure DevOps names no default branch for ${repo.repository}.`, 1);
   const made = await call(repo, 'POST', '/pullrequests', {
     sourceRefName: heads(args.branch), targetRefName: target, title: args.title || args.branch, description: args.description ?? '',
   });
   if (made.status === 201 || made.status === 200) {
-    return answered(`Opened pull request ${made.json.pullRequestId} into \`${withoutHeads(target)}\`: ${addressOf(repo, made.json)}`, 0, made.json, repo);
+    return opened(repo, made.json, args, `Opened pull request ${made.json.pullRequestId} into \`${withoutHeads(target)}\`: ${addressOf(repo, made.json)}`);
   }
   return answered(`Azure DevOps did not open the pull request (${made.status}): ${made.json?.message ?? 'no reason given'}`, 1);
 }
@@ -74,14 +90,23 @@ async function complete(args) {
   return answered(`Azure DevOps did not complete pull request ${pr.pullRequestId} (${done.status}): ${done.json?.message ?? 'no reason given'}`, 1);
 }
 
+/** The answer with the way its calls were made said, and given to the agent as `data.way` for the evidence it records. */
+function ways(answer) {
+  const way = wayOf();
+  if (!way) return answer;
+  return { ...answer, said: [...answer.said, wayWords()], ...(answer.data ? { data: { ...answer.data, way } } : {}) };
+}
+
 /** One round of a pull-request command; a refusal said as its line, exit 1. */
-export async function pullRequestCommand(command, args = {}) {
-  try {
-    if (command === 'create-pull-request') return await create(args);
-    if (command === 'pull-request-status') return await status(args);
-    return await complete(args);
-  } catch (error) {
-    if (error instanceof Refusal) return { said: [error.message], exit: 1 };
-    throw error;
-  }
+export function pullRequestCommand(command, args = {}) {
+  return within(async () => {
+    try {
+      if (command === 'create-pull-request') return ways(await create(args));
+      if (command === 'pull-request-status') return ways(await status(args));
+      return ways(await complete(args));
+    } catch (error) {
+      if (error instanceof Refusal) return ways({ said: [error.message], exit: 1 });
+      throw error;
+    }
+  });
 }

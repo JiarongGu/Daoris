@@ -11,8 +11,9 @@ const ASK = { name: 'token', prompt: 'Personal access token', masked: true };
 export { refused };
 
 export async function run({ command, args = {}, answers = {} }) {
-  if (!stored()) return { said: ['Daoris handed this plugin no private storage: switch its storage on in Plugins.'], exit: 1 };
+  // The pull request's commands need no storage: with none, the browser's signed-in session serves them as it serves a step.
   if (NAMES.includes(command)) return pullRequestCommand(command, args);
+  if (!stored()) return { said: ['Daoris handed this plugin no private storage: switch its storage on in Plugins.'], exit: 1 };
   if (command === 'login') {
     const token = typeof answers.token === 'string' ? answers.token.trim() : '';
     if (!token) return { said: [MAKE], ask: ASK };

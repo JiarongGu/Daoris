@@ -159,28 +159,50 @@ API. A refused one is noted for `status`. The plugin is not started where `origi
 denies Write. `DAORIS_HOST_API` names another base address in place of `https://dev.azure.com` and release management's, as the
 test's stand-in does.
 
+## Without a token: the person's signed-in browser
+
+Where no token is kept, or Azure DevOps refuses the kept one (a 401, a 403 or its sign-in page), every call above (the pull request, its
+auto-complete, `work/state`, the release watch and the agent's tools) is made from the person's signed-in session in Daoris's own browser
+instead of failing `no-token`. A kept token Azure DevOps accepts is always the first way, and a refused one is not asked again by the
+process until a new one is kept. Daoris hands the plugin the browser's DevTools address as `DAORIS_BROWSER` (the manifest's
+`hooks.browser`; a host with no browser hands none, and the plugin then fails `no-token` or `unauthorized` as before).
+
+- **A tab of its own** (`browser.mjs`). The plugin opens one tab per origin it asks (`dev.azure.com`, `vsrm.dev.azure.com`) in the
+  browser's signed-in profile, holds it by its own target, never selects or navigates another, and closes it when the step's work ends.
+  A fresh browser context was measured to carry no sign-in, so it is a tab, not a context; another session driving the browser moves
+  its own tabs, never this one.
+- **Only from the page.** Each call is a `fetch(url, { credentials: 'include', headers: { 'X-TFS-FedAuthRedirect': 'Suppress' } })` run
+  inside that page. Nothing reads a cookie, a storage, a header the page sends or the browser's cookie store, and no token or cookie
+  reaches the plugin's data, logs, evidence or the agent.
+- **A sign-in that lapses** (a 401, a 203, or HTML where JSON was asked) is renewed once, by navigating the page to the organization
+  (`{org}/_apis/connectionData`), which renews the single sign-on silently, and the call is made again. A second lapse fails the step as
+  `signed-out`, naming the lapsed sign-in, with no second renewal.
+- **The evidence names the way.** Each answer's evidence message (and `work/state`'s, and each tool's last line, with `data.way`) ends
+  `Way: the token.`, `Way: the browser.` or `Way: the browser (the kept token was refused).`; the outputs and the other fields are the
+  same by either way.
+
 ## Tools for an agent
 
 Four commands are marked `tool`, so a session at a place where the plugin's tools are on calls them through its `daoris-plugins`
 server: `status`, and the three an agent working a pull-request step needs, each naming the repository by its origin's address:
-`create-pull-request` (a pushed branch, its target, a title and a description; the active one found again), `pull-request-status` (by
+`create-pull-request` (a pushed branch, its target, a title and a description, and the step's auto-complete options as arguments; the active one found again), `pull-request-status` (by
 its address or id, or from its branch) and `complete-pull-request` (by `merge`, `squash`, `rebase` or `rebase-merge`, the source
 branch deleted where asked, the repository's policies still deciding). Each answers its pull request's id, address, state, branches
 and merge commit as `data` (`pull-request-commands.mjs`).
 
 ## What it needs
 
-- **Node.js**, as `plugin.json` declares under `tools`: the process, and its calls to the API.
-- **A personal access token, kept by `login`**, with the scopes Code (read and write) for the pull request and its auto-complete,
+- **Node.js 22 or newer**, as `plugin.json` declares under `tools`: the process, its calls to the API, and its connection to Daoris's browser.
+- **A personal access token, kept by `login`**, or the person's sign-in to Azure DevOps in Daoris's browser (the token is the first way), with the scopes Code (read and write) for the pull request and its auto-complete,
   Build (read) for the release step, and Release (read, write and execute) where it starts a stage by `deploy` (read alone otherwise).
   The token's user needs the repository's *Contribute to pull requests* permission to set auto-complete.
 - **`origin`** naming the Azure Repos repository.
 
 ## Why each version
 
-- **Node.js 18.0.0**: the plugin calls the API with the global `fetch` and `AbortSignal.timeout`, which came with Node.js 18 and 17.3
-  ([Node.js 18](https://nodejs.org/en/blog/announcements/v18-release-announce)); the kit's `work.mjs` needs 16.6.0 for `Array.prototype.at`.
-  Read from the release notes, not run on 18.0.0.
+- **Node.js 22.0.0**: the plugin calls the API with the global `fetch` and `AbortSignal.timeout`, and reaches the browser over the global
+  `WebSocket`, which Node.js 22 enables by default ([Node.js 22](https://nodejs.org/en/blog/announcements/v22-release-announce)); the kit's
+  `work.mjs` needs 16.6.0 for `Array.prototype.at`. Read from the release notes.
 
 ## Proof
 
@@ -190,6 +212,9 @@ source starts no program), `auto-complete.test.mjs` (set, off by default, refuse
 merge strategy) and `release.test.mjs` (a classic release watched to success, a failed stage, a pending approval waited on, a stage
 started by `deploy`, no build and no release found, a pipeline run's own stages, and the deadline), `release-places.test.mjs` (a build taken
 by several release definitions as four repositories of one organisation shape them, and a merge no pipeline builds, by a path filter, a branch
-filter or a trigger off) and `triggers.test.mjs` (the YAML trigger's shapes). None of it has been run against a
+filter or a trigger off) and `triggers.test.mjs` (the YAML trigger's shapes) and `browser.test.mjs`, against `browser-stand-in.mjs` as well, a stand-in of Daoris's
+browser's DevTools endpoint whose pages run the call with a `fetch` that sends the session (the token way left alone, the browser
+way with no token or a refused one, the same outputs and evidence by either, a lapsed sign-in renewed once and then said, a tab of its own,
+and no cookie or storage asked for). None of it has been run against a
 real Azure DevOps organisation: whether `lastMergeCommit` names a squash's commit on the target, and how each API answers a refusal by
 policy, were never measured, and git's confirmation is what keeps a wrong reading safe.
