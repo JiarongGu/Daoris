@@ -69,7 +69,6 @@ function targetOf(path) {
   }
 }
 
-/** The path in the form Windows accepts past 260 characters; other systems keep it. */
 const longPath = (path) => (process.platform === 'win32' && !path.startsWith('\\\\?\\') ? `\\\\?\\${resolve(path)}` : path);
 
 /** Removes what is left of `path` without following a link: each link as a link, each folder after its entries. */

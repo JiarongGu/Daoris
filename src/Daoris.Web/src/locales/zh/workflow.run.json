@@ -180,6 +180,7 @@
   "workflow.run.door.session": "打开会话",
   "workflow.run.door.quest": "打开委托 #{{id}}",
   "workflow.run.door.ask": "打开需求",
+  "workflow.run.door.needs": "{{command}}",
   "workflow.run.door.review": "打开审阅",
   "workflow.run.door.pullRequest": "打开拉取请求",
   "workflow.run.door.view": "工作流",

@@ -47,7 +47,6 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
 
-    /// <summary>The command of its plugin the failure named as its fix (the wire's <c>needs</c>), as the plugin said it.</summary>
     public string? Needs { get; init; }
 
     /// <summary>Whether that failure is declared transient: only such a failure retries without the person.</summary>
@@ -91,7 +90,6 @@ public sealed record NodeMove(string To, string By)
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
 
-    /// <summary>A failure's <c>needs</c>: the plugin's command the plugin named as the fix.</summary>
     public string? Needs { get; init; }
 
     public bool Transient { get; init; }

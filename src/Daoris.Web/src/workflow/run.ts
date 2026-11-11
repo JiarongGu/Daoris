@@ -1,4 +1,5 @@
 import type { Session } from '../data/api';
+import type { Authored } from '../locales/authored';
 import type { WorkflowStep } from './current';
 
 // Where a piece of work stands in its workflow, as the shell answers it: the driver's `WorkflowRunReader`, read from the records that already exist. The page draws it and derives nothing: where
@@ -56,6 +57,8 @@ export interface RunStep {
   acts?: string[] | null;
   /** The person's word on a graph run's node, kept and not applied yet; none where none waits. */
   asked?: NodeWordKept | null;
+  /** The command a refused step's plugin named as its fix and declares: its door opens the round card. */
+  needs?: { plugin: string; command: string; title?: Authored | null } | null;
   /** The gate a failed check named; none on another step, and from a shell before it. */
   gate?: string | null;
   /** A check's attempt held unknown for the person, or settled by their stop; none on another step. */

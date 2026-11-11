@@ -180,6 +180,7 @@
   "workflow.run.door.session": "Open its session",
   "workflow.run.door.quest": "Open quest #{{id}}",
   "workflow.run.door.ask": "Open the ask",
+  "workflow.run.door.needs": "{{command}}",
   "workflow.run.door.review": "Open its review",
   "workflow.run.door.pullRequest": "Open pull request",
   "workflow.run.door.view": "Workflow",

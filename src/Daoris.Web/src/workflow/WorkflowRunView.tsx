@@ -1,5 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { askCommand } from '../plugins/commandAsks';
+import { authoredText } from '../locales/authored';
+import i18n from '../locales/i18n';
 import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
@@ -275,6 +278,12 @@ function DoorPress({ door }: { door: Door }) {
 function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep, doors?: RunDoors): Door | null {
   if (step.state === 'not-reached') return null;
   const kind = step.step.kind;
+
+  // A refused step's plugin named its fix: the command's round card, which the Plugins page draws.
+  if (step.needs) {
+    const { plugin, command, title } = step.needs;
+    return { label: t('workflow.run.door.needs', { command: authoredText(title, i18n.language) || command }), open: () => askCommand(plugin, command) };
+  }
 
   // A graph run's node: where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
   // landed branch's page for what follows the landing; the session whose branch it observes.

@@ -161,7 +161,7 @@ public sealed class WorkflowGraphRunTests
         Assert.Null(Step(Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("claimed", NodeStates.Reached, "quest:q1", "m"))), "claimed").Held);
     }
 
-    /// <summary>A refused step carries the command its plugin named as the fix, or the words that say it was ignored.</summary>
+    /// <summary>A refused step carries the command its plugin named as the fix, or, naming none it declares, the words that say so.</summary>
     [Fact]
     public void A_refused_steps_needs_is_drawn_on_its_step_or_said_where_ignored()
     {

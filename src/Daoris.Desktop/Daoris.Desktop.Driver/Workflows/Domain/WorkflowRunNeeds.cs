@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record WorkflowRunNeeds(string Plugin, string Command, AuthoredText Title);
 
-/// <summary>What a step's <c>needs</c> came to where the run is read: the command it names, or the words that say it was ignored.</summary>
+/// <summary>What a step's <c>needs</c> came to where the run is read: the command it names, or the words that say it is ignored.</summary>
 public sealed record RunNeed(WorkflowRunNeeds? Needs, string? Said);
 
 /// <summary>

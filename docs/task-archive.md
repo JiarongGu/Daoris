@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINEXT1's refused step's `needs` (2026-11-12)
+
+> **PLUGINEXT1 a/c, a refused step's `needs`** (driver, web; D274): Outcome: a failed outcome (a completion, a reconcile, a step agent's `step_answer`) may carry `needs: "<command>"`, read by the work wire, kept on the node's status, cleared at the next start, and judged where a run is read (`RunNeeds`) against its plugin's declared commands; a declared one is the run step's `needs`, drawn as a door titled by the command that opens its round card (`askCommand`), any other ignored and said in the step's words; both catalogues; `WorkWireTests`, `NodeNeedsLifecycleTests`, `RunNeedsTests`, `WorkflowGraphRunTests`, `WorkflowRunView.needs.test.tsx`.
+
 ## DOCDIET1's first steps: a present search, the read-path bench, the design filer, 242 designs filed (2026-11-12)
 
 > **DOCDIET1 search, bench and filing** (service, tools, records; D278): Outcome: `knowledge_search` answers a present question present first (`PresentFirst`; each hit says present, dated or history), the area first for 9 of 12 questions against 1 by the words' own rank, history questions unchanged at 6 first and 10 within three (`PresentFirstBenchTests`); `tools/read-path-bench.mjs` measures the floor and the bytes at a change's start from `tools/read-path-bench-questions.json`; `tools/file-designs.mjs` filed 242 designs nothing open cites under `docs/archive/` with 1,469 citations respelled in 407 files, ten left; the bytes at a change's start 79.5 KB to 74.6 KB at the median area. The rest stays on the row.
