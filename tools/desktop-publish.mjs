@@ -321,8 +321,9 @@ async function main() {
 
   // The doctrine tool, beside the application: the package under `app/cli/`, as npm
   // lays one out, and a launcher for each shell in `app/bin/`. Nothing goes on any PATH from here.
+  const build = { id: buildId(), commit: commitOf(repoRoot) };
   try {
-    const tool = await layCli(cliTarball, root);
+    const tool = await layCli(cliTarball, root, {}, build);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
       + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}.`);
   } catch (error) {
@@ -412,9 +413,9 @@ async function main() {
     // The build's manifest, which the application and the launcher check before anything is replaced, then
     // the folder swapped into `update/staged/` whole, so the desktop never meets half a stage.
     const identity = {
-      id: buildId(),
+      id: build.id,
       version: JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version,
-      commit: commitOf(repoRoot),
+      commit: build.commit,
       at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     };
     writeManifest(root, identity);
