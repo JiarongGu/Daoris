@@ -59,8 +59,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 9. The opinion, the look and the `review` come before every landing, wired straight into it, and no landing starts before a look
    has passed; the opinion need not precede the look (`ProtectedOrder`). Each hold (`quest.holds`, `content.holds`,
    `work.requests`) is judged once, on every way to a landing. `quest.holds` never reaches on a done checked against nothing: an
-   ask's quest with no requirement waits *unchecked* until the person passes it with words or a version turns its `yes` off.
-   (D157, D190, D247, D255)
+   ask's quest with no requirement waits *unchecked* until the person passes it with words, their through words on its ask pass it
+   (rule 23), or a version turns its `yes` off. (D157, D190, D247, D255, D277)
 10. A `land` method brings a tail only for `integrate` (one `integrate`). A `push` stands after a `branch` landing, and a pull
     request is a plugin's step (`<plugin>/pull-request`) after it, composed by the place, never a method. A workflow that cannot
     bind or be drawn holds on a coded `BindingProblem`, worded from the catalogue. (D215, D227, D241)
@@ -125,7 +125,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     on an unchecked done (D255), an Accept naming it (`unchecked`) passes each unchecked `quest.holds` in the same edit, saying so
     (`none-unchecked` where none waits); no other hold passes this way, and a gate held only by the review just accepted holds
     nothing. The Accept is also the try again. No door lands in place: work no run's `land` performs is held with why. A tree door
-    given a tree's name takes the session whose tree it is. (D227, D228, D256, D273)
+    given a tree's name takes the session whose tree it is. Where the run's ask holds the person's through words, the runtime keeps
+    their word itself, a step at a pass: each `quest.holds` waiting unchecked is passed, then the review waiting on its record is
+    accepted, bound to the record standing, each saying *accepted on your words, "<quote>", kept on ask #…*. It does so only where no
+    requirement of the run's quests departed or waits unmet, no other step waits on the person (a hold, an open look or opinion, a
+    go-ahead, a task, an approval, a choice), nothing is stopped, no word is kept and the person asked for no changes on that review;
+    else the run waits for them. A go-ahead is never passed on them. (D227, D228, D256, D273, D277)
 24. An entry's or an ask's one Accept keeps each part's word on the record the press drew for it and lands it at the pass; a part
     no `land` performs is held, said. It is not atomic: a moved part is refused alone, and the answer says which landed, accepted,
     moved and failed. A part lands on its run's branch; each quest an ask sent is a run of its own unless its chain leads back to an
