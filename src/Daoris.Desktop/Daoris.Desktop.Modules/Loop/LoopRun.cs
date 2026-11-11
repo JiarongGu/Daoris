@@ -89,8 +89,7 @@ internal sealed class LoopRun(
         lineage.Start();
         using var lineageResumed = loop.Power?.Hear(lineage.Resumed);
 
-        // A plugin's word goes to the console under `plugin:<id>`; what the set does with each plugin goes to the machine log without
-        // its words, and into the loop's record of its health.
+        // A plugin's word goes to the console under `plugin:<id>`; what the set does, without its words, to the log and the health record.
         shared.Hooks = PluginsAtStart.Set(homeDirectory, say: null, loop.Output, log, loop.Health);
         _ = Task.Run(() => PluginTokenAdoption.RunAsync(homeDirectory, log, CancellationToken.None));
         // Each change the publisher tells the windows reaches the plugins at `state/changed` too, queued by the set, so no press's answer

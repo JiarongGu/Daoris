@@ -21,7 +21,6 @@ public static class PluginRenames
     public const string Storage = "storage";
     public const string Approvals = "approvals";
 
-    /// <summary>The attempts still in flight under the old id (<see cref="PluginRenamedAttempts"/>).</summary>
     public const string Attempts = "attempts";
 
     /// <summary>

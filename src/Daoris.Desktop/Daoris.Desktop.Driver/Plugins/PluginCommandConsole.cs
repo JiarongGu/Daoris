@@ -12,7 +12,8 @@ public static class PluginCommandConsole
     public sealed record Terminal(TextWriter Out, TextWriter Error, Func<bool, string?> ReadLine, Func<string, string?> Environment);
 
     /// <summary>Whether <paramref name="word"/> names an installed plugin that runs commands, by its id or its id's tail (<see cref="PluginTerminalWord"/>).</summary>
-    public static bool Names(string home, string word) => PluginTerminalWord.Named(PluginCatalog.Load(home), word).Count > 0;
+    public static bool Names(string home, string word) =>
+        PluginTerminalWord.Named(PluginCatalog.Load(home), word).Count > 0;
 
     public static async Task<int> RunAsync(string home, string[] args, Terminal terminal, CancellationToken ct, PluginCommandRun.Starter? start = null)
     {

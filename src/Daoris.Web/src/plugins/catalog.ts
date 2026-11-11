@@ -133,9 +133,8 @@ export type PluginShown = {
   harnesses: string[];
   /** The points it listens on, when it speaks. */
   points: string[];
-  /** Whether its hook process is up right now. */
+  /** Whether its hook process is up right now, and whether three unasked exits within an hour hold it back until *Try again*. */
   running: boolean;
-  /** Held back after three unasked exits within an hour, until the person's *Try again*; absent where the loop holds nothing. */
   unsound?: boolean;
   /** Its install folder. */
   folder: string;
