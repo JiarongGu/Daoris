@@ -14,6 +14,8 @@ public sealed class AskNewViewTests
         var grounds = new StubGrounds { Facts = new HelpMachineFacts(["engine"], ["default", "games"], []) };
         grounds.Placed["engine"] = "games";
         grounds.Registered.Add("engine");
+        // A repository placed nowhere is in the default workspace.
+        grounds.Registered.Add("docs");
         return grounds;
     }
 
@@ -75,6 +77,21 @@ public sealed class AskNewViewTests
         Assert.Contains("`ghost`", (await View(new { workspace = "games", sentence = "x", to = "ghost" })).Refusal);
         Assert.Contains("No review environment is declared in workspace `games`", (await View(new { workspace = "games", sentence = "x", review = "lab" })).Refusal);
         Assert.Contains("--review-words go with a review choice", (await View(new { workspace = "games", sentence = "x", reviewWords = "why" })).Refusal);
+    }
+
+    /// <summary>The service holds the workspaces its registered repositories are in, so one none is in is no workspace to ask at, the default's name included.</summary>
+    [Fact]
+    public async Task A_workspace_no_registered_repository_is_in_is_refused_at_the_ask_the_default_included()
+    {
+        var grounds = Machine();
+        grounds.Registered.Remove("docs");
+
+        var viewed = await new AskNewView().ViewAsync(grounds, JsonSerializer.SerializeToElement(new { workspace = "default", sentence = "x" }), CancellationToken.None);
+
+        Assert.Null(viewed.View);
+        Assert.Equal("there is no workspace `default` on this machine — one of `games`.", viewed.Refusal);
+        var other = await View(new { workspace = "GAMES", sentence = "x" });
+        Assert.Equal("games", other.View!.Facts["workspace"]);
     }
 
     [Fact]
