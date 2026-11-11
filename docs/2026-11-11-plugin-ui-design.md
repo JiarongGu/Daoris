@@ -399,12 +399,11 @@ method-not-found draws *It does not do this*.
   given the step's goal, instead of Daoris calling `work/perform` alone (D274 point 1). Its evidence is the session's record and its
   outcome the agent's answer. It is designed with the workflows area in its own row (§11 e), after the tools reach a session.
   Built for it: the tools reach a quest's session (row d), and both pull-request examples carry `create-pull-request`,
-  `pull-request-status` and `complete-pull-request` as tools naming the repository by its origin's address. Still to settle, with
-  the workflows area, before the runtime's half: (1) which steps an agent performs: a step declaring it, its manifest's `goal` (authored)
-  beside `outcomes`, while a step whose work outlives a round and a session's attention (a release watched for hours) stays on
-  `work/perform`, which D228 then reads as two declared jobs, not two ways to one; or every step by an agent, the release watch then a
-  tool the agent calls again; (2) the session: a part of the run started by the pass on the step's door, at the work's place, in its
-  tree or none, holding only its plugin's tools (`daoris plugin tools --plugin <id>`) and handed the step's goal, the run's record, the
+  `pull-request-status` and `complete-pull-request` as tools naming the repository by its origin's address. Settled (D274's note of
+  2026-11-12): (1) which steps an agent performs: a step declaring it, its manifest's `goal` (authored) beside `outcomes`, while a step
+  whose work outlives a round and a session's attention (a release watched for hours) stays on `work/perform`, which D228 then reads as
+  two declared jobs, not two ways to one; (2) the session: a part of the run started by the pass on the step's door, at the work's
+  place, with no tree of its own, staffed as the place's other sessions are, holding only its plugin's tools (`daoris plugin tools --plugin <id>`) and handed the step's goal, the run's record, the
   branch, origin's address, the line and the landing's evidence; (3) its answer: a tool of the same server (`step_answer` with the
   outcome code, the evidence's `url` and `message`, and the outputs) read as the step's completion, the plugin named as its source,
   the session's record its evidence, a session that ends unanswered failing the step; (4) the migration: an attempt a `pull-request`
