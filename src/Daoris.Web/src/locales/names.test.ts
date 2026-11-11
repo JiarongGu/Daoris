@@ -599,12 +599,12 @@ describe('the real glossary and catalogues', () => {
       expect(names('workflow')).toEqual([
         'Merge workflow | 合并工作流', 'Automatic merge workflow | 自动合并工作流', 'Documents workflow | 文档工作流',
         'Branch workflow | 分支工作流', 'Hosted merge workflow | 托管合并工作流', 'Integration workflow | 集成工作流',
-        'No-press integration workflow | 免按键集成工作流', 'Release workflow | 发版工作流',
+        'No-press integration workflow | 免按键集成工作流', 'Release workflow | 发版工作流', 'In-place workflow | 原处工作流',
       ]);
       expect(names('delivery')).toEqual([
         'Merge after you accept | 你采纳后合并', 'A branch to push | 留给你推送的分支', 'A pull request | 拉取请求',
         'Integrated into the line | 集成到主线', 'Merge with no review | 无需审阅即合并', 'Integrated with no press | 集成到主线，无需按键',
-        'Not driven | 未驱动',
+        'Work in place | 在原处工作', 'Not driven | 未驱动',
       ]);
       expect(names('step')).toEqual(expect.arrayContaining([
         'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已交接',

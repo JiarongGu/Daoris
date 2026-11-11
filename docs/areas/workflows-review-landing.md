@@ -89,7 +89,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    its places (`INodeKind.Places`): `land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`,
    `merge`, `isolate` (its kinds make a worktree) and Daoris's half of a plugin's `pull-request` run in a git repository alone, `apply`
    in a system alone, and every other kind and any other plugin step in every kind of place, since no plugin declares where its step
-   runs. (from D221, D227, D264)
+   runs. The shipped *Work in place* (`in-place`) holds none of the git kinds, so every kind of department can follow it: the window's
+   add chooses it for a folder and a system in the press that registers them, and for a repository where the person ticks it, as a
+   set-up's plan of one and its apply (`projects/inPlace.ts`); the terminal's choice is `daoris place <department> --preset in-place
+   --apply`. (from D221, D227, D264)
 6. A workflow is one file, `<home>/workflows/<id>.json`, on this machine. A version is whole and never edited; a save appends the
    next number. The newest 20 and every version a kept run names are kept. (from D157)
 7. Only graphs are saved. One judge at the one save point refuses steps (`steps-refused`), a `land`
