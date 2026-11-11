@@ -170,7 +170,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const brought = going('needs-you');
 
     const over = await screen.findByRole('region', { name: 'Sessions' });
-    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
     expect(screen.getByRole('region', { name: 'Sessions' })).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const brought = going('needs-you');
 
     const over = await screen.findByRole('region', { name: 'Sessions' });
-    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
 
