@@ -66,7 +66,9 @@ because the code and the read support them; and the read's corrections to both. 
   a newer one is refused (rule 2; `Driver/Plugins/Domain/PluginCatalog.cs`). The manifest's records are harnesses, hooks, servers,
   skills, steps, resources, systems, tools, an icon, `interfaces` and `formerly` (`Driver/Plugins/Domain/PluginManifest.cs`).
 - A plugin's id is `<family>-<name>`: Daoris's own are `daoris-github`, `daoris-azure-devops` and `daoris-in-app-browser` (rule 30).
-  The id's shape is not held to a dash (`Driver/Settings/PluginIds.cs`).
+  The family is the word before the first dash and the tail the rest (`Driver/Plugins/Domain/PluginFamily.cs`). The catalogue does
+  not hold an installed id to a dash (`Driver/Settings/PluginIds.cs`); the kit refuses a new id with no family, and the `daoris-`
+  family outside Daoris's own examples (`Driver/Plugins/PluginKitFamily.cs`).
 - The hook wire is JSON-RPC on stdio. The handshake hands the plugin its id, the home, its data folder and its declared points
   (`Driver/Plugins/HookPeer.cs:69-76`). A process may listen only on points its manifest declares (rule 6). The points are
   `HookPoints.All` (`Driver/Knowledge/Domain/PluginVocabulary.cs`).
@@ -82,10 +84,11 @@ because the code and the read support them; and the read's corrections to both. 
   (`Driver/Plugins/Domain/CommandWire.cs`, `Driver/Plugins/PluginCommandRun.cs`). `from` is Daoris's: `terminal`, `window` or
   `adoption`. A command marked `tool` is declared and reaches no agent yet; `interactive` and `tool` exclude each other.
 - **The terminal** reaches a plugin's command where the first word names no group of Daoris's and does name an installed plugin with
-  commands (`src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs:71-72`, before `Driver/Loop/CommandTree.cs:45-50` would hand it
-  to the doctrine CLI). No group word and no doctrine verb holds a dash today (`Driver/Platform/CommandWords.cs`,
-  `src/Daoris.Cli/src/cli.ts`). It runs the rounds itself, asks each value at the terminal, hidden where `masked`, and refuses a
-  session's terminal (`Driver/Plugins/PluginCommandConsole.cs`).
+  commands, by its id or by its tail where one such plugin has it (`daoris azure-devops login`), a tail two share refused naming both
+  (`Driver/Plugins/PluginTerminalWord.cs`; `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, before
+  `Driver/Loop/CommandTree.cs` would hand the word to the doctrine CLI). No group word and no doctrine verb holds a dash today
+  (`Driver/Platform/CommandWords.cs`, `src/Daoris.Cli/src/cli.ts`). It runs the rounds itself, asks each value at the terminal, hidden
+  where `masked`, and refuses a session's terminal (`Driver/Plugins/PluginCommandConsole.cs`).
 - **Private storage** is `profiles/plugins/<id>/`, limited to the person's account, handed as `DAORIS_PLUGIN_PRIVATE` (a path, never a
   secret) to every process of that plugin, and removed with it; Daoris reads nothing in it (`Driver/Plugins/PluginPrivate.cs`,
   `HookProcess.cs:109`, `Driver/Plugins/PluginInstall.cs:430`).
@@ -792,9 +795,10 @@ From the proposal, after the read and the slice:
   questions about inheritance, removal, validation and concurrent edits would all be Daoris's.
 - **`view/act`, an action channel beside commands.** It would be two ways to act, with different confirmation and visibility (the
   read's first finding).
-- **A namespaced terminal door** (`daoris plugin run <id> <command>`). It would be a second name for one command (D274's rename note).
-  No word of Daoris's holds a dash (row c's test keeps it so), so a family's id never meets one. Where an id without a dash is a group's
-  word, the group wins and the plugin's page says its commands run from the window and as tools.
+- **A namespaced terminal door** (`daoris plugin run <id> <command>`). It would be a second way to one command, beside the id and its
+  tail (D274's notes). No word of Daoris's holds a dash (row c's test keeps it so), so a family's id never meets one. Where a tail is a
+  group's word, the group wins and the whole id still reaches the plugin; an installed id with no dash that is a group's word is
+  reached from the window and as tools alone, which its page says.
 - **One long-lived UI process per plugin,** with subscriptions, generations and an idle stop. Per-ask processes need none.
 - **Transport envelopes per message family on one process.** A per-ask process takes its method's bound.
 - **A command's `timeoutSeconds` up to 600, or operation handles.** A round is 60 seconds, and longer work is the plugin's own.
