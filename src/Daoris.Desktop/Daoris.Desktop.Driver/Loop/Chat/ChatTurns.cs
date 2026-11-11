@@ -34,10 +34,7 @@ internal sealed class ChatTurns : IChatTurns
     private readonly TurnHolds _holds;
 
     /// <summary>A conversation's turns over its door.</summary>
-    /// <param name="ready">
-    /// Whether the door can take a turn — the protocol door's session open. False means it never will, and
-    /// everything waiting is dropped.
-    /// </param>
+    /// <param name="ready">Whether the door can take a turn (its session open); false, it never will, and what waits is dropped.</param>
     /// <param name="take">
     /// Send one turn and complete when it ends. It calls its second argument the moment the turn is on the
     /// wire; a turn it could not send completes without calling it.
@@ -64,10 +61,7 @@ internal sealed class ChatTurns : IChatTurns
     /// the turn is found to have ended: the door settles there what those words' own turns came to, so a word taken whose turn failed
     /// transient is tried again inside the turn, which lasts. Never faults the pump. Null for a door that settles nothing.
     /// </param>
-    /// <param name="cutsIn">
-    /// Whether <paramref name="interrupt"/> stops a turn keeping the conversation, so the person's *Send now* that the door cannot
-    /// take mid-turn cuts in (<see cref="TurnCutIn"/>) rather than waiting for the turn's end.
-    /// </param>
+    /// <param name="cutsIn">Whether <paramref name="interrupt"/> keeps the conversation, so *Send now* cuts in (<see cref="TurnCutIn"/>).</param>
     internal ChatTurns(
         Func<Task<bool>> ready,
         Func<ChatMessage, Action, Task> take,

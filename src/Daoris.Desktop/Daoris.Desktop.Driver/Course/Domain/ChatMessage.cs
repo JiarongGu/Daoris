@@ -33,10 +33,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     public MessageLevel Level { get; init; } = MessageLevel.Urgent;
 
-    /// <summary>
-    /// The person's *Send now* stopped the turn before these words, on a door that takes none into a running turn: they are the next
-    /// turn's first words (<see cref="TurnCutIn"/>), and the record says so beside them.
-    /// </summary>
+    /// <summary>The person's *Send now* stopped the turn before these words, the next turn's first (<see cref="TurnCutIn"/>).</summary>
     public bool StoppedFor { get; init; }
 
     /// <summary>

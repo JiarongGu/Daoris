@@ -208,10 +208,7 @@ public static class SendNowWhy
     /// </summary>
     public const string Behind = "behind";
 
-    /// <summary>
-    /// The reach of words the person's *Send now* cut in with: the running turn stopped for them, they are the next turn's first
-    /// words (<see cref="TurnCutIn"/>).
-    /// </summary>
+    /// <summary>The reach of words *Send now* cut in with: the turn stopped, they are the next one's first (<see cref="TurnCutIn"/>).</summary>
     public const string NextTurn = "next-turn";
 
     /// <summary>A reach in the record's spelling, <c>now</c> for a steer.</summary>
