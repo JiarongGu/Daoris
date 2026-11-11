@@ -310,7 +310,8 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             kept.Conversation, _help.TakeFocus(sessionId, roomIn, words, await FocusRegistryAsync(ct).ConfigureAwait(false)),
             woke is { } until
                 ? LimitNotes.Resumed(until)
-                : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false),
+                : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false,
+                    restarted: words.Any(word => word.Daoris && DaorisKeys.IsRestart(word.Key))),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             // The words its account's limit refused, handed again first.

@@ -7,7 +7,7 @@ public sealed record ShellClose(string? Build)
 {
     public static ShellClose Person { get; } = new((string?)null);
     public static ShellClose Update(string build) => new(build);
-    public const string Words = "Daoris restarted for an update while you were working. Go on where you stopped.";
+    public const string Words = "Daoris restarted while you were working. Go on where you stopped.";
     public static Noted Closed(string build) => Noted.Of(
         EndNoteCodes.UpdateClosed, "Daoris stopped for an update.", ("build", build));
 }

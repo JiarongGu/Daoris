@@ -113,13 +113,20 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
     /// <summary>
     /// A <c>started</c> ask nothing in this process runs (a restart ended its pass): its helper's record read, and if that ended the
-    /// ask is settled from what the helper kept, its last words read from its transcript. A helper still running is left.
+    /// ask is settled from what the helper kept, its last words read from its transcript. A helper still running is left. One the shell's
+    /// close or the sweep cut off with no answer kept is approved again, so the look runs it anew with no word from the person.
     /// </summary>
     internal async Task<LookLine?> SettleStartedAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
         if (state.Helper is not { } helper) return null;
         var record = await _context.Service.RecordAsync(helper, ct).ConfigureAwait(false);
         if (record is { Running: true }) return null;
+        if (record is { State: "stopped", Interrupted: true } && files.ReadAnswer(ask.Id) is null)
+        {
+            files.WriteState(state with { State = HelperStates.Approved, At = DateTimeOffset.UtcNow });
+            return Helper(LookClass.Progress,
+                $"helper  ask `{ask.Id}` runs again: Daoris restarted while helper {helper} worked, and session {ask.Asker} waits on it.");
+        }
 
         var lastWords = record is { State: "completed" }
             ? SessionLastWords.ParkedWords(_context.Events, helper, DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{helper}.log"))

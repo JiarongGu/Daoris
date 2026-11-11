@@ -162,7 +162,9 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 29. The `helpers` rule is per repository, else its workspace: `ask`, `on` or `off`. With none set, an agent's ask is `on` for agents
     Daoris has set up and signed in here; one naming none goes to another maker than the asker's. (from D163)
 30. A driven lead that ends its turn on its own helper ask, with no question or go-ahead on the person, ends `completed`
-    (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. (from D203)
+    (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. A
+    helper the shell's close or the sweep cut off (`stopped`, interrupted) with no answer kept is approved again at the next start's
+    look and runs anew while its asker waits, with no word from the person (`HelperSettling.SettleStartedAsync`). (from D203)
 31. A partner writes one piece in a clone with no remote, at the asked commit. Daoris reads its files and writes one frozen commit; the
     piece lands only when the lead merges it. At most two pieces are open per lead. A lead is a session working in a tree of its own,
     driven or a conversation (`StartAdmission.LeadsPiece`, the page's `leadsPieces`), and not ended: `PartnerJudge` and the person's ask refuse an ended lead (`asker-ended`, `ended`), and the page offers the ask only while the lead runs (`takesPartner`); a conversation hears a piece's answer as a turn

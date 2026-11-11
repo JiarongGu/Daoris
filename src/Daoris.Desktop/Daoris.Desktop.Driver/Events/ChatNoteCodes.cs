@@ -47,6 +47,7 @@ public static class ChatNoteCodes
     public static readonly NoteCode ChatCancelled = new("chat.cancelled", []);
     public static readonly NoteCode ChatNotKept = new("chat.not-kept", []);
     public static readonly NoteCode ChatRestarted = new("chat.restarted", []);
+    public static readonly NoteCode ChatCut = new("chat.cut", []);
 
     // ——— A landing at the quest's done, under a rule that accepts automatically: said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);

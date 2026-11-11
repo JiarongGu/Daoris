@@ -280,12 +280,17 @@ public static class Continuations
     /// Whether the supervisor's answer is among them: with none of the owner's words or findings, said as the
     /// supervisor's, never "your answer".
     /// </param>
+    /// <param name="restarted">
+    /// Whether Daoris's restart word is among them: said as Daoris having restarted, whoever else's words go with it, since the
+    /// conversation goes on with no word from the person.
+    /// </param>
     public static Noted OpeningNoted(
         string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true, bool helper = false,
-        bool daoris = false, bool supervisor = false)
+        bool daoris = false, bool supervisor = false, bool restarted = false)
     {
         var (said, why) = (findings, persons, helper) switch
         {
+            _ when restarted => ("Daoris restarted, and its word is", ResumedWhy.Restart),
             (false, false, _) when supervisor => ("the supervisor's answer is", ResumedWhy.Supervisor),
             (true, false, _) => ("another agent's findings are", ResumedWhy.Findings),
             (true, true, _) => answer

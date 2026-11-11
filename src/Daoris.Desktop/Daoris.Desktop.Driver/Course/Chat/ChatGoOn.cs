@@ -558,7 +558,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         Continuations.OpeningNoted(
             adapter, now, then, answer: false, findings: words.Any(word => word.By is not null),
             persons: words.Any(word => word.Persons), helper: words.Any(word => word.Helper is not null),
-            daoris: words.Any(word => word.Daoris));
+            daoris: words.Any(word => word.Daoris), restarted: words.Any(word => word.Daoris && DaorisKeys.IsRestart(word.Key)));
 
     /// <summary>
     /// The words that went to the conversation come off its record by their ids, so the service keeps

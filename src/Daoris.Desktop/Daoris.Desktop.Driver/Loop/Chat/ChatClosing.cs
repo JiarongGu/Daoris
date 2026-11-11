@@ -1,38 +1,44 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How conversations end at the driver's own hand and at a person's: the shell closing, which stops every conversation and keeps the update's
-/// restart word on those that were idle, and a person finishing one.
+/// How conversations end at the driver's own hand and at a person's: the shell closing, which stops every conversation and keeps Daoris's
+/// restart word on each it cut mid-turn, and a person finishing one.
 /// </summary>
 internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclusion)
 {
     private ChatContext Context => wiring.Context;
 
-    /// <summary>The conversations a restart for an update cut off, whose record keeps the word that Daoris restarted.</summary>
-    public System.Collections.Concurrent.ConcurrentDictionary<string, byte> UpdateCuts { get; } = new();
+    /// <summary>The conversations the shell's close cut off, whose record keeps the word that Daoris restarted.</summary>
+    public System.Collections.Concurrent.ConcurrentDictionary<string, byte> Cuts { get; } = new();
+
+    /// <summary>
+    /// What this close's restart word is keyed by, set as the close begins: the update's build, or the moment any other close began, since a
+    /// key the line settled answers a later say as kept for seven days and each close's word must be its own.
+    /// </summary>
+    public string? Restart { get; private set; }
 
     /// <summary>
     /// End every conversation this runner holds, as the driver's own act, and return once each record says so, or once <paramref name="bound"/>
     /// has passed, since a shutdown must not hang on one. Stopped, not finished: a harness given end-of-input finishes the sentence it is saying
-    /// first, which can take minutes, and the person is closing the application now.
+    /// first, which can take minutes, and the person is closing the application now. Whoever closes it, a conversation cut mid-turn goes on
+    /// by itself at the next start; one between turns waits for the person's next word.
     /// </summary>
     public void StopAll(TimeSpan bound)
     {
         // No conversation goes on from here, and one already on its way is let finish its start first, so its process is among those stopped
         // below rather than spawned after them.
         var atClose = Context.Turned.ToDictionary(pair => pair.Key, pair => pair.Value.Turns.State);
+        var update = Context.Processes.Close.Build;
+        Restart ??= update ?? $"closed-{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfff}";
         Context.Close();
         wiring.Of<ChatGoOn>().Stop();
-        var update = Context.Processes.Close.Build;
         foreach (var (id, chat) in Context.Turned)
         {
             var state = atClose.GetValueOrDefault(id) ?? chat.Turns.State;
             var cut = chat.Turns.HoldForClose();
-            if (update is not null && (cut || state.Taking || state.Opening || state.Queued.Count > 0))
-                UpdateCuts.TryAdd(id, 0);
+            if (cut || state.Taking || state.Opening || state.Queued.Count > 0) Cuts.TryAdd(id, 0);
         }
-        if (update is not null)
-            foreach (var id in Context.GoingOn.Keys) UpdateCuts.TryAdd(id, 0);
+        foreach (var id in Context.GoingOn.Keys) Cuts.TryAdd(id, 0);
         try
         {
             Task.WaitAll([.. Context.Opening.Values, .. Context.GoingOn.Values], bound);
@@ -46,9 +52,10 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         foreach (var (id, _) in watches)
         {
             if (Context.Turned.TryGetValue(id, out var chat)) chat.Turns.HoldForClose();
-            var idle = update is not null && !UpdateCuts.ContainsKey(id) && conclusion.Spoken(id);
-            Context.Processes.Stop(id, idle ? Noted.Of(ChatNoteCodes.ChatRestarted,
-                "Daoris restarted for an update; this conversation goes on in its own conversation at your next word.") : ChatRunner.ClosedNoted);
+            Context.Processes.Stop(id, Cuts.ContainsKey(id) ? CutNoted
+                : update is not null && conclusion.Spoken(id) ? Noted.Of(ChatNoteCodes.ChatRestarted,
+                    "Daoris restarted for an update; this conversation goes on in its own conversation at your next word.")
+                : ChatRunner.ClosedNoted);
         }
 
         try
@@ -59,15 +66,16 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         {
             // A watch that failed has written its own record, or could not; either way it has ended.
         }
-        if (update is not null)
+        foreach (var id in Cuts.Keys)
         {
-            foreach (var id in UpdateCuts.Keys)
-            {
-                if (watches.FirstOrDefault(entry => entry.Key == id).Value is not { IsCompletedSuccessfully: true }) continue;
-                KeepRestart(id, update);
-            }
+            if (watches.FirstOrDefault(entry => entry.Key == id).Value is not { IsCompletedSuccessfully: true }) continue;
+            KeepRestart(id);
         }
     }
+
+    /// <summary>The note of a conversation the close cut mid-turn: Daoris's own stop, and it goes on by itself.</summary>
+    public static Noted CutNoted => Noted.Of(ChatNoteCodes.ChatCut,
+        "Daoris closed while this conversation's turn ran; it goes on by itself in its own conversation when Daoris starts again.");
 
     /// <summary>
     /// Words a turn left waiting on their record, said: the record did not name them marked attempted, so nothing is written for them. They
@@ -79,19 +87,21 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         Context.Record(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts.Count > 0 ? note.Parts : null });
     }
 
-    /// <summary>Daoris's restart word, kept on a conversation's record at the shell's close. It is this run's, and refused it is logged unkept as any refusal is.</summary>
-    public void KeepRestart(string session, string build)
+    /// <summary>Daoris's restart word, kept on a conversation's record at the shell's close. It is this close's, and refused it is logged unkept as any refusal is.</summary>
+    public void KeepRestart(string session)
     {
+        if (Restart is not { } close) return;
         try
         {
             var said = Context.Service.SayAsync(session, ShellClose.Words, from: DaorisWords.From,
-                key: DaorisKeys.Restart(session, build)).GetAwaiter().GetResult();
+                key: DaorisKeys.Restart(session, close)).GetAwaiter().GetResult();
             if (said.Kept) return;
             using var refused = new MachineLog(Context.Home, "driver");
             refused.Warn("conversation.restart-unkept", ("session", session), ("error", "Refused"));
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException or OperationCanceledException)
+        catch (Exception error) when (error is DriverException or HttpRequestException or OperationCanceledException or ObjectDisposedException)
         {
+            // The close must not throw: a client already let go on the same shutdown keeps nothing, and is logged as any refusal is.
             using var log = new MachineLog(Context.Home, "driver");
             log.Warn("conversation.restart-unkept", ("session", session), ("error", error.GetType().Name));
         }

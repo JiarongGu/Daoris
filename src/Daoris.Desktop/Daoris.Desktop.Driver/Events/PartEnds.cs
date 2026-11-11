@@ -40,7 +40,7 @@ public static class PartEnds
         "awaits-helper", "stood-down", "unknown",
     ];
 
-    /// <summary>The <c>ended.*</c> codes that decide a class whatever the state is.</summary>
+    /// <summary>The codes that decide a class whatever the state is: the <c>ended.*</c> codes, and the shell's close of a conversation or of an update.</summary>
     public static readonly IReadOnlyDictionary<string, string> Decided = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["ended.choice-not-offered"] = "refused-choice",
@@ -62,6 +62,10 @@ public static class PartEnds
         ["ended.background-cut"] = "stopped-daoris",
         ["ended.went-on"] = "stopped-daoris",
         ["ended.went-on-exit"] = "stopped-daoris",
+        ["chat.cut"] = "stopped-daoris",
+        ["chat.closed"] = "stopped-daoris",
+        ["chat.restarted"] = "stopped-daoris",
+        ["update.closed"] = "stopped-daoris",
         ["ended.limit-words-wait"] = "limited",
         ["ended.done"] = "completed",
         ["ended.submitted"] = "completed",
