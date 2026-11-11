@@ -116,7 +116,7 @@ internal static class HarnessCapture
         TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, IStreamMapper mapper, string? prompt,
         CancellationToken ct, string? preamble = null, Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action? named = null, InstructionAccount? account = null,
-        HarnessWords? own = null, IReadOnlyList<SaidWordView>? handed = null)
+        HarnessWords? own = null, IReadOnlyList<SaidWordView>? handed = null, Action<string>? echoed = null)
     {
         own?.Begin();
         await using var file = AgentContext.Current.OpenTranscript(transcript, append);
@@ -220,6 +220,8 @@ internal static class HarnessCapture
                 Event(e);
                 observed?.Invoke(e);
             }
+
+            if (mapped.Echoed is { } uuid) echoed?.Invoke(uuid);
 
             if (mapped.Limits is { } limits)
             {

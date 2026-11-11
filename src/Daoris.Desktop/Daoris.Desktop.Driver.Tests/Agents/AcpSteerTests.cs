@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AcpSteerTests
 {
     /// <summary>A scripted agent: each frame the client sends is answered by the handler, which may push frames first.</summary>
-    private sealed class Agent(Func<JsonElement, Agent, string?> handle)
+    internal sealed class Agent(Func<JsonElement, Agent, string?> handle)
     {
         private readonly Channel<string> _toClient = Channel.CreateUnbounded<string>();
 
@@ -102,6 +102,8 @@ public sealed class AcpSteerTests
     private const string Steers =
         """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
+    private const string InTurn = "note:Sent now: it went into the turn it was on.";
+
     /// <summary>A tool call announced or updated, as the adapter streams it.</summary>
     private static string Call(string kind, string id, string? status) =>
         JsonSerializer.Serialize(new
@@ -113,7 +115,7 @@ public sealed class AcpSteerTests
 
     /// <summary>The run's record and what it is told, in one order: the events, each word said and each word taken.</summary>
     /// <param name="receipts">Whether the receipts the record keeps under a word's id are among the lines.</param>
-    private sealed class Record(bool receipts = false)
+    internal sealed class Record(bool receipts = false)
     {
         private readonly List<string> _lines = [];
 
@@ -826,15 +828,11 @@ public sealed class AcpSteerTests
         session.Release();
     }
 
-    /// <summary>
-    /// *Send now* steers only where the agent says both that it takes words during a turn (the next-step door) and that
-    /// it offers the steering extension, each by its own <c>true</c>. Codex offers the extension without the first, and stays a
-    /// turn-end door.
-    /// </summary>
+    /// <summary>*Send now* steers where the agent offers the steering extension, by its own <c>true</c>, Codex's too.</summary>
     [Theory]
     [InlineData(Steers, true)]
     [InlineData(Queues, false)]
-    [InlineData("""{"_meta":{"steering":{"supported":true}},"agentCapabilities":{}}""", false)]
+    [InlineData(AcpCodexSteerTests.CodexSteers, true)]
     [InlineData("""{"_meta":{"steering":{"supported":"true"}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""", false)]
     [InlineData("""{"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true},"steering":{"supported":true}}}}""", false)]
     [InlineData("""[]""", false)]
@@ -904,6 +902,7 @@ public sealed class AcpSteerTests
                 "tool:read-1:pending",
                 "said:said-1:Steered:put MANGO after the words",
                 "taken:said-1:put MANGO after the words",
+                InTurn,
                 "tool:read-2:pending",
                 "tool:read-2:completed",
                 "message:MANGO",
@@ -971,6 +970,7 @@ public sealed class AcpSteerTests
                 "said:said-1:NextStep:put PINEAPPLE after the words",
                 "said:said-2:Steered:stop: the tests are in /spec",
                 "taken:said-2:stop: the tests are in /spec",
+                InTurn,
                 "message:MANGO",
                 "turn:end_turn",
                 "taken:said-1:put PINEAPPLE after the words",
@@ -1166,7 +1166,7 @@ public sealed class AcpSteerTests
 
         Assert.Equal("injected", steered);
         Assert.Equal("end_turn", await turn.WaitAsync(Poll.Patience));
-        Assert.Equal(["taken:said-c1:put MANGO after the words", "message:MANGO", "turn:end_turn"], record.Lines);
+        Assert.Equal(["taken:said-c1:put MANGO after the words", InTurn, "message:MANGO", "turn:end_turn"], record.Lines);
         session.Release();
 
         var silent = new Agent((frame, self) => frame.GetProperty("method").GetString() switch

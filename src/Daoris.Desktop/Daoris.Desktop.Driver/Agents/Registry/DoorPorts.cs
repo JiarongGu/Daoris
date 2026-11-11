@@ -27,6 +27,8 @@ public static class DoorPorts
         /// <summary>The line that stops a conversation's turn on the door's stdin, null where it has none.</summary>
         public string? FrameInterrupt() => Native(door)?.FrameInterrupt();
 
+        public string? FrameSteer(string text, string uuid) => Native(door)?.FrameSteer(text, uuid);
+
         /// <summary>What a protocol-door session carries on <c>session/new</c> to take its rules file, plugins and own tool home, null for none.</summary>
         public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string>? plugins = null, OwnTools? own = null) =>
             door.Dialect.IsKnown ? (door.Dialect.Required as IProtocolDialect)?.SessionMeta(settingsFile, plugins ?? [], OwnFor(door, own)) : null;

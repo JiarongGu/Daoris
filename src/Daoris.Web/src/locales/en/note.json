@@ -268,6 +268,8 @@
   "note.words.not-sent": "The message could not be sent: the agent had gone.",
   "note.words.start-not-taken": "The words this conversation started with could not be taken off session {{session}}:",
   "note.words.not-kept": "What you said as it wound up was not kept for it to go on with:",
+  "note.words.sent-now-in-turn": "Sent now: it went into the turn it was on.",
+  "note.words.sent-now-next-turn": "Sent now: its turn ended before it could take this, so this began the next.",
   "note.words.why.ended-first": "it ended first",
   "note.words.why.unkept": "Daoris kept no id for its conversation",
   "note.words.why.unmarked": "its record did not mark them attempted, so they wait there for the session's next go-on",
