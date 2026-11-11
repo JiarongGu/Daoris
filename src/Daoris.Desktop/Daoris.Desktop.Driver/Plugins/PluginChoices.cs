@@ -71,6 +71,9 @@ public static class PluginRoutes
     /// <summary><c>plugin remove|enable|disable &lt;id&gt;</c>: the row's switch, and its remove.</summary>
     public static InstanceRoute Action { get; } = Person("PLUGIN_ACTION");
 
+    /// <summary><c>plugin switch &lt;id&gt; &lt;what&gt; on|off [--place &lt;place&gt;]</c>: one interface or point at one place.</summary>
+    public static InstanceRoute Switch { get; } = Person("PLUGIN_SWITCH");
+
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
@@ -79,6 +82,8 @@ public static class PluginRoutes
         ("plugin update <id> --yes", Update, "the update's press, sent with `apply: true`; the plan without --yes is read here"),
         ("plugin remove|enable|disable <id>", Action,
             "the row's switch, and its remove, which stops the plugin's process before the folder goes"),
+        ("plugin switch <id> <what> on|off [--place <place>]", Switch,
+            "one interface or point switched at one place, which the loop reads at its next look"),
         ("plugin add … (installed already)", Replace,
             "the replace, which PLUGIN_ADD and PLUGIN_INSTALL never make: the person's press, confirmed in the window (D50)"),
     ];

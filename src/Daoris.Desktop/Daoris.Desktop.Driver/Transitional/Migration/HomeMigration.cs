@@ -57,6 +57,7 @@ public static class HomeMigration
         new SecondCheckStep(),
         new HelpProposalsStep(),
         new ClosedRunsStep(),
+        new PluginSwitchesStep(),
     ];
 
 

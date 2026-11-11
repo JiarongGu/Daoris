@@ -39,7 +39,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | The events relay's verb | `Plugins/Relay/RelayCommand.cs` (`events relay`), `RelayAsk.cs`, `RelayCopy.cs`, `RelayPipe.cs`, `RelayRun.cs`; `Instance/UserPipe.cs` | EVENTHOOK1c: routed at the host's entry after the role terminal's gate (which refuses it, being no verb of `RoleTerminal.Runs`) and before the home's adoption, the generic lease and the machine log, one catch saying every failure as `the relay stopped (<code>)`; `--where` adopts the install's home, holds its lease by `HomeLease.ForVerb` (refused as `HeldByAnother`), lays the running build out at `bin/events-relay/<RelayBuild.Of>` staged and moved whole with its `in-use` file, removes a build none holds by an exclusive open and a rename first, deletes a stopped removal, follows no junction, and prints the copy's command; `--once` drops the holder key the entry took and strips the service, remote and messaging variables, runs only from a whole copy whose `in-use` it holds shared for reading, removes a dead relay's subscriber file, serves `daoris-event-<32 hex>` by `UserPipe.Security` for two instances (a Unix socket in the subscribers' folder elsewhere), puts its `<pid>.json` in place whole, refuses a client whose holder is no instance or whose agents' job (`ProcessJob.NamedHolds`) answers no, takes one the job cannot answer untold, checks the first line within 5 s, ends on a second client, three bad frames, the connection's end, the 30 s gathering, `--session-pid`'s exit (printing nothing) or the 15-minute bound read off its clock while an instance holds the home or the lease is a doubt (`HomeLease.HeldBy(home, out doubt)`), and prints its tallies, then its batch; `work/event`'s handshake names the set's `run`, which the plugin's first line carries. The plugin is Daoris.Plugins' `event-relay` (§5 of the design); Daoris holds none of it, and the relay's Process tests run their own stand-in for it, `Driver.Tests/Plugins/RelayStandIn/` (the hook wire and the relay's first line and frames, no more) |
 | Work events' frame and teller | `Plugins/Domain/WorkEventGrammar.cs`, `HookFrames.Event` (`Plugins/Domain/HookPoints.cs`), `Plugins/WorkEventPoint.cs`, `Plugins/RelayBuild.cs` | `work/event`'s parts: the grammar (version 3: `session.parked`, `quest.parked`, `session.ended`, `work.landed`, `events.missed`, the version 2 kinds `quest.published`, `quest.closed`, `quest.close-lost`, `confirmation.ended`, `work.ended`, and version 3's `channel.posted`, each kind's closed list of ids, codes, counts and a UTC time); the frame built by it, an optional field that fails left out and an event whose required field fails told as `events.missed` in its place; the teller, which mints every `seq` under one lock whether or not it tells, tells only while `Held`, keeps a queue of 256 and a teller per plugin that joined (the oldest dropped and counted in the next frame's `missed`), and stops a plugin after three late answers in a row; a build's hash over its whole bundle, 64 zeros where there is none |
 | Systems | `Plugins/Domain/PluginSystems.cs`, `Plugins/Systems/` (`SystemAdapter`, `SystemAdapters`, `SystemReadBack`, `SystemPlanning`, `SystemAdd`), `Service/Domain/SystemPlace.cs`, `HookPoints.System`, `HookPeer.SystemAsync` | A manifest's `systems` read; a system's adapter started from the catalogue and asked to plan and apply; a system department's registration composed from the plugins that adapt it (`SystemAdd`, which the registry door sends whole), a system guarded by `none` read before and after each write (the driving area keeps the plans, the workflows area the apply) |
-| Switch | `Plugins/PluginState.cs`, `Plugins/PluginInterfaceSwitch.cs` | `<home>/plugins.json`: the disabled rows, and `off`, each plugin's interfaces switched off |
+| Switch | `Plugins/PluginState.cs`, `Plugins/PluginSwitches.cs`, `Plugins/Domain/PluginSwitchTable.cs`, `Plugins/Domain/PluginPlace.cs`, `Plugins/WorkSwitched.cs`, `Plugins/PluginSwitchVerb.cs`; `Modules/Bridge/Routes/PluginSwitchRoutes.cs` | `<home>/plugins.json`: the disabled rows, and `switches`, the person's word on each interface and point per place, read by one resolver at every door; `daoris plugin switch` and `PLUGIN_SWITCH` |
 | Family | `Plugins/Domain/PluginFamily.cs`, `Plugins/PluginKitFamily.cs`, `Plugins/PluginTerminalWord.cs` | An id's family and tail; the kit's refusal of an id with no family or in Daoris's own; the plugin a terminal's word names |
 | Rename | `Plugins/Domain/PluginFormerly.cs`, `Plugins/PluginRenames.cs`, `Plugins/PluginRenamedAttempts.cs`, `Plugins/PluginsAtStart.cs`, `Workflows/PluginFormerKinds.cs` | A manifest's `formerly` read; the old id's copy, switches, data, storage, approvals and attempts in flight moved to the new id once, before each loop's plugins start; a saved graph's former kinds read and drawn as the new id's |
 | Interfaces | `Plugins/Domain/PluginInterfaces.cs` (`PluginCommandReader`, `PluginViewReader`, `PluginInterfaceFields`), `PluginInterfaceChanges.cs`, `PluginInterfaceLines.cs`, `Plugins/Domain/CommandWire.cs`, `Plugins/PluginCommandRun.cs`, `Plugins/PluginCommandConsole.cs`, `Plugins/PluginPrivate.cs`, `Plugins/PluginTokenAdoption.cs` | A manifest's `interfaces` read entry by entry; an update's rows per entry; what is not reached, said; a command's rounds at `command/run`; `daoris <plugin> <command>`; the private storage handed; a git identity's API token adopted once |
@@ -58,7 +58,18 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
    earlier plugin declared, refuses the later plugin before anything loads, naming both; a server name declared twice in one manifest refuses that plugin. A plugin never replaces. (from D64)
 4. A problem in `icon`, `tools` or an `interfaces` entry never refuses the plugin; a problem in `steps` or `resources` does. (from D140, D150, D173, D274)
 5. Off is a row in `plugins.json`, never a rename. An installed plugin is on until the person switches it off; a
-   remove clears its row and leaves `.data/<id>`. (from D64, D120)
+   remove clears its row and its switches and leaves `.data/<id>`. (from D64, D120)
+5a. `plugins.json`'s `switches` holds, by plugin, by what it switches (`commands`, `tools`, `views`, `storage`, or a point of
+    `HookPoints.All`), by place (`machine`, `workspace:<name>`, `repository:<id>`), the person's word, `true` or `false`. Read for a
+    place, the repository's word decides, else its workspace's, else the machine's, else it is on; `storage` reads the machine's word
+    alone and is written nowhere else; `on` at the machine is the default and leaves no word; a plugin in `disabled` is off over all
+    of it, and an unreadable file switches nothing off and refuses an edit. One resolver (`PluginSwitches`, its table
+    `PluginSwitchTable`) is read at every door: a command's run at its place (`PluginCommandRun.Find`), the storage handed, the
+    adoption, `quest/consider` at the quest's repository and workspace, `session/ended` at the session's repository, and the work
+    wire, whose units at a place where `work/watch` or `work/perform` is off are not told (`WorkSwitched`), so that place's process is
+    idle. `daoris plugin switch <id> <what> on|off [--place <place>]` and `PLUGIN_SWITCH` {id, what, place?, on} (Person) write one
+    word, the loop looking at once; `PLUGINS` answers each plugin's `switches`, its words by what and place. The migration's
+    `plugin-switches` step moves an older home's `off` lists once into machine words. (from D274)
 6. A process may listen only on points its manifest declares, or it is refused. A point this build lacks is named
    once and never asked. (from D101, D148)
 7. `quest/consider` is a waterfall in catalogue order that fails closed. The first hold ends it; a late, wrong or
@@ -188,7 +199,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     (rule 30);
     it asks each value at the terminal, hidden where `masked`, and refuses a session's terminal. `storage` is `profiles/plugins/<id>/`,
     limited to the account, handed as `DAORIS_PLUGIN_PRIVATE` to that plugin's processes alone, removed with the plugin; Daoris reads
-    nothing in it. Each interface is on until the person switches it off (`plugins.json`'s `off`). A command declaring `adopts`
+    nothing in it. Each interface is on until the person switches it off, per place (rule 5a). A command declaring `adopts`
     (`hosts`, `answer`) is sent, once at the loop's start, the API token of the first identity serving one of those hosts, which then
     keeps none; `plugin.token.adopted` names ids alone. Daoris names no plugin in any of it: every word comes from the manifest and the
     plugin's answers. (from D274)
@@ -201,7 +212,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     second name a manifest declares. An installed plugin declaring `formerly` takes over the old id once, at each loop's start, the
     desktop's and the headless host's (`drive`, `--once` among them), before its plugins start (`PluginsAtStart`), and after any install
     door that put it in (`PluginRenames`): the copy installed under the old id is taken out, and
-    its switches (`disabled`, `off`), `.data/<old>`, `profiles/plugins/<old>/` and its approvals move to the new id, what the new id
+    its switches (`disabled`, `switches`), `.data/<old>`, `profiles/plugins/<old>/` and its approvals move to the new id, what the new id
     already keeps never overwritten and said as left, and each attempt not settled that names the old id names the new one with its
     step's kind (`PluginRenamedAttempts`), so the new process is asked after it at its next look, written only by the process holding
     the home's lease, else at the next start; `plugin.renamed` names the ids and the parts moved and left, and a later start
@@ -235,7 +246,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`,
 `PluginToolsTests`, `PluginToolSetUpTests`, `RefusedHandTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
 `WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`, `WorkEventWiringTests`, `PluginSystemsTests`, `PluginKitSystemTests`,
-`PluginRenamesTests`); `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
+`PluginRenamesTests`, `PluginSwitchesTests`, `HookChangedTests`); `Install/PluginSwitchesStepTests`; `Workflows/PluginFormerKindsTests`; `Departments/` (`SystemPlanTests`,
 `SystemReadBackTests`, the stand-in's process proofs `SystemPlanProcessTests` and `SystemReadBackProcessTests`);
 `Workplace/` (`PullRequestAskTests`, `PullRequestBoundsTests`, `PullRequestMomentsGitTests`, `WorkEndsGitTests`); `RelayHostProcessTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;

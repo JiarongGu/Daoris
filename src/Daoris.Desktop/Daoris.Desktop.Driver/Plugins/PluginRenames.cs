@@ -75,7 +75,7 @@ public static class PluginRenames
     {
         try
         {
-            return PluginState.Renamed(home, former, now) | PluginInterfaceSwitch.Renamed(home, former, now) ? true : null;
+            return PluginState.Renamed(home, former, now) | PluginSwitches.Renamed(home, former, now) ? true : null;
         }
         catch (DriverException)
         {

@@ -46,6 +46,7 @@ public sealed class PluginsRoutes(DriverContext context)
         // The person's approvals of what each plugin offers Ask Daoris.
         var grants = HelpGrants.Read(_loop.Home, catalog, withSwitchedOff: true);
         var offered = PluginOffers.Load(OffersFolder, _loop.Home, reserved);
+        var switches = PluginSwitches.Read(_loop.Home);
         return new
         {
             Folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins),
@@ -79,6 +80,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
                     plugin.Manifest.Interfaces,
+                    // The person's words on its interfaces and points, per place; whatever has none is on.
+                    Switches = switches.Words(plugin.Manifest.Id),
                     // Its tools as written; nothing is found or run by this read, the person's Check does.
                     Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),

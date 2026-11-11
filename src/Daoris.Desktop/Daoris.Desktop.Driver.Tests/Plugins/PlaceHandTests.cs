@@ -84,11 +84,11 @@ public sealed class PlaceHandTests : IDisposable
     [Fact]
     public void Storage_switched_off_is_handed_to_no_start()
     {
-        PluginInterfaceSwitch.Set(Home, "pr", PluginInterfaces.Storage, on: false);
+        PluginSwitches.Set(Home, "pr", PluginInterfaces.Storage, PluginPlace.MachineKey, on: false);
         Assert.False(HookProcess.StartInfo(Plugin("pr"), Home).Environment.ContainsKey(PluginPrivate.Variable));
-        Assert.Equal([PluginInterfaces.Storage], PluginInterfaceSwitch.Off(Home, "pr"));
+        Assert.Equal([new PluginSwitchWord(PluginInterfaces.Storage, PluginPlace.MachineKey, false)], PluginSwitches.Read(Home).Words("pr"));
 
-        PluginInterfaceSwitch.Set(Home, "pr", PluginInterfaces.Storage, on: true);
+        PluginSwitches.Set(Home, "pr", PluginInterfaces.Storage, PluginPlace.MachineKey, on: true);
         Assert.True(HookProcess.StartInfo(Plugin("pr"), Home).Environment.ContainsKey(PluginPrivate.Variable));
     }
 

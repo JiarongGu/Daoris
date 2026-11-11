@@ -69,7 +69,7 @@ public sealed record PluginInterfacesDeclared(IReadOnlyList<PluginCommandDeclare
 
 /// <summary>
 /// Reads a manifest's <c>interfaces</c>: what the plugin implements that Daoris reaches it through, besides its points. A problem
-/// refuses its entry alone, never the plugin. Each is switched on or off by the person apart from the plugin (<see cref="PluginInterfaceSwitch"/>).
+/// refuses its entry alone, never the plugin. Each is switched on or off by the person per place, apart from the plugin (<see cref="PluginSwitches"/>).
 /// </summary>
 public static class PluginInterfaces
 {

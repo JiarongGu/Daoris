@@ -19,7 +19,7 @@ public static class PluginTokenAdoption
         {
             var id = plugin.Manifest.Id;
             if (plugin.Manifest.Interfaces.Commands.FirstOrDefault(each => each.Adopts is not null) is not { Adopts: { } adopts } command
-                || !PluginInterfaceSwitch.IsOn(home, id, PluginInterfaces.Commands)) continue;
+                || !PluginSwitches.IsOn(home, id, PluginSwitches.Commands)) continue;
             var identity = identities.FirstOrDefault(each => Serves(adopts, each.Host) && GitTokens.Has(home, each.Id, GitTokens.Api));
             if (identity is null || GitTokens.Read(home, identity.Id, GitTokens.Api) is not { } token) continue;
             try

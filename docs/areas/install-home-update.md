@@ -216,7 +216,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     a stored standing confirmation grant, removed; configured access's old lists as families of acts; the supervisors' records with
     their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; *Second
     check*'s first staffing; and a closed quest's runs whose standing steps cannot move ended by the runtime's own
-    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`. The
+    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`; and `plugins.json`'s
+    `off` lists as the machine's words in `switches` (`plugin-switches`). The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 

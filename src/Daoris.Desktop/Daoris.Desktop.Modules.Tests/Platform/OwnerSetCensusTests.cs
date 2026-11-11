@@ -34,6 +34,7 @@ public sealed class OwnerSetCensusTests
         ["GIT_ANSWER"] = OwnerNone.ActsOnNothing, // a git go-ahead answered by its id, a file its door reads; its session goes on unchanged
         ["PLUGIN_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // a plugin's folder opened in the file manager
         ["PLUGIN_ACTION"] = OwnerNone.MachineSetting, // a plugin turned on or off, by the plugin's id
+        ["PLUGIN_SWITCH"] = OwnerNone.MachineSetting, // one interface or point of a plugin switched at one place, by the plugin's id
         ["PLUGIN_UPDATE"] = OwnerNone.MachineSetting, // a plugin replaced, by its id
         ["PLUGIN_NEW"] = OwnerNone.MachineSetting, // a plugin made in a folder, by its id
         ["PLUGIN_TRY"] = OwnerNone.MachineSetting, // a plugin tried from a folder, by its id
