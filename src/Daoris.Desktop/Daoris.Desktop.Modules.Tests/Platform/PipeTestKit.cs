@@ -165,6 +165,12 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
+    public StubGrounds Workspace(string name)
+    {
+        Placed["Held-" + name] = name;
+        return this;
+    }
+
     public StubGrounds Parking(string quest)
     {
         Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
@@ -294,8 +300,8 @@ internal sealed class StubGrounds : IPipeGroundWorld
                 group = (Sessions.TryGetValue(id, out var held) ? held.State : null) switch
                 {
                     "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
-                    "awaiting-person" => Daoris.Driver.SessionGroup.You,
-                    _ => Daoris.Driver.SessionGroup.Ended,
+                    "awaiting-person" => Daoris.Driver.SessionGroup.NeedsYou,
+                    _ => Daoris.Driver.SessionGroup.Done,
                 },
                 deletable = true,
             }).ToArray(),

@@ -2,613 +2,344 @@
 
 ## What it does
 
-Driving turns requests into running sessions on this machine. A quest asks one repository for work. An ask is a sentence
-the person enters at a workspace; an intake session reads it and publishes quests. The desktop's driver loop looks
-again and again. At each look a pure planner decides which quests start and why every other one sits. Each start opens
-a session record, a working tree and an agent process. The session takes, finishes or declines its own quest. The
-driver only observes: it concludes each end from the exit code and the quest's state, carries cut-off work on, resumes
-the agent's own conversation where it can, and brings a quiet session to the person. Nothing is ended on a clock.
-Finished trees are tidied by the look once git proves their work has ended. The service keeps the quest, ask and
-session records and judges every move for every door.
+Driving turns requests into running sessions on this machine. A quest asks one repository for work. An ask is a sentence the
+person enters at a workspace; an intake session reads it and publishes quests. The desktop's driver loop looks again and again: at
+each look a pure planner decides which quests start and why every other one sits, and each start opens a session record, a place
+to work and an agent process. The session takes, finishes or declines its own quest. The driver only observes: it concludes each
+end from the exit code and the quest's state, carries cut-off work on, resumes the agent's own conversation where it can, and
+brings a quiet session to the person. Nothing is ended on a clock. Finished trees are tidied once git proves their work ended. The
+service keeps the quest, ask and session records and judges every move for every door.
 
 ## Its parts
 
 Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start with `Service/`, which is
-`src/Daoris.Service/Daoris.Service.Core/`.
+`src/Daoris.Service/Daoris.Service.Core/`. Each type is in a file of its name; `docs/index/registered.md` lists the look's passes,
+the run's stages and the quest log's operations in their order.
 
-| Unit | File | Its job |
-|---|---|---|
-| `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`), each running its passes or stages at each phase's anchor in turn; the driver holds the order and the wiring alone |
-| A run's stages | `Loop/Run/`, listed in `docs/index/registered.md` | Each stage a module registers (`[RunStage(name, phase, after)]`, `IRunStage`), run at its phase's anchor in `RunAsync` in the kit's order and built with the driver as its `IRunWiring`; a stage that returns a `StartRun` holds the start there, and no stage after it runs |
-| `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree and the repository's trees held until the record is open, the binding, the set-up step, what the continue stage settled and the opened record; a member read before the stage that writes it throws, naming that stage; the state lets go of the held trees and the carry-on's move record with the run |
-| `GrowTree` | `Loop/Run/Tree/` | The `Grown` phase: the tree the session runs in, found where an earlier session worked or grown from the line, with the repository's trees held until the record is open; a hold lets the fresh tree go |
-| `StartAgent`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, the account the walk or a resume takes, the access setup |
-| `FolderManifestReader`, `FolderExcludes`, `PlaceExcludes`, `ManifestBounds`, `FolderChanges`, `FolderTurns`, `PlaceKind`, `FolderAdd`, `FolderFirstManifest`, `FolderDeclarationReader` | `Departments/Manifest/`, `Settings/ManifestBounds.cs`, `Settings/PlaceKind.cs`, `Service/FolderAdd.cs`, `Service/FolderDeclarationReader.cs`, `Departments/RepositoryPresses.cs` | A folder that is no git checkout as a place (`PlaceKind.At`): `daoris repository add <folder> [--workspace] [--exclude <glob>]...` registers it as `folder` through the registry route (its root to a service on this machine only, its own `daoris.json` and lanes read from disk, a git checkout refused toward `connect`) and reads its first manifest then, kept as the place's last so the first turn is told what changed since; `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (none: says them; the window's `REGISTRY_EXCLUDES`, shown on the Confirm card by `FolderExcludesView`, and the folder page's *Files to leave out* row) rewrites the registration's globs whole through the service's `POST /api/registry/{repository}/excludes` (a person's door, a folder's alone) and reads the manifest again with them; its page's *Open* (the window's `REGISTRY_OPEN_FOLDER`, by the registered name) opens its folder in the file manager; its manifest a stat walk listing every file but the excludes (the defaults `~$*`, `.~lock.*#`, `Thumbs.db`, `desktop.ini`, `*.tmp`, and the registration's own globs: one with a `/` read from the root, `**` crossing folders; kept on the start's manifest so the end and the review pass the same files) with its size, time and SHA-256, hashing only what moved since the last manifest or lies within two seconds of it, links not followed; past its bounds, 250,000 files and five minutes unless this machine's `manifest` setting says others (`ManifestSetting`, read from the file at each manifest as `ManifestBounds.Of(home)`), it lists nothing and is too large to follow, still worked in place; the paths added, changed and removed between two; a turn's start and end, the end keeping the place with nothing; a place whose last manifest is git's never read as one, and a `.jj` root not read |
-| `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `CreateHistory`, `CreateRemoteSteps`, `RepositoryCreateWork`, `RepositoryCreateCommand`, `RepositoryCreateWorld`, `RepositoryCreateConsole` | `Setup/Create/`, and the host's `RepositoryCreateConsole.cs` (`Daoris.Desktop.Driver.Host/`) | A department made by one press (rule 51): the plan and its one judge (`CreateJudge`: the ask's, the registry's and the folder's refusals, the derived parent), the apply with its receipt and its resumption, the real `git init` and the reading of a folder that says whether it is a receipt's, the inherited workflow's remote step, the one place the work becomes the set-up's chained step (`RepositoryCreateWork`, with the step's type `SetupThen` in `Setup/Domain/`; rule 52), the terminal's words (`--plan` alone, the apply through the running Daoris's Confirm) and the world over the service |
-| `PlaceChanges`, `TextPatch` | `Departments/Review/` | A folder turn's review: the files it changed against its start, from its end or the folder as it stands while it runs, each text file's unified diff from the store's blobs, a file that is not text a row with no patch; `SESSION_DIFF` answers it as `source: place` before any git read |
-| `RunManifest`, `ManifestReader`, `ManifestStore`, `ContentStore`, `PlaceChangesSince`, `PlaceTurns`, `RunTurns` | `Departments/Manifest/` | A git place's manifest (its status with each listed path's hash) kept at `<home>/work/places/<workspace>/<department>/manifests/`, the newest 20 and every named one; each new text file's blob beside it, the store bounded at 1 GB; the paths changed between two manifests, the turn's own still uncommitted and those not its own; a turn's start and end in its place (`PlaceTurns`: the start kept with its root, the paths its line carried in, the run it serves and the paths changed outside it, the end read once, a record's found under any place of the home; a commit made since the last manifest's head is named among the paths changed outside Daoris); a run's turns, each kept as it ends, and its first start kept as the named record `run-<key>-base` (`RunTurns`), which a review record reads from, and `Loop/Chat/ChatPlaceTold.cs` (a conversation in its own checkout reads the same start and is told it with its first message, after the browser's line) |
-| `SystemChangeSet`, `SystemPlans`, `SystemChanges`, `SystemStaleWords`, `SystemWire`, `SystemPlanAnswer`; `SystemPlanning` | `Departments/Systems/`; `Plugins/Systems/`, which Course asks through `CourseSystems` | A place reached only through its console (design §5): a session never changes it; it plans through the connector's `system_plan`, a keyed request (move `plan`, its changes as the text) that the loop running it hands to its department's adapter (each resource named once, refused at the connector and again here), answering the plan's number and each resource's op, or a refusal where its department is no system; each session plans under its own record, so two at once keep their own plans; its turn's change set is the adapter's typed operations (`create`, `update`, `delete`, each with its value before and after and the precondition it is applied under, the version it read), kept whole and never rewritten as `<home>/work/plans/<record>/plan-<n>.json` with what its apply came to beside it as `applied-<n>.json`; `SESSION_DIFF` answers the newest plan as `source: place`, each operation a row named by its resource with its value before and after as a patch; a stale apply's words for the work, and those of one changed while applying, name each such resource's present value and version (`SystemStaleWords`). The adapter's channel is the plugins area's (`Plugins/Systems/`), the apply the workflows area's |
-| `PlaceHomeMarker`, `PlaceHome` | `Departments/`, `Loop/Run/Choose/` | The marker in a git place's common git directory naming the home that works it in place, and the start's stage that holds another home's start there |
-| `PlacePrompt`, `PlaceTold`, `PlaceDenies`, `PlaceAccount` | `Agents/`, `Context/` | What a start in its place is told of it (the `place` section, bounded at 30 paths a list), the denies its rules take where it found paths not its own, and the section's account |
-| `PlaceHolders`; `PlaceLeases` | `WorkOrders/Domain/`; `Workplace/Domain/` | The place's holder at a look, and the sentence a start sits with; whether a session holds its place's lease, as the ledger reads it |
-| `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
-| `TrustedTree`, `GoOnRecord` | `Loop/Run/Trust/`, `Loop/Run/Continue/` | The `Cleared` phase: whether the harness trusts the tree (`TrustAsk`, asked again of an account a resume's words walk to), then the record the person's words wait on, continued or handed on in a new session |
-| `OpenRecord` | `Loop/Run/Open/` | The `Opened` phase: the record opened through the ledger, the carry-on's move record fenced before it, and how the account was chosen said on it |
-| `HandToSession`, `RunConclusion`, `RunEndings` | `Loop/Run/Hand/`, `Loop/Run/Conclude/`, `Loop/Run/Ending/` | The `Handed` phase, whose one stage ends the run: the instruction composed and the spawn assembled, the hold's conclusion of the record, and the ends that are not a conclusion (the driver closing, a wire broken after a stop, a failure) |
-| `SessionHold`, `DrivenProtocolDoor` | `Loop/Run/Hold/` | A prepared session started and held to its conclusion for every kind of run the driver starts (`Driver.Holds`), and the protocol door's driven session that hold opens |
-| The look's passes | `WorkOrders/Look/` (the pass's kit), `Loop/Look/` (the passes that reach the loop's own classes, through `ILookStagesWiring`), listed in `docs/index/registered.md` | Each pass a module registers (`[LookPass(name, phase, after)]`, `ILookPass`), run at its phase's anchor in `LookAsync` in the kit's order and built with the driver as its `ILookWiring` |
-| `LookState` | `WorkOrders/Look/LookState.cs` | What a look carries from pass to pass on its `LookRound`: the snapshot as each pass shapes it, what a pass marks for the ones after it, and what ended; a member read before the pass that writes it throws, naming that pass |
-| `LookSync`, `LostClaimStop` | `WorkOrders/` | The look's head: the remote sync, then the stop of each session whose take lost |
-| `PluginReload` | `Plugins/PluginReload.cs` | The look's local phase, first: the plugins read fresh, taken up through `IPluginWiring`, the hooks reconciled |
-| `RuleSettling`, `WatchLook`, `MovedLines`, `TogetherSteps` | `WorkOrders/` | The local phase, in this order: the rule proposals settled, the session watch, the lines Daoris moved followed, the operations bringing sessions together stepped |
-| `WorkspacePlansLook` | `Setup/WorkspacePlansLook.cs` | The local phase's last: every workspace plan worked once, through `ISetupWiring` |
-| `SnapshotLook`, `PausedLook`, `SupervisorLook` | `WorkOrders/`, `WorkOrders/Work/` | The read phase, first: the roster's mark and the starts opening taken, then the snapshot; the paused work held; the supervisor's decisions moved, its unattributed words taken back, and the look's answers-alone bound left in the state |
-| `AloneLook`, `UnableLook`, `PiecesOnFileLook`, `HandOversLook`, `StaffPolicyLook`, `CommittedLook`, `OverlapsLook`, `OverlapsToldLook`, `RosterLook` | `WorkOrders/`, `WorkOrders/Work/`, `Loop/Look/` | The read phase, shaping the snapshot in this order: the answers that would go on alone marked; the words a record could not go on with; the pieces on file; the quests handed to another agent; the staff course's moves and holds; the commits a failed session left; what running units changed and the overlaps told; the roster told what started, leaving `LookState.Looked` |
-| `ChannelLook`, `ReopensLook`, `ReviewsLook` | `Loop/Look/` | The read phase, from `Looked`: the ask's channel, the sources' reopens (their taken-off words leave the snapshot), the set-ups' tabs |
-| `OpinionsLook`, `HelpersLook`, `PartnersLook`, `BrainstormsLook`, `MeetingsLook` | `Loop/Look/` | The read phase, before the plan: the second opinions owed, then the helpers, partners, brainstorms and meetings, each started beside the look and counted into `LookState.Passes` under the cap. They reach the driver's classes through `ILookStagesWiring` |
-| `LoopRuns` | `Loop/Look/LoopRuns.cs` | The one-look run and the gate's run-until-idle, and the wait for the sessions they started (the sync and the lost-claim stop beside them, the endings after); the driver's `RunOnceAsync` and `RunUntilIdleAsync` are its doors |
-| `RunDoors`, `LookDoors` | `Loop/Run/RunDoors.cs`, `Loop/Look/LookDoors.cs` | The doors the run's stages (`IRunWiring`) and the look's passes (`ILookWiring` and the interfaces over it) reach the driver through, one line each to the driver's member or the unit that owns it; the stages and passes are built on them, never on `Driver` |
-| `SessionEquipment` | `Loop/Session/SessionEquipment.cs` | The spawn prepared for either kind of session: the adapter's process, the toolchain's environment and tools-up-front switch on it (`Equip`, shared with the conversation's run), a dsh home's profile, and whether the handed rules let the connector's tool through |
-| `LineageBrackets` | `Loop/Session/LineageBrackets.cs` | A process's lineage token issued before its spawn and its end written once the exit is read and the capture drained, for the driven run and the conversation's alike |
-| `PartsHanded`, `MovedParts`, `StartTargets` | `Loop/Session/` | What a start hands beyond the quest: the earlier parts of its session, the line saying a part moved and the record's `from` link, and the target's words, language and go-aheads; the bind of the run to its workflow and its step's role are `StartBinding` (`Loop/Run/`), a stopped run's record `StoppedRecord` |
-| `SessionRules` | `Loop/Session/SessionRules.cs` | The permission rules a session is handed: the machine's rules composed for its workspace and repository, shaped by its job and kind, written to its settings file, and the account of what was handed |
-| `AccountEndings` | `Loop/Session/AccountEndings.cs` | What a session's ending says of its account: a limit, a refused credential or model, a sign-in refused, read from the door's failure and applied to the roster; the driver's `AccountLimited` and its kin are its doors |
-| `SessionWatching` | `Loop/Session/SessionWatching.cs` | A run whose root has exited concluded by what it said within the capture bound (a held-open pipe ended, an unfinished capture abandoned), and the watcher's look at the running sessions, each step a line |
-| `QuestWalk` | `Loop/Session/QuestWalk.cs` | The walk over the order of choices a quest's start takes: the role's order, the start plan with its passes and gate, the role taken, the moves counted, and the re-ask of a handed quest whose agent refused its model; the driver's `Walk` |
-| `StartSentence`, `StartLanding` | `Loop/Session/` | The creating sentence a start's record carries while it runs (its tree's opening, a resume, a carry-on and why); and what a start's landing is named for, a chain's step landing on its chain's branch |
-| `SessionWaits` | `Loop/Session/SessionWaits.cs` | How a driven session's turn waits and ends: the background-work judgement, the turn-end look at a quest closed with uncommitted work, the bounds on a lingering process, and a given-up run's capture observed |
-| `LookKept` | `Loop/Look/LookKept.cs` | The look's first pass: a cool-off the file would not take written again, a lifted drain's held word freed, the conversations' and notices' files moved into the store |
-| `PlanLook` | `Loop/Look/PlanLook.cs` | The read phase's last: the plan made over the snapshot with the starts still opening held, under the cap the passes' slots left; it writes `LookState.Plan` and `Starts` |
-| `AnsweredIntakesLook`, `IntakesLook`, `StartsLook`, `RuleActsLook`, `CourseReleaseLook` | `Loop/Look/` | The `Planned` phase: a parked intake ended once its ask is answered; the asks due an intake in the slots left; then every claimed start and intake begun at once (`BegunStarts`, the run of each in `ClaimedStart`) and settled, writing `LookState.OpenedStarts` and `Outcome` (`StartsOutcome`: held, signed out, untrusted, waits by `AccountWaits`, a limited line's news by `LimitedStart`). The rules' acts the plan made (a quest parked, held on a transient episode or by the bound of moves, a line moved to another choice) are said on their lines once, by `RuleActsLook`; then the supervisor's go-on on a quest's referred point is released through the quest's own *Try again* (`CourseReleaseLook`). They reach the driver through `IStartsWiring` and `ILookWiring` |
-| `BindRunsLook`, `EndingsLook` | `Loop/Look/` | The `Begun` phase: what the starts bound, said; what ended reported, told to the plugins' hooks and synced (the idle loop asks the same `EndAsync`) |
-| `UnresolvedDeliveries`, `ChannelMembersLook` | `Workflows/UnresolvedDeliveries.cs`, `WorkOrders/ChannelMembersLook.cs` | The `After` phase, at a whole look only: the deliveries a stopped run left unresolved, settled by the lease's holder; then an outside agent's channel membership ended as expired where its claims lapsed, its ask has no quest open and no part running, or it neither read nor posted for a day |
-| `DriverWatch` | `Loop/DriverWatch.cs` | The loop's surface: its nudges, its doors and its settings; each run is a `WatchRun` |
-| `WatchRun` | `Loop/Watch/WatchRun.cs` | One run of the loop: the parts it starts beside the looks, and when a look runs (pace, nudge, wake), whole look or plan only |
-| `WatchWakes`, `WatchDoors` | `Loop/Watch/` | What a nudge says, ordered with no lock; what a running loop lends the watch's surface, published one reference at a time |
-| `WatchNodes`, `WatchBeside` | `Loop/Watch/` | Link 8: the evaluation runtime with its doors and its pass beside the look; the tidy, the limits' wake and the line-following beside the looks |
-| `LookStages` | `Platform/LookStages.cs` | Times each stage of a look and the work beside it, says a slow one |
-| `DriverIntakes` | `Loop/DriverIntakes.cs` | Asks due an intake, the intake's run, ending a parked intake once its ask is answered |
-| `DriverContinuations` | `Loop/DriverContinuations.cs`, `Loop/Continue/` | The person's words continue their session: a park or an ended record goes on. The hub holds `ContinueAsync` and one-line doors; `ContinuationLimits` (the limit word kept and taken off), `ResumeLedger` (the held saying, the record put back, not handed or unstarted, the park ended), `ResumeConclusion` (how a resumed run ends), `WordsHandedOn` (words handed to a new session or left with the person) and `NativeGoOn` (the native door's go-on) are types of their own; `NativeWords` is a file of its own |
-| `HelperTurn`, `HelperSettling` | `Loop/Helpers/HelperTurn.cs`, `Loop/Helpers/HelperSettling.cs` | A helper's pass: one read-only turn in a clone of the asker's repository; `HelperSettling` takes an ask up, settles what the helper said and delivers it to the asker; `DriverHelpers` holds doors to both |
-| `PartnerPassRunner` | `Loop/PartnerPassRunner.cs` | A partner's pass: admitted, its copy, its strict job, its record and its one turn; `DriverPartners` holds a door to it |
-| `BrainstormAssembly`, `BrainstormTurnRunner` | `Loop/Brainstorm/` | A brainstorm's packet assembly, and its voice, room measurement and real turns; `DriverBrainstorms` holds one-line doors to both |
-| `DriverCommand`, `DriveUsage*` | `Loop/DriverCommand.cs`, `Loop/Usage/` | The loop a person asks for by its verb; the usage text is six per-group constants joined in order (`DriveUsageIntro`, `Ask`, `Records`, `Place`, `Session`, `Machine`) |
-| `SystemWiring`, `WiringFiles`, `WiringRemotes`, `ServiceProbe`, `WindowWiring`, `WiringWorld` | `Loop/SystemWiring.cs`, `Loop/WiringFiles.cs`, `Loop/WiringRemotes.cs`, `Loop/ServiceProbe.cs`, `Loop/WindowWiring.cs`, `Loop/WiringWorld.cs` | How this Daoris is wired: the reader, the settings files and records, the remotes, and its records in files of their own. What it lists as not Daoris's or an earlier build's is a name at the walked home that no entry of the table holds: `WiringPlaces` reads each entry's new place below the Daoris folder and its old place below the old home as parts below the home walked (an install's `data/` or a plain home), and a database's `-wal`, `-shm`, `-journal` and `.wake` are the database's. The press that frees an earlier build's leavings (`SpaceKinds`, `left-over`) names two exact paths and refuses any holding an entry |
-| `AccountPath`, `AccountServiceAddress`, `WiringFolderPaths`, `IAccountEnvironment`, `WindowsAccountEnvironment`, `SetupResult` | `Loop/Setup/` | Setting it up from the page (the window's `SYSTEM_PATH`, `SYSTEM_SERVICE_ADDRESS`, `SYSTEM_OPEN_FOLDER`, all `Window`-class and refused on the pipe): the install's `app/bin` put on or taken off **the account's** `PATH` alone (the registry's `HKCU\Environment`, unexpanded, never the machine's), the account's `DAORIS_SERVICE_URL` set to an address of this machine or cleared, and a folder or file row's id resolved to the folder it opens, never a path from the page. A refusal is data, `{ done: false, why, message }`, with `PATH_NOT_INSTALL`, `PATH_NOT_WINDOWS`, `PATH_UNREADABLE`, `PATH_NOT_WRITTEN`, `SERVICE_MALFORMED`, `SERVICE_NOT_LOOPBACK`, `SERVICE_NOT_WINDOWS`, `SERVICE_UNREADABLE`, `SERVICE_NOT_WRITTEN`, `FOLDER_UNKNOWN` or `FOLDER_NOT_OPENED`; the account's variables are an `IAccountEnvironment` the application hands in, so a test hands a stand-in. The two environment presses declare the `wiring` scope |
-| `Planner` | `WorkOrders/Domain/Planner.cs` | Pure plan over a `Snapshot`: `Start` or a `StartVerdict` with its sentence; strikes; the carry-on rule. `Plan` is one line into `PlanRound`, which holds a tick's state and weighs reasons in order through `RoundReading` (the records), `RoundSaying` (go-on, carry-on, resume, taken elsewhere), `RoundConsidering` (the start's reasons, the cap, trees and repository), `RoundJoining` and `HoldVerdicts`; the records (`Snapshot`, `Consideration`, `StartVerdict`, `SittingFact`) are files of their own |
-| `SessionsCommand` | `WorkOrders/SessionsCommand.cs`, `WorkOrders/Sessions/` | `daoris session`: the usage, the dispatch and the doors; the verb groups are `SessionsReading`, `SessionsListing`, `SessionsJson`, `SessionsEnding`, `SessionsSaying`, `SessionsKeeping`, `SessionsQueueEdit`, `SessionsGoingOn`, `SessionsArchiving`, `SessionsHandback` and `SessionsPresses`; `SessionsAsk`, `SessionsWorld`, `SessionGrouping`, `SessionLook`, `WordsHold` and `ShownState` are files of their own |
-| `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one decision of how a line goes on: resume, move to a new part, wait, hold, refuse; `LimitCourse` holds the limit's end and wake, the carry-on and the transient bound |
-| `DrivenCourse` | `Course/GoOn/DrivenCourse.cs` | A driven line's facts handed to the course, and its answers |
-| `DrivenInbox` | `Course/DrivenInbox.cs` | Words to a working driven session: held, delivered at the next step or turn end; the person's turn stop; the one door of its parts |
-| `InboxState` | `Course/Inbox/InboxState.cs` | The inbox's state under its one gate: what it guards, the keep's lock before it, what a race would break |
-| `InboxKeeps`, `InboxHolds`, `InboxRun`, `InboxStops` | `Course/Inbox/` | The keeps on the record and the edits; the holds of words and claims; the run's next step and close, one step; the keeping stop |
-| `LimitResume` | `Course/LimitResume.cs` | A limited line resumes its own conversation once its account is ready |
-| `MoveStore` | `Course/MoveStore.cs` | The durable record of each move of a line, taken up by the next loop after a dead one |
-| `Observation` | `Events/Domain/Observation.cs` | A run's end concluded from exit code and quest status, with its coded note |
-| `PartEnds` | `Events/PartEnds.cs` | The class of each end, read from the journal row alone |
-| `SessionWatch` | `Events/SessionWatch.cs` | Marks a quiet session and brings it to the person; ends nothing by itself |
-| `TransientRetry` | `Agents/TransientRetry.cs` | Retries a transient failure in the same conversation on a fixed backoff |
-| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, poll, trees, the adapters' commands, notify, the restart marks (`Forgiven`) and the quiet bound; its doors over the units below, so callers name it alone |
-| `MachineSettings` | `Settings/List/MachineSettings.cs` | Every machine setting declared once: its one key, which the terminal's verb, the route, Ask Daoris's door and the page's words spell, and its field in `driver.json`; the page reads it as `SETTINGS` |
-| `MachineSettingsSaid` | `Settings/MachineSettingsSaid.cs` | Each machine setting said with its value and the verb that changes it, `(the default — …)` or `(set — …)`: every one for `daoris settings` with no verb, one for a setting's verb with no value, and each in `daoris place list` |
-| `QuietSetting` | `Settings/QuietSetting.cs` | `quietMinutes`, the one quiet setting: its bounds as the list declares them, its read, its edit and the watcher's Q |
-| `ManifestSetting`, `ManifestSettingEdit` | `Settings/ManifestSetting.cs`, `Settings/ManifestSettingEdit.cs` | `manifest` in `driver.json`, `{ files, minutes, copy }` each written only when set: the most files (1,000 to 10,000,000) and minutes (1 to 60) a folder's manifest read spends, and the most megabytes (1 to 1,048,576, 2 GB by default) a folder's followed files may hold to be copied for a session working apart, set one at a time by `daoris settings manifest files\|minutes\|copy <n>` and `SET_MANIFEST` (shown by `MachineSettingView.Manifest`), the first two also by Settings' one *A folder is too large to follow past* row; the answer's `manifestFiles`, `manifestMinutes` and `manifestCopy` |
-| `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigWrites`, `DriverConfigEdits`, `Effective` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands, and the keyed-map edits; its one writer, which reads the file under its lock before every change (a save, a standing choice, the git access and identity keys), writes atomically and drops the file's kept stamp; what a load decided from (the content key, and the staffing's revision where the store's staffing was laid over it, none where that store failed); the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
-| `LinePolicyKey`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | A line policy's reading, writing and sentences (`LinePolicyKey`), and the integrate policy, form and names it reads |
-| `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
-| `SessionTrees` | `Workplace/SessionTrees.cs` | Opens a fresh tree; the front over every tree part (`TreeContext`) |
-| `TreeHeads` | `Workplace/TreeHeads.cs` | The branch each listed tree has checked out, one `worktree list` per repository; a tree git does not list is asked on its own |
-| `TreeFilesStage`, `DependencyStore`, `TreeFilesRecord`, `TreeSharing`, `TreeShares`, `TreeVisit`, `DepsKeeping`, `IInstallRunner` | `Workplace/Deps/` | Keep, place from the store or install a tree's dependencies after its record opens; link its shared paths, each trusted and unlinked only while it reads as its link; the tree's `unworked` mark and a terminal's visit taking it; the store's daily eviction; the port Review's heavy step runs and admits an install through |
-| `TreePool`, `KeptTree`, `TreeClaim`, `SlotVisit`, `LineEnd`, `ClaimFence`, `LinePlaces`, `LineWhere`, `PooledBranchReviews` | `Workplace/Pool/` | The kept slots' tables in the desktop store (`kept_trees`, `tree_claims`, `tree_visits`, `line_ends`, store step 23, and step 25's `expect_branch` and `expect_line` on a claim, writer stamp unchanged, so an older build never opens them): which slot serves which line (`WhereIs`), the one claim in flight per slot and per line, taken over from a dead run, or from the look's own run where its undo waits or its act threw out of it (`PoolAbandoned`, in memory, the phase kept), by one guarded update of its run and generation, the terminals and served builds that hold a switching claim back, and each let-go of a line. Over git, `TreePool` makes a slot (today's open at the slot's fixed folder), takes it for a new line or returns it to a line, ends a line's use of it, and takes over a dead run's claim; every git of a claim runs in the claim's named job (`PoolGit`), and each act is a unit of its own (`TreePoolMakes`, `TreePoolTakes`, `TreePoolEnds`, `PoolTakeovers`, `PoolUndo`). A take judges the slot inside its claim (`PoolJudging`: git's list and binding, the pool's own lock reasons in `PoolLocks`, the links npm's workspace declarations account for in `WorkspaceLinks`, a repository inside, a half-done operation, the status sorted by the effective rules in `SlotIgnored`, a refusal for the line's own ignored top naming it, and HEAD against where its line let it go), deletes Daoris's copies, switches in place with hooks held and never forced, moves the outputs aside, checks, marks the tree `unworked` (which owes the `post-checkout` hook to the files stage), and requests the keyed open the caller hands in. The claim records the slot as it found it: its HEAD (`Expect`), its branch (`ExpectBranch`, empty where detached) and the line its row named (`ExpectLine`). A refusal after the switch (a switch git refuses, a top held at the clearing, answered `busy: <top> is held by a running process`, a check that fails), the run's own look and a takeover all run one undo (`PoolUndo`): the claim enters `undoing` in the transaction that writes the slot's row with no line; the slot goes back onto `ExpectBranch` only where that branch's tip is still `Expect`, else detached at `Expect`, with hooks held and no ignored file overwritten; a take's own branch goes through `JournaledDeletes` where it still points at its start; and the slot is released once it reads back so, binds to no other checkout and, detached off a moved branch, is clean. Where the branch is checked out in another checkout, or the undo throws, the claim waits at `undo-waiting`, the line it restores is held as a line a claim names is, and the run's look takes it by the takeover's guarded update (a claim at `undoing` is a step still running and its own run never takes it); anything else settles the slot `stuck`, naming no line, a take's own branch still deleted once the slot is detached. A takeover keeps a switching return as the returning line's only from `cleared` on, or where it switched nothing, and runs the undo for every other take or return, so one already put back is settled and its take's branch deleted. The clearing (`PoolClearing`) marks the set-aside folder as the previous line's before its first rename and moves all or none: a rename refused (`IOException` or `UnauthorizedAccessException`) moves back what moved, in reverse, a full move-back removing the folder and its mark, and one that left a top keeping both, held for the line. Every row a claim leaves is written by `SlotStanding` from the slot's disk: the claim's line where the slot is on the claim's branch and the claim made it that line's (an open that landed, a return from `cleared` on, a claim in place), `ExpectLine` where it stands on `ExpectBranch` at `Expect`, else no line; a slot it settles `stuck` is first detached where it stands, unless git's own lock file stands, when the words name the branch it holds. `SlotSettledCensusTests` fails on a row built anywhere else, and on a claim ended with no row the census does not list with why the row still holds. A line's finish (`TreePoolFinishes`) writes the set-aside's schema-2 manifest `judged` before anything moves, sets aside under a `finish` claim each ignored top whose rule's `finish` is `aside` at the line's tip, its kind's default where the rule says none: kept where its take keeps it, so a dependency, an intermediate, a cache and a base stay (`FinishSort`; read again after, anything changed putting it all back), detaches the slot at the line's tip, deletes the branch through the journal with a recovery ref made in that transaction, and gathers the folders its takes set aside from the line (marked by `PoolAsides`, class `line`, held while the line's record can go on); the record pass posts it. A retirement (`TreePoolRetires`) moves the whole folder aside, then git's record is pruned and the row removed; a rename a handle refuses is `busy` and the slot stays. A slot past 4 GB of ignored bytes outside `node_modules` (read at each let-go) has its builds moved aside at the next take; the toolchain key (`PoolToolchain`) is read from the effective rules; Daoris's copies are known by the hash the files record holds (`TreeCopies`) and the record keeps the commit a hook owes its run from. `BuildFolderList` is the one list of build folders, `TreeScratch`'s thirteen a subset. The takeover settles every claim kind. Nothing outside tests makes, takes or ends a slot. A record names a line and never a slot, and `LinePlaces` is the one answer every reader that opens a record's tree as a folder asks: `Of(tree)` is a `LineWhere`, the slot's folder where the line holds one, else the record's own path, with whether it stands, can be brought back (a let-go of the line is recorded and no slot holds it) or is gone, so a home with no pool answers the disk as before. The run state keeps the line's path (`WorkTree`) beside the folder it works in (`WorkFolder`), which the start's record, agent and trust open; the go-ons, the briefed move, the hand-over's judge and a conversation's start take *stands, or can be had*; the landing's two gone reads wait for a tree that can be brought back and close one gone for good; a branch now and the follow's learning read a pooled line's branch from its slot; a removal's *opened* is `kept_trees.since` for a slot; the agent's home claims each slot a line worked in; a review of an unlanded line that holds no slot reads its branch in the checkout (`PooledBranchReviews`, asked first by the chain and the graph alike); *Show it again* is refused where the slot took its present line after the showing. `PoolReadersCensusTests` lists every reader still to move that opens a record's tree as a folder, derives a branch from a listed folder or tests a folder against an in-use set, each with the row that moves it |
-| `SlotChoice`, `SlotJudgement` | `Workplace/Domain/` | The pure choice of a slot for a start (six choices in order) and the pure six-step judgement of whether a slot is safe to take; `KeptTreesPort` in `Settings/` is the unset port the workplace will answer |
-| `TreeLocalInputs` | `Workplace/` | Copy the machine-local files the effective `copy` rules name into a tree |
-| `LaneRooms`, `RoomCheck`, `RoomCheckReport`, `RoomPaths` | `Workplace/` | The rooms the lanes file declares, read and checked with the repository's rule file: claim groups by build closure, crossings, refusals |
-| `FileRules`, `FileRuleFile`, `GitPattern`, `RuleFileFirstForm`, `FileKindSets`, `RepositoryFilesReader`, `PersonFiles`, `PersonFilesForm`, `FoundFiles`, `FilePermissions`, `FileFloor` | `Workplace/Files/` | The rule file's one format in git's syntax, the first form's translation, its four layers and the floor, each path's effective rule, the person's permissions; `FilesCommand` is `daoris files` |
-| `FilesLooks`, `FilesLook`, `FilesEdits`, `PersonPermissions` | `Workplace/Files/` | The rule file composed for the page (`FILES`), and the person's rules and permissions written, an allow with its maker, by one validation the terminal's verb and the window's routes (`Bridge/Routes/FilesRoutes.cs`) share |
-| `FileAnalysis`, `FileSignatures`, `FileGit`, `FileWalk`, `WorkspaceMembers` | `Workplace/Files/` | The analysis that writes the found layer from git's view, bounded walks, the shipped signatures, the workspace members a manifest names and the tracked scripts |
-| `FoundReads` | `Workplace/Files/` | When the found layer is written: a repository's registration, its line's move past a file the analysis reads, its toolchain's move, a line's finish; registration following and the tree's removal call it |
-| `RoomsProposal` | `Knowledge/` | The words the set-up's brief and Ask Daoris's room both say to ask a repository with no rooms or classes to propose them |
-| `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
-| `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
-| `Orphans` | `Workplace/Orphans.cs` | The sweep: a record that says it runs with nothing running it is stopped as interrupted |
-| `QuestStore`, `QuestExchange` | `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs` | Quest records and log; every door's judgement; claim by push; the exchange is a root that wires, each door one line to a part |
-| The exchange's records | `Service/Quests/Records/` | `QuestAsk`, `QuestPublishOutcome` and `QuestPublishRefusal`, `QuestRespondOutcome` and `QuestRespondRefusal`, `QuestCloseOutcome`, `QuestDeleteOutcome` and `QuestDeleteRefusal`, `QuestCarried`, one file each |
-| The exchange's parts | `Service/Quests/` | `QuestPublishing` (a publish judged in order before anything is written), with `QuestLanes`, `QuestChains`, `QuestRequirementJudge`, `QuestCarry` (links and files judged and kept), `QuestWorkflowKinds` (the person's kind and an intake's proposal) and `QuestReceived` (a remote's say over a pushed publish); `QuestResponses` (take, done, decline, wait), `QuestReadies` (the closure graph's ready), `QuestGraphCloses`, `QuestAnswering` (a done's answers and what they hold), `QuestEvidenceReads`, `QuestPersonMoves` (yes, reopen, go on, the person's done), `QuestBringForwards`, `QuestRemoteClaims` (claim by push) and `QuestDeletes`; `QuestWords` holds the sentences they share |
-| The quest log's operations | `Service/Quests/Operations/`, listed in `docs/index/registered.md` | Every kind the log writes is a module (`[QuestOperation(kind, Log)]`, `IQuestOperation`): published, taken, declined, done, conflict, dismissed, waited, bound, submitted, rebound, reopened, accepted, evidenced, setup, verdict, chosen and deleted. Each writes and reads its log payload, says what a lost one takes with it in a rebase (`LostAsync`, a lost wait and a lost submission naming themselves on the take's conflict through `QuestRebaseLosses`), and holds its verbs on the `QuestTx` the store's one-line door opens; built as the store opens, refusing a kind declared twice or a mark naming another kind. The take, the done and the decline share one move verb, on the take. `QuestRecordCodec` reads and writes the quest row, its columns and the payloads' shared parts, and `QuestSchema` makes and upgrades the store's tables as it opens |
-| The quest records | `Service/Quests/Records/` | `Quest`, `QuestStatus`, `QuestMove`, `QuestRequirement` and its answer, `QuestStep`, `QuestAttachment`, `QuestSubmission`, `QuestReopen` and `QuestDeletion`, one file each; the log's own: `QuestOperation` and its kind and reference, `QuestClose`, `QuestClaim`, `QuestLoss`, `QuestPush`, `QuestFetch`, `QuestAcceptance`, `QuestPushRefusal`, `QuestClosure`, `QuestRetirement`, `QuestIntegration`, `QuestConflict` with its end and reading, `QuestForwardTake`, `QuestForwardPress` and `QuestTakeReading` |
-| The log's rules | `Service/Quests/QuestLog.cs`, `Service/Quests/QuestTransitions.cs` | `QuestLog` replays a history and judges what applies, who holds a claim and what a rebase loses; `QuestTransitions` is the one table of status moves, which the page's flowchart is held to |
-| The store's parts | `Service/Quests/` | `QuestStore` wires and keeps one-line doors; each part is a type of its own over the store's gate: `QuestCache` (the quests table, written whole by a replay, repaired at open), `QuestLogSync` (a machine's pending, accepted and rebase; a remote's fetch, receive and standing; the log rows kept, numbered and rewritten), `QuestIntegrator` (a fetch's replay), `QuestFollowUps` (the follow-up steps a lost parent move rewrites), `QuestChain`, `QuestHistories`, `QuestTakeReadings`, `QuestForgetting`, `QuestReads` (find, list, from, waiting, cursor), `QuestPasses` (the passes and the remote's handshake) and `QuestClaims` |
-| `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
-| `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
-| The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
-| The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades, each alter with its backfill and the rebuild one transaction), `SessionColumnNames` (a table's `adapter` and `harness_version` renamed `door` and `door_version` as it opens), `SessionIndexes` (the indexes each record a list answers is read by: who continues it, a quest's last run, the conversation that took a quest, a mirror's id), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
-| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a copy's tree, the busy sentence) and `SessionPlaceLease` (the writer's lease on the place itself, its `holds_place` mark and its busy sentence; `ReleasePlace` clears the mark), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
-| `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
-| The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
-| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: an ask that names its receiver carries the chain it names to that quest, and one that names a chain and no receiver is refused; a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskPublishGuard` (each receiver asked once, and no session's publish beside the ask's intake), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
+| Where | Its job |
+|---|---|
+| `Loop/Driver.cs` | The root that wires: one look (`LookAsync`) and one quest's start (`RunAsync`), each running its registered passes or stages at their phases' anchors; the stages and passes reach it through `RunDoors` and `LookDoors` |
+| `Loop/Run/` | A start's stages by phase (`[RunStage]`, `RunState`): `Choose/` (agent, account, access, `PlaceHome`), `Tree/`, `Placed/` (steward, binding, set-up step), `Trust/`, `Continue/`, `Open/`, `Hand/`, `Conclude/`, `Ending/`, `Hold/` (`SessionHold`) |
+| `WorkOrders/Look/`, `Loop/Look/`, `WorkOrders/` | The look's passes (`[LookPass]`, `LookState`): the sync and lost claims, the local phase, the read phase shaping the snapshot, the plan (`PlanLook`), the starts and intakes (`StartsLook`), what ended (`EndingsLook`), the after phase |
+| `WorkOrders/Domain/` | The pure `Planner` over a `Snapshot` (`PlanRound` and its `Round*` parts, `StartVerdict`, `SittingFact`) |
+| `WorkOrders/Sessions/`, `WorkOrders/SessionsCommand.cs` | `daoris session` and the five states (`SessionStateReader`) |
+| `Loop/Session/` | What every start shares: `SessionEquipment`, `SessionRules`, `QuestWalk`, `AccountEndings`, `SessionWatching`, `SessionWaits`, `PartsHanded`, `StartSentence` |
+| `Loop/Watch/`, `Loop/` | When a look runs (`WatchRun`); intakes, continuations (`Loop/Continue/`), helpers, partners, brainstorms, `DriverCommand`, how this Daoris is wired (`SystemWiring`, `Loop/Setup/`) |
+| `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
+| `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
+| `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
+| `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
+| `Departments/` | A place's manifests and turns (`Manifest/`), a folder turn's review (`Review/`), a system's plans (`Systems/`), `PlaceHomeMarker` |
+| `Service/Quests/`, `Service/Sessions/`, `Service/Asks/` | `QuestStore` and `QuestExchange` (every door's judgement, the log's operations, `QuestLog`, `QuestTransitions`), `SessionStore` and `SessionLedger` (opens, moves, says, the tree lock and the place lease), `AskStore` and `AskDesk`, each a root wiring parts of its own |
+
+A folder that is no git checkout is a place of its own (`daoris repository add <folder>`), its manifest every file but the
+excludes with size, time and SHA-256, too large to follow past 250,000 files or five minutes (the `manifest` setting). A system
+place is never changed by a session: it plans through the connector's `system_plan`. The kept slots (`Workplace/Pool/`, D214) are
+built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers where a record's line stands.
 
 ## Its rules
 
 ### Quests and the take
 
-1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, its
-   body says why with evidence, never the change, and it is kept under its receiver's registered spelling. (from D32, D34, D70)
+1. A quest is `Open`, `Taken`, `Done` or `Declined`. It goes to a registered repository in the same workspace, its body says why
+   with evidence, never the change, and it is kept under its receiver's registered spelling. (D32, D34, D70)
 2. The driver never writes quest state. The session it starts takes, finishes or declines its own quest through its own
-   connector, so driven and outside work look the same at the quest layer. (from D46)
-3. A take on a quest shared through a remote claims by push before work starts. It is held, lost (the session stands
-   down), or unconfirmed (work goes on until a sync decides). (from D68, D69)
-4. Each whole look asks the host where every running session's claim stands. A session whose take lost is stopped,
-   and the record says why. (from D68, D69)
-5. Two machines' takes on one quest end as a conflict. The loser's work is kept; the person drops it or brings it
-   forward as a fresh take that its kept session goes on from. (from D178)
-6. A quest nobody has started on may be deleted: what stands on it (a session started for it, a quest waiting on it) is
-   judged again inside the delete's own write, and the delete travels as an operation. (from D95)
-7. A session's handback is the note it gave at done, ready or decline. It is written once, in the same write as the
-   move, kept with the session that wrote it, and read whole. (from D219)
+   connector, so driven and outside work look the same at the quest layer. (D46)
+3. A take on a quest shared through a remote claims by push before work starts. It is held, lost (the session stands down), or
+   unconfirmed (work goes on until a sync decides). (D68, D69)
+4. Each whole look asks the host where every running session's claim stands. A session whose take lost is stopped, and the record
+   says why. (D68, D69)
+5. Two machines' takes on one quest end as a conflict. The loser's work is kept; the person drops it or brings it forward as a fresh
+   take that its kept session goes on from. (D178)
+6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
+   travels as an operation. (D95)
+7. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
+   session that wrote it, and read whole. (D219)
 
 ### Planning a look
 
-8. The planner is pure and plans over one snapshot. The service's ledger judges every open again; the plan only
-   avoids asking for what the ledger would refuse, and gives each refusal a sentence first. (from D46)
-9. Only repositories the person opted into are driven. A held repository starts nothing new. A repository needs a
-   registration, adoption where the door needs it, and a root. (from D46, D70)
-10. Quests whose last session here has the person's words waiting are planned first. The rest go in the service's
-    order, oldest open first. (from D46, D137)
-11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
-    conversation the person holds. It is at least one. (from D130, D181)
-12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
-    graph's one entry wired into its work: its `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
-    alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
-    into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
-    which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
-    converted the old per-repository trees switch and the line policies' `overlap` into the step, and no verb or key sets a
-    repository apart beside it. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
-    whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
-    uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
-    there. The person's commit or stash in the checkout releases from the mark each path it took out (`PlaceMarkDiscards`,
-    `ReleasePlace` with its paths), the place going once none is left; the person's acts there are refused only while a turn
-    runs. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
-    one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
-    (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
-    (a driven turn and a conversation alike), and is told what changed there outside Daoris since the last session, commits
-    the person made between turns included, and the uncommitted paths not its own, whose
-    add-all, commit-all and stash its rules then deny (`PlaceTurns`, `PlaceDenies`); every move out of a running state, the
-    orphan sweep's stop included, reads the turn's end once and sends what of its own stays uncommitted as the mark, so a
-    commit clears it. A folder that is no git repository is worked in place the same way: its turn alone holds it, its start
-    reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
-    marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
-    Under the step a folder's session works in a copy of its own (`CopyStart`, `FolderCopies`): every followed file copied to
-    `copies/c-<8 hex>` under the place's folder in the home, the copy's own bytes hashed afresh as its return's base (a file that
-    cannot be read refuses the copy) and the records that work there named in its sidecar, so a carry-on goes back into it; its turns
-    are compared with the copy's own last manifest, never the folder's, and its review is the copy against that base. A folder past
-    the copy bound (`daoris settings manifest copy <megabytes>`, or its Settings row beside the manifest's bounds, `CopyBoundSetting`;
-    2 GB by default; 20,000 files), too large to follow, or more than half
-    the home's free disk is not copied, and the start is held with words naming the bound and the size and how to go on (raise the
-    bound, or choose a workflow with no isolate step); it never works in the folder itself in a copy's place. The workflow's `return`
-    brings the copy back (the workflows area's return kind). A copy names the runs its records worked for (`FolderCopies.Owned`), and
-    the look's tidy moves one aside into the trees' `.tidied` once every run it names has ended with no return of it waiting and no
-    session holds it, said in the tidy's words and gone with the keeping pass as a tree is (`ICopyTidying`, `OrphanCopies`, `CopyTidy`);
-    a copy that names no run is never judged.
-    In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
-    ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
-    A git place's first in-place start marks its common git directory with its home, and another home on
-    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the repository's
-    own checkout waits only for the lease's holder there, a turn running or a line parked with uncommitted paths of its own, read
-    inside the checkout's hold (`CheckoutBeside`, `PlaceLeases.Holds`); in a session's own tree it waits for any session running,
-    waiting or held to go on there. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
-    side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
-    existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
-    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
-    D258, D260, D265)
-13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
-    reserved (quest, tree, place under the cap) before it begins. (from D181)
-14. Under the isolate step's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
-    repository waits until that work is integrated, a done unit's open integration request included, whose quest the look reads
-    where the open list lacks it. A quest that goes back into a tree (a retry or a limit carry-on of
-    an open quest) is no first start and does not wait. (from D215)
-15. Failed sessions on one quest park it at the strike count, three by default and `0` for never, derived from the
-    records. Only `failed` and a stop that was not the person's count. On a home whose role rules are reached, the
-    count is a seeded rule. *Try again* marks where counting restarts. (from D58, D125, D229)
-16. A person's stop holds the quest here until they release it. A pause holds an ask's or quest's work here until
-    *Resume*. Another machine may still take an open one. Neither is a strike. (from D126, D132)
-17. A taken quest whose take is not this machine's sits. Nothing carries it on or resumes it here; the ledger refuses the
-    open as `TakenElsewhere`. (from D80, D178)
-18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or
-    signed out, a tree that would not grow, trust not given) reports its sentence as the quest's reason. Uncommitted work
-    in the place does not hold a start: the lease and the manifest say whose it is. A start in a checkout another Daoris home
-    on this machine works in place is held, naming no path (`PlaceHome`). (from D64, D73, D254)
+8. The planner is pure and plans over one snapshot. The service's ledger judges every open again; the plan only avoids asking for
+   what the ledger would refuse, and gives each refusal a sentence first. (D46)
+9. Only repositories the person opted into are driven. A held repository starts nothing new. A repository needs a registration,
+   adoption where the door needs it, and a root. (D46, D70)
+10. Quests whose last session here has the person's words waiting are planned first; the rest in the service's order, oldest open
+    first. (D46, D137)
+11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a conversation the
+    person holds. It is at least one. (D130, D181)
+12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*, `Workflows/Kinds/Isolate/`): its
+    `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any` under the cap; a full count sits a start `apart`)
+    and its `overlap` (`go`, `wait`: rule 14). A start carries the step it was planned under (`Consideration.Isolate`), so a save
+    between plan and start never moves it; no other verb or key sets a repository apart.
+    With no step, one writer works in the place at a time under the ledger's lease: the record whose turn runs there, or, in a git
+    place, the parked or waiting line whose end left uncommitted paths of its own (`holds_place`), until a turn commits them, they
+    are discarded, the person's commit or stash takes them out (`PlaceMarkDiscards`), or the person lets others work there.
+    Nothing renews it on a clock; a start sits behind the holder. Under the lease a start is told what changed outside Daoris
+    since the last session and which uncommitted paths are not its own, whose add-all, commit-all and stash its rules deny
+    (`PlaceTurns`, `PlaceDenies`). A folder is worked in place the same way, its end marking nothing.
+    Under the step a folder's session works in a copy of its own (`FolderCopies`); a folder past the copy bound (2 GB or the
+    `manifest copy` setting; 20,000 files) or over half the home's free disk is held, never worked in place instead. The
+    workflow's `return` brings the copy back. A path a turn changed that no tool event names is said as changed by none of its
+    tools (`TurnUnattributed`).
+    A git place's first in-place start marks its common git directory with its home (`PlaceHomeMarker`), and another home is held
+    there. A pull or promotion that would move the checkout waits only for the lease's holder; in a session's own tree, for any
+    session there. Under the step, sessions run side by side, one per tree; only a resume, a carry-on or a later quest of the
+    same run goes back into a tree, and a later quest of a line that is a run of its own gets a tree and branch of its own
+    (`RoundJoining`, `QuestRuns`). (D51, D167, D254, D258, D260, D265)
+13. A quest held by a session in flight, working or still opening, does not start again. Each start is reserved (quest, tree,
+    place under the cap) before it begins. (D181)
+14. Under `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the repository, a done unit's open
+    integration request included, waits until that work is integrated. A quest that goes back into a tree is no first start.
+    (D215)
+15. Failed sessions on one quest park it at the strike count, three by default and `0` for never, derived from the records; only
+    `failed` and a stop that was not the person's count. On a home whose role rules are reached, the count is a seeded rule.
+    *Try again* marks where counting restarts. (D58, D125, D229)
+16. A person's stop holds the quest here until they release it; a pause holds an ask's or quest's work until *Resume*. Another
+    machine may still take an open one. Neither is a strike. (D126, D132)
+17. A taken quest whose take is not this machine's sits: nothing carries it on or resumes it here, and the ledger refuses the open
+    as `TakenElsewhere`. (D80, D178)
+18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or signed out,
+    a tree that would not grow, trust not given) reports its sentence as the quest's reason. Uncommitted work in the place does not
+    hold a start: the lease and the manifest say whose it is. A start in a checkout another home on this machine works in place is
+    held, naming no path (`PlaceHome`). (D64, D73, D254)
 
 ### Start, tree and resume
 
-19. The record opens before the spawn. It names the quest, repository, adapter, tree, access setup and the actor's
-    choice. The tree, profile and waiting words are machine-local and never travel. A throw or a cancel between the open and
-    the hand ends the record, failed, or stopped where the driver is closing, and lets its tree lock go (`RunEndings.BeforeHandAsync`).
-    (from D47, D49, D184, D205)
+19. The record opens before the spawn, naming the quest, repository, door, tree, access setup and the actor's choice. The tree,
+    profile and waiting words are machine-local and never travel. A throw or cancel between the open and the hand ends the record,
+    failed (stopped where the driver is closing), and lets its tree lock go. (D47, D49, D184, D205)
 20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
-    `daoris/s-<8 hex>`. It grows from the repository's line, or from the branch a chain's step before landed on. A root
-    that is not the top of its own repository is refused. (from D51, D82, D86)
-21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`), its
-    `post-checkout` hook owed, copying nothing; a failed open removes its tree and branch. The `files` run stage, after
-    `open` and before `hand` (and the same step in a conversation's open and a go-on), is the one way a tree gets its
-    dependencies: in an unworked tree it writes back what a cut-off start left, then keeps, places from the store
-    (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in rule order, the install under
-    its key's lock (an `npm ci` of a rule that declares `setup` runs `--ignore-scripts` where its lockfile marks no
-    `hasInstallScript` and resolves nothing from git, so the repository's own scripts never keep it unsealed), the repository's only where the rule's last install wrote git's common folder, and the machine's
-    admission; it seals only a fresh install, begun in a tree holding nothing ignored but earlier placements and the build
-    outputs the rules declare (an `output` or `intermediate` entry, which a kept slot holds after its first build), that wrote
-    nothing beside its folder, changed no earlier placement, named no tree path or secret and left no link outside, and a
-    seal the disk refuses is said `started.deps-unstored` (`unsealed`), never `started.deps-installed`; dependencies install in the order of the rule
-    that decides each, a workspace member the found layer named beside its root taking its root's place where a later layer
-    decides the root (`WorkspaceOrder`); it records an unsealed install's companions and other writes, groups
-    an install with each earlier placement it changed (a group whose member is now another kind's path drops that member's
-    record and leaves its folder), runs the owed hook, installs again what lost an other write, runs each rule's `setup`
-    commands (`per: repository` once per key of the commands, the manifest's scripts and the files they name, kept in the
-    home; `per: tree` in each tree; a failure said `started.setup-failed`), links each shared path, and
-    copies the machine-local files by the effective `reach: copy` rules. A path whose effective rule says `reach: read` or `write`
-    (never a `dependency`, `intermediate`, `cache` or `output` entry, which the reader refuses, nor a harness's or an editor's
-    settings) is linked in any tree to its one place in the checkout, before the copies so no copy writes through it (`TreeSharing`):
-    a junction for a folder on Windows, a symbolic link elsewhere and for a file, recorded in the files record's `Shares` before
-    it is made. It is made only for a pattern naming one path, where `share(path)` is let through, git ignores the path in the
-    tree and the checkout, the place stands, is no link and lies in no other repository, and nothing stands at the path or on its
-    way; else `started.share-declined` says why, a file link the machine refuses included, and no copy stands in. `read` is
-    Daoris's word alone: none of its acts writes there, and the session is told its own shell still can. `started.tree-shared`
-    names the shares and says a recursive delete that follows a link deletes the shared place's files. A share counts only
-    while its entry reads, without following it, as a link to its place (`TreeShares`); anything else there is the line's, its
-    record dropped and said at the next stage as `tree.share-lost`. In a worked tree it only keeps, or places a hit into an
-    absent folder while each earlier dependency stood and no group names it. The hand, a conversation's open, a go-on and
-    a terminal's visit take the mark off first, a visit ending a running install or hook; every stage write re-reads the
-    mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. Once a day the tidy's Keeping pass sweeps what a cut-off copy
-    left in the store (a making folder, or a key's folder with no manifest, a day old), then evicts
-    a store entry not placed or sealed in thirty days, then the least recently placed while the store holds more than 10 GB; the
-    Disk space card shows the store as its `deps` kind, a rule the person does not set. A path its install left absent (an
-    npm workspace member whose packages the install hoisted to the root) is recorded absent: its store entry holds no files, a
-    placement makes no folder, and the record holds while the path stays absent and differs once it appears. (from D51, D214, D216)
-22. A tree serves one line of work and is never handed to another. A repository may declare its rooms (lanes carrying
-    `builds`, joined by a `room`); `RoomCheck` checks them with its rule file over git's tracked files and names the claim
-    groups. Every path git does not manage has an effective rule from four layers, a later one's match winning and the last
-    match deciding within one: the analysis's found layer (`data/files-found.json`, git's view, the walks, the local and
-    toolchain signatures of `Defaults/file-signatures.json` and the tracked scripts, read at the commit and writing nothing in
-    a tree), the repository's tracked `daoris.files.json` read from git's objects at the line's tip, and the person's
-    `data/files.json`, its `machine` rules then the repository's. Each layer's file says `"form": 2`, which every writer writes:
-    its entries are git's ignore patterns, each with a rule set per act (`reach`, `take`, `finish`, a dependency's `across`, an
-    output's `builds` and `refuses`), a
-    kind naming the defaults an entry leaves out (`FileKindSets`), and an entry covers a top as git's ignore does (the top or a
-    folder above it, case by the checkout's `core.ignorecase`, a path read as written folding case too, no `!` taking back under a covered folder; `GitPatternOracleTests` asks `git check-ignore --no-index` the same of a sample, both settings). A file without `form`
-    is the first form, read through `RuleFileFirstForm`: each of its words is stated exactly in git's syntax but one that matches
-    a folder without what lies under it (`P/*`), which is read as written. The person's file is rewritten in git's form once none
-    of its paths is read as written, its first form set aside beside it; until then the Files tab names each such path with its
-    two wordings, one press words them all, and no other edit is written. A slot's ignored tops are sorted by each rule's `take`,
-    and a top holding a recorded copy or share, or a path a share's entry declares, is partitioned without entering a link
-    (`TopPartition`): the copy is Daoris's own while its hash holds, the share while its link leads to its place (`Shared`, which no
-    take or finish moves), and every other entry under it is sorted as a path of its own. A link no share holds is foreign and holds
-    the slot; a take unlinks the shares before its switch, as it deletes the copies, and a retirement before its rename; the tidy's
-    move aside unlinks them in the moved folder once its tree is known to go, and a folder put back has them made again, each
-    link read again just before it goes, so no set-aside folder holds a link to a shared place; git's removal of
-    a tree takes every link off first (`TreeLinks`). A take reads its plan once, in its claim before the switch, from the rules at its start
-    (`TakePlans`): a top inside which the start tracks a path is listed again after the switch and sorted entry by entry, never moved
-    whole (`PlanRelisting`); a `base` top beside one project file keeps the folders of the configurations that project declares
-    (`BaseProducers`: its own `Configurations`, else the nearest `Directory.Build.props`'s, else Debug and Release) as the previous
-    line's build base, each recorded in the tree's files record (`TreeBase`: its folder, the line, the commit, the moment, the
-    producer and the build its rule names) and marked `.daoris-base` (`BaseMarker`), every other entry under it set aside, and a
-    top beside no project file or several, or whose rule and signature name no `builds`, set aside whole; the clearing moves
-    exactly the plan's tops, the bases too where the toolchain key moved (a new SDK pinned at the start among them), and the undo
-    takes back the bases its claim wrote (`TreeBases`). An output's `builds` is the one command the door runs, naming
-    `{configuration}` and never `--no-build`, the .NET signature's `dotnet build -c {configuration}` filling an entry that leaves it
-    out; its `refuses` names the runners the repository integrated with the guard, for the start's words alone. The found layer
-    writes `take: base` for a signature's output that names its `builds` (.NET's `bin/` beside a project), and `aside` where a
-    script it found runs that output without building, naming the script. A base is released only by `daoris tree build <path>`
-    (`TreeBaseBuilds`), which runs its recorded `builds` for its producer in the project's folder under the machine's admission,
-    once for each framework where the SDK's evaluation reads several (`-f`), asks MSBuild in each run for its `FileWrites` and
-    `FileWritesShareable` items (`BuildAccounts`, held whole on a build with nothing to do by `BuildAccountProcessTests`), sets
-    aside with the previous line's every entry under the base those accounts do not name (`BaseTrim`), and lets the base go in the
-    write that keeps what it did beside the bases (`TreeBaseRelease`: the producer, its frameworks, each command, the commit, the
-    exit, the moment and the count set aside), before the marker; any other exit releases nothing, a base whose record names no
-    build is set aside whole, and a restore, a gate's step or a `--no-build` never comes to it. The files stage names the bases
-    with the runners their rules' `refuses` names (`started.tree-base`) or the word that none refuses them
-    (`started.tree-base-unguarded`), tells the session the same, and says once each release that set entries aside
-    (`tree.base-trimmed`, `TreeBaseWords`); `daoris gate run`'s admission line names the tree's unreleased bases and refuses
-    nothing (`UnreleasedBases`). The runners this repository integrates refuse a path under a standing marker through
-    `tools/tree-base.mjs` (`run`'s and `restart`'s four hosts, `run --real`'s shell among them, proof-kit's three paths, the family
-    rehearsal's and the e2e host's HTTP host), every builder before them builds through its `build` (`tools/desktop.mjs build`, the
-    MCP host among them, and `test:web:e2e`), the product's walking-up locators (`ServiceHostLocator`, `KnowledgeConnector`) pass
-    over a marked workspace build, and where none is left the window's reason (`base-host`) and the session's line for a missing
-    connector (`tree.base-host`) name the marked build and the door (`BaseHosts`); `tools/tree-base.test.mjs` holds every site of
-    the tracked code that reads a build output guarded or exempt for a reason it checks. A command typed into a shell is unmanaged
-    and refused by none of them. The floor is read over all: a tracked path is git's, a top
-    that is or holds another repository, a linked worktree or a bare repository's shape is `repository`, and a harness's or
-    an editor's settings are never copied. The person's `deny`, `allow` and `ask` over `run`, `copy` and `share` are empty by
-    default; a `files.json` that does not read holds every act as an ask and is never written over. `daoris files` and the repository
-    page's Files tab (`FILES_SETTLE` words the paths read as written) show each path's rule, its layer, the layers below it, its evidence and size, the acts the rules would
-    make with the person's answer to each, and a `copy`'s readers (every session in a tree it is copied to). The tab leads with
-    the paths and the person's own rules; how the layers decide, the terminal's twin, the reading's commit and the acts sit
-    behind one fold, open where an act is held. A repository whose checkout git cannot read is told what to check, never only
-    that it cannot. The page sets the
-    person's rules and `permissions` through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT` and reads the found layer again
-    through `FILES_READ`, each the window's alone and refused on the pipe: an `ask` is allowed in one press, written as the
-    person's `allow` with its maker, and the allow is taken back by the same route. An `ask` that holds a start's `run`, a machine-local input's
-    `copy` (`TreeCopyPermit`, said `started.local-held`; a `deny` says `started.local-denied`) or a `share` is kept in
-    `data/files-asks.json` (`FileAsks`) under the start that first met it, for the repository's supervisor of the `files` kind
-    (roles area rule 7): its allow is written by `FileAllows` into the repository's own layer with `by` the role and the
-    decision, and the start's sweep records the decision made where that allow stands, else the ask waits again; a
-    `files.json` that does not read refuses
-    each write and every allow, said, and is never written over; each write reads and writes the file under one lock, so two presses lose neither. No payload carries a machine path. The found layer is written only when a repository is registered, when
-    its line moves past a signature, manifest, ignore or gates file or its toolchain's answers move (asked once a day), and
-    when a line finishes (a removed tree's ignored tops marked `scratch`); a look that changed nothing writes nothing. A pnpm
-    or npm repository's workspace members' `node_modules/` are in its root dependency's paths, read at the commit. The set-aside
-    walk holds a bare repository (a `HEAD` and `objects/` and `refs/`) as it holds a `.git`. (from D51, D214)
-23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is
-    followed there. (from D164)
-24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a
-    carry-on, a hand-over): resume, a new part, wait, hold or refuse. (from D137, D189, D206, D212)
-25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold.
-    Otherwise a new part opens and is handed Daoris's brief, composed without a model. (from D137, D189)
-26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a
-    shutdown, was a person's stop they released, or parked and was answered. (from D80, D83, D104)
-27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in
-    the same tree once that quest is answered. (from D79)
+    `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
+    of its own repository is refused. (D51, D82, D86)
+21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
+    every other end of a tree, removes the tree, its branch and its record. The `files` run stage, after `open` and before `hand`
+    (and the same step at a conversation's open and a go-on), is the one way a tree gets its dependencies: in an unworked tree it
+    keeps, places from the store (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in order,
+    under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). It
+    seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); it runs the owed
+    `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
+    the machine-local files the `reach: copy` rules name. A `reach: read` or `write` path naming one place that git ignores is
+    linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
+    while it reads as its link (`TreeShares`). In a worked tree the stage only keeps. The hand, an open, a go-on and a terminal's
+    visit take the mark off first. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
+    (D51, D214, D216)
+22. A tree serves one line of work and is never handed to another. A repository may declare rooms (lanes carrying `builds`,
+    joined by a `room`), which `RoomCheck` checks. Every path git does not manage has an effective rule from four layers, a later
+    match winning: the found layer (`data/files-found.json`, git's view and the signatures in `Defaults/file-signatures.json`, read
+    at the commit), the repository's tracked `daoris.files.json` at the line's tip, and the person's `data/files.json`, its
+    `machine` rules then the repository's. Each layer is `"form": 2`: git's ignore patterns, each with a rule per act (`reach`,
+    `take`, `finish`, a dependency's `across`, an output's `builds` and `refuses`) and a kind naming its defaults, covering a top
+    as git's ignore does (`GitPatternOracleTests`). A first-form file is read through `RuleFileFirstForm`; the person's is
+    rewritten in git's form once none of its paths reads as written.
+    A take's `base` top beside one project file is kept as the previous line's build base, marked `.daoris-base` and released
+    only by `daoris tree build <path>`; the runners this repository integrates refuse a path under a marker
+    (`tools/tree-base.mjs`). The floor holds over all: a tracked path is git's, a nested repository is `repository`, and a
+    harness's or editor's settings are never copied. The person's `deny`, `allow` and `ask` are empty by default; a `files.json`
+    that does not read holds every act as an ask and is never written over. `daoris files` and the Files tab show each path's
+    rule and evidence; the page writes the person's rules through `FILES_SET`, `FILES_REMOVE` and `FILES_PERMIT`, the window's
+    alone. An `ask` holding a start is kept in `data/files-asks.json` for the repository's `files` supervisor (roles rule 7). The
+    found layer is written only at registration, when the line or toolchain moves past what it reads, and when a line finishes.
+    (D51, D214)
+23. A session commits on its tree's branch as it goes. An agent that moves its tree onto a branch of its own is followed there.
+    (D164)
+24. One decision says how a line goes on after any trigger (words kept, an answer, a limit, a transient bound, a carry-on, a
+    hand-over): resume, a new part, wait, hold or refuse. (D137, D189, D206, D212)
+25. The agent's own conversation is resumed only by the id Daoris kept, where its agent, account and tree still hold. Otherwise a
+    new part opens and is handed Daoris's brief, composed without a model. (D137, D189)
+26. A taken quest is carried on in the same tree when its last session here failed, was cut off by the sweep or a shutdown, was a
+    person's stop they released, or parked and was answered. (D80, D83, D104)
+27. A session that asks another repository a quest ends completed and waits. Its quest stays taken, and it resumes in the same
+    tree once that quest is answered. (D79)
 
 ### Words to a session
 
-28. The person's words reach a session in any state: at its next step where its door takes words during a turn, else
-    at its turn's end, else by reopening its ended record. The only move out of an ended state is back to working
-    with words waiting. (from D137, D188)
-29. Answers alone that would take a line on past its answers-alone rule's number in a row wait for the person; the hold's note and an
-    ended conversation's refusal name that number, the one the hold judged at, never a fixed count. (from D188, D229)
+28. The person's words reach a session in any state: at its next step where its door takes words during a turn, else at its
+    turn's end, else by reopening its ended record. The only move out of an ended state is back to working with words waiting.
+    (D137, D188)
+29. Answers alone that would take a line past its answers-alone rule's number in a row wait for the person; the hold's note and
+    an ended conversation's refusal name that number. (D188, D229)
 
 ### The look, timeouts and limits
 
-30. The loop looks at its pace (15 s by default), on a nudge, and on a wake (a ledger change, a terminal's words, a
-    session's end). A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on
-    beside the look, reserved. The whole lists a pass or the work beside it reads together (the snapshot's, the tidy's
-    holders, the nodes' units) are asked at once. The tidy reads a repository's refs, top and working trees once a look,
-    each tree's branch from that list, until one of its stages writes. A branch's end judgement is three starts, where it left the
-    line (which is also whether the line holds its tip), its tree and its files, from five: D88's question of every session
-    branch is one `rev-list` of the judgement's refs (`UnheldTips`); on the benchmark's two dozen trees the tidy is 6 starts, on
-    six trees with work 26 from 38 (the git area's *Git's starts, counted*). An ended session's offer reads each question of git once (`GitReadOnce` over the tree's walk), and a
-    line still where the branch left it is neither walked nor compared again (17 starts of a tree of work, 12). A reader of the running ones asks the open ones
-    (the open hold's candidates, `SessionOpenDoors.HoldAsync`; the accounts' running counts, `AccountsRoutes`), a reader of one
-    session asks for it alone (`GET /api/sessions/{id}`; the sessions routes' doors), and every other reader of the session list
-    reads the list kept by its change since the last mark (`SessionListKept`): its text and its typed records are made once for
-    each state of the list, one record is typed alone, and a host from before the change door is read whole each time. Every
-    reader of every quest (`EveryQuestAsync`, `QuestsJsonAsync`, one quest's `FindQuestAsync`) reads the quest list kept the same
-    way (`QuestListKept`, `GET /api/quests/changes`), and the service keeps its quest list's answer by the store's mark
-    (`QuestListAnswers`). The sessions and quests slices judge a kept list once while it is the same object (`JudgedOnce`), and a
-    slice handed back the judgement it last made compares nothing, so a period with nothing moved does no work. A look
-    reads the open ones and every record once each, in its snapshot; what it tells takes the open ones from that snapshot
-    (`LookTold`), and the parks it says, only where they moved, from the kept list. A landing's plan and its press each read
-    every record once, the session's tree and quest, its line's parts and a chat's run all read from it (`TreesLandDesk`). The
-    window's sessions slice reads the change since its mark and pushes the records it moved, and the groups' slice reads every
-    record once over the look's verdicts; the page merges a pushed change into the list it holds (`sessionsComposer`). A reader
-    that asks one record of every record in the list's text reads them from one parse of that text (`ListedPriors`), so the
-    groups' words waiting on 3,000 ended chats take milliseconds where a parse for each took 37 s. The overlaps read a running
-    tree's changes, one `git diff`, only where its `HEAD` or its index moved since the last look or its kept read is two minutes
-    old, the bound on an edit not yet staged being seen, and compare the pairs in memory (`TreeChangesKept`). The evaluation
-    runtime passes at a whole look and at its own wakes (a door's ask, a timer its records persist, a plugin's step, an answer),
-    never at a ledger change, since a wake's pass judges the units as the last look read them; its branch tips and
-    remote-tracking refs are read from git's ref files, git asked only for those the files cannot say (`NodeTips`). On ten
-    open trees and thirty runs neither starts git where nothing moved, each is under a second, and after one tree moved the
-    overlaps start one git, where every look started twenty, and the nodes read that tree's content alone, 7 starts where its
-    run's content waits and 6 for the next tree to move: a tree's content is one read of its work (`HoldReads` over `WorkAsync`,
-    whose `Unlanded` is the count a landing door asks), so its layout, branch, head and log are each asked once, the checkout's
-    origin `HEAD` is read from git's file (`WorkingTree.DefaultBranchAsync`), and the branches by date are kept while the repository's
-    counted refs stand (`BranchesByDate`), which a session's own commits do not move. The nodes stage over three hundred runs,
-    five live, is no git where nothing moved and about half a second where it was two (the pass's per-run work: a run's record
-    is read once while its file stands as it was, `NodeRecordFiles.Settled`, by its own read and by the list of every record alike; a workflow file once per stamp for all the runs
-    bound to it, `StampedWorkflows`; the quests' chains and the units' links are indexed once a read, `QuestChains`,
-    `NodeGoverning`'s `RunReads`), held by `LookWorkBenchProcessTests`. (from D68, D181)
-31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
-    pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
-    `timeoutMinutes` is no setting: nothing reads or says it, a save keeps it as it keeps any key it does not own, and the
-    migration's driver-keys step takes it out. (from D200)
-32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the
-    person at 3Q. While it waits on its own background work these are 3Q and 5Q. A wait for a permission answer is
-    never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on any door
-    that takes words, once marked, is told once as Daoris's urgent word (`watch/<session>/<episode>`; `QuietWord`), unless
-    it told the same call as long: the protocol door's word reaches the agent at its next step, and the native and text-only
-    doors' waits for the turn's end, judged by its episode where it leaves, so it goes to no turn once the session was heard
-    again. The same look finds a light session's call or background task past its pipeline's `callMinutes` (20 by default;
-    `CallBound`, `LongCallLook`) and tells it once, urgent (`long-call/<session>/…`), only where the door takes words at its
-    next step; Daoris ends neither. The page's row says *quiet* with its time and, once the word was kept, that Daoris told
-    it (`quietTold` on the calls slice). The quiet word is taken off the record when the episode or the run ends, is no word a record waits on (`SessionViews.Waiting`,
-    so no look goes on with it and no carry-on resumes from it), is settled at the come-up (`UncertainWords`) where a crash left it on
-    an ended record, and is marked on its event (`SessionEvent.Watcher`) so it resets no answers-alone count. Q is `quietMinutes` in
-    `driver.json`, 10 by default and 5 to 120, written only when set and read at each look; it is set at Settings → Driver, by
-    `daoris settings quiet <minutes>`, through `SET_QUIET`, which Ask Daoris presses with no card where the person granted it the
-    `settings` family, and `driver list` says it. Ask Daoris answers *how long may a session run?* from its room: as
-    long as it works, and Daoris looks in on one quiet for Q minutes. (from D200)
-33. An account's limit is read from the agent's own words. It cools that account until the reset it names, and is
-    never a strike. The record ends `failed` with its `limited` flag and reads as *limited*. (from D125, D206)
-34. A limited driven line resumes by itself: its own conversation when its account is ready; else a briefed part on
-    another account or the role's next choice; else it waits and shows the earliest reset. An account the person
-    picked is never moved off. (from D205, D206)
-35. A transient error is retried in the same conversation after 1, 2, 4, 8 and 16 minutes, and is never a strike.
-    Past that the line waits for the person's word or *Try again*. Access goes to the person; a fatal error fails with
-    its reason. (from D210)
+30. The loop looks at its pace (15 s by default), on a nudge and on a wake (a ledger change, a terminal's words, a session's end).
+    A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on beside the look, reserved.
+    A read costs no more as the home grows: the lists a pass reads are asked at once; the tidy reads a repository's refs, top and
+    trees once a look until one of its stages writes, and a branch's end judgement is three starts; a reader of the session or
+    quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
+    (`JudgedOnce`); a look reads the open records and every record once each; the overlaps read a running tree's changes only
+    where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
+    look and its own wakes, never a ledger change, reading tips from git's ref files (`NodeTips`) and a run's record once while
+    its file stands. The budgets are the bench tests' (below) and the git area's *Git's starts, counted*. (D68, D181)
+31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
+    minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
+    nothing; the migration's driver-keys step takes it out. (D200)
+32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the person at 3Q; while it
+    waits on its own background work, 3Q and 5Q. A wait for a permission answer is never quiet. Daoris ends nothing quiet but a
+    dead process and a headless `--quiet-end`. A quest session on a door that takes words is told once, as Daoris's urgent word,
+    that it was marked (`QuietWord`), and once that a call or background task passed its pipeline's `callMinutes` (20 by default;
+    `LongCallLook`); Daoris ends neither. The quiet word is no word a record waits on, is taken off when its episode ends, and
+    resets no answers-alone count. Q is `quietMinutes` in `driver.json`, 10 by default and 5 to 120, set at Settings → Driver, by
+    `daoris settings quiet <minutes>` or `SET_QUIET`. (D200)
+33. An account's limit is read from the agent's own words. It cools that account until the reset it names and is never a strike.
+    The record ends `failed` with its `limited` flag and reads as *limited*. (D125, D206)
+34. A limited driven line resumes by itself: its own conversation when its account is ready; else a briefed part on another account
+    or the role's next choice; else it waits and shows the earliest reset. An account the person picked is never moved off.
+    (D205, D206)
+35. A transient error is retried in the same conversation after 1, 2, 4, 8 and 16 minutes, and is never a strike; past that the
+    line waits for the person's word or *Try again*. Access goes to the person; a fatal error fails with its reason. (D210)
 
 ### States and the end
 
-36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson`, then `Completed`,
-    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its
-    tree. (from D46, D51, D83)
-37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its
-    own quest parks as `AwaitingPerson`, quoting its last words. A clean exit on another's take stands down. A messy exit
-    with the quest taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a
-    taken quest so left, or left so again by a go-on from such an end, is `Unclosed` (`UnclosedQuests`): a row of *What needs you*
-    by the quest until the person's done closes it or their word goes on with the session in its tree, and its tree's work stays to
-    review. (from D46, D83)
-38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on. On
-    the protocol door the session keeps waiting on that work. (from D83, D105)
-39. A park never resumes by itself. The person answers it, or an appointed supervisor's word that the driver can
-    attribute. (from D83, D208, D229)
-40. Each end gets one class from its record: completed, failed, limited, transient-bound, access, stopped by the
-    person, a role or Daoris, refused-choice, awaits-helper, stood-down, or unknown. A limit outranks a good end or one
-    Daoris made. (from D173, D206, D210)
-41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's
-    process tree and records the same. Both are carried on. (from D104)
-42. One writer holds a home: an instance for its life, a verb for its act. (from D104)
+36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson`, then `Completed`, `Declined`,
+    `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree. (D46, D51, D83)
+37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its own quest
+    parks as `AwaitingPerson`, quoting its last words; a clean exit on another's take stands down; a messy exit with the quest
+    taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a taken quest so
+    left is `Unclosed`, a row of *What needs you* until the person's done closes it or their word goes on with the session, its
+    tree's work staying to review. (D46, D83)
+38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on; on the protocol
+    door the session keeps waiting on that work. (D83, D105)
+39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.
+    (D83, D208, D229)
+40. Each end gets one class from its record: completed, failed, limited, transient-bound, access, stopped by the person, a role or
+    Daoris, refused-choice, awaits-helper, stood-down, or unknown. A limit outranks a good end or one Daoris made.
+    (D173, D206, D210)
+41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
+    tree and records the same. Both are carried on. (D104)
+42. One writer holds a home: an instance for its life, a verb for its act. (D104)
 
 ### Asks and intakes
 
-43. An ask is a sentence entered at a workspace, kept verbatim with every later word of the person's. It is `Open`,
-    `Proposed`, `Published` or `Closed`, and `Done` derived from its quests. Every session on it is handed its words,
-    and a requirement must quote them. (from D65, D133)
-44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat that names its
-    ask. It reads the declarations and publishes quests. It runs only where an Intake actor is set, one per ask, in
-    slots the quests leave. A parked intake ends when the person answers the ask. Where no repository owns the work (no declaration covers it and no
-    repository's own files fit it) the intake publishes nothing and ends its last message with one line, `no-department-owns-this: <the work, and why
-    nothing here owns it>`, which the driver reads (`IntakeUnowned`) where the exit was clean and nothing was published: the same park then carries
-    the sentence `intake.unowned`, naming Ask Daoris as the one that can open a department or a room for the ask (`repository create`,
-    `place --room`) beside the person's own publish or close, and the intake's words under it. The intake creates nothing and routes the ask
-    nowhere on it; a verdict with no work named, past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a
-    receiver it holds an open, taken or done quest for, by another hand than that quest's publisher, answers that quest and
-    publishes nothing; one publisher's several quests to a receiver are its pieces of the work. While its intake is queued, starting
-    or working, or before any intake has served it, a session's publish other than the intake's is refused, naming the intake; the
-    person's press never is. The answer to a new ask the declarations left open says the intake publishes it where Intake is set. A
-    publish names the session that made it (a session's terminal names its own) and says when it carries no requirement. (from D65, D205, D255)
-45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards
-    only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
-    landing of it stays offered; the home migration's `abandoned-runs` step does the same once for the runs of a declined quest or a
-    closed ask that an older build left live. A run with a step waiting on the person (an Accept, a task or approval, a
-    go-ahead, a held attempt) lists its newest session here in To review for an Accept and in Waiting on you otherwise, whatever
-    that session's own ending or archive mark, in the window and in `daoris session list` alike. (from D132)
-46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
-    forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
+43. An ask is a sentence entered at a workspace, kept verbatim with every later word of the person's. It is `Open`, `Proposed`,
+    `Published` or `Closed`, and `Done` derived from its quests. Every session on it is handed its words, and a requirement must
+    quote them. (D65, D133)
+44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
+    the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave, and a
+    parked one ends when the person answers the ask. Where no declaration covers the work and no repository's own files fit it, the
+    intake publishes nothing and ends its last message with one line, `no-department-owns-this: <why>`, which the driver reads
+    (`IntakeUnowned`) after a clean exit that published nothing: the park then carries `intake.unowned`, naming Ask Daoris as the one
+    that can open a department or a room (`repository create`, `place --room`) beside the person's own publish or close. The intake
+    creates nothing; a verdict past one sentence or not the last line is the ordinary park. An ask asks each receiver once: a publish to a receiver holding an open, taken
+    or done quest for it, by another hand than that quest's publisher, answers that quest and publishes nothing. Until an intake
+    has served the ask, and while it runs, a session's publish other than the intake's is refused, naming it; the person's press
+    never is. A publish names the session that made it and says when it carries no requirement. (D65, D205, D255)
+45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards only what
+    nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
+    person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
+    order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in), failed
+    (nothing carries it on), working (live or going on), pending (queued, or its next start held) and done (completed, stopped,
+    declined, stood down). Each row carries `state` and the finer `reason`; *Archived* folds a done or failed session alone. A line
+    is in the first of needs you, working and pending any part is in, else as its newest part ended. A tree holding commits no
+    run waits on is offered on its session, bar one running. `daoris session list --group` takes the five and `archived`.
+    (D132, D273)
+46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from` forward, at most
+    256 hops; a cycle or the bound reads as no head. (D167, D212)
 
 ### The tidy
 
-47. A branch's end is judged from git alone: claim, handed, ended or unknown. Ended means merged into the line, on the
-    line by content, carried by a pull request whose merge is here, or inside an ended landing. An agent's done is a
-    claim. An unread proof ends nothing. (from D88, D102, D148)
-48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or
-    content, or carried. With a tree, only this home's tree on a branch that moved. Landed work goes only once it is on
-    the line, and a session branch whose tree moved onto a branch of its own only once the line holds that branch's work,
-    the tip its end is judged at. The folder is moved aside into `.tidied`, never deleted; the keeping pass purges it. (from D88, D195)
-49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or
-    untracked work keeps it. An ignored folder of more than 5,000 files is too large to look through and keeps it, counted by
-    name before any file's time or bytes are read. (from D195, D218)
-50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears,
-    judging each again right before it goes. A removal or press that git would refuse for the tree's lock takes no link off it
-    first. (from D88)
-51. `daoris repository create <name> --purpose "…"` (`REGISTRY_CREATE`) makes a department by one person's press that no mode grants
-    as a family, and its hand ends before any content (`RepositoryCreates`, `Setup/Create/`). Its plan reads the registry, the commit
-    identities of the workspace's repositories and the folder, and writes nothing: the folder goes under the parent most of the workspace's
-    registered git roots share (the one holding the newest where two tie; `--under` where none can be read), the line is the one most of them
-    land on (else `main`), the author is the identity they commit as, and a name registered in any workspace in any case, a folder that exists
-    and is not empty, an unknown workspace, a line git cannot name, no identity (the refusal names `daoris git use`), no `git` and a service
-    not on this machine each refuse it with nothing written. The apply keeps a receipt written before its first effect
-    (`data/place-receipts/create/<digest>.json`) and goes in order: the folder; `git init` with one empty commit and no remote; the
-    unadopted registration; drive on with hold off, left off with the step and the next press named where the inherited workflow holds a
-    `push` or a plugin's `pull-request` and the new place has no remote; the set-up quest, the one `SetupPress` builds for `place
-    --adoption`, with the purpose and the plan's key as its last lines. A failure leaves the folder and the receipt and deletes nothing. A
-    re-press whose folder holds exactly the receipt's empty commit goes on from the first operation not done, and any other existing
-    folder is refused. A `--kind folder` department is a folder registered as one, with no history, line, identity or set-up quest, so
-    `--work` is refused with it. The person's `--work` is the set-up quest's one chained step: a quest to the same repository titled by the
-    request's first line, whose body is the request, the purpose and `{parent}`, carried on the set-up's own ask (`SetupPlan.Then`,
-    `RepositoryCreateWork.StepOf`) and published by the service, on behalf of the ask, when the set-up closes done; a decline of the set-up
-    ends the chain, and the quest found by its key on a re-press is the chain found with it. The step goes to a place whose row may still
-    read unadopted: the planner starts it over the protocol door and sits it over the pipe door (`NotAdopted`, a wait) until the driver's
-    follow registers the adoption, and sits it `NotDrivable` where the drive was left off (rule 9). No `daoris.json`, brief or code is
-    written and nothing is pushed. The plan is also `REGISTRY_CREATE_PLAN` (open; the ask resolved, the folder, line and identity, the steps, every
-    refusal, the digest and the first lines of each quest, `CreatePlanWire`, `CreateQuests`), the press's own ground and its view's one judge. The
-    apply's answer carries the `PressReceipt` it made (the department, workspace, folder, line and set-up quest, and whether it is done), which Ask
-    Daoris's press record keeps (roles-and-supervision 56). The person's growth switch for its workspace (`GrowthRules`, `growth` and `workspaceGrowth` in
-    `driver.json`, `daoris settings growth <workspace> [--repository <name>] mode|asked|off`, the person's alone) is read by the plan: `off` refuses it
-    (`growth-off`, "Opening repositories in `<workspace>` is off …") in every door, and the plan carries the value (`growth`) the card and the pipe
-    read, so `asked` puts the press on a card even in full access (rule 56).
-52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one repository
-    with its receiver named, as the person's, carrying `SetupPlan.Then`, a `SetupThen` (title and body) the service chains behind the quest as
-    its one step to the same repository, or none. `place --adoption`, a workspace plan's tick, `repository create` and `place --room` publish through it;
-    only a creation sets `Then`, and a room's quest has none. The ask door's `then` (`PostAsk.Then`, `AskRequest.Then`) is judged by the exchange as any chain is, and
-    refused as `BadChain` where it names no receiver.
-53. A room is asked, never made: `daoris place <repository> --room <path> --purpose "…"` is a part of `PLACE_APPLY` (`PlaceAsk.Room`, `Purpose`), so a
-    place's set-up stays one door, and its whole is one quest to that repository's own session; Daoris writes none of a room's text (`PlaceRooms`,
-    `PlaceRoomApplies`, `RoomBrief`, `Setup/Room/`). It rides with no delivery, second opinion, look, adoption, driving or pace (`room-alone`), asks one
-    repository (`room-one`) with a reason of one line (`room-purpose`), and refuses, with every refusal said at once and nothing written, a path that is
-    not a folder inside the repository (`room-path`: empty, rooted, on a drive, with `..` or a character Windows refuses, inside `.git`, `.agents` or
-    `.claude`, through a link or a submodule on the line, or onto a file), a room already there (`room-exists`: the line's `daoris.json` `rooms`, a folder
-    with its own `AGENTS.md`, or a room the lanes file declares, read as git objects at its tip by `IPlaceWorld.RoomAsync`), a repository not registered,
-    not adopted on the registry or its line, with no checkout here, held (`held`) or with a set-up open, and a line that cannot be read (`unread`). Its one
-    change is `ROOM_PRESS` (a second line says the quest is admitted alone where the repository is not driven), so `--plan` and the receipt say it
-    with no case of their own, and the card is its own kind (`place-room`, naming the room, the reason and the first lines of the quest, which are
-    `RoomBrief`'s opening); its receipt is the quest's one `room` operation, found by the plan's key on a retry, judged again where it is asked, with no
-    configuration written and no chain. The quest's body (`RoomBrief`) names the repository, the path, the person's reason, the canon's `rooms-and-classes`
-    convention (four of its lines quoted, which a test holds to the canon's text) and the repository's own declaration as its line holds it, and asks only
-    for `daoris --version`, `sync` and `check` (`SetupPressRules.RoomRules`, added to the repository's scope beside the rules its set-up added).
-    The growth switch for the repository (its own value, else its workspace's, `GrowthRules.Resolve`) is read by the same plan: `off` refuses the room
-    (`growth-off`, "Opening rooms in `<repository>` is off …", beside every other refusal), and the plan carries the value for the card and the pipe.
+47. A branch's end is judged from git alone: claim, handed, ended or unknown. Ended means merged into the line, on the line by
+    content, carried by a pull request whose merge is here, or inside an ended landing. An agent's done is a claim. An unread proof
+    ends nothing. (D88, D102, D148)
+48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or content, or
+    carried; with a tree, only this home's tree on a branch that moved. Landed work goes only once it is on the line, and a branch
+    its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
+    keeping pass purges it. (D88, D195)
+49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or untracked work
+    keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
+50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
+    again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
+
+### Departments and rooms
+
+51. `daoris repository create <name> --purpose "…"` (`REGISTRY_CREATE`, a person's press, no grantable family) makes a department and
+    ends before any content. Its plan (`REGISTRY_CREATE_PLAN`, open; the press's own ground and its view's one judge) reads the
+    registry, the workspace's commit identities and the folder, and writes nothing: the folder goes under the parent most of the
+    workspace's registered git roots share (`--under` where none can be read), the line is the one most of them land on, the author the
+    identity they commit as; a name registered in any workspace in any case, a folder that exists and is not empty, an unknown workspace,
+    an unusable line, no identity (naming `daoris git use`) and no `git` each refuse it with nothing written. The apply keeps a receipt
+    before its first effect (`data/place-receipts/create/<digest>.json`) and goes in order: the folder; `git init` with one empty commit and
+    no remote; the unadopted registration; drive on with hold off, left off with the step and the next press named where the inherited
+    workflow holds a `push` or a `pull-request` and the place has no remote; the set-up quest. A failure leaves the folder and the receipt
+    and deletes nothing; a re-press whose folder holds exactly the receipt's empty commit goes on from the first operation not done.
+    `--kind folder` registers a folder with no history, identity or set-up quest, so `--work` is refused with it. No `daoris.json`, brief or
+    code is written and nothing is pushed. The answer carries the `PressReceipt` it made, which Ask Daoris's press record keeps
+    (roles-and-supervision 56). The growth switch (`GrowthRules`: `growth` and `workspaceGrowth` in `driver.json`, set only by the person with
+    `daoris settings growth <workspace> [--repository <name>] mode|asked|off`) is read by the plan: `off` refuses it (`growth-off`), and the
+    plan carries the value, so `asked` puts the press on a card even in full access.
+52. The set-up quest is built once, by `SetupPress`, and asked through one door: `ISetupWorld.PublishAsync` posts one ask to one
+    repository with its receiver named, as the person's, carrying `SetupPlan.Then`, a title and body the service chains behind the quest
+    as its one step to the same repository, or none. `place --adoption`, a workspace tick, `repository create` and `place --room` publish
+    through it; only a creation sets `Then`: the person's `--work`, a quest titled by its first line whose body is the request, the purpose
+    and `{parent}`, published by the service when the set-up closes done and not at all when it is declined. The ask door's `then` is
+    judged as any chain is, and refused `BadChain` where it names no receiver. The step goes to a place whose row may still read
+    unadopted: the planner starts it over the protocol door, sits it over the pipe door (`NotAdopted`, a wait) until the driver's follow
+    registers the adoption, and sits it `NotDrivable` where the drive was left off (rule 9).
+53. A room is asked, never made: `daoris place <repository> --room <path> --purpose "…"` is a part of `PLACE_APPLY` (`PlaceAsk.Room`,
+    `Purpose`), so a place's set-up stays one door, and its whole is one quest to that repository's own session; Daoris writes none of a
+    room's text. It rides with no delivery, opinion, look, adoption, driving or pace (`room-alone`), asks one repository (`room-one`) with a
+    one-line reason (`room-purpose`), and refuses, every refusal said at once and nothing written, a path that is not a folder inside the
+    repository (`room-path`: empty, rooted, with `..` or a character Windows refuses, inside `.git`, `.agents` or `.claude`, through a link
+    or submodule, or onto a file), a room already there (`room-exists`: `daoris.json`'s `rooms`, a folder with its own `AGENTS.md`, or a
+    lanes room, read as git objects at the line's tip by `IPlaceWorld.RoomAsync`), a repository not registered, not adopted, without a
+    checkout, held or with a set-up open, and a line that cannot be read. Its one change is `ROOM_PRESS`, so `--plan` and the receipt say
+    it with no case of their own; the card is its own kind (`place-room`); its receipt is the quest's one `room` operation, found by the
+    plan's key on a retry. The quest's body (`RoomBrief`) names the repository, the path, the reason, the canon's `rooms-and-classes`
+    convention and the repository's own declaration as its line holds it, and asks only for `daoris --version`, `sync` and `check`
+    (`SetupPressRules.RoomRules`). The growth switch for the repository (its own value, else its workspace's) is read by the same plan:
+    `off` refuses the room (`growth-off`).
 
 ## Where a change goes
 
-Put new behaviour in a unit of its own, beside the subdomain below (D231). `Loop/Driver.cs` is a root that wires: it holds the order of the
-look and the run, the lazily built parts and the settables, and grows by a one-line door at most. `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Sessions.cs` and `Service/Asks/AskDesk.cs` are roots that wire.
+New behaviour goes in a unit of its own in its subdomain (D231). `Loop/Driver.cs`, `Service/Quests/Quests.cs`,
+`Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Sessions.cs` and `Service/Asks/AskDesk.cs`
+are roots that wire and grow by a one-line door at most.
 
-| A new behaviour about | Goes in | Tests that pin it |
+| A new behaviour about | Goes in | Tests |
 |---|---|---|
-| whether a quest starts, and why it sits | `WorkOrders/Domain/Planner.cs` (a `StartVerdict` and its `SittingFact`) | `WorkOrders/PlannerTests`, `WorkOrders/ParkedQuestsTests`, `WorkOrders/OverlapPlannerTests`, `StrikeTests`, `Loop/CapCountTickTests`, `Loop/PauseTickTests` |
-| how a line goes on after an end, words or a limit | `Course/Domain/LineCourse.Decide.cs` only; executors in `Course/` | `Course/LineCourseTests` with `course-cases.txt`, `Course/CourseCensusTests`, `Course/LimitWaitsTests`, `Course/LimitResumeTickTests`, `Loop/AnswerContinuesTickTests` |
-| what a run's end is | `Events/Domain/Observation.cs`, its code in `Events/NoteCodes.cs`, its class in `Events/PartEnds.cs` | `Events/ObservationTests`, `Events/PartEndedTests`, `Loop/AskAndWaitTickTests`, `Loop/OrphanedSessionTests` |
-| a part of the look | a pass of its own in its subdomain, marked `[LookPass]`; what it reaches of the driver goes on `ILookWiring`, or on its module's own wiring interface where the type sits above Work orders; what it reads of an earlier pass or leaves for a later one goes on `LookState`, written by one pass | `Loop/DriverPartsTests`, and the tests of the stage it moves |
-| a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
-| a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
-| when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
-| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read's time and its git starts and session-record requests held to its budget (the look 0 starts and 2 requests, the tidy 8 starts, a tree's walk 17); `Workplace/TidyGitCountTests` and `Workplace/OfferGitCountTests` hold the starts per branch and per offer; `Loop/SessionChangeBenchProcessTests`, one change read as its change; the modules' `Loop/SessionReadsBenchProcessTests` over the same home, a slice's push and a landing's plan and press each reading every record once, as its change, and the look's snapshot the open ones and every record once each; `Loop/LookWorkBenchProcessTests` over ten open trees and thirty runs, the look's overlaps and the nodes' pass each starting no git where nothing moved and held under a second, and after a tree moved the overlaps one start and the nodes 7, that tree's alone, each kept start a fact read once: its layout (one `rev-parse`: common dir, top level, branch), its `status` (head and own branch), the one `log` of commits no branch of the person's holds, the repository's line (origin's HEAD and one ref listing, the checkout's), and the content proof's `merge-base`, `diff --name-only` and branches by date, which only a tree with commits beyond its line asks |
-| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Course/AnswersAloneTests`, `Settings/QuietSettingTests` |
-| a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
-| transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
-| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/Deps/DependencyStoreTests`, `Workplace/Deps/DependencyGroupsTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
-| a room's declaration, or the room check | `Workplace/LaneRooms.cs`, `RoomCheck.cs`; the conventions in canon's `rooms-and-classes` | `Workplace/LaneRoomsTests`, `RoomCheckTests`, `RoomsDeclaredCensusTests` (this repository's own) |
-| a rule file's layer, the floor, the permissions or the analysis | `Workplace/Files/`; the signatures in `Defaults/file-signatures.json` | `Workplace/Files/FileRulesTests`, `PersonFilesTests`, `FilesLookTests`, `RepositoryFilesTests`, `FileAnalysisTests` (Process, git: a fixture per toolchain) |
-| the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
-| a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestMovesTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
-| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, `WorkOrders/IntakeUnownedTests`, `WorkOrders/IntakeUnownedRunTests`, service `Asks/IntakeTests` |
+| whether a quest starts, and why it sits | `WorkOrders/Domain/Planner.cs` (a `StartVerdict` and its `SittingFact`) | `PlannerTests`, `StrikeTests` |
+| how a line goes on after an end, words or a limit | `Course/Domain/LineCourse.Decide.cs` only; executors in `Course/` | `LineCourseTests` with `course-cases.txt`, `CourseCensusTests` |
+| what a run's end is | `Events/Domain/Observation.cs`, its code in `Events/NoteCodes.cs`, its class in `Events/PartEnds.cs` | `ObservationTests`, `PartEndedTests` |
+| a part of the look | a pass of its own marked `[LookPass]`, reaching the driver on `ILookWiring`, sharing on `LookState` written by one pass | `DriverPartsTests` |
+| a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
+| a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
+| when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests` |
+| what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `SessionReadsBenchProcessTests` |
+| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
+| a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
+| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests` |
+| rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
+| the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
+| a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |
+| intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs` | `IntakeTests`, `IntakePromptGoldenTests`, `IntakeUnownedTests`, `IntakeUnownedRunTests` |
 
-Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`; service tests under
-`src/Daoris.Service/Daoris.Service.Tests/`.
-
-The gates that bite: `driver` (which also runs `StructureTests`: the module structure), `censuses`,
-`driver-process` and `driver-process-git` (real processes and git, run serially), `service`, and `universal` (which writes the
-index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file; `npm run quick` holds the size ratchet
-(`tools/size-ratchet.mjs`). A changed driven loop also meets the family rehearsal
-(`npm run rehearse:family`), whose stub-adapter phase proves the loop.
+Driver tests are under `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`, service tests under
+`src/Daoris.Service/Daoris.Service.Tests/`. Gates: `driver` (with `StructureTests`), `censuses`, `driver-process` and
+`driver-process-git` (run serially), `service`, `universal`, `test-map` and `code-map` for a new file; `npm run quick` holds the
+size ratchet. A changed driven loop also meets the family rehearsal (`npm run rehearse:family`).
 
 ## Contradictions
 
-- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `Isolate` branch) runs sessions side by
-  side, one per tree, where the repository's workflow starts with an `isolate` step. The code reads right (as D115 and D167 already say).
-- D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs` (`Decide`, `Account`) resumes the agent's own conversation
-  where it holds. D189 reads right.
-- D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed
-  and unbuilt, and `Workplace/SessionTrees.cs` (the worktree half of D51) opens a tree for one line and keeps no pool. D51 reads right today.
-- D83 says the person answers a park; `Service/Sessions/SessionSays.cs` lands an appointed supervisor's
-  attributed word on a park. D208 and D229 read right.
-- D88 counts work on any branch of the person's as landed; `Workplace/EndJudgement.cs:322-326` calls it handed, not
-  ended, and `Workplace/TreeSetAside.cs` (`GoesByItself`) makes the look wait for the line; only the press goes on D88's proof.
-  The code reads right.
-- D58 makes `strikes` in `driver.json` the count; D229 makes it the failures rule, and no configuration reads the key: the
-  release's migration takes it out (`Transitional/Migration/RulesStep.cs`). D229 reads right.
-- D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
-  written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
-- D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief
-  (`LineCourse.Decide.cs`, `Briefed`). D189 reads right.
-- D65 point 4 says a workflow is a chain of quests; D157 and D190 make it a named, versioned graph that governs a
-  bound run, with chains kept as its steps. D190 reads right.
+- D46 and D51 (one driven session per repository) vs `RoundConsidering`'s `Isolate` branch (side by side, one per tree, under an
+  `isolate` step): the code, as D115 and D167 say.
+- D46 (a fresh session per quest) vs `LineCourse.Decide` resuming the agent's own conversation: D189.
+- D51 rule 2 (a tree for one line, never reused) vs D214 (trees handed from line to line): D214 is unbuilt in production, so D51
+  reads right today.
+- D83 (the person answers a park) vs `SessionSays` landing an appointed supervisor's attributed word: D208 and D229.
+- D88 (work on any branch of the person's is landed) vs `EndJudgement` calling it handed and the tidy waiting for the line: the
+  code; only the press goes on D88's proof.
+- D58 (`strikes` in `driver.json`) vs D229 (the failures rule; the key read by nothing and taken out by `RulesStep`): D229.
+- D81 (posture from the harness's `auto`) vs D184 (from the repository's access setup, written on the record): D184.
+- D131 (a plain carry-on where a conversation cannot resume) vs D189 (a new part with Daoris's brief): D189.
+- D65 point 4 (a workflow is a chain of quests) vs D157 and D190 (a named, versioned graph governing a bound run): D190.
 
 ## Open
 
-- **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; proposed, both makers' reads of
-  round 5 owed.
-- **REPOCONFIG1**: one store every reader of a repository's declarations passes, each content parsed once by its bytes' key and
-  a commit's facts proven by their own hashes, the declarations' names banned by symbol outside it so the compiler finds every reader
-  that names one and a table holding each use kept outside it, and path-bearing git reads through one door
-  (`docs/2026-11-09-repo-config-design.md`); round 6 proposed, both makers' reads of it owed.
-- **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
-- **SESSWATCH1f**: each pass asked for its own minutes.
-- **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.
-- **SESSCTX1a**: resume and a fresh part measured on each door.
-- **LIMITRESUME1** (under ONEWAY1g): what is left of the limit resume.
-- **AGENTERRORS1** (rows 1c to 1e): the one error policy built into the agent interface.
-- **AGENTPROVIDER1**: what is left of the one provider contract every agent implements (rows h, r and t).
-- **TOOL4n**: a driven Claude Code session that ends on a limit on the native door cools its account.
+- **TREEPOOL1** (D214): rooms first with an optimised fallback for a session's tree; round 5's reads owed.
+- **REPOCONFIG1**: the declarations' one store (`docs/2026-11-09-repo-config-design.md`); round 6's reads owed.
+- **SESSWATCH1d, 1e, 1f**: the record of quiet episodes, an automatic end only where it shows quiet is not work, each pass asked
+  for its own minutes.
+- **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case; **SESSCTX1a**: resume and a fresh part measured per door.
+- **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
+- **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
-- **D178's last clause** (no row): handing a lost take's work to the winner waits for a way to reach it.
+- D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.

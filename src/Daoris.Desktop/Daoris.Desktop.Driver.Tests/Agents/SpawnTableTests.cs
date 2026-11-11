@@ -34,7 +34,7 @@ public sealed class SpawnTableTests
     /// <summary>Door, configured command, program and arguments of a conversation.</summary>
     public static TheoryData<string, string[]?, string, string[]> Chats => new()
     {
-        { "claude-code", null, "claude", ["-p", "--input-format", "stream-json", "--permission-mode", "acceptEdits", .. Stream] },
+        { "claude-code", null, "claude", ["-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "acceptEdits", .. Stream] },
         { "claude-code-acp", null, "claude-agent-acp", [] },
         { "codex-acp", null, "codex-acp", [] },
         { "stub", ["node", "agent.mjs"], "node", ["agent.mjs"] },
@@ -113,7 +113,7 @@ public sealed class SpawnTableTests
             ["-p", "--resume", "conversation-1", "--permission-mode", "default", "--model", "opus", .. Stream],
             spawn.Resume(request)!.Arguments);
         Assert.Equal(
-            ["-p", "--input-format", "stream-json", "--permission-mode", "default", "--resume", "conversation-1", "--model", "opus", .. Stream],
+            ["-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "default", "--resume", "conversation-1", "--model", "opus", .. Stream],
             spawn.Chat(request).Arguments);
         Assert.Null(spawn.Resume(request with { Resume = null }));
     }

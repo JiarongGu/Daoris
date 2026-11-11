@@ -82,8 +82,8 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         // conversation, which a link reaches.
         text.Append("- Sessions are archived or unarchived by pressing: `daoris sessions archive <id>…` and\n");
         text.Append("  `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record\n");
-        text.Append("  whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never\n");
-        text.Append("  archived: archive never hides what needs the person, and the press is answered to you at once and never shown.\n");
+        text.Append("  whole, and a teammate's may be archived here too. Only a done or failed session is archived; one working, pending or needing you never is:\n");
+        text.Append("  archive never hides what needs the person, and the press is answered to you at once and never shown.\n");
         text.Append("  Stopping a session is never pressed for the person: it is their own, on the session's page, where a link takes them.\n");
         // The person's helper doors, as the page's Ask another agent…, Ask again… and Pass to the lead are.
         text.Append("  `daoris sessions helper <id> \"…\"` asks another agent, read-only, one question about one session's work, and\n");

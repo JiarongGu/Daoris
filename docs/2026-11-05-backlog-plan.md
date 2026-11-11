@@ -218,7 +218,7 @@ from SCOPEVERIFY2 where a later chunk changes what they prove.
   - S3: modules and service.
   - S4: the web.
   - S5: the CLI, the devkit and the tools outside MERGETOOL1.
-  - Exemplar: BL30's gate and REVIEW2's fixed test homes (`docs/2026-11-02-review2-findings.md`).
+  - Exemplar: BL30's gate and REVIEW2's fixed test homes (`docs/archive/2026-11-02-review2-findings.md`).
 - **The merge tool.** MT1 (Opus) builds D237's first exemplar. MT2 and MT3 (Sonnet) follow it. They are built on their own branch,
   and the tool switches only after SCOPEVERIFY2, since it merges the scope.
 - **Wave 7:** S1, S2, S3, S4, MT1. **Wave 8:** S5, MT2, MT3.

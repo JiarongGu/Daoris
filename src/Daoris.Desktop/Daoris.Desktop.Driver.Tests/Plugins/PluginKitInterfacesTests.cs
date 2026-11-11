@@ -54,8 +54,9 @@ public sealed class PluginKitInterfacesTests : IDisposable
         Installed("acme-hello");
         var (plugin, _) = PluginCommandRun.Find(_home, "acme-hello", PluginKitInterfaces.Command);
 
-        var first = await PluginCommandRun.RoundAsync(_home, plugin, PluginKitInterfaces.Command, [], new Dictionary<string, string>(), CommandWire.Terminal, CancellationToken.None);
-        var second = await PluginCommandRun.RoundAsync(_home, plugin, PluginKitInterfaces.Command, [], new Dictionary<string, string>(), CommandWire.Terminal, CancellationToken.None);
+        var call = CommandCall.Plain(PluginKitInterfaces.Command, new Dictionary<string, string>(), CommandWire.Terminal);
+        var first = await PluginCommandRun.RoundAsync(_home, plugin, call, CancellationToken.None);
+        var second = await PluginCommandRun.RoundAsync(_home, plugin, call, CancellationToken.None);
 
         Assert.Equal((0, "Hello from Hello: asked 1 time."), (first.Exit, Assert.Single(first.Said)));
         Assert.Equal("Hello from Hello: asked 2 times.", Assert.Single(second.Said));

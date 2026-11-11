@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>A process of its own, by measurement.</b> The engine's debug port reaches every page in
-/// its process (`docs/2026-09-28-chromium-embedding-evidence.md` §1), so the port lives in that
+/// its process (`docs/archive/2026-09-28-chromium-embedding-evidence.md` §1), so the port lives in that
 /// process and this one, which holds the bridge, has none.</para>
 ///
 /// <para><b>This executable, started through the kit</b>: the application started with <see cref="EngineBrowser.Argument"/>, by

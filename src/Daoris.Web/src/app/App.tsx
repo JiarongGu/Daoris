@@ -1,5 +1,7 @@
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
+import { usePlugins as usePluginCatalogue } from '../bridge/plugins';
+import { PluginRecordActs, type RecordKind, recordCommandActs } from '../plugins/recordActs';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useRefreshIndex, useRepositories, useStatus } from '../data/queries';
 import { NotificationsBell } from '../notifications/NotificationsBell';
@@ -102,6 +104,10 @@ export function App() {
   // zooms its page itself, so it is left its wheel and its keys.
   const zoom = useZoom();
   useZoomWheel(attached);
+  // The commands plugins add to a record's menu, read from the catalogue this machine's window asks for.
+  // Never asked for here: the Plugins view and the palette ask, and the menus read what they found.
+  const catalogue = usePluginCatalogue({ enabled: false });
+  const recordActs = useCallback((kind: RecordKind, id: string) => recordCommandActs(catalogue.data, kind, id, i18n.language), [catalogue.data, i18n.language]);
   const { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, focusAsk, changeFocus, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening } = useFrameDoors();
   const { attention, presses, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, roster, openWindow, openBrowser, messages, markNoticesRead, linkOpener, notices, setNotificationsToggle, showReviewAgain, reviewActs, update, sayUpdate, dismissUpdate, unkeyedHost, unkeyedSaid, setUnkeyedSaid, answerConfirmation, pressShown, notificationsAt, setNotificationsOpen, dismissNotice, markChannel, notificationsShow, notificationsToggle } = useShellFeeds({ notify });
 
@@ -124,8 +130,7 @@ export function App() {
   useLayoutEffect(() => pageShows(view), [view]);
 
   // Whether the view in front has a list pane, whose four doors — the strip's toggle, the View
-  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
-  // keeps a view's list too; Sessions, the one view that needs a shell, is never in front there.
+  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
   const listed = isListed(view);
 
   // A region toggled: the side bar and the panel are the frame's on every view, and
@@ -152,9 +157,9 @@ export function App() {
   const { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed } = useShellFigures({ repositories, driver, attached, attention, presses, t, outstanding, scope, workspaces, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, notify });
   const { open, openSettings, apply, chooseSettings } = useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, lists, view, knowledgeMode, setSettingsAnchor, setSettingsGitHost, setAgentPart, setListGroup, setDrawerWorkspace, composes, setCompose, setAddRequested, setImportRequested, chooseProjectTab, setBranchAsked, chooseWorkspaceTab, setWorkspaceSection, setMapCode, closings, setTab, circle });
   const { plugins, agents } = useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open });
-  const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout });
+  const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout, palette });
   useShortcuts({ commandState, commandDoors, translate, openMenu, attached, setMnemonics, setOpenMenu });
-  const { openInWork, openRun, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
+  const { openInWork, openRun, openReview, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
   const { quests, projects, knowledge } = useWorkViews({ lists, view, notify, attached, openInWork, openRun, openAtWork, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked });
   // What Ask Daoris is handed wherever it stands: what is on the screen — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
@@ -178,7 +183,7 @@ export function App() {
     onClose: () => closings.setDock(true),
     onGo: go,
   };
-  const { attentionDoors } = useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings });
+  const { attentionDoors } = useAttentionDoors({ attached, openInWork, openAsk, openQuest, open, setWorkIntent, showNotifications, openSettings, openHelp });
   const { renderView, contextDoors } = useViewLayouts({ notify, settingsSection, chooseSettings, settingsAnchor, setSettingsAnchor, settingsGitHost, setSettingsGitHost, go, attached, askSetup, driving, openInWork, plugins, quests, projects, knowledge, agents, t, openings, setSearchAsked, open, askQuickly, openBrowser, copyText, view, openQuest, presses, showNotifications, onRefresh, refresh, mapCode });
 
   return (
@@ -188,6 +193,7 @@ export function App() {
     <LinkOpener.Provider value={linkOpener}>
     {/* What the main area's page offers, which the menu bar's record groups read. */}
     <MainOffer.Provider value={offers}>
+    <PluginRecordActs.Provider value={recordActs}>
     {/* A window, not a page: the viewport IS the frame, every region scrolls inside it, and
         the status bar is therefore always in the same place. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
@@ -396,18 +402,16 @@ export function App() {
                   update={attached ? update.data : undefined}
                   onSayUpdate={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
                   names={pressNames}
-                  // A press's door to its plan: the plan's own page, scoped as the press is; a land's at its review.
-                  onOpenPlan={(door) => {
-                    const plan = planOpening(door, circle, (repository) =>
-                      holdings.data?.find((each) => each.members.includes(repository))?.name ?? null);
-                    apply(plan.opening);
-                    if (plan.review) setWorkIntent('review');
-                  }}
+                  onOpenPlan={(door) => apply(planOpening(door, circle, (repository) =>
+                    holdings.data?.find((each) => each.members.includes(repository))?.name ?? null).opening)}
                   at={notificationsAt}
                   onVisible={setNotificationsOpen}
                   notices={notices}
                   onRead={(ids) => markNoticesRead.mutate(ids)}
-                  onOpenNotice={(notice) => { if (notice.session) openInWork(notice.session); }}
+                  onOpenNotice={(notice) => {
+                    if (notice.kind === 'outcome' && notice.quest) openReview(notice.quest, notice.session);
+                    else if (notice.session) openInWork(notice.session);
+                  }}
                   onDismiss={(notice) => dismissNotice.mutate(notice.id)}
                   messages={messages.asks}
                   answered={messages.answered}
@@ -596,6 +600,7 @@ export function App() {
       {/* The window's one right-click handler: each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
     </div>
+    </PluginRecordActs.Provider>
     </MainOffer.Provider>
     </LinkOpener.Provider>
     </HarnessRuns>

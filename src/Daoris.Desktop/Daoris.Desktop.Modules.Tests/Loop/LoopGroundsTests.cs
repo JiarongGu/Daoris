@@ -101,9 +101,9 @@ public sealed class LoopGroundsTests : DriverModuleBridge
         using var _ = services;
         using var __ = pipe;
 
-        Assert.Null(await grounds.HeldAsync("help", Payload(new { id = "nobody" }), CancellationToken.None));
         Assert.Null(await grounds.HeldAsync("trust", Payload(new { folder = Home, trustFile = Path.Combine(Home, "t.json") }), CancellationToken.None));
         Assert.Null(await grounds.HeldAsync("workflow-node", Payload(new { run = "r1", node = "n1" }), CancellationToken.None));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => grounds.HeldAsync("nothing", null, CancellationToken.None));
+        foreach (var wait in LoopGround.Waits) await grounds.HeldAsync(wait, null, CancellationToken.None);
     }
 }

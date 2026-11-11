@@ -26,7 +26,7 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
             RedirectStandardOutput = true,
             CreateNoWindow = true,
         };
-        foreach (var word in new[] { "lease", Leases, repository }) info.ArgumentList.Add(word);
+        foreach (var word in new[] { "lease", Leases, repository, GitLibraryFaults.Package }) info.ArgumentList.Add(word);
         using var host = Process.Start(info)!;
         try
         {
@@ -116,11 +116,13 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
             ProgramHome.Named = before;
         }
 
-        Assert.Single(inside.Split('\n', StringSplitOptions.RemoveEmptyEntries));
-        Assert.StartsWith("open\t", inside);
+        var opened = inside.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(2, opened.Length);
+        Assert.Equal($"package\t{Uri.EscapeDataString(GitLibraryFaults.Package)}", opened[0]);
+        Assert.StartsWith("open\t", opened[1]);
         var after = ReadLease().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(2, after.Length);
-        Assert.StartsWith("close\t", after[1]);
+        Assert.Equal(3, after.Length);
+        Assert.StartsWith("close\t", after[2]);
     }
 
     private string ReadLease()
@@ -133,13 +135,43 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
     public void A_dead_process_that_closed_what_it_opened_left_nothing_and_one_that_did_not_left_its_repository()
     {
         Directory.CreateDirectory(Leases);
-        File.WriteAllText(Path.Combine(Leases, "999999-1.log"), "open\t1\tone\nopen\t2\ttwo\nclose\t1\nclose\t2\n");
-        File.WriteAllText(Path.Combine(Leases, "999998-1.log"), "open\t1\tone\nopen\t2\ttwo%20spaced\nclose\t1\nopen\t3\tone\n");
+        File.WriteAllText(Path.Combine(Leases, "999999-1.log"), "package\tp1\nopen\t1\tone\nopen\t2\ttwo\nclose\t1\nclose\t2\n");
+        File.WriteAllText(Path.Combine(Leases, "999998-1.log"), "package\tp1\nopen\t1\tone\nopen\t2\ttwo%20spaced\nclose\t1\nopen\t3\tone\n");
 
         var left = GitLibraryLeases.Left(Leases);
 
-        Assert.Equal(["one", "two spaced"], left.Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(["one", "two spaced"], left.Select(each => each.Repository).Order(StringComparer.Ordinal).ToArray());
         Assert.Empty(Directory.GetFiles(Leases, "*.log"));
+    }
+
+    [Fact]
+    public void A_dead_process_leaves_its_repository_under_the_package_its_file_names()
+    {
+        Directory.CreateDirectory(Leases);
+        File.WriteAllText(Path.Combine(Leases, "999997-1.log"), "package\told%20build\nopen\t1\tone\n");
+
+        Assert.Equal([("one", "old build")], GitLibraryLeases.Left(Leases).ToArray());
+    }
+
+    [Fact]
+    public async Task A_fault_found_after_an_update_is_journalled_under_the_package_that_faulted()
+    {
+        var broken = await BuildRepositoryAsync("fault-older-package");
+        Directory.CreateDirectory(Leases);
+        File.WriteAllText(Path.Combine(Leases, "999996-1.log"), $"package\tolder-build\nopen\t1\t{Uri.EscapeDataString(broken)}\n");
+
+        var before = ProgramHome.Named;
+        ProgramHome.Named = Home;
+        try
+        {
+            Assert.Null(GitLibraryFaults.RefusalOf(broken));
+        }
+        finally
+        {
+            ProgramHome.Named = before;
+        }
+
+        Assert.Equal("older-build", GitLibraryJournal.FaultOf(broken));
     }
 
     [Fact]
@@ -149,7 +181,7 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
         Directory.CreateDirectory(Leases);
         var busy = string.Concat(Enumerable.Range(0, 4000).Select(at => $"open\t{at}\tsound\nclose\t{at}\n"));
         for (var at = 0; at < 60; at++) File.WriteAllText(Path.Combine(Leases, $"{999000 + at}-1.log"), busy);
-        File.WriteAllText(Path.Combine(Leases, "999999-1.log"), $"open\t1\t{Uri.EscapeDataString(broken)}\n");
+        File.WriteAllText(Path.Combine(Leases, "999999-1.log"), $"package\t{Uri.EscapeDataString(GitLibraryFaults.Package)}\nopen\t1\t{Uri.EscapeDataString(broken)}\n");
         var before = ProgramHome.Named;
         ProgramHome.Named = Home;
         try
@@ -171,9 +203,29 @@ public sealed class GitLibraryFaultProcessTests : LandedFixture
     }
 
     [Fact]
+    public void An_orderly_exit_closes_the_leases_a_call_on_the_pool_still_holds()
+    {
+        var before = ProgramHome.Named;
+        ProgramHome.Named = Home;
+        try
+        {
+            Assert.NotNull(GitLibraryFaults.Enter("held-at-exit"));
+            GitLibraryFaults.Exit();
+        }
+        finally
+        {
+            ProgramHome.Named = before;
+        }
+
+        var lines = ReadLease().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.StartsWith("open\t", lines[1]);
+        Assert.StartsWith("close\t", lines[^1]);
+    }
+
+    [Fact]
     public void A_live_process_is_never_read_as_dead_inside_a_lease()
     {
-        var leases = new GitLibraryLeases(Leases);
+        var leases = new GitLibraryLeases(Leases, "p1");
         var id = leases.Open("held");
 
         Assert.Empty(GitLibraryLeases.Left(Leases));

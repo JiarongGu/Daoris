@@ -176,7 +176,7 @@ git, or a `git.cmd`, starts as before. The timings are in `docs/FIX-LOG.md`, GIT
 
 ### `map` — the code map from the project files
 
-A repository's code map (`docs/2026-09-23-map-design.md` §3) is the file the platform draws a
+A repository's code map (`docs/archive/2026-09-23-map-design.md` §3) is the file the platform draws a
 repository's modules from. `map` writes it from what the project files declare exactly, with no
 compiler:
 - every tracked `*.csproj` is a module, and each `ProjectReference` is a dependency of kind `project`;

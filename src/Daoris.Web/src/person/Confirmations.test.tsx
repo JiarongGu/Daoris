@@ -11,8 +11,7 @@ import {
   regionShown, routeKey,
 } from './Confirmations';
 
-// The window's confirmation of a terminal's press, as *Notifications*
-// draws it: in plain words that keep what tells one session and one
+// The window's confirmation of a terminal's press, as *Notifications* draws it: in plain words that keep what tells one session and one
 // file from another, every value in the card's view, the route's name under *Details*; its decision region bounded, and *shown*
 // once that region is in view in a window in front of the person. A terminal's press waits until the person answers:
 // its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
@@ -434,7 +433,7 @@ describe("the window's confirmation of a terminal's press", () => {
 });
 
 // A terminal's press that rests on a plan is confirmed hours later from
-// its card, so the card opens that plan's own page, scoped to the press's own session, repository, workspace, quest or ask.
+// its card, so the card opens that plan's own page, scoped to the press's own repository, workspace, quest or ask.
 describe("the door to a press's plan", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -445,7 +444,6 @@ describe("the door to a press's plan", () => {
   });
 
   it.each<[string, Confirmation, PlanDoor]>([
-    ['a land, its session', press('LAND_SESSION_TREE', { id: '3f2a91c4', branch: 'main' }), { plan: 'land', session: '3f2a91c4' }],
     ['a sweep, its workspace', press('SWEEP', { workspace: 'studio' }), { plan: 'sweep', workspace: 'studio' }],
     ['a sweep of no workspace named', press('SWEEP', {}), { plan: 'sweep', workspace: null }],
     ['a sync, its workspace', press('TREES_SYNC', { workspace: 'studio' }), { plan: 'sync', workspace: 'studio', repository: null }],
@@ -467,7 +465,7 @@ describe("the door to a press's plan", () => {
     const onOpenPlan = vi.fn();
     render(
       <Confirmations
-        waiting={[STOP, SAY, UNKNOWN, SERVICE, press('LAND_SESSION_TREE', {}), press('HISTORY_CLEAR', {})]}
+        waiting={[STOP, SAY, UNKNOWN, SERVICE, press('LAND_ENTRY', { entry: 'e1' }), press('HISTORY_CLEAR', {})]}
         onAnswer={vi.fn()}
         names={NAMES}
         onOpenPlan={onOpenPlan}

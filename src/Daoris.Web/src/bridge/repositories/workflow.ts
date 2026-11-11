@@ -1,10 +1,10 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
 import type { WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowUseAnswer, WorkflowUseAsk } from '../../workflow/edit/answers';
 import type { NodeWordAnswer, NodeWordAsk, RunScope, WorkflowRunAnswer } from '../../workflow/run';
-import { call } from '../call';
+import { call, pressBound } from '../call';
 
 // How work moves in a repository or a workspace: its Current
 // workflow, which the driver derives from this machine's driver file, plugins and registry exactly as `daoris
@@ -140,13 +140,37 @@ export const useVerify = () => useMutation({
  * the refusal's code and the driver's sentence, never thrown; the run's view is asked again by the state hub under the driver's key.
  */
 export const useRunNodeWord = () => useMutation({
-  mutationFn: async ({ run, node, act, words }: NodeWordAsk): Promise<NodeWordAnswer> => {
-    const answer = (await call('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) })) as Partial<NodeWordAnswer> | null;
+  // Keyed by its route, so every view reads an Accept under way, a review remounted mid-press too.
+  mutationKey: ['WORKFLOW_NODE'],
+  mutationFn: async (ask: NodeWordAsk): Promise<NodeWordAnswer> => {
+    const answer = (await call('WORKFLOW_NODE', nodeWordPayload(ask), ask.act === 'accept' ? { timeoutMs: pressBound(1) } : undefined)) as Partial<NodeWordAnswer> | null;
     return {
-      run: answer?.run ?? run, node: answer?.node ?? node, act: answer?.act ?? act, done: answer?.done === true,
-      refused: answer?.refused ?? null, message: answer?.message ?? null,
+      run: answer?.run ?? ask.run, node: answer?.node ?? ask.node, act: answer?.act ?? ask.act, done: answer?.done === true,
+      refused: answer?.refused ?? null, message: answer?.message ?? null, revision: answer?.revision ?? null, early: answer?.early === true,
+      landing: answer?.landing ?? null, press: answer?.press ?? null,
     };
   },
+});
+
+/** Whether this window's Accept of `run`'s review is under way, read alike by every view of the run. */
+export const useAcceptUnderWay = (run: string | null) => useIsMutating({
+  mutationKey: ['WORKFLOW_NODE'],
+  predicate: (mutation) => {
+    const asked = mutation.state.variables as NodeWordAsk | undefined;
+    return run !== null && asked?.run === run && asked.act === 'accept';
+  },
+}) > 0;
+
+/** What `WORKFLOW_NODE` is sent for a word: only the fields given, so a skip or a stop sends what it always sent. */
+export const nodeWordPayload = ({ run, node, act, words, attempt, revision, answers, unchecked, part, whole }: NodeWordAsk) => ({
+  run, node, act,
+  ...(words ? { words } : {}),
+  ...(attempt != null ? { attempt } : {}),
+  ...(revision ? { revision } : {}),
+  ...(answers ? { answers } : {}),
+  ...(unchecked ? { unchecked: true } : {}),
+  ...(part ? { part } : {}),
+  ...(whole ? { whole: true } : {}),
 });
 
 /**

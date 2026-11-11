@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>A message said mid-turn waits for the turn's end</b>, as the protocol door's does: a harness may fold a line written mid-turn
-/// into the turn still running, and the record would take it in the middle of that turn.</para>
+/// into the turn still running, and the record would take it in the middle of that turn. Only the person's *Send now* is written at
+/// once, where the harness echoes what it takes, and read where it landed (<see cref="NativeSteers"/>).</para>
 ///
 /// <para><b>The person's words are recorded, then sent</b>: the harness can answer before a record written afterwards lands, and the answer
 /// would sit above the question.</para>
@@ -31,6 +32,14 @@ internal sealed class NativeChat : ITurnedChat
         Action<ChatQueue> changed, Action? wentOn = null)
     {
         Interrupts = agent.FrameInterrupt() is not null;
+        _steers = new NativeSteers(agent.FrameSteer, async (words, line) =>
+        {
+            // A kept word is marked attempted on its record before the wire, as a turn's is; one its record holds stays there.
+            if (await SaidDoor.AcknowledgedAsync(words, count => Turns!.Unsent?.Invoke(count)).ConfigureAwait(false) is null) return null;
+            var delivery = await input.SayAsync(
+                new DoorWord(words.Id is { } id ? [id] : [], line, Written: words.Went), CancellationToken.None).ConfigureAwait(false);
+            return delivery != Delivery.Refused;
+        }, record);
         Turns = new ChatTurns(
             // A conversation going on waits for nothing here: its words wait on the run's input until its process is up.
             ready: () => Task.FromResult(true),
@@ -85,10 +94,20 @@ internal sealed class NativeChat : ITurnedChat
             {
                 if (agent.FrameInterrupt() is { } stop) await input.ControlAsync(stop, CancellationToken.None).ConfigureAwait(false);
             },
-            changed);
+            changed,
+            steerNow: _steers.Steers ? _steers.Now : null,
+            cutsIn: Interrupts && !_steers.Steers);
     }
 
+    private readonly NativeSteers _steers;
+
     public ChatTurns Turns { get; }
+
+    /// <summary>Whether the person's *Send now* is written into the running turn, read where it landed by the harness's echo.</summary>
+    public bool Steers => _steers.Steers;
+
+    /// <summary>A line the harness echoed where it took it, in the wire's order: where words sent now landed.</summary>
+    public void Echoed(string uuid) => _steers.Echoed(uuid);
 
     /// <summary>
     /// Whether its harness takes a stop that keeps the conversation: an <c>interrupt</c> control request. The keeping stop is offered only
@@ -99,6 +118,7 @@ internal sealed class NativeChat : ITurnedChat
     /// <summary>The turn's end is in the record: the next message may go.</summary>
     public void TurnEnded()
     {
+        _steers.TurnEnded();
         TaskCompletionSource? turn;
         lock (_gate)
         {
@@ -114,6 +134,7 @@ internal sealed class NativeChat : ITurnedChat
     public void Gone(bool personStopped = false)
     {
         Turns.Gone(personStopped);
+        _steers.Gone();
         TurnEnded();
     }
 

@@ -84,7 +84,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     show();
 
     const working = (await screen.findByRole('heading', { level: 3, name: 'Working (2)' })).closest('section')!;
-    const ended = (await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).closest('section')!;
+    const ended = (await screen.findByRole('heading', { level: 3, name: 'Done (1)' })).closest('section')!;
     expect(rowsOf(working)).toHaveLength(2);
     expect(rowsOf(ended)).toHaveLength(1);
     // The two intakes, ended, are their asks' page's: no heading holds them.
@@ -128,7 +128,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     const select = vi.fn();
     show({ onSelect: select });
 
-    const ended = (await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).closest('section')!;
+    const ended = (await screen.findByRole('heading', { level: 3, name: 'Done (1)' })).closest('section')!;
     await userEvent.click(rowsOf(ended)[0]!);
 
     expect(select).toHaveBeenCalledWith('ap000012');
@@ -138,7 +138,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     ENTRIES = undefined;
     show();
 
-    const ended = (await screen.findByRole('heading', { level: 3, name: /^Ended/ })).closest('section')!;
+    const ended = (await screen.findByRole('heading', { level: 3, name: /^Done/ })).closest('section')!;
     expect(rowsOf(ended).length).toBeGreaterThan(5);
   });
 
@@ -214,7 +214,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
         : drive(module, type)));
       show();
 
-      const ended = (await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).closest('section')!;
+      const ended = (await screen.findByRole('heading', { level: 3, name: 'Done (1)' })).closest('section')!;
       const user = userEvent.setup();
       within(ended).getAllByRole('button', { name: /^more for / })[0]!.focus();
       await user.keyboard('{Enter}');

@@ -19,8 +19,7 @@ public sealed class PipeGroundsBindingTests
         row.ReadAsync(world, payload, TimeProvider.System, CancellationToken.None);
 
     /// <summary>
-    /// Finding 1: each plan read whose rows name branches binds each branch's full tip, so a branch rewritten to as many commits (its count,
-    /// kind and short id kept) reads moved, and the same tips read again hold.
+    /// Each plan read whose rows name branches binds each branch's full tip, so a branch rewritten to as many commits reads moved.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rewrites))]
@@ -62,11 +61,6 @@ public sealed class PipeGroundsBindingTests
             "TREES_SYNC", "TREES_SYNC_PLAN",
             """{"lines":[],"rebases":[{"repository":"Lyntai","branch":"quest/x","kind":"replay","commits":2,"replays":true}],"deletes":[]}""",
             """{"all":true}""", "Lyntai:quest/x"
-        },
-        {
-            "LAND_SESSION_TREE", "LANDING",
-            """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0}""",
-            """{"id":"s1"}""", "s1:main"
         },
         {
             "LAND_ENTRY", "ENTRY_LANDING",
@@ -206,7 +200,6 @@ public sealed class PipeGroundsBindingTests
         foreach (var (route, payload) in new (string, object)[]
                  {
                      ("SESSION_ARCHIVE", new { ids = new[] { "s1", "s2" }, archived = true }),
-                     ("LAND_SESSION_TREE", new { id = "s1" }),
                      ("WORK_ABANDON", new { ask = "a1", pieces = new[] { "quest:q1" } }),
                      ("DISCARD_SESSION_TREE", new { path = "C:\\t", force = true }),
                      ("SESSION_INPUT", new { id = "s1", text = "x", question = "q" }),

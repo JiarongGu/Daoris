@@ -113,7 +113,7 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  * - **Answer…** for a session waiting on you, on its row: its header's card keeps the answer. Not for a park the person
  *   answered, which goes on at the driver's next look and has no box to answer in.
  * - **Stop…** for a live session this machine runs. **Try again** for a parked quest's last session, a stopped one
- *   whose stop holds its quest, and a failed one past its transient bound that holds it. **Review** where there is work to read: its tree, its landing, or a place in To review.
+ *   whose stop holds its quest, and a failed one past its transient bound that holds it. **Review** where there is work to read: its tree, its landing, or a reason to review it.
  * - **Go on with another agent…** (or **Stop and hand over…** while it works) for a conversation of this machine's own: not
  *   an intake, Ask Daoris's, nor a quest's session. One act with two names; it asks under the header.
  * - **Ask another agent…** in the header of a session of this machine's own that may ask, driven or a conversation, live or
@@ -168,7 +168,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     // A record past its transient bound, its quest's last here, which the planner holds for the person.
     else if (session.state === 'failed' && grouping?.holdsQuest && endedTransient(session)) offered.add('retry');
     if (!intake && !isHelp(session)
-      && (grouping?.group === 'review' || Boolean(where?.landed) || (Boolean(session.tree) && !where?.treeGone))) {
+      && (grouping?.reason === 'review' ||Boolean(where?.landed) || (Boolean(session.tree) && !where?.treeGone))) {
       offered.add('review');
     }
     if (folderOf(facts) !== null) {
@@ -178,7 +178,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     offered.add('detach');
     if (grouping?.deletable) offered.add('delete');
   }
-  if (grouping?.group === 'ended' && !grouping.archived) offered.add('archive');
+  if ((grouping?.group === 'failed' || grouping?.group === 'done') && !grouping.archived) offered.add('archive');
   if (grouping?.archived) offered.add('unarchive');
   offered.add('copy');
 
@@ -187,13 +187,13 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
 
 /**
  * The header's loud act: *Resume* while a pause holds its quest, *Try again* while parked or held,
- * *Review* in To review, else none. The one primary control a page has is its next step.
+ * *Review* where the reason it needs you is work to review, else none. The one primary control a page has is its next step.
  */
 export function primaryAct(acts: readonly SessionActId[], grouping?: SessionGrouping | null): SessionActId | null {
   if (acts.includes('resumeAsk')) return 'resumeAsk';
   if (acts.includes('resumeQuest')) return 'resumeQuest';
   if (acts.includes('retry')) return 'retry';
-  if (acts.includes('review') && grouping?.group === 'review') return 'review';
+  if (acts.includes('review') && grouping?.reason === 'review') return 'review';
   return null;
 }
 

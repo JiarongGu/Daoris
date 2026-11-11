@@ -179,6 +179,7 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
     helper: () => i18n.t('work.identity.helper'),
     partner: () => i18n.t('work.identity.partner'),
     supervise: () => i18n.t('work.identity.supervise'),
+    step: () => i18n.t('work.identity.step'),
     help: () => i18n.t('help.title'),
     conversation: () => i18n.t('work.identity.conversation'),
     session: () => i18n.t('work.identity.session'),
@@ -205,7 +206,7 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
 
   it('names every difference between the two drawings and decides it: a partner’s and a supervisor’s turn’s drawings change', () => {
     const decided: Record<string, string> = {
-      partner: 'partner-drawn', supervise: 'supervise-drawn',
+      partner: 'partner-drawn', supervise: 'supervise-drawn', step: 'step-drawn',
     };
     for (const row of TABLE.rows) {
       const differs = row.today.drawn !== row.byWork.drawn;

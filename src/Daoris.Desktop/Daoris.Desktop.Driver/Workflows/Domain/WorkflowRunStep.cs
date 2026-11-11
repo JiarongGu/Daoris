@@ -76,6 +76,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>The person's word on a graph run's node, kept by its door and not applied yet; null where none waits.</summary>
     public NodeWord? Asked { get; init; }
 
+    /// <summary>The command a refused step's plugin named as its fix and declares: the window's door to its round card; null on any other step.</summary>
+    public WorkflowRunNeeds? Needs { get; init; }
+
     /// <summary>The gate a failed check named, read from the attempt's result by the reader; null on any other step.</summary>
     public string? Gate { get; init; }
 

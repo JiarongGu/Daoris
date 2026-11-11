@@ -12,15 +12,13 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The running Daoris answers on a pipe: a terminal's request is
-/// the kit's envelope on a line, run by the dispatcher every window's page uses, so a declared press over the pipe is under way
-/// and publishes its change as a window's press does; a person's route and a window's are refused before anything runs; a lost
+/// The running Daoris answers on a pipe: a terminal's request is the kit's envelope on a line, run by the dispatcher every
+/// window's page uses, so a declared press over the pipe is under way and publishes its change as a window's press does; a person's route and a window's are refused before anything runs; a lost
 /// connection cancels nothing and <c>RESULT</c> says how the press ended; an id sent twice runs once; and a closing instance
 /// answers every new hello <c>stopping</c>.
 /// </summary>
 /// <remarks>
-/// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris.
-/// The pipe is Windows': elsewhere a test returns at once, as the terminal module's do.
+/// Each test serves its own pipe in this process, named by its scratch home's id, so nothing here meets a running Daoris. The pipe is Windows': elsewhere a test returns at once.
 /// </remarks>
 public sealed class InstancePipeTests : Bridge
 {
@@ -74,8 +72,8 @@ public sealed class InstancePipeTests : Bridge
         return (provider.GetRequiredService<IMessageDispatcher>(), underWay, provider);
     }
 
-    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null) =>
-        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = new StubGrounds() };
+    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null, StubGrounds? at = null) =>
+        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = at ?? new StubGrounds() };
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
@@ -132,8 +130,8 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead,
-    /// and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
+    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window, as
+    /// <c>PipeConfirmTests</c> holds, so here it is shown and never run.
     /// </summary>
     [Fact]
     public async Task A_window_route_and_a_module_nobody_classed_are_refused_and_a_person_route_runs_nothing_unconfirmed()
@@ -150,13 +148,13 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        await client.SendAsync(DriverModule.Name, "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+        await client.SendAsync(DriverModule.Name, "DISCARD_SESSION_TREE", new { id = "s1a2b3c4" });
         var window = await client.AnswerAsync(await client.SendAsync("DAORIS.WINDOWS", "OPEN", new { name = "session:s1a2b3c4" }));
         var nobody = await client.AnswerAsync(await client.SendAsync("TEST.ELSEWHERE", "ANYTHING"));
 
         Assert.Equal(InstancePipe.WindowOnly, Code(window));
         Assert.Equal(InstancePipe.Unclassed, Code(nobody));
-        Assert.Equal("LAND_SESSION_TREE", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
+        Assert.Equal("DISCARD_SESSION_TREE", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
         Assert.Equal(0, driver.Ran);
         Assert.Equal(0, windows.Ran);
         Assert.Equal(0, elsewhere.Ran);
@@ -454,7 +452,7 @@ public sealed class InstancePipeTests : Bridge
 
         var routes = answer.GetProperty("data").GetProperty("routes").EnumerateArray().ToList();
         Assert.Equal(Census.Routes.Count, routes.Count);
-        Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"LAND_SESSION_TREE","class":"person"}""");
+        Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"DISCARD_SESSION_TREE","class":"person"}""");
         Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.DRIVER","route":"SESSION_GROUPS","class":"open"}""");
         Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.WINDOWS","class":"window"}""");
     }
@@ -714,8 +712,7 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A route that is a look in one form and a press in another runs over the pipe as asked only in its open form: its press waits
-    /// for the window, and runs nothing until the person confirms it there.
+    /// A route a look in one form and a press in another runs over the pipe only in its open form; its press waits for the Confirm.
     /// </summary>
     [Fact]
     public async Task A_route_classed_by_its_payload_runs_only_in_its_open_form()
@@ -726,7 +723,8 @@ public sealed class InstancePipeTests : Bridge
         driver.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, driver);
         using var __ = services;
-        using var pipe = Pipe(dispatcher, log);
+        using var plugin = new PipeInstalledPlugin(Home);
+        using var pipe = Pipe(dispatcher, log, at: plugin.Grounds);
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 

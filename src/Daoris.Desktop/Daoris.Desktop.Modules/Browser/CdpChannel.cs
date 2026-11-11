@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// One connection to a browser's own socket that stays open: calls answered by their id, flattened sessions'
 /// events heard as they come, and its closing said. <see cref="EngineCdp"/> makes one call per socket, which is enough to open a
 /// window; holding a tab's requests needs a socket that lives as long as the holding, since a client's interception ends with
-/// its socket (measured, <c>docs/2026-10-09-review-serving-evidence.md</c>).
+/// its socket (measured, <c>docs/archive/2026-10-09-review-serving-evidence.md</c>).
 /// </summary>
 /// <remarks>
 /// <b>Heard off the reading loop.</b> Each event is handed to <see cref="Heard"/> on the loop that reads the socket, so a handler

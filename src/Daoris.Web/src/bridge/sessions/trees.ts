@@ -9,7 +9,7 @@ import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/gates/o
 import type { TreeFile } from '../../work/review/preview';
 import type { SessionProcessAnswer } from '../../work/head/process';
 import type { ReviewWaits } from '../../work/gates/review';
-import { call, pressBound } from '../call';
+import { call } from '../call';
 
 export type { DiffFile, SessionDiff } from '../../work/review/diff';
 export type { TreeFile } from '../../work/review/preview';
@@ -203,7 +203,10 @@ export function readDiff(client: QueryClient, session: string, signal: AbortSign
 }
 
 /** What the review keeps a session's answer by: its record's last move, and whether it still runs. */
-export type ReviewRecord = { updated: string; live: boolean };
+export type SessionAnswerRecord = { updated: string; live: boolean };
+
+/** The review an Accept is pressed on: its run and step, and the attempt and revision of the record drawn, absent before it begins. */
+export type ReviewAccept = { run: string; node: string; attempt?: number | null; revision?: string | null };
 
 /**
  * What a session actually did.
@@ -228,7 +231,7 @@ export type ReviewRecord = { updated: string; live: boolean };
  * A refusal's code is what the page words it by: "no tree here", "no range recorded", "git could not
  * read it" are different facts with different next moves, and the review says each (`ReviewFailed`).
  */
-export const useSessionDiff = (session: string | null, record?: ReviewRecord | null) => {
+export const useSessionDiff = (session: string | null, record?: SessionAnswerRecord | null) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const moved = record ? Date.parse(record.updated) : Number.NaN;
@@ -403,6 +406,11 @@ export const useLanding = (id: string | null, branch?: string | null) => {
        * kept.
        */
       carried?: { carries: number; awaiting: boolean } | null;
+      /**
+       * The review the window's Accept is pressed on (`WORKFLOW_NODE`'s `accept`): its run and step, and the attempt and revision of the
+       * record drawn, absent where the review has not begun. Null where the run holds no review.
+       */
+      accept?: ReviewAccept | null;
     }>,
     enabled: isAvailable && id !== null,
   });
@@ -497,37 +505,6 @@ export const useOpinionMyself = () => useOpinionChange(
 /** *Stop*: the reviewer reading the opinion stopped, as the person's stop; that pass then says it gave none. */
 export const useStopOpinion = () => useOpinionChange(
   ({ opinion }: { opinion: string }) => call('STOP_OPINION', { opinion }) as Promise<OpinionPressed>);
-
-/**
- * Accept a session: its work lands as its repository's rule says — merged, or put on a branch. The push and the pull request
- * are the workflow's own steps after it, never this press's.
- *
- * Where *Accept…* is drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`),
- * so the press answers what it showed; a gate that moved since answers nothing, and the door refuses in its sentence.
- *
- * What it moved is the route's to declare and the state hub's to ask again, in every window: every plan and
- * gate (the line moved, or a refusal fetched it), the sessions, its review and the clean-up's list. Asked here
- * alone, and never the plan after a done press, the plan read before it answered after a tab switch; the hook asks
- * nothing itself, a conflict's plan among it.
- */
-export const useLandSessionTree = () =>
-  useMutation({
-    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed.
-    mutationKey: ['LAND_SESSION_TREE'],
-    mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
-      const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
-      // A name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
-      const named = branch?.trim();
-      // What it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
-      return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pressBound(1) }) as Promise<TreeAct & {
-        branch?: string;
-        leftOut?: LeftOutCommit[] | null;
-        /** What refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
-        press?: string | null;
-        conflict?: LandingConflict | null;
-      }>;
-    },
-  });
 
 /**
  * Discard a session's tree, its branch with it. Its review, the sessions, every plan and the clean-up's list, which the

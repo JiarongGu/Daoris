@@ -186,7 +186,7 @@ export type ReachSetup = {
  */
 export type LandsHere =
   | { is: 'version'; summary: string; editor: ReactNode }
-  | { is: 'current'; onConvert?: () => void };
+  | { is: 'current' };
 
 export type RepositorySetupProps = {
   repository: string;

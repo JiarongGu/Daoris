@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answer, read through the driver's own judgement so the picture cannot disagree with the loop.
 /// </summary>
 /// <remarks>
-/// The design's rule (<c>docs/2026-09-23-map-design.md</c> §2): the wiring is resolved "by the same
+/// The design's rule (<c>docs/archive/2026-09-23-map-design.md</c> §2): the wiring is resolved "by the same
 /// functions the driver uses". So the account is <see cref="HarnessSettings.Resolve"/>'s own answer,
 /// with its source beside it, and whether the start would happen is <see cref="HarnessRoster.SelectAsync"/>
 /// itself — its refusal verbatim.

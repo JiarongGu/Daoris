@@ -8,7 +8,7 @@ import { call, pressBound } from '../call';
 export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
 
 // A line of work as one: its one Accept and its ask's, over the driver's
-// `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what `LAND_SESSION_TREE` answers.
+// `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what its run's landing came to.
 
 /** One part's outcome at an entry's Accept: `landed`, `refused`, `left-out`, `same-tree` or `not-tried`, with its landing's words. */
 export type EntryPartLanded = {
@@ -58,9 +58,17 @@ export const useLandEntry = () =>
   useMutation({
     // Keyed by its route, so every view reads it under way.
     mutationKey: ['LAND_ENTRY'],
-    mutationFn: ({ entry, parts, leaveOut }: { entry: string; parts: number; leaveOut: readonly string[] }) =>
-      call('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,
+    mutationFn: ({ entry, parts, leaveOut, revisions }: {
+      entry: string; parts: number; leaveOut: readonly string[]; revisions?: readonly { session: string; revision: string }[];
+    }) =>
+      call('LAND_ENTRY', {
+        entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}), ...(revisions?.length ? { revisions: [...revisions] } : {}),
+      }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,
   });
+
+/** Each part's review revision the plan drew, which the entry's Accept names so a run whose record moved is refused alone. */
+export const drawnRevisions = (plan: { parts: readonly { session: string; revision?: string | null }[] } | null | undefined) =>
+  (plan?.parts ?? []).flatMap((part) => (part.revision ? [{ session: part.session, revision: part.revision }] : []));
 
 /** An ask's one Accept (`LAND_ASK`): each of its lines of work lands in its own repository, answered per repository. */
 export const useLandAsk = () =>

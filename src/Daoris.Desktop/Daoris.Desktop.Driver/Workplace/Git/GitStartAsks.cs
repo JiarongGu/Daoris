@@ -26,7 +26,7 @@ internal static class GitStartAsks
         var fetches = WaitOf(arguments, writes) is GitWait.Read && GitLazyFetch.Fetches(info, folder);
         return new GitRunAsk(folder, repository, fetches ? GitWait.Outside : WaitOf(arguments, writes))
         {
-            Start = shares && runner == GitRunner.Whole ? Key(info, runner, bound) : null,
+            Start = shares && runner == GitRunner.Whole && !writes ? Key(info, runner, bound) : null,
             Endable = runner != GitRunner.Held && !fetches && GitEndable.Of(arguments),
             Writes = writes,
             Removes = Removed(folder, arguments),

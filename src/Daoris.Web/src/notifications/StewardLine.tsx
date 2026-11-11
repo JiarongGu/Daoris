@@ -2,11 +2,10 @@ import { useId, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
-import { clockOf, stamp } from '../locales/format';
+import { clockOf } from '../locales/format';
 import {
-  type DeskRequestNow, type StandingConfirmationNow, type StewardActNow, type StewardLandNow, stewardActKnown, stewardReverse,
+  type DeskRequestNow, type StandingConfirmationNow, type StewardActNow, stewardActKnown, stewardReverse,
 } from '../person/standing';
-import { Refused } from '../work/InlineConfirm';
 
 /** An act's target in words: its repository, or its quest and session, as the act names them. */
 function targetOf(t: TFunction, act: StewardActNow): string {
@@ -34,24 +33,6 @@ function ActLine({ act, busy, onReverse }: { act: StewardActNow; busy: boolean; 
       </span>
       {press && (
         <Button variant="ghost" disabled={busy} onClick={() => onReverse(act)}>{t(`notifications.steward.reverse.${press}`)}</Button>
-      )}
-    </li>
-  );
-}
-
-/** A landing a supervisor allowed, waiting its window: what it lands, when, and *Overrule* while the window lasts. */
-function LandLine({ land, busy, onOverrule }: { land: StewardLandNow; busy: boolean; onOverrule?: (land: StewardLandNow) => void }) {
-  const { t } = useTranslation();
-  const target = land.session ? t('notifications.steward.target.sessionOnly', { session: land.session }) : (land.repository ?? land.quest ?? '');
-  return (
-    <li data-steward-land={land.ask} className="flex flex-wrap items-center justify-between gap-2 text-small">
-      <span className="min-w-0 text-ink-soft">{t('notifications.steward.land.says', { target, at: stamp(land.landsAt) })}</span>
-      {onOverrule && land.session && (
-        <Button
-          disabled={busy} aria-label={t('notifications.steward.land.overruleLabel', { target })} onClick={() => onOverrule(land)}
-        >
-          {t('notifications.steward.land.overrule')}
-        </Button>
       )}
     </li>
   );
@@ -89,25 +70,19 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  * started*, opening to the run's acts newest first: each its act in words, its target, its time and the mark *By the steward, on your
  * behalf*, and only while it stands, the owner's own reverse press, none for a finish or a Try again. A stop whose quest still
  * waits on a *Try again* is said above them as *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row
- * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's. Who holds the
- * steward is its role's, among the roles.
+ * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's.
  *
  * Under it, the steward's desk (kept across a restart): what any caller asked the steward to do, *n waiting*, folded until
- * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own
- * presses are elsewhere, and a request is the steward's to answer.
+ * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press.
  *
  * A molecule: drawn from props; the application holds the presses.
  */
-export function StewardLine({ standing, busy = false, refused = null, onReverse, onOverrule }: {
+export function StewardLine({ standing, busy = false, onReverse }: {
   standing: StandingConfirmationNow | null;
   /** A press of the line on its way. */
   busy?: boolean;
-  /** What a press is refused with, in words, said under the line. */
-  refused?: string | null;
   /** The owner's reverse press for this act, the route `stewardReverse` names. */
   onReverse: (act: StewardActNow) => void;
-  /** The person's *Overrule* of an allowed landing inside its window; absent where nothing can send it. */
-  onOverrule?: (land: StewardLandNow) => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -117,8 +92,7 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse,
   const held = standing.holds.some((each) => each.kind === 'steward');
   const acts = standing.stewardActs;
   const desk = standing.stewardDesk;
-  const lands = standing.stewardLands;
-  if (!held && acts.length === 0 && desk.length === 0 && lands.length === 0) return null;
+  if (!held && acts.length === 0 && desk.length === 0) return null;
   const deskWaiting = desk.filter((each) => each.state === 'open').length;
   const waiting = acts.filter((each) => each.act === 'stop' && each.waiting && stewardReverse(each) === 'retry');
   const said = held ? t('notifications.steward.line', { count: acts.length }) : t('notifications.steward.lineOff', { count: acts.length });
@@ -145,11 +119,6 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse,
           </ul>
         </div>
       )}
-      {lands.length > 0 && (
-        <ul aria-label={t('notifications.steward.land.list')} className="m-0 grid list-none gap-1 p-0">
-          {lands.map((each) => <LandLine key={each.ask} land={each} busy={busy} onOverrule={onOverrule} />)}
-        </ul>
-      )}
       {open && (
         <ul id={`${id}-acts`} aria-label={t('notifications.steward.list')} className="m-0 grid list-none gap-1 p-0">
           {acts.map((each) => <ActLine key={each.id} act={each} busy={busy} onReverse={onReverse} />)}
@@ -170,7 +139,6 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse,
           )}
         </div>
       )}
-      {refused && <Refused sentence={refused} />}
     </section>
   );
 }

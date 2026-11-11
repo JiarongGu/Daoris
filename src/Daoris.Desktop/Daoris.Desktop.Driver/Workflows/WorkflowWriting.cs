@@ -54,19 +54,11 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
 
     internal int Apply()
     {
-        var asGraph = run.Argv.Contains("--as-graph");
-        run.Flags("apply", asGraph ? 3 : 4, ["--base"], ["--plan", "--as-graph"]);
+        run.Flags("apply", 4, ["--base"], ["--plan"]);
         var id = WorkflowOperations.Named(run.Argv[2]).Id;
-        if (asGraph)
-        {
-            throw new ChoiceWords($"`apply {id} --as-graph` is folded into `daoris convert`, which converts what was saved as steps as you press it: "
-                + "`daoris convert --plan`. Nothing was written.", 1);
-        }
-
         var found = run.Required(id);
         var (version, _) = BaseOf(found);
         var held = WorkflowTerminal.Parsed(run.FileOperand(run.Argv[3]));
-        // A graph: the file's own, a version's of schema 2, or a workflow's newest version's.
         var versions = held is JsonObject record && record["versions"] is JsonArray listed ? listed : null;
         if (GraphIn(versions is null ? held : versions.Count > 0 ? versions[^1] : null, out var graph)) return ChangeGraph(found, version, graph);
         if (held is JsonArray || (held is JsonObject holder && holder["steps"] is JsonArray)

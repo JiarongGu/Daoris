@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record SpacePlan(DateTimeOffset At, IReadOnlyList<SpaceUnit> Units, IReadOnlyDictionary<string, string> Unread)
 {
     /// <summary>The early groups, in the card's order: each kind with something that could go early.</summary>
-    public static IReadOnlyList<string> Groups { get; } = ["set-aside", "downloads", "browser-cache", "left-over", "update-failed"];
+    public static IReadOnlyList<string> Groups { get; } = ["set-aside", "downloads", "salvage", "browser-cache", "left-over", "update-failed"];
 
     /// <summary>The kinds with a press of their own: Clear history… on a workspace's page, Clean up… on its Branches.</summary>
     public static IReadOnlyList<string> Doors { get; } = ["history", "trees"];

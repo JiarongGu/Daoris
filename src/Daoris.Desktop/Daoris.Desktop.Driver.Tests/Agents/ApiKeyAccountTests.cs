@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>Measured on Claude Code 2.1.280 with an invalid key and nothing spent: the key in
 /// <c>ANTHROPIC_API_KEY</c> is enough for <c>auth status</c> (logged in, by <c>api_key</c>, no email)
-/// and for a non-interactive run, with no prompt (<c>docs/2026-09-23-api-key-accounts.md</c>).</para>
+/// and for a non-interactive run, with no prompt (<c>docs/archive/2026-09-23-api-key-accounts.md</c>).</para>
 /// <para>The key is kept <b>beside</b> the account in <c>keys.json</c> under the home, never inside the
 /// directory that is the tool's, shown back only as its last four characters, and handed to
 /// the agent at spawn through the variable its toolchain declares.</para>

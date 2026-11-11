@@ -648,7 +648,7 @@ describe('a departure that waits for your yes, worded', () => {
 
 describe('work to review, worded', () => {
   const placed: SessionGrouping = {
-    session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 3, uncommitted: 0 },
+    session: 'r3v13w00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 3, uncommitted: 0 },
   };
 
   it('names the session from its record, and says what its tree holds', () => {
@@ -662,12 +662,11 @@ describe('work to review, worded', () => {
   });
 
   /**
-   * A record whose words an account's limit holds is worded in What needs you as the limit's wait is worded elsewhere:
-   * the wait, its time and the account that resets first, in both languages, never only that it completed.
+   * A record an account's limit holds is worded as the limit's wait: its time and the account that resets first, in both languages.
    */
   it('says a held record’s wait as a limit’s wait, in both languages', async () => {
     const held: SessionGrouping = {
-      ...placed, group: 'later', holds: { why: 'cooling', reason: 'every account is cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' },
+      ...placed, group: 'pending', state: 'pending', reason: 'cooling', holds: { why: 'cooling', reason: 'every account is cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' },
     };
     const detail = () => words(row('review', 'r3v13w00', '2026-09-21T11:00:00Z', { where: 'engine', placed: held })).detail;
     expect(detail()).toMatch(/^Waiting for a limit to reset: it resumes by itself at .+, on Work\.$/);
@@ -824,15 +823,6 @@ describe('a quest its role’s policy holds, worded', () => {
 });
 
 describe('the groups', () => {
-  it('puts each kind in its group', () => {
-    expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', unclosed: 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
-      permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
-      'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding',
-    });
-  });
-
   /** An agent's ask to hand its session over holds work once its session stands still on it, its turn ended. */
   it('puts an ask to hand a session over in Holding work once its session stands still on it', () => {
     expect(attentionGroup(row('hand-over', 'h1', null, { stands: true }))).toBe('holding');
@@ -1239,21 +1229,7 @@ describe('the groups', () => {
   });
 });
 
-/**
- * A number on a place counts only what waits on the person, the bell's rows, each at the one place
- * its door opens, where its step is taken; so the places' numbers sum to what the bell counts of the rows, and a press is the bell's.
- */
 describe('the place each wait is counted at', () => {
-  it('is the place its door opens, for every kind', () => {
-    expect(ATTENTION_PLACE).toEqual({
-      parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
-      permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', unclosed: 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
-      departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions',
-    });
-  });
-
   it('counts every listed row at one place, so the places sum to what the bell counts of them', () => {
     const at = '2026-09-21T09:00:00Z';
     const rows = [

@@ -83,6 +83,7 @@ internal static class SessionReads
                 Serves = session.Serves is { Length: > 0 } serves ? serves : null,
                 Piece = session.Piece is { Length: > 0 } piece ? piece : null,
                 Decides = session.Decides is { Length: > 0 } decides ? decides : null,
+                Performs = session.Performs is { Length: > 0 } performs ? performs : null,
                 HoldsPlace = session.HoldsPlace is { Count: > 0 } kept ? kept : null,
             });
         }
@@ -384,6 +385,7 @@ internal static class SessionReads
             Piece = session.Piece is { Length: > 0 } piece ? piece : null,
             Opinion = session.Opinion,
             Decides = session.Decides is { Length: > 0 } decides ? decides : null,
+            Performs = session.Performs is { Length: > 0 } performs ? performs : null,
             // The session it continues, why and who asked: served on loopback with the record, for the head to say.
             From = session.From,
             FromWhy = session.FromWhy,

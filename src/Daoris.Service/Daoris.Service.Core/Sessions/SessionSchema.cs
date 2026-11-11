@@ -135,6 +135,7 @@ internal static class SessionSchema
         // before says none.
         await SchemaColumns.EnsureAsync(db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(db, "sessions", "decides", "decides TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(db, "sessions", "performs", "performs TEXT NULL", ct).ConfigureAwait(false);
 
         await SchemaColumns.EnsureAsync(db, "sessions", "holds_place", "holds_place TEXT NULL", ct).ConfigureAwait(false);
 

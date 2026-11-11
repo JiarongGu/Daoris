@@ -5,16 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Workplace-names-Plugins cut: the seams the cut adds. Workplace declares the plugin wire's five operations, the
-/// catalogue's two facets, the operations that make the wire and load the catalogue, and the lower patience and door words; Plugins
-/// implements and installs them. The cases that need no new seam are <see cref="WorkplacePluginsBoundaryTests"/>'.
+/// The Workplace-names-Plugins cut's seams: Workplace declares the plugin wire's operations, the catalogue's facets and the lower patience and door words; Plugins installs them.
 /// </summary>
 [Collection("agent operation ports")]
 public sealed class WorkplacePluginsPortsTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 28, 9, 0, 0, TimeSpan.Zero);
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-plugins-ports", Guid.NewGuid().ToString("N")[..8]);
-    private string ChatTree => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
 
     public WorkplacePluginsPortsTests() => Directory.CreateDirectory(_home);
 
@@ -138,58 +135,19 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
     }
 
     [Fact]
-    public async Task A_missing_operation_is_required_only_where_it_is_reached_and_its_failures_propagate_unchanged()
+    public void A_missing_operation_is_required_only_where_it_is_reached()
     {
         var actual = WorkplacePlugins.Current;
-        using var client = Client();
         var handed = new Wire();
         try
         {
             WorkplacePlugins.Current = null!;
-            // A wire handed in needs no operations; the default wire and the catalogue's load do.
+            // A wire handed in needs no operations; the default wire does.
             Assert.Same(handed, new SessionTrees(_home, handed).Context.Plugins);
             var wire = Assert.Throws<InvalidOperationException>(() => new SessionTrees(_home));
             Assert.Contains("Plugins installs them", wire.Message);
-            var load = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null));
-            Assert.Contains("Plugins installs them", load.Message);
-
-            var refused = new IOException("refused");
-            WorkplacePlugins.Current = new Operations(handed) { LoadFails = refused };
-            Assert.Same(refused, await Assert.ThrowsAsync<IOException>(() =>
-                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null)));
         }
         finally { WorkplacePlugins.Current = actual; }
-    }
-
-    [Fact]
-    public async Task The_chat_land_loads_the_home_s_catalogue_once_through_the_supplied_operation_and_reads_its_plugins_for_the_binding()
-    {
-        var actual = WorkplacePlugins.Current;
-        var operations = new Operations(new Wire());
-        using var client = Client();
-        try
-        {
-            WorkplacePlugins.Current = operations;
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client, new Wire()), "s1", ChatTree, "chat-s1", Ended("s1"), null));
-        }
-        finally { WorkplacePlugins.Current = actual; }
-
-        // The press reads the catalogue once; other doors it passes through may make wires of their own.
-        Assert.Equal([$"load:{_home}"], operations.Calls.Where(call => call.StartsWith("load:", StringComparison.Ordinal)));
-    }
-
-    private ServiceClient Client() => new("http://ledger.test", null,
-        new HttpClient(new Handler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") })), disposeHandler: false));
-
-    private ChatLandWorld World(ServiceClient service, IWorkplacePluginWire wire) =>
-        new(service, _home, new SessionTrees(_home, wire), null, new StringWriter(), new StringWriter());
-
-    private string Ended(string id) => JsonSerializer.Serialize(new[] { new { id, state = "completed", kind = "chat", repository = "engine", tree = ChatTree } });
-
-    private sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> answer) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) => answer(request);
     }
 
     private sealed record Entry(string Id, IReadOnlyList<string> Points) : IWorkplacePluginEntry
@@ -221,6 +179,12 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         {
             Calls.Add($"problem:{plugin}");
             return $"said:{plugin}";
+        }
+
+        public IReadOnlyDictionary<string, string> Formerly()
+        {
+            Calls.Add("formerly");
+            return new Dictionary<string, string>();
         }
 
         public Task<IReadOnlyList<StateAnswer>> AskStatesAsync(IReadOnlyList<StateAsk> asks, CancellationToken ct = default)

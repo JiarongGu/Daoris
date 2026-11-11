@@ -109,7 +109,7 @@ public sealed class LandPerformer(
         if (held is not null) return Tried(entry, held.Refusal ?? LandingCode.Refused, tip, status, held);
         if (!string.Equals(tip, start.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return Tried(entry, LandingCode.Refused, tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Refused }, start: start.Tip);
+            return Tried(entry, LandingCode.Moved, tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Moved }, start: start.Tip);
         }
 
         if (uncommitted > 0) return Tried(entry, LandingCode.Uncommitted, tip, status, uncommitted: uncommitted);
@@ -187,7 +187,7 @@ public sealed class LandPerformer(
 
         if (!string.Equals(tip, run.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return (Tried(entry, LandingCode.Refused, tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Refused }, start: run.Tip), null);
+            return (Tried(entry, LandingCode.Moved, tip, status, new TreeLanding(false, MovedWords) { Refusal = LandingCode.Moved }, start: run.Tip), null);
         }
 
         // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind the content proof.

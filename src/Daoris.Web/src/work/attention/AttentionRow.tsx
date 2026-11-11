@@ -29,7 +29,13 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'unclosed' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check';
+
+/** A second check's flag not yet seen, as a `second-check` row carries it: the reader's claim about one of Ask Daoris's acts. */
+export type SecondCheckFlag = {
+  session: string; range: string; index: number; says: string; certainty: string; call: string; at: string;
+  reader: string | null; independence: string | null;
+};
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -175,6 +181,8 @@ export type Attention = {
   git?: GitHeld;
   /** A `git-ask` row's go-ahead: the act it holds, which its *Allow* and *Refuse* answer. */
   gitAsk?: GitAskWait;
+  /** A `second-check` row's flag, which its *Seen* acknowledges. */
+  secondCheck?: SecondCheckFlag;
   /** The workspace a `git-held` row is judged in, which its *Try again* names; absent where .NET scoped it to none. */
   workspace?: string;
   /**
@@ -247,6 +255,8 @@ export type AttentionActs = {
   gitReadOnly?: (item: Attention) => void;
   /** A git go-ahead allowed (`allow`) or refused, as its session's head answers it. */
   gitAnswer?: (item: Attention, allow: boolean) => void;
+  /** A second check's flag acknowledged: *Seen*, never accepted, resolved or answered. */
+  secondCheckSeen?: (item: Attention) => void;
   /**
    * A quiet session's presses: *End and carry on*, *Hand over…* (its page's hand-over asked), *Stop…* and *Leave it
    * running*, each told how it ended where it asked once.
@@ -349,6 +359,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
     else if (act === 'git-key-page') acts.gitKeyPage?.(item);
     else if (act === 'git-read-only') acts.gitReadOnly?.(item);
     else if (act === 'git-allow' || act === 'git-refuse') acts.gitAnswer?.(item, act === 'git-allow');
+    else if (act === 'second-check-seen') acts.secondCheckSeen?.(item);
     else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
     else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
     else if (act === 'approve-end' || act === 'decline-end') acts.memoryEnd?.(item, act === 'approve-end');
@@ -425,6 +436,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
       // A git go-ahead's answers, the head's own words.
       case 'git-allow': return t('work.wait.gitAsk.allow');
       case 'git-refuse': return t('work.wait.gitAsk.refuse');
+      case 'second-check-seen': return t('work.attention.secondCheck.seen');
       // The quiet row's own presses, and the session page's own *Hand over…* and *Stop…*.
       case 'quiet-carry-on': return t('work.attention.act.carryOn');
       case 'quiet-hand-over': return t('work.attention.act.handOver');

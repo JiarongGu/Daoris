@@ -2,7 +2,7 @@ using System.Text.Json;
 using CefSharp;
 using CefSharp.WinForms;
 
-// The probe host (docs/2026-09-28-chromium-host-design.md §5). One window embedding Chromium
+// The probe host (docs/archive/2026-09-28-chromium-host-design.md §5). One window embedding Chromium
 // through CefSharp, in the two roles a Daoris window would give it:
 //
 //   --page <url>     the APP's page, in the global request context (<root>/page) — the one that would

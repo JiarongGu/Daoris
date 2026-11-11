@@ -214,6 +214,7 @@ public static class PluginSteps
         // The words a person reads the step by; absent is none.
         if (!ReadWords(row, "title", StepWords.TitleMost, oneLine: true, out var title)) return Broken("title");
         if (!ReadWords(row, "about", StepWords.AboutMost, oneLine: false, out var about)) return Broken("about");
+        if (!ReadWords(row, "goal", StepWords.GoalMost, oneLine: false, out var goal)) return Broken("goal");
 
         NodePerform? perform = null;
         if (row.TryGetProperty("perform", out var declaredPerform))
@@ -255,6 +256,7 @@ public static class PluginSteps
             OutputsOn = carried,
             Title = title,
             About = about,
+            Goal = goal,
         };
 
         if (NodeOutcomes.OutputsOnProblem(step) is not null) return Broken("outputsOn");
@@ -384,6 +386,7 @@ public static class PluginSteps
         "outputsOn" => $"step `{name}`'s `outputsOn` must name, for an output it declares, the outcomes that carry it, one or more of its `outcomes` once each; an output it leaves out is carried on every reach.",
         "title" => $"step `{name}`'s `title` must be one line of words, or an object of language tags to such lines, at most {StepWords.TitleMost} characters each: the step's name where a person reads it.",
         "about" => $"step `{name}`'s `about` must be a sentence of what the step does, or an object of language tags to such sentences, at most {StepWords.AboutMost} characters each.",
+        "goal" => $"step `{name}`'s `goal` must say what an agent performing it brings about, or be an object of language tags to such words, at most {StepWords.GoalMost} characters each.",
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",

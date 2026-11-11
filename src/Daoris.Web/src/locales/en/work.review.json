@@ -70,7 +70,6 @@
   "work.review.chatPress.moved": "The work moved while it was judged; press Accept again.",
   "work.review.chatPress.asked": "A second opinion is asked on this work; press Accept again once it settles.",
   "work.review.accepting": "Landing…",
-  "work.review.acceptingGate": "Checking…",
   "work.review.acceptingPass": "Awaiting its pass…",
   "work.review.acceptingPassNote": "Accepted. Daoris lands it at its next pass. This waits up to {{seconds}} seconds for it, and past that says it is accepted and lands when the pass does.",
   "work.review.sendBack": "Send back…",

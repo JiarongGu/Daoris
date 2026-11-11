@@ -53,7 +53,8 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Departments/FolderReturnProcessTests.cs", "Daoris.Desktop.Driver.Tests/Install/HeldFilesProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Loop/LineageExitProcessTests.cs", "Daoris.Desktop.Driver.Tests/Loop/LineageRaceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Loop/OrphanedSessionTests.cs", "Daoris.Desktop.Driver.Tests/Platform/ProcessJobTests.cs",
-            "Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Review/HeavyRunProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Platform/OwnedProcessesProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/GitPlaceExitTests.cs",
+            "Daoris.Desktop.Driver.Tests/Review/HeavyRunProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Review/IntegrationVerdictProcessTests.cs", "Daoris.Desktop.Driver.Tests/Settings/DriverConfigFenceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Store/KeepLockProcessTests.cs", "Daoris.Desktop.Driver.Tests/Store/RecordLockProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/GitLibraryFaultProcessTests.cs",
@@ -76,7 +77,8 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Driver.Tests/Participants/LineageHookProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/DriverProgramWordsProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Platform/HomeLeaseProcessTests.cs", "Daoris.Desktop.Driver.Tests/Platform/PieceLauncherProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Plugins/HookMarks.cs", "Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs",
-            "Daoris.Desktop.Driver.Tests/Plugins/PluginTrialShutdownTests.cs",
+            "Daoris.Desktop.Driver.Tests/Plugins/PluginToolsProcessTests.cs", "Daoris.Desktop.Driver.Tests/Plugins/PluginTrialShutdownTests.cs",
+            "Daoris.Desktop.Driver.Tests/Workflows/Kinds/AgentStep/StepAgentProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Plugins/RelayHostProcessTests.cs", "Daoris.Desktop.Driver.Tests/Plugins/RelayOnceProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/GitDoorStartTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/GitForWindowsProcessTests.cs",
             "Daoris.Desktop.Driver.Tests/Workplace/Pool/BuildAccountProcessTests.cs", "Daoris.Desktop.Driver.Tests/Workplace/Pool/TreeBaseBuildsProcessTests.cs",
@@ -91,7 +93,7 @@ internal static class TestProcessStarts
         (TestStartKind.AgentCommand,
         [
             "Daoris.Desktop.Driver.Tests/Agents/NativePromptProcessTests.cs", "Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceLive.cs",
-            "Daoris.Desktop.Driver.Tests/Agents/StandInShimProcessTests.cs",
+            "Daoris.Desktop.Driver.Tests/Agents/StandInShimProcessTests.cs", "Daoris.Desktop.Driver.Tests/Participants/PacketOnlyReaderProcessTests.cs",
         ]),
         (TestStartKind.Probe,
         [

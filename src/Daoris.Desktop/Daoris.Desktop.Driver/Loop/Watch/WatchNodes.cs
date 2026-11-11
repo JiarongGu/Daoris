@@ -91,6 +91,12 @@ internal sealed class WatchNodes
             Turning = ct => TidyHolders.InUseAsync(home, service, null, ct),
             Resolvers = resolvers,
             Reserve = (row, ct) => TreeReserving.ReserveAsync(home, service, new TreeHandOffs(home), row, ct),
+            // A plugin step declaring a goal is performed by a session of the run's own, started off the pass by a driver built as a look's is.
+            StepSessions = new StepSessionTurn(() => new Driver(
+                service, config(), watch.Adapters, home, watch.Processes, watch.Sync, watch.Output, watch.Harnesses, watch.Usage, hooks, watch.Events,
+                watch.Browser, watch.Running) { Log = Log }),
+            StepAsks = (unit, attempt, node, ct) => Runtime.StepAskAsync(unit, attempt, node, ct),
+            Wake = () => watch.NodesWoken("step"),
         });
 
         // The transport an open request's line is sent to, run off the pass beside the heavy

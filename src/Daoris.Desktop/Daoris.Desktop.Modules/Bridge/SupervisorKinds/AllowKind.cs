@@ -53,7 +53,7 @@ internal sealed class AllowKind : ISupervisorKind
     }
 
     public async Task<SupervisorDecided> DecideAsync(DriverLoop loop, SupervisorDecideForm form, SupervisorHolder holder, CancellationToken ct) =>
-        form.Subject.IsAsk ? await StewardAllowSubjects.DecideAsync(loop, form, holder).ConfigureAwait(false)
+        form.Subject.IsAsk ? StewardAllowSubjects.Decide(loop, form, holder)
         : form.Subject.IsPress ? PressAllowSubjects.Decide(loop, form, holder)
         : form.Subject.IsProposal ? Widening(loop, form, holder)
         : await HeldAsync(loop, form, holder).ConfigureAwait(false);

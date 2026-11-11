@@ -131,15 +131,15 @@ internal static class TreesConsole
             case ["land", "--entry" or "--ask", ..]:
                 return await TreesEntryLandVerb.RunAsync(args, home, configPath, log).ConfigureAwait(false);
 
-            // Accepting a session's work: the review's Accept, from a terminal — its second door. The run's `land` lands it,
-            // so the press keeps the word for the pass and lands nothing itself, and --plan says where it would go and does nothing.
-            case ["land", var session, ..]:
+            // Where a session's work would land, said before its review's Accept. The Accept is the review record's word
+            // (`daoris workflow accept <run>`), and the run's `land` lands it: this verb presses nothing.
+            case ["land", var session, ..] when args.Contains("--plan"):
             {
                 // The name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
                 var entered = Option(args, "--branch");
                 if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
                 // The plan is the running Daoris's where one answers (LANDING), in the alone path's words.
-                if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
+                if (await InstanceDoor.TryReadAsync(
                         OpenRoutes.Landing, new { id = session, branch = entered, said = true },
                         TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } viaInstance)
                 {
@@ -151,21 +151,13 @@ internal static class TreesConsole
 
                 // A session whose review reads as landed — its landed branch stands, or its tree is gone —
                 // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
-                // The reading is the route's too: both doors refuse a second landing in the same words.
                 var before = await TreesWords.LandedBeforeAsync(trees, service, session).ConfigureAwait(false);
                 var gone = TreeFolders.TreeGone(tree);
                 if (before is not null && before.ReadsAsLanded(gone))
                 {
-                    if (args.Contains("--plan"))
-                    {
-                        var landedPlan = TreesPlanWords.LandedPlan(session, before);
-                        landedPlan.Print(Console.Out, Console.Error);
-                        return landedPlan.Code;
-                    }
-
-                    var again = TreesWords.NotAgain(session, before, gone);
-                    again.Print(Console.Out, Console.Error);
-                    return again.Code;
+                    var landedPlan = TreesPlanWords.LandedPlan(session, before);
+                    landedPlan.Print(Console.Out, Console.Error);
+                    return landedPlan.Code;
                 }
 
                 if (string.IsNullOrWhiteSpace(tree))
@@ -184,57 +176,33 @@ internal static class TreesConsole
                 }
 
                 var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
-                // A chat that took a quest is gated by that quest's chain, as the window's press reads it.
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false) ?? ChatRuns.TakenOf(session, recordsJson);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-                // No plugin wire: this verb lands nothing, so no plugin is told.
                 var landing = new SessionTrees(home);
 
-                // A chat in a tree of its own is gated by its chat run, and
-                // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing.
+                // A chat in a tree of its own is gated by its chat run; its plan reads that gate and writes nothing.
                 var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
-                if (chatRun is not null && !args.Contains("--plan"))
-                {
-                    return await ChatLandCommand.RunAsync(
-                        new ChatLandWorld(service, home, landing, InstanceHost.World(home, "trees"), Console.Out, Console.Error) { Log = log },
-                        session, tree, chatRun, recordsJson, entered).ConfigureAwait(false);
-                }
 
-                // The landing gate: the second opinion, then the review, read once for the plan, and handed to
-                // the landing, which refuses the first that holds.
+                // The second opinion, then the review, read once for the plan.
                 var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session, run: chatRun).ConfigureAwait(false);
                 // Named for the chain's first quest, as the review's press names it, and a part of an entry with others for its
                 // entry's first part, on the entry's one branch: the driver's one call.
-                // Its quests are read once, as the route reads them.
                 var quests = new PressQuests(service.FindQuestAsync);
                 var subject = await landing.OwnSubjectAsync(
                     tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => quests.FindAsync(quest),
                     named => events.Openings([named]).GetValueOrDefault(named), gate.Process).ConfigureAwait(false);
                 subject = subject with { Entered = entered };
 
-                if (args.Contains("--plan"))
-                {
-                    // How it lands, by the process the gate read: a named workflow's landing step, or the rule.
-                    var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
-                    // The plan's lines, which the route answers as `said` too: what the line holds of it, the gate, the review's reading of
-                    // an earlier landing and where it is due.
-                    var planned = await TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
-                    planned.Print(Console.Out, Console.Error);
-                    return planned.Code;
-                }
-
-                // A terminal with no loop lands nothing. It keeps the word under
-                // the verb's lease for a run whose `land` the runtime performs, which the running Daoris lands at its next pass; any other is held.
-                var accepted = TreesWords.AcceptedForPass(home, gate);
-                accepted.Print(Console.Out, Console.Error);
-                if (log is not null && gate.Refusal is { } refused
-                    && LandingGateWords.Held(session, landing.Owner(tree), gate, refused, ReviewDoors.Terminal) is { } held)
-                {
-                    SessionLog.WriteLanding(log, held);
-                }
-
-                return accepted.Code;
+                // How it lands, by the process the gate read: a named workflow's landing step, or the rule. The plan's lines, which the
+                // route answers as `said` too: what the line holds of it, the gate, the review's reading of an earlier landing and where it is due.
+                var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
+                var planned = await TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
+                planned.Print(Console.Out, Console.Error);
+                return planned.Code;
             }
+
+            case ["land", _, ..]:
+                return Usage("`trees land <session>` says its plan with `--plan`; its work is accepted on its review: `daoris workflow accept <run> <node>`.");
 
             // The milestone of every unit before the plugin's ask below, which takes a name.
             case ["state"] or ["state", "--entries"]:

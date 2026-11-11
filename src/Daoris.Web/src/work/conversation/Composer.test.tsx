@@ -208,7 +208,7 @@ describe('the composer', () => {
     show({ taking: true, stoppable: true, levels: { nextStep: true, steers: true }, onSend: send, queued: [{ id: 'a', text: 'cap it', files: [] }] });
 
     expect(screen.queryByRole('button', { name: 'Queue' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send now' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'When it reads this' })).toBeDisabled();
     await userEvent.type(box(), 'the budget is 64 KiB{Enter}');
     expect(send).toHaveBeenLastCalledWith('the budget is 64 KiB', []);

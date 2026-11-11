@@ -46,6 +46,7 @@ public sealed class PluginsRoutes(DriverContext context)
         // The person's approvals of what each plugin offers Ask Daoris.
         var grants = HelpGrants.Read(_loop.Home, catalog, withSwitchedOff: true);
         var offered = PluginOffers.Load(OffersFolder, _loop.Home, reserved);
+        var switches = PluginSwitches.Read(_loop.Home);
         return new
         {
             Folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins),
@@ -79,6 +80,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
                     plugin.Manifest.Interfaces,
+                    Switches = switches.Words(plugin.Manifest.Id),
                     // Its tools as written; nothing is found or run by this read, the person's Check does.
                     Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),
@@ -118,6 +120,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Skills = SkillsOf(offer.Manifest, offer.Folder),
                     Steps = StepsOf(offer.Manifest),
                     Resources = ResourcesOf(offer.Manifest),
+                    offer.Manifest.Interfaces,
                     offer.Needs,
                     offer.Installed,
                 };
@@ -330,6 +333,7 @@ public sealed class PluginsRoutes(DriverContext context)
 
         var entry = InstalledPlugin(_loop, id);
 
+        var forgot = ForgetOutcome.None;
         switch (action)
         {
             case "enable" or "disable":
@@ -343,7 +347,7 @@ public sealed class PluginsRoutes(DriverContext context)
                 // library's remove, which `daoris plugin remove` calls alone: the folder moved aside WHOLE, a
                 // held one refused as PLUGIN_BUSY with nothing taken.
                 await _loop.StopPluginAsync(entry.Manifest.Id).ConfigureAwait(false);
-                PluginInstall.Remove(_loop.Home, entry.Manifest.Id);
+                PluginInstall.Remove(_loop.Home, entry.Manifest.Id, outcome => forgot = outcome);
                 break;
             }
             // The person's approval of the exact tools a plugin's server offers Ask Daoris,
@@ -379,6 +383,8 @@ public sealed class PluginsRoutes(DriverContext context)
             Id = entry.Manifest.Id,
             Action = action,
             Data = Directory.Exists(entry.Data) ? entry.Data : null,
+            // A removal's own sign-out: `confirmed`, `not-confirmed`, or null where the plugin asks none.
+            Forgot = forgot switch { ForgetOutcome.Confirmed => "confirmed", ForgetOutcome.NotConfirmed => "not-confirmed", _ => null },
         };
     }
 
@@ -518,7 +524,7 @@ public sealed class PluginsRoutes(DriverContext context)
     /// <param name="grants">The person's approvals (<see cref="HelpGrants"/>); null for an offer, which nothing here has approved.</param>
     private static object[] HelpServersOf(PluginManifest manifest, HelpGrantSet? grants) =>
     [
-        .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server =>
+        .. PluginCommandServer.OfferedToHelp(manifest).Select(server =>
         {
             var grant = grants?.All.FirstOrDefault(each =>
                 string.Equals(each.Plugin, manifest.Id, StringComparison.OrdinalIgnoreCase) && each.Server.Name == server.Name);

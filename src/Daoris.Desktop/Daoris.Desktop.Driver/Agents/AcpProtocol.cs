@@ -59,16 +59,16 @@ internal static class AcpProtocol
         && claudeCode.TryGetProperty("promptQueueing", out var queueing) && queueing.ValueKind == JsonValueKind.True;
 
     /// <summary>
-    /// Whether the person's *Send now* steers into the running turn: an agent that takes a
-    /// prompt during its turn (<see cref="TakesWordsMidTurn"/>) and offers the steering extension, the top-level
-    /// <c>_meta.steering.supported</c> as <c>true</c> (<c>claude-agent-acp</c> 0.84.0, <c>acp-agent.js:1291-1307</c>).
+    /// Whether the person's *Send now* steers into the running turn: an agent that offers the steering extension, the top-level
+    /// <c>_meta.steering.supported</c> as <c>true</c> (<c>claude-agent-acp</c> 0.84.0, <c>acp-agent.js:1291-1307</c>; <c>codex-acp</c>
+    /// 2.6.0, measured).
     /// </summary>
     /// <remarks>
-    /// Each by its own <c>true</c>. <c>codex-acp</c> offers the extension and not the first, and its <c>turn/steer</c> waits for
-    /// a measured turn: until then it is a turn-end door, where *Send now* stops the turn keeping the words.
+    /// Apart from <see cref="TakesWordsMidTurn"/>: <c>codex-acp</c> offers the extension and not that, so its other words wait for the
+    /// turn's end, and a steer that finds its turn just ended starts the next (<see cref="AcpStartedTurn"/>).
     /// </remarks>
     internal static bool SteersNow(JsonElement initialized) =>
-        TakesWordsMidTurn(initialized)
+        initialized.ValueKind == JsonValueKind.Object
         && initialized.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
         && meta.TryGetProperty("steering", out var steering) && steering.ValueKind == JsonValueKind.Object
         && steering.TryGetProperty("supported", out var supported) && supported.ValueKind == JsonValueKind.True;

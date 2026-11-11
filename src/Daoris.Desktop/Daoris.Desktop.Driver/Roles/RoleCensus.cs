@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The role census: a record carrying an <c>actor</c> is held to a role taking its work, by
 /// the revision of that role its start kept on its binding. The marks decide the work, since the desks write them at the open and the role
 /// says only its staffing; a role taking <c>design</c> is admitted on a record whose marks read <c>build</c>, since design work is read
-/// as build from its marks.
+/// as build from its marks, and a role taking <c>build</c> on one whose marks read <c>step</c>, since a goal step's session is held as a build.
 /// </summary>
 public static class RoleCensus
 {
@@ -30,6 +30,7 @@ public static class RoleCensus
         var (role, revision) = bound ?? (actor, 0L);
         if (at(role, revision) is not { } record) return $"its start kept role `{role}` at revision {revision}, which the catalogue does not hold";
         return record.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Build && record.Takes.Any(taken => taken is RoleWork.Design or RoleWork.Exact))
+            || (work == ParticipantWork.Step && record.Takes.Contains(RoleWork.Build, StringComparer.Ordinal))
             ? null
             : $"role `{role}` at revision {revision} does not take `{work}`";
     }

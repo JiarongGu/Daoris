@@ -118,7 +118,10 @@ describe("the person's word on a run's node", () => {
     const answer = await result.current.mutateAsync({ run: 'q1', node: 'go', act: 'skip', words: 'nobody raises it' });
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q1', node: 'go', act: 'skip', words: 'nobody raises it' } });
-    expect(answer).toEqual({ run: 'q1', node: 'go', act: 'skip', done: false, refused: 'worded', message: 'workflow: already has your word.' });
+    expect(answer).toEqual({
+      run: 'q1', node: 'go', act: 'skip', done: false, refused: 'worded', message: 'workflow: already has your word.',
+      revision: null, early: false, landing: null, press: null,
+    });
   });
 
   it('leaves out words the person did not give', async () => {

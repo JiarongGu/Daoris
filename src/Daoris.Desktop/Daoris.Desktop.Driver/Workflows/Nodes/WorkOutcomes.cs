@@ -47,7 +47,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
                 settled = settled with { Code = code };
                 move = new NodeMove(NodeStates.Failed, NodeCause.Authority)
                 {
-                    Source = source, Attempt = attempt.Attempt, Code = code, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
+                    Source = source, Attempt = attempt.Attempt, Code = code, Needs = outcome.Needs, Transient = node.Perform?.Transient.Contains(code, StringComparer.Ordinal) == true,
                 };
                 break;
             default:

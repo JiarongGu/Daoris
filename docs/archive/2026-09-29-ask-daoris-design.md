@@ -1,0 +1,570 @@
+# Ask Daoris — a conversation about Daoris itself (HELP1)
+
+**Standing:** D89/D110; implementation notes live in those decisions. D158 governs conversation
+history, and its remaining reachability work is in `TASKS.md`. HELP1's completion is in the archive.
+
+**Original status:** design, written before the build, with the owner's
+two calls made (§8, D89). The requirement is `docs/archive/2026-09-28-after-the-first-workspace.md` §4. The owner,
+setting the first real workspace's landing rule (2026-09-28): *"I think we will need some chat agent to
+support configure for workspace"*.
+
+## 1. What it is
+
+A conversation with a session whose subject is Daoris on this machine: how to set up a workspace,
+what a screen means, why a start was refused, how to drive a repository, write a rule, or start a
+task. It is **a harness session like any other** (D24: Daoris calls no model), in a room of its own,
+and it **changes nothing by itself**. Every change it wants is a proposal the person confirms, made
+through the same door the screen uses, so what it can do is exactly what the person can do (D50).
+
+## 2. The doors
+
+- **An app-strip button** beside the palette, **the palette's *Ask Daoris***, and **F1**.
+- It opens as **a panel at the application's right edge**, beside whatever view is in front of the
+  person, and it stays open across views. *As built (HELP1d):* not a tab of Sessions' right dock, as
+  first written, since that dock exists only inside Sessions and a panel there would close with a
+  change of view. Whether it is open is this viewer's, remembered like the view.
+- One conversation per workspace, carried on across opens; a window shows its own workspace's (D158's ASKSCOPE1 note).
+  *New conversation* waits for the host to finish
+  a running conversation before clearing the panel. Pending or refused endings keep the draft visible.
+
+**Where it lives, looked at again (the owner, 2026-09-29: *"the ask daoris need to be a better
+location please refer to a better ui/ux design"*).** On the installed window the panel was a second
+right column beside Sessions' own dock, at a fixed width, so the centre was squeezed between two side
+bars. The references agree on one right region:
+- **VS Code** opens the Chat view in the **Secondary Side Bar**, the one right region, next to the
+  editor; reached from a Chat menu beside the Command Center or `Ctrl+Alt+I`; Quick Chat is a light
+  box at the top, like the palette; the region toggles, resizes, and can move to the panel.
+- **Cursor**'s AI pane is the same right side bar (`Ctrl+L`), movable to the panel.
+- **JetBrains** AI Chat is a tool window on the **right toolbar**.
+
+So: **one right region.** On Sessions, Ask Daoris is a tab of the right dock beside *timeline* and
+*review*, sharing its resize, its close and its full; `F1` and `Ctrl+Alt+I` open the dock on it. It has
+no button of its own on the strip (the owner: *"no ask daoris at top border bar"*, DOCK1c): the right
+side bar's toggle is its door. Quick Ask (a palette-like box for one question) and moving the region
+are DOCK1's: both built (`2026-09-29-dock-design.md` §4), Quick Ask on `Ctrl+Shift+Alt+L` and the
+palette's last row. *Since DOCK1a* the same side bar is on every view, so Ask Daoris has one host: the
+region on its own away from Sessions, with its own width, is gone.
+
+## 3. The room
+
+`<home>/help/`, re-rendered at every open (the intake's rule, D65 §1b), never a repository and never
+a `SessionTree` (*amended by D158's ASKSCOPE1b note, 2026-10-19: `help` is `default`'s room, the whole machine; a named
+workspace's conversation runs in a room of its own beside it, written from that workspace's facts*):
+- **`AGENTS.md`**: what Daoris is, the doors table (§5), and the machine as it stands, rendered from
+  the host's own answers: the workspaces and their repositories, what is drivable and held, each
+  repository's line and landing rule, the agents and accounts with their sign-in state, and what
+  waits on the person. Names and states, never a key.
+- **The window** (HELP2, 2026-09-29): how it is laid out, how a view moves between the side bar and
+  the panel, the layout keys, and that the helper cannot see the window and asks rather than guesses.
+  Added after it guessed at a menu that does not exist.
+- **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
+  tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
+  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
+  `browser_propose` and `sync_propose`, §9.10, since DRIFT1d2 `accept_propose`, D133's note, and since ENTRY1d1
+  `repository_propose`, D161's ENTRY1d note, and since SESSUX1h2 `session_propose`, D161's SESSUX1h2a note, and since PAUSE1f `pause_propose`, D132's PAUSE1f notes, and since HIST1f `clear_propose`, D153's HIST1f notes, and since LAYOUT8 `setup_propose`, D117's LAYOUT8 note), and nothing else. Over the protocol door
+  a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
+  it proposes.
+
+## 4. Where the person is
+
+The page hands the conversation what is on the screen, as a short preface to the person's message
+whenever it has changed since the last one: the view, the workspace in scope, the attended session or
+repository, and a sentence the screen is showing (a refusal, a parked card's question). It is chrome
+the page already renders, so nothing new leaves the machine (D47 §4). On Sessions it also says which
+views each region holds and whether it is showing (HELP2).
+
+## 5. What it may propose
+
+**A setting.** `setting_propose {door, target, value, why}`, where `door` is one of the driver
+module's own setting routes, named as a person would name them:
+
+| Door | Route | Terminal twin |
+|---|---|---|
+| drive · hold · own tree | `SET_DRIVABLE` · `SET_HOLD` · `SET_TREES` | `daoris driver drive|hold|trees` |
+| line · landing | `SET_LINE` · `SET_LANDING` | `daoris driver line|landing` |
+| intake · strikes · timeout · notify | `SET_INTAKE` · `SET_STRIKES` · … | `daoris driver intake|strikes|timeout|notify` |
+| across (HELP9) | `SET_READ_ACROSS` · `SET_WRITE_ACROSS` | `daoris driver across <repository> read on|off|--clear`, `… write-to <other> [--clear]` |
+| cap · adapter (HELP9) | (no screen; the terminal's edit) | `daoris driver cap|adapter` |
+| a rule | `RULE_ACTION` | `daoris agent rules …` |
+
+The driver checks a proposal against the route's own validation before the person sees it, so a
+proposal the route would refuse is refused to the agent, in the route's words, and never shown.
+*As built (HELP1c):* a rule is not a door; the room is never handed `permission_propose`. *Since HELP9 (D110)*
+every `daoris driver` verb and every Settings control is a door, a door owed, or exempt with its reason, held
+by a test (§9.9).
+
+**Starting something.** `ask_propose {sentence, workspace}`: an ask, which the ordinary loop takes
+(D65). The helper never runs a session's work, and never publishes a quest itself. Since ENTRY1c it
+also carries the review choice the person said and their words (`review`, `reviewWords`), never a kind
+or a workflow (D161's ENTRY1c note).
+
+**Every door built since** (HELP6, §9.6): an agent's update or pin (`agent_propose`), an account's
+model and effort (`agent_settings_propose`), the delete of a quest or an ask made by mistake
+(`delete_propose`), and a screen to open (`go_propose`), each judged by the rules of the screen that
+makes the same change and applied through that screen's own route.
+
+**A plugin** (PLUG9, §9.7): one that has landed, added from its folder in the checkout of the
+repository that holds it (`plugin_propose`), or one installed here switched on or off; since D103 one
+of the install's own by its id, or an update of one from where it came from; since HELPPLUG1c (D170's
+note) the person's approval of what an installed plugin's server offers Ask Daoris (`approve`, its
+`server` and the `writes` accepted), or its withdrawal (`withdraw`), the card naming every tool. Making one is
+never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
+person and is made with tests and reviewed like any other work.
+
+**Reading and writing across, a cap, an adapter** (HELP9, §9.9, D110): `across`, `cap` and `adapter` are
+setting doors, and since HELP10 (§9.10) `retry` of a quest the driver parked, so every `daoris driver` verb but
+`list` is one. A write-to's card says applying it is the person's standing say-so for writing across.
+
+**The browser's settings** (HELP10, §9.10): which browser sessions and the person use, where the page's links
+open, other software's extensions, and a favorite kept or dropped (`browser_propose`), applied through the
+Browser screen's own edits.
+
+**Bringing repositories up to date** (HELP10, §9.10, D109): `sync_propose`, a card with the screen's two presses,
+since looking fetches as the person: *look for updates* lists what the press would do on the card, and *apply*
+does those rows only.
+
+**A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
+(`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
+the plugin's, signed in as the person, which the card says before Apply, exactly as the review's *hand it
+to* would.
+
+**A yes to a departure** (DRIFT1d2, D133 §4): a quest a done's departure holds (`accept_propose`), proposed only when
+the person asks to accept it, its card showing each departure with the person's words it relied on, and applied through
+the local host's accept door, the quest page's *Accept the departure*.
+
+**Setting a repository up** (LAYOUT8, D170 point 1, D117 §6.1): a registered repository, by name (`setup_propose`), its
+card showing what `daoris-driver setup <repository> --plan` shows, and its Apply the press: one quest to that repository's own
+session and the rule its session needs, as the repository page's *Set up for agents* does. Where Ask Daoris had no such door it
+could only name the terminal command; a shell is still never given (D89, D170).
+
+**Never**: a push of Daoris's own, a merge, a discard, a sign-in, a key. Those stay the person's own
+presses where they already are; a hand-off's push is the plugin the person named, on their Apply.
+
+## 6. The confirmation
+
+A proposal appears in the conversation as a card: what it changes, in the page's words, the terminal
+command that does the same, the agent's `why`, and **Apply** or **Not now**. Apply calls the same
+route the screen would, and the result, done or refused in the route's words, goes back into the
+conversation as the person's next message, so the agent knows. A proposal is a file under the home
+(`<home>/help/proposals/<id>.json`, PERM2's shape), so an unanswered one survives a restart.
+
+*2026-10-22 (ASKDISMISS1):* a go's card, which changes nothing (HELP6), reads **Go there** and **Dismiss** (移除). Its dismiss
+settles the card so no window draws it again, and goes back into the conversation as nothing: told as *Not now*, it had started
+a turn in which the agent could take it for the person's word on the quest the card named. A change's *Not now* still goes back
+as the person's next message. A go to a quest a session has taken says so, and one to an ask names its taken quest.
+
+*2026-10-22 (ASKQUESTS1, §9 item 12):* what an Apply did goes back as Daoris's word, still a turn, its words starting `Daoris:` and
+naming by id what it published; a change's *Not now* stays the person's. What an Apply published is kept with the conversation
+and shown in the panel with its live state.
+
+## 7. With no agent named
+
+D24: the useful part without a model. Ask Daoris opens with **starters from what the machine
+lacks**, each a door to the screen that fixes it and its terminal command: no workspace, nothing
+drivable, an agent with no account signed in, a session waiting on the person, a repository with no
+line git can name. With an agent named, a starter is also a first message.
+
+## 8. The owner's calls — made (2026-09-29, D89)
+
+1. **Which agent and account it runs on**: *its own choice in Settings*. A third job under Settings →
+   *Daoris's own AI*, with its own agent choice and the account each circle's default names, off
+   until named, as the intake is.
+2. **Whether a confirmation may be remembered**: *always confirm*. Every change shows its card, and
+   nothing applies on its own.
+
+## 9. Build order
+
+1. **HELP1a**: the doors, the dock tab, the room, and the conversation as a chat in the room (the
+   intake's plumbing, as a conversation rather than one turn). *Plan (2026-09-29):* the ledger opens
+   a help session as the intake's is opened, a chat serving no quest in "repository" `daoris:help`
+   (a colon no folder name holds), one running per room; `START_HELP` renders the room from the
+   machine and starts the chat there on the helper's agent, or hands back the one already running;
+   the panel shows the newest help session's conversation with a composer, and a message with none
+   running starts one. *Built 2026-09-29, as planned*, with what building it settled:
+   - **The room says what the machine holds from the driver's own answers** (`HelpRoom.Describe`):
+     its file, the registry, each repository's line and landing rule, the roster. Names and states;
+     no root, no profile's home, no key. Every terminal command in its doors table is spelled as
+     the CLI's help spells it, and the timeout, which has no screen, says so.
+   - **Its rules are the room's allows and the person's denies**, never the person's allows, which
+     are for work in a repository; the connector is handed on both doors, and no plugin's server
+     (a browser brought up for a tool it may not use would be a window for nothing).
+   - **Each conversation is in the workspace it started in** (D158's ASKSCOPE1 note): the panel
+     shows the window's workspace's, and its history lists them, or every workspace's, each labelled.
+     Another workspace's is read from any window, and gone on in only from a window on it.
+   - **A running conversation is carried on only where this process holds it**: after a restart,
+     the one that ran is shown ended, and a message opens the next.
+   - 🔴 **Its session asks for the agent's own asking mode** (`default`), never D81's `auto`. The
+     first real conversation, on the scratch window, ran `grep` and `sed` over a checkout under
+     `auto` to research its answer: the allow-list is not a gate in a mode that judges its own
+     actions, and a helper that can run a command can run `daoris driver …`, a change nobody
+     confirmed. Asked again in `default`, every read outside the room was refused, and it answered
+     from the room. Its room now also says what a landing pattern may say, which it had to guess.
+   - **Found on the same look:** the strip's door was a bare glyph, and the owner found no easy way
+     to open the chat. It is a named button now, the name giving way at a narrow window.
+2. **HELP1b**: where the person is, as the preface. *Built 2026-09-29:* one line, agent-facing and
+   so untranslated (`help/where.ts`): the view or the Settings domain, the workspace in scope, and on
+   Sessions the attended session with its state and up to 280 characters of what a parked one asks.
+   The page sends it with a message only when it changed since the last one that conversation was
+   handed. The driver hands the agent the preface, a blank line, then the words, on every door, and
+   the record keeps it as a note, *told where the person is*, never as the person's words. A refusal on
+   the screen is not carried yet: nothing holds one in a shape the page can hand over.
+3. **HELP1c**: `setting_propose` and `ask_propose`, the validation, the card, Apply. *Plan
+   (2026-09-29):* the connector's two tools write a file each under the home the driver names on the
+   connector (`<home>/help/proposals/<id>.json`, PERM2's shape), shape-checked there and nothing more:
+   the route's own validation is the driver's, which the service cannot run. So the driver checks a
+   pending proposal with the route's code when the panel asks for them; one the route would refuse is
+   never shown, and its refusal goes back into the conversation in the route's words. *Apply* makes
+   the same edit the screen's route makes, and *Not now* dismisses; either result goes back into the
+   conversation as the person's next message. *Built 2026-09-29, as planned*: the doors are the
+   twelve `daoris driver` verbs the room's table names (drive, undrive, hold, resume, trees, line,
+   landing, intake, helper, strikes, timeout, notify) and an ask. The driver's check is the config's
+   own edits, which throw the route's refusal, plus the names the routes do not check and a helper
+   can invent: a registered repository, a workspace, an agent. **Not the rules**: the room is never
+   handed `permission_propose`, since PERM2 applies a narrowing with nobody's press. On the scratch
+   window, asked to make a repository land on feature branches, the helper proposed exactly that
+   with its reason; *apply* wrote the file the screen writes, and it acknowledged the result.
+4. **HELP1d**: the starters, and the no-agent tier. *Built 2026-09-29:* waiting sessions, nothing
+   registered or driven, a tool no account is signed in to, a repository with no line, and Ask Daoris
+   with no agent, each with its door and its terminal command; the strip's button, the palette's
+   *Ask Daoris* and F1 open the panel. Its agent choice (D89) is Settings → *Daoris's own AI*.
+5. **HELP5**: answering sooner (2026-09-30). Measured on the owner's install, a first word came 40 s
+   after the conversation was made, over five model round trips, three of them Daoris's to remove:
+   - **Its tools load with the first request.** Claude Code defers every MCP tool behind a search step
+     unless `ENABLE_TOOL_SEARCH` reads false, so the helper paid a round trip to find its own tools. The
+     switch is the adapter's to name (`ISessionAdapter.ToolsUpFront`, empty by default; both Claude Code
+     doors name it), and only the room's conversation asks for it: a repository's keeps the harness's
+     default.
+   - **The room says it has no web either**, in the sentence that says it has no shell: its fourth move
+     was a fetch of a ticket's URL, refused before it ran.
+   - **The conversation opens as the panel shows**, so the spawn and `session/new` (3.2 s measured) are
+     done before the person types: once per showing, again after *New conversation* once the one it
+     finished has gone, never while one runs. One that is refused says nothing and is not asked again;
+     the send asks for itself and says why, as before. **Nobody has spoken in it, so it is not shown**:
+     the starters, or the conversation that ended, stay in front until the first words go to it, and
+     words sent while it is still opening wait for it (HELP4's holding). Which conversation that is lives
+     in the page's query cache, so the side bar and Quick Ask agree on it and a tab drawn again still
+     hides it. *Not settled:* a conversation opened ahead is a record whether or not anyone speaks in it,
+     so after a restart the newest help record can be an empty one, shown ended in place of the last real
+     conversation.
+6. **HELP6**: Ask Daoris reaches everything (2026-09-30). The owner: *"we need to have a good ui/ux or
+   easy access for everything use ask daoris"*. Doors built since HELP1c were not reachable from it.
+   *Plan:* four more kinds, each a connector tool writing the same file (§6), judged by the driver with
+   the rules of the route that serves the same screen, applied through that route's own code:
+   - **`agent_propose {action, agent, version?}`**: *update* where the roster's `updates` is `pin` or
+     `tool`, *pin* to one exact release where the door is pinnable; applied as `HARNESS_ACTION`'s
+     own start, one at a time, its end said into the conversation.
+   - **`delete_propose {quest | ask}`**: only where the service's `deletable` says the record may go
+     (D95); the card says what goes. Applied through the local host's `DELETE /api/quests/{id}` and
+     `DELETE /api/asks/{id}`, the drawer's routes. Not D95's rejected *delete over MCP*: the tool only
+     proposes, and the delete is the person's press.
+   - **`agent_settings_propose {agent, account, model?, effort?}`**: an account whose tool's settings
+     Daoris knows (D98), the values the tool's own, `max` refused; applied as `SET_AGENT_SETTINGS`.
+   - **`go_propose {view, domain?, part?}`**: a *go* card, applied by navigating the page as the
+     starters' doors do, nothing else changed; the places are a twin of the page's views, Settings
+     domains, their parts and the setup guide's steps.
+
+   *Built 2026-09-30, as planned*, with what building it settled:
+   - **The apply is the driver library's, and each door is the module's code for the screen's route**
+     (`HelpProposals.ApplyAsync` over `IHelpDoors`; `DriverModule.HelpDoors`). `HARNESS_ACTION`'s process
+     start and `SET_AGENT_SETTINGS`'s write became one method each, which the route and the door both
+     call, so the two cannot drift; a delete is `ServiceClient`'s call to the drawer's own route. Tests
+     hold each door with a stand-in that records the call, in both test projects.
+   - **Each kind is judged by its screen's rules, in that route's words.** An update: the agent is
+     installed and the roster's `updates` names one. A pin: the door declares a package or a channel,
+     and the version is one exact release (the channel's own `RefuseVersion`; for a package, an exact
+     semver, since npm would take a pointer). A delete: the service's own `deletable` on every quest
+     and ask, closed ones included, read only when a delete is pending; a refusal says what to do
+     instead, as D95's does. An account: a tool whose settings Daoris knows, one of its owner's accounts,
+     and the values through `AgentSettings.JudgeModel`/`JudgeEffort`, so `max` is refused in its words.
+     A go: `HelpPlaces`, the twin of the page's `help/places.ts`.
+   - **An agent action's end is said into the conversation after what the Apply did**, however soon it
+     comes: a pin already installed ends before its start is answered. The page's Agents screen follows
+     the started action (`HarnessRun.follow`), so its console and its end show there too. A busy slot is
+     the route's refusal and leaves the card for another press.
+   - **The room lists the asks by id** (the quests are the family's `quest_list`), says the rule each
+     kind is judged by, and lists every place a go may name from the driver's own table.
+   - **Left out:** a per-model effort (`--for <model>`), which the screen sets only where the file
+     already holds one; *unpin*, *install*, a sign-in and an API key, which stay the person's presses;
+     and a go to a place inside a view other than Projects' two drawers, since nothing else there has
+     a door that opens it.
+   - **What the gates do not cover:** a real helper choosing these tools, and the cards on the window
+     in both themes; both are the owner's look on the installed window.
+7. **PLUG9 (a) and (b)**: Ask Daoris makes a plugin by asking for it, and installs one by a press
+   (2026-09-30). The owner asked that Daoris make plugins itself, through Ask Daoris; the reading in the
+   backlog is that a plugin is code running as the person, so making one is work and installing it is
+   the person's press. It fits HELP6's shape, so it needed no decision of its own. *Built:*
+   - **The room says how a plugin is made** (*Making a plugin*): as an ask (`ask_propose`) at the
+     workspace of the repository that holds plugins, addressed to it, saying what the plugin does and
+     the point it speaks on, each point named from `HookPoints` with what it is for; the session there
+     makes it with its tests. The helper finds that repository by what the registry says it owns, and
+     with none the person decides where plugins live. It never writes one and never proposes adding one
+     that has not landed. The room lists the plugins installed here by id and state.
+   - **`plugin_propose {action, repository?, folder?, id?}`**: `add` names the folder from a registered
+     repository's checkout root (a whole path only where the person gave one), `enable` or `disable` an
+     installed id. The service checks the shape, `..` and a whole path within a repository included.
+   - **Judged by the catalogue's own reader** (`PluginCatalog.ReadAsWritten`, `RefusedByThisBuild`,
+     through `PluginInstall.Read`): a folder with no sound manifest, a harness this build carries, a
+     folder inside or holding the Daoris home, one outside the checkout it names, a repository with no
+     checkout here, and an id already installed are refused; a switch needs an installed id not already
+     where it would put it.
+   - **The card shows what will run before Apply**: the id, the command it starts with `${plugin}` as
+     written, its points, the agents it declares and the servers it hands every session, and for an add
+     that the folder is copied in and nothing starts at the press. The terminal twin is `daoris plugin
+     add <folder>` or `daoris plugin enable|disable <id>`.
+   - **Applied through the door the screen or the terminal uses**: an add is `PluginInstall.Add`, the
+     driver's twin of `plugin add`'s copy, which never replaces an installed plugin; a switch is
+     `PLUGIN_ACTION`'s own row, one method the route and the door share. Neither starts anything.
+   - **Built as PLUG9 (c) and (d)** (D103): an `update` action, with the plugin's `id`, judged by
+     `PluginInstall.PlanUpdate` (a plugin with no record of where it came from is refused, never guessed)
+     and applied through `PLUGIN_UPDATE`'s own apply, its card listing what changes; and an `add` naming one
+     of the install's own plugins in `offer`, by id and never a path (the service refuses an offer beside a
+     folder), judged by what the install offers and applied through `PLUGIN_INSTALL`'s copy. The room lists
+     the offers not installed, with their points and their README's requirement lines, and says of each
+     installed plugin only the kind of its source.
+   - **What the gates do not cover:** whether the folder's contents have landed on the repository's line
+     (the checkout is copied as it stands), a real helper choosing the tool, and the card on the window in
+     both themes.
+8. **WSR5b**: Ask Daoris proposes handing a landed branch to its plugin (2026-09-30, D102). *Built:*
+   - **`hand_propose {target, repository?, plugin?}`**: the session that landed the branch, or the branch;
+     the repository only where a branch's name is in several; a plugin only where the repository's landing
+     rule names none. The service checks the shape (one word each, a plugin id's shape).
+   - **Judged against the landing record** (`<home>/landings.json`, D102): a branch the record holds, one
+     repository, and a plugin, named or the rule's, that can land work here (D100's refusals). What only
+     the checkout can answer (the branch standing, moved since its push, already on the line) is the door's
+     at the press, in its words, which settle the card refused.
+   - **The card** says a plugin pushes the branch to its remote, signed in as the person, before Apply, and
+     carries `daoris-driver trees hand <branch> --repository <name>` as its terminal twin. Apply is
+     `HANDOFF`'s own press, and the note it keeps in the landing's conversation is the review's.
+   - **The room** lists the branches landings made, by name, repository and session, and whether a plugin
+     pushed each, with its pull request.
+   - **What the gates do not cover:** a real helper choosing the tool, a real platform's push, and the card
+     on the window in both themes.
+9. **HELP9**: Ask Daoris reaches every door built since HELP8, and the next one cannot be built without an
+   answer (2026-09-30, D110). *Built:*
+   - **The doors built since, checked one by one.** HELP8's landing `--plugin`, PLUG9's install by offer id and
+     update, and WSR5b's hand-off were already proposals. `daoris driver across` was not: READ1 built it and its
+     room row, and the setting kind refused it. It is a setting door now, `read on|off|--clear` for a repository
+     or a workspace and `write-to <other> [--clear]` from a repository, judged by the same edits
+     `SET_READ_ACROSS` and `SET_WRITE_ACROSS` make; the other repository of a write-to is checked as a registered
+     name, and a repository naming itself is the route's own refusal. A write-to's card says that applying it is
+     the person's standing say-so for writing across, one way. `cap` and `adapter`, which only a terminal set,
+     are setting doors too.
+   - **Each kind names its doors** (`IHelpProposalKind.Doors`), and the service's writer of that kind spells each;
+     the setting's are one list on both sides, held line for line.
+   - **The coverage** (`HelpCoverageTests`): every verb in the CLI's command table, and every control a Settings
+     domain holds, is a door, a door owed with what it waits on, or exempt with its reason. The controls are read
+     from the page's source: each domain's component and everything it imports, the bridge hooks among them that
+     change something, and each action a hook's payload names; the theme, the language and the setup guide's step
+     doors, which press no hook, are named by what their source says. Every other start on the page is read too,
+     the page's own service calls (`queries.ts`) among the hooks, each by where it is pressed, and a quest's or a
+     session's own act may answer *its own conversation*, the view a go reaches it by (D161's ENTRY1a note). A
+     control or verb on none fails, and so does a row whose control is gone. D110 has the exemptions' principles
+     and `--share`'s answer.
+   - **Owed** (the desktop modules' to add): `retry`, whose judge needs the parked quests in the facts; an
+     account made default, which needs `HARNESS_ACTION`'s own door; the browser's settings, which need
+     `BrowserModule`'s. The room names each one's screen and command meanwhile, and every `daoris driver` verb
+     that changes something is a row of its doors table.
+   - **What the gates do not cover:** a real helper choosing `across`, `cap` or `adapter`, and the write-to card
+     on the window in both themes.
+10. **HELP10**: the doors HELP9 left owed, and the ones built since (2026-09-30, D110 applied). *Built:*
+   - **Retry a parked quest.** `retry` is a setting door, its target the quest by id (`#` or not), so every
+     `daoris driver` verb but `list` is one. The loop keeps what each tick parked by its strikes
+     (`ParkedQuests`, beside the trust holds, replaced whole each tick), which is the verdict the quest's drawer
+     shows its Retry by; the facts carry it (`HelpMachineFacts.Parked`) and a quest not on it is refused, since a
+     helper can invent an id and forgiving one not parked lets it run past its strikes. Applied as `RETRY_QUEST`'s
+     own edit, forgiven at the strike limit standing at the press. The room lists the parked quests by id and
+     repository, none said as none.
+   - **Make an account the default.** `agent_propose` takes a third door, `default`: the account (as the file's
+     `value`) an agent runs as, for the machine or one workspace, judged as `daoris agent profile default` judges it
+     (an account that exists, a workspace this machine has). A door's default is its owner's (AGT7), so the card and
+     its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
+     `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
+     *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
+     *LEFT3 built the verb*, `daoris agent profile default <agent> --clear [--workspace <name>]`, a twin of the screen's
+     write; proposing a clear is a door owed (`HelpCoverageTests`' forms), and the room names the command meanwhile.
+   - **The browser's settings.** A ninth kind, `browser_propose {door, value, address?, title?}`: the `daoris
+     browser` verbs that change something (`use`, `links`, `extensions`, `favorite add|remove`), a favorite's address
+     as the file's target. The files are the desktop modules', so the facts carry what `BrowserModule.HelpFacts`
+     read of them, with its own reader of an address, and none read is no proposal. Judged by the Browser screen's
+     routes: the values each takes, a favorite that is a web page, one removed that is kept, and a file it could not
+     read never written over, each in the route's words; Edge where none is installed says so before Apply, as the
+     screen does. Applied through `IHelpDoors.ChangeBrowser`, which is `BrowserModule`'s own edit (each route now one
+     method the route and the door call). The room says how the browser is set and the favorites it keeps.
+   - **A go to Permissions → *Reading and writing across*.** A part of `permissions` on both twins (`HelpPlaces`,
+     `help/places.ts`), found by the `settings-across` id the card has carried since READ1, now a `SettingsAnchor`.
+   - **The room says PREVIEW1's file preview exists** (D111), in *The window*: a path in a session's tool card, or a
+     file's button in the review, opens a read-only preview as a tab of the right side bar, and in Ask Daoris's own
+     conversation a path is plain text.
+   - **Bring up to date** (WSR6, D109). A tenth kind, `sync_propose {repository?}`, for one repository or every one
+     with a checkout here. D109 fetches nothing until the person presses (looking reaches the network as them), so
+     the helper's proposal lists nothing: **the card has the screen's two presses.** Its first, *look for updates*,
+     is an Apply that runs `TREES_SYNC_PLAN`'s own list through `IHelpDoors.SyncPlanAsync` (the same checkouts and
+     sessions, fetching each line) and keeps every row in the proposal's file (`listed`: its key as `TREES_SYNC`'s
+     `only` takes it, its step, whether it moves, the terminal's sentence), and the card stays; a look with nothing
+     to do settles it, and says so. Its second, *apply*, is `TREES_SYNC`'s own press through `IHelpDoors.SyncAsync`,
+     on the listed rows that move and nothing else, fetching nothing and judging each again; what did not happen is
+     said as the terminal says it. The rows are the screen's selection (a line that moves, a branch that replays, a
+     landed branch that may go). The room names the kind and the card's two buttons, and a delete card's own word,
+     which it had given as *apply*. *Since LEFT3* the look keeps beside its rows what they do not say, and the card
+     says it as the screen does: the lines it could not fetch, by git's reason and since when, and the repositories it
+     left apart (D112), collapsed, with how a proposal includes one.
+
+11. **ASKHIST1**: Ask Daoris's conversations are kept, listed and gone on in (2026-10-09). The owner: *"we are also missing a chat
+   history resume and management with Ask Daoris, so that we can reuse a session or continue with more knowledge"*. *Built, with
+   no decision of its own; what it amends is named below for the steward's note:*
+   - **Kept on this machine only.** Each conversation is the help record the host already keeps and its words this machine's
+     record (D76). A help record belongs to no workspace, so no feed pushes it (*amended by D158's ASKSCOPE1 note, 2026-10-19:
+     a help record keeps the workspace its window started it in, one runs per workspace, and the sync skips it by its kind*). What the person adds (a name, a pin, the
+     earlier conversation one started from) is `<home>/sessions/<id>.help.json` beside its other files, in the home's one
+     inventory (`SessionHomeFiles`), so a delete or a clear takes it too. Never the record, never a repository.
+   - **The history** (`HelpConversations`): the conversations the person spoke in, pinned first, then the newest by their last
+     word; each with its title (its name, else its first question), when, and the first line of Ask Daoris's last answer as the
+     line of what it was about (Daoris makes no model call, so it writes no summary of its own). A search finds them by words
+     in a name or in what either side said, with where. One opened ahead (HELP5) and never spoken in is not listed.
+   - **It goes on in itself** (D137 §2.2, as a chat does, MSG1c): its harness conversation's id is kept now, and words written
+     to one that ended reopen its record and resume that conversation in its room, with the room's place (its rules, `default`,
+     its tools up front), the room written again from the machine as `START_HELP` writes it. The room holds one conversation at
+     a time (*one per workspace since ASKSCOPE1a*), so going back to one first stops the one running here, which keeps its own id; one answering a turn is never
+     stopped, and the words wait, said why. `help` is no longer a never for words; a new session and a conversation started in
+     a repository are still refused it, by the same code.
+   - **A new one from an earlier one's words**: handed its **transcript**, never a summary: Daoris has none of its own (D24), and
+     one asked of the earlier agent would spend a turn and reopen that conversation. The transcript (both sides' words, the
+     newest kept where it is long, saying the start was cut) is a file in the new conversation's own folder, which its rules
+     already read (CONV4c), handed with the person's first message and named in its preface.
+   - **The panel**: two views, each with its own head (*as ASKHIST1c made it*, after the owner looked at the window). The
+     history's, left-led: *Conversation history*, *Kept on this machine only.* under it, *New conversation* at its right and
+     the search the whole width, its rows alone scrolling, grouped *Pinned*, *Today*, *Yesterday*, *This week* (from its
+     Monday) and *Older* by local days. The open conversation's: *← History*, its title whole, a new one at its end. A row's
+     title wraps; the open one says *current*; its line is the answer's words without their Markdown, or a search's find with
+     its words marked; its ⋯ sits beside it. Opening a row only reads it and focuses its heading; *← History* or Escape goes
+     back to that row. What the next words do is said right above the box: one that ended and goes on in itself takes them;
+     one the person chose that cannot go on, or is still being checked, takes none until they choose *New conversation from
+     it* (first) or a blank one. Each conversation keeps its own draft, words and files, and a new one its own. The newest
+     that ended still starts a new one by default, as HELP5 made it; *Go on in it* chooses it. A rename starts from the title
+     selected, with *Use the original question* for a named one and the terminal's twin; a delete asks once (`InlineConfirm`)
+     through `SESSION_DELETE`.
+   - **Both doors** (D50): `HELP_CONVERSATIONS`, `HELP_RENAME`, `HELP_PIN`, `HELP_START_FROM`, with going on as `SESSION_INPUT`
+     and a delete as `SESSION_DELETE`; and `daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>] |
+     resume <id> "…" | rename <id> "…"|--clear | pin|unpin <id> | delete <id> [--yes]`, its `--json` the panel's row field for
+     field. A listing is a page of every conversation, ordered and searched before it is taken (ASKHIST1d, D158's note).
+     Exempt from Ask Daoris: the conversations are the person's own (`HelpCoverageTests`).
+   - **It amends** D137's MSG1c note (*Ask Daoris's keeps none, since it never goes on*) and §2.2's `help` never, HELP1a's *a
+     message opens the next* after a restart (it still does, unless the person chooses to go on), and D76's RAIL1 rejection of
+     hand-naming, for Ask Daoris's conversations alone: the name is the person's, kept on this machine, never the record.
+   - **What the gates do not cover:** a real agent resuming a help conversation (`claude --resume`, `session/resume`); the room's
+     set-aside with a real process (no `Process` row was written); a new conversation reading its handed transcript; and the panel
+     on the window in both themes. Not built: a terminal door for a new conversation from an earlier one, since no terminal door
+     opens an Ask Daoris conversation at all.
+12. **ASKQUESTS1**: the asks and quests a conversation published, kept with it, shown live in the panel and followed to their end
+   (2026-10-22, the owner's direction while using Ask Daoris). Before it, what an Apply published lived in the scroll only: the
+   ask's card before Apply, the Apply's sentence after it, said into the conversation as the person's words, and any go card the
+   agent drew later; the ids the service answered (`AskAnswer.AskId`, `QuestId`) were dropped in the kinds' Apply
+   (`HelpAskProposals.ApplyAsync` kept only the sentence), and nothing kept a list. *Designed and built with no decision of its own,
+   read by Codex (below); what it amends is named for the steward's note on D89:*
+   - **The conversation's own list** (`HelpPublished`): `<home>/sessions/<id>.published.json`, `{ "published": [ { "at",
+     "proposal", "kind", "workspace", "ask", "quest" } ] }`, oldest first, one entry per Apply that published something: an `ask`
+     card (the ask door's answer) and a `setup` card (its outcome's ask and quest). The ids are the service's answer, handed to
+     `HelpApplying.Settled`, never read from a sentence; an answer naming neither keeps nothing. The entry is kept as the service
+     answers, before the card settles applied and before the conversation is told, once per proposal (one Apply settles it, the
+     claim of HELPAPPLY1; a second keep of the same proposal keeps the first), under an in-process lock as `HelpWired`'s receipts
+     are. What is left: a crash between the service's answer and the keep loses the entry, never the ask or the quest, which Quests
+     still lists; and a door's refusal before anything happened keeps nothing, as it settles nothing. A file of its own, beside the
+     conversation's other files and in `SessionHomeFiles`' inventory under Ask Daoris's name, so a delete or a history clear takes
+     it: not a field of `.help.json`, which a build before this one rewrites whole on a rename or a pin (`HelpConversations.Change`)
+     and would drop (`compatible-builds`); such a build's delete or clear leaves this file behind, since its inventory does not name
+     it. It keeps ids and when, never a state: the state is the service's, read live. A conversation that applied before this build
+     has no file and lists nothing; its words are never parsed for ids. One process writes it and the same process reads it, the
+     desktop host's driver library at the window's Apply (D89: no terminal door applies a proposal); the service and the terminal
+     never read it, so it is no record one process writes for another, and Fable is not owed it.
+   - **The route** (`HELP_PUBLISHED { session }`): `{ session, published: [...] }`, newest first, each entry's absent id left out. A
+     read: no mark (`StatePublisherTests`' row `""`, no entry in the page's `DECLARED`), `Open` in the pipe's census, the help
+     row of the desktop README, off the window's thread, desktop-only as the conversation is. Its key, `HELP_PUBLISHED` in
+     `bridge/help.ts`, is added to the state hub's `help` family (`stateHub.ts`), which `HELP_APPLY` publishes, so an Apply's
+     entry is read at the publish that settles its card; nothing else moves it, so it is never asked on a clock. An older shell's
+     answer, none, reads as nothing published. No coverage row: it is a read.
+   - **The panel's place**: a strip under the open conversation's head, outside the scroll, shown only where the conversation
+     published something, and gone while the history or *What it has* takes the conversation's place. Folded, one line: *Published
+     from this conversation* and what stands, each count with its noun (*3 quests · 1 open · 1 taken · 1 done*, *1 ask with no
+     quest yet* for an ask still asked, never one closed or done with none). What waits on the person is counted first and in
+     open's ink, the only part that wears it (D185 §3.10.2): a done a departure holds for their yes (`held`, DRIFT1d) and an ask
+     proposed or asking a go-ahead (KNOWUSE1a); the rest is the soft ink. Opened in place, newest first, at most 12rem tall before
+     its own scroll: each ask with the quests it became under it, and each quest published on its own. A row is one press that
+     opens its record on Quests, the door a go uses (`placeDoor`'s item: a quest by its id, an ask as `ask:<id>`); it adds no act,
+     since every act on a quest or an ask is its page's (D50). Each row says its state as its list does: a quest's status pill
+     (`QUEST_TONE`, *submitted* where its taker said ready, its hold's words where one holds it for the person), an ask's
+     (`ASK_TONE`); a taken quest worked here names its session's state (`sessionState.*`, `SESSION_TONE`), the live session whose
+     `quest` it is, never its ask's intake; one whose take is another machine's says so only where both `holder` and `here` are
+     known and differ; a record the lists answered and no longer hold is *no longer on this machine* and opens nothing; and while
+     a list is not answered yet the row and the line read *reading…*, never empty or gone (D185 §3.8). A list that failed to read
+     says so in the line.
+   - **Live, never polled, never stale after a take.** The states are read from the pushed quests, asks and sessions slices
+     (`QuestsStateSlice`, `AsksStateSlice`, `SessionsStateSlice`; PUSH1d2, PUSH1d3), from their widest entries, every workspace's
+     (`useEveryQuest`, `useEveryAsk`, `useEverySession`, never the window's scoped lists), so the window's scope never hides what
+     the conversation published and a take moves its row at the take's push. Where a shell pushes none of them, each is the widest
+     list's own pull, asked as Quests' lists are; read only while the conversation published something. Opening a row judges
+     nothing, so it is never refused.
+   - **The go card after a take.** Since ASKDISMISS1 a go card's sentence says where its quest stands (*taken*), and an ask by its
+     taken quests, so the plan its Apply judges moves with a take, and a card drawn before the take answered *the plan changed*
+     at its first press (`HELP_APPLY`'s `changed`, HELPAPPLY1). While a go card is shown, the proposals are asked again at each push
+     that moves a quest's status, an ask's state or quests, or a session's state (`useStandingsMark`): read only while all three
+     slices are pushed, never a pull and never on a clock, and `HELP_PROPOSALS` publishes nothing, so it cannot loop.
+   - **The transcript: the Apply's result is Daoris's word.** It is still a turn, as the person's words make one, so the agent
+     hears what was published at its next step or as its next turn, whichever its door takes (§6, D89); but it is Daoris's
+     (`ChatRunner.Tell`, COWORK1b's mark, `from: daoris`, D188), on the record and on the page, never the person's. The person
+     pressed Apply; the sentence is the driver's and the service's, and ASKDISMISS1 showed what a sentence said in the person's name
+     does: the agent took it for their word. Its words start `Daoris:`, as Daoris's other words to a session do, since the agent
+     reads only the words and a text-only door keeps nothing but them; and they name by id the ask and the quest the service's
+     answer named where its sentence does not already. So is a proposal refused before it was shown (*Daoris did not show proposal
+     …*). A change's *Not now* stays the person's answer, their next message. Daoris's word waiting for a turn is never in the
+     person's queue, never edited by its id, and never handed back to their box by a stop (`ChatMessage.Theirs`); a stop takes it
+     with what it withdraws, and the list still holds what was published. The panel's list is built from the record, never from
+     the words. Rejected: a line of the page's own with no turn, which tells the agent nothing until the person speaks again; and
+     keeping it in the person's name.
+   - **What the agent is told**: the Apply's word, at its next step or turn, with the ids. The room's Asks section is unchanged and
+     lists no conversation's own: the room is the workspace's, written at a start, and a state written there is stale at the next
+     take, the go card's defect again. The live state is the family's `quest_list`, which the room already names; its *What you
+     may do* now says that what an Apply did comes back as Daoris's word, starting `Daoris:` and naming the ids, and a *Not now* as
+     the person's.
+   - **Words** (`help.published.*`, the glossary's names: *quest* 委托, *ask* 需求, *publish* 发布, *conversation* 对话):
+     *Published from this conversation* 本对话发布的; *{n} quests* {n} 项委托; *{n} open* {n} 项待接, *taken* 已接下, *done*
+     已完成, *declined* 已谢绝; *{n} waits on you* {n} 项等你处理; *{n} ask with no quest yet* {n} 项需求尚无委托; *{n} no longer on
+     this machine* {n} 项已不在本机; *to {repository}* 发给 {repository}; *asked at {workspace}* 在 {workspace} 提出; *session
+     {state}* 会话：{state}; *taken on another machine* 由另一台机器接下; *a go-ahead waits on you* 有一项同意等你处理; *reading where
+     each stands…* 正在读取各项状态…; *Open quest {name}* 打开委托 {name}. The statuses' own words are `status.*`, `asks.state.*`
+     and a hold's, as their lists say them.
+   - **Left out:** a terminal door for one conversation's list (`daoris-driver help list` keeps its fields): each quest and ask
+     is the terminal's already by the id the Apply's word names. The asks a conversation proposed and the person did not apply
+     are its cards', not the list's. An Apply's word to a conversation nothing listens to (one that ended) is lost as the person's
+     was before; the list keeps the entry.
+   - **What the gates do not cover:** the strip on the installed window in both themes and at the dock's widths; a real agent's
+     turn on Daoris's word after an Apply.
+   - **The read (D191).** Codex read the design before it was built, read-only in the branch's checkout, told the files to check;
+     Fable did not: the design adds a file the desktop host writes and reads, and changes no record another process reads, no
+     protocol between processes and no rule other designs rest on (D191's amendment). Each finding was checked against the code.
+
+     | Finding | Verdict |
+     |---|---|
+     | The ids are dropped in the kinds, not the route; the service's sentence need not name them | Taken: the history above says so, and the Apply's word adds the ids its sentence lacks (`HelpAskProposals.Named`) |
+     | A take alone does not move a go card's sentence (`HelpGoProposals.cs:187`) | Taken as read on a checkout before ASKDISMISS1, which adds *taken*; the go card section names that as the cause |
+     | Keeping after the card settles leaves a gap; concurrent keeps of one conversation; duplicates | Taken: kept before the settle, under a lock, once per proposal; the crash window is said |
+     | An older build's delete leaves the file | Taken: said, as `compatible-builds` asks |
+     | The agent reads no `from` mark; a text-only door keeps only the words | Taken: the words start `Daoris:` |
+     | *At once* is not true of a turn that is running | Taken: *at its next step or as its next turn* |
+     | A handed transcript labels every user passage *The person* (`HelpConversations.cs:388`) | Partly: the words carry `Daoris:`; the label was so for these lines before, and is left |
+     | A Daoris word before the person's first words would hide a conversation from the history (`SessionEventLog.cs:158`) | Not taken: a proposal needs an agent's turn, which needs the person's first words |
+     | Daoris's word waiting shows in the person's queue, is editable, and a stop hands it to their box | Taken: `ChatMessage.Theirs` leaves it out of all three |
+     | A Tell to a conversation nothing listens to is lost; two `HELP_PROPOSALS` reads at once can tell one refusal twice | Not taken: both were so before; the list keeps the entry. The refusal race is named for the steward |
+     | The pull fallback where nothing is pushed | Taken: said, and read only where something was published |
+     | Unknown and absent apart; a gone record opens nothing; *another machine* only where both are known | Taken, each held by `published.test.ts` and `PublishedList.test.tsx` |
+     | Redrawing go cards is unrelated; it must not hear every cache update, and go names sessions too | Kept, as the dispatch named the go card's refusal; narrowed to a mark of the three standings read only while pushed |
+     | Name the key's wiring into the hub, the `StatePublisherTests` row, no `DECLARED`, the README | Taken: each is named above and built |
+     | *None waits on the person* is false: a held done, a go-ahead asked | Taken: counted first in open's ink |
+     | *No quest yet* for a closed ask; counts need nouns; 会话：{state} | Taken |
+
+## 10. Not chosen
+
+- **Running `daoris` commands in the room.** The installed application does not carry the CLI, and
+  a helper that ran commands would be a second door with its own approval problem (PERM2's answer:
+  it proposes).
+- **A model call of Daoris's own** for help. D24: the deployment chooses a model, and a session is how
+  Daoris uses one.

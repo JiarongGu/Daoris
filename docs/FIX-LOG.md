@@ -5,6 +5,90 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - A goal step's record failed the role census, and the seeded role table had no `step`
+
+- **Symptom:** `RoleCensusTests` and `StartPlanTests` threw on `StartPlan.RoleOf("step")`: no work of that name.
+- **Root cause:** the step's session became a work code (f6db00195c) and then a session held as the build role (c7f08b01be); neither the
+  seeded role table nor the census learned it, so the census would refuse every step's record as a build role not taking `step`.
+- **Fix:** `step` walks Build's seeded role, and the census admits a role taking `build` on a record whose marks read `step`, as it
+  admits design on build.
+- **Verification:** both classes pass; `step` is in the start plan's mapping assertion.
+
+## 2026-11-12 - A git that had exited held its repository stalled, so a tree's next background git was refused
+
+- **Symptom:** `TreeSharesTests` and `TreePoolSharesGitTests` failed alone, each on "git is stalled in .git: a git there outlived its
+  kill" from a status, `ls-files`, `ls-tree` or `worktree` asked just after another git in the same repository.
+- **Root cause:** since a place opens its process handle at bind (GITREV3f, c16690d256), it read its process as exited only once its own
+  `WaitForExitAsync` task had completed on the pool; a run returning at its git's exit found the task still pending, counted the git
+  apart and marked the repository stalled until the continuation ran. GITREV3i (f88e58efa6) made that refusal git's failure, so the
+  window became a red instead of a quiet retry.
+- **Fix:** `GitPlace` reads the handle's `HasExited` beside the wait's completion; the wait still disposes the handle at the exit.
+- **Verification:** `GitPlaceExitTests` (red first: round 0 read an exited process as running), the two tree-share classes alone, the
+  scheduler's and the lifetimes census pass.
+
+## 2026-11-12 - Structure and census gates red on main: upward names, a kind chosen by name, a wait no reader answers
+
+- **Symptom:** the driver's structure gate found `Events/RunOutcomeNotices.cs` and `RunOutcomesLook.cs` naming Workflows and Work orders
+  types, `Plugins/PluginToolsServer.cs` naming `StepAnswer`, `Workplace/TidyKeeping.cs` naming `PluginOutputKeeping` and
+  `Roles/SupervisorLandingView.cs` naming `ReviewRecords`; the dispatch census found `RunNodeWords` choosing by `NodeKinds.Review`;
+  `LoopGroundsTests` asked the `help` wait the grounds no longer read.
+- **Root cause:** the run outcomes (4b18416098) were placed under Events; the agent-performed step (201d532cb6) kept its answer file under
+  Workflows; the plugin output prune (115a84e827) was built by the tidy itself; the supervisor card's work kind (b0955d4903) was read in
+  the roles; the Accept bound to its review (d1a92856c9) checked the kind the kit had already matched; the proposal box's removal
+  (b1b82c4583) dropped the `help` wait's reader and left it in `LoopGround.Waits`.
+- **Fix:** the outcomes live in `Workflows/Kinds/Review/`; `StepAnswer` and `StepAgentAsk` are the plugin wire's, under `Plugins/`, a
+  codeless failure settling at the performer's default; the prune is the tidy's `IOutputKeeping` port, handed by the loop's watch;
+  `LandingWork` reads an Accept's kind in the workflows; `RunNodeWords` trusts the kit's match; the `help` wait leaves the list.
+- **Verification:** the structure tests, the dispatch census, the supervisor and tools server classes, and `LoopGroundsTests` pass.
+
+## 2026-11-12 - Three gates red on main: an upward edge, an unclassed route, and two pipe tests whose card was refused at the ask
+
+- **Symptom:** the driver's structure gate found `Agents/SessionServers.cs` naming two Plugins types; `WindowCensusTests` found `PLUGIN_COMMAND`
+  neither held, told by event nor owed; `InstancePipeTests.A_route_classed_by_its_payload_runs_only_in_its_open_form` and
+  `PipeConfirmTests.A_press_whose_ground_moved_while_it_waited` (`plan`) timed out waiting on the Confirm queue.
+- **Root cause:** the tools server's hand-off (PLUGINEXT1 d, 4621545b7c) put `PluginToolsAt` and `PluginToolsHand` in the signature and body of a
+  lower subdomain's file; `PLUGIN_COMMAND` (9976a6d577) declared no change, so it counted as a read; since each press's card became a view
+  judged at the ask (02d710f4fb), a press whose plugin or workspace the stand-in machine did not hold was refused before it was queued.
+- **Fix:** `SessionServers` takes the entry and the loop builds it with `PluginToolsHand.OfQuest`; `PLUGIN_COMMAND` publishes the plugins slice;
+  the two tests give the stand-in the installed plugin with its source and the workspace.
+- **Verification:** the structure, census and the two pipe tests pass.
+
+## 2026-11-12 - The window never showed the terminal's tier or its record, and the terminal grouped a left-taken quest as a word
+
+- **Symptom:** Settings' terminal row and Notifications' standing read no tier and no record of who changed it on a window's load;
+  `DriverStateSliceTests` named `terminal` and `terminalActs` as classed in neither list. The terminal's `notices` grouped an
+  `unclosed` row (a quest its finished session left taken) under *a word*, where the page holds it under *holding*.
+- **Root cause:** the tier (48021cab4f) and its record (d23c75469a) were added to `STATE`'s answer and not to the driver slice's
+  allow-list, so they were never pushed, and the window reads the driver's state from the push alone. The page's `unclosed` group
+  (336d8d1a18) was not added to `NoticesRead.KindGroups`, the terminal's twin of the page's table.
+- **Fix:** both fields are pushed in the `choices` partition; `unclosed` is `holding` in the terminal's table.
+- **Verification:** `DriverStateSliceTests` and `NotificationsReadTests.Each_kind_s_group_is_the_page_s` pass.
+
+## 2026-11-12 - The CLI's and the service's home tables had no row for a plugin's private storage
+
+- **Symptom:** `home.test.ts` *the driver's and the service's tables are this one, cell for cell* failed on a `plugin-private` row only the
+  driver's table held.
+- **Root cause:** the plugin's private storage (`profiles/plugins`, 62aafd16ba) was added to the driver's `DaorisHome` alone; the
+  three tables are twins held equal cell for cell, so the CLI's and the service's did not know the entry.
+- **Fix:** the row is in the CLI's `home.ts` and the service's `DaorisHome.cs`, in the same place.
+- **Verification:** `home.test.ts` passes, 17 of 17.
+
+## 2026-11-11 - The tool-tests gate waited two and a half hours on one queue case whose bound did not end its tree
+
+- **Symptom:** in a full CI the merge-queue case *an invocation with no verdict is ended at its bound* ran from 09:03 to 11:38 UTC; its
+  `merge-branch b1 --message` child and that child's queue runner were still alive, and a manual `taskkill /T /F` ended both at once.
+- **Root cause:** the case's bounded invocation ended the child's tree with `endTree`, which ran `taskkill /T /F` with its output
+  ignored and its status unread, and then waited for the child's `close`, which comes only once every process holding its output
+  is gone. When taskkill did not end the tree the promise never resolved, and `node --test` bounds no test by default, so the gate
+  waited without end. The unbounded wait came with the case's helper (240d407a03); why taskkill leaves this tree
+  standing is not yet found: both TOOLTESTHANG1 cases reproduce it alone on a quiet machine.
+- **Fix:** `endTree` reads taskkill's status, asks again twice a second apart, and answers whether the root is gone; the tool tests'
+  bounded invocation (`tool-test/support/bounded-node.ts`) answers a tree that outlives the end after the patience, naming the leak and
+  leaving the child for the case's cleanup; the gate's script bounds each case at thirty minutes and exits once its cases are done.
+- **Verification:** `bounded-node.test.ts` holds a child whose grandchild keeps its output under a refused end, answered after the
+  grace with the leak named, and one the end reaches whole answered at its close; `step-trees.test.ts` holds the statuses read and the
+  tries. The two TOOLTESTHANG1 queue cases now fail in under three minutes naming the leak, where they hung.
+
 ## 2026-11-11 - Hundreds of runs never ended once their quest closed, and every look paid for them
 
 - **Symptom:** an installed copy held 586 open graph runs, every one on a done quest: most stood at `content.holds` ready with their
@@ -2046,7 +2130,7 @@ repository.
   when its words were held for its own account's weekly reset, and this fix reaches only a record whose quest is open or taken: a closed
   quest's session kept its wait, as the fix says. That case is LIMITSWITCH2's, built the same day (D137's LIMITSWITCH2 note), within
   D137's LIMITSWITCH1 note by the steward's reading of *an ended record* (D137's note amending point 4), and FOUNDATION1's row 1a-iii
-  (`docs/2026-10-25-foundation-design.md` §10).
+  (`docs/archive/2026-10-25-foundation-design.md` §10).
 
 ## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
 
@@ -2203,7 +2287,7 @@ repository.
   where the conversation's was), then green with the `WorkflowRunTests`, `WorkflowPortsTests`, `WorkflowRunCommandTests`,
   `WorkflowRunSaidTwinTests` and `TraceTests` classes (288), the driver's fast half (14,411) and `DriverModuleWorkflowRunTests` (17).
 The nine entries headed *(AGENTERRORS1, Codex's C4-n)* are the code defects Codex's owed read of D210's accepted text found in rows
-1a and 1a2 on main, before any installed build carried them (`docs/2026-10-24-agent-errors-reads.md`, *Codex, the accepted text*;
+1a and 1a2 on main, before any installed build carried them (`docs/archive/2026-10-24-agent-errors-reads.md`, *Codex, the accepted text*;
 the design's §17). Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; each test was seen red against the rows as
 committed, then green.
 
@@ -2918,7 +3002,7 @@ committed, then green.
 ## 2026-10-23 - Three model readers built on guessed shapes, found by measuring the doors (MODELROLE1a)
 
 - **Symptom:** none reported. Measuring what each door accepts for model and effort
-  (`docs/2026-10-23-model-effort-doors-evidence.md`) produced the first real frames for three shapes the code had guessed.
+  (`docs/archive/2026-10-23-model-effort-doors-evidence.md`) produced the first real frames for three shapes the code had guessed.
   (1) `claude-agent-acp` refuses a `set_config_option` as `Internal error` and puts its sentence in `data.details`. A refused model
   in the composer said only *Internal error*. (2) Both protocol agents nest each model's counts in `quota.model_usage[]` under
   `token_count`, the cache read named `cachedInputTokens`. The split was read at the entry's top level, found nothing, and every
@@ -7154,7 +7238,7 @@ committed, then green.
 - **Root cause:** `WorkflowKeepCommand` ignored the nullable binding writer's result.
 - **Fix:** require a saved binding; a refused save retains the original hold explanation.
 - **Verify:** both real-Git race regressions and the normal Keep/automatic-landing acceptance case;
-  final reached-gate receipt in `docs/2026-10-10-code-and-docs-review.md`.
+  final reached-gate receipt in `docs/archive/2026-10-10-code-and-docs-review.md`.
 - **Commit:** `423cc132`.
 
 ### Workflows: a named run was drawn from Current (WORKFLOW1c6)
@@ -7189,7 +7273,7 @@ committed, then green.
   a real backlog row still contributes to its word count.
 - **Verify:** four failing-first defect cases; backtick, tilde and unclosed longer fences, repeated
   live entries and nested example cost. Focused tests pass; final baseline receipt:
-  `docs/2026-10-10-code-and-docs-review.md`.
+  `docs/archive/2026-10-10-code-and-docs-review.md`.
 - **Commit:** `c0527f64`.
 
 ### Documentation: a freshness declaration passed after its source disappeared (DOCSYS2)
@@ -7202,7 +7286,7 @@ committed, then green.
   normalization; require source paths for every tracked guide; resolve Markdown section links to files.
 - **Verify:** five failing-first regressions, all 13 audit tests passing, and a real declaration mutation
   producing exit 1 with the guide and missing source named, restored to exit 0. Final baseline receipt:
-  `docs/2026-10-10-documentation-review.md`.
+  `docs/archive/2026-10-10-documentation-review.md`.
 - **Commit:** `c17a7bfb`.
 
 ### Workflows: damaged bindings silently fell back to Current
@@ -7968,7 +8052,7 @@ repository), and all six held. D102's SQUASHTIDY1c note has the shape; the entri
   the thread, so the sighting could say only a CPU total. The suspects, unmeasured: a running session's traffic (large tool
   results serialized on the thread by the flush), a route's synchronous part, a full collection.
 - **Fix:** `tokens.css` gives `--animate-pulse` a count of three, so the live dot pulses as it turns live and settles
-  (D41's motion line, `docs/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
+  (D41's motion line, `docs/archive/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
   and writes `ui.stalled` (warn) when one waits 250 ms or more: the longest wait, how long, the route found on the thread and
   the slowest route's synchronous part, how many routes ran, the bus events and full collections meanwhile; once a minute
   while it lasts (the machine log design §4). The shell composes it beside `RefusalLog`; the form starts it on Load.
@@ -8178,7 +8262,7 @@ repository), and all six held. D102's SQUASHTIDY1c note has the shape; the entri
 ## 2026-10-07 — an evidence verdict judged twice, differently
 
 ### Service: the wire took a `spelled` the evidence door refused (REFAC3)
-- **Symptom:** read from the code by a second opinion (`docs/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
+- **Symptom:** read from the code by a second opinion (`docs/archive/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
 - **Root cause:** EVID1a wrote the verdict's field rules twice, in `QuestEvidenceVerdict.Judged` for the wire and `QuestExchange.JudgeVerdict` for the door, and only the door kept `spelled` to a `case` read. Neither checked that the spelling is the same path in another case.
 - **Fix:** `QuestEvidenceVerdict.JudgeShape`, one judge of the shape both call, returning the field at fault (`QuestVerdictFault`); coverage stays the exchange's and the replay's. D144's REFAC3 note names what is refused now.
 - **Verify:** `QuestEvidenceTests.A_verdict_is_taken_or_refused_alike_at_both_doors`: thirty-one shapes through both doors; the two disagreeing rows failed first (taken on the wire, refused at the door), and the two new `spelled` rows failed at both. Not covered: no reader writes a verdict yet (EVID1b).

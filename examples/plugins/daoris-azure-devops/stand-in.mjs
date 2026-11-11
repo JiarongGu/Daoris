@@ -25,13 +25,13 @@ const PROJECT = '/acme/Proj/_apis';
 
 /**
  * Azure DevOps' calls as its REST API answers them, admitting one token as Basic's password; else `status`, while set. A test writes
- * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`), `patch` to answer a pull request's
- * update with a refusal, and `onRead(method, path, n)` to move it on as it is read.
+ * what the platform holds (`pulls`, `builds`, `timelines`, `pipelines`, `definitions`, `releases`, `files`, `changes`), `patch` to answer a
+ * pull request's update with a refusal, and `onRead(method, path, n)` to move it on as it is read.
  */
 export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
-    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null,
+    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, files: {}, changes: [],
   };
   const { pulls, calls } = api;
   const reads = new Map();
@@ -59,7 +59,15 @@ export async function standIn() {
       Object.assign(pr, sent, sent.autoCompleteSetBy ? { autoCompleteSetBy: { id: sent.autoCompleteSetBy.id, displayName: api.me.providerDisplayName } } : {});
       return [200, pr];
     }
-    if (request.method === 'GET' && path === `${PROJECT}/build/definitions`) return [200, { value: api.pipelines.filter((each) => each.name === query('name')) }];
+    if (request.method === 'GET' && path === `${PROJECT}/build/definitions`) {
+      return [200, { value: api.pipelines.filter((each) => (query('name') !== null ? each.name === query('name') : each.repository?.id === query('repositoryId'))) }];
+    }
+    if (request.method === 'GET' && path === `${GIT}/items`) {
+      return api.files[query('path')] === undefined ? [404, { message: 'no such item' }] : [200, { path: query('path'), content: api.files[query('path')] }];
+    }
+    if (request.method === 'GET' && /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/[0-9a-f]+\/changes$/.test(path)) {
+      return [200, { changeCounts: { edit: api.changes.length }, changes: api.changes.map((each) => ({ item: { path: each } })) }];
+    }
     if (request.method === 'GET' && path === `${PROJECT}/build/builds`) {
       const wanted = query('definitions')?.split(',').map(Number);
       return [200, { value: api.builds.filter((build) => build.sourceBranch === query('branchName') && build.repository.id === query('repositoryId')
@@ -82,7 +90,7 @@ export async function standIn() {
       return found ? [200, found] : [404, { message: 'no such release definition' }];
     }
     if (request.method === 'GET' && path === `${PROJECT}/release/releases`) {
-      return [200, { value: api.releases.filter((each) => each.releaseDefinition.id === Number(query('definitionId'))
+      return [200, { value: api.releases.filter((each) => (query('definitionId') === null || each.releaseDefinition.id === Number(query('definitionId')))
         && each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
           && artifact.definitionReference.version.id === query('artifactVersionId'))) }];
     }

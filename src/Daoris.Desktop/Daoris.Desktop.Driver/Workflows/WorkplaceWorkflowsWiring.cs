@@ -52,7 +52,7 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
         var kept = word.Done || word.Refused == RunNodeWords.Worded;
         // A review that does not wait for the word yet (not active) is no refusal: the word is given again when it does.
         var said = kept || word.Refused == NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);
-        return new ReviewWord(true, kept, RunUnits.IdOf(run), review.Id, said) { Moved = word.Refused == ReviewAccepts.Moved ? word.Detail ?? "" : null };
+        return new ReviewWord(true, kept, RunUnits.IdOf(run), review.Id, said) { Moved = word.Refused == ReviewMoved.Word ? word.Detail ?? "" : null };
     }
 
     public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)

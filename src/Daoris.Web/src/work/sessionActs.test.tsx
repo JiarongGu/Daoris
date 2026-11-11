@@ -251,7 +251,7 @@ describe('the acts on a session', () => {
     invoke.mockImplementation(async () => ({ scope: 'ask', id: 'a1b2c3', did: 'resumed', released: [], holds: [] }));
     const { result, notify } = acts();
     const grouping = {
-      session: 's1a2b3c4', group: 'review' as const, shown: 'stopped', archived: false, teammate: false,
+      session: 's1a2b3c4', group: 'needs-you' as const, reason: 'review', shown: 'stopped', archived: false, teammate: false,
       pausedBy: { scope: 'ask' as const, id: 'a1b2c3' },
     };
     act(() => result.current.run('resumeAsk', { session: session({ state: 'stopped' }), grouping }));

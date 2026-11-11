@@ -15,8 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// Each test has its own scratch home under the checkout's <c>_fixtures</c>, handed by path: no test sets <c>DAORIS_HOME</c>, starts a
 /// window, a console or an agent. The acts run over a stand-in world (<see cref="World"/>), so no process is stopped and no service is
-/// asked; the pipe is served in this process, as <c>OwnerSetTests</c>' is, and the judge's build offers the steward, which only a test's
-/// judge does in this build.
+/// asked; the pipe is served in this process, as <c>OwnerSetTests</c>' is.
 /// </remarks>
 public sealed class RoleActTests : IDisposable
 {
@@ -53,7 +52,6 @@ public sealed class RoleActTests : IDisposable
         { "delete", """{"quest":"q1"}""" },
         { "updatenow", "{}" },
         { "updatecancel", "{}" },
-        { "land", """{"id":"s1"}""" },
         { "clean", """{"id":"s1"}""" },
         { "handover", """{"id":"s1","agent":"codex"}""" },
         { "handover", """{"id":"s1","agent":"codex","account":"work"}""" },
@@ -67,7 +65,7 @@ public sealed class RoleActTests : IDisposable
 
         Assert.Equal(
             ["drive", "undrive", "hold", "resume", "stop", "finish", "retry", "workflow",
-             "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"],
+             "pause", "unpause", "done", "delete", "clean", "updatenow", "updatecancel", "handover"],
             StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);
@@ -107,7 +105,6 @@ public sealed class RoleActTests : IDisposable
     [InlineData("setup")]
     [InlineData("SET_CAP")]
     [InlineData("SESSION_GO_AHEAD")]
-    [InlineData("LAND_SESSION_TREE")]
     [InlineData("DISCARD_SESSION_TREE")]
     [InlineData("SESSION_INPUT")]
     public void Every_act_of_the_owner_s_is_refused_not_role(string act)

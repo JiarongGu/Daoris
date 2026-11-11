@@ -62,7 +62,7 @@ const WIDENING: RuleProposal = {
 };
 
 const review = (session: string): SessionGrouping => ({
-  session, group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
+  session, group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
 });
 
 // The rows as the shell pushes them: each as `NeedsAPerson` judges it from the facts above.
@@ -103,7 +103,7 @@ const waitRow = (over: Partial<PushedAttention> = {}) => row('account-wait', 'wa
 });
 
 function respond(url: string): Response {
-  // The list with the ended ones holds them all, which names the rows.
+  // The ended ones too: they name the rows.
   if (url.startsWith('/api/sessions')) return Response.json(url.includes('includeClosed=true') ? [...ENDED, INTAKE] : []);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   return Response.json([]);
@@ -163,7 +163,6 @@ function start(rows: PushedAttention[], props: {
   );
 }
 
-/** What the band asked the bridge. */
 const asked = () => asksOf(invoke);
 
 describe('What needs you on a machine', () => {

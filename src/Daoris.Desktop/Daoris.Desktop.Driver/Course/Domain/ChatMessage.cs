@@ -29,9 +29,12 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// <summary>
     /// When the sender asks it to reach a working agent: urgent unless said (the person's default; another session's claim
     /// at its next step). The door gives what it
-    /// can and says so; no level stops a turn.
+    /// can and says so; no level stops a turn, only the person's own press (<see cref="StoppedFor"/>).
     /// </summary>
     public MessageLevel Level { get; init; } = MessageLevel.Urgent;
+
+    /// <summary>The person's *Send now* stopped the turn before these words, the next turn's first (<see cref="TurnCutIn"/>).</summary>
+    public bool StoppedFor { get; init; }
 
     /// <summary>
     /// The level the record keeps beside the person's words while they wait: spelled for the person's own, null for
@@ -75,6 +78,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// takes it off the record by its id, after every take-off before it. Null for a word kept nowhere.
     /// </summary>
     internal Action? Went { get; init; }
+
+    /// <summary>Told once the door wrote this message, so what rode ahead of the person's words (a second check's flags) is kept told.</summary>
+    internal Action? Told { get; init; }
 
     /// <summary>Gives back what this message took once, where it is withdrawn and handed back to the person.</summary>
     internal Action? Untaken { get; init; }

@@ -11,9 +11,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleEntriesTests
 {
-    private static EntryPart Part(string session) => new(session, "0fda18", "completed", SessionGroup.Review, PartBegan.Opened);
+    private static EntryPart Part(string session) => new(session, "0fda18", "completed", SessionGroup.Done, PartBegan.Opened);
 
-    private static SessionGrouping Row(string session, bool lands) => new(session, SessionGroup.Review, "completed")
+    private static SessionGrouping Row(string session, bool lands) => new(session, SessionGroup.Done, "completed")
     {
         Lands = lands ? new LandOffer($"daoris/s-{session}", $"s-{session}", 1, 0) : null,
     };
@@ -21,7 +21,7 @@ public sealed class DriverModuleEntriesTests
     [Fact]
     public void An_entrys_accept_takes_the_parts_whose_tree_offers_work_in_the_entrys_order()
     {
-        var entry = new SessionEntry("ask:a3/engine", "ask:a3", "engine", SessionGroup.Review, "s3", [Part("s1"), Part("s2"), Part("s3")]);
+        var entry = new SessionEntry("ask:a3/engine", "ask:a3", "engine", SessionGroup.Done, "s3", [Part("s1"), Part("s2"), Part("s3")]);
 
         var parts = EntriesRoutes.PartsOf(entry, [Row("s3", lands: true), Row("s2", lands: false), Row("s1", lands: true)]);
 
@@ -31,7 +31,7 @@ public sealed class DriverModuleEntriesTests
     [Fact]
     public void An_asks_accept_takes_its_own_entries_one_per_repository_and_never_its_intake()
     {
-        SessionEntry Entry(string key) => new(key, key.Split('/')[0], key.Split('/')[1], SessionGroup.Review, "s1", [Part("s1")]);
+        SessionEntry Entry(string key) => new(key, key.Split('/')[0], key.Split('/')[1], SessionGroup.Done, "s1", [Part("s1")]);
 
         var entries = EntriesRoutes.EntriesOf("a3", [Entry("ask:a3/web"), Entry("ask:a4/engine"), Entry("ask:a3/intake"), Entry("ask:a3/engine")]);
 
@@ -67,6 +67,21 @@ public sealed class DriverModuleEntriesTests
         Assert.Equal("feature/x", parts[1].GetProperty("target").GetString());
     }
 
+    /// <summary>Each part names the revision of the review record its run stands on, which the entry's Accept sends back as <c>revisions</c>.</summary>
+    [Fact]
+    public void Each_part_names_the_review_revision_its_run_stands_on()
+    {
+        var plan = new EntryPlan(LandingForm.Branch, "feature/x", [
+            new EntryPartPlan("s1", new LandingPlan(LandingForm.Branch, "feature/x", "repository")) { Run = "q1" },
+            new EntryPartPlan("s2", null) { SameTreeAs = "s1" },
+        ]);
+
+        var parts = Read(EntriesRoutes.Plan("ask:a3/engine", "engine", plan, revisionOf: run => run == "q1" ? "feedc0de" : null))
+            .GetProperty("parts").EnumerateArray().ToList();
+
+        Assert.Equal(("feedc0de", JsonValueKind.Null), (parts[0].GetProperty("revision").GetString(), parts[1].GetProperty("revision").ValueKind));
+    }
+
     [Fact]
     public void The_press_goes_on_the_wire_with_each_parts_outcome_and_its_own_words()
     {
@@ -94,8 +109,8 @@ public sealed class DriverModuleEntriesTests
         new(id, "engine", "completed") { Entry = entry, Created = new DateTimeOffset(2026, 10, 16, 9, minute, 0, TimeSpan.Zero) };
 
     /// <summary>
-    /// A part's own Accept is its entry's for that part alone, so <c>LANDING</c> and
-    /// <c>LAND_SESSION_TREE</c> name its landing for its run's first part in the entry, oldest by its record's <c>created</c> then id.
+    /// A part's own Accept is its entry's for that part alone, so <c>LANDING</c>
+    /// names its landing for its run's first part in the entry, oldest by its record's <c>created</c> then id.
     /// </summary>
     [Fact]
     public async Task A_parts_own_accept_is_named_for_its_entrys_first_part()

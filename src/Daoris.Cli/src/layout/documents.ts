@@ -1,5 +1,5 @@
 // The development documents a repository declares: roles bound to paths
-// (`docs/2026-10-01-development-documents-design.md` §2.7–§2.8).
+// (`docs/archive/2026-10-01-development-documents-design.md` §2.7–§2.8).
 //
 // The canon names its records by their job (the backlog, the decisions, the fix log) and never by their
 // path, which is right for doctrine and costs every session in every adopter a search. A repository

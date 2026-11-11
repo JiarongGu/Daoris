@@ -17,8 +17,6 @@ export type StandingConfirmationNow = {
   stewardActs: StewardActNow[];
   /** The steward's desk this run, newest first, from Daoris's memory: what the line shows under its acts. */
   stewardDesk: DeskRequestNow[];
-  /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
-  stewardLands: StewardLandNow[];
   /** What Ask Daoris pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
   helpPresses: HelpPressNow[];
 };
@@ -57,23 +55,9 @@ export function helpReverse(press: HelpPressNow): HelpReverse | null {
 }
 
 /**
- * A `land` of the steward's that a supervisor allowed and that waits its window, as `STATE`'s `standingConfirmation.stewardLands` says
- * it: the request's id, what it acts on and when it lands. *Overrule* names the request and its session.
- */
-export type StewardLandNow = {
-  ask: string;
-  act: string;
-  repository: string | null;
-  quest: string | null;
-  session: string | null;
-  landsAt: string;
-};
-
-/**
  * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it:
  * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it is
- * filed; whether it still waits, is answered by the steward's act, is declined by the steward with a reason, or is left open when
- * Daoris stops (the desk is kept across a restart, and nothing answers a request from before it). Never the caller.
+ * filed; whether it still waits, is answered, is declined with a reason, or is left open when Daoris stops. Never the caller.
  */
 export type DeskRequestNow = {
   id: string;
@@ -105,7 +89,7 @@ export type StewardActNow = {
 };
 
 /** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */
-export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
+export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'clean', 'handover'] as const;
 
 /** Whether the page has words for this act. */
 export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);

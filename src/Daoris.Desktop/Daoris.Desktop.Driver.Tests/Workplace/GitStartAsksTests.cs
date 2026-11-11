@@ -22,4 +22,22 @@ public sealed class GitStartAsksTests
         Assert.Null(GitStartAsks.Made(Checkout, ["worktree", "add", "--lock"]));
         Assert.Null(GitStartAsks.Made(Checkout, ["status"]));
     }
+
+    private static string? SharedKey(params string[] arguments)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = Checkout };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        return GitStartAsks.For(info, arguments, GitRunner.Whole, TimeSpan.FromSeconds(30), shares: true).Start;
+    }
+
+    [Fact]
+    public void An_identical_read_may_share_a_queued_start_and_no_write_may()
+    {
+        Assert.NotNull(SharedKey("rev-parse", "HEAD"));
+        Assert.NotNull(SharedKey("status", "--porcelain"));
+
+        Assert.Null(SharedKey("worktree", "add", "-b", "x", "trees/x", "main"));
+        Assert.Null(SharedKey("config", "--add", "k", "v"));
+        Assert.Null(SharedKey("commit", "-m", "x"));
+    }
 }

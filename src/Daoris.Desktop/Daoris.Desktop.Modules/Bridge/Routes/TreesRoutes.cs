@@ -5,20 +5,17 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's
-/// diff, the files a composer offers, a file's preview, discard, landing
-/// and the second opinion's gate.
+/// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's diff, the files a composer
+/// offers, a file's preview, discard, landing and the second opinion's gate.
 /// </summary>
-public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses presses)
+public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 {
     private readonly DriverLoop _loop = loop;
     private readonly ReadLeaves _reads = reads;
-    private readonly LandPresses _presses = presses;
 
     /// <summary>
-    /// What a landing changes: the session, every plan and gate (the line it merged into is what each
-    /// session's plan judges against, so `landing` is never only its own), its review, the clean-up's
-    /// list, and which repositories hold Daoris's branches.
+    /// What a landing changes: the session, every plan and gate (the line it merged into is what each session's plan judges
+    /// against), its review, the clean-up's list, and which repositories hold Daoris's branches.
     /// </summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
@@ -129,7 +126,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// <b>Unlisted is INFORMATION</b>, in the review's class: a record from another machine names no
     /// tree here, and a tree that is gone or not a repository of its own has nothing git will answer
     /// for. One code for both, because the person's next move is the same — type the path, which both
-    /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
+    /// doors expand as typed (`docs/archive/2026-09-25-message-content-evidence.md`).
     /// </remarks>
     [DriverRoute("SESSION_FILES", PipeClass.Open)]
     private async Task<object?> FilesAsync(SessionFiles press, CancellationToken cancellationToken)
@@ -191,8 +188,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
 
     // Discarding a reviewed session's tree: the PERSON's act, since nothing
     // deletes itself, so its own route rather than anything the diff route could do as a side effect.
-    // Its sibling, the merge alone, is retired: the work lands through `LAND_SESSION_TREE`,
-    // which merges where the repository's rule says merge.
     /// <summary>
     /// Discard a session's tree.
     /// </summary>
@@ -254,52 +249,16 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
 
     private readonly TreesLandDesk _land = new(loop);
 
-    // How a reviewed session's work lands: what a press WOULD do, said before it —
-    // merge into the line, or the branch the rule names for this session — and the press, which
-    // applies the repository's rule. It is the one door that lands a session's work.
     /// <summary>
-    /// A reviewed session's landing: the plan before the press, or the press itself.
+    /// A reviewed session's landing plan, and the review record its Accept is pressed on.
     /// </summary>
     /// <remarks>
     /// The pattern is expanded from the session's quest and its title, or for a conversation from the
     /// session and what the person first said — this machine's own record, never the session record's.
-    /// A refusal is an answer, as the merge door's are.
     /// </remarks>
     [DriverRoute("LANDING", PipeClass.Open)]
     private Task<object?> LandingAsync(LandingRead read, CancellationToken cancellationToken) =>
-        _land.LandAsync(new TreesLandDesk.LandAsk(read.Id, read.Branch, Press: false, read.Said), cancellationToken);
-
-    [DriverRoute("LAND_SESSION_TREE", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("LAND_SESSION_TREE", Session = "id")]
-    [GroundSession("LAND_SESSION_TREE", "id")]
-    [GroundHead("LAND_SESSION_TREE", "id")]
-    [GroundRead("LAND_SESSION_TREE", nameof(PipeReads.TreeLanding))]
-    [Says("LAND_SESSION_TREE", "id:session")]
-    [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
-    private Task<object?> LandSessionTreeAsync(LandSessionTree press, CancellationToken cancellationToken) =>
-        _presses.PressAsync(press.Id, Lands, token =>
-            _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), token), cancellationToken);
-
-    /// <summary>
-    /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch, the gate's parts, what it left
-    /// out or the conflict that refused it, and the verb's words.
-    /// </summary>
-    public static object Pressed(
-        string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null) => new
-    {
-        Session = id, Done = landed.Landed, landed.Message, landed.Branch,
-        Review = Waits(gate.Review),
-        Opinion = Opinion(gate.Opinion),
-        Workflow = WorkflowWaits(gate.WorkflowPart()),
-        // what it left out, and the conflict that refused it with the words the review offers to say to the session.
-        LeftOut = LeftOut(landed.LeftOut),
-        Conflict = Conflict(landed.Conflict),
-        // what `trees land` prints, the plugin's lines first, and its exit code.
-        Said = said.ToWire(),
-        Followed = followed,
-        // what refused a chat run's press, which the page words in the reader's language; null for every other.
-        Press = press,
-    };
+        _land.PlanAsync(read.Id, read.Branch, read.Said, cancellationToken);
 
     /// <summary>
     /// <c>LANDING</c>'s answer: what a press would do, said before it, beside what holds it and how many paths the tree holds
@@ -311,8 +270,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// </param>
     public static object Planned(
         string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null,
-        LandingDelivery? delivery = null) => new
+        LandingDelivery? delivery = null, ReviewDrawn? accept = null) => new
     {
+        // The review the window's Accept is pressed on, the record's attempt and revision it names; null where the run holds no review.
+        Accept = accept,
         // the session's newest delivery, where one is written: who authorized it and when, the phase
         // an unresolved one stands at, and when it is delivered; each null where there is none.
         Authorized = delivery is null ? null : new { delivery.Record.Authorization.Authority, delivery.Record.At },

@@ -42,7 +42,7 @@ internal static class DriverStateAnswer
             // The person's standing confirmation as This Daoris's row and the line in
             // Notifications read it: offered, on, the presses granted and built, since, a record not honoured, its count this run, and
             // the holds a terminal made under it. None where this shell serves no pipe.
-            StandingConfirmation = loop.Pipe is { } pipe ? pipe.StandingConfirmation.Now() with { StewardLands = pipe.StewardAllows.Lands() } : null,
+            StandingConfirmation = loop.Pipe?.StandingConfirmation.Now(),
             // The repositories whose workflow sets their sessions apart, each in a tree of its own: read from each one's `isolate` step.
             Trees = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } known
                 ? known.Snapshot.Repositories.Where(each => PlaceIsolates.Of(loop.Home, config, each.Repository, each.Workspace) is not null)

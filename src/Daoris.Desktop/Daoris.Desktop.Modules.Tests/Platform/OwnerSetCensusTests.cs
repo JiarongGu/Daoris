@@ -34,6 +34,8 @@ public sealed class OwnerSetCensusTests
         ["GIT_ANSWER"] = OwnerNone.ActsOnNothing, // a git go-ahead answered by its id, a file its door reads; its session goes on unchanged
         ["PLUGIN_OPEN_FOLDER"] = OwnerNone.ActsOnNothing, // a plugin's folder opened in the file manager
         ["PLUGIN_ACTION"] = OwnerNone.MachineSetting, // a plugin turned on or off, by the plugin's id
+        ["PLUGIN_COMMAND"] = OwnerNone.ActsOnNothing, // one round of a plugin's own command, in the plugin's process: nothing of Daoris's changes
+        ["PLUGIN_SWITCH"] = OwnerNone.MachineSetting, // one interface or point of a plugin switched at one place, by the plugin's id
         ["PLUGIN_UPDATE"] = OwnerNone.MachineSetting, // a plugin replaced, by its id
         ["PLUGIN_NEW"] = OwnerNone.MachineSetting, // a plugin made in a folder, by its id
         ["PLUGIN_TRY"] = OwnerNone.MachineSetting, // a plugin tried from a folder, by its id
@@ -42,6 +44,7 @@ public sealed class OwnerSetCensusTests
         ["WORKFLOW_SAVE"] = OwnerNone.MachineSetting, // a version of one of the machine's saved workflows, by its id
         ["GIT_IDENTITY"] = OwnerNone.MachineSetting, // one of the machine's git identities; a test names only the remote it reaches
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
+        ["SET_TERMINAL"] = OwnerNone.MachineSetting, // the terminal's tier; the `session` it names is the one that changed it, kept in the log
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest
         ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names

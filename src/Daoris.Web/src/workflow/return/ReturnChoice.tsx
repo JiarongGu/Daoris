@@ -69,7 +69,7 @@ export function ReturnChoice({ run, step, onWord, refusal }: {
             {t(`workflow.run.node.${act}`)}
           </Button>
         ))}
-      {refused[path] && !chosen[path] && <span className="basis-full text-small text-danger">{refused[path]}</span>}
+      {refused[path] && !chosen[path] && <span className="basis-full text-small text-ink-danger">{refused[path]}</span>}
     </li>
   );
   const changed = waitingPaths(step);

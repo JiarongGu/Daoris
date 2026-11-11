@@ -172,6 +172,24 @@ public sealed class WorkWireTests
         Assert.Null(WorkWire.ReadStep(Parse("""{"step":"find","state":"reached","outcome":"Not A Name","at":"2026-10-17T09:00:00Z","id":"e1","invocation":"i1"}"""), out _));
     }
 
+    [Fact]
+    public void A_failures_needs_round_trips_in_a_completion_and_a_reconcile_and_is_read_on_a_failure_alone()
+    {
+        var failed = new WorkOutcome(WorkStates.Failed, Code: "signed-out") { Needs = "login" };
+        var frame = WorkWire.Step(new WorkStepFrame("deploy", failed, DateTimeOffset.UtcNow, "e1", Invocation: "i1"));
+        Assert.Equal("login", WorkWire.ReadStep(Parse(frame).GetProperty("params"), out _)!.Outcome.Needs);
+
+        var answer = WorkWire.ReconcileAnswer(new WorkReconcileAnswer(ReconcileStates.Failed, failed));
+        Assert.Equal("login", WorkWire.ReadReconcileAnswer(Parse(answer))!.Outcome!.Needs);
+
+        var reached = """{"step":"deploy","state":"reached","needs":"login","at":"2026-10-17T09:00:00Z","id":"e1","invocation":"i1"}""";
+        Assert.Null(WorkWire.ReadStep(Parse(reached), out var field));
+        Assert.Equal("needs", field);
+        var shaped = """{"step":"deploy","state":"failed","code":"x","needs":"Log In","at":"2026-10-17T09:00:00Z","id":"e1","invocation":"i1"}""";
+        Assert.Null(WorkWire.ReadStep(Parse(shaped), out field));
+        Assert.Equal("needs", field);
+    }
+
     [Theory]
     [MemberData(nameof(ReconcileAnswers))]
     public void A_reconcile_call_and_each_answer_round_trip(string state, string? outcome, string? code)

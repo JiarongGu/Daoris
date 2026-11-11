@@ -114,7 +114,7 @@ internal sealed class PoolTakeovers(TreePool pool, PoolSeams seams)
         }
 
         // The open never landed: the folder and the branch it made are this claim's own and go.
-        if (Directory.Exists(folder)) await TreeOpenings.UndoAsync(site.Root, folder, claim.Branch, ours: true).ConfigureAwait(false);
+        if (Directory.Exists(folder)) await TreeOpenings.UndoAsync(site.Root, folder, claim.Branch, ours: true, home: site.Home).ConfigureAwait(false);
         pool.Complete(fence, null);
         return new PoolDone(null, null, null, null);
     }

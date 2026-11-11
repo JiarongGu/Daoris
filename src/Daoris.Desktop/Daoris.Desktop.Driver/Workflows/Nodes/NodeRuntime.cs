@@ -145,6 +145,15 @@ public sealed class NodeRuntime(
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
 
+    /// <summary>What a step's session works from (<see cref="StepAsks"/>): the frame its plugin would be told for the attempt, from the runs this pass governs.</summary>
+    public Task<StepAgentAsk?> StepAskAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
+    {
+        if (_governed?.GetValueOrDefault(unit) is not { Scope: not null } governed) return Task.FromResult<StepAgentAsk?>(null);
+        var told = Telling.RunTold(governed, attempt, new PassTips((_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>()), new Dictionary<string, IReadOnlyCollection<string>>()));
+        var landing = told is { Landing: true } ? governed.Unit.Records.Landings.LastOrDefault(each => each.Tip == told.Tip) : null;
+        return StepAsks.OfAsync(unit, attempt, node, told, landing, ct);
+    }
+
     /// <summary>
     /// The landed branches whose <c>integrate</c> waits for the owner's card, each as its unit's last judgement found it, oldest
     /// landing first; a unit the last look no longer governs is none. Empty before a pass has judged one.

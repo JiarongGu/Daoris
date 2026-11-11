@@ -81,7 +81,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         {
             Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList(),
             Courses = _loop.Supervisor.CoursesOf(press.Id).Select(SupervisorCourseRow).ToList(),
-            Landings = _loop.Supervisor.LandingsOf(press.Id).Select(SupervisorLandingRow).ToList(),
+            Landings = _loop.Supervisor.LandingsOf(press.Id).Select(view => SupervisorLandingRow(view, LandingWork.Of(_loop.Home, view))).ToList(),
             Allows = _loop.Supervisor.AllowsOf(press.Id).Select(SupervisorAllowRow).ToList(),
             Counts = SessionCountsWire.Counts(facts),
             Acts = SessionCountsWire.Acts(facts),
@@ -128,7 +128,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     };
 
     /// <summary>One landing decision as the page reads it: the step and attempt, the act and where it stands, no sentence.</summary>
-    internal static object SupervisorLandingRow(SupervisorLandingView view) => new
+    internal static object SupervisorLandingRow(SupervisorLandingView view, string? work) => new
     {
         view.Id,
         Kind = SupervisorKinds.Landing,
@@ -136,6 +136,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         view.Node,
         view.Attempt,
         view.Do,
+        Work = work,
         Holder = new { view.Holder.Kind, view.Holder.Parent },
         State = SupervisorStates.Spell(view.State),
         view.Why,

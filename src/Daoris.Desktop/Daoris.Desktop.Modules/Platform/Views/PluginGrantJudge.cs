@@ -13,7 +13,7 @@ internal static class PluginGrantJudge
     {
         var named = found.Manifest.Id;
         if (found.Problem is { } problem) return PressViewed.Refused($"plugin `{named}` is not sound as it stands, so its servers reach Ask Daoris not at all: {problem}");
-        var offered = found.Manifest.Servers.Where(each => each.HandedTo(PluginServerTo.Help)).ToList();
+        var offered = PluginCommandServer.OfferedToHelp(found.Manifest);
         if (offered.Count == 0) return PressViewed.Refused($"plugin `{named}` offers Ask Daoris no server: what it serves is handed to sessions only, as its manifest declares.");
         if (offered.FirstOrDefault(each => string.Equals(each.Name, server, StringComparison.Ordinal)) is not { } declared)
         {

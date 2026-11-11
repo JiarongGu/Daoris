@@ -20,6 +20,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A session's end.
   'ended.awaits': { values: ['awaits'] },
   'ended.exit': { values: ['exit'] },
+  // A step's session: the step it performs while it works, then the step's answer.
+  'step.performs': { values: ['step', 'plugin', 'unit', 'attempt'] },
+  'step.reached': { values: ['step', 'message'] },
+  'step.failed': { values: ['step', 'code', 'message'] },
   'ended.turn-failed-taken': { values: [] },
   'ended.turn-failed-open': { values: [] },
   // Its model's provider refused its turn; a failed run, never a park.

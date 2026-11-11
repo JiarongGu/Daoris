@@ -30,6 +30,18 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return count > 1 ? t('notifications.done.lost', { count }) : t('notifications.done.lost_one');
   }
   if (notice.kind === 'newer') return t('notifications.done.newer');
+  if (notice.kind === 'outcome') {
+    // A run's step after its review: the step by its kind's own words, the run by its id.
+    const step = notice.route ? t(`workflow.step.${notice.route}`, { defaultValue: notice.act ?? '' }) : notice.act ?? '';
+    const words = { step, run: notice.quest ?? '' };
+    return notice.state === 'failed' ? t('notifications.done.outcome.failed', words) : t('notifications.done.outcome.reached', words);
+  }
+  if (notice.kind === 'plugin-command') {
+    // A plugin's command round nobody watched, or one that failed: by the plugin's id and the command's name, never its words.
+    const words = { plugin: notice.code ?? '', command: notice.act ?? '' };
+    if (notice.state === 'failed') return t('notifications.done.pluginCommand.failed', words);
+    return t(notice.route === 'removal' ? 'notifications.done.pluginCommand.removal' : 'notifications.done.pluginCommand.agent', words);
+  }
   if (notice.kind === 'look') {
     // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
@@ -54,7 +66,7 @@ export function DoneAndFailed({ notices, onRead, onOpen, onDismiss, now = Date.n
   notices: Notice[];
   /** The notices shown, *Opened* or named by *Mark all read*, read. */
   onRead: (ids: string[]) => void;
-  /** A notice's door: its session's page; absent where it names none. */
+  /** A notice's door: a run's outcome its run's review, any other its session's page; absent where it names neither. */
   onOpen?: (notice: Notice) => void;
   onDismiss: (notice: Notice) => void;
   /** The clock its ages are read by. */
@@ -92,7 +104,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
   const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.kind === 'look'
     || notice.state === 'failed';
-  const opens = onOpen && notice.session ? () => {
+  const opens = onOpen && (notice.session || (notice.kind === 'outcome' && notice.quest)) ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);
   } : null;

@@ -60,6 +60,18 @@ public sealed class ChildProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_program_that_exits_while_a_descendant_holds_its_pipe_answers_at_its_exit()
+    {
+        var script = "console.log('said');require('child_process').spawn(process.execPath,['-e','setTimeout(()=>{},8000)'],{stdio:'inherit'}).unref()";
+
+        var run = await ChildProcess.RunAsync(Node(script), TimeSpan.FromSeconds(5), CancellationToken.None, closeInput: false);
+
+        Assert.True(run.Started);
+        Assert.False(run.TimedOut);
+        Assert.Equal(0, run.ExitCode);
+    }
+
+    [Fact]
     public async Task A_run_past_its_patience_is_timed_out_and_its_tree_ended()
     {
         var marker = Path.Combine(_root, "grandchild");

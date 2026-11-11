@@ -59,10 +59,10 @@ describe('SecondCheckTurnOn', () => {
     await i18n.changeLanguage('zh');
     render(<SecondCheckTurnOn editor={editorOf(SECOND_CHECK, (_, answered) => answered.refused('目录已变'))} />);
 
-    await userEvent.click(screen.getByRole('button', { name: '开启…' }));
+    await userEvent.click(screen.getByRole('button', { name: '启用…' }));
     expect(screen.getByText(/依次发送给 Codex, Claude Code 复核/)).toBeTruthy();
     expect(screen.getByText(/每个选择每天最多 40 次启动/)).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: '开启' }));
+    await userEvent.click(screen.getByRole('button', { name: '启用' }));
     expect(screen.getByText('目录已变')).toBeTruthy();
   });
 

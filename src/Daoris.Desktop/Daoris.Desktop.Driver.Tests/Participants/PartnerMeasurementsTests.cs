@@ -16,7 +16,7 @@ public sealed class PartnerMeasurementsTests
 
     private static PartnerMeasurement Row(PartnerConfiguration at, string outcome = PartnerMeasurements.Held, bool standIn = false) =>
         new(at.Agent, at.DoorVersion!, "0.9.0", at.Posture!, at.WritableRoots, at.Network, at.System, at.SettingsDigest,
-            PartnerMeasurements.Confinement, outcome, "docs/2026-10-22-coagent-design.md")
+            PartnerMeasurements.Confinement, outcome, "docs/archive/2026-10-22-coagent-design.md")
         {
             StandIn = standIn,
         };

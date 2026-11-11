@@ -160,8 +160,8 @@ public static class WorkflowNamed
     /// <summary>What every door says to a list of steps (schema 1) being saved.</summary>
     public static string StepsRefused(string? id) =>
         $"`{id ?? "the workflow"}` is not saved: a workflow is saved as a graph of steps now, and a list of steps (schema 1) is no longer saved. "
-        + $"Compose it in the workflow editor, or save a graph with `daoris workflow apply {id ?? "<id>"} <file>`. "
-        + "A workflow saved as steps before is converted by the conversion plan: `daoris convert --plan`.";
+        + "Compose it in the workflow editor, "
+        + $"or save a graph with `daoris workflow apply {id ?? "<id>"} <file>`.";
 
     /// <summary>A version's <c>from</c>, or null where it names none or names one in another shape: where it came from never makes it unreadable.</summary>
     private static WorkflowFrom? FromOf(JsonElement version) =>

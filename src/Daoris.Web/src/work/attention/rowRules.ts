@@ -54,6 +54,7 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'git-read-only': 'gitReadOnly',
   'git-allow': 'gitAnswer',
   'git-refuse': 'gitAnswer',
+  'second-check-seen': 'secondCheckSeen',
   'quiet-carry-on': 'quiet',
   'quiet-hand-over': 'quiet',
   'quiet-stop': 'quiet',

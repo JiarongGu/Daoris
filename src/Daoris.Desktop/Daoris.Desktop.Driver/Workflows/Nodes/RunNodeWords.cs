@@ -132,8 +132,9 @@ public static class RunNodeWords
             {
                 By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
+                Revision = by is null ? null : revision?.Trim(),
             };
-            if (act == NodeWordActs.Accept && by is null && declared.Kind == NodeKinds.Review)
+            if (act == NodeWordActs.Accept && by is null)
             {
                 // On the way to its review the press is kept for it, on the record named; on an active one it is bound to the record
                 // the review stands on, the one named or, unnamed, the one standing as it is kept.
@@ -219,7 +220,7 @@ public static class RunNodeWords
             var standing = WorkPerformer.StatusOf(next, node.Id);
             if (ReviewAccepts.MovedFrom(word, standing, present))
             {
-                applied.Add((word, ReviewAccepts.Moved));
+                applied.Add((word, ReviewMoved.Word));
                 continue;
             }
 
@@ -320,11 +321,11 @@ public static class RunNodeWords
         (null, _) when done.Early =>
             $"workflow: your accept of `{done.Node}` on run {done.Run} is kept until its review begins, and applied there only where the work is as you read it.",
         (null, NodeWordActs.Accept) when done.Detail is { } at =>
-            $"workflow: your accept of `{done.Node}` on run {done.Run} is kept on its record at revision {ReviewAccepts.Short(at)}; Daoris's next look "
+            $"workflow: your accept of `{done.Node}` on run {done.Run} is kept on its record at revision {ReviewMoved.Short(at)}; Daoris's next look "
             + "applies it only where the work still reads so.",
         (null, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} is kept; Daoris's next look applies it.",
-        (ReviewAccepts.Moved, _) =>
-            $"workflow: `{done.Node}` on run {done.Run} no longer stands on the record you named: it now reads revision {ReviewAccepts.Short(done.Detail)}, "
+        (ReviewMoved.Word, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} no longer stands on the record you named: it now reads revision {ReviewMoved.Short(done.Detail)}, "
             + "so read that and accept it, or say what it should change.",
         (NodeRecordFiles.NotHeld, _) =>
             "workflow: this process does not hold the home, so it keeps nothing: the desktop holds it while it runs, so say it there, or close the "

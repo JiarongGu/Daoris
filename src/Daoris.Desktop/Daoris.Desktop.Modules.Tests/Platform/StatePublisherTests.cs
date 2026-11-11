@@ -366,11 +366,9 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The landing family: what each press declares it changes, and which payload field names the session
-    /// where the change is one session's; the plans, gates and lists beside them declare nothing.
+    /// The landing family: what each press declares it changes, and which payload field names the session; the plans, gates and lists declare nothing.
     /// </summary>
     [Theory]
-    [InlineData("LAND_SESSION_TREE", "sessions,landing,diff,sweep,treesSync", "id")]
     [InlineData("LAND_ENTRY", "sessions,landing,diff,sweep,treesSync", null)]
     [InlineData("LAND_ASK", "sessions,landing,diff,sweep,treesSync", null)]
     [InlineData("ENTRY_LANDING", "", null)]
@@ -774,5 +772,5 @@ public sealed class StatePublisherTests : DriverModuleBridge
     /// <summary>A request to another module is never the driver's, whatever its type is called.</summary>
     [Fact]
     public void Only_the_driver_s_requests_are_read_against_its_marks() =>
-        Assert.Null(DriverModule.Declared(new IpcRequest { Id = "x", Module = "DAORIS.WINDOWS", Type = "LAND_SESSION_TREE" }));
+        Assert.Null(DriverModule.Declared(new IpcRequest { Id = "x", Module = "DAORIS.WINDOWS", Type = "DISCARD_SESSION_TREE" }));
 }

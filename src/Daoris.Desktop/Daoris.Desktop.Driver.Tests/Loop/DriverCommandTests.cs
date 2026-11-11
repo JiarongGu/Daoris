@@ -195,15 +195,14 @@ public sealed class DriverCommandTests
         Assert.Contains("tree remove <path|session|branch> [--repository <name>] [--force]", DriverCommand.Usage);
         var program = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
-        Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
+        Assert.Contains("PressAsync(TreesRoutes.DiscardBranch, new { named, repository, force },", program);
         Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
     }
 
     /// <summary>
-    /// The terminal's `trees land` refuses work the line holds by content where every door does, in the landing
-    /// itself, and its <c>--plan</c> says so before the press in the same sentence, asked of the driver's own judgement, as the
-    /// review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its own. <c>ContentLandingTests</c>
-    /// holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
+    /// The terminal's `trees land --plan` says work the line holds by content in the landing's own sentence, asked of the
+    /// driver's own judgement, as the review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its
+    /// own. <c>ContentLandingTests</c> holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
     /// </summary>
     [Fact]
     public void The_terminals_landing_plan_says_work_the_line_holds_by_content_in_the_landings_own_sentence()
@@ -215,26 +214,26 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
             File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
-        // The terminal lands nothing itself: it keeps the person's word for the running Daoris's next pass.
-        Assert.Contains("TreesWords.AcceptedForPass(home, gate)", program);
+        // The terminal lands nothing and presses nothing: the work is accepted on its review.
+        Assert.Contains("daoris workflow accept <run> <node>", program);
         Assert.DoesNotContain("landing.LandAsync(", program);
         Assert.DoesNotContain("WorkAsync(", program);
         Assert.DoesNotContain("ContentHold", program);
     }
 
     /// <summary>
-    /// `trees land` takes <c>--branch &lt;name&gt;</c> for the plan and the press alike, and the usage says so. A
-    /// <c>--branch</c> with no name is the usage, never the rule's name quietly: the person would think theirs is used.
-    /// <c>LandingTests</c> holds what the name does over real git.
+    /// `trees land --plan` takes <c>--branch &lt;name&gt;</c>, and the usage says so. A <c>--branch</c> with no name is the
+    /// usage, never the rule's name quietly: the person would think theirs is used. <c>LandingTests</c> holds what the name does
+    /// over real git.
     /// </summary>
     [Fact]
-    public void The_terminals_landing_takes_an_entered_branch_for_the_plan_and_the_press()
+    public void The_terminals_landing_plan_takes_an_entered_branch()
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
 
-        Assert.Contains("land <session> [--plan] [--branch <name>]", console);
-        Assert.Contains("tree land <session> [--plan] [--branch <name>]", DriverCommand.Usage);
+        Assert.Contains("land <session> --plan [--branch <name>]", console);
+        Assert.Contains("tree land <session> --plan [--branch <name>]", DriverCommand.Usage);
         Assert.Contains("TreesConsole.RunAsync(treesArgs, log)", program);
         Assert.Contains("Option(args, \"--branch\")", console);
         Assert.Contains("{ Entered = entered }", console);
@@ -260,8 +259,7 @@ public sealed class DriverCommandTests
         Assert.Contains("TreesCommand.ReadEntryLand(args, out var problem)", console);
         Assert.Contains("accepts.LandAsync(entry, rows, ask.LeaveOut, default)", console);
         Assert.Contains("Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);", console);
-        // The terminal's door is the log's, and its press carries the route's own marks: no copy of the page's code in the host.
-        Assert.Contains("ReviewDoors.Terminal", console);
+        // The terminal's press carries the route's own marks: no copy of the page's code in the host.
         Assert.DoesNotContain("LandEntryAsync", console);
         Assert.Contains(PressesTold.LandEntry, PressesTold.Routes);
         Assert.Contains(PressesTold.LandAsk, PressesTold.Routes);
@@ -472,7 +470,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_sessions_and_the_host_routes_it_to_the_librarys_words()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
+        Assert.Contains("\n  session list [--group needs-you|working|pending|failed|done|archived] [--repository", usage);
         Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
         Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);

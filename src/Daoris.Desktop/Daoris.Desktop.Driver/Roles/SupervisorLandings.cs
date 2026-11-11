@@ -46,7 +46,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
             {
                 Id = id, Session = landing.Session, Run = landing.Run, Node = landing.Node, Attempt = landing.Attempt, Repository = repository, Do = landing.Do,
                 Generation = landing.Generation, Words = string.Join(" ", landing.Reasons.Select(reason => reason.Says)), GoesOnAt = goesOnAt,
-                State = left ? SupervisorState.Left : SupervisorState.Held,
+                State = left ? SupervisorState.Left : SupervisorState.Held, Revision = landing.Revision,
             };
             Directory.CreateDirectory(book.Files.FolderOf(landing.Session));
             AtomicFile.WriteText(book.Files.FileOf(landing.Session, id), Json(id, landing, repository, now, goesOnAt));
@@ -69,7 +69,10 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
             var reached = await book.UnderAsync(due.Session, async () =>
             {
                 if (due.State != SupervisorState.Held) return (SupervisorState?)null;
-                var handed = new SupervisorLandingDue(due.Id, due.Session, due.Run, due.Node, due.Attempt, due.Repository, due.Do, due.Generation, due.Words);
+                var handed = new SupervisorLandingDue(due.Id, due.Session, due.Run, due.Node, due.Attempt, due.Repository, due.Do, due.Generation, due.Words)
+                {
+                    Revision = due.Revision,
+                };
                 var admitted = admission.Admit(SupervisorKinds.Landing, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
                     ? await line.Why(handed).ConfigureAwait(false)
@@ -136,7 +139,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
         foreach (var file in Directory.EnumerateFiles(book.Files.FolderOf(session), "*.json"))
         {
             if (SupervisorLandingView.Read(book.Files, session, Path.GetFileNameWithoutExtension(file)) is not { } read) continue;
-            views.Add(book.Landings.TryGetValue(read.Id, out var live) ? read with { State = live.State, StateAt = live.StateAt, Why = live.Why, Earlier = false } : read);
+            views.Add(book.Landings.TryGetValue(read.Id, out var live) ? read.Over(live) : read);
         }
 
         return [.. views.OrderBy(view => view.KeptAt).ThenBy(view => view.Id, StringComparer.Ordinal)];
@@ -173,6 +176,7 @@ internal sealed class SupervisorLandings(SupervisorBook book, IDecisionAdmission
         ["landing"] = new JsonObject
         {
             ["run"] = landing.Run, ["node"] = landing.Node, ["attempt"] = landing.Attempt, ["repository"] = repository, ["do"] = landing.Do,
+            ["revision"] = landing.Revision,
         },
         ["bound"] = landing.Do == SupervisorLandingActs.Hold ? landing.Bound : null,
         ["reasons"] = new JsonArray([.. landing.Reasons.Select(reason => (JsonNode)new JsonObject { ["says"] = reason.Says, ["source"] = reason.Source })]),

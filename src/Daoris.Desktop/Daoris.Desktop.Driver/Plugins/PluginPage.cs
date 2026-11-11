@@ -68,7 +68,7 @@ public static class PluginPage
             points,
             [.. manifest.Harnesses.Select(harness => new PageAgent(
                 harness.Name, harness.Command, "protocol", harness.Posture, harness.ProfileVariable, harness.Package, harness.Install))],
-            [.. manifest.Servers.Select(server => Granted(new PageServer(
+            [.. manifest.Servers.Concat(PluginCommandServer.Of(manifest) is { } commands ? [commands] : []).Select(server => Granted(new PageServer(
                 server.Name, server.Command,
                 // Names only: the value is read for nothing but whether it names the browser.
                 [.. server.Environment.Keys.Order(StringComparer.Ordinal)],

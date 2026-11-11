@@ -51,8 +51,10 @@ public record PluginStep : INodeKind, IStarts
 
     public IReadOnlyList<string> LandingActs(NodeDeclaration node) => [];
 
-    /// <summary>None: its door is its plugin's port, the runtime's own.</summary>
-    INodeDoor? IStarts.Door(NodeDoorWiring wiring) => null;
+    /// <summary>The step agents a step declaring a goal is sent to (<see cref="StepAgents"/>), which the loop wires; any other is its plugin's port, the runtime's own.</summary>
+    INodeDoor? IStarts.Door(NodeDoorWiring wiring) => wiring.StepSessions is { } sessions && wiring.StepAsks is { } asks
+        ? new StepAgents(wiring.Home, sessions, asks, wiring.Program ?? PluginToolsHand.Program(wiring.Home), wiring.Wake)
+        : null;
 
     /// <summary>
     /// Observed, it is begun as a built-in is, ready to active with its firings written, and published to its plugin only after; performed, it is
@@ -64,8 +66,10 @@ public record PluginStep : INodeKind, IStarts
         var (governed, node) = (starting.Governed, starting.Node);
         var unread = starting.Tipped && starting.Tip is null;
         if (node.Reach == NodeReach.Observed && governed.Observable.Contains(node.Id)) return unread ? null : starting.Begin();
-        if (!governed.Dispatchable.Contains(node.Id) || unread || starting.Sends.Left <= 0
-            || starting.Port.GenerationOf(NodeGoverning.PluginOf(node.Kind)) is null || !starting.Sends.Take())
+        var performer = node.Goal is not null
+            ? starting.Performer.Doors.Door<IStepAgents>(StepAgents.Door) is not null
+            : starting.Port.GenerationOf(NodeGoverning.PluginOf(node.Kind)) is not null;
+        if (!governed.Dispatchable.Contains(node.Id) || unread || starting.Sends.Left <= 0 || !performer || !starting.Sends.Take())
         {
             return null;
         }

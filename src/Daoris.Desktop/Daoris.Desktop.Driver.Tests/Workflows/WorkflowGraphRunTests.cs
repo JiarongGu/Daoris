@@ -161,6 +161,22 @@ public sealed class WorkflowGraphRunTests
         Assert.Null(Step(Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("claimed", NodeStates.Reached, "quest:q1", "m"))), "claimed").Held);
     }
 
+    /// <summary>A refused step carries the command its plugin named as the fix, or, naming none it declares, the words that say so.</summary>
+    [Fact]
+    public void A_refused_steps_needs_is_drawn_on_its_step_or_said_where_ignored()
+    {
+        var record = Record(Status("deploy", NodeStates.Failed, Self, Tip) with { Code = "signed-out", Needs = "login" });
+        var facts = (Dictionary<string, RunNeed> needs) => WorkflowGraphRuns.Derive(
+            new WorkflowGraphRunFacts(Records(Quest("q1")), Run, Graph(GatesAndADeploy), record) { Needs = needs }, "default", "a1");
+
+        var kept = facts(new() { ["deploy"] = new(new WorkflowRunNeeds("acme.deploy", "login", AuthoredText.Of("Sign in")), null) });
+        Assert.Equal(("acme.deploy", "login"), (Step(kept, "deploy").Needs!.Plugin, Step(kept, "deploy").Needs!.Command));
+
+        var ignored = facts(new() { ["deploy"] = new(null, "its `needs` named `login`, which acme.deploy does not declare; ignored.") });
+        Assert.Null(Step(ignored, "deploy").Needs);
+        Assert.Contains("does not declare", Step(ignored, "deploy").Words);
+    }
+
     private static WorkflowRunStep Step(WorkflowRun run, string id) => run.Steps.Single(step => step.Step.Id == id);
 
     /// <summary>

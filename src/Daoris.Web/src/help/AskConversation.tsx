@@ -8,6 +8,9 @@ import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
 import { useHelpReceipts } from './receipt/useHelpReceipts';
 import { useHelpBeyond } from '../bridge/helpBeyond';
+import { useHelpReadings } from '../bridge/helpReadings';
+import { readingsBeneath } from './secondCheck/ReadingLine';
+import { SecondCheckChip } from './secondCheck/SecondCheckChip';
 import { BackToBottom, SessionConversation, type TailState } from '../work/conversation/SessionConversation';
 import { AskHistory } from './AskHistory';
 import { type AskConversationSlot } from './AskPanel';
@@ -236,6 +239,11 @@ export function useAskConversation(
   const beyond = useHelpBeyond(shown?.id ?? null);
   // What its presses made, under the turn that pressed them, beside what it looked at beyond its focus.
   const madeBeneath = useHelpReceipts(shown?.id ?? null, onGo);
+  // And the second check's line under the last turn each of its readings covers, with the check's chip beside the access chip.
+  const readings = useHelpReadings(shown?.id ?? null);
+  const readingPages = readings.data?.pages ?? [];
+  const readingBeneath = readingsBeneath(shown?.id ?? null, readingPages.flatMap((page) => page.readings));
+  const beyondBeneathTurn = beyondBeneath(beyond.data, { focus: focusing.focus, next: focusing.next, onFocus: focusing.choose });
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   // A go link in Ask Daoris's words opens its place as the starters' doors open theirs.
   const conversation = shown ? (<GoOpener.Provider value={onGo ?? null}>
@@ -253,11 +261,7 @@ export function useAskConversation(
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
       dividers={focusDividers(shownRow?.marks)}
-      beneath={(ask, until) => {
-        const looked = beyondBeneath(beyond.data, { focus: focusing.focus, next: focusing.next, onFocus: focusing.choose })(ask, until);
-        const made = madeBeneath(ask, until);
-        return looked || made ? <>{looked}{made}</> : null;
-      }}
+      beneath={(ask, until) => <>{beyondBeneathTurn(ask, until)}{madeBeneath(ask, until)}{readingBeneath(ask)}</>}
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}
@@ -335,7 +339,8 @@ export function useAskConversation(
     escapeToList: shown !== null && left?.row === shown.id,
     history, historyOpen,
     onHistory: end.isPending ? undefined : openHistory,
-    access, wired: whatItHas, full: offered && selectedMode === 'full',
+    access: access ? <span className="flex flex-wrap items-center gap-2">{access}<SecondCheckChip check={readingPages[0]?.check ?? null} /></span> : access,
+    wired: whatItHas, full: offered && selectedMode === 'full',
     // No chip where no words can go: one that cannot go on has no box, and its head still names the focus.
     focus: helper !== null && composer ? focusing.chip : undefined,
     crumb: focusing.crumb,

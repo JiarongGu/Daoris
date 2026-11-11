@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a git may be ended once nobody waits for it: a read (<see cref="GitCommands.Writes"/> calls it none) that takes no lock.
+/// Whether a git may be ended once nobody waits for it: a read (<see cref="GitCommands.Writes"/> calls it none) that takes no lock and writes no file (`--output`).
 /// A <c>status</c> refreshes the index under its lock unless told <c>--no-optional-locks</c>; a diff against the working tree refreshes
 /// and locks it whatever that says, unless also told <c>-c diff.autoRefreshIndex=false</c>; <c>describe --dirty</c> refreshes it as a
 /// status does. A command it does not know is not endable.
@@ -14,6 +14,7 @@ internal static class GitEndable
         var command = GitLaunch.Command(arguments);
         if (command.Count == 0) return false;
         var options = arguments.Take(arguments.Count - command.Count).ToList();
+        if (command.Any(word => word == "--output" || word.StartsWith("--output=", StringComparison.Ordinal))) return false;
         var unlocked = options.Contains("--no-optional-locks");
         return GitLaunch.KindOf(arguments) switch
         {

@@ -35,9 +35,6 @@ public sealed record PressTold(string Route, string? Session, DateTimeOffset At)
 /// </remarks>
 public sealed partial class PressesTold(string home)
 {
-    /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
-    public const string Land = TreesMarks.Land;
-
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
     public const string DiscardTree = TreesMarks.DiscardTree;
 
@@ -63,7 +60,7 @@ public sealed partial class PressesTold(string home)
     public const string RecoveryDrop = "RECOVERY_DROP";
 
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, WithdrawLanding, Sweep, TreesSync, LandEntry, LandAsk, RecoveryDrop];
+    public static readonly IReadOnlyList<string> Routes = [DiscardTree, DiscardBranch, WithdrawLanding, Sweep, TreesSync, LandEntry, LandAsk, RecoveryDrop];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

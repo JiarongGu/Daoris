@@ -5,6 +5,7 @@ import { ago, elapsed, moment } from '../../locales/format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { contextOffer } from '../../menus/press';
+import { usePluginRecordActs } from '../../plugins/recordActs';
 import { actMenu, type SessionActId } from '../acts';
 import { callHead, type SessionGrouping, shownOf } from '../groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from '../identity';
@@ -249,7 +250,8 @@ export function SessionRow({
 
   // What the rule offered, each absent where it does not apply and never disabled; nothing at all where there
   // is nowhere to report a press. One list for its ⋯ and its right-click.
-  const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session);
+  const pluginActs = usePluginRecordActs('session', session.id);
+  const actions = [...actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session), ...pluginActs];
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;
@@ -307,6 +309,11 @@ export function SessionRow({
   );
 }
 
+/** The reasons the reader gives (`SessionReason`) that a row says in a line of their own. */
+const REASON_LINES: ReadonlySet<string> = new Set([
+  'question', 'policy-held', 'unclosed', 'steward-stop', 'sign-in', 'transient', 'carried-on', 'opinion', 'elsewhere',
+]);
+
 /**
  * What a row's line says for the group the reader placed it in, with the tip that explains it: how many
  * sessions failed before its quest parked, which question its quest waits on and who it is asked of, whose pause holds
@@ -358,12 +365,16 @@ export function placedFact(
   }
   // A person's stop that holds its quest here: its quest moves again only on *Try again*.
   if (shown === 'stopped' && grouping.holdsQuest) return { line: 'work.rail.heldHere', tip: 'work.rail.heldTip' };
-  if (grouping.group === 'review' && grouping.work) {
+  if (grouping.reason === 'review' && grouping.work) {
     const { commits, uncommitted } = grouping.work;
     // A count git could not give is still work: said as work, never as nothing.
     if (typeof commits === 'number' && commits > 0) return { line: 'work.rail.toReview', values: { count: commits }, tip: 'work.rail.reviewTip' };
     if (typeof uncommitted === 'number' && uncommitted > 0 && commits === 0) return { line: 'work.rail.uncommitted', tip: 'work.rail.reviewTip' };
     return { line: 'work.rail.workToReview', tip: 'work.rail.reviewTip' };
+  }
+  // The finer reason the reader gave, where no line above already said it.
+  if (grouping.reason && REASON_LINES.has(grouping.reason)) {
+    return { line: `work.rail.reason.${grouping.reason}`, tip: 'work.rail.reasonTip' };
   }
   return null;
 }

@@ -166,8 +166,12 @@ public sealed class PluginInterfacesTests : IDisposable
     {
         var (manifest, problem) = PluginCatalog.ReadFolder(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", example));
         Assert.Null(problem);
-        Assert.Equal(["login", "logout", "status"], manifest.Interfaces.Commands.Select(command => command.Name));
+        Assert.Equal(
+            ["login", "logout", "status", "create-pull-request", "pull-request-status", "complete-pull-request"],
+            manifest.Interfaces.Commands.Select(command => command.Name));
         Assert.True(manifest.Interfaces.Commands[0].Interactive);
+        Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool && !command.Interactive && command.Args.Count > 0));
+        Assert.All(manifest.Steps, step => Assert.Equal(step.Kind.EndsWith("/pull-request", StringComparison.Ordinal), step.Goal is not null));
         Assert.NotNull(manifest.Interfaces.Storage);
         Assert.Empty(manifest.Interfaces.Refused);
     }

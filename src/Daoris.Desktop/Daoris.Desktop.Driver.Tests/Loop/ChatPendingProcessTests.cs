@@ -23,7 +23,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     public ChatPendingProcessTests()
     {
         _root = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_root);
+        GitSeed.PlainAsync(_root, "engine").GetAwaiter().GetResult();
     }
 
     public void Dispose() => GitSeed.Discard(_home);

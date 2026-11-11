@@ -32,6 +32,11 @@ Each failure this prevents is silent.
 - **A record with no reader, paid for on every step.** A session carries what it read into every step
   after. A fix log of every defect, an archive entry that retells its row, a decision for a choice
   nobody weighed: each is written once and paid for by every later reader, who learns nothing from it.
+- **History found before the present.** A repository's records and finished designs only grow, so after
+  months they are most of its text, and a search for how something works now returns them first.
+  Measured in one repository, a fresh copy holding only its present state found the right rule first
+  for ten of twelve questions, and the repository itself for one. What a change reads, and what its
+  search returns, must cost in the second year what they cost on the first day.
 
 ## How to apply
 
@@ -95,6 +100,12 @@ glossary are kept only where sessions use them; the area documents carry the lin
   other defect's root cause is its commit's body.
 - **Look up by identifier.** A record is searched for the identifier a row or a decision names and read
   at that entry. Reading a record whole to find one entry pays for every other entry in it.
+- **Search the present for a present question.** How something works now is searched in the brief, the
+  area documents, the index, the knowledge and the code; the records are searched only when the question
+  is about history. History stays whole in its files: found by identifier, it costs a line.
+- **A finished design leaves the read path.** A design that no open row and no area document names has
+  done its work: it moves to the folder the router keeps for history, and every citation of it is
+  rewritten in the change that moves it.
 
 ### What goes in the brief
 
@@ -106,7 +117,8 @@ a quotation of a person, or a permission, which belongs to the declaration.
 
 ### Ceilings
 
-A document read whole has a ceiling; a record read by lookup has none.
+What a change reads (the brief, its area document, its backlog row, the index) has a ceiling, so it stays
+the size it was on the first day; a record read by lookup has none.
 
 - **Bytes, for the root instruction file as a whole**: the brief and the doctrine together, under the
   smallest limit among the agents the repository serves. What is lost is the tail, and the tail is the
@@ -115,7 +127,8 @@ A document read whole has a ceiling; a record read by lookup has none.
   a room, 600 words; the backlog, 3,000 words; a backlog row or an archive line, 60 words.
 
 **A ceiling reports and never fails**, because whether a document says too much is a judgement. When one
-goes over, move what belongs in another tier, then condense, and only then raise the number,
+goes over, the read path has grown: move its history to the record that keeps it and what belongs in
+another tier there, then condense, and only then raise the number,
 deliberately and with the reason. What fails is a fact: a named document missing, or a list of places
 that no longer matches the files.
 

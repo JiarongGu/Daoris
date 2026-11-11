@@ -21,7 +21,7 @@ import { WaitStrip } from './waits/WaitStrip';
 import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
 import { coolingFor } from './say';
-import type { FrameIntent } from '../menus/commands';
+import { type FrameIntent, reviewOfIntent } from '../menus/commands';
 import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
@@ -264,9 +264,15 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
+  // The run `review/<run>` opened, kept while the session it opened over stays followed.
+  const [reviewing, setReviewing] = useState<{ run: string; over: string | null } | null>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
-    if (intent === 'start') newConversationPressed();
+    const run = reviewOfIntent(intent);
+    if (run) {
+      setReviewing({ run, over: following?.id ?? null });
+      openView('review');
+    } else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
     else if (intent === 'atWork') openView('atWork');
@@ -346,7 +352,7 @@ export function WorkFrame({
     t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { entryAt, workAskAt, entryOffered, landsNow } = work;
+  const { entryAt, workAskAt } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
@@ -359,7 +365,7 @@ export function WorkFrame({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
+    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
@@ -368,6 +374,7 @@ export function WorkFrame({
   const regions = useRegionSurfaces({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
     session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
   // A row its run's waits placed opens on its run's view, where the step that waits is acted on.

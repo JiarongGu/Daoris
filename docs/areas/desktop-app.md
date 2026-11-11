@@ -178,7 +178,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 30. The right-click menu is the page's own, offering the surface's acts from their one owner plus text, link and code
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell. Its groups are presses waiting, *What needs you*,
-    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. Beside the
+    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. *Done and
+    failed* holds, beside a session's end, each watched step after a run's review once reached or failed, one line by run, node and
+    attempt (`outcome:<run>/<node>/<attempt>`, `Workflows/Kinds/Review/RunOutcomeNotices`, claimed by the look's last pass `RunOutcomesLook` through the news,
+    so it is kept once and written again where a write was lost), said by its step's kind and its run. Beside the
     presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
     in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
     window's own words, with the place it named (*outside its focus* where that was beyond its conversation's focus at the press),
@@ -186,8 +189,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person on a card in restricted mode, each with its card's state; a press that opened a place says what it made under its row, as the
     conversation does (`PressReceiptLine`); a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
-    holds a row for each session Sessions' list places to review, except one of a quest whose run the person stopped, its review
-    among its steps (`StoppedRuns`, read from the node records; `StoppedReviewAttentionTests`).
+    holds a review row for each session Sessions' list places in Needs you for a run's Accept (`reason` `review`), except one of a
+    quest whose run the person stopped, its review among its steps (`StoppedRuns`, read from the node records;
+    `StoppedReviewAttentionTests`).
     Overview keeps one summary line per group. (from D150, D181, D196)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
@@ -416,6 +420,7 @@ a probe, git through a counting seam, a source that only names a start, a proces
 
 ## Open
 
+- **THROUGH1f (D277):** the browser's tabs are one set shared by every session's server; decided: a browser context per session for `${browser}`, ended with the session, the person's and Ask Daoris's tabs apart; the click-settle timeouts on the identity and Azure DevOps pages measured first. Not built.
 - **CANVAS1g**: the canvas in the installed window, with FLOWCHART2h.
 - **SETUPUX1x**: the set-up experience seen in the installed window, and its fixes.
 - **AGENTSPLACE1l**: the Agents place seen in the installed window.

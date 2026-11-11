@@ -29,14 +29,14 @@ public sealed class RefreshTests
         var index = new KnowledgeIndex(store);
         var source = new MutableSource();
         source.Entries.Add(Entry("Sonora", "old-rule"));
-        source.Entries.Add(Entry("Yaorin", "new-rule"));
+        source.Entries.Add(Entry("Sibling", "new-rule"));
         await index.RefreshAsync(source);
 
         source.Entries.RemoveAll(e => e.Repository == "Sonora"); // renamed away on disk
         await index.RefreshAsync(source);
 
         var repositories = (await store.AllAsync()).Select(e => e.Repository).Distinct().ToList();
-        Assert.Equal(["Yaorin"], repositories);
+        Assert.Equal(["Sibling"], repositories);
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public sealed class RefreshTests
         var store = new InMemoryKnowledgeStore();
         var index = new KnowledgeIndex(store);
         var source = new MutableSource();
-        source.Entries.Add(Entry("Yaorin", "new-rule"));
+        source.Entries.Add(Entry("Sibling", "new-rule"));
         await index.RefreshAsync(source);
 
         source.Entries.Clear(); // the root vanished, or points somewhere empty

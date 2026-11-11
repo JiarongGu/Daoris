@@ -25,7 +25,7 @@ import type { DiscardOffer } from '../groups';
 
 const FILES = [{ path: 'src/report/compare.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1,2 @@\n-a\n+b' }];
 const DIFF = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: null, files: FILES, source: 'tree' };
-const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace' };
+const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', accept: { run: 'q1', node: 'review' } };
 const KEPT = 'refs/daoris/discarded/daoris/s-4e6837ed';
 const HELD: DiscardOffer = {
   branch: 'daoris/s-4e6837ed',
@@ -92,7 +92,7 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
 
     // The press is its owner's, never the pane's own: no landing is planned or pressed, and no discard sent from here.
     expect(asked('LANDING')).toHaveLength(0);
-    expect(asked('LAND_SESSION_TREE')).toHaveLength(0);
+    expect(asked('WORKFLOW_NODE')).toHaveLength(0);
     expect(asked('DISCARD_SESSION_TREE')).toHaveLength(0);
   });
 

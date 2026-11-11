@@ -4,6 +4,7 @@ import type { KitPoint } from './PluginKit';
 import { ViewMain } from '../work/frame/ViewMain';
 import type { OfferShown } from './catalog';
 import { PluginIcon } from './PluginIcon';
+import { InterfaceList } from './PluginSetup';
 import { Body, HelpServers, Lead, NameRows, PageHead, PageSection, PointRows, SkillRows, StepRows } from './PluginPage';
 
 /**
@@ -61,6 +62,7 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       <HelpServers servers={offer.helpServers} />
       <SkillRows skills={offer.skills} />
       <StepRows plugin={offer.id} steps={offer.steps} resources={offer.resources} />
+      <InterfaceList interfaces={offer.interfaces} />
       {offer.needs.length > 0 && (
         <PageSection title={t('plugin.section.needs')}>
           <ul className="m-0 list-disc pl-5 text-small text-ink-soft">

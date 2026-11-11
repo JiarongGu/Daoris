@@ -91,7 +91,7 @@ public sealed class HelpRoomPlacesTests
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).", places);
+        Assert.Contains("- Parts of `sessions`: `needs-you` (Needs you), `failed` (Failed), `new` (New conversation).", places);
         Assert.Contains("- Parts of `quests`: `asks` (Asks), `held` (Waiting on you).", places);
         Assert.Contains("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest", places);
         Assert.Contains("`overview` has no part", places);

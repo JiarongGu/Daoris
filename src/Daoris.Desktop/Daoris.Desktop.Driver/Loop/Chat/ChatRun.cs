@@ -160,7 +160,13 @@ internal sealed class ChatRun(
             {
                 IReadOnlyList<string> drivers;
                 (pluginServers, browserNotice, drivesBrowser, drivers) = await ChatServers.HandAsync(
-                    home, browser, plugins, sessionId, ct, place.ServersTo, place.EveryServer).ConfigureAwait(false);
+                    home, browser, plugins, sessionId, ct, place.ServersTo, place.EveryServer,
+                    () => PluginToolsHand.Entry(
+                        home,
+                        place.ServersTo == PluginServerTo.Help
+                            ? new PluginToolsAt(sessionId, new PluginPlace(null, place.Circle), "en")
+                            : PluginToolsAt.OfQuest(sessionId, config, place.Name, null),
+                        PluginToolsHand.Program(home))).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message; one going on resumes a conversation already told
                 // when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) Context.Browsers[sessionId] = line;
@@ -377,6 +383,7 @@ internal sealed class ChatRun(
             };
             chat.Turns.Closing = () => Context.Closing;
             chat.Turns.Unsent = count => closing.Unsent(sessionId, count);
+            if (helpMode is not null) chat.Turns.Ahead = new AskDaorisTold(Context.Home, sessionId, () => DateTimeOffset.UtcNow).Ahead;
             Context.Turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -394,6 +401,7 @@ internal sealed class ChatRun(
             };
             native.Turns.Closing = () => Context.Closing;
             native.Turns.Unsent = count => closing.Unsent(sessionId, count);
+            if (helpMode is not null) native.Turns.Ahead = new AskDaorisTold(Context.Home, sessionId, () => DateTimeOffset.UtcNow).Ahead;
             Context.Turned[sessionId] = native;
         }
 
@@ -446,6 +454,7 @@ internal sealed class ChatRun(
             {
                 if (e.Kind == SessionEventKind.Turn) native.TurnEnded();
             },
+            Echoed = native is null ? null : native.Echoed,
             // Its harness opened the conversation its words went to, so they went: off the record by their ids.
             Named = goOn is null ? null : () =>
             {

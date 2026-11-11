@@ -132,6 +132,9 @@ public static class ChatNoteCodes
     public static readonly NoteCode WordsStartNotTaken = new("words.start-not-taken", ["session"]);
     public static readonly NoteCode WordsNotKept = new("words.not-kept", []);
 
+    public static readonly NoteCode WordsSentNowInTurn = new("words.sent-now-in-turn", []);
+    public static readonly NoteCode WordsSentNowNextTurn = new("words.sent-now-next-turn", []);
+
     // ——— A server that drives Daoris's own browser, withheld: the servers are plugin-declared names; why it is not handed is a fact
     // of the host's, or an exception's words riding after the lead.
     public static readonly NoteCode BrowserWithheld = new("browser.withheld", ["servers"]);

@@ -8,6 +8,7 @@ import { code } from '../test/code';
 import { cappedBlocks } from '../test/measure';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
+import { interfacesOf } from './interfaces';
 
 // One of Daoris's own plugins, not installed here: a molecule, every state by its props.
 
@@ -96,5 +97,22 @@ describe("an offer's page", () => {
   it('holds Install while an install is on its way', () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} installing onInstall={vi.fn()} />);
     expect(within(header()).getByRole('button', { name: 'Install land-github' })).toBeDisabled();
+  });
+
+  it('lists its commands, storage and views before Install, an entry refused alone said with why, and nothing to run', () => {
+    render(<OfferPage offer={{ ...OFFER, interfaces: interfacesOf({
+      commands: [{ name: 'login', title: 'Sign in', interactive: true }, { name: 'status', tool: true }],
+      storage: { for: 'The token its sign-in keeps.', forget: 'logout' },
+      views: [{ id: 'pull-requests', title: 'Pull requests', where: ['side'] }],
+      refused: [{ interface: 'views', entry: 'release', problem: '`release`: this build draws no frame.' }],
+    }) }} kitPoints={KIT} onInstall={vi.fn()} />);
+    const list = screen.getByRole('heading', { name: 'Its commands, storage and views' }).closest('section')!;
+    expect(within(list).getByText('Sign in')).toBeInTheDocument();
+    expect(within(list).getByText('asks you')).toBeInTheDocument();
+    expect(within(list).getByText('for agents')).toBeInTheDocument();
+    expect(within(list).getByText('The token its sign-in keeps.')).toBeInTheDocument();
+    expect(within(list).getByText('Pull requests')).toBeInTheDocument();
+    expect(within(list).getByText('not read')).toBeInTheDocument();
+    expect(within(list).queryByRole('button')).toBeNull();
   });
 });

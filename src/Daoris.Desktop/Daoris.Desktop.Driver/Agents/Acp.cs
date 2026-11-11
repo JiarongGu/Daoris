@@ -314,7 +314,7 @@ public sealed class AcpSession(
     private AcpPrompting Prompting => LazyInitializer.EnsureInitialized(ref _prompting, () => new AcpPrompting(this));
     private AcpPrompting? _prompting;
 
-    private AcpSteering Steering => LazyInitializer.EnsureInitialized(ref _steering, () => new AcpSteering(this, Prompting));
+    private AcpSteering Steering => LazyInitializer.EnsureInitialized(ref _steering, () => new AcpSteering(this, Prompting, new AcpStartedTurn(this)));
     private AcpSteering? _steering;
 
     private AcpTry Try => LazyInitializer.EnsureInitialized(ref _try, () => new AcpTry(this, Prompting));

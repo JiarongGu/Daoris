@@ -90,6 +90,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A git go-ahead: its door holds the act on the remote until the person allows or
   // refuses it, or its bound passes, as a held call holds its session's turn.
   'git-ask': 'holding',
+  // A second check's flag on one of Ask Daoris's acts, which has run: the person should know before going on, and
+  // nothing is held by it.
+  'second-check': 'word',
   // A session the watcher brings to the person: it holds its slot and its tree, and
   // its work stands still until they press, or it is heard again.
   quiet: 'holding',
@@ -214,7 +217,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
 
@@ -597,6 +600,20 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.gitAsk ? { gitAsk: row.gitAsk } : {}),
         ...(row.session ? { session: row.session } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
+      };
+    // The reader's claim, said as its claim with its certainty and the call it rests on; never a fact.
+    case 'second-check':
+      return {
+        ...base,
+        title: i18n.t('work.attention.secondCheck.title'),
+        detail: row.secondCheck
+          ? i18n.t('work.attention.secondCheck.detail', {
+            says: row.secondCheck.says, call: row.secondCheck.call,
+            certainty: i18n.t(`help.secondCheck.certainty.${row.secondCheck.certainty}`, { defaultValue: row.secondCheck.certainty }),
+          })
+          : null,
+        ...(row.secondCheck ? { secondCheck: row.secondCheck } : {}),
+        ...(row.session ? { session: row.session } : {}),
       };
     default:
       return { ...base, title: row.title ?? row.id };

@@ -33,7 +33,7 @@ describe('the acts a session is offered', () => {
   });
 
   it('offers a session waiting on you its answer on its row, and not in its header, where its card keeps it', () => {
-    const waiting = { session: session({ state: 'awaiting-person' }), grouping: placed({ group: 'you', shown: 'awaiting-person' }), root: ROOT };
+    const waiting = { session: session({ state: 'awaiting-person' }), grouping: placed({ group: 'needs-you', shown: 'awaiting-person' }), root: ROOT };
     expect(offeredActs(waiting, 'row')).toEqual(['answer', 'stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs(waiting, 'header')).not.toContain('answer');
   });
@@ -53,7 +53,7 @@ describe('the acts a session is offered', () => {
 
   /** Where a pause holds its quest, Resume is offered in Try again's place, and leads. */
   it('offers Resume ask or Resume quest where a pause holds its quest, in Try again’s place, and leads with it', () => {
-    const byAsk = placed({ group: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } });
+    const byAsk = placed({ group: 'needs-you', reason: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } });
     const stopped = { session: session({ state: 'stopped', tree: TREE }), grouping: byAsk, root: ROOT };
     const acts = offeredActs(stopped, 'header');
     expect(acts).toContain('resumeAsk');
@@ -61,7 +61,7 @@ describe('the acts a session is offered', () => {
     expect(acts).not.toContain('pauseQuest');
     expect(primaryAct(acts, byAsk)).toBe('resumeAsk');
 
-    const byQuest = placed({ group: 'ended', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'quest', id: 'abc123' } });
+    const byQuest = placed({ group: 'done', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'quest', id: 'abc123' } });
     expect(offeredActs({ ...stopped, grouping: byQuest }, 'row')).toContain('resumeQuest');
     expect(offeredActs({ ...stopped, grouping: byQuest }, 'row')).not.toContain('retry');
   });
@@ -71,7 +71,7 @@ describe('the acts a session is offered', () => {
     const facts = { session: session(), quest: asked, grouping: placed({ group: 'working', shown: 'working' }) };
     expect(workTargetOf('pauseQuest', facts)).toEqual({ scope: 'quest', id: 'abc123' });
     expect(workTargetOf('pauseAsk', facts)).toEqual({ scope: 'ask', id: 'a1b2c3' });
-    const held = { ...facts, grouping: placed({ group: 'ended', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }) };
+    const held = { ...facts, grouping: placed({ group: 'done', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }) };
     expect(workTargetOf('resumeAsk', held)).toEqual({ scope: 'ask', id: 'a1b2c3' });
     expect(workTargetOf('stop', facts)).toBeNull();
   });
@@ -87,32 +87,32 @@ describe('the acts a session is offered', () => {
   });
 
   it('offers a parked quest’s last session Try again, and a stopped one Try again only where its stop holds its quest', () => {
-    const parked = { session: session({ state: 'failed' }), grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }), root: ROOT };
+    const parked = { session: session({ state: 'failed' }), grouping: placed({ group: 'failed', reason: 'parked', shown: 'parked', strikes: 3 }), root: ROOT };
     expect(offeredActs(parked, 'row')).toContain('retry');
     expect(offeredActs(parked, 'row')).not.toContain('stop');
 
-    const holding = { session: session({ state: 'stopped' }), grouping: placed({ group: 'ended', shown: 'stopped', holdsQuest: true }), root: ROOT };
+    const holding = { session: session({ state: 'stopped' }), grouping: placed({ group: 'done', shown: 'stopped', holdsQuest: true }), root: ROOT };
     expect(offeredActs(holding, 'row')).toContain('retry');
-    const released = { ...holding, grouping: placed({ group: 'ended', shown: 'stopped', holdsQuest: false }) };
+    const released = { ...holding, grouping: placed({ group: 'done', shown: 'stopped', holdsQuest: false }) };
     expect(offeredActs(released, 'row')).not.toContain('retry');
   });
 
   /** A record past its transient bound, its quest's last here, is released for that end by Try again. */
   it('offers Try again on a failed record past its transient bound that holds its quest, and leads with it', () => {
     const transient = session({ state: 'failed', noteParts: [{ code: 'ended.transient', values: { count: 5, minutes: 31 } }] });
-    const holding = placed({ group: 'ended', shown: 'failed', holdsQuest: true });
+    const holding = placed({ group: 'done', shown: 'failed', holdsQuest: true });
     const acts = offeredActs({ session: transient, grouping: holding, root: ROOT }, 'header');
     expect(acts).toContain('retry');
     expect(primaryAct(acts, holding)).toBe('retry');
     // Not where it does not hold its quest (a later record, a hand-over), nor a failed record that ended any other way.
-    expect(offeredActs({ session: transient, grouping: placed({ group: 'ended', shown: 'failed', holdsQuest: false }), root: ROOT }, 'row'))
+    expect(offeredActs({ session: transient, grouping: placed({ group: 'done', shown: 'failed', holdsQuest: false }), root: ROOT }, 'row'))
       .not.toContain('retry');
     const struck = session({ state: 'failed', noteParts: [{ code: 'ended.turn-failed-taken', values: {} }] });
     expect(offeredActs({ session: struck, grouping: holding, root: ROOT }, 'row')).not.toContain('retry');
   });
 
   it('offers Archive on what the reader placed in Ended, and Unarchive wherever the mark stands', () => {
-    const ended = { session: session({ state: 'completed' }), grouping: placed({ group: 'ended', shown: 'completed' }), root: ROOT };
+    const ended = { session: session({ state: 'completed' }), grouping: placed({ group: 'done', shown: 'completed' }), root: ROOT };
     expect(offeredActs(ended, 'row')).toContain('archive');
     expect(offeredActs(ended, 'row')).not.toContain('unarchive');
 
@@ -121,26 +121,26 @@ describe('the acts a session is offered', () => {
     expect(offeredActs(marked, 'row')).not.toContain('archive');
 
     // Archive never hides what needs the person, nor what runs, nor a record the reader has not placed.
-    expect(offeredActs({ ...ended, grouping: placed({ group: 'review', shown: 'completed' }) }, 'row')).not.toContain('archive');
+    expect(offeredActs({ ...ended, grouping: placed({ group: 'needs-you', reason: 'review', shown: 'completed' }) }, 'row')).not.toContain('archive');
     expect(offeredActs({ ...ended, grouping: null }, 'row')).not.toContain('archive');
   });
 
   /** Delete… only where the reader says the delete would be taken, at both doors. */
   it('offers Delete… only where the reader says deletable, after the archive marks and before the id', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
-    const deletable = { session: chat, grouping: placed({ group: 'ended', shown: 'completed', deletable: true }), root: ROOT };
+    const deletable = { session: chat, grouping: placed({ group: 'done', shown: 'completed', deletable: true }), root: ROOT };
     expect(offeredActs(deletable, 'row')).toEqual(['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy']);
     expect(offeredActs(deletable, 'header')).toContain('delete');
 
-    expect(offeredActs({ ...deletable, grouping: placed({ group: 'ended', shown: 'completed' }) }, 'row')).not.toContain('delete');
+    expect(offeredActs({ ...deletable, grouping: placed({ group: 'done', shown: 'completed' }) }, 'row')).not.toContain('delete');
     expect(offeredActs({ ...deletable, grouping: null }, 'row')).not.toContain('delete');
-    const driven = { session: session({ state: 'completed' }), grouping: placed({ group: 'ended', shown: 'completed', deletable: false }), root: ROOT };
+    const driven = { session: session({ state: 'completed' }), grouping: placed({ group: 'done', shown: 'completed', deletable: false }), root: ROOT };
     expect(offeredActs(driven, 'header')).not.toContain('delete');
   });
 
   it('offers a teammate’s record only what this machine can do of it: archive marks and its id', () => {
     const theirs = session({ id: 'person@machine-b/s1a2b3c4', state: 'completed', tree: null });
-    expect(offeredActs({ session: theirs, grouping: placed({ group: 'ended', shown: 'completed', teammate: true }) }, 'header'))
+    expect(offeredActs({ session: theirs, grouping: placed({ group: 'done', shown: 'completed', teammate: true }) }, 'header'))
       .toEqual(['archive', 'copy']);
     expect(offeredActs({ session: { ...theirs, state: 'working' }, grouping: placed({ group: 'working', shown: 'working', teammate: true }) }, 'row'))
       .toEqual(['copy']);
@@ -227,12 +227,12 @@ describe('the acts a session is offered', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
     const wordless = ['handOver', 'answer', 'retry', 'resumeQuest', 'resumeAsk', 'pauseQuest', 'pauseAsk'];
     for (const other of [{ serves: 's9z8y7x6' }, { opinion: 'o1p2q3' }]) {
-      const ended = { session: { ...chat, ...other }, grouping: placed({ group: 'ended', shown: 'completed' }), root: ROOT };
+      const ended = { session: { ...chat, ...other }, grouping: placed({ group: 'done', shown: 'completed' }), root: ROOT };
       for (const door of ['row', 'header'] as const) {
         const acts = offeredActs(ended, door);
         for (const act of wordless) expect(acts).not.toContain(act);
       }
-      const parked = { session: { ...chat, ...other, state: 'awaiting-person' as const }, grouping: placed({ group: 'you', shown: 'parked' }), root: ROOT };
+      const parked = { session: { ...chat, ...other, state: 'awaiting-person' as const }, grouping: placed({ group: 'failed', reason: 'parked', shown: 'parked' }), root: ROOT };
       const acts = offeredActs(parked, 'row');
       for (const act of wordless) expect(acts).not.toContain(act);
       expect(acts).toContain('stop');
@@ -251,7 +251,7 @@ describe('the acts a session is offered', () => {
     const helper = { ...chat, serves: 's9z8y7x6' };
     for (const partner of [{ ...helper, piece: 'p1a2b3c4' }, { ...helper, piece: 'p1a2b3c4', work: 'partner' }]) {
       for (const state of ['completed', 'awaiting-person'] as const) {
-        const grouping = placed(state === 'completed' ? { group: 'ended', shown: 'completed' } : { group: 'you', shown: 'parked' });
+        const grouping = placed(state === 'completed' ? { group: 'done', shown: 'completed' } : { group: 'failed', reason: 'parked', shown: 'parked' });
         for (const door of ['row', 'header'] as const) {
           const acts = offeredActs({ session: { ...partner, state }, grouping, root: ROOT }, door);
           for (const act of wordless) expect(acts).not.toContain(act);
@@ -272,11 +272,11 @@ describe('the acts a session is offered', () => {
    */
   it('offers a line a limit ended Go on now with… in its header, unless closed or paused', () => {
     const limited = session({ state: 'failed', limit: true });
-    const ended = placed({ group: 'ended', shown: 'limited' });
+    const ended = placed({ group: 'done', shown: 'limited' });
     expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: ended, root: ROOT }, 'header')).toContain('handOver');
     expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: ended, root: ROOT }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: limited, quest: quest('Done'), grouping: ended, root: ROOT }, 'header')).not.toContain('handOver');
-    const paused = placed({ group: 'ended', shown: 'limited', pausedBy: { scope: 'quest', id: 'abc123' } });
+    const paused = placed({ group: 'done', shown: 'limited', pausedBy: { scope: 'quest', id: 'abc123' } });
     expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: paused, root: ROOT }, 'header')).not.toContain('handOver');
     expect(handOverLabel(limited)).toBe('work.limit.goOnNow');
     // A failure no limit made is offered nothing new.
@@ -285,14 +285,14 @@ describe('the acts a session is offered', () => {
   });
 
   it('offers Review where there is work to read, and leads with it in To review', () => {
-    const toReview = { session: session({ state: 'stopped', tree: TREE }), grouping: placed({ group: 'review', shown: 'stopped' }), root: ROOT };
+    const toReview = { session: session({ state: 'stopped', tree: TREE }), grouping: placed({ group: 'needs-you', reason: 'review', shown: 'stopped' }), root: ROOT };
     expect(offeredActs(toReview, 'header')).toContain('review');
     expect(primaryAct(offeredActs(toReview, 'header'), toReview.grouping)).toBe('review');
     expect(offeredActs({ session: session({ tree: null }), root: null }, 'row')).not.toContain('review');
   });
 
   it('leads with Try again where it is offered, and with nothing on a session that has no next step', () => {
-    const parked = placed({ group: 'you', shown: 'parked' });
+    const parked = placed({ group: 'failed', reason: 'parked', shown: 'parked' });
     expect(primaryAct(offeredActs({ session: session({ state: 'failed' }), grouping: parked, root: ROOT }, 'header'), parked)).toBe('retry');
     expect(primaryAct(['stop', 'copy'], placed({ group: 'working', shown: 'working' }))).toBeNull();
   });

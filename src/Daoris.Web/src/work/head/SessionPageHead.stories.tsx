@@ -9,6 +9,7 @@ import type { Session } from '../../data/api';
 import { AskHelper } from '../start/AskHelper';
 import { HandOverAsk, type HandOverRoster } from '../start/HandOverAsk';
 import { HandOverOfferLine } from '../start/HandOverOfferLine';
+import type { SessionStateName } from '../groups';
 import { type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
 import { supervisionChip } from './lineSupervision';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
@@ -96,7 +97,7 @@ export const TryingAgainInChinese: Story = { ...TryingAgain, decorators: [sessio
 function HeldForALimitHead(args: ComponentProps<typeof SessionPageHead>) {
   const { t } = useTranslation();
   const grouping = {
-    session: SESSION.id, group: 'later', shown: 'limit-waits', archived: false, teammate: false,
+    session: SESSION.id, group: 'pending', state: 'pending', shown: 'limit-waits', archived: false, teammate: false,
     holds: { why: 'cooling', reason: 'its account is cooling.', until: '2026-10-26T12:30:00Z', account: 'account-2', accountName: 'Work' },
   } as const;
   return <Page><SessionPageHead {...args} facts={sessionFacts(t, { session: args.session, shown: args.shown, grouping })} /></Page>;
@@ -623,32 +624,37 @@ export const ByWeightDarkNarrow: Story = { args: WHY(BY_WEIGHT), decorators: [se
 
 // The facts led by *now · next*, a story per phase, each wide, narrow in 中文, and wide in the dark theme.
 type Phase = {
-  session: Partial<Session>; shown: ComponentProps<typeof SessionPageHead>['shown']; flow: { parts: number; landing: boolean };
+  session: Partial<Session>; shown: ComponentProps<typeof SessionPageHead>['shown']; state: SessionStateName; reason?: string;
   integration?: { state: string; line: string }; next?: ComponentProps<typeof SessionPageHead>['next']; branch?: SessionFactsOf['branch'];
 };
 
 function PhaseHead({ phase, ...args }: ComponentProps<typeof SessionPageHead> & { phase: Phase }) {
   const { t } = useTranslation();
   const session = { ...SESSION, ...phase.session };
-  const of: SessionFactsOf = { session, shown: phase.shown, flow: phase.flow, integration: phase.integration, branch: phase.branch };
+  const grouping = {
+    session: session.id, group: phase.state, state: phase.state, reason: phase.reason, shown: phase.shown, archived: false, teammate: false,
+  } as const;
+  const of: SessionFactsOf = { session, shown: phase.shown, grouping, integration: phase.integration, branch: phase.branch };
   return <Page><SessionPageHead {...args} session={session} shown={phase.shown} facts={sessionFacts(t, of)} next={phase.next} /></Page>;
 }
 
 const PHASES: Record<string, Phase> = {
-  Working: { session: {}, shown: 'working', flow: { parts: 0, landing: false } },
-  WaitsOnYou: {
-    session: { state: 'awaiting-person' }, shown: 'awaiting-person', flow: { parts: 0, landing: false },
+  Working: { session: {}, shown: 'working', state: 'working' },
+  NeedsYou: {
+    session: { state: 'awaiting-person' }, shown: 'awaiting-person', state: 'needs-you', reason: 'question',
     next: { press: 'answer', onPress: () => {} },
   },
-  PartsToLand: {
-    session: { state: 'completed' }, shown: 'completed', flow: { parts: 3, landing: false }, next: { press: 'accept', onPress: () => {} },
+  Review: {
+    session: { state: 'completed' }, shown: 'completed', state: 'needs-you', reason: 'review', next: { press: 'accept', onPress: () => {} },
   },
-  Landing: { session: { state: 'completed' }, shown: 'completed', flow: { parts: 3, landing: true } },
+  Pending: { session: { state: 'queued' }, shown: 'queued', state: 'pending' },
+  Failed: { session: { state: 'failed' }, shown: 'failed', state: 'failed', reason: 'transient' },
+  Done: { session: { state: 'completed' }, shown: 'completed', state: 'done' },
   Integrating: {
-    session: { state: 'completed' }, shown: 'completed', flow: { parts: 0, landing: false }, integration: { state: 'in-candidate', line: 'main' },
+    session: { state: 'completed' }, shown: 'completed', state: 'working', integration: { state: 'in-candidate', line: 'main' },
   },
   Landed: {
-    session: { state: 'completed' }, shown: 'completed', flow: { parts: 0, landing: false },
+    session: { state: 'completed' }, shown: 'completed', state: 'done',
     branch: { kind: 'landed', where: 'main' } as SessionFactsOf['branch'],
   },
 };
@@ -663,9 +669,11 @@ const phaseStories = (phase: Phase): { wide: Story; narrowChinese: Story; dark: 
 });
 
 const working = phaseStories(PHASES.Working!);
-const waits = phaseStories(PHASES.WaitsOnYou!);
-const parts = phaseStories(PHASES.PartsToLand!);
-const landing = phaseStories(PHASES.Landing!);
+const needsYou = phaseStories(PHASES.NeedsYou!);
+const review = phaseStories(PHASES.Review!);
+const pending = phaseStories(PHASES.Pending!);
+const failed = phaseStories(PHASES.Failed!);
+const done = phaseStories(PHASES.Done!);
 const integrating = phaseStories(PHASES.Integrating!);
 const landed = phaseStories(PHASES.Landed!);
 
@@ -673,18 +681,26 @@ const landed = phaseStories(PHASES.Landed!);
 export const NowWorking: Story = working.wide;
 export const NowWorkingNarrowChinese: Story = working.narrowChinese;
 export const NowWorkingDark: Story = working.dark;
-/** *Waits on you*, *next* a door to the answer. */
-export const NowWaitsOnYou: Story = waits.wide;
-export const NowWaitsOnYouNarrowChinese: Story = waits.narrowChinese;
-export const NowWaitsOnYouDark: Story = waits.dark;
-/** *3 parts to land*, *next* a door to the Accept…. */
-export const NowPartsToLand: Story = parts.wide;
-export const NowPartsToLandNarrowChinese: Story = parts.narrowChinese;
-export const NowPartsToLandDark: Story = parts.dark;
-/** *Landing*: the press is on its way. */
-export const NowLanding: Story = landing.wide;
-export const NowLandingNarrowChinese: Story = landing.narrowChinese;
-export const NowLandingDark: Story = landing.dark;
+/** *Needs you* for a question, *next* a door to the answer. */
+export const NowNeedsYou: Story = needsYou.wide;
+export const NowNeedsYouNarrowChinese: Story = needsYou.narrowChinese;
+export const NowNeedsYouDark: Story = needsYou.dark;
+/** *Needs you* for work to review, *next* a door to the Accept…. */
+export const NowReview: Story = review.wide;
+export const NowReviewNarrowChinese: Story = review.narrowChinese;
+export const NowReviewDark: Story = review.dark;
+/** *Pending*. */
+export const NowPending: Story = pending.wide;
+export const NowPendingNarrowChinese: Story = pending.narrowChinese;
+export const NowPendingDark: Story = pending.dark;
+/** *Failed*, its reason on the line. */
+export const NowFailed: Story = failed.wide;
+export const NowFailedNarrowChinese: Story = failed.narrowChinese;
+export const NowFailedDark: Story = failed.dark;
+/** *Done*. */
+export const NowDone: Story = done.wide;
+export const NowDoneNarrowChinese: Story = done.narrowChinese;
+export const NowDoneDark: Story = done.dark;
 /** *Integrating*: the integration record's own fact, said once. */
 export const NowIntegrating: Story = integrating.wide;
 export const NowIntegratingNarrowChinese: Story = integrating.narrowChinese;

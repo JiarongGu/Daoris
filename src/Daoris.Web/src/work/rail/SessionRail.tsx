@@ -170,7 +170,7 @@ export function SessionRail({
   // on the person by the reader's word alone. A list that draws none (nothing waits there, no reader, the strip) lets it go.
   // A search typed here hides every group, and is this rail's alone and never kept, so a go clears it, in the render the
   // go arrives in; the frame shows the list by state for it, and lays its strip over.
-  const bringing = group === 'you' || group === 'review';
+  const bringing = group === 'needs-you' || group === 'failed';
   if (bringing && !compact && query) setQuery('');
   const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
   useBringGroup(bringing ? groupHeading('sessions', group) : null, answered, onGroupBrought);

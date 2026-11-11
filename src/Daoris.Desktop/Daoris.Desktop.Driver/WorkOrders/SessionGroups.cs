@@ -6,32 +6,15 @@ namespace Daoris.Driver;
 
 
 /// <summary>
-/// The one reader of a session's group: which of the five groups each session is in, or Archived,
-/// the word its row shows, and what its second line says. <c>SESSION_GROUPS</c> hands it to the page and the terminal's
-/// <c>sessions</c> prints it, so the two cannot disagree.
+/// The one reader of a session's group: which of the five states each session is in (<see cref="SessionStateReader"/>), or the
+/// Archived fold, the word its row shows, and what its second line says. <c>SESSION_GROUPS</c> hands it to the page and the
+/// terminal's <c>sessions</c> prints it, so the two cannot disagree.
 /// </summary>
 /// <remarks>
-/// <para><b>Pure.</b> <see cref="Read"/> decides from a <see cref="SessionLook"/> and touches nothing; what it reads is
+/// <b>Pure.</b> <see cref="Read"/> decides from a <see cref="SessionLook"/> and touches nothing; what it reads is
 /// gathered by the door that asks (<see cref="JudgeAsync"/>, <see cref="VerdictsAsync"/>), so the table of cases holds
-/// the rule without a process.</para>
-///
-/// <para><b>A session is in the first group it qualifies for</b>: Waiting on you, To review, Working, Resumes later,
-/// Ended. Parked and awaiting reply are the planner's verdicts on the session's quest (<see cref="StartVerdict.Exhausted"/>,
-/// <see cref="StartVerdict.Waiting"/>), read for the quest's last session here only; nothing here counts strikes or
-/// decides a wait a second way.</para>
-///
-/// <para><b>To review is the tree's work, once nothing will go back into the tree.</b> Only the newest session on a tree
-/// stands for it; a tree a live session holds is in use; and a tree whose quest is
-/// still taken and considered by the planner is the one its carry-on or resume goes back into, so its asker
-/// rests in Resumes later or Ended. A quest the person's stop holds goes back into nothing until they release it
-/// (<see cref="StartVerdict.Stopped"/>), so the stop's work is to review. Read literally, the order would put every awaiting reply with a commit in To review
-/// and offer a review of a tree a carry-on is writing.</para>
-///
-/// <para><b>A teammate's record is grouped by its state only.</b> Its park waits on them, its tree is on their machine,
-/// and the planner's verdicts and the strikes are this machine's, as the park notification reads it.</para>
-///
-/// <para><b>Archive never hides what needs the person</b>: a mark moves a session to Archived from Resumes later or
-/// Ended only; one waiting on you, to review or still live is shown in its group with its mark said.</para>
+/// the rule without a process. Parked and awaiting reply are the planner's verdicts on the session's quest, read for the
+/// quest's last session here only; nothing here counts strikes or decides a wait a second way.
 /// </remarks>
 public static class SessionGroups
 {
@@ -46,7 +29,7 @@ public static class SessionGroups
         SessionEntries.Read(look, only);
 
     /// <summary>
-    /// Whether a live record waits on the person, the list's <i>Waiting on you</i>: a park nobody answered, since an
+    /// Whether a live record waits on the person's answer, a park that <i>needs you</i>: one nobody answered, since an
     /// answered one goes on at the driver's next look, and not a teammate's, whose park waits on them.
     /// One rule, which Ask Daoris's room lists its waiting sessions by.
     /// </summary>
@@ -55,10 +38,10 @@ public static class SessionGroups
         state == "awaiting-person" && !answered && !id.Contains('/');
 
     /// <summary>Every session's place, in the order a list shows them; with <paramref name="only"/>, those sessions' alone.</summary>
-    /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to review.</param>
+    /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to land.</param>
     public static IReadOnlyList<SessionGrouping> Read(SessionLook look, IReadOnlyCollection<string>? only = null)
     {
-        var facts = new Facts(look);
+        var facts = new SessionStateReader(look);
         var placed = look.Records
             .Where(record => only is null || only.Contains(record.Id, StringComparer.Ordinal))
             .Select(record => (Record: record, Row: facts.Place(record)))
@@ -103,15 +86,15 @@ public static class SessionGroups
     }
 
     /// <summary>
-    /// The trees <see cref="Read"/> would put to review, or offer to land, if they held work: an ended session's own tree, this
-    /// home's, the newest session on it and held by nothing live. A tree its quest goes back into is asked too (a cut-off's,
-    /// a parked quest's, an asker's), since its commits are offered to land whatever its ending. Only these are worth a git walk.
+    /// The trees <see cref="Read"/> would offer to land, or show beside a run's wait, if they held work: an ended session's own
+    /// tree, this home's, the newest session on it and held by nothing live. A tree its quest goes back into is asked too (a
+    /// cut-off's, a parked quest's, an asker's), since its commits are offered to land whatever its ending. Only these are worth a git walk.
     /// </summary>
     /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>): the only kind looked at.</param>
     public static IReadOnlyList<string> TreesToJudge(
         SessionLook look, Func<string, bool> held, IReadOnlyCollection<string>? only = null)
     {
-        var facts = new Facts(look);
+        var facts = new SessionStateReader(look);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var trees = new List<string>();
         foreach (var record in look.Records)
@@ -390,251 +373,18 @@ public static class SessionGroups
     }
 
     /// <summary>
-    /// A group's rows in its order: waiting and resuming oldest first, the longest wait first; to review and
-    /// working by repository then start, so rows do not reshuffle as their states move; ended and archived newest first.
+    /// A group's rows in its order: needing you and pending oldest first, the longest wait first; working by repository then
+    /// start, so rows do not reshuffle as their states move; failed, done and archived newest first.
     /// </summary>
     private static IEnumerable<(SessionRecord Record, SessionGrouping Row)> Ordered(
         string group, IEnumerable<(SessionRecord Record, SessionGrouping Row)> rows) => group switch
         {
-            SessionGroup.You or SessionGroup.Later => rows
+            SessionGroup.NeedsYou or SessionGroup.Pending => rows
                 .OrderBy(each => each.Record.Updated).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
-            SessionGroup.Review or SessionGroup.Working => rows
+            SessionGroup.Working => rows
                 .OrderBy(each => each.Record.Repository, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(each => each.Record.Created).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
             _ => rows.OrderByDescending(each => each.Record.Updated).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
         };
 
-    /// <summary>What every session's place is read against, gathered once per look.</summary>
-    private sealed class Facts
-    {
-        private readonly SessionLook _look;
-        private readonly Dictionary<string, Consideration> _verdicts;
-        private readonly Dictionary<string, QuestView> _quests;
-        private readonly HashSet<string> _liveTrees;
-        private readonly Dictionary<string, string> _newestOnTree;
-        private readonly IReadOnlyDictionary<string, IReadOnlyList<PersonWait>> _runWaits;
-
-        public Facts(SessionLook look)
-        {
-            _look = look;
-            _runWaits = RunWaitSessions.Of(look);
-            _verdicts = look.Considered
-                .GroupBy(consideration => consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-            _quests = look.Quests
-                .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-            var ours = look.Records.Where(record => !record.Teammate && record.Tree is not null).ToList();
-            // An open conversation between turns writes nothing into its tree until the person says more.
-            _liveTrees = new HashSet<string>(
-                ours.Where(record => record.Live && !look.Between.Contains(record.Id)).Select(record => Normal(record.Tree!)),
-                StringComparer.OrdinalIgnoreCase);
-            _newestOnTree = ours
-                .GroupBy(record => Normal(record.Tree!), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).First().Id,
-                    StringComparer.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Where a session is listed, and what its own tree offers to land wherever it rests bar Working: a session that
-        /// goes on, or runs, is about to write into that tree again. Where the line holds its commits by content, its discard
-        /// instead. An open conversation between turns offers its landing too, by the same judgement, and never a
-        /// discard while it is open.
-        /// </summary>
-        public SessionGrouping Place(SessionRecord record)
-        {
-            var row = PlaceInGroup(record);
-            var between = _look.Between.Contains(record.Id);
-            if ((row.Group == SessionGroup.Working && !between)
-                || LandableTree(record) is not { } tree
-                || !_look.Trees.TryGetValue(Normal(tree), out var work))
-            {
-                return row;
-            }
-
-            return between
-                ? row with { Lands = LandOffer.Of(tree, work) }
-                : row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
-        }
-
-        private SessionGrouping PlaceInGroup(SessionRecord record)
-        {
-            var archived = _look.Archived.ContainsKey(record.Id);
-            // A failure an account's limit made is said limited, in whichever group it rests.
-            var row = new SessionGrouping(record.Id, SessionGroup.Ended, ShownState.Of(record))
-            {
-                Archived = archived,
-                Teammate = record.Teammate,
-                // The ledger's half, as the service answered it, and this machine's.
-                Deletable = record.Deletable && !record.Live && !record.Teammate && !_look.Kept.Contains(record.Id),
-            };
-
-            if (record.Live)
-            {
-                // A live session of a quest whose earlier sessions here failed is another try,
-                // and its head says how many failed before it, counted as the planner counts them, from the last *Try again*.
-                if (!record.Teammate && record.Quest is { } quest && _look.Strikes.TryGetValue(quest, out var failed) && failed > 0)
-                {
-                    row = row with { Strikes = failed };
-                }
-
-                // The call its agent is inside, said only while it works; a park's turn ended, and a teammate's calls
-                // run on their machine, which this one heard none of.
-                if (!record.Teammate && record.State == "working" && _look.Calls.TryGetValue(record.Id, out var call))
-                {
-                    row = row with { Calling = call };
-                }
-
-                // An answered park goes on at the driver's next look, so it is working, never waiting on you.
-                if (record.Answered) return row with { Group = SessionGroup.Working, Shown = ShownState.Answered };
-
-                // A teammate's park waits on them: nothing this window sends reaches its process.
-                return row with { Group = WaitsOnYou(record.Id, record.State, record.Answered) ? SessionGroup.You : SessionGroup.Working };
-            }
-
-            if (record.Teammate) return Rest(row);
-
-            // A chat the person's words wait on goes on with them, since its runner takes them up at once,
-            // unless the runner says what holds them; before to review, as a driven record's words go on in its tree.
-            if (_look.ChatsWaiting.Contains(record.Id))
-            {
-                return _look.Held.TryGetValue(record.Id, out var chat)
-                    ? Rest(row.HeldBy(chat) with { Group = SessionGroup.Later })
-                    : row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
-            }
-
-            var verdict = VerdictOnLast(record);
-            // Its line says the stop holds its quest, in whichever group it rests; and that a pause does, since a pause is the
-            // reason before a stop. So does its end past its transient bound, which *Try again* releases for that end alone.
-            row = row with { HoldsQuest = verdict?.Verdict is StartVerdict.Stopped or StartVerdict.TransientHeld or StartVerdict.PolicyHeld, PausedBy = verdict?.PausedBy };
-
-            // The person's words wait on it, so it goes on with them, working, where the planner starts
-            // it; else it resumes later, its line naming what holds them, the planner's own verdict. Before parked and to
-            // review: words written to it are the person's Try again, and its tree is what it goes on in. The
-            // session a reopen names, though a later one is its quest's last here, reads that quest's verdict for its words.
-            if (WordsWait(record) && VerdictOn(record) is { } words)
-            {
-                // The planner's own hold first; where it starts them, the cool-off a fresh plan cannot see, read from
-                // the home for the account the words resume on.
-                if ((WordsHold.Of(words, WaitOn(words.Quest.Id)) ?? _look.Held.GetValueOrDefault(record.Id)) is not { } holds)
-                {
-                    return row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
-                }
-
-                return Rest(row.HeldBy(holds) with { Group = SessionGroup.Later, PausedBy = words.PausedBy });
-            }
-
-            if (verdict?.Verdict == StartVerdict.Exhausted)
-            {
-                return row with
-                {
-                    Group = SessionGroup.You,
-                    Shown = ShownState.Parked,
-                    Strikes = _look.Strikes.TryGetValue(record.Quest!, out var strikes) ? strikes : null,
-                };
-            }
-
-            // 🔴 It ended its turn on its own helper's ask and goes on with the answer in its own tree, so it resumes later,
-            // never to review and never the person's: the planner considers nothing of its taken quest meanwhile, so no verdict says so.
-            if (record.AwaitsHelper) return Rest(row with { Group = SessionGroup.Later, Shown = ShownState.AwaitingHelper });
-
-            var held = ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds ? work : null;
-            if (_runWaits.TryGetValue(record.Id, out var waits)) return row.WaitedOn(waits, held);
-            if (held is not null) return row with { Group = SessionGroup.Review, Work = held };
-
-            if (verdict is { Verdict: StartVerdict.Waiting, Quest.Awaits: { Length: > 0 } awaits })
-            {
-                return Rest(row with
-                {
-                    Group = SessionGroup.Later,
-                    Shown = ShownState.AwaitingReply,
-                    Awaits = awaits,
-                    AwaitsOf = _quests.TryGetValue(awaits, out var question) ? question.To : null,
-                });
-            }
-
-            return Rest(row);
-
-            SessionGrouping Rest(SessionGrouping resting) => archived ? resting with { Group = SessionGroup.Archived } : resting;
-        }
-
-        /// <summary>
-        /// The tree an ended session of this machine's would offer to land, were there commits in it: its own, the newest
-        /// session on it, held by nothing live. Whatever its ending, and whether or not its quest goes back into it: the person
-        /// may land what it committed before a carry-on writes more. An open conversation between turns too, as the page's
-        /// foot offers it. Null for any other.
-        /// </summary>
-        public string? LandableTree(SessionRecord record)
-        {
-            // A partner's record never lands; its piece reaches the line through its lead alone.
-            if ((record.Live && !_look.Between.Contains(record.Id)) || record.Teammate || record.Partner || record.Tree is not { } tree) return null;
-            var key = Normal(tree);
-            return _newestOnTree.TryGetValue(key, out var newest) && newest == record.Id && !_liveTrees.Contains(key) ? tree : null;
-        }
-
-        /// <summary>
-        /// The tree an ended session of this machine's would be reviewed in, were there work in it: its landable tree, its quest
-        /// not parked and not going back into it. Null for any other.
-        /// </summary>
-        public string? ReviewableTree(SessionRecord record)
-        {
-            if (LandableTree(record) is not { } tree) return null;
-
-            // Parked comes first, and a quest the planner still considers while it is taken goes back into this
-            // session's tree: its carry-on or its resume, whatever holds that start for now. Bar the person's
-            // stop: nothing goes back into its tree until they release it, so its work is theirs to review. And bar
-            // a pause or a finished session's take, until Resume or the person's word. An open
-            // quest whose failed session committed work here goes back into it too, so its tree is not offered meanwhile.
-            return VerdictOnLast(record) is { } verdict
-                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused or StartVerdict.Unclosed)
-                   && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken" || verdict.CarriesWork is > 0)
-                ? null
-                : tree;
-        }
-
-        /// <summary>
-        /// Whether the person's words wait on this record for it to go on with: the record its quest's words
-        /// go on in (<see cref="WordsOn"/>).
-        /// </summary>
-        private bool WordsWait(SessionRecord record) =>
-            record.Quest is { } quest && string.Equals(WordsOn(quest)?.Session, record.Id, StringComparison.Ordinal);
-
-        /// <summary>
-        /// The record the person's words wait on for this quest, the planner's <c>WordsOn</c> read again: with
-        /// words kept on it, not every one a word it is already found unable to go on with (its marks). The session the quest's
-        /// reopen names first, though a later one is its last here, else its last session here; where the planner
-        /// started the words' go-on, the record it names. The person's stop of the last session holds the named record's words,
-        /// so they are listed on it, held by that verdict.
-        /// </summary>
-        private PriorSession? WordsOn(string quest)
-        {
-            if (_verdicts.TryGetValue(quest, out var verdict) && verdict is { GoesOn: true, Resumes: { } resumes }) return resumes;
-            if (_look.NamedByReopen.TryGetValue(quest, out var named) && Waits(named)) return named;
-            return _look.LastRun.TryGetValue(quest, out var last) && Waits(last) ? last : null;
-
-            // The planner's hold, in this copy's own right.
-            bool Waits(PriorSession record) =>
-                record.WordsWaiting && !GoOnMarks.Judged(record, _look.Unable.GetValueOrDefault(record.Session)) && !_look.SupervisorHolds(record);
-        }
-
-        /// <summary>The planner's verdict on this session's quest, where its words go on in this session (<see cref="WordsOn"/>) or it is that quest's last here.</summary>
-        private Consideration? VerdictOn(SessionRecord record) =>
-            VerdictOnLast(record)
-            ?? (WordsWait(record) && _verdicts.TryGetValue(record.Quest!, out var verdict) ? verdict : null);
-
-        /// <summary>The look's wait holding this quest's start, on a cool-off or on signed-out accounts, or null.</summary>
-        private AccountWait? WaitOn(string quest) =>
-            _look.Waits.FirstOrDefault(wait => wait.Quests.Contains(quest, StringComparer.OrdinalIgnoreCase));
-
-        /// <summary>The planner's verdict on this session's quest, where this session is that quest's last here; null otherwise.</summary>
-        private Consideration? VerdictOnLast(SessionRecord record) =>
-            record.Quest is { } quest
-            && _look.LastRun.TryGetValue(quest, out var last)
-            && string.Equals(last.Session, record.Id, StringComparison.Ordinal)
-            && _verdicts.TryGetValue(quest, out var verdict)
-                ? verdict
-                : null;
-    }
 }

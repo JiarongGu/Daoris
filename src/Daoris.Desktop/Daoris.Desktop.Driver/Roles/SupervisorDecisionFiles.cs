@@ -19,7 +19,6 @@ internal sealed class SupervisorDecisionFiles(string home)
 
     public string PointerOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + QuestionSupervisorDecisions.PointerSuffix);
 
-    /// <summary>The session folders of every decision on disk.</summary>
     public IEnumerable<string> Folders()
     {
         var root = DaorisHome.Entry(home, HomeEntry.Sessions);

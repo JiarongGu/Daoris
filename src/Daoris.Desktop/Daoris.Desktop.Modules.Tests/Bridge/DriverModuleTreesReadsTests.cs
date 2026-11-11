@@ -74,11 +74,10 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A partner's record lands nothing at the press, the plan or the verb; each
-    /// refuses it in the words that name its lead's merge of the frozen ref.
+    /// A partner's record lands nothing at the press, the plan or the verb; each refuses it in the words that name its lead's merge of the frozen ref.
     /// </summary>
     [Fact]
-    public async Task A_partners_record_is_refused_at_the_press_the_plan_and_the_verb()
+    public async Task A_partners_record_is_refused_at_the_plan_and_the_verb()
     {
         const string sessions = """
             [{ "id": "pt1a2b3c", "repository": "engine", "state": "completed", "kind": "chat", "door": "codex-acp",
@@ -91,12 +90,9 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
             [new SessionRecord("pt1a2b3c", "engine", "completed") { Serves = "s1a2b3c4", Piece = "pc000001" }], "pt1a2b3c")!;
 
         var verb = await AnswerAsync(module, "LANDING", new { id = "pt1a2b3c", said = true });
-        var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "pt1a2b3c" });
 
         Assert.Equal(refused.Error, Said(verb).Error);
         Assert.Equal(1, Said(verb).Code);
-        Assert.False(press.GetProperty("done").GetBoolean());
-        Assert.Equal(refused.Error, Said(press).Error);
         Assert.Contains("lands nothing", await RefusalAsync(module, "LANDING", new { id = "pt1a2b3c" }));
     }
 
@@ -138,13 +134,13 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
 
         var page = await AnswerAsync(module, "SESSION_GROUPS", new { });
         var verb = await AnswerAsync(module, "SESSION_GROUPS", new { group = (string?)null, repository = (string?)null, json = false, said = true });
-        var named = await AnswerAsync(module, "SESSION_GROUPS", new { group = SessionGroup.You, said = true });
+        var named = await AnswerAsync(module, "SESSION_GROUPS", new { group = SessionGroup.NeedsYou, said = true });
         var written = await AnswerAsync(module, "SESSION_GROUPS", new { json = true, said = true });
 
         Assert.Equal(["sessions", "entries"], page.EnumerateObject().Select(each => each.Name));
         Assert.Equal(["sessions", "entries", "said"], verb.EnumerateObject().Select(each => each.Name));
         Assert.Equal(["sessions: no session on this machine."], Said(verb).Out);
-        Assert.Equal(["sessions: nothing waits on you."], Said(named).Out);
+        Assert.Equal(["sessions: nothing needs you."], Said(named).Out);
         Assert.Equal(0, Said(verb).Code);
         // `--json` is the page's own answer, field for field, as `SessionsCommand.Json` writes it.
         Assert.Equal(SessionsCommand.Json([], []), Said(written).Out.Single());

@@ -31,12 +31,12 @@ public static class HelpPlaces
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
         // What waits on the person below Sessions and Quests, a group of the view's list the
-        // page brings into view, named by its heading: Sessions' parked and to-review groups (the reader's `you` and
-        // `review`), Quests' asks and the quests held for the person's yes or review. A part names no session or quest in it
+        // page brings into view, named by its heading: Sessions' Needs you and Failed groups (the reader's `needs-you` and
+        // `failed`), Quests' asks and the quests held for the person's yes or review. A part names no session or quest in it
         // (a link's item names one, on Quests and Sessions); Overview has no part, since what
         // waits on the person leads it.
         // New conversation, the composer; a link to it may carry a repository and words.
-        ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"), ("sessions", "new", "New conversation"),
+        ("sessions", "needs-you", "Needs you"), ("sessions", "failed", "Failed"), ("sessions", "new", "New conversation"),
         ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
         // A repository's Setup, where its own values are set; a link names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),

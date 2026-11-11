@@ -1,6 +1,6 @@
 # `browser` — the smallest plugin that hands a session a tool
 
-A plugin may **declare MCP servers** (`docs/2026-09-23-intake-design.md` §1f, D65): every session
+A plugin may **declare MCP servers** (`docs/archive/2026-09-23-intake-design.md` §1f, D65): every session
 the driver spawns is handed them beside Daoris's own knowledge host. This one declares the
 [Playwright MCP server](https://github.com/microsoft/playwright-mcp), which is what makes *test it
 in a browser* something a session can do — open the app, click through the change, read the page —

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The names check (docs/2026-10-01-naming-design.md §6), beside the parity check. The parity
+// The names check (docs/archive/2026-10-01-naming-design.md §6), beside the parity check. The parity
 // check holds that both catalogues have every key; this holds that each key a person reads as a name says
 // what the glossary (`src/locales/glossary.json`) says it should, in each language:
 // - glossary: a label whose English names a term says the term's Chinese name, and neither language uses a

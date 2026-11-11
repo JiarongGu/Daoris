@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "3.0.1",
-  "changes": "Its work journal is written one record at a time under a lock (the kit's storage.mjs), so the work processes of a repository and a workspace, which share its data folder, no longer write over each other's attempts.",
+  "version": "3.2.0",
+  "changes": "Its pull-request step declares a goal, so a Daoris that starts a step's agent has an agent open the pull request with the plugin's own tools; elsewhere the step is performed on work/perform as before, and an attempt begun there is settled by its own check.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -14,7 +14,35 @@
     "commands": [
       { "name": "login", "about": "Keeps a personal access token for Azure DevOps' REST API in this plugin's own storage.", "interactive": true, "adopts": { "hosts": ["dev.azure.com", "visualstudio.com"], "answer": "token" } },
       { "name": "logout", "about": "Forgets the kept token." },
-      { "name": "status", "about": "Says whether a token is kept, since when, and whether Azure DevOps last refused it.", "tool": true }
+      { "name": "status", "about": "Says whether a token is kept, since when, and whether Azure DevOps last refused it.", "tool": true },
+      { "name": "create-pull-request", "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
+        "about": { "en": "Opens an Azure DevOps pull request from a pushed branch into its target (the repository's default branch where none is named), or finds the active one; its data is the pull request's id, address and state.", "zh": "从已推送的分支向目标分支（未指定则为仓库默认分支）创建 Azure DevOps 拉取请求，已有进行中的则直接找到；数据为拉取请求的编号、地址和状态。" },
+        "tool": true, "writes": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "branch", "type": "text", "title": { "en": "Pushed branch", "zh": "已推送的分支" }, "required": true },
+          { "name": "target", "type": "text", "title": { "en": "Target branch", "zh": "目标分支" } },
+          { "name": "title", "type": "text", "title": { "en": "Title", "zh": "标题" } },
+          { "name": "description", "type": "text", "title": { "en": "Description", "zh": "描述" } }
+        ] },
+      { "name": "pull-request-status", "title": { "en": "How a pull request stands", "zh": "拉取请求的状态" },
+        "about": { "en": "Says whether a pull request, named by its address or id or found from its branch, is open, completed or abandoned, with its address and merge commit as data.", "zh": "说明一个拉取请求（按地址或编号指定，或从其分支找到）是进行中、已完成还是已放弃，数据含地址和合并提交。" },
+        "tool": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "pull-request", "type": "text", "title": { "en": "Pull request's address or id", "zh": "拉取请求的地址或编号" } },
+          { "name": "branch", "type": "text", "title": { "en": "Its branch", "zh": "其分支" } },
+          { "name": "target", "type": "text", "title": { "en": "Its target branch", "zh": "其目标分支" } }
+        ] },
+      { "name": "complete-pull-request", "title": { "en": "Complete a pull request", "zh": "完成拉取请求" },
+        "about": { "en": "Completes an active pull request by the merge strategy asked (merge where none is), its policies still deciding; one already completed is said so.", "zh": "按所要求的合并策略（未指定则为合并）完成进行中的拉取请求，仍由其策略决定；已完成的会如实说明。" },
+        "tool": true, "writes": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "pull-request", "type": "text", "title": { "en": "Pull request's address or id", "zh": "拉取请求的地址或编号" }, "required": true },
+          { "name": "strategy", "type": "choice", "title": { "en": "Merge strategy", "zh": "合并策略" }, "choices": ["merge", "squash", "rebase", "rebase-merge"] },
+          { "name": "delete-source-branch", "type": "boolean", "title": { "en": "Delete the source branch", "zh": "删除源分支" } }
+        ] }
     ],
     "storage": { "for": "The personal access token login keeps, and when Azure DevOps last refused it." }
   },
@@ -23,6 +51,7 @@
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
       "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the personal access token its own login keeps.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用它自己登录时保存的个人访问令牌。" },
+      "goal": { "en": "Open an Azure DevOps pull request from the pushed branch into the line with create-pull-request (finding the active one where there is one), check it with pull-request-status, and answer reached with its address as the evidence's url and its id as the pull-request output; answer failed with the code a tool's refusal names where it cannot be opened.", "zh": "用 create-pull-request 从已推送的分支向主线创建 Azure DevOps 拉取请求（已有进行中的则找到它），用 pull-request-status 确认，然后回答 reached，证据的 url 为其地址，pull-request 输出为其编号；无法创建时回答 failed，代码取工具拒绝时给出的代码。" },
       "reach": "performed",
       "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },

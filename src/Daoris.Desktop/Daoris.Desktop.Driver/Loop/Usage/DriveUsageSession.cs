@@ -5,9 +5,9 @@ internal static class DriveUsageSession
 {
     public const string Text =
         """
-          session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
-              this machine's sessions by what they need: waiting on you first, then to review, working,
-              resumes later and ended.
+          session list [--group needs-you|working|pending|failed|done|archived] [--repository <name>] [--json]
+              this machine's sessions by what they need: needing you first, then working, pending,
+              failed and done.
           session stop <id> [--turn]  ·  session finish <id> [--note "…"]  ·  session decline <id> --reason "…"
               stop a live session (its quest is then held here until `daoris quest retry`), or finish or
               decline one that waits on you. --turn stops only its turn, keeping the session, so the words

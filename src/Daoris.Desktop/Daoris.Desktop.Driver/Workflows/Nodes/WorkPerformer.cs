@@ -286,7 +286,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     {
         AttemptStates.Recorded or AttemptStates.Unknown => attempt.AskAt is not { } ask || ask <= now,
         // The executor owns a check's bound, so it is asked once it says it has an answer, or after a restart; never at its deadline.
-        AttemptStates.Sent when OnPort(attempt) => !SentHere(attempt.Call.Invocation) || PortOf(attempt.Plugin)?.Answered(attempt.Call.Invocation) == true,
+        AttemptStates.Sent when OnPort(attempt) || AgentsFor(attempt, null) is not null =>
+            !SentHere(attempt.Call.Invocation) || (PortOf(attempt.Plugin) ?? AgentsFor(attempt, null))?.Answered(attempt.Call.Invocation) == true,
         AttemptStates.Sent => !SentHere(attempt.Call.Invocation) || Held(attempt) != attempt.Generation
             || (attempt.AskAt ?? attempt.Call.DeadlineAt) <= now,
         _ => false,
@@ -316,12 +317,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         });
         if (refused is not null) return new(unit, node.Id, PerformedWhat.Refused, refused);
         if (asked is null) return new(unit, node.Id, PerformedWhat.NotTaken, Moved);
-        if (node.Perform is not { } perform || !(perform.Reconcile || perform.Idempotent))
+        // An attempt begun on `work/perform` is its plugin's to settle by its own `check`, whatever the step declares since.
+        var agents = AgentsFor(asked, null);
+        if (agents is null && (node.Perform is not { } perform || !(perform.Reconcile || perform.Idempotent)))
         {
             return records.Edited(unit, node.Id, record => Still(record, invocation, node.Id, current => Hold(record, current, NoReconcile)));
         }
 
-        if (!perform.Reconcile)
+        if (agents is null && !node.Perform!.Reconcile)
         {
             // An idempotent step's redelivery uses the same key, its plugin deduplicates it durably, and its answer comes by `work/step`.
             // Idempotency allows the same key again; it does not say the effect never began. So an attempt its node has moved
@@ -336,8 +339,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             return decided.What == PerformedWhat.Redelivered && sends.Take() ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : decided;
         }
 
-        var check = OnPort(asked);
-        var checks = check ? PortOf(asked.Plugin) : null;
+        var check = OnPort(asked) || agents is not null;
+        var checks = OnPort(asked) ? PortOf(asked.Plugin) : agents;
         if ((check ? checks is null : port.GenerationOf(asked.Plugin) is null) || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
         WorkReconcileAnswer answer;
         int generation;
@@ -417,10 +420,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         {
             generation = await StepAuthority.RunAsync(StepAuthorities.Of(unit, attempt), async () =>
             {
-                if (!OnPort(attempt)) return await port.PerformAsync(attempt.Plugin, attempt.Call with { Options = node.Options }, ct).ConfigureAwait(false);
+                var first = attempt.Deliveries == 0 ? node : null;
+                var agents = AgentsFor(attempt, first);
+                if (!OnPort(attempt) && agents is null && first?.Goal is null)
+                    return await port.PerformAsync(attempt.Plugin, attempt.Call with { Options = node.Options }, ct).ConfigureAwait(false);
 
-                // A hand-over; the executor runs it on its own task, never the pass's.
-                await (PortOf(attempt.Plugin) ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
+                // A hand-over; the executor or the step's session runs it on its own task, never the pass's.
+                await (PortOf(attempt.Plugin) ?? agents ?? throw new DriverException(OnPort(attempt) ? "no executor takes a check here" : "no step agents perform a step declaring a goal here"))
+                    .SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
                 return PortGeneration;
             }).ConfigureAwait(false);
         }
@@ -525,6 +532,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// </summary>
     internal static bool OnPort(NodeAttempt attempt) => NodeKit.Of(attempt.Plugin) is IJournalled;
 
+    /// <summary>The step agents' port for a plugin's attempt they hold, or whose node declares a goal; null where no loop wires them.</summary>
+    private IStepAgents? AgentsFor(NodeAttempt attempt, NodeDeclaration? node) =>
+        !OnPort(attempt) && Doors.Door<IStepAgents>(StepAgents.Door) is { } agents && (node?.Goal is not null || agents.Holds(attempt.Call.Invocation))
+            ? agents
+            : null;
+
     /// <summary>The generation an attempt on a port records: the port has one, the driver's own.</summary>
     private const int PortGeneration = 1;
 
@@ -535,9 +548,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public void StopChecks(string unit, IReadOnlyCollection<string> nodes)
     {
         if (records.Read(unit) is not { } record) return;
-        foreach (var attempt in record.Attempts.Where(each => OnPort(each) && nodes.Contains(each.Node) && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
+        foreach (var attempt in record.Attempts.Where(each => (OnPort(each) || AgentsFor(each, null) is not null) && nodes.Contains(each.Node)
+                     && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
         {
-            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) PortOf(attempt.Plugin)?.Stop(attempt.Call.Invocation);
+            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) (PortOf(attempt.Plugin) ?? AgentsFor(attempt, null))?.Stop(attempt.Call.Invocation);
         }
     }
 

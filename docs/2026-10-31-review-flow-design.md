@@ -1,6 +1,6 @@
 # REVIEWFLOW1 and LINESTOGETHER1: a session's page as one flow, and its lines brought together
 
-**Standing:** a synthesis, 2026-10-31, revised that day on both makers' reads (`2026-10-31-review-flow-reads.md`): accepted under D191
+**Standing:** a synthesis, 2026-10-31, revised that day on both makers' reads (`archive/2026-10-31-review-flow-reads.md`): accepted under D191
 in full (REVIEWFLOW1a built); the door's section (§4, rows 1d, 1e, REVIEWFLOW1c) accepted after its round-3 named changes, which
 Codex checked closed. The steward's, from the brief
 and the sealed proposals of the Opus maker (O) and Codex (X); claims checked at `5c40345f7`. Paths: the web's under `src/Daoris.Web/src/`,

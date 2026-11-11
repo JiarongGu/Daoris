@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -14,22 +15,18 @@ namespace Daoris.Driver;
 /// No version says it: git's <c>promisor-remote.c</c> reads the variable in 2.39.4, 2.44.1 and 2.45.1 but not in 2.44.0 or 2.45.0. So
 /// it is proved once per git in use (<see cref="GitRuns.GitInUse"/>: its file and its write time), in the first repository with a
 /// promisor a read is asked in, by two starts with every transport refused (so neither reaches a network) and git's trace on: asked an
-/// object no repository holds, the git without the variable must run its fetch, and the same git told the variable must not. A git
-/// whose plain run shows no fetch proves nothing and is not trusted with it.
+/// object no repository holds, the git without the variable must run its fetch, and the same git told it must not. A start that did
+/// not run, or a plain run showing no fetch, proves nothing: it is not kept, and the next read proves again.
 /// </remarks>
 internal static class GitLazyFetch
 {
     internal const string Variable = "GIT_NO_LAZY_FETCH";
 
     private static readonly ConcurrentDictionary<string, Lazy<Task<bool>>> s_proved = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<string, (long Written, string? Text)> s_configs = new(StringComparer.OrdinalIgnoreCase);
     private static readonly AsyncLocal<bool> s_fetching = new();
     private static readonly AsyncLocal<bool> s_probing = new();
 
-    /// <summary>
-    /// The test seam for the proof: where set, it answers for the git in use instead of the two starts, so an unsupported build's path
-    /// is one fast case. Null in production, and an async local.
-    /// </summary>
+    /// <summary>The test seam for the proof: where set, it answers for the git in use instead of the two starts. Null in production.</summary>
     internal static readonly AsyncLocal<Func<string, Task<bool>>?> Proof = new();
 
     /// <summary>Until disposed, this flow's reads may fetch: the one remote start of a read that answered missing.</summary>
@@ -58,7 +55,7 @@ internal static class GitLazyFetch
         !(info.Environment.TryGetValue(Variable, out var off) && off == "1") && Promisor(folder);
 
     /// <summary>Whether the repository <paramref name="folder"/> is a folder of names a promisor remote (a partial clone's).</summary>
-    internal static bool Promisor(string folder) => ConfigOf(folder) is { } text && PromisorLine().IsMatch(text);
+    internal static bool Promisor(string folder) => ShapeOf(folder)?.Promisor == true;
 
     /// <summary>
     /// Whether the two traces prove the variable honoured: the plain run started git's fetch, and the run told the variable did not.
@@ -73,11 +70,19 @@ internal static class GitLazyFetch
     {
         var key = GitRuns.GitInUse(ProgramHome.Named) ?? file;
         if (Proof.Value is { } stand) return stand(key);
-        var proof = s_proved.GetOrAdd(key, _ => new Lazy<Task<bool>>(() => ProveAsync(folder)));
+        var proof = s_proved.GetOrAdd(key, _ => new Lazy<Task<bool>>(() => ProveAsync(key, folder)));
         return proof.Value.WaitAsync(ct);
     }
 
-    private static async Task<bool> ProveAsync(string folder)
+    /// <summary>The proof of <paramref name="key"/>'s git, kept only where both starts ran and the plain one fetched; else the next read asks again.</summary>
+    private static async Task<bool> ProveAsync(string key, string folder)
+    {
+        var proved = await ProbeAsync(folder).ConfigureAwait(false);
+        if (proved is null) s_proved.TryRemove(key, out _);
+        return proved ?? false;
+    }
+
+    private static async Task<bool?> ProbeAsync(string folder)
     {
         s_probing.Value = true;
         var absent = Absent(folder);
@@ -85,37 +90,25 @@ internal static class GitLazyFetch
         string[] refused = ["-c", "protocol.allow=never", .. new[] { "file", "git", "ssh", "http", "https", "ext" }.SelectMany(name => new[] { "-c", $"protocol.{name}.allow=never" })];
         string[] arguments = [.. refused, "cat-file", "-t", absent];
         var bound = TimeSpan.FromSeconds(30);
-        var (_, _, plain) = await GitRuns.GitAsync(folder, arguments, new Dictionary<string, string> { ["GIT_TRACE"] = "1" }, bound, CancellationToken.None).ConfigureAwait(false);
-        var (_, _, told) = await GitRuns.GitAsync(folder, arguments, new Dictionary<string, string> { ["GIT_TRACE"] = "1", [Variable] = "1" }, bound, CancellationToken.None).ConfigureAwait(false);
-        return Proves(plain, told);
+        var (plainCode, _, plain) = await GitRuns.GitAsync(folder, arguments, new Dictionary<string, string> { ["GIT_TRACE"] = "1" }, bound, CancellationToken.None).ConfigureAwait(false);
+        if (plainCode < 0 || !RanFetch(plain)) return null;
+        var (toldCode, _, told) = await GitRuns.GitAsync(folder, arguments, new Dictionary<string, string> { ["GIT_TRACE"] = "1", [Variable] = "1" }, bound, CancellationToken.None).ConfigureAwait(false);
+        return toldCode < 0 ? null : Proves(plain, told);
     }
 
     // An id of the repository's format that names nothing.
-    private static string Absent(string folder)
-    {
-        var sha256 = ConfigOf(folder) is { } text && Sha256Line().IsMatch(text);
-        return string.Concat(Enumerable.Repeat("da0f", sha256 ? 16 : 10));
-    }
+    private static string Absent(string folder) => string.Concat(Enumerable.Repeat("da0f", ShapeOf(folder)?.Sha256 == true ? 16 : 10));
 
-    // The repository's shared configuration, read again only once its file is written.
-    private static string? ConfigOf(string folder)
-    {
-        if (RefFiles.CommonDirOf(folder) is not { } common) return null;
-        var file = new FileInfo(Path.Combine(common, "config"));
-        try
-        {
-            if (!file.Exists) return null;
-            var written = file.LastWriteTimeUtc.Ticks;
-            if (s_configs.TryGetValue(file.FullName, out var held) && held.Written == written) return held.Text;
-            var text = File.ReadAllText(file.FullName);
-            s_configs[file.FullName] = (written, text);
-            return text;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    private sealed record Shape(bool Promisor, bool Sha256);
+
+    private static Shape? ShapeOf(string folder) =>
+        RefFiles.CommonDirOf(folder) is not { } common
+            ? null
+            : FileStamp.Parsed(Path.Combine(common, "config"), bytes =>
+            {
+                var text = Encoding.UTF8.GetString(bytes);
+                return new Shape(PromisorLine().IsMatch(text), Sha256Line().IsMatch(text));
+            }).Parsed;
 
     private static readonly Regex s_promisor = new(@"^\s*(partialclone\s*=|promisor\s*=\s*true\b)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant);
     private static readonly Regex s_sha256 = new(@"^\s*objectformat\s*=\s*sha256\b", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant);

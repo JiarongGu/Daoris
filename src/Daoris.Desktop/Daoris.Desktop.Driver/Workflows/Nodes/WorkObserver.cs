@@ -168,7 +168,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
                 {
                     Source = NodeSource.Plugin, Attempt = status.Attempt, Acceptance = WorkPerformer.Accepted(node, frame.Id, binding, frame.Outcome),
                 }
-                : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = status.Attempt, Code = frame.Outcome.Code ?? WorkPerformer.NoCode };
+                : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = status.Attempt, Code = frame.Outcome.Code ?? WorkPerformer.NoCode, Needs = frame.Outcome.Needs };
             // An event the one table refuses (evidence of another schema than the node declares, an output undeclared or of
             // another schema) moves nothing and is kept nowhere, and is no answer: counted as a plugin.step line of the table's code. A
             // completion the table refuses holds its attempt for the person instead (WorkPerformer.Hold); an event has no attempt to hold.

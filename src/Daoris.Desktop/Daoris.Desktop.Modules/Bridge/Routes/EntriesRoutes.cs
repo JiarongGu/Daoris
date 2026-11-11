@@ -15,8 +15,7 @@ namespace Daoris.Desktop;
 /// <para><b>Which parts.</b> An entry's parts whose tree offers work to land (<see cref="SessionGrouping.Lands"/>),
 /// oldest first, as the Parts strip shows them; an ask's entries are its own, one per repository, never its intake.</para>
 ///
-/// <para><b>Nothing machine-local comes back</b>: ids, names of branches and files, and the landing's sentences, as
-/// <c>LAND_SESSION_TREE</c>'s.</para>
+/// <para><b>Nothing machine-local comes back</b>: ids, names of branches and files, and the landing's sentences.</para>
 /// </remarks>
 public sealed class EntriesRoutes(DriverContext context)
 {
@@ -47,7 +46,7 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var service = _loop.Service ?? throw NotReady();
         var (entries, rows) = await LookAsync(service, entry => entry.Key == key, cancellationToken).ConfigureAwait(false);
-        return (service, entries, rows, entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Ended, "", []));
+        return (service, entries, rows, entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Done, "", []));
     }
 
     [DriverRoute("LAND_ENTRY", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -162,7 +161,9 @@ public sealed class EntriesRoutes(DriverContext context)
     /// whose tree it shares, and the later part that superseded it.
     /// </summary>
     /// <param name="held">What holds each part, its gate's sentence, by session; absent where nothing does.</param>
-    public static object Plan(string entry, string repository, EntryPlan plan, IReadOnlyDictionary<string, string>? held = null) => new
+    /// <param name="revisionOf">The revision of the review record a part's run stands on, which the entry's Accept names for it (<c>revisions</c>).</param>
+    public static object Plan(
+        string entry, string repository, EntryPlan plan, IReadOnlyDictionary<string, string>? held = null, Func<string?, string?>? revisionOf = null) => new
     {
         Entry = entry,
         Repository = repository,
@@ -180,6 +181,7 @@ public sealed class EntriesRoutes(DriverContext context)
             Lands = part.Plan?.Lands?.Select(commit => new { Commit = TextBounds.ShortCommit(commit.Sha, 8), commit.Subject }).ToArray(),
             Conflict = TreesRoutes.Conflict(part.Plan?.Conflict),
             Held = held?.GetValueOrDefault(part.Session),
+            Revision = revisionOf?.Invoke(part.Run),
             part.SameTreeAs,
             Superseded = part.Superseded is { } by ? new { by.By, by.Says, by.Conflicts } : null,
             Clash = part.Clash is { } clash ? new { clash.By, clash.Says } : null,
@@ -256,7 +258,7 @@ public sealed class EntriesRoutes(DriverContext context)
     private async Task<object> PlanAsync(ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
     {
         var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
-        return Plan(entry.Key, entry.Repository, plan, held);
+        return Plan(entry.Key, entry.Repository, plan, held, run => ReviewDrawn.RevisionOf(_loop.Home, run));
     }
 
     /// <summary>

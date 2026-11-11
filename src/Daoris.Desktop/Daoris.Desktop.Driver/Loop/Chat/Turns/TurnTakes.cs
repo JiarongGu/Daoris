@@ -8,8 +8,10 @@ namespace Daoris.Driver;
 /// <param name="steer">The door's next step: hand a word to the turn on the wire, or null where it takes none now.</param>
 /// <param name="steerNow">The person's <i>Send now</i> on that door: steer a word into the turn at once, or null.</param>
 /// <param name="nextStep">Whether the door takes words at the turn's next step now, asked without sending anything.</param>
+/// <param name="cutIn">The person's <i>Send now</i> where the door takes no word mid-turn but stops a turn keeping the conversation, or null.</param>
 internal sealed class TurnTakes(
-    TurnState state, TurnPump pump, Func<ChatMessage, Task?>? steer, Func<ChatMessage, Task?>? steerNow, Func<bool>? nextStep)
+    TurnState state, TurnPump pump, Func<ChatMessage, Task?>? steer, Func<ChatMessage, Task?>? steerNow, Func<bool>? nextStep,
+    TurnCutIn? cutIn = null)
 {
     /// <summary>
     /// Take a word at the level it carries: an urgent one handed to the turn on the wire where the door takes words at
@@ -110,19 +112,20 @@ internal sealed class TurnTakes(
     /// The person's words at <c>now</c>, carried out by the door it has: with no turn running the words are the
     /// next turn at once; into a turn on the wire whose agent steers, they are steered at once (<c>now</c>) and the turn lasts until
     /// the steer is answered; on a door that takes words only at its next step they go there, said so; on a door that takes none
-    /// during a turn they wait as <see cref="Take"/> queues them, said <c>no-interrupt</c>, and are the next turn when it ends.
-    /// Null once the conversation is finishing, held or gone.
+    /// during a turn but stops one keeping the conversation they cut in (<see cref="TurnCutIn"/>): first among what waits, the turn
+    /// stopped, said <c>next-turn</c>; on any other they wait as <see cref="Take"/> queues them, said <c>no-interrupt</c>, and are
+    /// the next turn when it ends. Null once the conversation is finishing, held or gone.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>Nothing is stopped, on any door</b>: the stop that keeps the waiting words is the person's
-    /// own press (<see cref="StopKeepingAsync"/>, <c>CANCEL_TURN</c> with <c>keep</c>), never a word's. On a next-step door a stop
-    /// would besides answer a word on its way cancelled while the agent may still act on it. A steer is
+    /// <para>🔴 <b>A next-step door is never stopped</b>: a stop would answer a word on its way cancelled while the agent may still
+    /// act on it. The cut-in is the person's own press, made on a door where nothing is on its way. A steer is
     /// no stop: it goes past words on their way and waiting, the person's choice to go first, and they keep their places. Where the
     /// agent cannot steer, the words go behind what is ahead, said <see cref="SendNowWhy.Behind"/>.</para>
     /// </remarks>
     public Task<SentNow?> TakeNowAsync(ChatMessage message)
     {
         message = message with { Level = MessageLevel.Now };
+        var cut = false;
         lock (state.Gate)
         {
             if (state.Finishing || state.Gone || state.Held) return Task.FromResult<SentNow?>(null);
@@ -154,17 +157,25 @@ internal sealed class TurnTakes(
                         SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt));
                 }
 
-                state.Waiting.Add(state.Stamped(message));
-                if (state.Retrying && TurnState.Carries(message)) state.Woke.TrySetResult();
-                // Held for the turn's end: behind what is ahead on a door that takes words at its next step, and on any other, or
-                // behind the person's own stop, because nothing interrupts a turn for them.
-                var why = !state.Stopped && !state.StopPending && (onTheirWay || nextStep?.Invoke() == true)
-                    ? behind ? SendNowWhy.Behind : SendNowWhy.Opening
-                    : SendNowWhy.NoInterrupt;
-                state.Publish();
-                return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.TurnEnd), Now: false, why));
+                // Cut in on a door that takes no word mid-turn: first among what waits, the turn on the harness stopped below.
+                cut = state.OnWire && nextStep?.Invoke() != true && cutIn?.Place(message, onTheirWay) == true;
+                if (!cut)
+                {
+                    state.Waiting.Add(state.Stamped(message));
+                    if (state.Retrying && TurnState.Carries(message)) state.Woke.TrySetResult();
+                    // Held for the turn's end: behind what is ahead on a door that takes words at its next step, and on any other, or
+                    // behind the person's own stop, because nothing interrupts a turn for them.
+                    var why = !state.Stopped && !state.StopPending && (onTheirWay || nextStep?.Invoke() == true)
+                        ? behind ? SendNowWhy.Behind : SendNowWhy.Opening
+                        : SendNowWhy.NoInterrupt;
+                    state.Publish();
+                    return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.TurnEnd), Now: false, why));
+                }
             }
         }
+
+        // The door's stop is called with the gate released, as every stop is.
+        if (cut) return cutIn!.StopAsync();
 
         // No turn in flight: the next turn at once, or behind the one the door is still opening for.
         return Task.FromResult<SentNow?>(Take(message) switch

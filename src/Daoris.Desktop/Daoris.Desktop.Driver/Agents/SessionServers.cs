@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The servers a session is handed, as the harness will start them: Daoris's browser filled in or withheld
+/// The servers a session is handed, as the harness will start them: its plugins' tools server where the caller built one, Daoris's browser filled in or withheld
 /// (<see cref="InAppBrowserServers"/>), then every server a plugin declared through <c>npx</c> made node and its package's script,
 /// the package installed once into the toolchain (<see cref="ServerPackages"/>). Both doors take what this hands, the protocol
 /// door on <c>session/new</c> and the pipe door in its file, so the harness starts each server as one node under the session's job.
@@ -14,8 +14,9 @@ public static class SessionServers
 {
     /// <inheritdoc cref="InAppBrowserServers.HandNotedAsync"/>
     public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
-        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
+        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct, ServerEntry? tools = null)
     {
+        if (tools is not null) servers = [.. servers, tools];
         var (filled, notice, _, drivers) = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
         var handed = await DirectAsync(home, filled, log, ct, kept: drivers).ConfigureAwait(false);
         IReadOnlyList<string> driving = [.. drivers.Where(name => handed.Any(server => server.Name == name))];
@@ -24,9 +25,9 @@ public static class SessionServers
 
     /// <inheritdoc cref="InAppBrowserServers.HandAsync"/>
     public static async Task<(IReadOnlyList<ServerEntry> Handed, string? Notice, bool Drives)> HandAsync(
-        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
+        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct, ServerEntry? tools = null)
     {
-        var (handed, notice, drives, _) = await HandNotedAsync(home, servers, browser, log, ct).ConfigureAwait(false);
+        var (handed, notice, drives, _) = await HandNotedAsync(home, servers, browser, log, ct, tools).ConfigureAwait(false);
         return (handed, notice?.Note, drives);
     }
 

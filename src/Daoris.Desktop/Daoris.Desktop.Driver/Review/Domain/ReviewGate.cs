@@ -181,7 +181,7 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
 /// it.
 /// </summary>
 /// <remarks>
-/// <para><b>Every landing door asks it</b>: the review's press (<c>LAND_SESSION_TREE</c>), <c>daoris tree land</c>, and
+/// <para><b>Every landing door asks it</b>: a run's <c>land</c> after the review's Accept, <c>daoris tree land --plan</c>'s plan, and
 /// the look under <i>Accept automatically</i>, an advance of the chain's branch among them, since each lands through
 /// <see cref="SessionTrees.LandAsync"/>, which refuses a state that does not let go.</para>
 ///

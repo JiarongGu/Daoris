@@ -268,6 +268,8 @@ internal sealed class TreeSweeps(
 
                     left = why;
                 }
+
+                TreeFilesRecord.Forget(context.Home, pressed);
             }
 
             // Only while it is still the commit judged, and in one transaction with what its proof rested on: exactly what the judgement returned.

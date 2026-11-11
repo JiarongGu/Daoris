@@ -776,7 +776,7 @@ const DRIVEN_LINES: [time: string, event: string, data: Record<string, unknown>]
   ['2026-09-29T10:01:00.000Z', 'turn.ended', {
     session: 'd2', stopReason: 'end_turn', turnMs: null, input: 4, cacheRead: 227462, cacheWrite: 1864, output: 199, calls: 0, used: 229529, size: 1000000,
   }],
-  ['2026-09-29T11:00:00.000Z', 'session.started', { session: 'd3', kind: 'driven', adapter: 'codex', repository: 'Yaorin', workspace: 'games' }],
+  ['2026-09-29T11:00:00.000Z', 'session.started', { session: 'd3', kind: 'driven', adapter: 'codex', repository: 'Other', workspace: 'games' }],
   ['2026-09-29T11:00:05.000Z', 'actor.ran', { session: 'd3', actor: 'build', models: ['gpt-x'], more: 0 }],
   ['2026-09-29T11:10:00.000Z', 'session.started', { session: 'u1', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games', setup: true }],
   ['2026-09-29T11:11:00.000Z', 'turn.ended', { session: 'u1', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
@@ -809,7 +809,7 @@ test('each driven session\'s cost: its models, turns, minutes, calls, tokens and
   });
   // A session with no turn.ended is said so: every figure null, never zero.
   assert.deepEqual(driven.sessions[0], {
-    session: 'd3', started: '2026-09-29T11:00:00.000Z', repository: 'Yaorin', workspace: 'games', adapter: 'codex',
+    session: 'd3', started: '2026-09-29T11:00:00.000Z', repository: 'Other', workspace: 'games', adapter: 'codex',
     models: ['gpt-x'], turns: 0, ms: null, calls: null, input: null, cacheRead: null, cacheWrite: null, output: null, used: null, size: null,
   });
 });
@@ -818,7 +818,7 @@ test('driven sessions rolled up by repository and by adapter and model, with the
   const { byRepository, byAdapterAndModel } = drivenOf();
   const pick = (group: Record<string, unknown>, ...fields: string[]) => Object.fromEntries(fields.map((field) => [field, group[field]]));
 
-  assert.deepEqual(byRepository.map((group) => group.label), ['Daoris', 'Yaorin']);
+  assert.deepEqual(byRepository.map((group) => group.label), ['Daoris', 'Other']);
   // The cache read per call is over the sessions that measured both: d2 made no call, so only d1 counts (1.5M over 15).
   assert.deepEqual(pick(byRepository[0]!, 'sessions', 'measured', 'turns', 'timed', 'medianMs', 'slowestMs', 'slowestSession', 'input',
     'cacheRead', 'cacheWrite', 'output', 'calls', 'cacheReadPerCall', 'used'), {
@@ -855,10 +855,10 @@ test('the text report lists the driven sessions, then the roll-ups, and says a s
   assert.match(text, /^Driven sessions$/m);
   assert.match(text, /started\s+3 — 2 with a turn\.ended, 1 with none read/);
   assert.match(text, /unstarted\s+1 turn from sessions that did not start in this period/);
-  assert.match(text, /09-29 11:00 {2}d3 {2}Yaorin \(games\) · codex · gpt-x\n {4}no turn\.ended read\n/);
+  assert.match(text, /09-29 11:00 {2}d3 {2}Other \(games\) · codex · gpt-x\n {4}no turn\.ended read\n/);
   assert.match(text, /09-29 10:00 {2}d2 {2}Daoris \(games\) · claude-code-acp · \(model not logged\)\n {4}1 turn · 0 calls · in 4 · cache read 227\.5K · cache write 1\.9K · out 199 · peak 229\.5K\n/);
   assert.match(text, /09-29 09:00 {2}d1 {2}Daoris \(games\) · claude-code-acp · fable-5 \+ sonnet\n {4}2 turns · 3m 0s · 15 calls · in 15 · cache read 1\.5M · cache write 150 · out 75 · peak 150K\n/);
-  assert.match(text, /by repository\n {4}Daoris\n {6}2 sessions · median 3m 0s · slowest 3m 0s · cache read 100K\/call · peak 229\.5K\n {4}Yaorin\n {6}1 session · 1 with no turn\.ended · cache read\/call not measured\n/);
+  assert.match(text, /by repository\n {4}Daoris\n {6}2 sessions · median 3m 0s · slowest 3m 0s · cache read 100K\/call · peak 229\.5K\n {4}Other\n {6}1 session · 1 with no turn\.ended · cache read\/call not measured\n/);
   assert.match(text, /by adapter and model\n {4}claude-code-acp · \(model not logged\)\n {6}1 session · cache read\/call not measured · peak 229\.5K\n/);
   assert.match(text, /codex · gpt-x\n {6}1 session · 1 with no turn\.ended/);
   // The set-up is its own section's, unchanged by the driven one.

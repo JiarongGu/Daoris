@@ -30,10 +30,20 @@ public static class PluginCommandConsole
             var id = PluginTerminalWord.IdOf(PluginCatalog.Load(home), words[0]);
             if (words.Count < 2) throw new DriverException(Usage(home, id));
             var (plugin, command) = PluginCommandRun.Find(home, id, words[1]);
+            var given = CommandArgs.FromWords(command.Name, command.Args, words[2..]);
+            var values = new Dictionary<string, object?>(given.Values, StringComparer.Ordinal);
+            foreach (var missing in given.Missing)
+            {
+                if (!stdin) await terminal.Out.WriteAsync($"{missing.Title.AsWritten}: ").ConfigureAwait(false);
+                values[missing.Name] = CommandArgs.Typed(command.Name, missing, terminal.ReadLine(false)?.Trim()
+                    ?? throw new DriverException($"`{command.Name}` needs `{missing.Name}`, and none came."));
+            }
+
             var answers = new Dictionary<string, string>(StringComparer.Ordinal);
+            var call = new CommandCall(command.Name, CommandCall.NewRun(), values, answers, CommandWire.Terminal, PluginPlace.Machine, "en");
             for (var round = 0; round < CommandWire.Rounds; round++)
             {
-                var said = await PluginCommandRun.RoundAsync(home, plugin, command.Name, words[2..], answers, CommandWire.Terminal, ct, start).ConfigureAwait(false);
+                var said = await PluginCommandRun.RoundAsync(home, plugin, call with { Answers = new Dictionary<string, string>(answers) }, ct, start).ConfigureAwait(false);
                 foreach (var line in said.Said) await terminal.Out.WriteLineAsync(line).ConfigureAwait(false);
                 if (said.Open is { } open) await terminal.Out.WriteLineAsync($"Open: {open}").ConfigureAwait(false);
                 if (said.Code is { } code) await terminal.Out.WriteLineAsync($"Code: {code}").ConfigureAwait(false);

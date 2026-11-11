@@ -13,7 +13,7 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>A process of its own, by measurement.</b> The engine's debug port reaches every page in
 /// its process, the shell's page and its bridge included
-/// (`docs/2026-09-28-chromium-embedding-evidence.md`). So the browser is another process, and the
+/// (`docs/archive/2026-09-28-chromium-embedding-evidence.md`). So the browser is another process, and the
 /// shell's process has no port.</para>
 ///
 /// <para><b>The engine's own window.</b> A tab an agent opens over CDP joins a Chromium window of the

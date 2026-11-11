@@ -160,6 +160,7 @@ public sealed class DesktopStore : IDisposable
             Pragma(connection, $"PRAGMA busy_timeout = {BusySeconds * 1000}");
             Pragma(connection, "PRAGMA journal_mode = WAL");
             Pragma(connection, "PRAGMA synchronous = FULL");
+            Pragma(connection, "PRAGMA journal_size_limit = 33554432");
             // A move's claim names a row of `store_runs` and a word in transfer its move, and the store holds them to it.
             Pragma(connection, "PRAGMA foreign_keys = ON");
             store = new DesktopStore(location, connection, options);

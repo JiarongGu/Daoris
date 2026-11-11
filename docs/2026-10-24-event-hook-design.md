@@ -3,7 +3,7 @@
 **Standing:** **rows 1a, 1b and 1c accepted by the steward on 2026-10-25**, after both makers' reads of round 4 and their named changes
 (§16, §17), under D191; rows 1d and 1e stay proposed for their own rounds. 1a is built first; 1b and 1c land after the FOUNDATION1
 Part A moves that hold their files (§17), since FOUNDATION1's build goes first. The rounds, under D191: round 1 was written by Claude Opus 5.5 from the code at `5e9a563bd` and read at
-`71e08c3c0` by the independent Opus foundation reader alone, its read verbatim in `docs/2026-10-24-event-hook-reads.md`: 16 findings,
+`71e08c3c0` by the independent Opus foundation reader alone, its read verbatim in `docs/archive/2026-10-24-event-hook-reads.md`: 16 findings,
 7 blocking, another round. Codex's read was then owed, its credits out. Round 2 is written by Claude Opus 5.5 from the code on main at
 `5d19f6b3a`, where nothing round 1 or the read cites has changed (an empty `git diff --stat 5e9a563bd` over `src/Daoris.Desktop`,
 `src/Daoris.Service`, `tools/knowledge-server.mjs` and `examples/plugins`). It answers every finding in §12, each checked against that
@@ -230,7 +230,7 @@ is `:945`, §1.4's `Driver.cs:1405-1412` is `:1412-1419` and §1.3's `Driver.cs:
 
 ### 1.7 Pipes, owners and elevation
 
-- **The instance pipe** is the exemplar (`docs/2026-10-16-terminal-rpc-design.md:145-152`): the user's SID alone, the network denied,
+- **The instance pipe** is the exemplar (`docs/archive/2026-10-16-terminal-rpc-design.md:145-152`): the user's SID alone, the network denied,
   `FirstPipeInstance`, owned by the user's SID at either elevation (`Modules/Platform/InstancePipe.cs:744-762`). Its client takes a pipe
   owned by its user's SID or its token's default owner, and asks the system which process serves it (`GetNamedPipeServerProcessId`,
   `Driver/Platform/InstanceClient.cs:105-114`, `:196-211`).
@@ -319,7 +319,7 @@ is `:945`, §1.4's `Driver.cs:1405-1412` is `:1412-1419` and §1.3's `Driver.cs:
 - **The notices record** (`Driver/Platform/Notices.cs:6-26`) keeps the attention watch's events on the machine.
 - **`ChainEvents`** (`Driver/Platform/Chain.cs:5-61`) holds the wakes (`refs`, `home`, `ledger`, `nodes`, `press`, `focus`,
   `plugin.step`, `harness`, `exit`, `timer`) and the end judgement's facts (`work.step`, `work.held`, `work.ended`, `work.tidied`).
-  An event is a wake, never a fact (the fabric events design §A1 point 1, `docs/2026-10-16-fabric-events-design.md:50-52`).
+  An event is a wake, never a fact (the fabric events design §A1 point 1, `docs/archive/2026-10-16-fabric-events-design.md:50-52`).
 - **§C4's `work/ended` point was never built** (`Chain.cs:170`; D173's FABRIC-CHAIN2 note, `docs/decisions/D173.md:399-401`;
   `docs/task-archive.md:15807-15811`).
 
@@ -658,7 +658,7 @@ switches it on; nothing starts at the press, and the loop starts it at its next 
   Daoris did not ask for, so its back-off starts it again (§4.4), and a start reads the folder whole.
 - **The watch is backed by a slow reconciliation** (round 4, K4.1, K3.2). D173's rule is that a watcher is never trusted alone: a
   slow reconciliation stands behind it, minutes apart (D173's note of 2026-10-16 on events over polling, its point 2, `D173.md:196-198`;
-  the fabric events design §A1 point 2, `docs/2026-10-16-fabric-events-design.md:52`). Round 3's *nothing is reread on a clock*
+  the fabric events design §A1 point 2, `docs/archive/2026-10-16-fabric-events-design.md:52`). Round 3's *nothing is reread on a clock*
   broke that rule. So the plugin reads its subscribers' folder again **every five minutes**, and **at once whenever one of its connections ends** (a slot freed), connecting to every file it holds no
   connection to: one a watch's callback never reported, a ninth that now has a slot, and one whose pipe did not answer when last
   tried. A file whose pipe does not answer is said once on stderr and tried again at the next reconciliation, never sooner, so each
@@ -1157,7 +1157,7 @@ entry order (`Host/Program.cs:357-449`), each of which 1b's and 1c's proofs exer
 
 ## 12. Round 2: the read's findings and their answers
 
-Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-event-hook-reads.md` §4), each checked against the code on main
+Every finding of the Opus foundation read of round 1 (`docs/archive/2026-10-24-event-hook-reads.md` §4), each checked against the code on main
 at `5d19f6b3a`. *Taken* means the design now says it; *answered* means it is not taken as named, for the reason given; *deferred* means a
 later row carries it.
 
@@ -1168,7 +1168,7 @@ later row carries it.
 | **3** | **The inbox token can reach Daoris and everything it starts** | `HookProcess.cs:85-106` (set over the inherited environment); `GitWiring.cs:40-47`, `:98`; `Tools.cs:679`, `:693`; `WorkingTree.cs:973`; `App/Program.cs:34`, `Host/Program.cs:345` | **Taken**, and wider than named: both names join `GitWiring.Removed`, so every child is handed neither, and each Daoris executable removes both at entry as it does the holder key, `daoris-driver` taking them for `events relay` alone (§6.3). §1.5 says the plugin inherits. M8 measures that a process from the session's Bash holds them and a child with `Removed` applied does not. Proved by 1b's proof 8. |
 | **4** | **The relay is plugin code running uncontained** | D201 point 4 (`docs/decisions/D201.md:31`); `SupervisorProof.cs:10-20`; `GitWiring.cs:38-41`; `AgentStarts.cs:5-11` (plugins and agents in one job) | **Taken, by another way than named**: the relay is not plugin code at all but Daoris's own verb, `daoris-driver events relay`, from the install's build, which no plugin folder or package carries. It removes every Daoris key at entry, opens no Daoris door and makes no press, so the standing confirmation has nothing of its to cover, and it holds only the two messaging variables (§3, §6.1 step 1). The read's pinned copy is rejected with its reason (§10): its hash has no place agents cannot rewrite, and Node leaves F6 open. 1c proves the verb strips and opens nothing but its pipe and the inbox. |
 | **5** | **The relay trusts its input** | §5.2 round 1 (`subscribe.json`); `InstanceClient.cs:196-211` (`GetNamedPipeServerProcessId`); `HomeLease.cs:31`, `:165` | **Taken**: the relay reads no address file. It serves its own pipe, takes a client only where the system names a process that is a launcher's direct child under the lease's holder, and validates every frame against `WorkEventGrammar`, the grammar the driver's census holds, before building a word (§6.1 steps 3 and 4). So no process redirects or feeds it by rewriting a file. §6.1 says plainly what Windows does not separate (one user's processes), and that step 4 still bounds such a process to a false wake in fixed words. 1c proves the refusals and the dropped frames. |
-| **6** | **The endpoint names no ACL, owner or elevation** | `InstancePipe.cs:400-410`; `docs/FIX-LOG.md:1506-1520` (PIPEOWNER1); `docs/2026-10-16-terminal-rpc-design.md:145-152`; `docs/2026-10-23-terminal-trust-design.md:253-255` | **Taken**, the read's reverse direction: the relay serves, with `InstancePipe.Security` (the user's SID owner and alone, the network denied, `FirstPipeInstance`), and the plugin connects as a client, which needs no descriptor; an elevated plugin holds the user's SID, and a relay at either elevation owns its pipe by that SID, which is PIPEOWNER1's fix (§1.7, §3, §6.1 step 2). M9 measures it from both elevations, and confirms that the Node-made pipe fails, before 1c. |
+| **6** | **The endpoint names no ACL, owner or elevation** | `InstancePipe.cs:400-410`; `docs/FIX-LOG.md:1506-1520` (PIPEOWNER1); `docs/archive/2026-10-16-terminal-rpc-design.md:145-152`; `docs/2026-10-23-terminal-trust-design.md:253-255` | **Taken**, the read's reverse direction: the relay serves, with `InstancePipe.Security` (the user's SID owner and alone, the network denied, `FirstPipeInstance`), and the plugin connects as a client, which needs no descriptor; an elevated plugin holds the user's SID, and a relay at either elevation owns its pipe by that SID, which is PIPEOWNER1's fix (§1.7, §3, §6.1 step 2). M9 measures it from both elevations, and confirms that the Node-made pipe fails, before 1c. |
 | **7** | **A second process in the same data folder breaks delivery** | `PluginTrials.cs:58-78`; `PluginsRoutes.cs:399`; `Hooks.cs:702-710`; `Host/Program.cs:20-27` | **Taken**, all three of the read's changes: one subscriber file per process, each removing only its own, written by the subscriber and none by the plugin (§5.2); the kit's sample and a trial's handshake say `run: "sample"`, which the plugin connects nowhere with and the relay refuses (§5.4); a plugin on `work/event` wanted only by the lease's loop (§4.1). And the relay takes one plugin at a time (§6.1 step 2). Proved in 1b (proof 3) and 1c. |
 | 8 | A restart cannot be seen | `Hooks.cs:147-150` (`initialize` without run or seq); `:1196-1206` | **Taken**: `initialize` gains `events: { run, seq }` for a plugin at `work/event`, and `seq` counts events minted while none listened, so a gap shows to a plugin that comes back; a subscriber reads the truth again on a gap, a new run or a reconnection (§4.1, §4.4, §5.2). |
 | 9 | A hung plugin holds every event and every other plugin | `Hooks.cs:725-729`; `:1109`; `WorkBounds.cs:25` | **Taken**, both of the read's options: a queue and teller per plugin, so one holds only itself; and three late answers in a row stop it, to be started again at the next look (§4.4). Proved by 1b's proof 6. |
@@ -1182,7 +1182,7 @@ later row carries it.
 
 ## 13. Round 2's read: where each named change went
 
-Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-event-hook-reads.md`, round 2 §4), taken as the read names it,
+Every finding of the Opus foundation read of round 2 (`docs/archive/2026-10-24-event-hook-reads.md`, round 2 §4), taken as the read names it,
 each checked against the code on main at `4de8a5099`. R*n* is the read's finding *n*. Blocking in bold.
 
 | # | Finding | Where it went | Checked against |
@@ -1202,7 +1202,7 @@ each checked against the code on main at `4de8a5099`. R*n* is the read's finding
 
 ## 14. Round 3: Codex's read answered
 
-Every finding of Codex's read of round 2 with its named changes (`docs/2026-10-24-event-hook-reads.md`, *Codex, round 2*), each checked
+Every finding of Codex's read of round 2 with its named changes (`docs/archive/2026-10-24-event-hook-reads.md`, *Codex, round 2*), each checked
 against the code on main at `972b17577`, the commit it read. C*s.n* is its finding *n* of section *s*; its comparison with the earlier
 reads is C7.1 and C7.2. *Taken* means the design now says it, and where; *disputed* would name the code line that shows why not, and no
 finding is disputed: each held where it was checked. Blocking in bold.
@@ -1233,7 +1233,7 @@ finding is disputed: each held where it was checked. Blocking in bold.
 
 ## 15. Round 4: the reads of round 3 answered
 
-Every finding of both reads of round 3 (`docs/2026-10-24-event-hook-reads.md`, *Opus (foundation), round 3* and *Codex, round 3*), each
+Every finding of both reads of round 3 (`docs/archive/2026-10-24-event-hook-reads.md`, *Opus (foundation), round 3* and *Codex, round 3*), each
 checked against the code on main at `b4f096cc0`, merged into this branch. Both read `c685459f4`, whose code is `972b17577`'s; between it
 and `b4f096cc0` only `Host/Program.cs` (four lines after line 194), `DriverLoop.cs`, `InstancePipe.cs` (after line 1002),
 `PipeCensus.cs` (three lines after line 228) and `StandingConfirmation.cs` (its steward flag from `:293` to `:336`; added by round 4's
@@ -1263,14 +1263,14 @@ on the subscriber the Opus reader's finding 1 is taken. No finding is disputed: 
 | **K3.1** | **A final unexportable event still disappears silently** | design round 3 §4.3 (an untold event counted only by the next) | **Taken**: an event whose required field fails is told as an `events.missed` frame in its place, with its own `seq`, so its loss is said at once; 1b's proof 9 makes it the last event of a run, with no later event, disconnection or restart (§4.3, §6.1 step 5, §9). |
 | **K3.2** | **A subscriber can wait forever before obtaining a connection** | design round 3 §5.2, §5.3, §6.1 step 2 | **Taken**: the plugin reads its folder again whenever a connection ends (a freed slot) and every five minutes, retrying a file that did not answer at the next one; a relay that meets only refusals or no plugin is said by its bound; 1c proves a ninth subscriber and a failed first try connected without the file rewritten (§5.2, §5.3, §6.1 step 6, §9). |
 | K3.3 | Recovery after a successful connection is coherent | `Attention.cs:224` | Agreed; nothing to change. |
-| **K4.1** | **Subscriber discovery trusts a watcher without reconciliation** | `D173.md:196-198`; `docs/2026-10-16-fabric-events-design.md:52` | **Taken**: round 3's *nothing on a clock* broke D173's rule; the plugin's watch is backed by a reconciliation every five minutes, its own folder read again, and 1c proves a suppressed callback recovered by it (§5.2, §9, §10). |
+| **K4.1** | **Subscriber discovery trusts a watcher without reconciliation** | `D173.md:196-198`; `docs/archive/2026-10-16-fabric-events-design.md:52` | **Taken**: round 3's *nothing on a clock* broke D173's rule; the plugin's watch is backed by a reconciliation every five minutes, its own folder read again, and 1c proves a suppressed callback recovered by it (§5.2, §9, §10). |
 | K5.1 | 1a's gate is usable; M5 should add an end before stdout | design round 3 §6.1 step 6, §7 | **Taken**, with O12 (§7). |
 | **K5.2** | **1b still needs the final-rejection rule** | design round 3 §9 | **Taken**: 1b builds `events.missed` and proves the last event of a run said with no later event (§9 proof 9). |
 | **K5.3** | **1c needs the remaining protocol choices before implementation** | design round 3 §9 | **Taken**: hello validation (O2, K2.1), failed and pending admission (K3.2, the second-client rule, the bound), silent watcher loss (K4.1) and the whole bundle's identity (K2.2) are each settled in §5 and §6.1 and each has a proof in 1c's row; with them, every failure path ends in recovery or an explicit wake, so 1a, 1b and 1c justify stopping the poll. |
 
 ## 16. Round 4's named changes, and where each went
 
-Every finding of the Opus foundation reader's read of round 4 (`docs/2026-10-24-event-hook-reads.md`, *Opus (foundation), round 4*),
+Every finding of the Opus foundation reader's read of round 4 (`docs/archive/2026-10-24-event-hook-reads.md`, *Opus (foundation), round 4*),
 taken as the read names it, each checked against the code on main at `deb766f20`, merged into this branch. P*n* is the read's finding
 *n*. Where the read offered a choice, the steward's is named. Codex's read of round 4 was owed then; it has landed since, and §17
 places it. Blocking in bold.
@@ -1290,7 +1290,7 @@ places it. Blocking in bold.
 
 ## 17. Codex's read of round 4: its named changes, and where each went
 
-Every finding of Codex's read of round 4 (`docs/2026-10-24-event-hook-reads.md`, *Codex, round 4*), each checked against the code on
+Every finding of Codex's read of round 4 (`docs/archive/2026-10-24-event-hook-reads.md`, *Codex, round 4*), each checked against the code on
 main at `9f48860ba`, merged into this branch. Codex read `eced2688e`; between it and `9f48860ba` nothing under `src/Daoris.Desktop`,
 `src/Daoris.Service`, `tools` or `examples/plugins` changed, so every line it cites stands where it cites it, and this design's text
 was `eced2688e`'s until this section's changes, so its `Design:N` lines are that text's. Its `Driver.cs:888` and `:924` are of the file
@@ -1311,7 +1311,7 @@ No finding is disputed: each held where it was checked. Blocking in bold.
 | **C4-5.2** | **1b lacks startup coverage** | as C4-3.1 | **Taken with C4-3.1**: row 1b's list and its proof 13, the subscriber reconciling between the reconcile and the snapshot, a park taken into the baseline, and the baseline's `events.missed` with no later look, event or disconnection, empty baseline included, in both loops (§9) |
 | **C4-5.3** | **1c lacks the complete entry-output proof** | `Host/Program.cs:407`, `:413` | **Taken with C4-2.2**: row 1c's list and proof (§9). The 1a → 1b → 1c order holds; the steward's poll stops with 1h's installed proof, as §9 says |
 
-**Against FOUNDATION1** (`docs/2026-10-25-foundation-design.md`, D212; Part A accepted and building its folder moves, read at its §10 and
+**Against FOUNDATION1** (`docs/archive/2026-10-25-foundation-design.md`, D212; Part A accepted and building its folder moves, read at its §10 and
 §14). Part A moves the driver's files into twenty-one subdomains' folders, bottom up, one subdomain a row, each move landing when no open
 branch holds its files (§14.6), and its structure gate, row mod-0, places every driver file and refuses a new upward edge (§14.5). Row 1a
 writes no driver file. **Row 1b** writes in four moved places: `Plugins/` (the point, the hook set, `HookFrames.Event`, `PluginEvents`,

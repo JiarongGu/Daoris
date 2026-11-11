@@ -17,7 +17,7 @@ public sealed class TerminalActsTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Discard(_home);
     }
 
     private string Path0 => DaorisHome.Entry(_home, HomeEntry.TerminalActs);

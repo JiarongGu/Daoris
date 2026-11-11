@@ -183,14 +183,14 @@ describe('the opener', () => {
    * the view brings into view, and no item in it. A group means nothing to another view, Overview's among them.
    */
   it('opens Sessions or Quests with the group a door names, and only there', () => {
-    expect(opening('sessions', null, { group: 'you' })).toEqual({ view: 'sessions', group: 'you' });
-    expect(opening('sessions', null, { group: 'review' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(opening('sessions', null, { group: 'needs-you' })).toEqual({ view: 'sessions', group: 'needs-you' });
+    expect(opening('sessions', null, { group: 'failed' })).toEqual({ view: 'sessions', group: 'failed' });
     expect(opening('quests', null, { group: 'asks' })).toEqual({ view: 'quests', group: 'asks' });
     expect(opening('quests', null, { group: 'held' })).toEqual({ view: 'quests', group: 'held' });
-    expect(opening('quests', null, { group: 'you' })).toEqual({ view: 'quests' });
+    expect(opening('quests', null, { group: 'needs-you' })).toEqual({ view: 'quests' });
     expect(opening('sessions', null, { group: 'held' })).toEqual({ view: 'sessions' });
-    expect(opening('overview', null, { group: 'you' })).toEqual({ view: 'overview' });
-    expect(doorOpening({ view: 'sessions', group: 'you' })).toEqual(opening('sessions', null, { group: 'you' }));
+    expect(opening('overview', null, { group: 'needs-you' })).toEqual({ view: 'overview' });
+    expect(doorOpening({ view: 'sessions', group: 'needs-you' })).toEqual(opening('sessions', null, { group: 'needs-you' }));
   });
 
   it('keeps no chosen item for a view with no list', () => {
@@ -210,15 +210,9 @@ describe('the opener', () => {
   });
 });
 
-// A press's card opens the page its plan is shown on, scoped to the
-// press's own session, repository, workspace, quest or ask.
+// A press's card opens the page its plan is shown on, scoped to the press's own repository, workspace, quest or ask.
 describe("a press's plan door", () => {
   const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
-
-  it("opens a land's session at its review", () => {
-    expect(planOpening({ plan: 'land', session: '3f2a91c4' }, 'forge', holding))
-      .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
-  });
 
   it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {
     expect(planOpening({ plan: 'sweep', workspace: 'studio' }, 'forge', holding))

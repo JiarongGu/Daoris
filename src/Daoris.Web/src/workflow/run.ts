@@ -1,4 +1,5 @@
 import type { Session } from '../data/api';
+import type { Authored } from '../locales/authored';
 import type { WorkflowStep } from './current';
 
 // Where a piece of work stands in its workflow, as the shell answers it: the driver's `WorkflowRunReader`, read from the records that already exist. The page draws it and derives nothing: where
@@ -56,6 +57,8 @@ export interface RunStep {
   acts?: string[] | null;
   /** The person's word on a graph run's node, kept and not applied yet; none where none waits. */
   asked?: NodeWordKept | null;
+  /** The command a refused step's plugin named as its fix and declares: its door opens the round card. */
+  needs?: { plugin: string; command: string; title?: Authored | null } | null;
   /** The gate a failed check named; none on another step, and from a shell before it. */
   gate?: string | null;
   /** A check's attempt held unknown for the person, or settled by their stop; none on another step. */
@@ -133,7 +136,7 @@ export interface CheckHeldAnswer {
  * What the person may say of a graph run's node: pass it over for the run, or stop it; a declined request's ask again and go
  * on; a review's changes, with their words.
  */
-export type NodeAct = 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
+export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {
@@ -143,15 +146,35 @@ export interface NodeWordKept {
   at: string;
 }
 
-/** What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. */
+/**
+ * What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. An Accept names the record drawn
+ * (`attempt`, `revision`), the second opinion's token it answers (`answers`) and that it passes the unchecked dones it named (`unchecked`);
+ * a send-back names its `part`; `whole` makes a stop the review's Stop.
+ */
 export interface NodeWordAsk {
   run: string;
   node: string;
   act: NodeAct;
   words: string | null;
+  attempt?: number | null;
+  revision?: string | null;
+  answers?: string | null;
+  unchecked?: boolean;
+  part?: string | null;
+  whole?: boolean;
 }
 
-/** What `WORKFLOW_NODE` answers: kept, or refused by its code with the driver's sentence. */
+/** What a landing after an Accept came to, within the press's bound: landed, or why not by its code. */
+export interface NodeWordLanding {
+  landed: boolean;
+  message: string;
+  code?: string | null;
+}
+
+/**
+ * What `WORKFLOW_NODE` answers: kept, or refused by its code with the driver's sentence; a kept Accept's `revision`, `early` where its review
+ * had not begun, and the `landing` its run's `land` came to; a conversation's press its `press` code (`busy`, `elsewhere`, `moved`, `asked`).
+ */
 export interface NodeWordAnswer {
   run: string;
   node: string;
@@ -159,6 +182,10 @@ export interface NodeWordAnswer {
   done: boolean;
   refused?: string | null;
   message?: string | null;
+  revision?: string | null;
+  early?: boolean;
+  landing?: NodeWordLanding | null;
+  press?: string | null;
 }
 
 /** A wire of a graph run's graph: from a node to a node, by its kind (`after`, `failed`, `rejected`, `when`, …). */

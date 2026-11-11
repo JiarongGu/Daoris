@@ -31,6 +31,9 @@ public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<Ses
     /// harness's <c>model_not_found</c>, on a turn its model never answered and no tool ran. False for every other line.
     /// </summary>
     public bool ModelRefused { get; init; }
+
+    /// <summary>The uuid of a line the harness took from its stdin and echoed back; null for every other line.</summary>
+    public string? Echoed { get; init; }
 }
 
 /// <summary>
@@ -100,7 +103,7 @@ public interface IStreamsReader
 
 /// <summary>
 /// Claude Code's <c>stream-json</c> output, in Daoris's vocabulary — every shape read off the
-/// binary first (docs/2026-09-25-stream-json-evidence.md).
+/// binary first (docs/archive/2026-09-25-stream-json-evidence.md).
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The words arrive twice</b> with partial messages on: as <c>text_delta</c>s, and again whole
@@ -295,6 +298,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
         if (!frame.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object)
         {
             return StreamMapped.Nothing;
+        }
+
+        if (frame.TryGetProperty("isReplay", out var replay) && replay.ValueKind == JsonValueKind.True)
+        {
+            return StreamMapped.Nothing with { Echoed = Text(frame, "uuid") };
         }
 
         var lines = new List<string>();

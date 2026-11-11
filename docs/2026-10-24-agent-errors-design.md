@@ -7,7 +7,7 @@ Codex's read and an independent Opus reader's foundation read under D191 (its am
 adapter answers at the agent interface, and the decided rules TURNFAIL1, D206 and D205 rest on).
 
 **Codex's owed read's amendments** (2026-10-24) take Codex's read of the accepted text, read at `7cda79f01` after rows 1a and 1a2
-were built and before either reached an installed build, kept verbatim in `docs/2026-10-24-agent-errors-reads.md` (the section
+were built and before either reached an installed build, kept verbatim in `docs/archive/2026-10-24-agent-errors-reads.md` (the section
 *Codex, the accepted text*): 11 findings, 8 blocking, *reopen*, keeping the four-kind interface, the conservative limits, the
 adapter-local authentication declaration and the note-based exhaustion hold, all of which this text keeps unchanged. Each section a
 finding changes marks it *(Codex's owed read, C4-n)*, `C4-1` being the read's finding 1, and §17's table says where each went, in the
@@ -19,7 +19,7 @@ harness's lines are branched on before any kind (C4-8); the guarantee is said as
 failed attempts' alone (C4-10); and the summaries agree with the body (C4-11). Row 1a and 1a2's code carries 1 to 8 and 10.
 
 **Round 3's named changes** (2026-10-24) take the Opus foundation reader's read of round 3, read at `3086e44f1` and kept verbatim in
-`docs/2026-10-24-agent-errors-reads.md`: 11 findings, 1 blocking, *accept after named changes* the steward checks without another
+`docs/archive/2026-10-24-agent-errors-reads.md`: 11 findings, 1 blocking, *accept after named changes* the steward checks without another
 read. Codex's read of round 3 stopped when its credits ran out and is owed on this text. Each finding is taken as the read names it,
 checked against the code on main at `ffcf42926`, where no file the read cites changed since its `8cc3936b0`. Each section a finding
 changes marks it *(round 3's read, R3-On)*, `R3-O1` being the read's finding 1, and §16's table says where each went. The blocking
@@ -29,7 +29,7 @@ held record carries it on in its tree (R3-O3); Daoris's go-on leaves the record 
 release moves to row 1a2 beside its press (R3-O11).
 
 **Round 3** (2026-10-24) answers round 2's two reads, read at `f23020f80` and kept verbatim in
-`docs/2026-10-24-agent-errors-reads.md`. Codex asked another round (11 findings, 8 blocking), keeping the four-kind interface, the
+`docs/archive/2026-10-24-agent-errors-reads.md`. Codex asked another round (11 findings, 8 blocking), keeping the four-kind interface, the
 conservative limit reading and the ACP driven-session first delivery. The Opus foundation reader would accept after named changes
 (11 findings, 2 blocking, and 3, 5 and 6 to write in before row 1a is built). The code is read again on main at `aa16658e7`. Of the
 files this design cites, only `Conversations/Chat/ChatRunner.cs` changed since `fb3eb89eb` (HELPNEWCHAT1, 20 lines added near
@@ -44,7 +44,7 @@ holds. §15's table takes, answers or defers every finding of both reads. Each s
 - the driven owner's check and the runs row 1a retries (R2-O6);
 - the intake's check from its authoritative endings (R2-C8).
 
-**Round 2** (2026-10-24) answers round 1's two reads, kept verbatim in `docs/2026-10-24-agent-errors-reads.md`: Codex's (14
+**Round 2** (2026-10-24) answers round 1's two reads, kept verbatim in `docs/archive/2026-10-24-agent-errors-reads.md`: Codex's (14
 findings, 12 blocking; *another round*, keeping the four-kind interface and the ACP driven-session first delivery) and the Opus
 foundation read (16 findings, 1-3 blocking, 4-6 to take before acceptance; *accept after named changes*). The code is read again
 on main at `fb3eb89eb`. No file this design cites changed since `64059110a` (the commits between touched the driver's platform
@@ -110,8 +110,8 @@ was written from. Rows 1a and 1a2 now stand on main, with their code as D210's n
 
 | Door | Adapter | The harness's own retries | What reaches Daoris at the end | Daoris reads |
 |---|---|---|---|---|
-| Protocol | `claude-code-acp` (`Agents/Adapters/Adapters.cs:1824-1939`) | Claude Code retries 5xx, 529 and dropped connections itself, reported as `system`/`api_retry` frames (`acp-agent.js:3600-3612`), which the adapter forwards only to a client that declared JetBrains AIR's `sessionFailure` capability (§10) | A JSON-RPC error on the prompt, `-32603` *Internal error: {result}*, `data.errorKind` the SDK's `authentication_failed`, `oauth_org_not_allowed`, `account_on_hold`, `verification_required`, `billing_error`, `rate_limit`, `overloaded`, `invalid_request`, `model_not_found`, `server_error`, `unknown`, `max_output_tokens` or `cloud_credential_error` (the SDK's declaration, `docs/2026-10-02-limit-signals-evidence.md:156`). *Please run /login* is `-32000` (`acp-agent.js:4170-4171`). A mid-turn word's own prompt, shape 2 | The message string: `turnFailed` (`Driver.cs:4312-4326`). `ErrorKind`, `Code` kept on `AcpRefusal` (`Acp.cs:192-240`) and dropped there |
-| Pipe | `claude-code` (`Adapters.cs:2166-2410`) | The same; `system`/`api_retry` frames on stdout, not read | The `result` frame: `is_error`, `subtype`, `result`'s text, `api_error_status` (the HTTP status); the harness's synthetic `assistant` frame before it (`model: "<synthetic>"`) carries `error`. *(Round 2, O14.)* Measured by MODELROLE1a: `error: "model_not_found"` with `api_error_status: 404`, and a limit as `error: "rate_limit"`, `api_error_status: 429`, *You've hit your weekly limit · resets …* (`docs/2026-10-23-model-effort-doors-evidence.md:186-204`). *(Round 3, R2-C11.)* Only the 404 frame is held in a test (`Driver.Tests/Agents/ClaudeStreamJsonTests.cs:191-212`); the failed 429 result is the evidence document's alone, and row 1c adds its fixture | `is_error` and the text alone, as `StreamMapped.Failed` (`Agents/Streams/StructuredOutput.cs:292-349`) kept as `HarnessWords.Failed` (`Sessions/Domain/Observation.cs:629-632`). No `turnFailed` on this door (`Driver.cs:3730`) |
+| Protocol | `claude-code-acp` (`Agents/Adapters/Adapters.cs:1824-1939`) | Claude Code retries 5xx, 529 and dropped connections itself, reported as `system`/`api_retry` frames (`acp-agent.js:3600-3612`), which the adapter forwards only to a client that declared JetBrains AIR's `sessionFailure` capability (§10) | A JSON-RPC error on the prompt, `-32603` *Internal error: {result}*, `data.errorKind` the SDK's `authentication_failed`, `oauth_org_not_allowed`, `account_on_hold`, `verification_required`, `billing_error`, `rate_limit`, `overloaded`, `invalid_request`, `model_not_found`, `server_error`, `unknown`, `max_output_tokens` or `cloud_credential_error` (the SDK's declaration, `docs/archive/2026-10-02-limit-signals-evidence.md:156`). *Please run /login* is `-32000` (`acp-agent.js:4170-4171`). A mid-turn word's own prompt, shape 2 | The message string: `turnFailed` (`Driver.cs:4312-4326`). `ErrorKind`, `Code` kept on `AcpRefusal` (`Acp.cs:192-240`) and dropped there |
+| Pipe | `claude-code` (`Adapters.cs:2166-2410`) | The same; `system`/`api_retry` frames on stdout, not read | The `result` frame: `is_error`, `subtype`, `result`'s text, `api_error_status` (the HTTP status); the harness's synthetic `assistant` frame before it (`model: "<synthetic>"`) carries `error`. *(Round 2, O14.)* Measured by MODELROLE1a: `error: "model_not_found"` with `api_error_status: 404`, and a limit as `error: "rate_limit"`, `api_error_status: 429`, *You've hit your weekly limit · resets …* (`docs/archive/2026-10-23-model-effort-doors-evidence.md:186-204`). *(Round 3, R2-C11.)* Only the 404 frame is held in a test (`Driver.Tests/Agents/ClaudeStreamJsonTests.cs:191-212`); the failed 429 result is the evidence document's alone, and row 1c adds its fixture | `is_error` and the text alone, as `StreamMapped.Failed` (`Agents/Streams/StructuredOutput.cs:292-349`) kept as `HarnessWords.Failed` (`Sessions/Domain/Observation.cs:629-632`). No `turnFailed` on this door (`Driver.cs:3730`) |
 | Protocol | `codex-acp` (`Adapters.cs:2053-2115`) | Codex retries a dropped stream and 5xx itself, each attempt a notification with `willRetry: true`, forwarded as `session_info_update` with `_meta.codex.error` (`codex-acp/dist/index.js:30823-30834`) | A usage limit: a JSON-RPC error, `data` `{ message, codexErrorInfo, additionalDetails }` (`index.js:30836-30840`, `:30968-30979`). An unauthorised turn: `-32000` (`:30803-30807`). **Every other terminal error: the readable message as an agent text chunk, and the prompt answered `end_turn`** (`:30842-30844`) | The limit's sentence (`CodexLimits.Words`, `Accounts/Usage/AccountLimits.cs:346-361`). Not `codexErrorInfo`. Not sign-in: `SignInOf("codex-acp")` is null, since `codex` is a holder and not an adapter (`Accounts/Harnesses/HarnessRoster.cs:135-144`) |
 | Protocol | `dsh` (`Adapters.cs:1960-2023`), plugins (`Plugins/DeclaredAcpAdapter.cs:21-63`), `acp-stub` | Unknown | A JSON-RPC error, or the stream's end. The protocol stub answers **every** failed turn `-32000` (`tools/rehearsal-kit.mjs:889`), as `Accounts/SignIns/AccountSignIns.cs:19` records | The message string; no limit, sign-in or refusal table for dsh or a plugin (`DeclaredAcpAdapter.cs:46-59`); `acp-stub` reads the stub's (`Adapters.cs:1713-1731`) |
 
@@ -201,7 +201,7 @@ harness, not the provider, and stays `failed` with its reason and SESSCTX1c's on
 ### 3.2 The order
 
 One failure can carry more than one reading: Claude's weekly limit came as `-32603` with `errorKind: "rate_limit"` and the limit's
-sentence in the message (`docs/2026-10-23-model-effort-doors-evidence.md:116`). So the reader decides in a fixed order and stops at
+sentence in the message (`docs/archive/2026-10-23-model-effort-doors-evidence.md:116`). So the reader decides in a fixed order and stops at
 the first that holds:
 
 1. **`limit`** where the `Limits` table reads a limit in the words, whatever the code says; then where the code or kind is a limit's
@@ -1007,7 +1007,7 @@ The first row gives the most: it is the install's door, its measured shape 1 and
 
 Round 1 was read at `6f089fe1f` by Codex (*another round*: 14 findings, 12 blocking) and by the independent Opus reader as a
 foundation (*accept after named changes*: 16 findings, 1-3 blocking, 4-6 to take before acceptance), each kept verbatim in
-`docs/2026-10-24-agent-errors-reads.md`. §14 answers every finding.
+`docs/archive/2026-10-24-agent-errors-reads.md`. §14 answers every finding.
 
 Round 2 was read at `f23020f80` by Codex (*another round*: 11 findings, 8 blocking, keeping the four-kind interface, the
 conservative limit reading and the ACP driven-session first delivery) and by the independent Opus reader as a foundation (*accept

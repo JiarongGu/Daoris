@@ -5,9 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// An ORGANISM, so this is the layer that holds the hooks and the layer a mocked bridge is for
-// The bridge is mocked as present, because the Work frame is desktop-only
-// and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
+// An organism: the layer that holds the hooks and the one a mocked bridge is for. The bridge is mocked as present,
+// since the Work frame is desktop-only and the group header's driver facts exist nowhere else; one case takes it away.
 
 const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -73,10 +72,10 @@ const LIVE = [
 /** The driver's one reader on LIVE, in its order: what waits on you, what runs, what ended. */
 let GROUPS: unknown[] = [];
 const LIVE_GROUPS = [
-  { session: 'b2c3d4e5', group: 'you', shown: 'awaiting-person', archived: false, teammate: false },
+  { session: 'b2c3d4e5', group: 'needs-you', shown: 'awaiting-person', archived: false, teammate: false },
   { session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false },
   { session: 'c3d4e5f6', group: 'working', shown: 'working', archived: false, teammate: false },
-  { session: 'd4e5f6a7', group: 'ended', shown: 'completed', archived: false, teammate: false },
+  { session: 'd4e5f6a7', group: 'done', shown: 'completed', archived: false, teammate: false },
 ];
 
 /** The bridge's answer to each call: the reader's groups, and the driver's state for everything else. */
@@ -122,9 +121,8 @@ describe('the session rail', () => {
   it('groups what is running by repository, in a stable order', async () => {
     show(<SessionRail notify={() => {}} arrangement="repository" />);
 
-    // The repository groups' headings — not the ended section's, which is a peer of the groups
-    // rather than one of them, and lists what is not running.
-    const ended = await screen.findByRole('region', { name: 'Ended' });
+    // The repository groups' headings, not the finished section's: a peer of the groups that lists what is not running.
+    const ended = await screen.findByRole('region', { name: 'Failed and done' });
     const headings = screen.getAllByRole('heading', { level: 3 })
       .filter((heading) => !ended.contains(heading));
     expect(headings.map((heading) => heading.textContent)).toEqual(['engine', 'tools']);
@@ -538,7 +536,7 @@ describe('the session rail', () => {
     const engine = screen.getByText('engine').closest('section')!;
     expect(rows(engine)).toHaveLength(1);
     // …it is in the ended section, reachable from a fresh window with nothing selected.
-    const ended = screen.getByRole('region', { name: 'Ended' });
+    const ended = screen.getByRole('region', { name: 'Failed and done' });
     expect(within(ended).getByText('completed')).toBeInTheDocument();
     expect(rows(ended)).toHaveLength(1);
   });
@@ -547,7 +545,7 @@ describe('the session rail', () => {
     const onSelect = vi.fn();
     show(<SessionRail notify={() => {}} onSelect={onSelect} arrangement="repository" />);
 
-    const ended = await screen.findByRole('region', { name: 'Ended' });
+    const ended = await screen.findByRole('region', { name: 'Failed and done' });
     await userEvent.click(rows(ended)[0]!);
     expect(onSelect).toHaveBeenCalledWith('d4e5f6a7');
   });
@@ -557,7 +555,7 @@ describe('the session rail', () => {
     SESSIONS = LIVE.filter((s) => (s as { state: string }).state === 'completed');
     show(<SessionRail notify={() => {}} arrangement="repository" />);
 
-    await screen.findByRole('region', { name: 'Ended' });
+    await screen.findByRole('region', { name: 'Failed and done' });
     expect(screen.queryByText(/Sessions appear here/)).not.toBeInTheDocument();
     expect(screen.getByText('Nothing is running')).toBeInTheDocument();
   });
@@ -648,8 +646,8 @@ describe('the session rail by state', () => {
   it("lists by state by default, in the groups the driver's reader answers", async () => {
     show(<SessionRail notify={() => {}} />);
 
-    await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
-    expect(groupHeadings()).toEqual(['Waiting on you (1)', 'Working (2)', 'Ended (1)']);
+    await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
+    expect(groupHeadings()).toEqual(['Needs you (1)', 'Working (2)', 'Done (1)']);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
     // No group header names a repository by state, so each row's line does.
     const working = screen.getByRole('heading', { level: 3, name: 'Working (2)' }).closest('section')!;
@@ -662,12 +660,12 @@ describe('the session rail by state', () => {
     SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
     GROUPS = [
       LIVE_GROUPS[0],
-      { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 },
+      { session: 'f41led00', group: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3 },
       ...LIVE_GROUPS.slice(1),
     ];
     show(<SessionRail notify={() => {}} />);
 
-    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Waiting on you (2)' })).closest('section')!;
+    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Failed (1)' })).closest('section')!;
     expect(within(waiting).getByText('parked')).toBeInTheDocument();
     expect(within(waiting).getByText(/after 3 failed sessions/)).toBeInTheDocument();
     expect(screen.queryByText('failed')).toBeNull();
@@ -678,7 +676,7 @@ describe('the session rail by state', () => {
     SESSIONS = [...LIVE, { ...base, id: 'e9f8a7b6', quest: null, kind: 'chat', repository: 'engine', state: 'awaiting-person', created: at(3), updated: at(1) }];
     show(<SessionRail notify={() => {}} />);
 
-    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Waiting on you (2)' })).closest('section')!;
+    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Needs you (2)' })).closest('section')!;
     expect(within(waiting).getAllByText('waiting on you')).toHaveLength(2);
   });
 
@@ -687,7 +685,7 @@ describe('the session rail by state', () => {
     bridge.available = false;
     show(<SessionRail notify={() => {}} />);
 
-    expect(await screen.findByRole('region', { name: 'Ended' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Failed and done' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
   });
@@ -742,7 +740,7 @@ describe('the session rail by state', () => {
       answering(() => ({ archived: [{ session: DONE, at: '2026-10-02T12:00:00Z' }], kept: [] }));
       rail({ notify });
 
-      const user = await menuOf('Ended (1)');
+      const user = await menuOf('Done (1)');
       await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
 
       expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: [DONE], archived: true } });
@@ -754,16 +752,16 @@ describe('the session rail by state', () => {
       const notify = vi.fn();
       answering(() => {
         throw Object.assign(new Error('refused'), {
-          code: 'SESSION_NEEDS_YOU', parameters: { session: DONE, group: 'review', context: 'review' },
+          code: 'SESSION_NEEDS_YOU', parameters: { session: DONE, group: 'needs-you', context: 'needs-you' },
         });
       });
       rail({ notify });
 
-      const user = await menuOf('Ended (1)');
+      const user = await menuOf('Done (1)');
       await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
-        `${DONE} has work to review, so it was not archived: archive never hides what needs you. Land its work or discard its tree first.`,
+        `${DONE} needs you, so it was not archived: archive never hides what needs you.`,
         'error',
       ));
     });
@@ -775,7 +773,7 @@ describe('the session rail by state', () => {
       });
       rail({ notify });
 
-      const user = await menuOf('Ended (1)');
+      const user = await menuOf('Done (1)');
       await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(`${DONE} is still running, so it was not archived. Stop it first.`, 'error'));
@@ -795,7 +793,7 @@ describe('the session rail by state', () => {
       const user = await menuOf('Archived (1)');
       await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
 
-      expect(await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 3, name: 'Done (1)' })).toBeInTheDocument();
       // Archived is still shown, and now says it holds nothing.
       expect(screen.getByRole('heading', { level: 3, name: 'Archived (0)' })).toBeInTheDocument();
       expect(notify).toHaveBeenCalledWith('Unarchived. It is back in the list.');
@@ -820,7 +818,7 @@ describe('the session rail by state', () => {
       answering(() => undefined);
       rail();
       await screen.findByRole('heading', { level: 3, name: 'Working (2)' });
-      expect(screen.queryByRole('heading', { level: 3, name: /^Ended/ })).toBeNull();
+      expect(screen.queryByRole('heading', { level: 3, name: /^Done/ })).toBeNull();
 
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'Session');
       const byName = await screen.findByRole('region', { name: 'By name' });
@@ -832,12 +830,12 @@ describe('the session rail by state', () => {
       const notify = vi.fn();
       const closed = vi.fn();
       SESSIONS = [...LIVE, ENDED_TWO];
-      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'ended', shown: 'declined', archived: false, teammate: false }];
+      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'done', shown: 'declined', archived: false, teammate: false }];
       answering(() => ({ archived: [{ session: DONE, at: 'x' }, { session: ENDED_TWO.id, at: 'x' }], kept: [] }));
       rail({ notify, archiveEnded: true, onArchiveEnded: closed });
 
       const ask = await screen.findByRole('group', { name: 'Archive what ended…' });
-      expect(ask).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 1 waiting on you.');
+      expect(ask).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 1 needing you.');
       await userEvent.click(within(ask).getByRole('button', { name: 'Archive 2' }));
 
       expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: [DONE, ENDED_TWO.id], archived: true } });
@@ -849,8 +847,8 @@ describe('the session rail by state', () => {
     it('says how many of the listed went where some changed since the list', async () => {
       const notify = vi.fn();
       SESSIONS = [...LIVE, ENDED_TWO];
-      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'ended', shown: 'declined', archived: false, teammate: false }];
-      answering(() => ({ archived: [{ session: DONE, at: 'x' }], kept: [{ session: ENDED_TWO.id, code: 'SESSION_NEEDS_YOU', group: 'review' }] }));
+      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'done', shown: 'declined', archived: false, teammate: false }];
+      answering(() => ({ archived: [{ session: DONE, at: 'x' }], kept: [{ session: ENDED_TWO.id, code: 'SESSION_NEEDS_YOU', group: 'needs-you' }] }));
       rail({ notify, archiveEnded: true });
 
       await userEvent.click(await screen.findByRole('button', { name: 'Archive 2' }));
@@ -889,7 +887,7 @@ describe('the session rail by state', () => {
   /** Group by repository, chosen in the list's ⋯, is today's arrangement with the reader's words. */
   it('draws the list by repository when that is chosen, parked with waiting on you', async () => {
     SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
-    GROUPS = [...LIVE_GROUPS, { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
+    GROUPS = [...LIVE_GROUPS, { session: 'f41led00', group: 'failed', reason: 'parked', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
     show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     const engine = (await screen.findByRole('heading', { level: 3, name: 'engine' })).closest('section')!;
@@ -920,9 +918,9 @@ describe('a group a door brings into view', () => {
     const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     const brought = vi.fn();
     try {
-      show(<SessionRail notify={() => {}} group="you" onGroupBrought={brought} />);
+      show(<SessionRail notify={() => {}} group="needs-you" onGroupBrought={brought} />);
 
-      const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      const heading = await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
       await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
       expect(heading).toHaveFocus();
       expect(scroll.mock.instances).toContain(heading);
@@ -931,22 +929,22 @@ describe('a group a door brings into view', () => {
     }
   });
 
-  /** A parked quest's session is the reader's alone to place in *Waiting on you*: the rail waits for its answer. */
+  /** A finished session with work to review is the reader's alone to place in *Needs you*: the rail waits for its answer. */
   it("waits for the reader's answer before it looks for the group", async () => {
-    SESSIONS = [{ ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
-    GROUPS = [{ session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
+    SESSIONS = [{ ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'completed', created: at(60), updated: at(20) }];
+    GROUPS = [{ session: 'f41led00', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false }];
     let answer: (value: unknown) => void = () => {};
     invoke.mockImplementation((_module: string, type: string) => (type === 'SESSION_GROUPS'
       ? new Promise((resolve) => { answer = resolve; })
       : Promise.resolve(DRIVER_STATE)));
     const brought = vi.fn();
-    show(<SessionRail notify={() => {}} group="you" onGroupBrought={brought} />);
+    show(<SessionRail notify={() => {}} group="needs-you" onGroupBrought={brought} />);
 
-    // By its record alone it ended; the reader has not said yet where it waits.
-    await screen.findByRole('heading', { level: 3, name: 'Ended (1)' });
+    // By its record alone it is done; the reader has not said yet that its work waits for you.
+    await screen.findByRole('heading', { level: 3, name: 'Done (1)' });
     expect(brought).not.toHaveBeenCalled();
     answer({ sessions: GROUPS });
-    const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
   });
@@ -962,39 +960,39 @@ describe('a group a door brings into view', () => {
       };
       return (
         <>
-          <button type="button" onClick={() => setGroup('you')}>go</button>
+          <button type="button" onClick={() => setGroup('needs-you')}>go</button>
           <SessionRail notify={() => {}} group={group} onGroupBrought={letGo} />
         </>
       );
     }
     show(<Searched />);
     await userEvent.type(await screen.findByRole('searchbox', { name: 'search sessions' }), 'zzz');
-    expect(screen.queryByRole('heading', { level: 3, name: 'Waiting on you (1)' })).toBeNull();
+    expect(screen.queryByRole('heading', { level: 3, name: 'Needs you (1)' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'go' }));
-    const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
     expect(screen.getByRole('searchbox', { name: 'search sessions' })).toHaveValue('');
   });
 
-  it('lets the door go where the list draws no such group: nothing to review, by repository, the strip', async () => {
+  it('lets the door go where the list draws no such group: nothing failed, by repository, the strip', async () => {
     const nothing = vi.fn();
-    const first = show(<SessionRail notify={() => {}} group="review" onGroupBrought={nothing} />);
-    await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const first = show(<SessionRail notify={() => {}} group="failed" onGroupBrought={nothing} />);
+    await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(nothing).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('heading', { level: 3, name: 'Waiting on you (1)' })).not.toHaveFocus();
+    expect(screen.getByRole('heading', { level: 3, name: 'Needs you (1)' })).not.toHaveFocus();
     first.unmount();
 
     const byRepository = vi.fn();
-    const second = show(<SessionRail notify={() => {}} arrangement="repository" group="you" onGroupBrought={byRepository} />);
+    const second = show(<SessionRail notify={() => {}} arrangement="repository" group="needs-you" onGroupBrought={byRepository} />);
     await screen.findByRole('heading', { level: 3, name: 'engine' });
     await waitFor(() => expect(byRepository).toHaveBeenCalledTimes(1));
     expect(document.activeElement).toBe(document.body);
     second.unmount();
 
     const strip = vi.fn();
-    show(<Tooltip.Provider><SessionRail notify={() => {}} compact group="you" onGroupBrought={strip} /></Tooltip.Provider>);
+    show(<Tooltip.Provider><SessionRail notify={() => {}} compact group="needs-you" onGroupBrought={strip} /></Tooltip.Provider>);
     await waitFor(() => expect(strip).toHaveBeenCalledTimes(1));
     expect(document.activeElement).toBe(document.body);
   });
@@ -1057,7 +1055,7 @@ describe('a group a door brings into view', () => {
       SESSIONS = LIVE;
       show(<SessionRail notify={() => {}} />);
 
-      await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      await screen.findByRole('heading', { level: 3, name: 'Needs you (1)' });
       expect(opinionsAsked).not.toHaveBeenCalled();
     });
   });

@@ -3,9 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run's <c>land</c> is the one way to land, so a door whose work no run's land performs lands nothing in place. It
-/// answers the gate's own refusal where a part holds, else why the work's process lands nothing, as <see cref="LandingCode.Refused"/>; the
-/// terminal's press says the same, exit 1.
+/// A door whose work no run's <c>land</c> performs lands nothing, and answers the gate's refusal or why the process lands nothing (<see cref="LandingCode.Refused"/>), exit 1 at the terminal.
 /// </summary>
 public sealed class RunLandHoldsTests
 {
@@ -41,17 +39,5 @@ public sealed class RunLandHoldsTests
 
         Assert.False(held.Landed);
         Assert.Equal("No workflow's run governs this work, so nothing lands it: Set up… chooses one. Nothing was landed.", held.Message);
-    }
-
-    [Fact]
-    public void The_terminals_press_on_work_no_run_lands_says_the_hold_and_exits_1()
-    {
-        var process = WorkflowProcess.Declared(DriverConfig.Empty, "engine", null) with { Problem = WorkflowProcess.NoWorkflow("engine") };
-        var gate = LandingGate.Open("engine") with { Workflow = WorkflowGate.Judge(process) };
-
-        var said = TreesWords.AcceptedForPass(Path.Combine(AppContext.BaseDirectory, "no-home"), gate);
-
-        Assert.Equal(1, said.Code);
-        Assert.Equal([$"trees: {RunLandHolds.Of(gate).Message}"], said.Out);
     }
 }

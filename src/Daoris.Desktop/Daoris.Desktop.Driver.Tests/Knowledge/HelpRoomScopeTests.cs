@@ -112,15 +112,15 @@ public sealed class HelpRoomScopeTests : IDisposable
         var alpha = whole.Within("alpha").Sessions!;
         var beta = whole.Within("beta").Sessions!;
 
-        Assert.Equal((1, 0, 0, 0, 2), (alpha.You, alpha.Review, alpha.Working, alpha.Later, alpha.Ended));
+        Assert.Equal((1, 0, 0, 2), (alpha.NeedsYou, alpha.Working, alpha.Pending, alpha.Failed + alpha.Done));
         Assert.Equal([new HelpEndedSession("ea2", "site"), new HelpEndedSession("ea1", "engine")], alpha.Listed);
-        Assert.Equal((12, HelpRoomMachineNow.EndedListed), (beta.Ended, beta.Listed.Count));
-        Assert.Equal(15, whole.Sessions!.Ended);
+        Assert.Equal((12, HelpRoomMachineNow.EndedListed), (beta.Failed + beta.Done, beta.Listed.Count));
+        Assert.Equal(15, whole.Sessions!.Failed + whole.Sessions.Done);
 
         var room = HelpRoom.Render(whole.Within("alpha"));
         Assert.Contains("- Workspace `alpha`'s sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
-            + "1 waiting on you, 0 to review, 0 working, 0 resuming later, 2 ended.", room);
-        Assert.Contains("- Ended sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).", room);
+            + "1 needing you, 0 working, 0 pending, 0 failed, 2 done.", room);
+        Assert.Contains("- Failed and done sessions, newest first: `ea2` (in `site`), `ea1` (in `engine`).", room);
         Assert.Contains("- In workspace `alpha`: 1 session waits on the person; 1 ask waits for an answer.", room);
         Assert.DoesNotContain("`eb", room);
         Assert.DoesNotContain("`sb1`", room);

@@ -82,6 +82,8 @@ public interface INativeDialect : IDialect
 
     /// <summary>The line that stops a turn and keeps the session; null where the program has none.</summary>
     string? FrameInterrupt() => null;
+
+    string? FrameSteer(string text, string uuid) => null;
 }
 
 /// <summary>

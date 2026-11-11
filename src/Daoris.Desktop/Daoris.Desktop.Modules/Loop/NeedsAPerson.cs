@@ -153,9 +153,9 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        // What Sessions' list places To review, from the groups the list reads: never a reader of its own. Ask Daoris's
-        // conversations are reached from its own panel, never from Sessions.
-        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == "review"))
+        // A run whose every wait is the person's Accept, one row by the session Sessions' list places for it in Needs you: never a
+        // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions.
+        foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") == SessionReason.Review))
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
@@ -287,6 +287,7 @@ public static class NeedsAPerson
 
 ﻿        rows.AddRange(AttentionSessionRows.Rows(facts, sessions, SessionScope));
         rows.AddRange(AttentionMachineRows.Rows(facts, UnitScope));
+        rows.AddRange(AttentionSecondCheckRows.Rows(facts));
 
         // The starts waiting on their accounts, and the signed-out accounts no waiting start names.
         rows.AddRange(AccountAttention.Rows(facts));
@@ -339,7 +340,7 @@ public static class NeedsAPerson
             .Where(session => Text(session, "id") is { Length: > 0 } id && !Elsewhere(id) && Active.Contains(Text(session, "state") ?? "")
                 && ActiveSessions.HoldsSlot(
                     Text(session, "kind"), Text(session, "repository"), Text(session, "ask"), Text(session, "serves"), Text(session, "opinion"),
-                    Text(session, "decides")))
+                    Text(session, "decides"), Text(session, "performs")))
             .Select(session => ($"session:{Text(session, "id")}", new JsonObject { ["workspace"] = Text(session, "workspace") ?? "default" })),
     ];
 

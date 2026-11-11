@@ -6,9 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Workplace-names-Workflows cut: the seams the cut adds. Workplace declares the run's files and ids, the process
-/// facet it reads, the operations it asks of the workflows (the landed declaration, a quest's process, a chat run's bind and press) and the
-/// gate's two; Workflows keeps and installs them. The cases that need no new seam are <see cref="WorkplaceWorkflowsBoundaryTests"/>'.
+/// The Workplace-names-Workflows cut's seams: Workplace declares the run's files and ids, the process facet it reads, the operations
+/// it asks of the workflows (the landed declaration, a quest's process, a chat run's bind and press) and the gate's two; Workflows installs them.
 /// </summary>
 [Collection("agent operation ports")]
 public sealed class WorkplaceWorkflowsPortsTests : IDisposable
@@ -240,44 +239,8 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         finally { WorkplaceWorkflows.Current = actual; }
     }
 
-    [Fact]
-    public async Task The_chat_land_binds_first_and_reads_the_press_through_the_operations_and_stops_where_the_bind_failed()
-    {
-        var actual = WorkplaceWorkflows.Current;
-        var operations = new Operations { Failed = "the home is full" };
-        using var client = Client();
-        var output = new StringWriter();
-        var world = new ChatLandWorld(client, _home, new SessionTrees(_home), null, output, new StringWriter());
-        try
-        {
-            WorkplaceWorkflows.Current = operations;
-
-            // A bind the home could not keep refuses the press, before the record is read.
-            var code = await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
-            Assert.NotEqual(0, code);
-            Assert.Equal([$"bind:chat-s1:{Tree}"], operations.Calls);
-            Assert.IsAssignableFrom<IWorkplacePluginCatalog>(operations.Catalog);
-
-            // One bound goes on to the press's view of the record: a live one is held by the running Daoris, and none is reached here.
-            operations.Failed = null;
-            operations.Calls.Clear();
-            await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
-            Assert.Equal([$"bind:chat-s1:{Tree}", "press:s1"], operations.Calls);
-        }
-        finally { WorkplaceWorkflows.Current = actual; }
-    }
-
     // ——— Stand-ins
 
-    private ServiceClient Client() => new("http://ledger.test", null,
-        new HttpClient(new Handler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") })), disposeHandler: false));
-
-    private string Ended(string id) => JsonSerializer.Serialize(new[] { new { id, state = "completed", kind = "chat", repository = "engine", tree = Tree } });
-
-    private sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> answer) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) => answer(request);
-    }
 
     private sealed class World : IOpinionWorld
     {

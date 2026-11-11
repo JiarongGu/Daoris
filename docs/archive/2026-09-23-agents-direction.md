@@ -54,7 +54,7 @@ From the vendors' own documents, not from memory:
   model-backed feature works with none and names the tier that answered (`model-decoupling`). Both
   jobs are on Settings since AGT6 (§3).
 
-**Checked again for AGT2b (2026-09-24)**: `docs/2026-09-24-agt2b-channel-evidence.md` records each
+**Checked again for AGT2b (2026-09-24)**: `docs/archive/2026-09-24-agt2b-channel-evidence.md` records each
 channel's layout, how the signature works, what the official installers verify, and what is not
 confirmed.
 
@@ -68,7 +68,7 @@ confirmed.
   updates itself, and it could, so the tool's own switch is now set. AGT2b fetches Claude Code from
   its release bucket at the pinned version, checked against the signed manifest, and Codex from its
   releases once the Windows archive and version choice are confirmed. npm stays for what ships
-  only there. **Built 2026-09-24**: `docs/2026-09-22-toolchain-design.md` §3a.
+  only there. **Built 2026-09-24**: `docs/archive/2026-09-22-toolchain-design.md` §3a.
 - **AGT3 — an account that is an API key.** Each tool has its own way: Claude Code reads
   `ANTHROPIC_API_KEY` or a cloud provider's credentials; Codex signs in with one read from stdin
   (`codex login --with-api-key`, [auth](https://developers.openai.com/codex/auth)) and stores it in

@@ -31,6 +31,18 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>A tree's reservation for a hand-off, its holders read through the loop's service (<see cref="TreeReserving"/>).</summary>
     public Func<TreeHandOff, CancellationToken, Task<TreeReserved>>? Reserve { get; init; }
 
+    /// <summary>The sessions an agent-performed plugin step is started in; with <see cref="StepAsks"/>, its door.</summary>
+    public IStepSessions? StepSessions { get; init; }
+
+    /// <summary>What a step's session works from, composed from its attempt's run.</summary>
+    public Func<string, NodeAttempt, NodeDeclaration, CancellationToken, Task<StepAgentAsk?>>? StepAsks { get; init; }
+
+    /// <summary>The desktop's program a step's tools are served by; the install's where none is named.</summary>
+    public string? Program { get; init; }
+
+    /// <summary>Asks a pass, as an answer kept off the pass does.</summary>
+    public Action? Wake { get; init; }
+
     /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>.</summary>
     public void Say(string code, string said) => Log?.Invoke(code, said);
 }

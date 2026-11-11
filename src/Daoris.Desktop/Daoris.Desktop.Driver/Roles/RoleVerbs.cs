@@ -320,6 +320,7 @@ public sealed class RoleVerb : ChoiceVerb
 
         var policies = staffing is null ? [] : RolePolicyRow.Of(staffing.Ledger, catalogue, choices);
         said.WriteLine("daoris: the roles that take this machine's work");
+        var column = Math.Max(12, rows.Select(row => row.Id.Length + 2).DefaultIfEmpty(0).Max());
         foreach (var row in rows)
         {
             var shape = row.State switch
@@ -330,10 +331,10 @@ public sealed class RoleVerb : ChoiceVerb
                     + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its staffing's order" : "")
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
-            said.WriteLine($"  {row.Id,-12}{shape}");
+            said.WriteLine($"  {row.Id.PadRight(column)}{shape}");
             if (policies.FirstOrDefault(each => each.Role == row.Id) is { } policy && (policy.PolicyState != StaffPolicyRead.Default || args.Count > 1))
             {
-                said.WriteLine($"  {"",-12}{PolicySaid(policy, row.Choices)}");
+                said.WriteLine($"  {"".PadRight(column)}{PolicySaid(policy, row.Choices)}");
             }
         }
 

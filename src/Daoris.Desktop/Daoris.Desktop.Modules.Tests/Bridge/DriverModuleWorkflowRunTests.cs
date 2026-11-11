@@ -6,9 +6,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// Where a piece of work stands in its workflow, over the bridge:
-/// `WORKFLOW_RUN` answers <see cref="WorkflowRunReader"/> read from the service's quests, sessions and ask and this machine's
-/// landing record, each step Current's cell beside where it stands; the same run for a session, its quest and its ask; a chat's
-/// no run, with the driver's sentence; and the refusals.
+/// `WORKFLOW_RUN` answers <see cref="WorkflowRunReader"/> read from the service's quests, sessions and ask and this machine's landing record,
+/// each step Current's cell beside where it stands; the same run for a session, its quest and its ask; a chat's no run; and the refusals.
 /// </summary>
 public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
 {
@@ -20,7 +19,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     [InlineData("cannot-start")]
     [InlineData("unread")]
     [Trait(Category.Name, Category.Process)]
-    public async Task The_landing_preview_and_refused_press_carry_the_same_workflow_hold(string state)
+    public async Task The_landing_preview_carries_the_workflow_hold_and_lands_nothing(string state)
     {
         var config = DriverConfig.Empty;
         StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"), null,
@@ -52,15 +51,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             var (module, _) = await UpAsync(tree);
 
             var preview = await AnswerAsync(module, "LANDING", new { id = "s1" });
-            var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1" });
 
             Assert.Equal(state, preview.GetProperty("workflow").GetProperty("state").GetString());
             Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
-            Assert.Equal(preview.GetProperty("workflow").GetRawText(), press.GetProperty("workflow").GetRawText());
-            Assert.False(press.GetProperty("done").GetBoolean());
-            // The refusal is also said in `trees land`'s words, exit 1, beside the page's fields.
-            Assert.Equal([$"trees: {press.GetProperty("message").GetString()}"], press.GetProperty("said").GetProperty("out").EnumerateArray().Select(line => line.GetString()));
-            Assert.Equal(1, press.GetProperty("said").GetProperty("code").GetInt32());
+            // A run whose graph holds no review offers no Accept.
+            Assert.True(!preview.TryGetProperty("accept", out var accept) || accept.ValueKind == JsonValueKind.Null);
             Assert.Empty(new LandedBranches(Home).Entries());
             var branches = await GitAsync(root, "branch", "--list", "feature/*");
             Assert.True(string.IsNullOrWhiteSpace(branches));
@@ -259,6 +254,25 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal("heavy-at-end", bound.GetProperty("chat").GetProperty("checks").GetString());
         var work = bound.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
         Assert.Equal(("working", "active"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
+    }
+
+    /// <summary>
+    /// A conversation's Accept at the node door is its press: the submission and then the keep, so it reserves the conversation first, and a
+    /// live one no runner here holds is refused <c>elsewhere</c> with nothing submitted or kept. Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_accept_at_the_node_door_is_its_press_reserved_first()
+    {
+        var own = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "aurora", "engine", "s-c2c2c2c2");
+        Directory.CreateDirectory(own);
+        var (module, _) = await UpAsync(chatTree: own);
+
+        var answer = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "chat-c2", node = "review", act = "accept" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(ChatPresses.Codes.Elsewhere, answer.GetProperty("press").GetString());
+        Assert.Equal(ChatPresses.Elsewhere, answer.GetProperty("message").GetString());
+        Assert.False(File.Exists(Path.Combine(NodeRecordFiles.FolderOf(Home), RunUnits.IdOf("chat-c2") + ".json")));
     }
 
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>

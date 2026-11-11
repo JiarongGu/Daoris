@@ -40,7 +40,7 @@ public sealed class StartTreeCloseTests : IDisposable
     public StartTreeCloseTests()
     {
         _root = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_root);
+        Directory.CreateDirectory(Path.Combine(_root, ".git"));
         _agent = Path.Combine(_home, "agent.mjs");
         File.WriteAllText(_agent, "");
         _ledger.Register("engine", _root);
@@ -74,6 +74,8 @@ public sealed class StartTreeCloseTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         WorkingTree.Runs.Value = GitAsync;
+        Exception? thrown;
+        TickReport? report = null;
         try
         {
             using (ProcessStarts.Within(info =>
@@ -82,7 +84,7 @@ public sealed class StartTreeCloseTests : IDisposable
                 throw new Win32Exception(2, "The system cannot find the file specified.");
             }))
             {
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => driver.RunOnceAsync(_closing.Token).WaitAsync(Poll.Patience));
+                thrown = await Record.ExceptionAsync(async () => report = await driver.RunOnceAsync(_closing.Token).WaitAsync(Poll.Patience));
             }
         }
         finally
@@ -90,7 +92,9 @@ public sealed class StartTreeCloseTests : IDisposable
             WorkingTree.Runs.Value = null;
         }
 
-        var said = $"git asked:\n{string.Join('\n', _asked)}\nother starts: {string.Join(", ", _seen)}";
+        var said = $"git asked:\n{string.Join('\n', _asked)}\nother starts: {string.Join(", ", _seen)}"
+            + (report is null ? "" : $"\nthe tick said: {string.Join(" | ", report.Events)}; {string.Join(" | ", report.Considerations)}");
+        Assert.True(thrown is OperationCanceledException, $"the run ended on {thrown?.GetType().Name ?? "no exception"}, not the close: {said}");
         var tree = _opened ?? throw new Xunit.Sdk.XunitException("the start opened no tree: " + said);
         Assert.False(Directory.Exists(tree), "the tree was left: " + said);
         Assert.Contains($"(no token) worktree remove {Path.GetFullPath(tree)}", _asked);

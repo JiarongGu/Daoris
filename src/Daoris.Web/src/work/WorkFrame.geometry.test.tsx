@@ -167,10 +167,10 @@ describe('the frame\'s geometry (FRAME6)', () => {
   it('lays the strip the window drew over the conversation for a go, and brings its group into view there', async () => {
     SESSIONS = [DRIVEN, PARKED];
     widen(900);
-    const brought = going('you');
+    const brought = going('needs-you');
 
     const over = await screen.findByRole('region', { name: 'Sessions' });
-    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
     expect(screen.getByRole('region', { name: 'Sessions' })).toBeInTheDocument();
@@ -183,10 +183,10 @@ describe('the frame\'s geometry (FRAME6)', () => {
   it('lays the strip the person closed over the conversation for a go, and their closing stands once it goes', async () => {
     SESSIONS = [DRIVEN, PARKED];
     window.localStorage.setItem('daoris.railClosed', '1');
-    const brought = going('you');
+    const brought = going('needs-you');
 
     const over = await screen.findByRole('region', { name: 'Sessions' });
-    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Needs you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
 

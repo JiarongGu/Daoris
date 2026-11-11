@@ -2,7 +2,7 @@ import type { GoAhead, SetUpRef } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { Consideration, TrustHold } from '../../data/signals';
 import type { SessionGrouping } from '../groups';
-import type { AttentionKind } from './AttentionRow';
+import type { AttentionKind, SecondCheckFlag } from './AttentionRow';
 import type { PushedAccountFacts } from './accountWords';
 import type { GraphEnd, HeldAttempt, MilestoneEntry, UnreadableRecord } from '../head/milestone';
 import type { OpinionWait } from '../gates/opinion';
@@ -116,6 +116,7 @@ export type PushedAttention = {
   git?: GitHeld;
   /** A git go-ahead a door holds while its act waits: its repository, remote, host, class and session, and whether its door has gone. */
   gitAsk?: GitAskWait;
+  secondCheck?: SecondCheckFlag;
   /** A session the watcher brings to the person: its watch, which its words and its presses read. */
   quiet?: QuietWait;
   /** A run held at a declined request: its `work.requests` node, the quest declined and where it went. */

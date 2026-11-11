@@ -101,8 +101,8 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             var placed = all.Where(row => row["group"]!.GetValue<string>() == group);
             return group switch
             {
-                SessionGroup.You or SessionGroup.Later => placed.OrderBy(row => When(row, "updated")).ThenBy(Id, StringComparer.Ordinal),
-                SessionGroup.Review or SessionGroup.Working => placed
+                SessionGroup.NeedsYou or SessionGroup.Pending => placed.OrderBy(row => When(row, "updated")).ThenBy(Id, StringComparer.Ordinal),
+                SessionGroup.Working => placed
                     .OrderBy(row => row["repository"]!.GetValue<string>(), StringComparer.OrdinalIgnoreCase)
                     .ThenBy(row => When(row, "created")).ThenBy(Id, StringComparer.Ordinal),
                 _ => placed.OrderByDescending(row => When(row, "updated")).ThenBy(Id, StringComparer.Ordinal),
@@ -160,8 +160,9 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     [Fact]
     public void Every_field_the_route_answers_is_classed_and_every_field_the_page_reads_is_pushed_or_the_pull_s()
     {
-        var row = new SessionGrouping("s1", SessionGroup.Later, "completed")
+        var row = new SessionGrouping("s1", SessionGroup.Pending, "completed")
         {
+            State = SessionGroup.Pending, Reason = WordsHold.Cooling,
             Archived = true, Strikes = 2, Awaits = "q9", AwaitsOf = "engine", Work = new TreeWork(3, 1) { Branch = "daoris/s1" }, HoldsQuest = true,
             PausedBy = new PausedBy(WorkScope.Ask, "a1"), Holds = new WordsHold(WordsHold.Cooling, "its account cools") { Repository = "engine", Until = At, Account = "work", AccountName = "Work" },
             Deletable = true, Lands = new LandOffer("daoris/s1", "s1", 3, 1),
@@ -169,8 +170,8 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Calling = new RunningCall("npm test", At),
             Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At)],
         };
-        var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Later, "s1",
-            [new EntryPart("s1", "q1", "completed", SessionGroup.Later, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }]) { Head = "s1" };
+        var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Pending, "s1",
+            [new EntryPart("s1", "q1", "completed", SessionGroup.Pending, PartBegan.Asked) { After = "s0", AskedBy = "game", Head = "s1" }]) { Head = "s1" };
 
         var route = FieldsOf(Written(SessionsGroupsWires.Grouped(row)), "row").Concat(FieldsOf(Written(SessionsGroupsWires.Entry(entry)), "entry")).ToList();
         var pushed = GroupsStateSlice.Fields.SelectMany(shape => shape.Value.Select(field => $"{shape.Key}.{field}")).ToHashSet(StringComparer.Ordinal);
@@ -238,7 +239,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         var row = Assert.Single(Pushes(GroupsStateSlice.Rows).Skip(1));
         Assert.Equal((2L, (long?)1L), (row.Seq, row.BaseSeq));
         Assert.Equal(["run1"], Written(row.Data).Select(each => each.Key));
-        Assert.Equal((SessionGroup.Ended, "2026-10-20T09:59:00+00:00"),
+        Assert.Equal((SessionGroup.Done, "2026-10-20T09:59:00+00:00"),
             (Written(row.Data)["run1"]!["group"]!.GetValue<string>(), Written(row.Data)["run1"]!["updated"]!.GetValue<string>()));
         var entry = Assert.Single(Pushes(GroupsStateSlice.Entries).Skip(1));
         Assert.Equal((2L, (long?)1L), (entry.Seq, entry.BaseSeq));

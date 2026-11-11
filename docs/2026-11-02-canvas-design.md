@@ -1,9 +1,9 @@
 # CANVAS1: one canvas for the workflow, the structure and the maps
 
 Status: accepted by the steward 2026-11-02 (D224), the synthesis of both sealed proposals; the read runs beside the first row.
-It answers `2026-11-02-canvas-brief.md` from `2026-11-02-canvas-proposal-opus.md` and `2026-11-02-canvas-proposal-codex.md`, and
-amends D223 (`2026-11-02-flowchart-design.md`), D186, the map design (`2026-09-23-map-design.md`) and the company-view design
-(`2026-10-31-company-view-design.md`) where §8 says. Each proposal's claims about today's code were read against it; a line cited
+It answers `archive/2026-11-02-canvas-brief.md` from `archive/2026-11-02-canvas-proposal-opus.md` and `archive/2026-11-02-canvas-proposal-codex.md`, and
+amends D223 (`2026-11-02-flowchart-design.md`), D186, the map design (`archive/2026-09-23-map-design.md`) and the company-view design
+(`archive/2026-10-31-company-view-design.md`) where §8 says. Each proposal's claims about today's code were read against it; a line cited
 here is the checkout's. Web paths start at `src/Daoris.Web/src/`, measured specs at `src/Daoris.Web/measured/` (written `measured/…`).
 
 ## 1. What both proposals decided alike
@@ -112,7 +112,7 @@ would move every rank below. A proposal's union drawing is a different scene, la
 - **Bounds:** each feature sets its own within 10–250% (§3); fit never goes above 100% (`LayeredMap.tsx:119-130`); edit is floored at
   80%, the map's four fifths (`:20-21`), 100% on `pointer: coarse`, so `text-meta`, the ＋ and the ports stay usable; an overview scale
   draws compact marks and no inline affordance. The toolbar, list and menu never scale, keeping the 28 px target
-  (`2026-09-19-platform-ux.md:741`).
+  (`archive/2026-09-19-platform-ux.md:741`).
 - **Height:** the world's height at k plus padding, up to the window's room below (`useTall`, as the map measures it), never under
   20rem: a small workflow is never a tall empty box, a large one pans, and the page scrolls around it.
 - **Opening and keeping:** the view opens where `opening` says and follows the drawing (folds, data arriving) until the person moves
@@ -317,7 +317,7 @@ from memory until this reading replaces it.
 | Cytoscape.js | refused: canvas-drawn nodes no reader or keyboard reaches (`D186.md:71-72`), a JS stylesheet beside the tokens, sigma's niche at lower speed |
 | sigma.js with graphology | the one named exit, for the code map only (§3.4) |
 | d3-zoom | refused: the gesture arithmetic is small (`viewMath.ts`), and its listeners, transitions and inertia fight React and the window zoom's taken-wheel contract |
-| dagre; elkjs | refused: dagre on D186's table, the bands and clusters laid by hand on their own fixtures; elkjs at 466,978 bytes gzipped under EPL-2.0 or GPL-3.0 (`2026-10-20-flowchart-design.md:487-488`) |
+| dagre; elkjs | refused: dagre on D186's table, the bands and clusters laid by hand on their own fixtures; elkjs at 466,978 bytes gzipped under EPL-2.0 or GPL-3.0 (`archive/2026-10-20-flowchart-design.md:487-488`) |
 | A whiteboard SDK | refused: a document model, tools and persistence a governed graph has no use for |
 
 ## 6. Kept, changed and gone
@@ -362,7 +362,7 @@ from memory until this reading replaces it.
   never a status hue; the list in reading order; no animated moves; the Map draws no process. **Amended:** point 2's *no panning, no
   zoom* (`:26`) becomes the viewport, stored positions and dragging still rejected (`:64`); point 3's placement by the pane's width holds
   below 36rem, and above it the viewport pans what the region cannot hold; trap 15, *no transform scale over text*
-  (`2026-10-20-flowchart-design.md:613`, held by `design/Flow.test.tsx:103-105` for a flow with no viewport), becomes *the canvas never
+  (`archive/2026-10-20-flowchart-design.md:613`, held by `design/Flow.test.tsx:103-105` for a flow with no viewport), becomes *the canvas never
   shrinks a drawing on its own: only the person's zoom scales it, and below a readable size a node draws its chip*; the rejection of a
   canvas drawing (`:71-72`) keeps one exception, the dot tier of a display-only positioned world, `aria-hidden`, the list its reading.
 - **The map design:** *no graph library* stands (`:48-50`), and MAP3's open question is answered: not yet, sigma.js the named exit. Its
@@ -419,7 +419,7 @@ the installed window where it changes it; its own line of D224's note and its ow
 
 ## 11. Settled after Codex's read
 
-Codex's read (`docs/2026-11-02-canvas-reads.md`) is taken whole; these amend §2 to §10, and each row carries its part.
+Codex's read (`docs/archive/2026-11-02-canvas-reads.md`) is taken whole; these amend §2 to §10, and each row carries its part.
 
 - **Row a's gate carries the editor and is fair.** React 19, ports, custom routes, insertion controls, pick mode and pointer capture
   are blocking contracts; if both candidates fail one, the row stops and hands back its evidence. The 12 KB and 150 KiB figures are

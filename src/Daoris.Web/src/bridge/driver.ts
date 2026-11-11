@@ -79,7 +79,7 @@ export type DriverState = {
   cap?: number;
   /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
   terminal?: string;
-  /** Who changed that tier and what a terminal pressed under act, newest first, read by `terminalActsOf`; absent from an older shell. */
+  /** Who changed that tier and what a terminal pressed under act, newest first, read by `terminalActsOf`; absent until one is recorded. */
   terminalActs?: unknown;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;
@@ -354,14 +354,6 @@ export const useSetQuiet = () => useDriverChange('SET_QUIET');
 
 /** One bound of a folder's manifest read, files or minutes: the same `manifest` `daoris settings manifest files|minutes <n>` edits. */
 export const useSetManifest = () => useDriverChange('SET_MANIFEST');
-
-/**
- * A folder department's excludes changed: the globs to leave out and the globs to take back, the same list
- * `daoris repository excludes` edits. The driver changes the registration and reads the folder's manifest again.
- */
-export const useSetFolderExcludes = () => useMutation({
-  mutationFn: (variables: Payload<'REGISTRY_EXCLUDES'>) => call('REGISTRY_EXCLUDES', variables),
-});
 
 /** How many sessions Daoris starts at once: the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');

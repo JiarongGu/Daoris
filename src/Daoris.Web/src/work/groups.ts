@@ -7,21 +7,26 @@ import { sessionOrigin } from './identity';
 // would take. Pure, so every list a person could have is an argument, and the list, the strip and the badge
 // read one answer.
 
+/** The five states a session is in, in the order the person acts on them. */
+export type SessionStateName = 'needs-you' | 'working' | 'pending' | 'failed' | 'done';
+
 /**
- * The groups the session list shows by state, in the order the person acts on them, and Archived: the
+ * The groups the session list shows by state, and Archived, the fold a done or failed session is moved to by its mark: the
  * host's spelling, which `daoris session list --group` shares.
  */
-export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' | 'archived';
+export type SessionGroupName = SessionStateName | 'archived';
 
 /** The groups in the order a list shows them, as the reader orders them (`SessionGroup.Order`). */
-export const GROUP_ORDER: readonly SessionGroupName[] = ['you', 'review', 'working', 'later', 'ended', 'archived'];
+export const GROUP_ORDER: readonly SessionGroupName[] = ['needs-you', 'working', 'pending', 'failed', 'done', 'archived'];
 
 /**
  * Where one session is listed and what its row's second line says, as `SESSION_GROUPS` answers it.
  *
  * @remarks
  * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
- * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
+ * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `state` is the
+ * one of the five the session is in and `reason` the finer why inside it; `group` is its state, or `archived` where its mark
+ * moved it to the fold. `shown` is the
  * record's state or a derived word, `parked`, `awaiting-reply`, `answered`, `going-on` or `limit-waits` (an ended record held for an account's reset); the page keeps its own *idle* for a live chat between
  * turns. `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
  * says the mark stands: a session that needs the person stays in its group whatever the mark says.
@@ -29,6 +34,8 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['you', 'review', 'worki
 export type SessionGrouping = {
   session: string;
   group: SessionGroupName;
+  state?: SessionStateName;
+  reason?: string;
   shown: string;
   archived: boolean;
   teammate: boolean;
@@ -170,17 +177,22 @@ export function waitsOnYou(
 
 /**
  * Where a session goes until the reader answers for it: a record that started after the reader's last look. Its record
- * alone says only the reader's first step, live or ended (`SessionGroups.Place`): a live session of this machine's
- * parked to ask the person waits on you, a teammate's waits on them and is working, one the person answered goes on and
- * is working, and an ended one is ended. Nothing here says parked, to review or resumes later, which only
- * the reader can.
+ * alone says only the reader's first step (`SessionStateReader`): a live session of this machine's parked to ask the
+ * person needs you, a teammate's waits on them and is working, one the person answered goes on and is working, a queued
+ * one is pending, a failed one failed, and any other ended one is done. Nothing here says parked, to review or held,
+ * which only the reader can.
  */
-function provisional(session: Session): SessionGroupName {
-  if (!SESSION_ACTIVE.has(session.state)) return 'ended';
-  return session.state === 'awaiting-person' && !answeredPark(session) && !sessionOrigin(session) ? 'you' : 'working';
+function provisional(session: Session): SessionStateName {
+  if (session.state === 'queued') return 'pending';
+  if (session.state === 'failed') return 'failed';
+  if (!SESSION_ACTIVE.has(session.state)) return 'done';
+  return session.state === 'awaiting-person' && !answeredPark(session) && !sessionOrigin(session) ? 'needs-you' : 'working';
 }
 
 const newestFirst = (a: Session, b: Session) => b.updated.localeCompare(a.updated);
+
+/** The states whose groups list newest first, so a record that ended after the reader's look comes before its rows. */
+const ENDED_STATES: ReadonlySet<SessionGroupName> = new Set(['failed', 'done']);
 
 /** One of the list's groups by state, its sessions in the reader's order. */
 export type StateGroup = { group: SessionGroupName; sessions: Session[] };
@@ -214,25 +226,27 @@ export function sessionsByState(
   }
 
   const unanswered = sessions.filter((row) => !answered.has(row.id));
-  const endedSince = unanswered.filter((row) => provisional(row) === 'ended').sort(newestFirst);
-  rows.set('ended', [...endedSince, ...rows.get('ended')!]);
+  for (const group of ENDED_STATES) {
+    const since = unanswered.filter((row) => provisional(row) === group).sort(newestFirst);
+    rows.set(group, [...since, ...rows.get(group)!]);
+  }
   for (const row of unanswered) {
-    if (provisional(row) !== 'ended') rows.get(provisional(row))!.push(row);
+    if (!ENDED_STATES.has(provisional(row))) rows.get(provisional(row))!.push(row);
   }
 
   return GROUP_ORDER.map((group) => ({ group, sessions: rows.get(group)! })).filter((group) => group.sessions.length > 0);
 }
 
 /** What *Archive what ended…* would take, and how many stay in the list because they need the person. */
-export type EndedToArchive = { going: string[]; kept: { you: number; review: number } };
+export type EndedToArchive = { going: string[]; kept: number };
 
 /**
- * What *Archive what ended…*'s first press lists: every session the reader placed in Ended that is
- * not archived, in its order, and how many stay under *Waiting on you* and *To review*, counted as their headings are.
+ * What *Archive what ended…*'s first press lists: every session the reader placed in Failed or Done that is
+ * not archived, in the list's order, and how many stay under *Needs you*.
  *
  * @remarks
- * A record the reader has not answered for is placed in Ended by its record alone, and the reader may yet say it is to
- * review, so it is left to the next look. Only what the page holds is taken: the person archives what they can see.
+ * A record the reader has not answered for is placed by its record alone, and the reader may yet say otherwise, so it is
+ * left to the next look. Only what the page holds is taken: the person archives what they can see.
  * The host judges each again at the second press, so this is a list, never a promise.
  */
 export function endedToArchive(sessions: readonly Session[], groupings: readonly SessionGrouping[] | undefined): EndedToArchive {
@@ -240,8 +254,9 @@ export function endedToArchive(sessions: readonly Session[], groupings: readonly
   const placed = new Map((groupings ?? []).map((row): [string, SessionGrouping] => [row.session, row]));
   const of = (group: SessionGroupName) => groups.find((row) => row.group === group)?.sessions ?? [];
   return {
-    going: of('ended').filter((row) => placed.get(row.id)?.group === 'ended').map((row) => row.id),
-    kept: { you: of('you').length, review: of('review').length },
+    going: [...of('failed'), ...of('done')]
+      .filter((row) => ENDED_STATES.has(placed.get(row.id)?.group ?? 'archived')).map((row) => row.id),
+    kept: of('needs-you').length,
   };
 }
 
@@ -358,7 +373,12 @@ export function stripSessions(
     return sessionsByRepository(sessions, groupings, { selected, archived }).live.flatMap((group) => group.sessions);
   }
   const groups = sessionsByState(sessions, groupings, { selected, archived });
-  const shown = groups.filter((group) => group.group === 'you' || group.group === 'working').flatMap((group) => group.sessions);
+  const placed = new Map((groupings ?? []).map((row): [string, SessionGrouping] => [row.session, row]));
+  const of = (name: SessionGroupName) => groups.find((group) => group.group === name)?.sessions ?? [];
+  // A quest parked on its failures waits on the person as much as what needs them, so it leads with it.
+  const shown = [
+    ...of('needs-you'), ...of('failed').filter((row) => waitsOnYou(row, placed.get(row.id))), ...of('working'),
+  ];
   const attended = selected && !shown.some((row) => row.id === selected) ? sessions.filter((row) => row.id === selected) : [];
   return [...shown, ...attended];
 }

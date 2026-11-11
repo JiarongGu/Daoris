@@ -19,6 +19,8 @@ import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
 import { type HelpPress, PluginMainNotice, PluginPage } from './PluginPage';
 import type { ToolRefused } from './PluginTools';
+import { interfacesOf, switchesOf } from './interfaces';
+import { usePluginCommands } from './usePluginCommands';
 
 /** The driver's word for a plugin this machine does not hold: read by its code, never by its sentence. */
 const UNKNOWN = 'PLUGIN_UNKNOWN';
@@ -87,6 +89,8 @@ function installedOf(raw: unknown): PluginShown[] {
     steps: stepsOf(plugin.steps),
     resources: resourcesOf(plugin.resources),
     tools: toolsOf(plugin.tools),
+    interfaces: interfacesOf(plugin.interfaces),
+    switches: switchesOf(plugin.switches),
   }));
 }
 function offersOf(raw: unknown): OfferShown[] {
@@ -100,6 +104,7 @@ function offersOf(raw: unknown): OfferShown[] {
     steps: stepsOf(offer.steps),
     resources: resourcesOf(offer.resources),
     needs: list<string>(offer.needs),
+    interfaces: interfacesOf(offer.interfaces),
   }));
 }
 
@@ -185,11 +190,14 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   // by the route's STATE_CHANGED, as a switch is. An approval carries the writes the person ticked.
   const helpOne = (id: string, server: string, action: HelpPress, writes: string[]) =>
     act.mutate(action === 'help-approve' ? { id, action, server, writes } : { id, action, server }, { onError: failed });
+  const commands = usePluginCommands({ plugins, answered, onChoose, refetch: () => void catalog.refetch(), notify });
   // A refusal is said inside the ask, where *Remove plugin* is pressed, not in a toast; a plugin the driver does not
-  // hold any more is the exception, since the page itself then says it has gone.
+  // hold any more is the exception, since the page itself then says it has gone. The driver asks the plugin to sign out first and
+  // answers how it went.
   const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
     onSuccess: (result) => {
       notify(t(result.data ? 'plugin.removedKept' : 'plugin.removed', { id, data: result.data ?? '' }));
+      if (result.forgot) notify(t(result.forgot === 'confirmed' ? 'plugin.signedOut' : 'plugin.notSignedOut', { id }));
       // Removed by the person's own press, so the page goes back to choosing, not to *gone*.
       onChoose(null);
       answered.done();
@@ -296,6 +304,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             onAskRemove={setAsking}
             onRemove={remove}
             onCancelRemove={() => setAsking(null)}
+            {...commands.pageParts(shown.plugin)}
           />
         )
         : shown.kind === 'offer'

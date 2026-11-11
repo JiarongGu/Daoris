@@ -94,6 +94,12 @@ public sealed class PluginLog(MachineLog? log, PluginHealth? health = null)
         log?.Write(passed ? "info" : "warn", PluginEvents.Tested,
             [("plugin", Name(plugin)), ("passed", passed), ("code", code), ("ms", ms), ("door", Name(door))]);
 
+    /// <summary>A round of a command, by names alone: never its arguments, answers or lines.</summary>
+    public void Commanded(string plugin, string command, string from, string? session, int? exit, long ms, string? place = null) =>
+        log?.Info(PluginEvents.Command,
+            ("plugin", Name(plugin)), ("command", Name(command)), ("from", Name(from)), ("session", Name(session)), ("place", Name(place)),
+            ("exit", exit), ("ms", ms));
+
     /// <summary>A name as written, or null for anything that is not one.</summary>
     private static string? Name(string? value) => value is not null && NameShape.IsMatch(value) ? value : null;
 }

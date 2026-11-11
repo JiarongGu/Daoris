@@ -25,24 +25,26 @@ const ENDED = {
   created: '2026-10-30T08:40:00Z', updated: '2026-10-30T09:00:00Z', note: 'Done; committed as a1b2c3d.',
 };
 
-/** The driver's grouping: the part offers work to land (`review`), or is working with nothing yet to land. */
+/** The driver's grouping: the part needs the person for its review, offering work to land, or is working with nothing yet to land. */
 function driver(phase: 'review' | 'working') {
+  const state = phase === 'review' ? 'needs-you' : 'working';
   invoke.mockImplementation(async (_module: string, type: string) => {
     if (type === 'HARNESSES') return ROSTER;
     if (type === 'SESSION_HISTORY') return { session: 'c4c4c4c4', events: [], earlier: false, latest: 0 };
     if (type === 'SESSION_GROUPS') {
       return {
         sessions: [{
-          session: 'c4c4c4c4', group: phase, shown: phase === 'review' ? 'completed' : 'working', archived: false, teammate: false,
+          session: 'c4c4c4c4', group: state, state, ...(phase === 'review' ? { reason: 'review' } : {}),
+          shown: phase === 'review' ? 'completed' : 'working', archived: false, teammate: false,
           ...(phase === 'review' ? { lands: { branch: 'daoris/s-c4c4c4c4', tree: 's-c4c4c4c4', commits: 1, uncommitted: 0 } } : {}),
         }],
         entries: [{
-          entry: 'session:c4c4c4c4/engine', origin: 'session:c4c4c4c4', repository: 'engine', group: phase, leading: 'c4c4c4c4',
-          parts: [{ session: 'c4c4c4c4', quest: 'abc123', shown: phase === 'review' ? 'completed' : 'working', group: phase, began: 'opened', after: null, askedBy: null }],
+          entry: 'session:c4c4c4c4/engine', origin: 'session:c4c4c4c4', repository: 'engine', group: state, leading: 'c4c4c4c4',
+          parts: [{ session: 'c4c4c4c4', quest: 'abc123', shown: phase === 'review' ? 'completed' : 'working', group: state, began: 'opened', after: null, askedBy: null }],
         }],
       };
     }
-    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'main', source: 'workspace' };
+    if (type === 'LANDING') return { session: 'c4c4c4c4', form: 'branch', target: 'main', source: 'workspace', accept: { run: 'q1', node: 'review' } };
     return DRIVER_STATE;
   });
 }
@@ -65,7 +67,7 @@ describe('a session’s head says where the work stands and what comes next', ()
     await i18n.changeLanguage('en');
   });
 
-  for (const [language, now, next] of [['en', '1 part to land', 'next: Accept…'], ['zh', '1 个部分待落地', '下一步：采纳…']] as const) {
+  for (const [language, now, next] of [['en', 'needs you', 'next: Accept…'], ['zh', '等你处理', '下一步：采纳…']] as const) {
     it(`reads ${now} and a door to the Accept… in ${language}`, async () => {
       await i18n.changeLanguage(language);
       SESSIONS = [ENDED];

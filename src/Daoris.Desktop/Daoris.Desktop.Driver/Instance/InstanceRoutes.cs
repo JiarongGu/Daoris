@@ -443,9 +443,6 @@ public static class PersonPresses
 /// </summary>
 public static class TreesMarks
 {
-    /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
-    public const string Land = "LAND_SESSION_TREE";
-
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
     public const string DiscardTree = "DISCARD_SESSION_TREE";
 
@@ -485,9 +482,6 @@ public static class TreesRoutes
     /// <summary>The driver's module, as the desktop's <c>DriverModule.Name</c> spells it (the settings' <see cref="InstanceRoute.DriverModule"/>).</summary>
     public const string DriverModule = InstanceRoute.DriverModule;
 
-    /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
-    public static InstanceRoute Land { get; } = new(DriverModule, TreesMarks.Land, RouteClass.Person);
-
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept.</summary>
     public static InstanceRoute LandEntry { get; } = new(DriverModule, TreesMarks.LandEntry, RouteClass.Person);
 
@@ -512,7 +506,6 @@ public static class TreesRoutes
     /// <summary>Each press of the <c>trees</c> verbs, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
-        ("trees land <session>", Land),
         ("trees land --entry <id>", LandEntry),
         ("trees land --ask <id>", LandAsk),
         ("trees remove <path>", DiscardTree),
