@@ -18,7 +18,25 @@ public sealed class TerminalTierRoutes(DriverContext context)
     [Publishes("SET_TERMINAL", StateScopes.Driver)]
     private object? SetTerminal(SetTerminal press)
     {
-        context.Change(config => config.WithTerminal(press.Tier));
+        string? was = null;
+        string? now = null;
+        context.Change(config =>
+        {
+            was = config.Terminal;
+            var changed = config.WithTerminal(press.Tier);
+            now = changed.Terminal;
+            return changed;
+        });
+        if (now is { } tier && was != tier)
+        {
+            var (by, session) = PipeDoor.By;
+            context.Loop.TerminalActs.Changed(tier, by, session);
+            context.Loop.Log?.Info(TierChangedEvent, ("tier", tier), ("by", by), ("session", session ?? ""));
+        }
+
         return DriverStateAnswer.State(context.Loop);
     }
+
+    /// <summary>The machine log's event for a change of the tier, naming who made it.</summary>
+    public const string TierChangedEvent = "terminal.tier";
 }

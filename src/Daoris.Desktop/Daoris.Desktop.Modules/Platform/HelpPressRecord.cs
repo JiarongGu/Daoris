@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One press Ask Daoris, or a terminal under its tier's act (<see cref="Terminal"/>, no conversation), made this run: the route as the window words it, its
+/// One press Ask Daoris made this run: the route as the window words it, its
 /// conversation, what it named, when, and <paramref name="Outcome"/>: <c>running</c>, <c>done</c> or <c>failed</c> for one run with no
 /// card; for one <see cref="Asked"/> on a card its state, <c>waiting</c>, <c>allowed</c>, <c>refused</c>, <c>changed</c> or <c>unanswered</c>.
 /// </summary>
@@ -22,8 +22,6 @@ public sealed record HelpPressNow(
 
     /// <summary>That it asked the person on a card in restricted mode rather than ran: the receipt's and Notifications' <i>Asked you</i>.</summary>
     public bool Asked { get; init; }
-
-    public bool Terminal { get; init; }
 }
 
 /// <summary>
@@ -48,8 +46,8 @@ public sealed class HelpPressRecord(TimeProvider clock)
     private readonly object _gate = new();
     private readonly List<HelpPressNow> _presses = [];
 
-    /// <summary>A covered press begun on <paramref name="session"/>'s conversation, or by a terminal with none: its id, for <see cref="Ended"/>.</summary>
-    public string Began(IpcRequest request, string session, bool terminal = false) => Keep(request, session, Running, null, asked: false, terminal);
+    /// <summary>A covered press begun on <paramref name="session"/>'s conversation: its id, for <see cref="Ended"/>.</summary>
+    public string Began(IpcRequest request, string session) => Keep(request, session, Running, null, asked: false);
 
     /// <summary>A press <paramref name="session"/>'s conversation asked on a card, with the place it named: its id, for <see cref="Answered"/>.</summary>
     public string Asked(IpcRequest request, string session, HelpPressPlace? place) => Keep(request, session, Waiting, place, asked: true);
@@ -63,7 +61,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
         _ => Unanswered,
     });
 
-    private string Keep(IpcRequest request, string session, string outcome, HelpPressPlace? place, bool asked, bool terminal = false)
+    private string Keep(IpcRequest request, string session, string outcome, HelpPressPlace? place, bool asked)
     {
         var id = Guid.NewGuid().ToString("N")[..12];
         var (scope, target) = Subject(request);
@@ -72,7 +70,6 @@ public sealed class HelpPressRecord(TimeProvider clock)
             Place = place?.Place.Wire(),
             Beyond = place?.Beyond ?? false,
             Asked = asked,
-            Terminal = terminal,
         };
         lock (_gate)
         {
@@ -128,7 +125,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
     private static readonly string[] s_scopes = ["quest", "ask", "repository", "session"];
 
     /// <summary>What the press named and the field that named it (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), the first it carried.</summary>
-    private static (string? Scope, string? Target) Subject(IpcRequest request)
+    internal static (string? Scope, string? Target) Subject(IpcRequest request)
     {
         foreach (var scope in s_scopes)
         {

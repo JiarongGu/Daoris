@@ -41,9 +41,11 @@ public sealed class PipeTerminalTierTests : Bridge
         Assert.Equal(1, driver.Ran("WORK_PAUSE"));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
         Assert.Equal(((string?)null, true), Assert.Single(driver.Doors));
-        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses is [{ Outcome: HelpPressRecord.Done }]);
-        var kept = Assert.Single(pipe.StandingConfirmation.Now().HelpPresses);
-        Assert.Equal(("WORK_PAUSE", "", "q1", true, false), (kept.Route, kept.Session, kept.Target, kept.Terminal, kept.Asked));
+        Assert.Equal((TerminalTierBy.Terminal, (string?)null), Assert.Single(driver.By));
+        await UntilAsync(() => pipe.TerminalActs!.Now().Presses is [{ Outcome: TerminalActs.Done }]);
+        var kept = Assert.Single(pipe.TerminalActs!.Now().Presses);
+        Assert.Equal(("WORK_PAUSE", "quest", "q1", (string?)null), (kept.Route, kept.Scope, kept.Target, kept.Code));
+        Assert.Empty(pipe.StandingConfirmation.Now().HelpPresses);
         Assert.Contains(
             $$"""{"route":"{{DriverModule.Name}}.WORK_PAUSE","by":"terminal","door":"terminal"}""", Logged(PipeDelegate.TerminalPressedEvent));
         Assert.Empty(Logged(PipeDelegate.PressedEvent));
@@ -69,7 +71,48 @@ public sealed class PipeTerminalTierTests : Bridge
         Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(Assert.Single(pipe.Confirmations.Now().Waiting).Id, confirm: true)).Outcome);
         Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(1, driver.Ran("SESSION_ARCHIVE"));
+        Assert.Equal((TerminalTierBy.Card, (string?)null), Assert.Single(driver.By));
+        Assert.Empty(pipe.TerminalActs!.Now().Presses);
         Assert.Empty(Logged(PipeDelegate.TerminalPressedEvent));
+    }
+
+    [Fact]
+    public async Task Under_act_a_terminal_s_press_its_route_refuses_is_kept_failed_with_its_code()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log) = await ServeAsync(TerminalTiers.Act, StandingPlace.Outside);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "WORK_PAUSE", new { quest = StandIn.Refuses }));
+
+        Assert.False(answer.GetProperty("success").GetBoolean());
+        await UntilAsync(() => pipe.TerminalActs!.Now().Presses is [{ Outcome: TerminalActs.Failed }]);
+        var kept = Assert.Single(pipe.TerminalActs!.Now().Presses);
+        Assert.Equal(answer.GetProperty("error").GetProperty("code").GetString(), kept.Code);
+        Assert.NotNull(kept.Ended);
+    }
+
+    [Fact]
+    public async Task Under_act_Ask_Daoris_s_press_in_full_access_is_its_own_and_never_a_terminal_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log) = await ServeAsync(TerminalTiers.Act, StandingPlace.Outside);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("h1");
+        _modes["h1"] = HelpModes.Full;
+
+        await SendProvedAsync(client, "WORK_PAUSE", new { quest = "q1" }, "h1", key, client.Nonce!);
+        await UntilAsync(() => driver.Ran("WORK_PAUSE") == 1);
+
+        Assert.Equal((TerminalTierBy.AskDaoris, "h1"), Assert.Single(driver.By));
+        Assert.Empty(pipe.TerminalActs!.Now().Presses);
+        await UntilAsync(() => pipe.StandingConfirmation.Now().HelpPresses.Count == 1);
     }
 
     [Theory]
@@ -109,7 +152,7 @@ public sealed class PipeTerminalTierTests : Bridge
         var card = Assert.Single(pipe.Confirmations.Now().Waiting);
         Assert.Equal(("h1", true), (card.Asker.Session, card.Asker.Help));
         Assert.Equal(0, driver.Ran("SESSION_ARCHIVE"));
-        Assert.DoesNotContain(pipe.StandingConfirmation.Now().HelpPresses, each => each.Terminal);
+        Assert.Empty(pipe.TerminalActs!.Now().Presses);
     }
 
     [Theory]
@@ -140,7 +183,13 @@ public sealed class PipeTerminalTierTests : Bridge
 
         public override string ModuleName => DriverModule.Name;
 
+        /// <summary>The quest whose pause the stand-in refuses, as a route's judge refuses.</summary>
+        public const string Refuses = "q-refused";
+
         public ConcurrentQueue<(string? Worker, bool Owned)> Doors { get; } = new();
+
+        /// <summary>Who each press was pressed by, as the route reads it.</summary>
+        public ConcurrentQueue<(string By, string? Session)> By { get; } = new();
 
         public int Ran(string route) => _ran.GetValueOrDefault(route);
 
@@ -148,6 +197,12 @@ public sealed class PipeTerminalTierTests : Bridge
         {
             _ran.AddOrUpdate(request.Type, 1, (_, count) => count + 1);
             Doors.Enqueue((PipeDoor.Worker, DriverModule.OwnerDoor(request.Type, request.Payload) is { Count: > 0 }));
+            By.Enqueue(PipeDoor.By);
+            if (request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("quest", out var quest) && quest.GetString() == Refuses)
+            {
+                throw new DriverException("this quest is not paused here.");
+            }
+
             return Task.FromResult<object?>(new { Done = true });
         }
     }
@@ -168,6 +223,7 @@ public sealed class PipeTerminalTierTests : Bridge
         {
             Grounds = new StubGrounds().Session(Archived, "completed"),
             TerminalTier = () => tier,
+            TerminalActs = new TerminalActs(DaorisHome.Entry(Home, HomeEntry.TerminalActs)),
             Delegates = session => new PipeDelegateSession(_delegates.Of(session), _modes.GetValueOrDefault(session)),
         };
         var client = await PipeClient.ConnectAsync(pipe.Serve()!);
