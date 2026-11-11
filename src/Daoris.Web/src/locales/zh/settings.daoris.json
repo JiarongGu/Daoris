@@ -364,7 +364,7 @@
   "settings.daoris.space.rule.history_other": "最后一次变动 {{count}} 天后清除",
   "settings.daoris.space.rule.proof": "其工作进入主线后清理",
   "settings.daoris.space.whose.browser": "浏览器自己的上限",
-  "settings.daoris.space.whose.agents": "属于你，并按各智能体自己的规则",
+  "settings.daoris.space.whose.agents": "属于你，并按各智能体自己的规则；较早的账户主目录仍留在 data/harnesses 下",
   "settings.daoris.space.whose.person": "只由你的操作移除",
   "settings.daoris.space.whose.each": "各按其自己的规则",
   "settings.daoris.space.next": "下次：{{when}}，{{what}}",

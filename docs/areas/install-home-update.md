@@ -82,7 +82,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     "Holds" is a non-empty file that parses when JSON, a non-empty folder, or one of the entry's named files. (from D172)
 15. An entry held in both places is refused, naming both, for the person to keep one. A list of items reads both places.
     Asking for a new place makes its category's folder. (from D172)
-16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`. (from D172)
+16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`, but for an older account's home, which stays
+    at `data/harnesses/<agent>/<account>` until HOMELAYOUT5 (rule 23; the Disk space card's sign-ins row says so). (from D172)
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
