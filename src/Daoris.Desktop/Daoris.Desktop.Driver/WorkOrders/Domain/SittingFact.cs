@@ -120,6 +120,9 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.Blocked"/>: a start a steward's act caused would work in the owner's checkout, so it is held for the owner.</summary>
     public const string Checkout = "checkout";
+
+    /// <summary><see cref="StartVerdict.Unclosed"/>: <see cref="Session"/> ended and left the quest taken, and nothing here carries it on.</summary>
+    public const string Unclosed = "unclosed";
 }
 
 /// <summary>A quest a second opinion sits, with the sentence the look said and its code, so the planner's verdict carries both.</summary>

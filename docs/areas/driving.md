@@ -414,7 +414,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     tree. (from D46, D51, D83)
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its
     own quest parks as `AwaitingPerson`, quoting its last words. A clean exit on another's take stands down. A messy exit
-    with the quest taken fails. (from D46, D83)
+    with the quest taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a
+    taken quest so left, or left so again by a go-on from such an end, is `Unclosed` (`UnclosedQuests`): a row of *What needs you*
+    by the quest until the person's done closes it or their word goes on with the session in its tree, and its tree's work stays to
+    review. (from D46, D83)
 38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on. On
     the protocol door the session keeps waiting on that work. (from D83, D105)
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word that the driver can

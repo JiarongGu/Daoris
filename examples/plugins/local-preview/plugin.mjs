@@ -102,6 +102,16 @@ const points = {
 // What it answers: its points, and the requests asked beside them that no manifest names.
 const answers = { ...points, ...kit.calls };
 
+// One frame answered once its handler settles, never after the frame before it: a slow read holds back no other answer, and
+// Daoris waits 10 s for each. A handler that throws is a refusal, which the driver says in this plugin's name. Never silence.
+const answer = async (frame) => {
+  try {
+    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
+  } catch (error) {
+    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
+  }
+};
+
 for await (const line of createInterface({ input: process.stdin })) {
   if (!line.trim()) continue;
   let frame;
@@ -121,12 +131,7 @@ for await (const line of createInterface({ input: process.stdin })) {
     // The driver is stopping, or this plugin is switched off. Leave; the driver ends a process that stays.
     process.exit(0);
   } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
-    try {
-      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
-    } catch (error) {
-      // A handler that throws is a refusal, which the driver says in this plugin's name. Never silence.
-      send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
-    }
+    answer(frame);
   } else if (frame.id !== undefined) {
     // A request this plugin does not know is answered in the protocol's own words rather than left
     // hanging: an unanswered request is a driver waiting on its timeout.
