@@ -629,7 +629,8 @@ Web: `agents/roles/*.test.ts(x)`, `agents/setup/*.test.tsx` and `help/goLink.tes
 ## Open
 
 - **GROWDEPT1:** only the person creates a repository or a room; a request needing a part of its own is done inside one Ask Daoris turn.
-  No agent act yet creates one (unasked in full access, a card in restricted mode), sets it up and hands its work on as quests. Needs a design.
+  No agent act yet creates one (unasked in full access, a card in restricted mode, held to asked or off per project by a switch), sets it
+  up and hands its work on as quests. Needs a design.
 - **CONTEXTDRIVE1j (rest):** the installed proof of a parked quest gone on.
 - **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
   census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
