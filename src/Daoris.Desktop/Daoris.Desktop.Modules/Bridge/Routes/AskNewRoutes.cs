@@ -8,7 +8,10 @@ namespace Daoris.Desktop;
 public sealed record AskNewPress(
     string Workspace, string Sentence, string? To = null, IReadOnlyList<string>? Links = null, IReadOnlyList<string>? Files = null,
     string? Review = null, string? ReviewWords = null, string? Kind = null, string? Workflow = null, string? WorkflowWords = null,
-    string? Short = null, bool Said = false, IReadOnlyList<Daoris.Contracts.Quests.QuestRequirementWire>? Requirements = null, string? Through = null);
+    string? Short = null, bool Said = false, IReadOnlyList<AskRequirementPress>? Requirements = null, string? Through = null);
+
+/// <summary>One requirement a new ask carries: the person's words and the check (D277).</summary>
+public sealed record AskRequirementPress(string Quote, string Check);
 
 /// <summary>
 /// A new ask as the person's press of the pipe (<c>ASK_NEW</c>): <c>daoris ask "…"</c> runs its own path (<c>said</c>) in this Daoris,
@@ -30,7 +33,7 @@ public sealed class AskNewRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var ask = new AskNew(press.Workspace.Trim(), press.Sentence, Named(press.To), press.Links, press.Files,
             Named(press.Review), Named(press.ReviewWords), Named(press.Kind), Named(press.Workflow), Named(press.WorkflowWords), Named(press.Short),
-            press.Requirements, Named(press.Through));
+            press.Requirements?.Select(each => new Daoris.Contracts.Quests.QuestRequirementWire(each.Quote, each.Check)).ToList(), Named(press.Through));
         return TerminalSaid.PressAsync(_loop, press.Said, (output, _) => AskQuotedPress.Refused(_loop, ask.Carried) is { } refused
             ? AskQuotedPress.Say(output, refused)
             : AskNewCommand.RunAsync(ask,
