@@ -46,6 +46,8 @@ internal sealed class IsolateNode : BuiltInNode, IObserves
 
     public override NodeLook Look => NodeLook.Work;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool EndsByTheLine => true;
 
     /// <summary>Reached once the quest's session has taken it, since the start set the work apart before that session's record opened.</summary>

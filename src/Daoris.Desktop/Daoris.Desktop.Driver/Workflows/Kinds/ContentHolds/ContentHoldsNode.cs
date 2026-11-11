@@ -29,5 +29,7 @@ internal sealed class ContentHoldsNode : BuiltInNode, IObserves, IAsksReads
 
     public override NodeLook Look => NodeLook.Holds;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public NodeObservation Observe(NodeReading reading) => ContentHoldsReading.Observe(reading);
 }

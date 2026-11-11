@@ -40,7 +40,7 @@ internal static class DriverChoicesConsole
         {
             using var service = ServiceClient.FromEnvironment();
             var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
-            return new([.. registry.Select(row => (row.Repository, (string?)row.Workspace, row.Root))], null);
+            return ChoicesRegistry.Of(registry);
         }
         catch (Exception unread) when (unread is HttpRequestException or TaskCanceledException or DriverException or InvalidOperationException
                                            && !ct.IsCancellationRequested)

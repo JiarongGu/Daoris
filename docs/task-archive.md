@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLACEWORK1e's place-kind at the bind (2026-11-11)
+
+> **PLACEWORK1e, place-kind** (driver, modules): Outcome: each node kind declares the kinds of place it runs in (`INodeKind.Places`): git's own steps (land, push, rebase, isolate and the rest) in a git repository, `apply` in a system, every other step and any plugin step anywhere (D264); choosing a workflow a department cannot run (`daoris workflow use`, `WORKFLOW_USE`) is refused with nothing written, naming the department, the step and where it runs (`place-kind`, `WorkflowPlaceKinds`). Proof: `NodePlacesTests`, `WorkflowUsePlaceKindTests` (seen failing first), `npm run quick`, the module tests.
+
+---
+
 ## The fast halves' reds after the day's merges (2026-11-11)
 
 > **CI reds, fast halves** (tools, driver, modules, web): Outcome: the lane table reaches the rehearsal's `rehearsal-apart.mjs` and the moved landing-says fixture from the suites that read them; the review and second-opinion rules' rows no longer name the service; `helpBeyond` is served through `shell.ts`; the place usage names the gone trees verb again while it still answers; the Help menu says *Change focus…*; the plan step's Chinese words carry 计划; the trees cases are gone or moved to the hold; the steward allow tests' stand-in registers the repository its hold names; the glossary drops the plugin kind's title and says 采纳 for accept (FIX-LOG, one entry per cause). Proof: each class filtered, `npm run quick`, `i18n:check`, `names:check --strict`, `test-map --check`, the web typecheck and the reach tool-tests.
