@@ -1,5 +1,5 @@
 // The browser way against the stand-ins of Azure DevOps and of Daoris's browser: taken only where no token is kept or Azure DevOps refuses
-// the kept one; the same outputs and evidence as the token's, each saying which way it was made; a lapsed sign-in renewed once and then
+// the kept one; the same outputs and evidence as the token's, each saying which way it took; a lapsed sign-in renewed once and then
 // said; a tab of the plugin's own that neither the person's nor another session's can be mistaken for; and nothing of the page's
 // credentials ever read.
 import { test } from 'node:test';

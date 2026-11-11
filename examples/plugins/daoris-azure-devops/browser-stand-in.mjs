@@ -41,7 +41,7 @@ function frames(buffer) {
 /**
  * The browser: `targets` (id → { url, closed }), `calls` (each `{ method, target }` the plugin's connection made), `navigations` (each
  * `{ target, url }`) and `evaluated` (each `{ target, expression }`). `elsewhere(url)` is another session opening and driving a tab of
- * its own. `person` is a tab of the person's that was open before: the plugin must never use it. `api` is the stand-in Azure DevOps,
+ * its own. `person` is a tab of the person's, open before: the plugin must never use it. `api` is the stand-in Azure DevOps,
  * whose `session` the pages send and whose `navigated(url)` is told of each navigation.
  */
 export async function browserStandIn(api, { person = 'https://dev.azure.com/acme/Proj/_git/app/pullrequest/9' } = {}) {

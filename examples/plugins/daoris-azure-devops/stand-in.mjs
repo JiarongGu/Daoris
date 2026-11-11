@@ -32,8 +32,6 @@ export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
     builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, files: {}, changes: [],
-    // The person's signed-in browser session, which a page sends as a cookie: `in` or `out`; `lapses` calls of it answered 401 (or the
-    // sign-in page, where `signInPage`) before it answers; `renews` whether going to the organization signs it in again.
     session: 'out', lapses: 0, signInPage: false, renews: true, navigated: null,
   };
   api.navigated = (url) => { if (api.renews && url.includes('/_apis/connectionData')) api.session = 'in'; };

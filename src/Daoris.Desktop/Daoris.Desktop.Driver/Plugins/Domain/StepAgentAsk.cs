@@ -20,10 +20,7 @@ public sealed record StepAgentAsk(
     /// <summary>The step's evidence schema, which the answer's evidence is named under; null for none.</summary>
     public string? Evidence { get; init; }
 
-    /// <summary>
-    /// The step's options as its graph writes them, each name with its JSON value's text: what the plugin's own <c>work/perform</c> would
-    /// have been given, which the agent passes on to the plugin's tools.
-    /// </summary>
+    /// <summary>The step's options as its graph writes them (each name with its JSON value's text), which the agent passes to the plugin's tools.</summary>
     public IReadOnlyDictionary<string, string> Options { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
     public string? Root { get; init; }

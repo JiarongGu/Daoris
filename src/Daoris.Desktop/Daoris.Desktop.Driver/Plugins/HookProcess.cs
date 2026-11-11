@@ -107,7 +107,6 @@ public sealed class HookProcess : IHookChannel
         // The plugin's own private storage goes to its own processes alone; a folder the desktop inherited never does.
         info.Environment.Remove(PluginPrivate.Variable);
         if (PluginPrivate.Handed(home, plugin) is { } storage) info.Environment[PluginPrivate.Variable] = storage;
-        // Daoris's own browser goes to the plugins that declare it alone, and an address the desktop inherited never does.
         info.Environment.Remove(PluginBrowser.Variable);
         if (browser is not null && hooks.Browser) info.Environment[PluginBrowser.Variable] = browser;
         // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)

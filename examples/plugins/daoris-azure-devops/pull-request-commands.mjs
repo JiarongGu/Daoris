@@ -38,7 +38,6 @@ async function named(repo, args) {
   return args.branch ? choose(await fromBranch(repo, args.branch), args.target) : null;
 }
 
-/** The step's auto-complete options as the arguments give them, in the names the step's own options use. */
 const optionsOf = (args) => ({
   autoComplete: args['auto-complete'],
   mergeStrategy: STRATEGY[args['merge-strategy']] ?? args['merge-strategy'],
@@ -47,7 +46,6 @@ const optionsOf = (args) => ({
   mergeCommitMessage: args['merge-commit-message'],
 });
 
-/** The pull request as opened or found, with auto-complete set where the arguments ask, and that said in the line. */
 async function opened(repo, pr, args, line) {
   return answered(`${line} ${await autoComplete(repo, pr, optionsOf(args))}`, 0, pr, repo);
 }
@@ -90,7 +88,7 @@ async function complete(args) {
   return answered(`Azure DevOps did not complete pull request ${pr.pullRequestId} (${done.status}): ${done.json?.message ?? 'no reason given'}`, 1);
 }
 
-/** The answer with the way its calls were made said, and given to the agent as `data.way` for the evidence it records. */
+/** The answer with its way said, and as `data.way` for the agent's evidence. */
 function ways(answer) {
   const way = wayOf();
   if (!way) return answer;

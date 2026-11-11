@@ -46,8 +46,7 @@ public sealed record PluginHarness(
     string? AskingPosture = null);
 
 /// <summary>
-/// What a plugin speaks: the process, and the points it listens on; and whether its process is handed Daoris's own browser's DevTools
-/// address (<see cref="PluginBrowser"/>) to make its calls from the person's signed-in page.
+/// What a plugin speaks: the process, the points it listens on, and whether it is handed Daoris's browser (<see cref="PluginBrowser"/>).
 /// </summary>
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points, bool Browser = false);
 

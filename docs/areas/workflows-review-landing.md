@@ -336,7 +336,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     port alone, never the plugin's process, which need not be up (with none wired the delivery fails and the attempt reads unknown). The port keeps the attempt's ask (`StepAgentAsk`, composed by `StepAsks` from
     the frame its plugin would be told, `NodeRuntime.StepAskAsync`: the goal, the run's unit, node and attempt, the repository, workspace
     and checkout, the branch, origin's address read there, the line, the commit, the landing's evidence, the step's outcomes, outputs
-    and evidence schema) under the home's `workflows/agent-steps/<invocation>.json`, and starts the step's session off the pass on the
+    and evidence schema, and the step's options as its graph writes them, which the prompt tells the agent) under the home's `workflows/agent-steps/<invocation>.json`, and starts the step's session off the pass on the
     kinds' door runner under the attempt's own step (`StepSessionTurn`, a supervisor's turn's shape): staffed and held as the place's
     builds are (the build role's order at the place, the account walk), its record a chat on no quest at the run's place with no tree of its own, marked `performs` with the invocation
     (`POST /api/step-sessions`, `StepSessionDesk`), read as the work `step`, a part of the run that holds no place's lease, no place

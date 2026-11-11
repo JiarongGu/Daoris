@@ -120,7 +120,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     the refusal is logged as `refused`, never as a start that failed (`unstartable`), counts as no exit toward unsound, and the hand is
     asked again a minute later (`HandRefusals`), so access allowed later starts the process with no press. `plugin try` asks the same
     question of the checkout it is run in (`PluginTrialHand`, the step `place-hand`); with no origin to ask it says so and passes. They run no git, `gh` or `az`, and declare
-    node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
+    node alone (22 or newer for the Azure DevOps one). Where no token is kept, or Azure DevOps refuses the kept one, the Azure DevOps
+    plugin makes its calls (the step, `work/state`, the release watch, the tools) from a tab of its own in the person's signed-in
+    browser: its manifest says `hooks.browser`, so each of its processes is handed the in-app browser's DevTools address as
+    `DAORIS_BROWSER` while a shell carries one (`PluginBrowser`, asked for the address only), and each call is a page-side `fetch` that
+    reads no cookie or token; a lapsed sign-in is renewed once, then fails `signed-out`; every answer's evidence ends `Way: the token.`
+    or `Way: the browser.` (D279). A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
     it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
     unsound mark (three unasked exits within an hour, after which it is not started until the person's *Try again*: `try-again` on
     `PLUGIN_ACTION`, `daoris plugin try-again <id>`, and the button on its page while `PLUGINS` says `unsound`, clearing every place's

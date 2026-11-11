@@ -21,14 +21,13 @@ import { run } from './commands.mjs';
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
 
-/** Words with the way the step's calls were made (`Way: the browser.`) at their end, inside the 300 characters an evidence message holds. */
+/** Words ending with the way the calls went (`Way: the browser.`), inside the 300 characters an evidence message holds. */
 const signed = (text) => {
   const way = wayWords();
   if (!way) return text;
   return `${text.length + way.length + 1 <= 300 ? text : `${text.slice(0, 299 - way.length - 1)}…`} ${way}`;
 };
 
-/** A step's answer with its evidence saying which way it was made: the token, or the person's signed-in browser. */
 const told = (answer) => (answer?.evidence ? { ...answer, evidence: { ...answer.evidence, message: signed(answer.evidence.message ?? '') } } : answer);
 
 const RECEIPT = 'azure-devops-pull-request/receipt@1';

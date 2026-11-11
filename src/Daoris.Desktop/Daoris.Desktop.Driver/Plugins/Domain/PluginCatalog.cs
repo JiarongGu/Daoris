@@ -439,7 +439,6 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                     return (PluginManifest.Empty(id), "`hooks` needs a `command` and the `points` it listens on.");
                 }
 
-                // Only JSON true hands the process the browser.
                 hooks = new PluginHooks(command, points, spoken.TryGetProperty("browser", out var browser) && browser.ValueKind == JsonValueKind.True);
             }
 

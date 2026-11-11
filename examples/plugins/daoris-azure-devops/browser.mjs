@@ -4,7 +4,7 @@
 // selects or navigates another, so a session driving the browser beside it cannot move it. Each API call is a `fetch` run INSIDE that
 // page with the page's own credentials (`credentials: 'include'`); nothing here reads a cookie, a storage, a header the page sends or the
 // browser's cookie store, so no bearer token or cookie ever reaches this process, its data, its logs or its evidence.
-// A sign-in that lapsed (a 401, a 203, or a sign-in page where JSON was asked) is renewed once by navigating the page to the
+// A sign-in that lapses (a 401, a 203, or a sign-in page for JSON) is renewed once by navigating the page to the
 // organization, which renews the single sign-on silently; a second lapse is a clear failure, not a second renewal.
 import { AsyncLocalStorage } from 'node:async_hooks';
 
@@ -178,7 +178,7 @@ export async function within(work) {
 
 const used = () => store.getStore();
 
-/** Note that a call was made in `way`: `token`, or `browser` (after a token Azure DevOps refused, where `afterRefusal`). */
+/** Note a call made in `way`: `token`, or `browser` (`afterRefusal`: the kept token is refused). */
 export function noted(way, afterRefusal = false) {
   const use = used();
   if (!use) return;
@@ -186,10 +186,10 @@ export function noted(way, afterRefusal = false) {
   if (afterRefusal) use.declined = true;
 }
 
-/** Whether the scope has made a call through the browser after the kept token was refused. */
+/** Whether the scope's browser calls follow a refused token. */
 export const declined = () => used()?.declined === true;
 
-/** The ways this scope's calls were made, said for evidence; empty where none was. */
+/** The way this scope's calls went, said for evidence; empty where none went. */
 export function wayWords() {
   const use = used();
   if (!use || use.ways.size === 0) return '';
@@ -200,7 +200,7 @@ export function wayWords() {
 /** The ways as a word for data: `browser`, `token`, or null where none. */
 export const wayOf = () => (used()?.ways.has('browser') ? 'browser' : used()?.ways.has('token') ? 'token' : null);
 
-/** A sign-in the page lost: a 401, the sign-in redirect's 203, or a page of HTML where JSON was asked. */
+/** A sign-in the page lost: a 401, the sign-in redirect's 203, or a page of HTML for JSON. */
 const lapsed = (reply) => [401, 203].includes(reply.status) || (reply.status < 300 && !/json/i.test(reply.type) && reply.text.trim() !== '');
 
 /**

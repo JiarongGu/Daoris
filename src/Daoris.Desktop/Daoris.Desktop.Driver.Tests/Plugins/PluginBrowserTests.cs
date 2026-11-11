@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Daoris's own browser handed to a plugin's process (D78): its DevTools address as <c>DAORIS_BROWSER</c>, to a plugin whose manifest
+/// Daoris's own browser handed to a plugin's process: its DevTools address as <c>DAORIS_BROWSER</c>, to a plugin whose manifest
 /// says <c>hooks.browser</c> and while a shell carries one, and to no other; an address the desktop itself inherited never travels on.
 /// </summary>
 /// <remarks>It holds the shell's browser in the process and plants the variable in its environment, which every class beside it reads, so it runs alone.</remarks>

@@ -2,9 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Daoris's own browser as a plugin's process is handed it: the loopback DevTools address, as <see cref="Variable"/>, to a plugin whose
-/// manifest says <c>hooks.browser</c> and only while a shell carries a browser (D78). The plugin opens a tab of its own there and makes
-/// its calls from the person's signed-in page; Daoris hands the address, never a cookie, a token or the page's content, and a
-/// plugin that does not declare it is handed nothing, whatever the desktop's own environment held.
+/// manifest says <c>hooks.browser</c> and only while a shell carries a browser. The plugin opens a tab of its own there and makes its
+/// calls from the person's signed-in page; Daoris hands the address alone, and a plugin that does not declare it is handed nothing.
 /// </summary>
 public static class PluginBrowser
 {
