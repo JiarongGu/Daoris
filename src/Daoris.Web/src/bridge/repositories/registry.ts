@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
-import { call } from '../call';
+import { call, type Payload } from '../call';
 
 // The registry's machine half: a folder the shell names, and a declaration written in place.
 
@@ -26,6 +26,11 @@ export type FolderInspection = {
    */
   uses: string[];
 };
+
+/** A folder's excludes changed as `daoris repository excludes` edits them; the driver reads the folder's manifest again. */
+export const useSetFolderExcludes = () => useMutation({
+  mutationFn: (variables: Payload<'REGISTRY_EXCLUDES'>) => call('REGISTRY_EXCLUDES', variables),
+});
 
 /** *Open*: a department's folder in the file manager, by its registered name; the module names the folder, never the page. */
 export const useOpenDepartmentFolder = () => useMutation({

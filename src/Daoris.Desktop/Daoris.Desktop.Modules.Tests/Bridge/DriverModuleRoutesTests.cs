@@ -142,6 +142,8 @@ public sealed partial class DriverModuleRoutesTests
         ["gitPush.ts"] = "Git",
         ["lines.ts"] = "SessionGitAccess",
         ["supervision.ts"] = "Sessions",
+        ["registry.ts"] = "RegistryPerson", // a folder's excludes, pressed beside the registry's other page calls
+        ["driver.ts"] = "TerminalTier", // the terminal's tier, a machine setting pressed beside the driver's others
     };
 
     [Fact]

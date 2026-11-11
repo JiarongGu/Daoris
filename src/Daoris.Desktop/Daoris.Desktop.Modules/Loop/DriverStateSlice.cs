@@ -42,6 +42,7 @@ public static class DriverStateSlice
             "standingConfirmation",
             // Git access at each level, as Settings → Git and the remote rows read it.
             "gitAccess", "workspaceGitAccess", "machineGitAccess",
+            "terminal", "terminalActs", // the terminal's tier and its record, as Settings and Notifications read them
         ],
         ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping", "sessionGitAccess"],
     };
