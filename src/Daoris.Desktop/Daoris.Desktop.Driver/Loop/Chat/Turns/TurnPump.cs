@@ -142,6 +142,7 @@ internal sealed class TurnPump(
                         // A helper's answer comes off the record once its turn is on the wire, and a kept word by its id,
                         // after every take-off before it.
                         message.Delivered?.Invoke();
+                        going.Told?.Invoke();
                         lock (state.Gate) state.TakeOff([message]);
                     }).ConfigureAwait(false);
                 }

@@ -126,4 +126,7 @@ public sealed record AttentionFacts
     /// workspace, remote, host, class, session, since when, and whether its door has gone.
     /// </summary>
     public IReadOnlyList<JsonObject> GitAsks { get; init; } = [];
+
+    /// <summary>Each second-check flag not yet seen, as <see cref="AttentionSecondCheckRows.Unseen"/> reads it.</summary>
+    public IReadOnlyList<JsonObject> SecondCheck { get; init; } = [];
 }

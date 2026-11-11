@@ -562,7 +562,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     role's revision, and a taken range whose next choice cannot run, close *unread* with why, logged `ask-daoris.unread` and never
     said in the conversation; with the check off the queued ranges close *unread*, and the start's sweep closes a running one
     *unread: Daoris restarted*. A terminal holder of the kind reads nothing: its ranges stay queued, and the door lists none.
-    (from D183, D253, D271, D272)
+    The window reads the reports alone (`AskDaorisReadings`, `HELP_READINGS { session, before?, limit?, range? }`, newest first,
+    20 a page): each range's state (queued with the walk's sentence, reading, read, *partial* where any evidence limit stands,
+    could not judge, not read with why, off) is one line under the last turn it covers, its *Details* the reader as its harness
+    reported it with its standing to the writer, the limits and the findings, and *What was sent* the packet, asked once opened;
+    beside the access chip, *Second check on · N pending* (the conversation's ranges queued or read now), *on* or *off*, its
+    popover today's readings on the machine and their reported tokens, those that reported none counted apart. Each flag not yet
+    seen is a `second-check` row of *What needs you*, counted on the bell, opening Ask Daoris and offering *Seen*
+    (`HELP_READING_SEEN`, the window's alone), kept on its flag as an acknowledgment; a note is never a row. A flag is told to
+    Ask Daoris once, as a line ahead of the person's next words at their dispatch, kept told with the word it rode once written
+    (`AskDaorisTold`; conversations rule 42). (from D183, D253, D271, D272)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
 60. A route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
     action. The room's doors table says where each change is and, where Ask Daoris never asks it on the card, why

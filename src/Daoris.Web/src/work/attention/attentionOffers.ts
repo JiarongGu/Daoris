@@ -37,7 +37,7 @@ export type AttentionActId =
   // compare and trust, the person's own sign-ins), the host's key page, the repository's git remote row, and the identity marked read only.
   | 'git-copy-key' | 'git-key-page' | 'git-sign-in' | 'git-open' | 'git-compare' | 'git-choose' | 'git-use-own' | 'git-read-only'
   // A git go-ahead allowed or refused.
-  | 'git-allow' | 'git-refuse'
+  | 'git-allow' | 'git-refuse' | 'second-check-seen'
   // A quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
   | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
   // The run's own skip of its `work.requests` node, with the person's words.
@@ -200,6 +200,7 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'git-held': return item.git ? plain(...gitHeldOffers(item.git)) : [];
     // A git go-ahead's two answers, as its session's head offers them.
     case 'git-ask': return item.gitAsk ? plain('git-allow', 'git-refuse') : [];
+    case 'second-check': return item.secondCheck ? plain('second-check-seen') : [];
     // *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];

@@ -377,6 +377,7 @@ internal sealed class ChatRun(
             };
             chat.Turns.Closing = () => Context.Closing;
             chat.Turns.Unsent = count => closing.Unsent(sessionId, count);
+            if (helpMode is not null) chat.Turns.Ahead = new AskDaorisTold(Context.Home, sessionId, () => DateTimeOffset.UtcNow).Ahead;
             Context.Turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -394,6 +395,7 @@ internal sealed class ChatRun(
             };
             native.Turns.Closing = () => Context.Closing;
             native.Turns.Unsent = count => closing.Unsent(sessionId, count);
+            if (helpMode is not null) native.Turns.Ahead = new AskDaorisTold(Context.Home, sessionId, () => DateTimeOffset.UtcNow).Ahead;
             Context.Turned[sessionId] = native;
         }
 
