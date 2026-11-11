@@ -69,6 +69,9 @@ class Refusal extends Error {
   }
 }
 
+/** The refusals that may pass: GitHub down, or limiting the token for now. */
+const PASSING = ['unavailable', 'rate-limited'];
+
 async function call(repo, method, path, body) {
   const token = process.env.DAORIS_HOST_TOKEN;
   if (!token) throw new Refusal('no-token', 'no API token was handed to this process');
@@ -197,15 +200,18 @@ const kit = work({
     if (String(attempt.step).split('/').pop() !== 'pull-request') return failed('unknown-step', `no step ${attempt.step}`);
     return pullRequest(attempt);
   },
-  // An attempt an earlier process began: the pull request open from its branch says whether the attempt made one.
+  // An attempt an earlier process began: the pull request open from its branch says whether the attempt made one. GitHub down or
+  // limiting the token cannot say yet, so the attempt is running and asked again; a refused token stops the step.
   check: async (attempt) => {
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
     try {
       const open = (await fromBranch(located(unit), unit.branch)).find((pr) => pr.state === 'open');
       return open ? { state: 'done', outcome: reached(attempt, open, `pull request #${open.number} is open from \`${unit.branch}\`.`) } : { state: 'not-started' };
-    } catch {
-      return null;
+    } catch (error) {
+      if (!(error instanceof Refusal) || !PASSING.includes(error.code)) return null;
+      say(`${error.message}; attempt ${attempt.invocation} is asked again later.`);
+      return { state: 'running' };
     }
   },
   remove: async () => ({ disposition: 'already-gone' }),
@@ -223,6 +229,16 @@ const points = {
 
 const answers = { ...points, ...kit.calls };
 
+// One frame answered once its handler settles, never after the frame before it: a slow read holds back no other answer, and
+// Daoris waits 10 s for each. A handler that throws is a refusal, which the driver says in this plugin's name.
+const answer = async (frame) => {
+  try {
+    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
+  } catch (error) {
+    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
+  }
+};
+
 for await (const line of createInterface({ input: process.stdin })) {
   if (!line.trim()) continue;
   let frame;
@@ -239,11 +255,7 @@ for await (const line of createInterface({ input: process.stdin })) {
   } else if (frame.method === 'shutdown') {
     process.exit(0);
   } else if (typeof frame.method === 'string' && frame.method.startsWith('hook/') && answers[frame.method.slice(5)]) {
-    try {
-      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
-    } catch (error) {
-      send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
-    }
+    answer(frame);
   } else if (frame.id !== undefined) {
     send({ jsonrpc: '2.0', id: frame.id, error: { code: -32601, message: `no ${frame.method}` } });
   }
