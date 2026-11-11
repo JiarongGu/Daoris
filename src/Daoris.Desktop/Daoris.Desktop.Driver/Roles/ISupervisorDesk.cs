@@ -11,6 +11,12 @@ public sealed record SupervisorWaiting(string Kind, SupervisorSubject Subject, s
 
     /// <summary>A referred point's count, value, rule and the rule's place, as the list names them; none for a question.</summary>
     public (string Count, string N, string Rule, string Place)? Point { get; init; }
+
+    /// <summary>
+    /// A subject read from the packet in the prompt alone: its reader runs packet-only (<see cref="PacketOnlyRules"/>) in an empty
+    /// folder of its own, and a choice whose harness cannot hold it so is passed.
+    /// </summary>
+    public bool PacketOnly { get; init; }
 }
 
 /// <summary>What a kept block answered: kept, or why not.</summary>
