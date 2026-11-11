@@ -40,7 +40,10 @@ public sealed class ServerNpxTests : IDisposable
         Assert.Equal(["server.mjs", "--quiet", "--"], server.Arguments.Take(3));
         IsNode(server.Arguments[3]);
         Assert.Equal(
-            [ServerKeeper.Install(_home), ServerKeeper.CeilingMb.ToString(), ServerKeeper.EveryMs.ToString(), script, "--cdp-endpoint", "http://127.0.0.1:9"],
+            [
+                ServerKeeper.Install(_home), ServerKeeper.CeilingMb.ToString(), ServerKeeper.EveryMs.ToString(), ServerKeeper.CallBoundMs.ToString(), "-",
+                script, "--cdp-endpoint", "http://127.0.0.1:9",
+            ],
             server.Arguments.Skip(4));
         Assert.DoesNotContain(server.Arguments, word => NpxCommand.Names(word));
     }

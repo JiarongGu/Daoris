@@ -59,7 +59,7 @@ public static class SessionServers
                     ?? throw new DriverException("node is not on this machine's PATH, nor managed by Daoris");
                 var script = await ServerPackages.ScriptAsync(home, npx.Npx, log, ct, npm).ConfigureAwait(false);
                 var start = new ServerEntry(server.Name, node, [script, .. npx.Npx.Arguments], server.Environment);
-                if (kept?.Contains(server.Name) == true) start = ServerKeeper.Wrap(home, start);
+                if (kept?.Contains(server.Name) == true) start = ServerKeeper.Wrap(home, start, tools: server.Tools);
                 handed.Add(npx.Handed(server, node, start.Arguments));
             }
             catch (DriverException error)

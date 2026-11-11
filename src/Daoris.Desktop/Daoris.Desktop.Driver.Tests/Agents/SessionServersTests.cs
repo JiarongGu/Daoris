@@ -87,7 +87,10 @@ public sealed class SessionServersTests : IDisposable
 
         Assert.True(drives);
         Assert.Equal(
-            [ServerKeeper.Install(_home), ServerKeeper.CeilingMb.ToString(), ServerKeeper.EveryMs.ToString(), script, "--cdp-endpoint", "http://127.0.0.1:9"],
+            [
+                ServerKeeper.Install(_home), ServerKeeper.CeilingMb.ToString(), ServerKeeper.EveryMs.ToString(), ServerKeeper.CallBoundMs.ToString(), "-",
+                script, "--cdp-endpoint", "http://127.0.0.1:9",
+            ],
             handed[0].Arguments);
         Assert.Equal([script, "--output-dir", "a folder"], handed[1].Arguments);
     }

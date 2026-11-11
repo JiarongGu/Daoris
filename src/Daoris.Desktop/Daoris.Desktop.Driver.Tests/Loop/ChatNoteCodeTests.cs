@@ -88,7 +88,8 @@ public sealed class ChatNoteCodeTests
         Assert.Null(InAppBrowserServers.Told([]));
         var one = InAppBrowserServers.Told(["browser"])!;
         Assert.Equal(
-            "Daoris has handed you its own browser as the MCP server `browser`: it drives the browser window the person signs in to and watches, so use its tools for any web page, including one behind the person's sign-in.",
+            "Daoris has handed you its own browser as the MCP server `browser`: it drives the browser window the person signs in to and watches, so use its tools for any web page, including one behind the person's sign-in. "
+            + "Only the tools its plugin declares are there, and a call past 2 minutes is ended: never poll or wait inside one call, call again in short steps.",
             one);
         var two = InAppBrowserServers.Told(["a", "b"])!;
         Assert.Contains("the MCP servers `a` and `b`", two);
