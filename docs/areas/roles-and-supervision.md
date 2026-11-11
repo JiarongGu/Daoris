@@ -628,6 +628,8 @@ Web: `agents/roles/*.test.ts(x)`, `agents/setup/*.test.tsx` and `help/goLink.tes
 
 ## Open
 
+- **GROWDEPT1:** a request needing a part of its own is done inside one Ask Daoris turn; nothing yet creates a repository or a room, sets
+  it up and hands its work on as quests. Needs a design.
 - **CONTEXTDRIVE1j (rest):** the installed proof of a parked quest gone on.
 - **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
   census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
