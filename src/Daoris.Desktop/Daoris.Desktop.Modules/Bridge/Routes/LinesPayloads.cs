@@ -25,6 +25,8 @@ public sealed record SetHelpers(string? Repository, string? Workspace, JsonEleme
 
 public sealed record SetHandOver(string? Repository, string? Workspace, JsonElement? Set, bool Clear = false);
 
+public sealed record SetGrowth(string? Repository, string? Workspace, string? Value);
+
 public sealed record SetCommits(string? Repository, string? Workspace, JsonElement? Set, bool Clear = false);
 
 /// <summary>No <c>Access</c>, or a null one, clears the level's setup.</summary>

@@ -62,6 +62,9 @@ internal static class LinesWires
             HandOver = lines.Select(line => (line, handOver: HandOverRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = new { pair.handOver.Rule.Mode }, pair.handOver.Source })
                 .ToArray(),
+            Growth = lines.Select(line => (line, growth: GrowthRules.Resolve(config, line.Repository, RemoteTarget.Workspace(line.Workspace))))
+                .Select(pair => new { pair.line.Repository, pair.line.Workspace, pair.growth.Value, pair.growth.Source })
+                .ToArray(),
             Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
                 .ToArray(),

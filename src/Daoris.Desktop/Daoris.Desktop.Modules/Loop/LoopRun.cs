@@ -266,6 +266,7 @@ internal sealed class LoopRun(
             served.Grounds = new LoopGrounds(loop, served);
             served.Delegates = session => DelegateTiers.Of(loop, session);
             served.TerminalTier = () => DelegateTiers.Terminal(loop);
+            served.Growth = (request, ct) => DelegateGrowth.OfAsync(loop, request, ct);
             served.TerminalActs = loop.TerminalActs;
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
             // the owner's own releases are kept whole.

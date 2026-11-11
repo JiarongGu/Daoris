@@ -15,6 +15,13 @@ public static class HelpAskedPress
         pipe.TellDriverState();
     }
 
+    /// <summary>A press of Ask Daoris's a rule refused at its ask, before any card: kept as refused with the words it met, naming the growth switch where that is the rule.</summary>
+    internal static void Barred(InstancePipe pipe, PipeReserved reserved, string why)
+    {
+        pipe.StandingConfirmation.HelpPresses.Barred(reserved.Request, reserved.Asker.Session ?? "", why);
+        pipe.TellDriverState();
+    }
+
     internal static void Kept(InstancePipe pipe, PipeReserved reserved, Daoris.Driver.HelpPressPlace? place, string card, Task<PipeEnding> ended)
     {
         var presses = pipe.StandingConfirmation.HelpPresses;

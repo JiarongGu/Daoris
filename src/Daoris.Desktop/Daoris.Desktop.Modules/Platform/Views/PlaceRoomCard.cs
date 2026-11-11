@@ -22,6 +22,7 @@ internal static class PlaceRoomCard
             also.Add(new PressSaid("place-room-alone", ("repository", facts["repositories"])));
         }
 
+        if (PressPayload.Field(plan, "growth") == GrowthKey.Asked) also.Add(new PressSaid("growth-asked", ("place", facts["repositories"])));
         also.Add(new PressSaid("place-room-quest", ("title", RoomBrief.TitleOf(room)), ("head", QuestHeads.Plain(RoomBrief.Opening(room, purpose)))));
         return new PressView("place-room", facts, command, also);
     }

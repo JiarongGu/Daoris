@@ -511,7 +511,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     spans two, a folder where the workspace has no repository to infer one from. Any agent opens a place through the two presses (Ask Daoris,
     a lead, a driven session), its tier deciding as for every press; each runs at once in full access, said once and kept, and waits on a
     card in restricted mode, and the room says so in *What you may do* (`HelpRoomMayDo`); a refusal is the route's own words, answered at once
-    and never carded; the intake never creates one. A workflow's version: the agent writes the
+    and never carded; the intake never creates one. The person's growth switch holds both presses, per workspace and repository (`growth`: `mode`, the
+    default, as above; `asked`, a card even in full access, the card saying so (`growth-asked`); `off`, a refusal in the route's own words, kept in the
+    press record as refused with them, in either mode), read by the plan the route, the card and the pipe all judge by (`GrowthRules`, `PipeGrowth`,
+    `DelegateGrowth`, a working session's own press included; an unread switch asks). It is the person's alone, in the window's Settings or
+    `daoris settings growth`: the pipe refuses `SET_GROWTH` to every press that proves a session's key, in every mode and whatever family is granted,
+    and to a process in an agents' job (`PipeOutsideOnly`, `person-alone`), and the room lists it as no verb (`HelpRoomGrowth`). A workflow's version: the agent writes the
     graph in the room's `drafts/` folder and presses `daoris workflow apply <id> drafts/<id>.json --base <version>`, whose card shows the
     graph as the editor draws it and its changes (`WorkflowSaveView`, the view of `WORKFLOW_SAVE`). `sessions archive --ended` stays a terminal's own, an archive being
     this machine's mark and undone by *Unarchive*. (from D89, D170, D253, D261)

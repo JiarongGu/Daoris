@@ -52,6 +52,7 @@ public sealed class RegistryCreateView : IPressView
         }
 
         List<PressSaid> also = [];
+        if (PressPayload.Field(plan, "growth") == GrowthKey.Asked) also.Add(new PressSaid("growth-asked", ("place", workspace)));
         if (git) also.Add(new PressSaid("repository-create-no-remote"));
         also.AddRange(Steps(plan, ask, workspace, folder, line, author, remote));
         if (PressPayload.Field(plan, "resumes") is { Length: > 0 } resumes) also.Add(new PressSaid("repository-create-resumes", ("plan", resumes[..Math.Min(12, resumes.Length)])));

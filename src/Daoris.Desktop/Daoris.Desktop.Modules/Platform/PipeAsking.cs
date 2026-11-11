@@ -61,6 +61,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         if ((row.Refusal(asked) ?? viewed?.Refusal) is { } words)
         {
             Confirmations.Let(place);
+            if (reserved.Asker.Help) HelpAskedPress.Barred(pipe, reserved, words);
             EndReserved(reserved, pipe.Refuse(request, InstancePipe.NotAllowed, words));
             return;
         }

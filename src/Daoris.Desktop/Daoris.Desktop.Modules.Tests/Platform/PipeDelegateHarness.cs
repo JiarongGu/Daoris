@@ -51,7 +51,7 @@ public abstract class PipeDelegateHarness : Bridge
     }
 
     internal async Task<(InstancePipe Pipe, PipeClient Client, string Nonce, StandIn Driver, ServiceProvider Services, MachineLog Log)> ServeAsync(
-        bool delegates = true, Func<IpcRequest, Task<object?>>? press = null)
+        bool delegates = true, Func<IpcRequest, Task<object?>>? press = null, StandingPlace? callerAt = null)
     {
         var log = new MachineLog(Home, "desktop");
         var driver = new StandIn { Press = press };
@@ -61,7 +61,8 @@ public abstract class PipeDelegateHarness : Bridge
         services.AddSingleton<IIpcModule>(driver);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         var provider = services.BuildServiceProvider();
-        var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, version: "9.9.9-test", clock: new HeldClock())
+        var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, version: "9.9.9-test", clock: new HeldClock(),
+            standing: callerAt is { } where ? new StandingConfirmation(Home, log, new StandingConfirmationTests.Placed(where)) : null)
         {
             Grounds = new StubGrounds().Session(Archived, "completed"),
         };
