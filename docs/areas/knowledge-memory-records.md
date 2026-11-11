@@ -29,7 +29,7 @@ one job each, checked by `verify`.
 | Ingest | `Core/Knowledge/Ingest/` | Splits files: `DecisionNotes`, `IndexSections`, `IndexRows`, `MarkdownSections`, `MarkdownFence`, `EntryPieces` |
 | `KnowledgeIndex`, `DisclosurePolicy` | `Core/Knowledge/` | Writes a source into the store, withholding at ingest what may not leave |
 | `SqliteKnowledgeStore` | `Core/Knowledge/Store/SqliteKnowledgeStore.cs` | `knowledge.db` with FTS5; `InMemoryKnowledgeStore` is its test twin |
-| Search | `Core/Knowledge/Search/` | `SqliteKnowledgeSearch` (BM25), `LexicalKnowledgeSearch` (term overlap over any store), `SemanticKnowledgeSearch`, `HybridKnowledgeSearch` (rank fusion), `ConvergenceDetector` |
+| Search | `Core/Knowledge/Search/` | `SqliteKnowledgeSearch` (BM25), `LexicalKnowledgeSearch` (term overlap over any store), `SemanticKnowledgeSearch`, `HybridKnowledgeSearch` (rank fusion), `PresentFirst` (the present ahead of the rest), `ConvergenceDetector` |
 | Freshness | `Core/Knowledge/Store/` | `CheckoutFreshness` (watch), `RootSignature` (per root), `UncommittedRecords` (git status), `NewerIndexException` |
 | `EntryStanding`, `Citation` | `Core/Knowledge/` | The `standing:` line of a hit; a record cited by id, lines, commit and digest |
 | `Registry`, `RegistrationStore`, `RegistryImport` | `Core/Registry/` | Registrations pushed by `connect` and persisted; a folder scan only proposes |
@@ -73,7 +73,12 @@ one job each, checked by `verify`.
 7. Every entry keeps its lines. A hit names `path:first-last`; `knowledge_get` reads an entry whole or a range. A search that names
    no kinds answers at most two index entries and three records. (from D151)
 8. Ranking is BM25 over FTS5. With an embedder, meaning is fused with words by reciprocal rank. A long entry is embedded in pieces
-   the deployment's window bounds. With no model, every answer says it matched on words only. (from D24, D123, D151)
+   the deployment's window bounds. With no model, every answer says it matched on words only. A search naming no kinds whose
+   question asks nothing of history (no decision number or row id, no *why*, *decided* or *root cause*, no *when* as its
+   question) answers the present first (`PresentFirst`): rules, knowledge, skills, the index and the documents named for no
+   date, ahead of dated documents and history (decisions, fixes, finished tasks, records, documents under an `archive`
+   folder), which keep the last three places where they matched. Within the present, a question not asking where answers the
+   documents ahead of the index. Each hit says `present`, `dated` or `history`. (from D24, D123, D151, D278)
 9. Disclosure applies at ingest. In shared mode a repository's local entries leave only when its manifest joins and shares
    knowledge; silence keeps them local. (from D21, D47)
 10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
