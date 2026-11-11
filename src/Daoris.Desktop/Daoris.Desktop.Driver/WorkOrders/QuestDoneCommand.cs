@@ -51,6 +51,10 @@ public static class QuestDoneCommand
         return ok ? 0 : 1;
     }
 
+    public static Task<int> PressAsync(QuestDoneAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.QuestDone, InstanceDoor.Said(("quest", ask.Quest), ("note", ask.Note)),
+            () => RunAsync(ask, service, output, ct), output, ct);
+
     /// <summary>A quest's id, never a flag.</summary>
     private static bool Id(string word) => word.TrimStart('#').Length > 0 && !word.StartsWith('-');
 }

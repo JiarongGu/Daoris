@@ -18,7 +18,8 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         var start = run.Start;
         var quest = run.Quest;
         var root = start.Root!;
-        var isolated = context.Config.OpensOwnTree(quest.To);
+        var isolated = start.Isolate is not null;
+        var folder = isolated && PlaceKind.At(root) == PlaceKind.Folder;
 
         var priorTree = start.Resumes is { Tree: { Length: > 0 } resumesIn } && context.Trees.Holds(resumesIn) ? resumesIn : null;
         var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
@@ -93,19 +94,43 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
                      && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
             ? await GoOnInSyncAsync(reopenedIn, quest, broughtForward: start.BroughtForward is not null, ct).ConfigureAwait(false)
-            : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
+            : !folder && (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
+
+        string? copied = null;
+        if (folder && resumedIn is null && joinedIn is null)
+        {
+            try
+            {
+                copied = CopyStart.Open(home, run, root);
+            }
+            catch (DriverException error)
+            {
+                return run.Hold(error.Message);
+            }
+        }
 
         // A start in the checkout itself holds it too, so no writer moves it between the commit this start reads and the record.
         var starting = TreeLock.TryStarting(home, root, startIn);
-        if (starting is null) return run.Hold(TreeLock.StartHeld(home, root, startIn, quest.To).Why);
+        if (starting is null)
+        {
+            if (FolderCopies.At(home, copied) is { } unused) FolderCopies.Remove(unused);
+            return run.Hold(TreeLock.StartHeld(home, root, startIn, quest.To).Why);
+        }
+
         run.State.Starting = starting;
 
         // git's guess at the checkout's line, asked once for the tree's opening and the landing the session is told of.
         var oneLook = context.Trees.OneLook();
 
         TreeOpened? opened = null;
-        if (isolated && resumedIn is null && joinedIn is null)
+        if (isolated && !folder && resumedIn is null && joinedIn is null)
         {
+            if (!start.Isolate!.Serves(PlaceKind.Git))
+            {
+                return run.Hold($"`{quest.To}` is a git repository, and its workflow's isolate step asks for a `{start.Isolate.Kind}`, which is a folder's: "
+                    + $"set the step's kind to `{IsolateStep.Worktree}` or `{IsolateStep.Auto}`.");
+            }
+
             try
             {
                 // A chain's next step grows from the branch its parent landed on, so a verify step sees the unmerged work it checks;
@@ -130,7 +155,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
             }
         }
 
-        run.State.WorkTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
+        run.State.WorkTree = opened?.Path ?? copied ?? resumedIn ?? joinedIn ?? root;
         run.State.WorkFolder = new LinePlaces(home).Of(run.State.WorkTree).Folder;
         run.State.Tree = new TreeFound(
             entryTree, priorStands, entryStands, opened, resumedIn, joinedIn, resuming, carryingOn, answered, handsOn, inSync, oneLook);
@@ -186,9 +211,9 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         }
     }
 
-    /// <summary>The branch a session's work last landed on here: the newest of its parts' landings in the repository whose record stands.</summary>
+    /// <summary>The branch a session's work last landed on here: the newest of its own run's parts' landings in the repository whose record stands.</summary>
     private string? EntryLanded(EntryParts entry, string repository) =>
-        entry.Parts
+        entry.Run
             .Select(part => wiring.Context.Trees.Recorded.Landing(part.Session))
             .FirstOrDefault(landing => landing is { GoneAt: null }
                                        && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase))

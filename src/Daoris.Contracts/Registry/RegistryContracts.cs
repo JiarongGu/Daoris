@@ -12,13 +12,13 @@ namespace Daoris.Contracts.Registry;
 /// registrations are the family. <c>Workspace</c> is null when the client said nothing, which preserves the row; <c>DefaultBranch</c>
 /// likewise. The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
 /// <c>Adopted</c> is false only from a door that looked and found no manifest. <c>Lanes</c> are the words of the lanes it declares,
-/// never their paths; null is unstated and preserves the row's.
-/// </summary>
+/// never their paths; null is unstated and preserves the row's, as a null <c>Kind</c> and <c>System</c> (its adapter, plugin/system) do.</summary>
 public sealed record RegisterRepository(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
     string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null,
-    bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null) : IRoute<RegisteredResponse>
+    bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null, string? Kind = null,
+    IReadOnlyList<string>? Excludes = null, string? System = null) : IRoute<RegisteredResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/registry";
@@ -36,6 +36,13 @@ public sealed record WireRepository(string Repository, string? Workspace) : IRou
 {
     public static string Method => "POST";
     public static string Path => "/api/registry/{repository}/workspace";
+}
+
+/// <summary>A folder department's excludes rewritten whole: the globs its manifest passes by, empty to clear; nothing else of the row.</summary>
+public sealed record SetFolderExcludes(string Repository, IReadOnlyList<string> Excludes) : IRoute<RegisteredResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/registry/{repository}/excludes";
 }
 
 /// <summary>The bootstrap, as a verb a person runs: a folder's immediate subdirectories, registered into <c>Workspace</c> where one is named.</summary>
@@ -87,6 +94,7 @@ public sealed record ClearRetired(string Repository, string? Workspace = null) :
 [JsonSerializable(typeof(RegisterRepository))]
 [JsonSerializable(typeof(RetireRepository))]
 [JsonSerializable(typeof(WireRepository))]
+[JsonSerializable(typeof(SetFolderExcludes))]
 [JsonSerializable(typeof(ImportRepositories))]
 [JsonSerializable(typeof(ListRegistry))]
 [JsonSerializable(typeof(ReadCodeMap))]

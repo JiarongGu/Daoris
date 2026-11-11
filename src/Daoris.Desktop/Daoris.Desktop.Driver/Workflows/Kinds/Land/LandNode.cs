@@ -105,6 +105,8 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 
     public override NodeLook Look => NodeLook.Landing;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool EndsByTheLine => true;
 
     /// <summary>Reached where the landing record holds the bound tip, by the landing's authority.</summary>

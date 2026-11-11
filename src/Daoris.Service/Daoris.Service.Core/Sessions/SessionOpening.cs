@@ -237,7 +237,16 @@ internal sealed class SessionOpening(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await holders.HolderAsync(known.Repository, holding, inside).ConfigureAwait(false);
+            if (SessionHolders.InPlace(holding, known.Root)
+                    && await holders.PlaceHolderAsync(known.Repository, known.Root, inside).ConfigureAwait(false) is { } leased)
+            {
+                return new SessionOpenOutcome(
+                    SessionOpenRefusal.RepositoryBusy,
+                    SessionPlaceLease.Busy(known.Repository, leased) + " That is true of a conversation exactly as it is of driven work.",
+                    Session: null);
+            }
+
+            var active = SessionHolders.InPlace(holding, known.Root) ? null : await holders.HolderAsync(known.Repository, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(
@@ -448,14 +457,22 @@ internal sealed class SessionOpening(
 
         // The same resolution as a chat's, through the same registry, for the same reason: two doors
         // onto one tree must agree about which tree that is.
-        var holding = Trees.Normalize(tree) ?? Trees.Normalize(await holders.RootOfAsync(quest.To, ct).ConfigureAwait(false));
+        var root = await holders.RootOfAsync(quest.To, ct).ConfigureAwait(false);
+        var holding = Trees.Normalize(tree) ?? Trees.Normalize(root);
 
         // The line of work the quest belongs to, read before the lock is taken so it holds nothing while it asks.
         var origin = await SessionEntries.OriginOfQuestAsync(quest, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await holders.HolderAsync(quest.To, holding, inside).ConfigureAwait(false);
+            // In the place itself the writer's lease judges it; in a copy of its own the tree lock does.
+            if (SessionHolders.InPlace(holding, root)
+                    && await holders.PlaceHolderAsync(quest.To, root, inside).ConfigureAwait(false) is { } leased)
+            {
+                return new SessionOpenOutcome(SessionOpenRefusal.RepositoryBusy, SessionPlaceLease.Busy(quest.To, leased), Session: null);
+            }
+
+            var active = SessionHolders.InPlace(holding, root) ? null : await holders.HolderAsync(quest.To, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(SessionOpenRefusal.RepositoryBusy, SessionHolders.Busy(quest.To, active), Session: null);

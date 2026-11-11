@@ -17,6 +17,7 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
 
         routes.Map<OpenIntake, SessionActionResponse>(OpenIntakeAsync);
         routes.Map<OpenHelp, SessionActionResponse>(OpenHelpAsync);
+        routes.Map<ReleasePlace, SessionActionResponse>(ReleasePlaceAsync);
         routes.Map<KeepHelpMode, SessionActionResponse>(KeepHelpModeAsync);
         routes.Map<KeepAccess, SessionActionResponse>(KeepAccessAsync);
         routes.Map<KeepActor, SessionActionResponse>(KeepActorAsync);
@@ -75,6 +76,12 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
             : conflicts.Contains(outcome.Refusal) ? Refusal.Conflict(outcome.Message)
             : Refusal.BadRequest(outcome.Message);
     }
+
+    private async Task<Answer<SessionActionResponse>> ReleasePlaceAsync(ReleasePlace request, HttpContext http, CancellationToken ct) =>
+        await Service.Ledger.ReleasePlaceAsync(request.Id, request.Paths, ct) is { } released
+            ? new SessionActionResponse(
+                await SessionAnswers.ToSessionAsync(Service, released, host.MachineLocal(http)), $"Others may work where `{request.Id}` worked.")
+            : Refusal.NotFound($"no session of this machine's is `{request.Id}`");
 
     private async Task<Answer<SessionActionResponse>> KeepHelpModeAsync(KeepHelpMode request, HttpContext http, CancellationToken ct)
     {

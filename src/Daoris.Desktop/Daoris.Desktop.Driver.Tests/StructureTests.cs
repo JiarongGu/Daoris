@@ -358,16 +358,17 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
-        // §14.2: bottom to top, so a subdomain names only its own types and those listed before it. Transitional (ONEWAY1ad-i) holds
-        // the register of kept reads, which names the others' types and no one names it. Conversion (ONEWAY1ae) holds the home's one
-        // conversion door and its parts, each naming the area it converts, so it stands above them all and below the register that reads it.
+        // Bottom to top, so a subdomain names only its own types and those listed before it. Transitional holds the register of kept
+        // reads, which names the others' types and no one names it. Conversion holds the home's one conversion door and its parts, each
+        // naming the area it converts, so it stands above them all and below the register that reads it.
         Assert.Equal(
             [
-                "Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles",
-                "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Conversion", "Transitional", "Help", "Loop",
+                "Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Departments",
+                "Roles", "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Conversion", "Transitional",
+                "Help", "Loop",
             ],
             map.Subdomains.Select(subdomain => subdomain.Name));
-        Assert.Equal(23, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
+        Assert.Equal(24, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
         // Every namespace stays Daoris.Driver.
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));

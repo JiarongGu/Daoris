@@ -85,6 +85,8 @@ internal sealed class IntegrateNode : BuiltInNode, IStarts
 
     public override NodeLook Look => NodeLook.Other;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public override bool ReadsTheLanding => true;
 
     public override bool EndsByTheLine => true;

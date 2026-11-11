@@ -17,9 +17,8 @@ public sealed class HelpRoomDoorsTests
         foreach (var command in new[]
         {
             "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
-            "daoris place trees <repository> on|off", "daoris place line <repository> <branch>|--clear",
+            "daoris place line <repository> <branch>|--clear",
             "daoris place landing <repository> merge|branch <pattern>|--clear",
-            // A role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
             "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
             "daoris settings notify on|off", "daoris agent rules", "daoris ask --workspace <name>",
             // The clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
@@ -30,7 +29,7 @@ public sealed class HelpRoomDoorsTests
             "daoris place across <repository> read on|off|--clear", "daoris place across <repository> write-to <other> [--clear]",
             // Every setting verb that changes something, and the doors Ask Daoris owes, named where they are,
             // and a stop's release, which names the session stopped.
-            "daoris quest retry <quest>", "daoris quest retry <quest> --session <id>", "daoris settings cap <n>",
+            "daoris quest retry <quest>", "daoris settings cap <n>",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // The one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
             "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
@@ -81,7 +80,7 @@ public sealed class HelpRoomDoorsTests
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes: a card the person applies, through the connector's two tools.
-        Assert.Contains("`setting_propose`", agents);
+        Assert.Contains("Every setting is pressed, never proposed", agents);
         Assert.Contains("`ask_propose`", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
@@ -106,7 +105,6 @@ public sealed class HelpRoomDoorsTests
 
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("drive a repository"));
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("hold one"));
-        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("give its sessions their own tree"));
         Assert.Equal(
             "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line",
             Screen("set the line"));
@@ -308,10 +306,9 @@ public sealed class HelpRoomDoorsTests
         foreach (var door in new[] { helpers, commits })
         {
             Assert.Contains("`--workspace <name>` for a whole workspace", door.Terminal);
-            Assert.IsType<HelpDoorAsk.Proposes>(door.Ask);
+            Assert.Null(door.Ask);
         }
 
-        Assert.Contains("from the repository's own instructions", commits.To);
         Assert.Contains("`{ticket}`", landing.To + landing.Terminal);
         Assert.Contains("`--key <shape>|--no-key`", landing.Terminal);
         Assert.Contains("`--squash|--no-squash`", landing.Terminal);
@@ -393,7 +390,7 @@ public sealed class HelpRoomDoorsTests
             "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris session say <id> \"…\"`, "
             + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             history.Terminal);
-        Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
-        Assert.Contains("[--workspace <name> | --all]", HelpCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all | --about <place>]", DriverCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all | --about <place>]", HelpCommand.Usage);
     }
 }

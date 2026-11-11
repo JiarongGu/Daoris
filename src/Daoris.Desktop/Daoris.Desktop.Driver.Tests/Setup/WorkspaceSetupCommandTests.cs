@@ -25,7 +25,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
 
     private static DriverConfig Config => new[] { "atlas", "billing", "cargo" }.Aggregate(
         DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 2 },
-        (config, repository) => config.WithDrivable(repository, true).WithTrees(repository, true));
+        (config, repository) => config.WithDrivable(repository, true));
 
     private static WorkspaceSetupStandIn World() => new WorkspaceSetupStandIn().With(
         WorkspaceSetupStandIn.Row("atlas"), WorkspaceSetupStandIn.Row("billing"), WorkspaceSetupStandIn.Row("cargo"));
@@ -66,10 +66,11 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     public async Task The_plan_prints_the_list_with_what_touched_each_and_each_refusal_and_writes_nothing()
     {
         var world = World();
+        world.InPlace.Add("billing");
         world.Quest("q1", "cargo", "Say what the tariff is", "Done", from: "billing");
         var output = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work", "--adoption", "--plan"], output, world, Config.WithTrees("billing", false));
+        var code = await RunAsync(["--workspace", "work", "--adoption", "--plan"], output, world, Config);
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, code);

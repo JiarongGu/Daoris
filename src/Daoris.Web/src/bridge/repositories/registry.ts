@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
+import { call } from '../call';
 
 // The registry's machine half: a folder the shell names, and a declaration written in place.
 
@@ -25,6 +26,11 @@ export type FolderInspection = {
    */
   uses: string[];
 };
+
+/** *Open*: a department's folder in the file manager, by its registered name; the module names the folder, never the page. */
+export const useOpenDepartmentFolder = () => useMutation({
+  mutationFn: (repository: string) => call('REGISTRY_OPEN_FOLDER', { repository }) as Promise<{ opened: boolean }>,
+});
 
 /**
  * Ask the shell for a folder. Null is the person cancelling the dialog, which is an answer.

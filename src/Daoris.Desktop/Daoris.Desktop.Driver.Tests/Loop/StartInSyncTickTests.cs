@@ -79,7 +79,7 @@ public sealed class StartInSyncTickTests : IDisposable
         service.Add(new JsonObject
         {
             ["id"] = "q3", ["from"] = "backend", ["to"] = "engine", ["title"] = "Keep the note's author too",
-            ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1",
+            ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1", ["parent"] = "q2",
         });
         service.Entries["q3"] = "ask:a1/engine";
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
@@ -164,7 +164,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
@@ -219,7 +219,7 @@ public sealed class StartInSyncTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(checkout);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
+            Drivable = ["engine"], DefaultWorkflow = IsolatedPlaces.In(_home), Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, "ask"] },
         };
         var adapters = ProviderRegistry.Built();
@@ -237,7 +237,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Trees = ["engine"],
+            DefaultWorkflow = IsolatedPlaces.In(_home),
             Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             PollSeconds = 1,

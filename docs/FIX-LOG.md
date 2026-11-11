@@ -5,6 +5,68 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-11 - A quest stayed taken for days after its session was finished
+
+- **Symptom:** a review quest's session ended its turn without its done and parked, as it should; three hours later a terminal's
+  `daoris session finish` (the person confirming in the window) moved it to `completed`, and its quest stayed `Taken` for three days:
+  no resume, no done, no row in *What needs you*, and its tree kept as one "a session running or waiting holds".
+- **Root cause:** 0864af5524 gave a park its finish, which ends the session and leaves its quest as it stands, and from then on nothing
+  read that quest: `RoundReading.Plans` and `Planner.CarriesOn` take a taken quest up only after a failure, a stop, an answered park, a
+  person's words or a reopen, so a finished session gave no verdict, *What needs you* had no row, and Sessions placed it in Ended,
+  while `TidyHolders.LineHolders` kept its tree as the newest part of a taken quest. 839380d18d named the done door once, after the
+  finish, and nothing later.
+- **Fix:** the planner says such a quest `Unclosed` (`UnclosedQuests`): its session was finished, or went on from a finish, and left
+  it taken. *What needs you* lists it by the quest (`unclosed`), its door the quest's *Mark done…*, and a word to the session goes on
+  with it; the work in its tree stays to review.
+- **Verify:** `UnclosedQuestTests` and `UnclosedQuestRowsTests`, red first; `attention.unclosed.test.ts` words the row in both languages.
+## 2026-11-11 - Changes left their censuses behind, and the fast half went red
+
+- **Symptom:** the CI run at a29752d failed the lane table's two reach tool-tests, the bridge's barrel test, the menus' count and
+  budget, the driver's refusal-row, ledger-rule and usage tests, and a dozen modules tests, six of the steward's allow cases timing
+  out at two minutes; on main's tip the plugin kit's two system glosses failed the names check as well.
+- **Root cause:** each change met a census it did not run. 9e044efade added `tools/rehearsal-apart.mjs`, which the family
+  rehearsal imports, with no lane-table row, and dropped `place trees` from the tree's usage while the place group still answers it;
+  feaf22de29 moved `LandingSaysTwinTests` to the modules with the table left among the driver's fixtures; 2f61c7735d added
+  `bridge/helpBeyond.ts` without its barrel line; 9655acc66d gave the `isolate` kind a refusal with no `graph-problems.json` row and
+  a ledger reach the lifecycle rule did not name, and removed `SET_TREES` and the steward's trees act under tests still pressing them;
+  8607c93d9c gave `SET_HOLD` a view that reads the registry, and 06654eb671's repair missed the allow tests' stand-in;
+  172210a04e labelled the Help menu's row with the palette's 25-character title; 73a6654275 said *plan* in Chinese without 计划;
+  65096c2482 deleted the service's last reader of the review and second-opinion rules' tables and kept their rows naming it.
+- **Fix:** the rows, the barrel line and the usage's gone-verb note added; the trees cases removed or moved onto `SET_HOLD` and the
+  hold act; the stand-in registers the held repository; the menu row says *Change focus…*; the glosses follow the glossary.
+- **Verify:** each listed class filtered, red first on the tip and green after; `npm run quick`, `i18n:check`, `names:check --strict`.
+
+## 2026-11-11 - A conversation's place was recorded as Daoris's browser
+
+- **Symptom:** `ChatAttachmentTests.A_chat_handed_no_browser_is_told_nothing_of_one` found a `chat.told-browser` note on a conversation
+  handed no browser; the page read "The agent was told it has Daoris's browser:" above the folder's `## Your place` section.
+- **Root cause:** 2f4845d53b told a conversation in its place by appending the place's words to the message's `Briefing`, the browser's
+  field, and the record keeps everything in that field under the browser's lead (`ChatRecorded.ToldBrowser`).
+- **Fix:** the place is a field of its own (`ChatMessage.Place`), handed after the browser's line as before and kept under its own note
+  code, `chat.told-place`, with its lead in both catalogues.
+- **Verify:** that test, red first; `ChatPlaceToldTests` and `noteLines.test.ts` hold the place's own lead.
+
+## 2026-11-11 - A review the page left kept its git running
+
+- **Symptom:** `DriverModuleReviewLeaveTests`' leave and window-destroyed cases timed out waiting for the read's git to exit: the caller
+  was answered cancelled, but the read's one `rev-parse` of the tree's layout ran on until its stand-in's own bound.
+- **Root cause:** b050836157 made a flow's memo (`GitReadOnce`) ask git under the flow's own token instead of its first asker's, and left
+  every read flow that opens one (`SessionReviews`, `LandedReviews`, `TreeLandPlans`, `TreeWorkReads`) calling `Within()` with no token,
+  so their shared gits ran untokened and a left read never ended them.
+- **Fix:** each read flow opens its memo under its own token (`GitReadOnce.Within(ct)`), so the read left by its last caller ends the
+  gits it shares, while a stage that leaves alone still only ends its own wait.
+- **Verify:** `DriverModuleReviewLeaveTests`, red first, its stand-in bound now past the test's wait so only the leave's kill passes it.
+
+## 2026-11-11 - A parked line's kept place never reached the work page's head
+
+- **Symptom:** `SessionsStateSliceTests.Every_field_the_page_reads_is_pushed_and_every_field_the_service_answers_is_classed` failed:
+  the service's last session field was `holdsPlace`, which the sessions slice neither pushed nor named the pull's alone.
+- **Root cause:** 2e95cdde44 added `holdsPlace` to the session record the service answers, and db49b1e989 made the work page's head read it
+  (`placeHolds`), but the slice's allow-list (`SessionsStateSlice.Fields`) was not given it, so the pushed records the page reads never
+  carried it and the head's "keeps its checkout" fact and its Let others work here press never showed.
+- **Fix:** `holdsPlace` is pushed with the other fields the page's `Session` type reads.
+- **Verify:** the slice test above, red first, and its pushed record carrying the field.
+
 ## 2026-11-08 - The canvas drew every card again on each zoom step and its toolbar on every frame
 
 - **Symptom:** `large/Hundred` and `large/Thousand` of `measured/large.spec.ts` failed their frame budget in CI when run alone after the other

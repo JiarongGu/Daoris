@@ -33,7 +33,7 @@ import { type HarnessRoster } from '../../bridge/agents/agents';
 import { type RefreshResponse } from '../../data/generated/service';
 import { type Notify } from '../../design/atoms/Toasts';
 
-export function useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, askQuickly, setShortcuts, setAbout }: {
+export function useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout }: {
   tab: View;
   openSettings: (section: SettingsSection, anchor?: SettingsAnchor | undefined) => void;
   running: UseQueryResult<Session[], Error>;
@@ -68,6 +68,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   openBrowser: UseMutationResult<{ opened: boolean; windows: string[]; }, Error, string | undefined, unknown>;
   onRefresh: () => void;
   openHelp: () => void;
+  changeFocus: () => void;
   askQuickly: (question?: string | undefined, draft?: boolean) => void;
   setShortcuts: React.Dispatch<React.SetStateAction<boolean>>;
   setAbout: React.Dispatch<React.SetStateAction<boolean>>;
@@ -203,6 +204,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     questAct: (act) => { offers.run(act); },
     help: openHelp,
     quickAsk: () => askQuickly(),
+    changeFocus,
     setup: () => openSettings('start'),
     shortcuts: () => setShortcuts(true),
     // Settings → Driver, where the install's update is: nothing here checks a release channel.

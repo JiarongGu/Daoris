@@ -22,38 +22,34 @@ internal static class HelpDoorRowsMachine
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
             "`daoris tree remove <session|branch> [--repository <name>] --force`"),
-        // Ask again from a terminal, exempt from Ask Daoris as a read.
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris tree state <session|branch> [--repository <name>]`",
             new HelpDoorAsk.Never("it changes nothing of yours or on the platform, and the room already says what was last answered")),
-        // A role's agents through the role door alone, Build, Intake and Ask Daoris among them; `role_propose` proposes it.
+        // A role's agents through the role door alone, Build, Intake and Ask Daoris among them.
         ("choose who does each kind of work, with which agent and model: driven sessions (Build), asks (Intake), Ask Daoris and every "
             + "other role", "Agents → Roles → Working roles", "`daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off`"),
         // The role catalogue, a role added, changed, removed or given back its seed, or every seeded role at once with added roles kept.
         ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "
             + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
             "`daoris role set|remove|default <id> …`, `daoris role default --all`"),
-        // How a role spends its choices, a policy proposed with `role_propose`'s `policy`; the terminal's twin names a choice by its number.
+        // How a role spends its choices; the terminal names a choice by its number.
         ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget and the work a choice takes",
             "Agents → Roles → Working roles, a role's Edit",
             "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--clear]`"),
-        // The quest's drawer is a page. A stop's release names its session, since the terminal cannot see which hold a quest is under.
-        ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
-        ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
-            + "whose *Sitting* names the session", "`daoris quest retry <quest> --session <id>`"),
-        // The terminal's door onto the default cool-off, and Ask Daoris's `setting` kind's `cooloff`.
+        // The quest's drawer is a page; the press judges from the planner's verdict whether to mark the quest forgiven or release the stop.
+        ("start a quest again that its failed sessions parked or your stop holds", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
+        // The terminal's door onto the default cool-off.
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris settings cooloff <minutes>`"),
         // The one quiet setting: a session runs as long as it works, and this is how long it may say nothing before Daoris looks in.
         ("set how long a session may say nothing and run nothing before Daoris looks in on it", "Settings → Driver → Look in on a quiet session after",
             "`daoris settings quiet <minutes>`"),
-        // A repository's remote or a workspace's host pointed at a git identity that exists, Ask Daoris's `setting` kind's `git-use`;
-        // never the person's own sign-ins, never an identity set up, tested or removed.
-        new("point a repository's remote, or a workspace's host, at a git identity already set up",
+        // A repository's remote or a workspace's host pointed at a git identity that exists, pressed; setting one up, testing or
+        // removing it is the person's own act.
+        ("point a repository's remote, or a workspace's host, at a git identity already set up",
             "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
-            "`daoris git use <repository> [--remote <name>] <identity>|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|--clear`",
-            new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
-        // How long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep`.
+            "`daoris git use <repository> [--remote <name>] <identity>|own|--clear`, `daoris git use --workspace <workspace> --host <host> <identity>|own|--clear`"),
+        // How long each kind Daoris keeps is kept.
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → Disk space → a kind's Change…",
             "`daoris settings keep <kind> <rule>`"),
         ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris settings cap <n>`"),
@@ -70,7 +66,7 @@ internal static class HelpDoorRowsMachine
         // What the person says holds for every session in one repository, kept on this machine.
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             Setup + "Sessions", "`daoris place standing <repository> \"…\"|--clear`"),
-        // The work's language, apart from the window's; Ask Daoris proposes it as the `setting` kind's `language` door.
+        // The work's language, apart from the window's.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             Setup + "Sessions; a workspace's, " + Ws + "Setup → Defaults → Session language",

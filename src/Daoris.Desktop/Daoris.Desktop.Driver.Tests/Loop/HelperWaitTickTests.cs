@@ -61,9 +61,7 @@ public sealed class HelperWaitTickTests : IDisposable
         var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             // One running slot; the default is two.
             Cap = 1,
             TestBound = 1,

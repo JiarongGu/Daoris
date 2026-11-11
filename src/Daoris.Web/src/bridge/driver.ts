@@ -38,7 +38,7 @@ export type DriverState = {
   retried?: Retried | null;
   drivable: string[];
   holds: string[];
-  /** Repositories whose sessions open their own worktree instead of the registered root. */
+  /** Repositories whose workflow sets their sessions apart, each in a worktree of its own (its `isolate` step). */
   trees: string[];
   /**
    * Repositories whose checkout the person let Daoris change the files of: off where absent.
@@ -70,8 +70,14 @@ export type DriverState = {
   coolOff?: number;
   /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
-  /** How many sessions Daoris starts at once on this machine; left out where none is set. */
+  /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
+  manifestFiles?: number;
+  manifestMinutes?: number;
+  /** The most megabytes a folder may hold to be copied for a session its workflow sets apart. */
+  manifestCopy?: number;
   cap?: number;
+  /** The tier of a press from a terminal no Daoris session owns: `ask` or `act`; left out where none is set, and the row is then not offered. */
+  terminal?: string;
   /** Quests the person restarted, by id, and the failure count each restarts at. */
   forgiven: Record<string, number>;
   /**
@@ -339,8 +345,22 @@ export const useSetCoolOff = () => useDriverChange('SET_COOLOFF');
 /** How long a session may be quiet before Daoris looks in: the same `quiet` `daoris settings quiet <minutes>` edits. */
 export const useSetQuiet = () => useDriverChange('SET_QUIET');
 
+/** One bound of a folder's manifest read, files or minutes: the same `manifest` `daoris settings manifest files|minutes <n>` edits. */
+export const useSetManifest = () => useDriverChange('SET_MANIFEST');
+
+/**
+ * A folder department's excludes changed: the globs to leave out and the globs to take back, the same list
+ * `daoris repository excludes` edits. The driver changes the registration and reads the folder's manifest again.
+ */
+export const useSetFolderExcludes = () => useMutation({
+  mutationFn: (variables: Payload<'REGISTRY_EXCLUDES'>) => call('REGISTRY_EXCLUDES', variables),
+});
+
 /** How many sessions Daoris starts at once: the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');
+
+/** Whether a terminal's press waits for the Confirm or runs at once as the person's: the same `terminal` `daoris settings terminal ask|act` edits. */
+export const useSetTerminal = () => useDriverChange('SET_TERMINAL');
 
 /**
  * One kind's keep rule: the same `keep` `daoris settings keep` edits. A value out of its
@@ -521,8 +541,8 @@ export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: b
 
 /**
  * A working role added, changed, removed or given back its seed: the person's press through the driver's role door,
- * whose judge refuses with nothing written. `daoris role` is its terminal twin, and Ask Daoris's `role_propose` is applied
- * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
+ * whose judge refuses with nothing written. `daoris role` is its terminal twin, Ask Daoris's press of it
+ * shown on the Confirm card by the route's view. What starts may move with it, so the route publishes the roster's key too.
  */
 export const useSetRole = () => useDriverChange('SET_ROLE');
 
@@ -577,8 +597,6 @@ export const useSyncNow = () => {
 
 export const useSetDrivable = () => useDriverChange('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange('SET_HOLD');
-/** Session trees: the same file `daoris place trees <repo> on|off` edits — two editors, one truth. */
-export const useSetTrees = () => useDriverChange('SET_TREES');
 /** The switch *Daoris may change this checkout's files*: off by default, writes nothing to the repository itself. */
 export const useSetCheckoutWrites = () => useDriverChange('SET_CHECKOUT_WRITES');
 /**

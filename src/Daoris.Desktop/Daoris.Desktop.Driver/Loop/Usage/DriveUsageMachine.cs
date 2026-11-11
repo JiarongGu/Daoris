@@ -94,13 +94,21 @@ internal static class DriveUsageMachine
           workflow stop <run> <node> ["…"]
               pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
               and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
+          workflow send <run> <node>
+          workflow ask-again <run> <node>  ·  workflow go-on <run> <node> "…"
+              send a ready request that waits for you, or answer a declined one: ask it again, or go on without it.
+          workflow accept <run> <node> ["…"]
           workflow changes <run> <node> "…"
-              ask for changes on a run's review in place of its Accept, with your words: the work's session is told
-              them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.
+              your Accept of the work on a run's review, which lands it as the run's workflow says; or the changes
+              you ask in its place, with your words: the work's session is told them as its next turn, and what it
+              commits is reviewed again. Daoris's window confirms it.
           workflow done <run> <node> ["…"]
           workflow approve|reject <run> <node> ["…"]
               press your task on a run, or answer its approval, with a note if you like: the run takes the route
               for what you pressed. Daoris's window confirms it.
+          workflow keep-yours|take-session|keep-both <run> <node> "<path>"
+              choose for one file a folder's return found changed in both the folder and the session's copy: keep
+              the folder's, take the session's, or write the session's beside it. Daoris's window confirms it.
           workflow fix <run> [<node>]
               ask for a fix of a verification run's failed gate, with its log: one ask per gate, and a repeat finds the
               ask already made. `work held` names the failed verifications. Daoris's window confirms it.

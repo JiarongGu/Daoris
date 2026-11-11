@@ -30,10 +30,14 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var (request, binding, mine, connection, place) = (reserved.Request, reserved.Binding, reserved.Line, reserved.Connection, reserved.Place);
         var id = request.Id;
         IReadOnlyList<PipeReading> asked;
+        PressViewed? viewed;
+        HelpPressPlace? placed;
         try
         {
             using var reading = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, reserved.Reading.Token);
             asked = await row.ReadAsync(pipe.Grounds, request.Payload, _clock, reading.Token).ConfigureAwait(false);
+            viewed = await PressViews.ReadAsync(pipe.Grounds, request.Module, request.Type, request.Payload, reading.Token).ConfigureAwait(false);
+            placed = await PipeDelegate.ReadPlaceAsync(reserved.PlaceOf, request, reading.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -54,7 +58,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        if (row.Refusal(asked) is { } words)
+        if ((row.Refusal(asked) ?? viewed?.Refusal) is { } words)
         {
             Confirmations.Let(place);
             EndReserved(reserved, pipe.Refuse(request, InstancePipe.NotAllowed, words));
@@ -74,7 +78,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var record = new PipeWaitingRecord(
             Guid.NewGuid().ToString("N"), id, binding, request.Module, request.Type,
             keyed ? null : request.Payload is { ValueKind: not JsonValueKind.Undefined } sent ? sent.GetRawText() : "",
-            keyed ? [] : asked, connection.Asker, reserved.Asked, null, keyed, PipeWaitingRecord.Waiting);
+            keyed ? [] : asked, reserved.Asker, reserved.Asked, null, keyed, PipeWaitingRecord.Waiting);
         if (!_keep.Keep(record))
         {
             Confirmations.Let(place);
@@ -94,14 +98,16 @@ internal sealed class PipeAsking(InstancePipe pipe)
 
         var payload = request.Payload;
         var shown = Confirmations.Ask(
-            place, request.Module, request.Type, fields, connection.Asker, why,
+            place, request.Module, request.Type, fields, reserved.Asker, why,
             judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold, View: viewed?.View, Placed: placed));
         lock (_state.Gate)
         {
             _state.WaitingFor[id] = shown.Shown.Id;
             _state.Lines[id] = mine;
         }
+
+        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Ended);
 
         // A close that began after the claim keeps it as any press waiting: its record kept and its line answered. The close
         // alone: a drain answers no waiting line, and the close it ends in keeps this one when it begins.
@@ -186,6 +192,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         if (ending.End == PipeConfirmationEnd.Confirmed && _keep.Begun(confirmation))
         {
             await pipe.RunAsync(request, id, binding, answered, begun: () => _keep.Forget(confirmation)).ConfigureAwait(false);
+            if (answered.Task.IsCompletedSuccessfully) Confirmations.Answered?.Invoke(confirmation, answered.Task.Result);
             return;
         }
 

@@ -8,6 +8,7 @@ import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE, type Shown
 import { HandedAccount } from '../conversation/HandedAccount';
 import { Note } from '../Note';
 import { ACCESS_AT } from '../noteLines';
+import { type Starting, StartingWords } from './startedFrom';
 import {
   short, type TraceAnswer, type TraceAskLink, type TraceBranch, type TraceKind, type TraceQuestLink,
   type TraceSessionLink, type TraceState, traceStory,
@@ -45,7 +46,7 @@ export type TraceDoor = {
  * A molecule: handed the answer and the fold, it reads the catalogue and nothing else.
  */
 export function HowItCameToBe({
-  kind, id, open, onToggle, answer, reading = false, refusal, onSession, onQuest, onAsk, className, nameOf,
+  kind, id, open, onToggle, answer, reading = false, refusal, onSession, onQuest, onAsk, className, nameOf, started,
 }: TraceDoor & {
   /** What a person calls an account, from the roster; absent, each record's id is said. */
   nameOf?: AccountNamer;
@@ -58,6 +59,7 @@ export function HowItCameToBe({
   onQuest?: (id: string) => void;
   /** Open an ask's page. */
   onAsk?: (id: string) => void;
+  started?: Starting | null;
   /** Its place among the page's blocks: the page's own spacing. */
   className?: string;
 }) {
@@ -86,6 +88,7 @@ export function HowItCameToBe({
       {open && (
         <div className="mt-2 grid min-w-0 gap-3 pl-[1.125rem]">
           <p className="m-0 text-small text-ink-faint">{t('work.trace.hint')}</p>
+          {started && started.kind !== 'requirements' && <div className="min-w-0 text-small text-ink-soft"><StartingWords starting={started} t={t} /></div>}
           {reading && !answer && <p className="m-0 text-small text-ink-soft" role="status">{t('work.trace.reading')}</p>}
           {refusal && !answer && <p className="m-0 text-small text-ink-soft"><Inline text={refusal} /></p>}
           {answer && answer.unread.map((store) => (

@@ -5,10 +5,7 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>
-/// The quest tools: <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent
-/// writes them with. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
-/// </summary>
+/// <summary>The quest tools: <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent writes them with; their words are said on <see cref="KnowledgeServer"/>.</summary>
 /// <param name="quests">What <c>quest_list</c> reads.</param>
 /// <param name="exchange">What judges a publish and an answer, shared with the HTTP host.</param>
 /// <param name="circle">Which workspace <c>quest_list</c> answers from.</param>
@@ -137,7 +134,7 @@ public sealed class QuestTools(
                     intake.Session, byAgent: true)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
-                ? $"As ask `#{askId}`: {answered.Message}{LeftUnsaid(answered.Quest, onAnAsk: true)}"
+                ? $"As ask `#{askId}`: {answered.Message}{LeftUnsaid(answered.Quest)}"
                 : answered.Message;
         }
 
@@ -176,33 +173,17 @@ public sealed class QuestTools(
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         return outcome.Refusal == QuestPublishRefusal.None
-            ? outcome.Message + LeftUnsaid(outcome.Quest, onAnAsk: false)
+            ? outcome.Message + LeftUnsaid(outcome.Quest)
             : outcome.Message;
     }
 
     /// <summary>
-    /// What a publish left for Daoris to fill, said beneath its answer, of the quest as it stands: with no short
-    /// title, the name a list will call it, read from its words; and on an ask's quest with no requirements, that
-    /// nothing of the person's words will be checked, since a done answers only those it carries. A
-    /// repository's quest carries none by design, so it is not told so.
-    /// </summary>
-    private static string LeftUnsaid(Quest? quest, bool onAnAsk)
-    {
-        if (quest is null) return "";
-
-        var said = new List<string>();
-        if (quest.Short is null)
-        {
-            said.Add($"It has no short title, so a list will call it \"{quest.Name}\", a name read from its own words.");
-        }
-
-        if (onAnAsk && quest.Requirements.Count == 0)
-        {
-            said.Add("It carries no requirements, so nothing of the person's words will be checked when it is done.");
-        }
-
-        return said.Count == 0 ? "" : "\n\n" + string.Join(" ", said);
-    }
+    /// What a publish left for Daoris to fill, said beneath its answer: with no short title, the name a list will call it, read from its
+    /// words. An ask's quest with no requirements is said so by the ask's own desk, at every door.</summary>
+    private static string LeftUnsaid(Quest? quest) =>
+        quest is { Short: null }
+            ? $"\n\nIt has no short title, so a list will call it \"{quest.Name}\", a name read from its own words."
+            : "";
 
     /// <summary>The memory proposals each listed quest carries, settled first against its quest and its target; none without a ledger.</summary>
     private async Task<ILookup<string, MemoryOp>> ProposalsAsync(IReadOnlyList<Quest> listed, CancellationToken ct)
@@ -233,9 +214,9 @@ public sealed class QuestTools(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var found = await quests.ListAsync(repository, includeClosed, scope, ct).ConfigureAwait(false);
+        CallFound.Say(found.Count);
         if (found.Count == 0)
         {
             return repository is null

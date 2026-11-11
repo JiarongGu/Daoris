@@ -55,6 +55,12 @@ public static class RunNodeWords
     /// <summary>A <c>done</c>, <c>approve</c> or <c>reject</c> of a task that does not wait for that press where it stands now.</summary>
     public const string NotWaiting = "not-waiting";
 
+    /// <summary>The word is a choice of a file changed on both sides, which only a <c>return</c> waiting on one takes.</summary>
+    public const string NotReturn = "not-return";
+
+    /// <summary>The acts kept as a mark of the node's attempt, moving no state: a request's send and a return's choices.</summary>
+    private static bool Marked(string act) => act == NodeWordActs.Send || NodeWordActs.Choices.Contains(act, StringComparer.Ordinal);
+
     /// <summary>The presses a node takes only while it waits for them: a person's task's.</summary>
     private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject];
 
@@ -114,15 +120,16 @@ public static class RunNodeWords
         var (refused, result) = records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(Ended) with { Detail = ended.Quest });
-            var standing = record.Pending.FirstOrDefault(each => each.Node == node);
+            var standing = EarlyAccepts.Standing(record, node, by);
             if (SupervisedWords.Refused(standing, by) is { } held) return (null, Refuse(held));
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
             var word = new NodeWord(node, act, words, now) { By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by) };
-            if (act == NodeWordActs.Send)
+            if (Marked(act))
             {
-                if (!Offers(declared, status, NodeWordActs.Send)) return (null, Refuse(NotSendable) with { State = status.State });
+                if (!Offers(declared, status, act)) return (null, Refuse(act == NodeWordActs.Send ? NotSendable : NotWaiting) with { State = status.State });
+                if (act != NodeWordActs.Send && words is null) return (null, Refuse(NodeRefusal.NoWords));
             }
             else
             {
@@ -131,7 +138,8 @@ public static class RunNodeWords
                 if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             }
 
-            return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), word] }, new NodeWorded(run, node, act, null));
+            var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
+            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null));
         });
         return refused is null ? result! : Refuse(refused);
     }
@@ -156,7 +164,8 @@ public static class RunNodeWords
 
     /// <summary>
     /// The person's words a run's record holds, applied through the one table under the run's declarations and its scope (the graph's digest and
-    /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not. Pure: the runtime writes it.
+    /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not, but an Accept kept for a
+    /// review not begun yet (<see cref="EarlyAccepts"/>). Pure: the runtime writes it.
     /// </summary>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
@@ -166,6 +175,7 @@ public static class RunNodeWords
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
         var applied = new List<(NodeWord, string?)>();
+        var waiting = new List<NodeWord>();
         foreach (var word in record.Pending)
         {
             if (!declared.TryGetValue(word.Node, out var node))
@@ -182,21 +192,29 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (EarlyAccepts.Held(word, standing) is { } early)
+            {
+                if (early == EarlyAccepts.Waiting) waiting.Add(word);
+                else applied.Add((word, early));
+                continue;
+            }
+
             if (SupervisedWords.Dropped(word, standing, landings) is { } dropped)
             {
                 applied.Add((word, dropped));
                 continue;
             }
 
-            if (word.Act == NodeWordActs.Send)
+            if (Marked(word.Act))
             {
-                if (!Offers(node, standing, NodeWordActs.Send))
+                if (!Offers(node, standing, word.Act))
                 {
-                    applied.Add((word, NotSendable));
+                    applied.Add((word, word.Act == NodeWordActs.Send ? NotSendable : NotWaiting));
                     continue;
                 }
 
-                next = next with { Fired = [.. next.Fired, SendKey(node.Id, standing.Attempt)] };
+                var mark = word.Act == NodeWordActs.Send ? SendKey(node.Id, standing.Attempt) : ReturnNode.ChoiceKey(node.Id, standing.Attempt, word.Act, word.Words ?? "");
+                next = next with { Fired = [.. next.Fired, mark] };
                 applied.Add((word, null));
                 continue;
             }
@@ -218,7 +236,8 @@ public static class RunNodeWords
             applied.Add((word, null));
         }
 
-        return (next with { Pending = [] }, applied);
+        // An Accept kept for a review not begun yet stays, and a pass that met nothing else writes nothing.
+        return applied.Count == 0 ? (null, []) : (next with { Pending = waiting }, applied);
     }
 
     /// <summary>
@@ -254,7 +273,7 @@ public static class RunNodeWords
         "usage: daoris workflow skip <run> <node> \"…\"  ·  daoris workflow stop <run> <node> [\"…\"]\n"
         + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
         + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
-        + "       daoris workflow changes <run> <node> \"…\"  (a review: what the work should change before it lands)\n"
+        + "       daoris workflow accept <run> <node> [\"…\"]  ·  daoris workflow changes <run> <node> \"…\"  (a review: your Accept of the work, or what it should change before it lands)\n"
         + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
@@ -271,7 +290,7 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, changes, done, approve or reject.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve or reject.",
         (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, and only an approval approved or rejected.",
         (NotWaiting, _) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now and waits for no {done.Act} of yours: a waiting task takes done, a waiting approval approve or reject.",
@@ -282,6 +301,7 @@ public static class RunNodeWords
             $"workflow: asking for changes on `{done.Node}` sends your words to the work, and none were given: say what should change.",
         (NodeRefusal.NotInTable, NodeWordActs.Changes) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept to ask changes of.",
+        (NodeRefusal.NotInTable, NodeWordActs.Accept) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept of yours.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",

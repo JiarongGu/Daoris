@@ -47,7 +47,7 @@ public static class OpinionPermissions
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
         "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "knowledge_refresh",
-        "question_ask", "memory_write", "memory_end", "memory_propose",
+        "question_ask", "memory_write", "memory_end", "memory_propose", "system_plan",
     ];
 
     /// <summary>What it reads its history with: git's reading commands, and the <c>cd</c> an agent prefixes one with.</summary>

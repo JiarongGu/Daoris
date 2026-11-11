@@ -372,7 +372,8 @@ public static class NodeLifecycle
                 return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Transient = false, Unreconciled = null });
 
             case NodeStates.Reached:
-                if (move.Source != authority.ReachBy && !(move.Source == NodeSource.Supervisor && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
+                if (move.Source != authority.ReachBy && move.Source != authority.ObservedBy
+                    && !(move.Source == NodeSource.Supervisor && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);
                 if (move.Acceptance is not { } accepted) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);

@@ -65,9 +65,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: a refused sign-in must hold none.
@@ -126,9 +124,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
@@ -173,9 +169,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
@@ -207,9 +201,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

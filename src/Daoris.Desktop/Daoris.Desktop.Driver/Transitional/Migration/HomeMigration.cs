@@ -49,6 +49,8 @@ public static class HomeMigration
         new BrainstormFilesStep(),
         new StandingGrantStep(),
         new SupervisorStep(),
+        new AbandonedRunsStep(),
+        new PlaceWorkStep(),
     ];
 
 

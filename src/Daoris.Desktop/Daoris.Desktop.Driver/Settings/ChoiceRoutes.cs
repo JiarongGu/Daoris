@@ -10,11 +10,12 @@ public static class ChoiceRoutes
 
     public static InstanceRoute Drivable { get; } = Person("SET_DRIVABLE");
     public static InstanceRoute Hold { get; } = Person("SET_HOLD");
-    public static InstanceRoute Trees { get; } = Person("SET_TREES");
     public static InstanceRoute Notify { get; } = Person("SET_NOTIFY");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
     public static InstanceRoute Quiet { get; } = Person("SET_QUIET");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
+    public static InstanceRoute Terminal { get; } = Person("SET_TERMINAL");
+    public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
@@ -33,16 +34,16 @@ public static class ChoiceRoutes
     public static InstanceRoute WorkflowKind { get; } = Person("WORKFLOW_KIND");
     public static InstanceRoute WorkflowLanded { get; } = Person("WORKFLOW_LANDED");
 
-    /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("driver drive|undrive <repo>", Drivable, "the window's drive switch"),
         ("driver hold|resume <repo>", Hold, "the window's hold"),
-        ("driver trees <repo> on|off", Trees, "the window's own-tree switch"),
         ("driver notify on|off", Notify, "the window's notify switch"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver quiet <minutes>", Quiet, "the window's quiet bound"),
         ("driver cap <n>", Cap, "the window's session cap"),
+        ("driver terminal ask|act", Terminal, "the window's tier of a terminal's presses"),
+        ("driver manifest files|minutes <n>", Manifest, "the window's bounds on a folder's manifest read"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),

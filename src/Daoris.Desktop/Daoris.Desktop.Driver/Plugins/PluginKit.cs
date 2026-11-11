@@ -80,6 +80,9 @@ public static class PluginKit
     /// <summary>A sample reference's owner: the plugin's id, written in a README as the plugin's own.</summary>
     public const string SamplePlugin = "{plugin-id}";
 
+    /// <summary>A system point's sample system: the first system the plugin declares, where a trial or the wire test sends it.</summary>
+    public const string SampleSystem = "{system}";
+
     /// <summary>The units awaiting a plugin's steps, as the kit's samples say it: one branch, its step awaited, a resync asked.</summary>
     public static readonly WorkWatchFrame SampleWatch = new(1, Resync: true,
     [
@@ -245,6 +248,7 @@ public static class PluginKit
               // Ids and codes only. Nothing said here changes anything; answer {} promptly.
               'work/event': (frame) => ({}),
             """),
+        .. PluginKitSystems.Points,
     ];
 
     /// <summary>The kit's word on a point, or null for a name this build does not have.</summary>
@@ -287,6 +291,7 @@ public static class PluginKit
         // and the hook set tells every plugin that works the awaited set at `work/watch`, a performer included, so performing brings that.
         if (named.Any(point => point is HookPoints.Watch or HookPoints.Perform) && !named.Contains(HookPoints.Step)) named.Add(HookPoints.Step);
         if (named.Contains(HookPoints.Perform) && !named.Contains(HookPoints.Watch)) named.Add(HookPoints.Watch);
+        if (named.Any(point => HookPoints.System.Contains(point, StringComparer.Ordinal))) named.AddRange(HookPoints.System.Except(named, StringComparer.Ordinal));
         var chosen = Points.Where(point => named.Contains(point.Name, StringComparer.Ordinal)).ToList();
         var folder = PluginKitFiles.FolderIn(parent, id);
         PluginKitFiles.Writable(folder);
@@ -301,6 +306,7 @@ public static class PluginKit
             new(Readme, ReadmeOf(id, name, chosen).Replace("\r\n", "\n")),
         };
         if (Works(chosen)) files.Add(new(WorkScript, WorkLibrary()));
+        if (PluginKitSystems.Adapts(chosen)) files.Add(new(PluginKitSystems.Library, PluginKitFiles.Template(PluginKitSystems.Library)));
         if (Performs(chosen))
         {
             files.Add(new(ContractTest, ContractTestText()));
@@ -365,7 +371,7 @@ public static class PluginKit
           "hooks": {
             "command": ["node", "${plugin}/{{Script}}"],
             "points": [{{string.Join(", ", points.Select(point => Json(point.Name)))}}]
-          },{{Declared(id, points)}}
+          },{{Declared(id, points)}}{{PluginKitSystems.Declared(name, points)}}
           "tools": []
         }
 
@@ -425,9 +431,10 @@ public static class PluginKit
             .Replace("{{id}}", id, StringComparison.Ordinal)
             .Replace("{{imports}}", (lands
                 ? "import { spawnSync } from 'node:child_process';\nimport { existsSync } from 'node:fs';\nimport { delimiter, join } from 'node:path';\n"
-                : "") + (works ? "import { work } from './work.mjs';\n" : ""), StringComparison.Ordinal)
+                : "") + (works ? "import { work } from './work.mjs';\n" : "")
+                + (PluginKitSystems.Adapts(points) ? $"import {{ adapter }} from './{PluginKitSystems.Library}';\n" : ""), StringComparison.Ordinal)
             .Replace("{{helpers}}", lands ? PluginKitFiles.Template("run.mjs") : "", StringComparison.Ordinal)
-            .Replace("{{work}}", works ? WorkCalls(id, performs) : "", StringComparison.Ordinal)
+            .Replace("{{work}}", (works ? WorkCalls(id, performs) : "") + PluginKitSystems.Calls(id, points), StringComparison.Ordinal)
             .Replace("{{handlers}}", string.Join("\n\n", points.Select(point => point.Handler.Replace("\r\n", "\n"))), StringComparison.Ordinal)
             .Replace("{{calls}}", performs ? ", ...kit.calls" : "", StringComparison.Ordinal)
             .Replace("{{capabilities}}", performs ? ", capabilities: kit.capabilities" : "", StringComparison.Ordinal);
@@ -448,14 +455,15 @@ public static class PluginKit
               send,
               say,
               // The work, done once for an attempt: call.unit, call.step, call.invocation, call.idempotencyKey, call.subjectRevision,
-              // call.inputs, call.deadlineAt. Say the receipt it reached on and what it made, which Daoris has removed at the end:
+              // call.inputs, call.options (the step's options in the workflow graph, by name, `{}` when none), call.deadlineAt. Say the receipt it reached on and what it made, which Daoris has removed at the end:
               //   return { state: 'reached', evidence: { ref: `{{ReceiptOf(id)}}:${call.invocation}`, url, message },
               //            resources: [{ schema: '{{ResourceOf(id)}}', id: '<the platform's id for it>' }] };
               // A failure names its code; only the codes plugin.json lists as `transient` are tried again:
               //   return { state: 'failed', code: 'unavailable', evidence: { message: '…' } };
               act: async (call) => ({ state: 'failed', code: 'not-written', evidence: { message: `${id} does not perform yet.` } }),
               // What became of an attempt a process before this one began, asked of the platform: { state: 'done', outcome },
-              // { state: 'not-started' }, or null where it cannot say, which stops the step for the person.
+              // { state: 'not-started' }; { state: 'running' } while the platform cannot be asked (down, rate-limited), said why
+              // with say(), so Daoris asks again; or null where it answered and cannot tell, which stops the step for the person.
               check: async (attempt) => null,
               // One thing act made, removed: { disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof, message }.
               remove: async (resource) => ({ disposition: 'failed', message: `${id} does not remove ${resource.resource} yet.` }),
@@ -496,6 +504,7 @@ public static class PluginKit
             .Replace("{{grace}}", ((long)HookProcess.Grace.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
             .Replace("{{capability}}", WorkWire.Capability, StringComparison.Ordinal)
             .Replace("{{step}}", SampleStep, StringComparison.Ordinal)
+            .Replace("{{system}}", SampleSystem, StringComparison.Ordinal)
             .Replace("{{points}}", table.ToJsonString(Pretty), StringComparison.Ordinal);
     }
 
@@ -534,10 +543,12 @@ public static class PluginKit
             files.Append($"| `{CycleFixture}` | the cycle `daoris plugin try --cycle` drives it through |\n");
         }
 
-        var work = !Works(points) ? ""
+        var (system, library) = PluginKitSystems.Readme(points);
+        files.Append(library);
+        var work = (!Works(points) ? ""
             : PluginKitFiles.Template(Performs(points) ? "work-perform.md" : "work-observe.md")
                 .Replace("{{step}}", step, StringComparison.Ordinal)
-                .Replace("{{resource}}", ResourceOf(id), StringComparison.Ordinal);
+                .Replace("{{resource}}", ResourceOf(id), StringComparison.Ordinal)) + system;
 
         return PluginKitFiles.Template("README.md")
             .Replace("{{name}}", name, StringComparison.Ordinal)

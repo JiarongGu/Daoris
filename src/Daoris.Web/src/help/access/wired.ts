@@ -71,7 +71,7 @@ export type HelpWired = { session: string; recorded: boolean; receipts: HelpRece
  * The grants of restricted mode's configured access, in the table's order:
  * Daoris's housekeeping, the browser, reading checkouts, chosen settings, and a confined shell, later.
  */
-export type HelpGrantId = 'housekeeping' | 'browser' | 'checkouts' | 'settings' | 'shell';
+export type HelpGrantId = 'housekeeping' | 'browser' | 'checkouts' | 'settings' | 'acts' | 'shell';
 
 /**
  * A grant's state as its row says it: off or on by the operations chosen; the browser waiting for approval, or changed

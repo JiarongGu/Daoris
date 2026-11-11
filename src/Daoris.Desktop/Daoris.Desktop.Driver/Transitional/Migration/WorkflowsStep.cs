@@ -29,7 +29,7 @@ public sealed class WorkflowsStep : IHomeMigrationStep
     }
 
     /// <summary>Each repository the service's store registers, with its workspace; none where the store or its table is not there.</summary>
-    private static IReadOnlyList<RepoView> Registry(string home)
+    internal static IReadOnlyList<RepoView> Registry(string home)
     {
         var path = DaorisHome.Entry(home, HomeEntry.Knowledge);
         if (!File.Exists(path)) return [];

@@ -412,10 +412,12 @@ public static class SessionGroups
         private readonly Dictionary<string, QuestView> _quests;
         private readonly HashSet<string> _liveTrees;
         private readonly Dictionary<string, string> _newestOnTree;
+        private readonly IReadOnlyDictionary<string, IReadOnlyList<PersonWait>> _runWaits;
 
         public Facts(SessionLook look)
         {
             _look = look;
+            _runWaits = RunWaitSessions.Of(look);
             _verdicts = look.Considered
                 .GroupBy(consideration => consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
@@ -538,10 +540,9 @@ public static class SessionGroups
             // never to review and never the person's: the planner considers nothing of its taken quest meanwhile, so no verdict says so.
             if (record.AwaitsHelper) return Rest(row with { Group = SessionGroup.Later, Shown = ShownState.AwaitingHelper });
 
-            if (ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds)
-            {
-                return row with { Group = SessionGroup.Review, Work = work };
-            }
+            var held = ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds ? work : null;
+            if (_runWaits.TryGetValue(record.Id, out var waits)) return row.WaitedOn(waits, held);
+            if (held is not null) return row with { Group = SessionGroup.Review, Work = held };
 
             if (verdict is { Verdict: StartVerdict.Waiting, Quest.Awaits: { Length: > 0 } awaits })
             {
@@ -584,10 +585,10 @@ public static class SessionGroups
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
             // session's tree: its carry-on or its resume, whatever holds that start for now. Bar the person's
             // stop: nothing goes back into its tree until they release it, so its work is theirs to review. And bar
-            // a pause: nothing goes back in until Resume, and the person paused the work to look at it. An open
+            // a pause or a finished session's take, until Resume or the person's word. An open
             // quest whose failed session committed work here goes back into it too, so its tree is not offered meanwhile.
             return VerdictOnLast(record) is { } verdict
-                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused)
+                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused or StartVerdict.Unclosed)
                    && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken" || verdict.CarriesWork is > 0)
                 ? null
                 : tree;

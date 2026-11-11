@@ -9,6 +9,29 @@ namespace Daoris.Desktop;
 /// </summary>
 internal static class TerminalSaid
 {
+    /// <summary>
+    /// <see cref="RunAsync(Func{TextWriter, Task{int}})"/> for a verb that says its refusals on its error, which the terminal prints on its own
+    /// error. Not asked for its words (<paramref name="said"/> false) a press answers <c>{ done, message }</c>: whether the verb exited 0, and
+    /// every line it said.
+    /// </summary>
+    public static async Task<object> RunAsync(Func<TextWriter, TextWriter, Task<int>> run, bool said = true)
+    {
+        var output = new StringWriter { NewLine = "\n" };
+        var error = new StringWriter { NewLine = "\n" };
+        var code = await run(output, error).ConfigureAwait(false);
+        string[] Lines(StringWriter writer) => writer.ToString().Split('\n') is [.. var whole, ""] ? whole : writer.ToString().Split('\n');
+        if (said) return new { Said = new TreesSaid(Lines(output), Lines(error), code).ToWire() };
+        return new { Done = code == 0, Message = string.Join('\n', Lines(output).Concat(Lines(error))) };
+    }
+
+    /// <summary>A person's press that runs a verb's own path: its answer, then the loop nudged to look again.</summary>
+    public static async Task<object?> PressAsync(DriverLoop loop, bool said, Func<TextWriter, TextWriter, Task<int>> run)
+    {
+        var answer = await RunAsync(run, said).ConfigureAwait(false);
+        loop.Nudge();
+        return answer;
+    }
+
     /// <summary>The lines <paramref name="run"/> printed and the exit code it returned, as an answer carries them (<see cref="TreesSaid.ToWire"/>).</summary>
     public static async Task<object> RunAsync(Func<TextWriter, Task<int>> run)
     {

@@ -336,6 +336,20 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False((await AnswerAsync(module, "WORK_RECORDS_FOLDER", new { })).GetProperty("opened").GetBoolean());
     }
 
+    /// <summary>A department's folder opens by its registered name, refused and said where none is here.</summary>
+    [Fact]
+    public async Task A_department_s_folder_is_opened_by_its_registered_name_and_only_where_it_is_here()
+    {
+        var module = await ModuleOverAsync(new DiscardService(root: null));
+        Assert.Contains("`engine` has no folder here", await RefusalAsync(module, "REGISTRY_OPEN_FOLDER", new { repository = "engine" }));
+
+        var gone = await ModuleOverAsync(new DiscardService(root: Path.Combine(Home, "absent")));
+        Assert.Contains("is not there", await RefusalAsync(gone, "REGISTRY_OPEN_FOLDER", new { repository = "engine" }));
+
+        var here = await ModuleOverAsync(new DiscardService(root: Home));
+        Assert.False((await AnswerAsync(here, "REGISTRY_OPEN_FOLDER", new { repository = "engine" })).GetProperty("opened").GetBoolean());
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {

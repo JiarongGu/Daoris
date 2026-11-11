@@ -12,7 +12,6 @@ public static class AppointedRoles
     public const string Supervisor = "supervisor";
     public const string Steward = "steward";
 
-    /// <summary>Both kinds, in the screen's order.</summary>
     public static IReadOnlyList<string> Kinds { get; } = [Steward, Supervisor];
 
     /// <summary>The catalogue's one steward among <paramref name="appointed"/>, which works for the machine alone; null where none reads.</summary>
@@ -21,7 +20,7 @@ public static class AppointedRoles
     /// <summary>The steward's acts: the nine of its table, then the set-up act, held only where the person lists it.</summary>
     public static IReadOnlyList<string> StewardActs { get; } =
     [
-        StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Trees, StewardActNames.Hold, StewardActNames.Resume,
+        StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Hold, StewardActNames.Resume,
         StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
         StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
         StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.HandOver,
@@ -49,7 +48,6 @@ public static class StewardActNames
 {
     public const string Drive = "drive";
     public const string Undrive = "undrive";
-    public const string Trees = "trees";
     public const string Hold = "hold";
     public const string Resume = "resume";
     public const string Stop = "stop";

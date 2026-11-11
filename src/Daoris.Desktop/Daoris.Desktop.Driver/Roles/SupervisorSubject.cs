@@ -54,6 +54,11 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public bool IsAsk { get; init; }
 
+    /// <summary>A working session's press asked of the person, <c>{ press }</c>, the allow kind's fourth subtype: it names no session.</summary>
+    public static SupervisorSubject SessionPress(string press) => new(SupervisorKinds.Allow, "", press) { IsPress = true };
+
+    public bool IsPress { get; init; }
+
     /// <summary>The start that met a rule file's ask, and which act it is (<c>run</c>, <c>copy</c> or <c>share</c>): a <c>files</c> subject only.</summary>
     public (string Start, string What)? Act { get; init; }
 
@@ -62,10 +67,10 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         new(SupervisorKinds.Files, repository, text) { Act = (start, what) };
 
     /// <summary>Whether this is an allow's widening, which names a proposal and no session.</summary>
-    public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0 && !IsAsk;
+    public bool IsProposal => Kind == SupervisorKinds.Allow && Session.Length == 0 && !IsAsk && !IsPress;
 
     /// <summary>The name the subject's id goes by: <c>question</c>, <c>point</c>, <c>landing</c>, <c>request</c>, <c>proposal</c> or <c>ask</c>.</summary>
-    public string IdName => IsAsk ? "ask" : IsProposal ? "proposal" : Named[Kind];
+    public string IdName => IsAsk ? "ask" : IsPress ? "press" : IsProposal ? "proposal" : Named[Kind];
 
     /// <summary>The subject as the wire carries it, its fields in their order.</summary>
     public IReadOnlyDictionary<string, string> Wire()
@@ -76,7 +81,7 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
             return new Dictionary<string, string>(StringComparer.Ordinal) { ["repository"] = Session, ["start"] = met.Start, ["what"] = met.What, ["text"] = Id };
         }
 
-        if (!IsProposal && !IsAsk) wire["session"] = Session;
+        if (!IsProposal && !IsAsk && !IsPress) wire["session"] = Session;
         wire[IdName] = Id;
         if (Held is not null) wire["held"] = Held;
         return wire;
@@ -104,7 +109,10 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         {
             if (fields.Count == 1)
             {
-                return Text(fields, "proposal") is { } proposal ? Proposal(proposal) : Text(fields, "ask") is { } ask ? StewardAsk(ask) : null;
+                return Text(fields, "proposal") is { } proposal ? Proposal(proposal)
+                    : Text(fields, "ask") is { } ask ? StewardAsk(ask)
+                    : Text(fields, "press") is { } press ? SessionPress(press)
+                    : null;
             }
 
             return fields.Count == 3 && Text(fields, "session") is { } held && Text(fields, "request") is { } request && Text(fields, "held") is { } since

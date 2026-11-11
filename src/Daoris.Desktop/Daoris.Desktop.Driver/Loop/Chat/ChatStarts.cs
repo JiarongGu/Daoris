@@ -7,12 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConclusion conclusion)
 {
-    /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice.</summary>
-    public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
-        ownTree ?? config.OpensOwnTree(repository);
+    /// <summary>Whether a conversation opens in a tree of its own: said, or else whether its repository's workflow sets its work apart.</summary>
+    public static bool Isolates(bool? ownTree, IsolateStep? apart) => ownTree ?? apart is not null;
 
     /// <summary>Open a chat and put a harness behind it.</summary>
-    /// <param name="onEnded">Called when the conversation ends, with the state the record took. The caller decides what that becomes.</param>
     /// <param name="profile">The credential profile this conversation runs as. Null takes the workspace's default, then the machine's, then the harness's own.</param>
     /// <param name="picked">
     /// The person named <paramref name="profile"/> for this start: the page's picker, the terminal's account or their hand-over press's. The
@@ -196,7 +194,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
             return new(null, "the tree the conversation ran in is gone, so there is nothing for a new one to go on in.");
         }
 
-        var isolated = tree is null && Isolates(ownTree, config, repository);
+        var isolated = tree is null && Isolates(ownTree, ownTree is null ? PlaceIsolates.Of(home, config, repository, known?.Workspace) : null);
         // In the checkout itself too, so no writer moves it between the commit read below and the record that holds it.
         var startIn = tree is not null ? StartIn.In(tree) : isolated ? StartIn.Fresh : StartIn.In(root!);
         using var starting = TreeLock.TryStarting(home, root!, startIn);
@@ -320,6 +318,12 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told, ChatConc
                     line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
                     ct).ConfigureAwait(false)
                 : TreeFilesOutcome.None;
+            // In the person's own checkout, read under the lease its open took, as a driven turn's start is.
+            if (!ours && await ChatPlaceTold.ToldAsync(home, known.Workspace, known.Repository, workTree, sessionId, from?.Session, ct, known.Excludes).ConfigureAwait(false) is { } inPlace)
+            {
+                told.HoldPlace(sessionId, inPlace);
+            }
+
             if (opened is not null)
             {
                 var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);

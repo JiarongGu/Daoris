@@ -378,6 +378,9 @@ public sealed record AutoTry(DateTimeOffset At, string Code)
     /// <summary>The tree's HEAD when it is tried, or null where none is read.</summary>
     public string? Tip { get; init; }
 
+    /// <summary>The tip its <c>land</c> started at, where the tree moved past it: a start at the tree's new tip shares <see cref="Tip"/>.</summary>
+    public string? Start { get; init; }
+
     /// <summary>The tree's status when it is tried (<see cref="LandTries.Fingerprint"/>), or null where none is read.</summary>
     public string? Status { get; init; }
 

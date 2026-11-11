@@ -161,7 +161,8 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             }
 
             // The skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
-            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(
+                _context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions, OwnTools.Machine(home, info, connectorOnly: true));
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What it may do: the person's composition under the reviewer's read-only shape with `helper_answer`, held to its copy

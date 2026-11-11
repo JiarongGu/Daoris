@@ -9,7 +9,7 @@ public sealed record SupervisorRulesPress(string Place, long Read, IReadOnlyList
 
 /// <summary>
 /// The supervisor's rules through the role door: for the seeded
-/// <c>supervisor</c>, <c>SET_ROLE</c>, <c>SET_ROLES</c>, <c>daoris role rules</c> and Ask Daoris's <c>role_propose</c> carry a place's
+/// <c>supervisor</c>, <c>SET_ROLE</c>, <c>SET_ROLES</c> and <c>daoris role rules</c> carry a place's
 /// <c>rules</c> and <c>rulesRevision</c>, written to their own family and never a <c>roles</c> row. A rule grants nothing, so it is set
 /// as a role's policy is, by the person's press; the supervisor's own record is set by a role's press like any role's.
 /// </summary>

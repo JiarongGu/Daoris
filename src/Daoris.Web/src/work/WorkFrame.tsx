@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Compose, OpenGroup } from '../app/opener';
+import type { Place } from '../help/focus';
 import { useAsks } from '../data/queries';
 import {
   useSessionEvents, usePushedCalls, withCall, useRemotes, useRunNodeWord, useTerminals,
@@ -45,6 +46,7 @@ import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
+import { opensRun } from './rail/runWaitFact';
 import { AttendedPane } from './head/AttendedPane';
 import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
@@ -179,8 +181,8 @@ export function WorkFrame({
    * the attended session is put down, the prompt owed the focus, the words put above any already typed.
    */
   compose?: (Compose & { id: number }) | null;
-  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends. */
-  onMakeTask?: (text: string) => void;
+  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends, and its focus. */
+  onMakeTask?: (text: string, focus?: Place) => void;
   /**
    * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
    * second column beside the dock. Absent where no shell is attached.
@@ -226,8 +228,8 @@ export function WorkFrame({
   // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
   const terminals = useTerminals();
 
-  // The ask its entry came from, for the head's name: the rail's read, so it costs nothing it does not already ask.
-  const entryAsks = useAsks(true, channelAsk !== null);
+  // The ask its entry came from, or an intake serves, for the head's name and *Started from*: the rail's read.
+  const entryAsks = useAsks(true, channelAsk !== null || Boolean(attended?.ask));
   const boxState = useAttendedBox({
     t, attended, here, intake, oneTurn, conversation, live, quest, sessions: sessions.data, attendedEntry, groups: groups.data,
   });
@@ -368,8 +370,13 @@ export function WorkFrame({
     session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
+  // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
+  const attendRow = (id: string) => {
+    attend(id);
+    if (opensRun(groups.data, id)) openView('workflow');
+  };
   const spec = useSessionsList({
-    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend: attendRow, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
   const { partBox, seek } = useSeekPart();

@@ -26,8 +26,13 @@ internal sealed class LoopRun(
         var homeDirectory = loop.Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         var person = supervisor.ProvedKey;
-        // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from.
-        using var service = new ServiceClient(serviceUrl, key, personKey: person) { TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)) };
+        // A session's end hands the service its usage history's turn lines, which its memory rows' models are read from, and in its
+        // place the uncommitted paths of its own its end's manifest found.
+        using var service = new ServiceClient(serviceUrl, key, personKey: person)
+        {
+            TurnLines = sessions => ServiceClient.LinesOf(UsageHistory.TurnLinesOf(homeDirectory, sessions), turn => new ServiceClient.TurnLine(turn.Seq, turn.Started, turn.Ended, turn.Model)),
+            PlaceEnds = (id, ct) => PlaceTurns.EndAsync(homeDirectory, id, ct),
+        };
         // The service's doors for the one read the client does not carry: the repositories' index sizes.
         using var doors = new ServiceHttp(service.BaseUrl, key, personKey: person);
         // After the client and before the chat runner, so it hears the runner's closing moves and lets go before the client does.
@@ -57,6 +62,7 @@ internal sealed class LoopRun(
             // A terminal's say is judged as the box's words are, and its take-back writes the withdrawn note here.
             Say = loop.Words.HoldAsync,
             TakeBack = loop.Words.HoldTakeBackAsync,
+            Permit = asked => NativePermits.HoldAsync(new SessionRequests(homeDirectory), HeldPermissions.Of(loop.Events), asked),
             Told = press => StatePublisher.Publish(eventBus, press),
             Log = log,
         };
@@ -239,8 +245,30 @@ internal sealed class LoopRun(
             // A press taken back after being shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
             // A press no terminal waits on, told at `work/event` as it settles, after its record says how.
-            served.Confirmations.Settled = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
+            var toldHooks = SettledTelling.Of(() => shared.Hooks, () => DateTimeOffset.UtcNow);
+            // One of Ask Daoris's is also said in its conversation.
+            Func<Func<string, string, string, bool>?> tellChat = () => loop.Chat is { } chat ? chat.Tell : null;
+            Action<string, HelpPublishedEntry> keepPublished = (session, entry) =>
+            {
+                try
+                {
+                    new HelpPublished(loop.Home).Keep(session, entry);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+                {
+                    // Only this conversation's list is short by one: the ask and the quest stand, and their lists name them.
+                }
+            };
+            var saidChat = SettledSaid.Of(tellChat, loop.PressedEnds, keepPublished);
+            served.Confirmations.Settled = (shown, ending) =>
+            {
+                toldHooks(shown, ending);
+                saidChat(shown, ending);
+            };
+            served.Confirmations.Answered = (id, answer) => loop.PressedEnds.Answered(id, answer, tellChat(), keepPublished);
             served.Grounds = new LoopGrounds(loop, served);
+            served.Delegates = session => DelegateTiers.Of(loop, session);
+            served.TerminalTier = () => DelegateTiers.Terminal(loop);
             // A restart forgets every steward's release, so what an earlier run left in the file is withdrawn before the first look;
             // the owner's own releases are kept whole.
             RoleStarts.Sweep(served.StandingConfirmation, loop.ConfigPath);

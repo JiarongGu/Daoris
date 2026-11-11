@@ -458,6 +458,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
     [InlineData("WORK_RECORDS_FOLDER", "", null)]
+    [InlineData("REGISTRY_OPEN_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
     // *Stop waiting*, a conversation held by its limit marked to wait for the person's next word.
@@ -542,7 +543,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [Theory]
     [InlineData("SET_DRIVABLE", "driver", null)]
     [InlineData("SET_HOLD", "driver", null)]
-    [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
     [InlineData("GIT_REF_CREATE", "driver", null)]
     [InlineData("GIT_REF_UNDO", "driver", null)]
@@ -555,11 +555,11 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]
     [InlineData("SET_SESSION_CHECKS", "driver", null)]
-    // Who holds a repository's heavy-run slot and who waits, a read.
     [InlineData("HEAVY_SLOT", "", null)]
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]
     [InlineData("SET_CAP", "driver", null)]
+    [InlineData("SET_MANIFEST", "driver", null)]
     [InlineData("SET_ROLE", "driver,harnesses", null)]
     [InlineData("SET_ROLES", "driver,harnesses", null)]
     [InlineData("ROLE_STRUCTURE", "", null)]
@@ -648,6 +648,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("START_HELP", "sessions", null)]
     [InlineData("HELP_RENAME", "sessions,help", "id")]
     [InlineData("HELP_PIN", "sessions,help", "id")]
+    [InlineData("HELP_FOCUS", "sessions,help", "session")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     [InlineData("HELP_DISMISS", "help", null)]
     // A set-up's Apply adds the repository's rule, so an Apply may move the rules too.

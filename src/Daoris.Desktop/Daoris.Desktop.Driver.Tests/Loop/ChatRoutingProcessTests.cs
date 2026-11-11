@@ -31,7 +31,8 @@ public sealed class ChatRoutingProcessTests : IDisposable
 
     private DriverConfig Config(bool driven, bool trees = false)
     {
-        var config = (driven ? DriverConfig.Empty.WithDrivable("engine", true) : DriverConfig.Empty).WithTrees("engine", trees) with
+        var place = driven ? DriverConfig.Empty.WithDrivable("engine", true) : DriverConfig.Empty;
+        var config = (trees ? place.Isolating(_home, "engine") : place) with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };

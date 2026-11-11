@@ -89,14 +89,14 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         // Said to every window while the press is under way; a plan is no press and says it to nobody.
         PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken, run: chatRun);
-        // Named for the chain's first quest, and a part of an entry with others for its entry's first part, on the entry's one
+        // Named for the chain's first quest, and a part of an entry with others of its run for the run's first part, on the entry's one
         // branch: the call every door that lands one session makes.
         // A name the person entered still lands as entered. Its quests read once, the press made on its own.
         var quests = new PressQuests(service.FindQuestAsync);
         var subject = Entering(await trees.OwnSubjectAsync(
             tree, id, questId, records, quest => quests.FindAsync(quest, cancellationToken),
             named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), asked.Branch);
-        var lead = EntryLead(records, id);
+        var lead = await RunParts.LeadOfAsync(records, id, quest => quests.FindAsync(quest, cancellationToken));
 
         if (!press)
         {
@@ -124,14 +124,18 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var shown = gate;
         // where the run's graph waits on its review, this press is the person's Accept, kept on the run's record for the pass.
         var accepted = false;
+        // on its way to the review, the press is kept as that review's Accept.
+        var kept = false;
         gate = await GraphPasses.PressAsync(
             token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, asked.Answers, tree, questId, token),
             token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
-            (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
+            (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done),
+            (graph, _) => Task.FromResult(kept = EarlyAccepts.Keep(new NodeRecordFiles(_loop.Home), graph.Run, graph.Commit).Done));
         // A run whose `land` the runtime performs is landed by that node, never by this press: the
         // press is the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
         if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed)
         {
+            if (kept && !gate.LetsGo && LandPresses.Kept(gate) is { } early) return Pressed(id, early, gate, TreesWords.Land(early, []), []);
             return await PerformedPressAsync(asked, id, gate, performed, accepted, cancellationToken);
         }
 
@@ -146,11 +150,9 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     }
 
     /// <summary>
-    /// The press on a run whose <c>land</c> the runtime performs: its Accept is the review's word,
-    /// kept above, and it lands nothing and builds no plugin wire. It forgets a refusal nothing changed since (the press is the person's try
-    /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
-    /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
-    /// A gate held only by the review this press <paramref name="accepted"/> is read before the pass applies it, and holds nothing.
+    /// The press on a run whose <c>land</c> the runtime performs: its Accept is the review's word, kept above, and it lands nothing and builds no
+    /// plugin wire. It is the person's try again, answered with what that try came to (<see cref="PerformedAnswers"/>); a workflow with no review
+    /// needs no Accept. A gate held only by the review this press <paramref name="accepted"/> is read before the pass applies it, and holds nothing.
     /// </summary>
     private async Task<object?> PerformedPressAsync(LandAsk asked, string id, LandingGate gate, WorkflowProcess process, bool accepted, CancellationToken ct)
     {
@@ -160,12 +162,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         if (gate.Refusal is { } held && !LandPresses.HeldByOwnAccept(gate, accepted)) return Pressed(id, held, gate, TreesWords.Land(held, []), []);
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return Refused(id, TreesWords.NotJudged(id));
 
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        var landed = outcome is null ? new TreeLanding(false, LandPresses.Landing)
-            : carried ? outcome with { Message = LandPresses.Carried }
-            : outcome;
+        var landed = PerformedAnswers.Of(await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct));
         _loop.Nudge();
         var followed = asked.Follow && landed.Landed
             ? await TreesWords.FollowMovedAsync(_loop.Service ?? throw NotReady(), _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, ct)
@@ -173,23 +170,13 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? []);
     }
 
-    /// <summary>
-    /// What a chat run's press waits for where the runtime performs its <c>land</c>: the landing the pass starts at the
-    /// press's tip, within <see cref="GraphPasses.Bound"/>, or <i>accepted; landing</i> past it. As <see cref="PerformedPressAsync"/>, for the
-    /// conversation's press, which keeps its own reservation and answer.
-    /// </summary>
+    /// <summary>As <see cref="PerformedPressAsync"/>, for a chat run's press, which keeps its own reservation and answer.</summary>
     private async Task<TreeLanding> PerformedLandingAsync(string id, LandingGate gate, WorkflowProcess process, bool accepted, CancellationToken ct)
     {
         if (gate.Refusal is { } held && !LandPresses.HeldByOwnAccept(gate, accepted)) return held;
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
 
-        var unit = RunUnits.IdOf(process.BoundRun!);
-        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
-        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
-                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
-        return outcome is null ? new TreeLanding(false, LandPresses.Landing)
-            : carried ? outcome with { Message = LandPresses.Carried }
-            : outcome;
+        return PerformedAnswers.Of(await PerformedWaits.AwaitAsync(_loop, id, RunUnits.IdOf(process.BoundRun!), tip, ct));
     }
 
     /// <summary>
@@ -207,19 +194,21 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var world = new ServiceReviewWorld(service);
         var presses = new OpinionPresses(_loop.Home, service) { Holder = _loop.Chat };
         var accepted = false;
+        var kept = false;
         PressSteps.Reach(PressSteps.Gate);
         var pressed = await ChatPresses.PressAsync(
             _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live), _loop.Chat,
             // a graph-bound run's gate is the quest's, its graph part judged by the pass this press asks
-            // after the candidate it submitted, and the press's Accept the review's word.
+            // after the candidate it submitted, and the press's Accept the review's word, kept on the way to it.
             async (tip, token) => await GraphPasses.PressAsync(
                 async held => await presses.PressedAsync(
                     id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), asked.Answers, tree, null, held, chatRun),
                 held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), _loop.PassWholeAsync, token,
-                (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done)),
+                (review, _) => Task.FromResult(accepted = RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done),
+                (graph, _) => Task.FromResult(kept = EarlyAccepts.Keep(new NodeRecordFiles(_loop.Home), graph.Run, graph.Commit).Done)),
             // A run whose `land` the runtime performs is landed by that node, and this press waits.
             async (gate, token) => gate.Process is WorkflowProcess { LandsByRuntime: true } performed
-                ? await PerformedLandingAsync(id, gate, performed, accepted, token)
+                ? kept && !gate.LetsGo && LandPresses.Kept(gate) is { } early ? early : await PerformedLandingAsync(id, gate, performed, accepted, token)
                 : RunLandHolds.Of(gate),
             () => ChatPresses.TurnsOf(_loop.Events, line), cancellationToken);
 

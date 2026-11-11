@@ -339,7 +339,8 @@ public static class RuleProposals
 
     private static RuleLists Named(IReadOnlyDictionary<string, RuleLists> scopes, ProposedChange change) =>
         change.Name is { } name && !string.IsNullOrWhiteSpace(name)
-            ? scopes.FirstOrDefault(pair => string.Equals(pair.Key.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase)).Value ?? RuleLists.Empty
+            ? scopes.Where(pair => string.Equals(pair.Key.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase))
+                .Aggregate(RuleLists.Empty, (all, pair) => all.Joined(pair.Value))
             : throw new DriverException($"a {(change.Scope == RuleScope.Workspace ? "workspace" : "repository")} scope names the one it reaches.");
 
     internal static string PathOf(string home, string id) => DaorisHome.Entry(home, HomeEntry.RuleProposals, $"{id}.json");

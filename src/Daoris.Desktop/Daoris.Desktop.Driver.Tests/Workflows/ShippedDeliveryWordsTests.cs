@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ShippedDeliveryWordsTests
 {
-    private static readonly string[] Offered = ["merge-after-accept", "branch-to-push", "pull-request", "integrated"];
+    private static readonly string[] Offered = ["merge-after-accept", "branch-to-push", "pull-request", "integrated", "in-place"];
 
     /// <summary>The steps §2.5 renames, whose words the page's rows n and w write.</summary>
     private static readonly string[] RenamedSteps = ["Completed on the host", "The integration request", "Handed on"];
@@ -24,6 +24,7 @@ public sealed class ShippedDeliveryWordsTests
                 ("branch-to-push", "A branch to push"),
                 ("pull-request", "A pull request"),
                 ("integrated", "Integrated into the line"),
+                ("in-place", "Work in place"),
             ],
             Offered.Select(id => (WorkflowDefaults.Of(id)!.DeliveryWords.Id, WorkflowDefaults.Of(id)!.DeliveryWords.Name)));
         Assert.StartsWith("For a repository whose work you accept", WorkflowDefaults.Of("merge-after-accept")!.DeliveryWords.For);
@@ -38,7 +39,7 @@ public sealed class ShippedDeliveryWordsTests
         var named = WorkflowDefaults.All.Select(each => each.DeliveryWords).GroupBy(each => each.Id).ToList();
 
         Assert.Equal(
-            ["merge-after-accept", "merge-automatic", "branch-to-push", "pull-request", "integrated", "integrated-no-press"],
+            ["merge-after-accept", "merge-automatic", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "in-place"],
             named.Select(group => group.Key));
         Assert.All(named, group => Assert.Single(group.Select(each => each.Name).Distinct()));
         Assert.Equal(named.Count, named.Select(group => group.First().Name).Distinct().Count());

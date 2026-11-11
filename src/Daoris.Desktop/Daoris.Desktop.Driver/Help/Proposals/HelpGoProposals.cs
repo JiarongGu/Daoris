@@ -26,24 +26,6 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         Item = Text(file, "item"),
     };
 
-    /// <summary>
-    /// The file's workspace and repository, and the record an item on Quests or Sessions names by id, filed
-    /// under the workspace its record says, as the records its judge reads hold it; a plugin is the machine's, never a workspace's.
-    /// </summary>
-    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var item = proposal.Item?.Trim().TrimStart('#').Trim() ?? "";
-        IReadOnlyList<(string Said, string? Workspace)> records = item.Length == 0 ? [] : proposal.Target?.Trim().ToLowerInvariant() switch
-        {
-            "sessions" => HelpNames.OfSession(facts, item),
-            "quests" when item.StartsWith(HelpPlaces.AskItem, StringComparison.OrdinalIgnoreCase) =>
-                HelpNames.OfAsk(facts, item[HelpPlaces.AskItem.Length..].Trim().TrimStart('#')),
-            "quests" => HelpNames.OfQuest(facts, item),
-            _ => [],
-        };
-        return new([proposal.Workspace], [proposal.Repository]) { Records = records };
-    }
-
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var view = proposal.Target?.Trim().ToLowerInvariant() ?? "";
@@ -58,7 +40,6 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             (view, domain, part) = (now.View, now.Domain, now.Part);
         }
 
-        // A tuple not found is its default, whose names are null.
         var shown = HelpPlaces.Views.FirstOrDefault(each => each.Id == view);
         if (shown.Id is null)
         {
@@ -98,8 +79,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
         if (workspace is not null)
         {
-            // Adding or importing a repository needs a folder, which stays the person's pick
-            // so a go opens the drawer with what Ask Daoris knows filled, the workspace, and never a path.
+            // A folder stays the person's pick: a go opens the drawer with the workspace filled, never a path.
             if (item is not null) return Refused(
                 "a go names a workspace or an item, not both — a workspace fills Repositories' Add or Import, and an item opens on its own.");
             if (view != "projects" || part is not ("add" or "import")) return Refused(

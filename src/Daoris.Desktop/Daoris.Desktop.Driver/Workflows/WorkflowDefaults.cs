@@ -152,7 +152,7 @@ public static class WorkflowDefaults
     /// </summary>
     public static SetupLand DerivedLand(NodeGraph graph)
     {
-        var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land) return new SetupLand(SetupLand.InPlace, SetupLand.You);
         var method = NodeOptions.Text(land, "method") ?? LandNodes.Merge;
         var accept = LandNodes.Reviewed(graph) ? SetupLand.You : SetupLand.Automatic;
         // A branch followed by a push and a plugin's pull-request step is the pull-request delivery: the plugin is the step's own.

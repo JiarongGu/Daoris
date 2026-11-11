@@ -68,6 +68,10 @@ public static class ChatNoteCodes
 
     public static readonly NoteCode LandingRootDirty = new("landing.root-dirty", []);
 
+    // An automatic landing that needs nothing of the person: the line holds everything already, or the merge waits in its line's integration.
+    public static readonly NoteCode LandingLineHolds = new("landing.line-holds", []);
+    public static readonly NoteCode LandingQueued = new("landing.queued", []);
+
     // The person's Accept on a session whose tree holds uncommitted work or whose replay conflicts: the session is carried on in
     // Daoris's words, and the yes stays on it until its tree is clean. Its own codes, since the work is accepted, not refused.
     public static readonly NoteCode LandingCarriedDirty = new("landing.carried-dirty", ["paths"]);
@@ -133,8 +137,9 @@ public static class ChatNoteCodes
     public static readonly NoteCode BrowserNoHost = new("browser.no-host", []);
     public static readonly NoteCode BrowserNoneUp = new("browser.none-up", []);
 
-    // The line a chat's agent is told of the browser it is handed: the lead by its code, the line Daoris's one-copy English.
+    // What a chat's agent is told of the browser it is handed and of the place it works in: the lead by its code, then Daoris's English.
     public static readonly NoteCode ChatToldBrowser = new("chat.told-browser", []);
+    public static readonly NoteCode ChatToldPlace = new("chat.told-place", []);
 
     // The repository's process a chat in a tree of its own is told at its start: its commit rule's mode and where it is set are
     // facts, the words after the lead Daoris's one-copy English.

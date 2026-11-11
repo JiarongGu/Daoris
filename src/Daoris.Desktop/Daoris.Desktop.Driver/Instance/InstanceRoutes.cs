@@ -69,7 +69,7 @@ public static class OpenRoutes
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
         ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
-        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
+        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press, `TREES_SYNC`, confirmed in the window"),
         ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
@@ -102,7 +102,7 @@ public static class OpenRoutes
         ("git review <session>", null,
             "alone: its `--time` counts and times the git this process starts itself (GITAPP1a-i), which a route's answer cannot carry; SESSION_DIFF answers the page's shape only"),
         ("workflow", null,
-            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
+            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip`, `stop`, `accept` and the other node words are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
         ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
         ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
@@ -114,8 +114,7 @@ public static class OpenRoutes
         // service's own doors, which the service writes once whoever asks.
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
-        ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
-        ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
+        ("quest check", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
         ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
 }
@@ -227,6 +226,12 @@ public static class PersonPresses
     /// <summary><c>git answer &lt;ask&gt; allow|refuse</c>: a git go-ahead answered, as its row in What needs you answers it.</summary>
     public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
 
+    /// <summary><c>browser favorite add|remove &lt;address&gt;</c>: a page kept on, or dropped from, Daoris's browser's bookmarks bar.</summary>
+    public static InstanceRoute BrowserFavorite { get; } = Person("BROWSER_FAVORITE");
+
+    /// <summary><c>browser use|links|extensions &lt;value&gt;</c>: which browser, where links open, and other software's extensions.</summary>
+    public static InstanceRoute BrowserSetting { get; } = Person("BROWSER_SETTING");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c>: a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
@@ -244,6 +249,9 @@ public static class PersonPresses
 
     /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c>: an Ask Daoris conversation kept at the top of its history, or not.</summary>
     public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
+
+    /// <summary><c>help focus &lt;id&gt; &lt;place&gt;</c>: what an Ask Daoris conversation is about, taken with its next words.</summary>
+    public static InstanceRoute HelpFocus { get; } = Person("HELP_FOCUS");
 
     /// <summary><c>opinion ask &lt;session&gt;</c>: a second opinion asked, spending an account at the person's choice.</summary>
     public static InstanceRoute AskOpinion { get; } = Person("ASK_OPINION");
@@ -290,6 +298,49 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute WorkHeld { get; } = Person("WORK_HELD");
 
+    /// <summary><c>quest done &lt;id&gt; [--note "…"]</c>: a quest closed as the person's own done.</summary>
+    public static InstanceRoute QuestDone { get; } = Person("QUEST_DONE");
+
+    /// <summary><c>quest delete &lt;id&gt;</c>: a quest made by mistake deleted.</summary>
+    public static InstanceRoute QuestDelete { get; } = Person("QUEST_DELETE");
+
+    /// <summary><c>ask --delete &lt;id&gt;</c>: an ask made by mistake deleted with every quest it became.</summary>
+    public static InstanceRoute AskDelete { get; } = Person("ASK_DELETE");
+    public static InstanceRoute AskNew { get; } = Person("ASK_NEW");
+
+    /// <summary><c>quest accept &lt;id&gt;</c>: a done's departure from what the person required, accepted.</summary>
+    public static InstanceRoute QuestAccept { get; } = Person("QUEST_ACCEPT");
+
+    /// <summary><c>quest reopen &lt;id&gt; [--note "…"]</c>: a sealed submission reopened.</summary>
+    public static InstanceRoute QuestReopen { get; } = Person("QUEST_REOPEN");
+
+    /// <summary><c>quest go-on &lt;id&gt;</c>: the step a source's reopen held gone on with the new work.</summary>
+    public static InstanceRoute QuestGoOn { get; } = Person("QUEST_GO_ON");
+
+    /// <summary><c>quest review &lt;id&gt; …</c>: the person's verdict on a review, or the chain's choice at its gate.</summary>
+    public static InstanceRoute QuestReview { get; } = Person("QUEST_REVIEW");
+
+    /// <summary><c>quest workflow &lt;id&gt; …</c>: a quest's own kind and workflow, or none.</summary>
+    public static InstanceRoute QuestWorkflow { get; } = Person("QUEST_WORKFLOW");
+
+    /// <summary><c>ask workflow &lt;id&gt; …</c> and <c>ask --set-workflow</c>: an ask's kind and workflow, or none.</summary>
+    public static InstanceRoute AskWorkflow { get; } = Person("ASK_WORKFLOW");
+
+    /// <summary><c>ask review &lt;id&gt; …</c> and <c>ask --set-review</c>: an ask's review choice.</summary>
+    public static InstanceRoute AskReview { get; } = Person("ASK_REVIEW");
+
+    /// <summary><c>repository retire [&lt;name&gt;]</c>: a repository taken off the registry.</summary>
+    public static InstanceRoute RegistryRetire { get; } = Person("REGISTRY_RETIRE");
+
+    /// <summary><c>repository wire &lt;repository&gt; --workspace &lt;name&gt;</c>: a repository wired to another workspace.</summary>
+    public static InstanceRoute RegistryRewire { get; } = Person("REGISTRY_REWIRE");
+
+    /// <summary><c>repository excludes &lt;folder&gt; --add|--remove &lt;glob&gt;</c>: a folder department's excludes rewritten.</summary>
+    public static InstanceRoute RegistryExcludes { get; } = Person("REGISTRY_EXCLUDES");
+
+    /// <summary><c>repository import [&lt;folder&gt;]</c>: every repository a folder's subdirectories propose, registered.</summary>
+    public static InstanceRoute RegistryImport { get; } = Person("REGISTRY_IMPORT");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -319,6 +370,7 @@ public static class PersonPresses
         ("help rename <id> \"…\"|--clear", HelpRename),
         ("help pin <id>", HelpPin),
         ("help unpin <id>", HelpPin),
+        ("help focus <id> machine|<workspace>|<workspace>/<repository>", HelpFocus),
         ("help delete <id> --yes", SessionDelete),
         ("opinion ask <session>", AskOpinion),
         ("opinion stop <opinion>", StopOpinion),
@@ -332,10 +384,30 @@ public static class PersonPresses
         ("workflow skip <run> <node> \"…\"", WorkflowNode),
         ("workflow stop <run> <node> [\"…\"]", WorkflowNode),
         ("workflow changes <run> <node> \"…\"", WorkflowNode),
+        ("workflow accept <run> <node> [\"…\"]", WorkflowNode),
         ("workflow done <run> <node> [\"…\"]", WorkflowNode),
         ("workflow approve <run> <node> [\"…\"]", WorkflowNode),
         ("workflow reject <run> <node> [\"…\"]", WorkflowNode),
         ("workflow fix <run> [<node>]", WorkHeld),
+        ("quest done <id> [--note \"…\"]", QuestDone),
+        ("quest delete <id>", QuestDelete),
+        ("ask --delete <id>", AskDelete),
+        ("quest accept <id>", QuestAccept),
+        ("quest reopen <id> [--note \"…\"]", QuestReopen),
+        ("quest go-on <id>", QuestGoOn),
+        ("quest review <id> reviewed|not-yet|skip|off|on|<environment> [\"…\"]", QuestReview),
+        ("quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", QuestWorkflow),
+        ("ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]", AskWorkflow),
+        ("ask review <id> on|<environment>|off [\"…\"]", AskReview),
+        ("repository retire [<name>]", RegistryRetire),
+        ("repository wire <repository> --workspace <name>", RegistryRewire),
+        ("repository excludes <folder> [--add <glob>]… [--remove <glob>]…", RegistryExcludes),
+        ("repository import [<folder>] [--workspace <name>]", RegistryImport),
+        ("browser favorite add <address> [--title \"…\"]", BrowserFavorite),
+        ("browser favorite remove <address>", BrowserFavorite),
+        ("browser use daoris|edge", BrowserSetting),
+        ("browser links system|daoris", BrowserSetting),
+        ("browser extensions offer|refuse", BrowserSetting),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

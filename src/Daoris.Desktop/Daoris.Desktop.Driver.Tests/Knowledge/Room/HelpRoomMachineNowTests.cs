@@ -30,7 +30,7 @@ public sealed class HelpRoomMachineNowTests
             + "`example.packaged` (on, installed from a package), "
             + "`example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from)", some);
         Assert.Contains("- Plugins: none installed.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("an `update` (the plugin's `id`) takes a", some);
+        Assert.Contains("`daoris plugin update <id> --yes` (a newer copy from where it came", some);
         Assert.Contains("`daoris plugin add --offer <id>`, `daoris plugin update <id>`", some);
     }
 
@@ -136,7 +136,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: `#q1a2b3c4` (to `engine`), "
             + "`#q5e6f7a8` (to `game`).", some);
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("`retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below", some);
+        Assert.Contains("`daoris quest retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below", some);
     }
 
     /// <summary>
@@ -343,7 +343,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// Daoris's browser as its two files hold it, so a browser proposal names a favorite kept; said only where
+    /// Daoris's browser as its two files hold it, so a press names a favorite kept; said only where
     /// the desktop reads them, since the files are its own.
     /// </summary>
     [Fact]

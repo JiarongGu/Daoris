@@ -1,6 +1,8 @@
 // The roles' judge as the page shows it: its shape as the page reads it, the
 // steward's acts and desk, and the roles a terminal holds. The reader is the bridge's (`standingOf`, `bridge/person.ts`).
 
+import { type Place } from '../help/focus';
+
 /**
  * The roles' judge as `STATE`'s `standingConfirmation` says it (the modules' `StandingNow`): the terminals that hold a role this run,
  * the holders living, the steward's acts and its desk.
@@ -16,7 +18,43 @@ export type StandingConfirmationNow = {
   stewardDesk: DeskRequestNow[];
   /** The steward's lands a supervisor allowed that wait their window, soonest first: the line says when each lands and offers *Overrule*. */
   stewardLands: StewardLandNow[];
+  /** What Ask Daoris, and a terminal under its tier's act, pressed this run, newest first, from Daoris's memory: the second group of *Notifications*' line. */
+  helpPresses: HelpPressNow[];
 };
+
+/** How an Ask Daoris press stands: one run with no card under way, done or not; one asked on a card, its card's state. */
+export const HELP_PRESS_OUTCOMES = ['running', 'done', 'failed', 'waiting', 'allowed', 'refused', 'changed', 'unanswered'] as const;
+export type HelpPressOutcome = (typeof HELP_PRESS_OUTCOMES)[number];
+
+/**
+ * One press Ask Daoris made this run, as `STATE`'s `standingConfirmation.helpPresses` says it (the modules' `HelpPressNow`): the route
+ * as the window words it, the conversation that pressed it (none, `terminal`, for a terminal's under its tier's act), what it named, when and how it stands, and whether it asked the person.
+ */
+export type HelpPressNow = {
+  id: string;
+  module: string;
+  route: string;
+  session: string;
+  scope: string | null;
+  target: string | null;
+  at: string;
+  outcome: HelpPressOutcome;
+  /** The workspace or repository the press named; none where it named neither, or until the driver placed it. */
+  place?: Place | null;
+  /** Whether that place lay beyond its conversation's focus at the press. */
+  beyond?: boolean;
+  /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
+  asked?: boolean;
+  terminal?: boolean;
+};
+
+/** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */
+export type HelpReverse = 'resume';
+
+/** The reverse press of a press Ask Daoris made: only a done pause, naming the quest or ask its resume carries. */
+export function helpReverse(press: HelpPressNow): HelpReverse | null {
+  return press.route === 'WORK_PAUSE' && press.outcome === 'done' && (press.scope === 'quest' || press.scope === 'ask') && press.target ? 'resume' : null;
+}
 
 /**
  * A `land` of the steward's that a supervisor allowed and that waits its window, as `STATE`'s `standingConfirmation.stewardLands` says
@@ -67,16 +105,16 @@ export type StewardActNow = {
 };
 
 /** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */
-export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
+export const STEWARD_ACTS = ['drive', 'undrive', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean', 'handover'] as const;
 
 /** Whether the page has words for this act. */
 export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);
 
 /** The acts that set a repository's driving, which Setup → Driving says the steward set (§5.1's last rows). */
-const SETS_DRIVING = new Set(['drive', 'undrive', 'trees', 'hold', 'resume']);
+const SETS_DRIVING = new Set(['drive', 'undrive', 'hold', 'resume']);
 
 /**
- * When the steward last set this repository's driving, from this run's memory: the newest act among drive, undrive, trees, hold and
+ * When the steward last set this repository's driving, from this run's memory: the newest act among drive, undrive, hold and
  * resume naming it, matched without case as the driver matches a repository, that still stands; null where none does.
  */
 export function stewardSetAt(acts: readonly StewardActNow[], repository: string): string | null {
@@ -87,10 +125,10 @@ export function stewardSetAt(acts: readonly StewardActNow[], repository: string)
 }
 
 /** The owner's own press that reverses a steward's act, each a press the window already sends. */
-export type StewardReverse = 'stopDriving' | 'drive' | 'treesOff' | 'resume' | 'hold' | 'retry';
+export type StewardReverse = 'stopDriving' | 'drive' | 'resume' | 'hold' | 'retry';
 
 const REVERSES: Readonly<Record<string, StewardReverse>> = {
-  drive: 'stopDriving', undrive: 'drive', trees: 'treesOff', hold: 'resume', resume: 'hold', stop: 'retry',
+  drive: 'stopDriving', undrive: 'drive', hold: 'resume', resume: 'hold', stop: 'retry',
 };
 
 /**

@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentProps, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { useDebounced } from '../../lib/useDebounced';
@@ -88,8 +88,10 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath,
 }: {
+  dividers?: Readonly<Record<string, ReactNode>>;
+  beneath?: ComponentProps<typeof ConversationView>['beneath'];
   /** The home of the channel messages its turns took, the attended session's alone — `ConversationView`'s. */
   channel?: ChannelHome;
   /**
@@ -359,6 +361,8 @@ export function SessionConversation({
         onOpenHelper={own ? helpersAsked?.onOpen : undefined}
         onShow={show}
         channel={own ? channel : undefined}
+        dividers={own ? dividers : undefined}
+        beneath={own ? beneath : undefined}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}

@@ -21,6 +21,9 @@ public sealed class RegistryDoors
         new(repo.Repository ?? "", repo.Adopted, repo.Root, RemoteTarget.Workspace(repo.Workspace))
         {
             Lanes = [.. (repo.Lanes ?? []).Select(lane => lane.Id).OfType<string>().Where(id => id.Length > 0)],
+            Excludes = repo.Excludes ?? [],
+            Kind = PlaceKind.Of(repo.Kind) ?? PlaceKind.Git,
+            System = PlaceKind.Of(repo.Kind) == PlaceKind.System ? SystemPlace.Of(repo.System) : null,
         };
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from.</summary>
@@ -54,6 +57,7 @@ public sealed class RegistryDoors
             {
                 // The service's own word: a workspace plan's *set up*, never recomputed on this side.
                 Registered = repo.Registered,
+                Kind = repo.Kind,
             }),
         ];
     }
@@ -110,6 +114,25 @@ public sealed class RegistryDoors
     }
 
     /// <summary>
+    /// Rewrite a folder department's excludes whole, which the Setup row and <c>daoris repository excludes</c> send: the service's
+    /// words where it refuses (not registered, not a folder), and a host older than the door is said to be.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> SetFolderExcludesAsync(string repository, IReadOnlyList<string> excludes, CancellationToken ct = default)
+    {
+        var sent = await _service.SendAsync(new SetFolderExcludes(repository, excludes), ct).ConfigureAwait(false);
+        if (AnswerOf(sent.Reply.Payload) is null)
+        {
+            return (false, $"the service at {_service.BaseUrl} has no excludes door for a folder ({sent.Reply.Status}) — is it older than this driver?");
+        }
+
+        return sent.Answer is { } set
+            ? (true, excludes.Count == 0
+                ? $"`{set.Repository}` leaves out nothing of its own now, beside the defaults."
+                : $"`{set.Repository}` leaves out {string.Join(", ", excludes)}, beside the defaults.")
+            : (false, ErrorWords(sent.Reply.Payload) ?? sent.Reply.Payload);
+    }
+
+    /// <summary>
     /// A repository's first registration from its working tree at <paramref name="root"/>, at this client's service,
     /// which may be any address: what <see cref="RegistryConnect.Plan"/> composes, taken or refused in the service's own words. The workspace
     /// the service says it took is read back, since silence preserves whatever the row held.
@@ -118,6 +141,24 @@ public sealed class RegistryDoors
     public async Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default)
     {
         var plan = RegistryConnect.Plan(root, workspace, _service.BaseUrl);
+        var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
+        return new ConnectDone(plan, sent.Answer?.Workspace);
+    }
+
+    /// <summary>A system reached only through its console, registered as <see cref="SystemAdd.Plan"/> composes it from the plugins in <paramref name="home"/>.</summary>
+    public async Task<ConnectDone> AddSystemAsync(string home, string system, string? name, string? workspace, CancellationToken ct = default)
+    {
+        var plan = SystemAdd.Plan(home, system, name, workspace, _service.BaseUrl);
+        var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
+        if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
+        return new ConnectDone(plan, sent.Answer?.Workspace);
+    }
+
+    /// <summary>A folder that is no git checkout, registered as <see cref="FolderAdd.Plan"/> composes it: the window's add through its route.</summary>
+    public async Task<ConnectDone> AddFolderAsync(string root, string? workspace, IReadOnlyList<string> excludes, CancellationToken ct = default)
+    {
+        var plan = FolderAdd.Plan(root, workspace, excludes, _service.BaseUrl);
         var sent = await _service.SendAsync(RegistrationOf(plan.Body), ct).ConfigureAwait(false);
         if (!sent.Reply.Ok) throw Refused($"the service refused the registration: {ServiceSaid(sent.Reply)}", 2);
         return new ConnectDone(plan, sent.Answer?.Workspace);

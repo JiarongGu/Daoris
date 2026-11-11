@@ -18,10 +18,14 @@ public sealed class CapCountTests
 
     private static RepoView Repo(string name) => new(name, true, $"D:/fam/{name}");
 
-    private static DriverConfig Config(int cap, bool trees = true) =>
-        DriverConfig.Empty with { Drivable = Repositories, Cap = cap, Trees = trees ? Repositories : [] };
+    private static DriverConfig Config(int cap) =>
+        DriverConfig.Empty with { Drivable = Repositories, Cap = cap };
 
-    private static Snapshot Snapshot(QuestView[] quests, params SessionView[] active) => new(quests, [.. Repositories.Select(Repo)], active);
+    /// <summary>The repositories work apart, each in a tree of its own, unless <paramref name="apart"/> is false.</summary>
+    private static Snapshot Snapshot(QuestView[] quests, params SessionView[] active) => Snapshot(true, quests, active);
+
+    private static Snapshot Snapshot(bool apart, QuestView[] quests, params SessionView[] active) =>
+        new Snapshot(quests, [.. Repositories.Select(Repo)], active).Apart(apart, [.. Repositories]);
 
     /// <summary>An Ask Daoris conversation, idle between turns: the chat kind, in the help room's own place.</summary>
     private static SessionView AskDaoris(string id) => new(id, HelpRoom.Repository, "working") { Kind = "chat" };
@@ -62,7 +66,7 @@ public sealed class CapCountTests
     [Fact]
     public void A_conversation_still_holds_the_repository_it_works_in_though_it_takes_no_slot()
     {
-        var plan = Planner.Plan(Snapshot([Quest("q1", "A")], Chat("c1", "A")), Config(cap: 4, trees: false));
+        var plan = Planner.Plan(Snapshot(false, [Quest("q1", "A")], Chat("c1", "A")), Config(cap: 4));
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);

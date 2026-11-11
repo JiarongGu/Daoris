@@ -260,7 +260,9 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         var (process, proc) = await StartProcessAsync(
                 sessionId, _start.Info, host.Bracketed(sessionId, _start.Info, moved: null), StartClass.Person, piece: null, ct)
             .ConfigureAwait(false);
+        if (host.Processes.WasStopRequested(sessionId)) host.Processes.Stop(sessionId);
         var leg = Captured(process, proc, append: true, opening: null, preamble: null, Told, ct);
+        _opened = leg;
         // The retry is the run's own and the last: a word the new process cannot take is no longer kept for another. It is handed every word
         // written to the process that ended, in order, then those said while this one started.
         Input.MayRetry = false;
@@ -490,6 +492,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.
         session.LimitsSaid += windows => sink.Read(new WireReading.WindowsSaid(windows));
         Session = session;
+        session.OwnServers = plan => OwnServersOf(process, plan);
         protocol.Configure?.Invoke(session);
         // A model the open refuses is a reading before its re-ask walks on: the offers store's part keeps it.
         session.ModelRefused = RefusalReading.Of(session.ModelRefused, sink);
@@ -508,6 +511,20 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         _captures.Remove(errors);
         _captures.Add(drive);
         return new Leg(process, proc, drive) { Drive = drive };
+    }
+
+    /// <summary>None to a pass held to Daoris's connector alone: its plan permits no plugin's servers.</summary>
+    private IReadOnlyList<ServerEntry> OwnServersOf(Process process, ConnectorPlan? plan)
+    {
+        if (plan?.Permitted is { } permitted && !permitted.Contains(ConnectorSource.Plugin)) return [];
+        try
+        {
+            return adapter.Spawned().OwnServers(OwnTools.Machine(host.Home, process.StartInfo));
+        }
+        catch (InvalidOperationException)
+        {
+            return [];
+        }
     }
 
     /// <summary>

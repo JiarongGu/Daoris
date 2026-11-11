@@ -235,7 +235,12 @@ public static class NodeWordActs
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject];
+    /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>
+    public const string KeepYours = "keep-yours", TakeSession = "take-session", KeepBoth = "keep-both";
+
+    public static readonly IReadOnlyList<string> Choices = [KeepYours, TakeSession, KeepBoth];
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
 }
 
 /// <summary>
@@ -256,6 +261,11 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 
     /// <summary>The supervisor's decision this person's word took the place of, which the pass settles <c>superseded</c>.</summary>
     public string? Supersedes { get; init; }
+
+    /// <summary>An Accept kept for a review not begun yet (<see cref="EarlyAccepts"/>), at the commit it is pressed on (<see cref="Tip"/>).</summary>
+    public bool Kept { get; init; }
+
+    public string? Tip { get; init; }
 
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;

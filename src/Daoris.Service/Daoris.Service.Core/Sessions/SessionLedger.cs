@@ -159,6 +159,10 @@ public sealed class SessionLedger(
     /// <summary>The record of one session, as the store holds it.</summary>
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
 
+    /// <summary>Whether <paramref name="record"/>'s department is registered as a system; false with no registry to ask.</summary>
+    public async Task<bool> InSystemAsync(Session record, CancellationToken ct = default) =>
+        registry is not null && (await registry.RegistryAsync(ct: ct).ConfigureAwait(false)).Named(record.Repository) is { PlaceKind: PlaceKinds.System };
+
     /// <summary>The line <paramref name="named"/> is on, walked to its head.</summary>
     public Task<LineWalk> WalkLineAsync(Session named, CancellationToken ct = default) => Lines.WalkAsync(sessions, named, ct);
 
@@ -235,8 +239,14 @@ public sealed class SessionLedger(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
         string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null,
-        IReadOnlyDictionary<string, MemoryTurns>? turns = null) =>
-        advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns);
+        IReadOnlyDictionary<string, MemoryTurns>? turns = null, IReadOnlyList<string>? holdsPlace = null) =>
+        advances.AdvanceAsync(id, state, note, evidence, transcript, now, ct, interrupted, limit, noteParts, expected, unbindAsk, expect, turns, holdsPlace);
+
+    /// <summary>Clear a parked line's mark: all at the person's press, or the <paramref name="paths"/> a discard took out; null where no record of this machine's has the id.</summary>
+    public async Task<Session?> ReleasePlaceAsync(string id, IReadOnlyList<string>? paths = null, CancellationToken ct = default) =>
+        await new SessionPlaceLease(sessions).ReleaseAsync(id, paths, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false)
+            : null;
 
     /// <summary>Whether this session's record may be deleted; see <see cref="SessionDeletes.JudgeDeleteAsync"/>.</summary>
     public Task<SessionDeleteOutcome> JudgeDeleteAsync(string id, CancellationToken ct = default) => deletes.JudgeDeleteAsync(id, ct);

@@ -128,7 +128,7 @@ public static class PermissionRules
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
                 "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
-                "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose",
+                "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` only PROPOSES — a widening still waits for the person. `go_ahead_ask`
@@ -194,6 +194,7 @@ public static class PermissionRules
             "A session writes files only inside its own tree: an edit, a write or a shell command's write "
             + "anywhere else is refused, through links as well. A change needed elsewhere is a quest.",
             Hook: TreeGuardHook.Matcher),
+        .. OwnHomeDefaults.Defaults,
     ];
 
     /// <summary>
@@ -409,7 +410,7 @@ public static class PermissionRules
                 RuleList.Ask => without with { Ask = [.. without.Ask, rule] },
                 _ => without with { Deny = [.. without.Deny, rule] },
             };
-        });
+        }, others: lists => Drop(lists, rule));
     }
 
     /// <summary>A rule out of every list of one scope.</summary>
@@ -436,8 +437,10 @@ public static class PermissionRules
         return file with { DefaultsOff = off };
     }
 
-    private static PermissionFile Edit(PermissionFile file, RuleScope scope, string? name, Func<RuleLists, RuleLists> change)
+    private static PermissionFile Edit(
+        PermissionFile file, RuleScope scope, string? name, Func<RuleLists, RuleLists> change, Func<RuleLists, RuleLists>? others = null)
     {
+        others ??= change;
         if (scope == RuleScope.Machine) return file with { Machine = change(file.Machine) };
 
         if (name is not { } given || string.IsNullOrWhiteSpace(given))
@@ -448,13 +451,20 @@ public static class PermissionRules
 
         var held = scope == RuleScope.Workspace ? file.Workspaces : file.Repositories;
         // The scope's existing spelling, when it has one in another case: one scope, never two.
-        var key = held.Keys.FirstOrDefault(k => string.Equals(k.Trim(), given.Trim(), StringComparison.OrdinalIgnoreCase))
-            ?? given.Trim();
+        var spellings = held.Keys.Where(k => string.Equals(k.Trim(), given.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+        var key = spellings.FirstOrDefault() ?? given.Trim();
         var next = new Dictionary<string, RuleLists>(held, StringComparer.Ordinal)
         {
             [key] = change(held.GetValueOrDefault(key) ?? RuleLists.Empty),
         };
         if (next[key].IsEmpty) next.Remove(key);
+        // A file that holds the name in more than one spelling composes them all, so the others lose what the edit took from the first.
+        foreach (var other in spellings.Skip(1))
+        {
+            var rest = others(held[other]);
+            if (rest.IsEmpty) next.Remove(other);
+            else next[other] = rest;
+        }
 
         return scope == RuleScope.Workspace ? file with { Workspaces = next } : file with { Repositories = next };
     }

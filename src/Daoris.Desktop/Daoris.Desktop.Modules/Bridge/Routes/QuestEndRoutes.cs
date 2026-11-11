@@ -22,8 +22,19 @@ public sealed class QuestEndRoutes(DriverContext context)
     [GroundQuest("QUEST_DONE", "quest")]
     [Says("QUEST_DONE", "quest:quest")]
     [Publishes("QUEST_DONE", Ends)]
-    private async Task<object?> QuestDoneAsync(QuestPress press, CancellationToken cancellationToken) =>
-        Answer(await (_loop.Service ?? throw NotReady()).PersonDoneAsync(press.Quest.Trim(), null, cancellationToken).ConfigureAwait(false));
+    private async Task<object?> QuestDoneAsync(QuestEndPress press, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        if (press.Said)
+        {
+            var said = await TerminalSaid.RunAsync(output => QuestDoneCommand.RunAsync(new QuestDoneAsk(press.Quest.Trim().TrimStart('#'), press.Note), service, output, cancellationToken))
+                .ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
+        return Answer(await service.PersonDoneAsync(press.Quest.Trim(), press.Note, cancellationToken).ConfigureAwait(false));
+    }
 
     /// <summary>A quest made by mistake deleted, refused in the service's words for one anything stands on.</summary>
     [DriverRoute("QUEST_DELETE", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -31,8 +42,19 @@ public sealed class QuestEndRoutes(DriverContext context)
     [GroundQuest("QUEST_DELETE", "quest")]
     [Says("QUEST_DELETE", "quest:quest")]
     [Publishes("QUEST_DELETE", Ends)]
-    private async Task<object?> QuestDeleteAsync(QuestPress press, CancellationToken cancellationToken) =>
-        Answer(await (_loop.Service ?? throw NotReady()).DeleteQuestAsync(press.Quest.Trim(), cancellationToken).ConfigureAwait(false));
+    private async Task<object?> QuestDeleteAsync(QuestEndPress press, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        if (press.Said)
+        {
+            var said = await TerminalSaid.RunAsync(output => QuestDeleteCommand.RunAsync(press.Quest.Trim().TrimStart('#'), service, output, cancellationToken))
+                .ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
+        return Answer(await service.DeleteQuestAsync(press.Quest.Trim(), cancellationToken).ConfigureAwait(false));
+    }
 
     private object Answer((bool Ok, string Message) sent)
     {

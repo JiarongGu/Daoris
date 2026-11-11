@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `MainForm`, `SecondaryWindowHost`, `SecondaryChrome` | `App/MainForm.cs`, `App/SecondaryWindowHost.cs`, `App/SecondaryChrome.cs` | The frameless main window; and the routes that open another main window (`main:<n>`) for a later launch and framed secondary windows (`monitor`, `session:<id>`) on the kit's `ChromiumWindowHost`, which makes each window and keeps its geometry, while Daoris describes its chrome and hands each window its `SecondaryChrome` (theme, count, title, identity, page reload); `Modules/Windows/PageThemeOrder.cs` decides the theme on the window's thread, so a page's word that lands beside the OS's change is the one worn |
 | The kit's dialogs, exception sink and launcher | `App/Program.cs` (`PickFile`, `PickFolder`, `Bootstrap`) | A system file or folder picker is the kit's `IFileDialogs`, owned by the window whose page asked and shown on a thread of its own (a census holds that no source shows one itself); a window thread's exception reaches the machine log through the kit's `OnUnhandledException` and the pump goes on, with no dialog of the kit's. The kit's layout builds the executable (the engine's launcher, CET-enforced) with its context validation relaxed, since a shell extension's handled exception under a picker's right-click menu otherwise fail-fasts the process (`0xc0000409`, code 0x30) |
 | `DriverModule` and the route classes | `Modules/Bridge/DriverModule.cs`, `Modules/Bridge/Routes/<Domain>Routes.cs` | `DAORIS.DRIVER`: one handler class per domain, each route `[DriverRoute]`, each press `[Publishes]` |
-| Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
+| Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors (a press on a card already settled is answered with its first press's outcome and logged `help.apply.again`, `HelpAppliedAgain`), room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
 | `SessionWords` and its parts | `Modules/Loop/SessionWords.cs`, `HeldWordsQueue.cs`, `HeldWordsDisk.cs`, `HeldSay.cs`, `WordsAnswer.cs`, `WordsRead.cs`, `WordsReach.cs`, `WordsQueueEdits.cs`, `WordsShown.cs` | The person's words to a session: `SessionWords` judges and says them; the words held for a record to end wait in `HeldWordsQueue` (its pump, which a failure no read expects ends with the words still held, the record's next move or the next word held starting it again) and in the held file `HeldWordsDisk` writes whole, which the queue owns: a deleted or cleared session's words leave through the driver library's one `HeldWordsFile.Forget`, which asks the queue (`IHeldWordsHolder`) to drop them from memory and file together where the process has one, and edits the file in place where none does; the record read, the reach a word would have, the take-back and move of a waiting word and the lines shown in the conversation each have a type of their own |
 | `AttentionStateSlice` helpers | `Modules/Loop/AttentionWaits.cs`, `AttentionFacts.cs`, `AttentionSessionRows.cs`, `AttentionMachineRows.cs`, `AttentionJson.cs` | The waits read off files and memory, the judge's input record, and the session and machine groups of `NeedsAPerson`'s rows, in the order it judges them; the slice and `NeedsAPerson` keep their doors |
 | `StatePublisher` | `Modules/Platform/StatePublisher.cs` | Innermost middleware: `STATE_CHANGED` after a press answers; `UNDER_WAY` while presses run |
@@ -93,13 +93,18 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     `Daoris-Person` to an address of this machine, never to a remote (`PersonHeader`), so the host enforces it. (from D156)
 12. The page asks `PERSON_KEY` and sends `Daoris-Person` on writes only. No session ever holds the key. `PERSON_KEY` answers
     the proved key, and none for a host the shell adopted or whose proof failed; the window says so, and the host's own held asks
-    are then not read into *Notifications* by the window. A terminal's verb that posts a person's door straight to the host
-    carries no key and is refused there until the verbs present one. (from D156)
+    are then not read into *Notifications* by the window. A terminal's verb never posts a person's door to the host itself: where
+    Daoris runs it is the person's press of a `Person` route (rule 14), whose in-process service client holds the key (a quest's
+    accept, reopen, go-on, review, workflow, done and delete, an ask's workflow and review, a repository's retire, wire and
+    import, a plugin's replace, a run's node acts including Accept, a git identity or access change); with none running the verb
+    acts alone or refuses as before. (from D156, D253)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
-    takes it back. The route's name and raw values sit under *Details*. A start sent with
+    takes it back; a terminal's press under the terminal's tier `act` runs with no row (rule 15). A main window says a press by a toast as it comes where it is in front of the person; a terminal's press is
+    asked from the terminal, so one heard out of focus is said once the window comes in front, where it still waits unshown
+    (`useInFront`). The route's name and raw values sit under *Details*. A start sent with
     `hold: true`, or the pipe's `HOLD { session }`, is carded saying so; confirmed, it
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
@@ -115,11 +120,17 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     page lists what waits at the service only where it holds the person key, as the shell tells it (`SERVICE_CONFIRMATIONS`); a browser
     holds none, so it lists none and never polls (`useServiceConfirmations`).
     (from D156, D196, D238)
-15. A terminal's stop, finish, hold and resume with no card are the steward's acts alone: the person appoints the steward to the
-    terminal and grants its acts in the window, and its terminal's press proved by the role's key makes them, and its other
-    acts, outside Daoris's agents. Each use is logged and said on the steward's line in *Notifications*, and taking an act back
-    holds from the next press, which asks as the person's own. There is no grant of the terminal's own beside the role door, and
-    a stored one an older build left is removed at the start. (from D201, D209)
+15. A terminal's press runs with no card in two ways. The steward's acts: the person appoints the steward to the terminal and
+    grants its acts in the window, its terminal's press proved by the role's key makes them, and its other acts, outside Daoris's
+    agents; each use is logged and said on the steward's line in *Notifications*, and taking an act back holds from the next press,
+    which asks as the person's own. And the terminal's tier, a machine setting (`driver.json`'s `terminal`, `daoris settings terminal
+    ask|act`, Settings → Agents and sessions), read at each press: `ask`, the default, puts every press on the card; under `act` a
+    person's press that proves no session's key, from a process the pipe places outside every agent Daoris runs, runs at once as the
+    person's own on the delegate's path (`PipeTerminalTier`, `PipeDelegate.Pressed`), logged `terminal.pressed` and listed with Ask
+    Daoris's presses in *Notifications*, marked a terminal's. A process in an agent's job or one the pipe cannot place asks; a
+    session's terminal keeps its own tier. `SET_TERMINAL` is itself a press, so `act` is set from a terminal only on the person's
+    Confirm; the verb acting alone, with no Daoris running, writes `ask` and refuses `act`. A stored `data/standing-confirmation.json`
+    an older build left is removed at the start. (from D201, D209, D271)
 
 **The windows**
 
@@ -159,8 +170,15 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 30. The right-click menu is the page's own, offering the surface's acts from their one owner plus text, link and code
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell. Its groups are presses waiting, *What needs you*,
-    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. (from D196)
-32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out.
+    messages, and *Done and failed*. There is no *Confirm all*. A *What needs you* row is answered, never dismissed. Beside the
+    presses waiting stand two lines that are no rows and count toward no group or the bell: the steward's, and what Ask Daoris pressed
+    in full access with no card this run (`HelpPressLine`, from `STATE`'s `standingConfirmation.helpPresses`), each press in the
+    window's own words, with the place it named (*outside its focus* where that was beyond its conversation's focus at the press),
+    its outcome, a press to open its conversation and a pause's *Resume*, and apart under *Asked you* the presses it put to the
+    person on a card in restricted mode, each with its card's state; a restart empties it. (from D196, D253)
+32. .NET judges *What needs you*. A row acts where one press is safe. No row starts a process to find a fact out. *Ready for you*
+    holds a row for each session Sessions' list places to review, except one of a quest whose run the person stopped, its review
+    among its steps (`StoppedRuns`, read from the node records; `StoppedReviewAttentionTests`).
     Overview keeps one summary line per group. (from D150, D181, D196)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
@@ -174,13 +192,22 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 **A session's page**
 
 37. A head shows the state, the title and two facts. A session's title takes one line; a quest's or an ask's takes two.
-    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162)
+    The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162) *Started from* sits on *Details*' own folded line, beside its summary and
+    cut with an ellipsis rather than wrapped, so the head grows no taller; it names, each a press
+    that opens it, the quest, the ask it came from, the earlier session a hand-over or a go-on continues; a conversation names its
+    repository and Ask Daoris its room and workspace (`work/head/startedFrom.tsx`). *Details* repeats it and has *Started with*,
+    the requirement it began with, whole, said by the record it is: the quest's requirements, else the quest's words, else the
+    ask's, else a conversation's first message, and beside any of them the *Handed brief* its start was given (folded, read from
+    `SESSION_OPENINGS`' `briefs`); the "How this came to be" fold says it where the trace draws no requirements. A
+    rail row of a line holding several quests names the quest its own session holds.
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it landed on once its tree is gone
     (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
-    `START_CHAT` carries a request id, and one id never starts twice. (from D162)
+    `START_CHAT` carries a request id, and one id never starts twice. Its repository picker and Ask Daoris's focus picker are
+    one combobox (`design/atoms/ChipCombobox.tsx`). *Make it a task with Daoris…* hands Ask Daoris the words as typed with the
+    repository as the conversation's focus. (from D162)
 
 **The design language**
 

@@ -8,10 +8,11 @@ namespace Daoris.Driver;
 internal static class SpawnRequests
 {
     /// <summary>A driven start's request: the target's posture and asked choice, its home, and whose work it serves.</summary>
-    public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command) =>
+    public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command, SessionDelegates? delegates = null) =>
         new(target.Repository, target.Root, target.ServiceUrl)
         {
-            Command = command, Asked = target.Asked, Mode = target.Access?.PermissionMode, Home = target.Home, Identity = Identity(target),
+            Command = command, Asked = target.Asked, Mode = target.Access?.PermissionMode, Home = target.Home,
+            Identity = Delegated(Identity(target), delegates, target.Brainstorm is null ? new SessionPlace(target.Repository, target.Access?.Workspace) : null),
         };
 
     /// <summary>
@@ -19,13 +20,23 @@ internal static class SpawnRequests
     /// rather than an empty one, which would read as an id that failed to parse; its own record, so a connector its agent
     /// starts from the repository's server list marks this conversation.
     /// </summary>
-    public static SpawnRequest Chat(string repository, string root, string serviceUrl, string? session) =>
+    public static SpawnRequest Chat(
+        string repository, string root, string serviceUrl, string? session, SessionDelegates? delegates = null, string? workspace = null) =>
         new(repository, root, serviceUrl)
         {
-            Identity = session is { } own
-                ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = own }
-                : new Dictionary<string, string?>(),
+            Identity = Delegated(
+                session is { } own
+                    ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = own }
+                    : new Dictionary<string, string?>(),
+                delegates, new SessionPlace(repository, workspace)),
         };
+
+    /// <summary>Every kind's identity handed a delegate key of its own in this one place, beside its record's id and its place.</summary>
+    private static Dictionary<string, string?> Delegated(Dictionary<string, string?> identity, SessionDelegates? delegates, SessionPlace? place)
+    {
+        delegates?.Hand(identity, place);
+        return identity;
+    }
 
     /// <summary>Whose work a driven start serves, each set by the start for its role and the rest absent.</summary>
     private static Dictionary<string, string?> Identity(SessionTarget target)

@@ -108,8 +108,9 @@ internal sealed class HeldClock : TimeProvider
 
 /// <summary>
 /// The loop's readers of a press's grounds as a test holds them: each world fact a dictionary the test moves between
-/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set), every read
-/// counted, and the whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
+/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set; the list's
+/// <c>SESSION_GROUPS</c> places each session asked, as a session press's view reads it at the ask), every read counted, and the
+/// whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
 /// </summary>
 internal sealed class StubGrounds : IPipeGroundWorld
 {
@@ -121,6 +122,10 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     /// <summary>What a name resolves to where the test says; a name only <see cref="Registered"/> resolves to itself.</summary>
     public Dictionary<string, string> Registrations { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string?> Placed { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, IReadOnlyList<string>> Folders { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
 
@@ -157,6 +162,12 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return this;
     }
 
+    public StubGrounds Parking(string quest)
+    {
+        Facts = Facts with { Parked = [.. Facts.Parked, new Daoris.Driver.ParkedQuest(quest, "engine")] };
+        return this;
+    }
+
     private async Task Read(CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref _reads);
@@ -174,6 +185,27 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         return Registrations.TryGetValue(name, out var resolved) ? resolved : Registered.Contains(name) ? name : null;
+    }
+
+    public async Task<IReadOnlyList<PipeRegistered>> RegistryAsync(CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return [
+            .. Placed.Select(each => new PipeRegistered(each.Key, each.Value)),
+            .. Folders.Select(each => new PipeRegistered(each.Key, "default", "folder", each.Value)),
+            .. Registered.Where(name => !Placed.ContainsKey(name)).Select(name => new PipeRegistered(name, null)),
+        ];
+    }
+
+    /// <summary>The machine a rule's view reads: the driver's file and the facts, as the test sets them.</summary>
+    public Daoris.Driver.DriverConfig Config { get; set; } = Daoris.Driver.DriverConfig.Empty;
+
+    public Daoris.Driver.HelpMachineFacts Facts { get; set; } = new([], [], []);
+
+    public async Task<PipeMachine> MachineAsync(CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return new PipeMachine(Config, Facts);
     }
 
     public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
@@ -220,7 +252,30 @@ internal sealed class StubGrounds : IPipeGroundWorld
     {
         await Read(cancellationToken);
         var asked = payload is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(payload, Shenora.Core.Ipc.IpcJson.Options);
-        return JsonSerializer.SerializeToElement(Reads.TryGetValue(route, out var answer) ? answer(asked) : new { }, Shenora.Core.Ipc.IpcJson.Options);
+        var answered = Reads.TryGetValue(route, out var answer) ? answer(asked) : route == "SESSION_GROUPS" ? Listed(asked) : new { };
+        return JsonSerializer.SerializeToElement(answered, Shenora.Core.Ipc.IpcJson.Options);
+    }
+
+    /// <summary>Each session asked (else each held) as listed, deletable: a held one by its state, any other ended.</summary>
+    private object Listed(JsonElement? asked)
+    {
+        IEnumerable<string> ids = asked is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("ids", out var named)
+            ? named.EnumerateArray().Select(each => each.GetString() ?? "")
+            : Sessions.Keys;
+        return new
+        {
+            sessions = ids.Select(id => new
+            {
+                session = id,
+                group = (Sessions.TryGetValue(id, out var held) ? held.State : null) switch
+                {
+                    "queued" or "starting" or "working" => Daoris.Driver.SessionGroup.Working,
+                    "awaiting-person" => Daoris.Driver.SessionGroup.You,
+                    _ => Daoris.Driver.SessionGroup.Ended,
+                },
+                deletable = true,
+            }).ToArray(),
+        };
     }
 
     public async Task<string?> HeldAsync(string wait, JsonElement? payload, CancellationToken cancellationToken)

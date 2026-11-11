@@ -144,7 +144,7 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
                 // The help start's own read and bound, so a conversation going on waits for the machine exactly as one opening does.
                 var start = wiring.Of<HelpStart>();
                 var (read, late, waited) = await start.ReadAsync(describe, workspace, ct).ConfigureAwait(false);
-                if (read?.Within(workspace) is { } machine)
+                if (read?.Within(workspace, FocusOf(sessionId, workspace)) is { } machine)
                 {
                     var room = HelpRoom.Prepare(context.Home, machine);
                     if (machine.NotReadYet.Any) context.Note(sessionId, HelpStart.NotReadYet());
@@ -160,5 +160,19 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
         }
 
         return (HelpRoom.PathOf(context.Home, workspace), []);
+    }
+
+    public HelpFocus FocusOf(string sessionId, string? workspace) => new HelpFocusing(context.Home).Applied(sessionId, workspace);
+
+    public IReadOnlyList<SaidWordView> TakeFocus(
+        string sessionId, string? workspace, IReadOnlyList<SaidWordView> words, IReadOnlyList<RepoView>? registry) =>
+        HelpFocusTurn.Apply(context.Home, sessionId, workspace, registry, words.FirstOrDefault()) is { } change
+            ? HelpFocusTurn.Ahead(words, change.Line)
+            : words;
+
+    public void CarryFocus(string from, string to, string? workspace)
+    {
+        var focusing = new HelpFocusing(context.Home);
+        focusing.Begin(to, focusing.Applied(from, workspace));
     }
 }

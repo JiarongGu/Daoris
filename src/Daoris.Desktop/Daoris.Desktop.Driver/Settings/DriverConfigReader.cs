@@ -15,8 +15,6 @@ internal static class DriverConfigReader
         // the text read stays as written, and no edit is written over it (Save).
         using var document = JsonDocument.Parse(JsonKeeping.Once(json));
         var root = document.RootElement;
-        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind:
-        // said here, so the reader can say it with its file.
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
         var (actors, actorErrors) = ActorKey.Read(root);
         var empty = DriverConfig.Empty;
@@ -27,7 +25,6 @@ internal static class DriverConfigReader
             Cap: Math.Max(1, Int(root, "cap") ?? empty.Cap),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? empty.PollSeconds),
             Commands: CommandMap(root),
-            Trees: Json.Strings(root,"trees"),
             // Absent means ON: every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.
@@ -39,11 +36,13 @@ internal static class DriverConfigReader
             // Out of its bounds, or not a whole number, is the default: never a bound the doors would refuse.
             QuietMinutes = root.TryGetProperty(QuietSetting.File, out var quiet) && quiet.ValueKind == JsonValueKind.Number
                 ? QuietSetting.Read(quiet.TryGetInt64(out var whole) ? whole : null) : null,
+            Manifest = ManifestSetting.Read(root),
             // Each actor's order: an entry that does not read is kept as its error, and holds its starts.
             Actors = actors,
             ActorErrors = actorErrors,
             // Restricted unless the file names full: never widened by a value it does not know.
             HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
+            Terminal = TerminalTiers.Read(Json.NonEmpty(root, TerminalTiers.File)),
             // Absent, or less than a minute, or not a whole number, is the default hour: never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,

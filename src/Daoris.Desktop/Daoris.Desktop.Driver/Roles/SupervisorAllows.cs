@@ -17,6 +17,8 @@ public static class SupervisorAllowShapes
     /// <summary>A steward's act outside its grants.</summary>
     public const string Steward = "steward";
 
+    public const string Press = "press";
+
     public const string Files = "files";
 }
 

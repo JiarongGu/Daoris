@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class HelpPlaceDoorTests : DriverModuleBridge
 {
-    private const string Config = """{ "adapter": "claude-code-acp", "actors": { "build": [ { "agent": "claude-code-acp" } ] }, "drivable": ["engine"], "trees": ["engine"] }""";
+    private const string Config = """{ "adapter": "claude-code-acp", "actors": { "build": [ { "agent": "claude-code-acp" } ] }, "drivable": ["engine"] }""";
 
     private const string Proposed = """
         {"id":"p1a2b3c4","kind":"setup","door":"place","target":"atlas","workspace":null,"value":null,"sentence":null,"why":"set both up","state":"proposed",

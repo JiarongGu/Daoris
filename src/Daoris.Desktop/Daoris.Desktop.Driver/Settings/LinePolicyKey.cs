@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public static class LinePolicyKey
 {
     internal const string IntegrateShape =
-        "`integrate` is an object: `request`, `commit`, `batch`, `order`, `gates`, `unconfirmed`, `conflicts`, `overlap` and `line`.";
+        "`integrate` is an object: `request`, `commit`, `batch`, `order`, `gates`, `unconfirmed`, `conflicts` and `line`.";
 
     internal const string UnconfirmedShape = "`integrate.unconfirmed` is an object: `unreached` and `reached`, each `split`, `hold` or `land`.";
 
@@ -44,7 +44,6 @@ public static class LinePolicyKey
             ?? Unknown("gates", LandingIntegrate.GateChoices, policy.Gates)
             ?? Unknown("unconfirmed.unreached", LandingIntegrate.Unconfirmeds, policy.Unreached)
             ?? Unknown("unconfirmed.reached", LandingIntegrate.Unconfirmeds, policy.Reached)
-            ?? Unknown("overlap", LandingIntegrate.Overlaps, policy.Overlap)
             ?? (policy.Line is { } line && !BranchName.IsValid(line)
                 ? $"`integrate.line` is the line by name, and `{line}` is not a branch name git would take."
                 : null);
@@ -102,7 +101,6 @@ public static class LinePolicyKey
         }
 
         var conflicts = Choice(value, "conflicts", "conflicts", LandingIntegrate.ConflictChoices, ref said);
-        var overlap = Choice(value, "overlap", "overlap", LandingIntegrate.Overlaps, ref said);
         string? line = null;
         if (said is null && value.TryGetProperty("line", out var lineValue) && lineValue.ValueKind != JsonValueKind.Null)
         {
@@ -116,10 +114,9 @@ public static class LinePolicyKey
             return null;
         }
 
-        return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, overlap, line);
+        return new LandingIntegrate(request, commit, batch, order, gates, unreached, reached, conflicts, Line: line);
     }
 
-    /// <summary>A map of names to line policies; one that does not read, or that <see cref="PolicyProblem"/> refuses, is not read.</summary>
     internal static IReadOnlyDictionary<string, LandingIntegrate> PolicyMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, LandingIntegrate>(StringComparer.OrdinalIgnoreCase);
@@ -167,7 +164,6 @@ public static class LinePolicyKey
         }
 
         if (integrate.Conflicts is not null) writer.WriteString("conflicts", integrate.Conflicts);
-        if (integrate.Overlap is not null) writer.WriteString("overlap", integrate.Overlap);
         if (integrate.Line is not null) writer.WriteString("line", integrate.Line);
         writer.WriteEndObject();
     }

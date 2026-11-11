@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The routing standing is judged once, from the drive, the lanes the
-/// registry declares and the trees, in the order not-driven, no-lanes, one-at-a-time, open; and it is told only to the works that can
-/// publish to their own repository's lanes (build, design, chat). Its words are the standing block's (<c>StandingBlockTests</c>).
+/// registry declares and the trees, in the order not-driven, no-lanes, one-at-a-time, open; and it is told only to the works that can publish to their own repository's lanes (build, design, chat).
 /// </summary>
 public sealed class RoutingStandingTests
 {
@@ -14,8 +13,7 @@ public sealed class RoutingStandingTests
 
     private static RepoView Repository(params string[] lanes) => new("engine", true, "/work/engine") { Lanes = lanes };
 
-    private static DriverConfig Config(bool driven, bool trees) =>
-        DriverConfig.Empty.WithDrivable("engine", driven).WithTrees("engine", trees);
+    private static DriverConfig Config(bool driven) => DriverConfig.Empty.WithDrivable("engine", driven);
 
     [Theory]
     [InlineData(false, false, false, RoutingStanding.NotDriven)]
@@ -29,7 +27,7 @@ public sealed class RoutingStandingTests
     {
         var repository = Repository(lanes ? Lanes : []);
 
-        Assert.Equal(standing, RoutingStanding.Of(Config(driven, trees), repository).Standing);
+        Assert.Equal(standing, RoutingStanding.Of(Config(driven), repository, apart: trees).Standing);
     }
 
     [Fact]
@@ -55,22 +53,22 @@ public sealed class RoutingStandingTests
     {
         var older = new RepoView("engine", true, "/work/engine");
 
-        Assert.Equal(RoutingStanding.NoLanes, RoutingStanding.Of(Config(driven: true, trees: true), older).Standing);
+        Assert.Equal(RoutingStanding.NoLanes, RoutingStanding.Of(Config(driven: true), older, apart: true).Standing);
     }
 
     [Fact]
     public void The_drive_is_read_whatever_the_case_the_repository_is_named_in()
     {
-        var config = DriverConfig.Empty.WithDrivable("Engine", true).WithTrees("ENGINE", true);
+        var config = DriverConfig.Empty.WithDrivable("Engine", true);
 
-        Assert.Equal(RoutingStanding.Open, RoutingStanding.Of(config, Repository("core")).Standing);
+        Assert.Equal(RoutingStanding.Open, RoutingStanding.Of(config, Repository("core"), apart: true).Standing);
     }
 
     [Fact]
     public void The_judge_keeps_the_lanes_the_registry_declares()
     {
-        Assert.Equal(Lanes, RoutingStanding.Of(Config(true, true), Repository(Lanes)).Lanes);
-        Assert.Equal(Lanes, RoutingStanding.Of(Config(false, true), Repository(Lanes)).Lanes);
+        Assert.Equal(Lanes, RoutingStanding.Of(Config(true), Repository(Lanes), apart: true).Lanes);
+        Assert.Equal(Lanes, RoutingStanding.Of(Config(false), Repository(Lanes), apart: true).Lanes);
     }
 
     [Theory]
@@ -87,7 +85,7 @@ public sealed class RoutingStandingTests
     [InlineData(null, false)]
     public void Only_build_design_and_chat_are_told_it(string? work, bool told)
     {
-        var line = RoutingStanding.Told(work, Config(true, true), Repository(Lanes));
+        var line = RoutingStanding.Told(work, Config(true), Repository(Lanes), apart: true);
 
         Assert.Equal(told, line is not null);
     }
@@ -95,7 +93,7 @@ public sealed class RoutingStandingTests
     [Fact]
     public void Every_work_the_participant_rule_knows_is_decided_here_one_way_or_the_other()
     {
-        var tells = ParticipantWork.Codes.Where(work => RoutingStanding.Told(work, Config(true, true), Repository(Lanes)) is not null);
+        var tells = ParticipantWork.Codes.Where(work => RoutingStanding.Told(work, Config(true), Repository(Lanes), apart: true) is not null);
 
         Assert.Equal([ParticipantWork.Build, ParticipantWork.Design, ParticipantWork.Exact, ParticipantWork.Chat], tells);
     }
@@ -103,6 +101,6 @@ public sealed class RoutingStandingTests
     [Fact]
     public void A_repository_the_registry_does_not_name_is_told_nothing()
     {
-        Assert.Null(RoutingStanding.Told(ParticipantWork.Chat, Config(true, true), null));
+        Assert.Null(RoutingStanding.Told(ParticipantWork.Chat, Config(true), null, apart: true));
     }
 }

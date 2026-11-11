@@ -1,0 +1,18 @@
+{
+  "id": "stand-in-system",
+  "apiVersion": 1,
+  "name": "Stand-in system",
+  "version": "1.0.0",
+  "description": "An adapter for a stand-in system: a small key-value store with an etag on each key, kept in the plugin's data folder. A session plans changes to it, the person reviews them, and the apply writes them under each key's etag, a stale plan being planned again.",
+  "hooks": {
+    "command": ["node", "${plugin}/hooks.mjs"],
+    "points": ["plan/read", "apply/perform"]
+  },
+  "systems": [
+    { "id": "stand-in", "name": "The stand-in store", "preconditions": "etag" },
+    { "id": "stand-in-unguarded", "name": "The stand-in store, unguarded", "preconditions": "none" }
+  ],
+  "tools": [
+    { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's hooks.mjs." }
+  ]
+}

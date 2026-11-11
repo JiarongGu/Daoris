@@ -184,6 +184,16 @@ public sealed class MemoryOpStore
             return await drop.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
         }, ct);
 
+    /// <summary>A deleted session's staged rows, dropped inside the transaction that deletes it.</summary>
+    internal static async Task DropStagedOfAsync(ConnectionGate db, string session, CancellationToken inside)
+    {
+        await using var drop = db.Command();
+        drop.CommandText = "UPDATE memory_ops SET state = 'dropped', settled = $now WHERE state = 'staged' AND session = $session";
+        drop.Parameters.AddWithValue("$session", session);
+        drop.Parameters.AddWithValue("$now", Moments.Write(DateTimeOffset.UtcNow));
+        await drop.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+    }
+
     /// <summary>The states of a session whose own commit point is still to come.</summary>
     private static readonly string[] Running =
         [nameof(SessionState.Queued), nameof(SessionState.Starting), nameof(SessionState.Working), nameof(SessionState.AwaitingPerson)];

@@ -44,10 +44,7 @@ export type HarnessRun = {
    * process whose end is news, `refused` with the sentence that would have been its toast.
    */
   run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, answered?: Answered) => void;
-  /**
-   * Follow an action the machine already started for the person (Ask Daoris's Apply of an update
-   * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
-   */
+  /** Follow an update or a pin a confirmed terminal press started: its console shows under the tool doing it, and its end is said. */
   follow: (harness: string, action: 'update' | 'pin') => void;
   /**
    * The driver's sentence where a sign-in's start is refused, or null. The sign-in's panel stays up and says it,

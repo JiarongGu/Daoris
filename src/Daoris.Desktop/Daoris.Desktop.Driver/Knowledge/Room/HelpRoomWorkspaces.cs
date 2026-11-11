@@ -112,7 +112,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         return string.Join(", ", parts);
     }
 
-    private static string LineOf(Line line) => line.Branch is not { Length: > 0 } branch
+    internal static string LineOf(Line line) => line.Branch is not { Length: > 0 } branch
         ? "none git can name"
         : line.Source switch
         {

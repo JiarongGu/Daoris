@@ -70,7 +70,7 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Equal("acme.offered", offer.Payload["offer"]!.GetValue<string>());
 
         Folder("data/plugins/acme.gate", Gate);
-        Assert.Null(PluginCommand.Plan(["add", source], World())!.Route);
+        Assert.Equal(PluginRoutes.Replace, PluginCommand.Plan(["add", source], World())!.Route);
         foreach (var verb in new[] { "remove", "enable", "disable" })
         {
             var press = PluginCommand.Plan([verb, "ACME.GATE"], World())!;

@@ -190,6 +190,7 @@ export const HOME_ENTRIES = [
   row('role-rooms', 'work', 'work/rooms/roles/*', 'work/rooms/roles/*'),
   row('deps', 'work', 'work/deps/*', 'work/deps/*'),
   row('tree-files', 'work', 'work/files/trees/*', 'work/files/trees/*'),
+  row('places', 'work', 'work/places/*/*', 'work/places/*/*'),
   row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'cache/tools', 'tools'),
   row('bin', 'cache', 'cache/bin', 'bin'),

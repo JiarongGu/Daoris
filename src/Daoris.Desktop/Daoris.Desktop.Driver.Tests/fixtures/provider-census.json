@@ -49,8 +49,6 @@
     ["Daoris.Desktop.Driver/Agents/StructuredOutput.cs", "ClaudeStreamJson", "k", "behaviour", "the native dialect's output, by type"],
     ["Daoris.Desktop.Driver/Agents/StructuredOutput.cs", "ClaudeStreams", "k", "behaviour", "the native dialect's output, by type"],
     ["Daoris.Desktop.Driver/Help/HelpWired.cs", "\"protocol\"", "i", "behaviour", "Ask Daoris's wired receipt names its transport by the transport's word, as DoorFailures says it"],
-    ["Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs", "ClaudeReleases", "f", "behaviour", "the proposal reads Claude Code's release source by type"],
-    ["Daoris.Desktop.Driver/Help/Proposals/HelpRuleSettings.cs", "id in a sentence", "-", "words", "an id as the example in a proposal's command"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "\"claude\"", "-", "permanent", "Claude Code's signed channel's binary name, Install's own source (AGT2b; row f keeps it in Install)"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "ClaudeReleaseDownloads", "-", "permanent", "Claude Code's signed channel, Install's own source (AGT2b)"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "ClaudeReleases", "-", "permanent", "Claude Code's signed channel, Install's own source (AGT2b)"],
@@ -105,9 +103,7 @@
       ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "\"codex\"", "-", "permanent", "the service's call keys, one file per agent read by its one ordered list, second in it (design §3.3, §6, O1-F17), held by `callKeys` below"],
       ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "x-codex-turn-metadata", "-", "permanent", "Codex's turn header, the key its lineage is read from, in Codex's own file (design §3.3, O1-F17)"],
       ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionKeepRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
-      ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
-      ["src/Daoris.Service/Daoris.Service.Mcp/HelpAgentTool.cs", "id in a sentence", "-", "words", "the tool's description names the agents as `daoris agent` spells them"],
-      ["src/Daoris.Service/Daoris.Service.Mcp/HelpRoleTool.cs", "id in a sentence", "-", "words", "the tool's description gives a staffing policy's example record, whose choice names an agent as `daoris agent` spells it"]
+      ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"]
     ],
     "callKeys": [
       ["claude-code", "claudecode/toolUseId"],
@@ -153,8 +149,6 @@
       ["src/Daoris.Web/src/design/ui.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
-      ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "\"codex\"", "-", "measurement", "a story's sample helper proposal names the agent it asks"],
-      ["src/Daoris.Web/src/help/AskPanel.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/help/QuickAsk.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/map/ChainStrip.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/map/ChainStrip.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],

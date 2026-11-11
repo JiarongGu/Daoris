@@ -235,19 +235,4 @@ public sealed class WorkplaceReviewPortsTests : IDisposable
 
         Assert.Equal(ReviewStates.None, (await trees.ReviewAsync(Path.Combine(_home, "tree"), null, new World())).State);
     }
-
-    // ——— An entry's lead
-
-    [Fact]
-    public void An_entry_s_lead_is_the_workplace_s_and_the_accept_s_answer_is_the_same()
-    {
-        SessionRecord Record(string id, int minute, string? entry = null) =>
-            new(id, "engine", "completed") { Created = At.AddMinutes(minute), Entry = entry };
-        SessionRecord[] records = [Record("b", 2, "quest:q1/engine"), Record("a", 1, "quest:q1/engine"), Record("c", 3)];
-
-        Assert.Equal("a", EntryLandings.LeadOf(records, "b")!.Id);
-        Assert.Equal(EntryAccepts.EntryLead(records, "b")!.Id, EntryLandings.LeadOf(records, "b")!.Id);
-        Assert.Null(EntryLandings.LeadOf(records, "c"));
-        Assert.Null(EntryLandings.LeadOf(records, "gone"));
-    }
 }

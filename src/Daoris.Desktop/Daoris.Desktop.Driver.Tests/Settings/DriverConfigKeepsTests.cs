@@ -128,7 +128,6 @@ public sealed class DriverConfigKeepsTests
             "none" => config,
             "drivable" => config.WithDrivable(Text("repository"), edit.GetProperty("on").GetBoolean()),
             "hold" => config.WithHold(Text("repository"), edit.GetProperty("on").GetBoolean()),
-            "trees" => config.WithTrees(Text("repository"), edit.GetProperty("on").GetBoolean()),
             // A target declared or taken back, through the door the terminal's `write-across` goes through.
             "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
             "line" => config.WithLine(Text("repository"), Text("branch")),

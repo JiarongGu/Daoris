@@ -60,9 +60,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
         var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode, Go] },

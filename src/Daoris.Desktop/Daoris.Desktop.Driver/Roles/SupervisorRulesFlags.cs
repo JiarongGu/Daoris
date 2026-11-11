@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// roles it reaches after an <c>@</c> (<c>--set answers-alone=3:hold@build,design</c>), so the card's twin is the one judged write the
 /// card is judged as, never a chain of commands judged one by one.
 /// </summary>
-internal static class SupervisorRulesFlags
+public static class SupervisorRulesFlags
 {
     public const string Grammar =
         "`role rules --place machine|workspace:<id>|repository:<id> [--set <count>=<at>:<do>[:<minutes>][@<id,…>]]… "

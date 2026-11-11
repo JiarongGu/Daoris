@@ -42,6 +42,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             }
 
             if (context.Trees.Holds(workTree)) TreeFilesStep.Hand(home, workTree);
+            FolderCopies.Owned(home, workTree, sessionId);
 
             // The words a session could not go on with went to this one: off that record by their ids, kept on the ask by the service, so
             // this start's instruction reads them among the person's words; and said in that session's conversation, where the person
@@ -135,11 +136,19 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 asking = asking with { Words = askRead.WithMoved(movedOn, sessionId, quest.Id) };
             }
 
+            // In its place, read under the lease its open took, so what it is told is no other turn's.
+            var place = context.Trees.Holds(workTree)
+                ? null
+                : await PlaceTurns.StartAsync(
+                    home, RemoteTarget.Workspace(start.Workspace), quest.To, folder, sessionId, continues?.Session ?? prior?.Session, ct,
+                    PlaceExcludes.Of(registry.FirstOrDefault(view => string.Equals(view.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Excludes)).ConfigureAwait(false);
             var target = StartTargets.WithAccess(StartTargets.WithLanguage(asking, config, start.Workspace), access) with
             {
+                Place = place,
                 // Its standing block, its tree's facts with its repository's routing and the person's choices on this machine, the
                 // memory a carry-on's line read, and the file it goes through where the whole first prompt cannot carry it.
-                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace) with
+                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace,
+                    apart: start.Isolate is not null) with
                 {
                     Checkouts = across.Reads.Count > 0,
                     Memory = brief?.Memory ?? [],
@@ -296,7 +305,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 if (carried is not null) LimitCarried.Compact(spawn, carried);
                 var served = adapter.ServerHanding()?.Hand(spawn, home, connectors);
                 // The skills plugins hand sessions, composed under the home, gone with the session.
-                var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions);
+                var (skills, skillPlugins) = SpawnSkills.Hand(
+                    context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions, OwnTools.Machine(home, spawn));
 
                 // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
                 // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block

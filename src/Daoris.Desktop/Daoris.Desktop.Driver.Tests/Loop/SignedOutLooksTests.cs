@@ -73,9 +73,7 @@ public sealed class SignedOutLooksTests : IDisposable
 
     private DriverConfig Config => DriverConfig.Empty with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Actors = StaffedRoles.On("stub"),
+        Drivable = ["engine"],        Actors = StaffedRoles.On("stub"),
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Script, Log] },
     };

@@ -7,7 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal interface IWorkOrdersWorkflows
 {
-    /// <summary>Every unit's obligations under <paramref name="home"/>, by unit id; none where neither the nodes' nor the resources' folder holds a record.</summary>
     IReadOnlyDictionary<string, IReadOnlyList<InventoryEntry>> Obligations(string home, DateTimeOffset now);
 
     /// <summary>The units that still owe anything: a receipt not ended, or an attempt not settled, or a record that does not read and names one.</summary>
@@ -19,12 +18,19 @@ internal interface IWorkOrdersWorkflows
     /// </summary>
     string? Unusable(string home, string workflow);
 
+    IReadOnlyList<PersonWait> PersonWaits(string home);
+
+    Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
+
     /// <summary>
     /// The workflow a repository's work follows where it names no kind, and, for each of <paramref name="kinds"/> in order, the one that kind
     /// maps to with what it lowers of the person's part against the first (null where either does not read).
     /// </summary>
     (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
         string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds);
+
+    /// <summary>The <c>isolate</c> step of each of <paramref name="repositories"/> whose workflow sets its work apart, by repository; one absent works in place.</summary>
+    IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories);
 }
 
 /// <summary>The required Workflows operations, resolved only where a unit's obligations, a saved workflow or a kind's mapping is read.</summary>

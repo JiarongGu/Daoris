@@ -21,9 +21,9 @@ internal static class DriveUsagePlace
               writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
               once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
               --resume (which judges the skipped again) and --stop steer a plan already made.
-          place list  ·  place drive|undrive|hold|resume <repository>  ·  place trees <repository> on|off
+          place list  ·  place drive|undrive|hold|resume <repository>  ·  place trees (gone: a workflow's isolate step)
           place line|landing|work-cycle|across|standing|language|review|opinion|helpers|commits <repository> …
-              each place's standing choices: what is driven and held, its trees, its line and how work lands there, its
+              each place's standing choices: what is driven and held, its line and how work lands there, its
               work's cycle, what agents outside it read, its standing answer, its language, where its work is shown to you,
               its second opinion (--agents <a,b>), its helpers and how it commits; a change a route takes goes to the
               running Daoris's window to confirm where one runs, and is written here where none does.
@@ -103,10 +103,13 @@ internal static class DriveUsagePlace
           repository connect [--workspace <name>] [--dry-run]
               register this checkout's repository with a knowledge service, any address: what it owns and what it
               accepts, so siblings know what to ask of it; --workspace wires it on this machine, in no tracked file.
+          repository add <folder> [--workspace <name>] [--exclude <glob>]... [--dry-run]
+              register a folder that is no git repository as a department worked in place, with its own daoris.json
+              read from disk where it holds one; --exclude names files its manifest passes by beside the defaults.
           repository register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `repository connect` would; a start and a line Daoris moves do the same on their own.
-          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]
+          repository retire [<name>] [--dry-run]  ·  repository wire <repository> --workspace <name> [--dry-run]  ·  repository excludes <folder> [--add <glob>]… [--remove <glob>]…
           repository import [<folder>] [--workspace <name>] [--dry-run]
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.

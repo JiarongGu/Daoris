@@ -44,15 +44,16 @@ public sealed class AskShortCommandTests
         Assert.Contains("\n  ask … --short \"…\"\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 
-    /// <summary>The console reads the flag, hands it to the door, refuses it beside another verb, and names it in its usage: read as text.</summary>
+    /// <summary>The verb's words read the flag, refuse it beside another act and name it in the usage; the new ask hands it to the door.</summary>
     [Fact]
-    public void The_console_reads_it()
+    public void The_verb_reads_it()
     {
-        var console = File.ReadAllText(Path.Combine(
-            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
-        Assert.Contains("case \"--short\": shortTitle = Value(); break;", console);
-        Assert.Contains("shortTitle: shortTitle", console);
-        Assert.Contains("--short goes with a new ask's words", console);
-        Assert.Contains("daoris ask … --short \\\"…\\\"", console);
+        Assert.Equal("Stall", AskArguments.Read(["--short", "Stall", "fix it"], out _)!.Short);
+        Assert.Null(AskArguments.Read(["--short", "Stall", "--close", "a1"], out var problem));
+        Assert.Contains("--short goes with a new ask's words", problem);
+        Assert.Contains("daoris ask … --short \"…\"", AskArguments.Usage);
+        var made = File.ReadAllText(Path.Combine(
+            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "WorkOrders", "AskNewCommand.cs"));
+        Assert.Contains("shortTitle: ask.Short", made);
     }
 }

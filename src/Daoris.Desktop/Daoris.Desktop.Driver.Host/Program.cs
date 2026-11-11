@@ -311,9 +311,9 @@ try
 
             using var workflowClient = ServiceClient.FromEnvironment();
             var workflowConfig = DriverConfig.ResolvePath();
-            return await QuestWorkflowCommand.RunAsync(
+            return await QuestWorkflowCommand.PressAsync(
                 workflowAsk, new AskWorkflowWorld(workflowClient, () => DriverConfig.Load(workflowConfig), DriverConfig.HomeOf(workflowConfig)),
-                Console.Out);
+                Console.Out, Daoris.Driver.Host.InstanceHost.World("quest"));
         }
 
         // The person marks a quest done: the quest page's *Mark done…* is the other door, and a
@@ -328,7 +328,7 @@ try
             }
 
             using var doneClient = ServiceClient.FromEnvironment();
-            return await QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out);
+            return await QuestDoneCommand.PressAsync(doneAsk, doneClient, Console.Out, Daoris.Driver.Host.InstanceHost.World("quest"));
         }
 
         // The person's reopen of a sealed submission and their go-on with the step it held: the quest
@@ -343,7 +343,7 @@ try
             }
 
             using var reopenClient = ServiceClient.FromEnvironment();
-            return await QuestReopenCommand.RunAsync(reopenAsk, reopenClient, Console.Out);
+            return await QuestReopenCommand.PressAsync(reopenAsk, reopenClient, Console.Out, Daoris.Driver.Host.InstanceHost.World("quest"));
         }
 
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
@@ -360,12 +360,10 @@ try
         }
 
         using var client = ServiceClient.FromEnvironment();
-        var (ok, message) = verb == "delete"
-            ? await client.DeleteQuestAsync(questId)
-            : await client.AcceptDepartureAsync(questId);
-        Console.WriteLine($"daoris: {message}");
-        // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
-        return ok ? 0 : 1;
+        var questWorld = Daoris.Driver.Host.InstanceHost.World("quest");
+        return verb == "delete"
+            ? await QuestDeleteCommand.PressAsync(questId, client, Console.Out, questWorld)
+            : await QuestAcceptCommand.PressAsync(questId, client, Console.Out, questWorld);
     }
 
     // Sessions from a terminal: Sessions' list and its acts are the other door to the same
@@ -447,7 +445,7 @@ try
         return await Daoris.Driver.Host.HistoryConsole.RunAsync(historyArgs, log);
     }
 
-    // The tree lifecycle from a terminal: `daoris place trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
+    // The tree lifecycle from a terminal: a workflow's isolate step opts a repository in; these are disk.
     if (args is ["trees", .. var treesArgs])
     {
         return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);
@@ -461,7 +459,7 @@ try
 
     if (args is ["browser", .. var browserArgs])
     {
-        return Daoris.Driver.Host.BrowserConsole.Run(browserArgs);
+        return await Daoris.Driver.Host.BrowserConsole.RunAsync(browserArgs);
     }
 
     if (args is ["files", .. var filesArgs])

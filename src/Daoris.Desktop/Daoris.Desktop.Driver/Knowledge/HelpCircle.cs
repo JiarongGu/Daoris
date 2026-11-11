@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workspace Ask Daoris's tools are bound to: its room's, which is its record's
+/// The workspace Ask Daoris's tools default to: its room's, which is its record's
 /// workspace in a room of its own, and none for <c>default</c>'s room, the whole machine. Its knowledge connector is
-/// handed it beside the session (<see cref="KnowledgeConnector.SessionScope"/>), and then answers from that workspace alone, refusing
-/// a call that names another, or <c>all</c> (the service's <c>WorkspaceScope</c>).
+/// handed it beside the session (<see cref="KnowledgeConnector.SessionScope"/>), and then answers from that workspace unless a call
+/// names another, or <c>all</c> (the service's <c>WorkspaceScope</c>).
 /// </summary>
 /// <remarks>
 /// A file of its own rather than the connector's: the CLI's census of machine-local variables reads every driver file that builds a
@@ -25,8 +25,11 @@ public static class HelpCircle
     /// </summary>
     public static string? Of(string home, string room, string? workspace) => KnowledgeHelp.Current.GoesOnIn(home, workspace, room);
 
+    /// <summary>The workspace a conversation focused on <paramref name="focus"/> starts at; null for this machine and <c>default</c>.</summary>
+    public static string? OfFocus(HelpFocus focus) => KnowledgeHelp.Current.ScopeOf(focus.Workspace);
+
     /// <summary>
-    /// The workspace a conversation's record binds what it proposes to (<see cref="HelpProposalScope"/>): Ask Daoris's, its room's,
+    /// The workspace a conversation's record focuses what it lists on: Ask Daoris's, its room's,
     /// the record's tree being the room it ran in. Null for any other record, for none, and for the whole machine's room.
     /// </summary>
     public static string? OfRecord(string home, SessionRecord? record) =>

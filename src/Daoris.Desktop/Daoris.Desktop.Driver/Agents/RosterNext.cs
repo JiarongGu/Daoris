@@ -278,9 +278,11 @@ internal sealed class RosterNext(HarnessRoster roster)
         string adapter, AccountAgent toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
     {
         var owner = roster.Adapters.OwnerOfAgent(adapter).Value;
-        var others = HarnessSettings.Profiles(roster.Home, owner)
+        var profiles = HarnessSettings.Profiles(roster.Home, owner);
+        var facts = Facts(owner, [.. profiles], now);
+        var others = profiles
             .Where(name => !string.Equals(name, picked, StringComparison.OrdinalIgnoreCase))
-            .Where(name => Before(owner, name, now).IsReady)
+            .Where(name => Before(owner, name, now, fact: FactOf(facts, name)).IsReady)
             .ToList();
         if (others.Count == 0) return [];
 

@@ -159,6 +159,7 @@ public static class NeedsAPerson
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
+            if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
             var row = Row("review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
@@ -202,6 +203,8 @@ public static class NeedsAPerson
             row["sitting"] = consideration.DeepClone();
             rows.Add(row);
         }
+
+        rows.AddRange(UnclosedQuestRows.Rows(facts, quests));
 
         // A quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
         // steward*, the one act of the steward's that can leave something waiting on the owner. Read from the planner's verdict by its code.
@@ -320,6 +323,7 @@ public static class NeedsAPerson
             counted.Add(($"policy:{quest}", held));
         }
 
+        counted.AddRange(UnclosedQuestRows.Counted(facts, quests));
         return counted;
     }
 

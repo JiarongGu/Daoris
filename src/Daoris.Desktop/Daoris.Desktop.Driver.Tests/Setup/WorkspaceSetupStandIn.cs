@@ -13,6 +13,11 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
 
     public List<RegistrationRow> Rows { get; } = [];
 
+    /// <summary>The repositories whose workflow does not start with the isolate step; every other works apart.</summary>
+    public HashSet<string> InPlace { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) => InPlace.Contains(repository.Repository) ? null : IsolateStep.Trees;
+
     /// <summary>What a repository's line reads as, where it is not the default: an unadopted repository with a README.</summary>
     public Dictionary<string, LineReading> Lines { get; } = new(StringComparer.OrdinalIgnoreCase);
 

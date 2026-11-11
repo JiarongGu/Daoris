@@ -64,7 +64,7 @@ public sealed class PartnerAdmissionTests : IDisposable
     [Fact]
     public void A_quest_waits_for_the_last_slot_a_piece_reserved()
     {
-        var config = DriverConfig.Empty with { Drivable = ["A"], Cap = 1, Trees = ["A"] };
+        var config = DriverConfig.Empty with { Drivable = ["A"], Cap = 1 };
         var snapshot = new Snapshot([new QuestView("q1", "Asker", "A", "Ask q1", "Why.", "Open")], [new RepoView("A", true, "D:/fam/A")], [])
         {
             Pieces = [Piece("p1", PartnerStates.Approved)],

@@ -147,11 +147,15 @@ public static class PluginTrials
         PluginFolders.Make(entry.Data);
 
         // A plugin that works is told the kit's stand-in world, so an attempt it is sent reaches no platform.
-        var world = hooks.Points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? Path.Combine(scratch, "world.json") : null;
+        var world = hooks.Points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal) || HookPoints.System.Contains(point, StringComparer.Ordinal))
+            ? Path.Combine(scratch, "world.json")
+            : null;
         if (world is not null) AtomicFile.WriteText(world, "{}\n");
 
         // The tools it declares, each said in its own sentence; a problem there never stops the trial.
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
+
+        if (PluginTrialHand.Step(entry, toolsHome, options.Origin) is { } hand) steps.Add(hand);
 
         PluginTrialProcess process;
         try
@@ -242,10 +246,11 @@ public static class PluginTrials
                     continue;
                 }
 
-                if (kit.Name == HookPoints.Perform && (world is null || !PluginFolders.HasFile(world + ".taken")))
+                if (kit.Name is HookPoints.Perform or HookPoints.ApplyPerform && (world is null || !PluginFolders.HasFile(world + ".taken")))
                 {
-                    steps.Add(new(kit.Name, false,
-                        $"it did not take the kit's stand-in world ({PluginCycles.World}), so an attempt would reach its platform: none was sent."));
+                    steps.Add(new(kit.Name, false, kit.Name == HookPoints.Perform
+                        ? $"it did not take the kit's stand-in world ({PluginCycles.World}), so an attempt would reach its platform: none was sent."
+                        : $"it did not take the kit's stand-in world ({PluginCycles.World}), so an apply would write to its system: none was sent."));
                     continue;
                 }
 
@@ -318,6 +323,7 @@ public static class PluginTrials
     /// </summary>
     internal static void Own(JsonObject frame, PluginManifest manifest, string root)
     {
+        if (frame["system"]?.GetValue<string>() == PluginKit.SampleSystem && manifest.Systems.Count > 0) frame["system"] = manifest.Systems[0].Id;
         if (manifest.Steps.Count == 0) return;
         var step = manifest.Steps.FirstOrDefault(each => each.Reach == NodeReach.Performed) ?? manifest.Steps[0];
         if (frame["step"]?.GetValue<string>() == PluginKit.SampleStep) frame["step"] = step.Kind;
@@ -380,6 +386,23 @@ public static class PluginTrials
                     ?? throw new DriverException($"the frame is not a `{HookPoints.Perform}` frame: an attempt's unit, step, invocation, key, revision, inputs and deadline.");
                 await peer.PerformAsync(call, ct).ConfigureAwait(false);
                 return $"acknowledged `{call.Invocation}` in the stand-in world; its outcome comes at `{HookPoints.Step}`, which `--cycle` hears.";
+            }
+
+            case HookPoints.PlanRead:
+            {
+                var answer = await peer.SystemAsync(point, frame, ct).ConfigureAwait(false);
+                var operations = SystemWire.ReadPlan(answer)
+                    ?? throw new DriverException($"it answered {Clip(answer.GetRawText())}, which is not a change set — `{{ \"operations\": [{{ \"resource\", \"op\", \"before\", \"after\", \"precondition\": {{ \"kind\", \"version\" }} }}] }}`.");
+                return $"typed {operations.Count} operation(s): "
+                    + (operations.Count == 0 ? "nothing to change." : string.Join(", ", operations.Select(each => $"`{each.Resource}` {each.Op} under {each.Precondition.Kind}")) + ".");
+            }
+
+            case HookPoints.ApplyPerform:
+            {
+                var answer = await peer.SystemAsync(point, frame, ct).ConfigureAwait(false);
+                var applied = SystemWire.ReadApplied(answer)
+                    ?? throw new DriverException($"it answered {Clip(answer.GetRawText())}, which is not what an apply came to — `{{ \"state\": \"applied\" | \"unchanged\" | \"stale\" | \"failed\", \"applied\": [ … ] }}`.");
+                return $"`{applied.State}` in the stand-in world" + (applied.Message is { } words ? $" — {words}" : ".");
             }
 
             default:

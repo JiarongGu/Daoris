@@ -54,7 +54,13 @@ public static class SessionMove
     /// </summary>
     public const string Read = "read";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read;
+    /// <summary>A native session's permission ask (<see cref="ClaudeAskHook"/>): the tool in Operation, the call in Text; keyed as a say is.</summary>
+    public const string Permit = "permit";
+
+    /// <summary>A session's <c>system_plan</c>: its changes as a JSON list in Text, taken by its loop and answered in <see cref="SystemPlanAnswer"/>'s shape.</summary>
+    public const string Plan = "plan";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep or Set or Read or Permit or Plan;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -71,6 +77,9 @@ public static class RequestDoor
 
     /// <summary>Ask Daoris's housekeeping tool: the agent's, through its connector, never the person's.</summary>
     public const string Help = "help";
+
+    /// <summary>A working session's own connector tool, such as <c>system_plan</c>: the agent's, never the person's.</summary>
+    public const string Connector = "connector";
 }
 
 /// <summary>One move asked of one session, for whichever loop on the home runs it.</summary>
@@ -170,9 +179,6 @@ public sealed record SettingAnswer(string Setting, bool Done, string? Code, stri
     /// <summary>Chosen after this conversation's start, which is not handed it: it holds from its next turn.</summary>
     public const string NotHanded = "not-handed";
 
-    /// <summary>A language for a repository or a workspace outside the conversation's.</summary>
-    public const string Outside = "outside";
-
     /// <summary>The request names no setting of the five.</summary>
     public const string Named = "named";
 
@@ -204,9 +210,6 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
 
     /// <summary>Chosen after this conversation's start, which is not handed it: it holds from the next start.</summary>
     public const string NotHanded = "not-handed";
-
-    /// <summary>The repository is registered in another workspace than the conversation's.</summary>
-    public const string Outside = "outside";
 
     /// <summary>No repository of that name is registered here.</summary>
     public const string Unknown = "unknown";
@@ -526,12 +529,27 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said));
     }
 
+    /// <summary>What became of a permission ask, written beside it in housekeeping's answer's fields: done is the call allowed.</summary>
+    public void Answer(SessionRequest request, PermitAnswer answer)
+    {
+        var path = AnswerPath(request);
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(path, ToJson(answer.Tool, answer.Allowed, answer.Why, answer.Said));
+    }
+
     /// <summary>What became of a setting request, written beside it in housekeeping's answer's fields.</summary>
     public void Answer(SessionRequest request, SettingAnswer answer)
     {
         var path = AnswerPath(request);
         Directory.CreateDirectory(Folder);
         AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
+    }
+
+    /// <summary>What became of a system plan, written beside it in housekeeping's answer's fields.</summary>
+    public void Answer(SessionRequest request, SystemPlanAnswer answer)
+    {
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(AnswerPath(request), ToJson(SessionMove.Plan, answer.Done, answer.Code, answer.Said));
     }
 
     /// <summary>What became of a checkout read, written beside it in the same fields with what is read as <c>text</c>.</summary>

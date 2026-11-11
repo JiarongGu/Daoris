@@ -166,10 +166,12 @@ export type GoAhead = GoAheadResponse;
 export type AskAction = Omit<AskActionResponse, 'ask' | 'quest'> & { ask: Ask; quest?: Quest | null };
 /**
  * A registered repository as the service declares it (`generated/service.ts`); `root` is the checkout on this machine, answered to it
- * alone. The fields left out read as none.
+ * alone. The fields left out read as none; a `kind` left out is a repository's.
  */
-export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>
-  & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses'>>;
+export type Registration = Omit<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>
+  & Partial<Pick<RegistrationResponse, 'workspace' | 'joined' | 'sharesKnowledge' | 'addressable' | 'uses' | 'kind'>>;
+
+export const isFolder = (registration: Registration): boolean => registration.kind === 'folder';
 
 /** Whether a repository can be asked — the host's answer, or adoption where it gives none. */
 export const canBeAsked = (registration: Registration): boolean =>
@@ -535,6 +537,7 @@ export const api = {
     send('RespondQuest', { id, action, reason }).then(({ answer }) => answer),
   // The person's yes to a done's departure from what they required: what it held goes on.
   acceptQuest: (id: string) => send('AcceptQuest', { id }).then(({ answer }) => answer),
+  releasePlace: (id: string) => send('ReleasePlace', { id }).then(({ answer }) => answer),
   // The person's own done, with their words where they wrote any; never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
     send('MarkQuestDone', { id, ...(note ? { note } : {}) }).then(({ answer }) => answer),

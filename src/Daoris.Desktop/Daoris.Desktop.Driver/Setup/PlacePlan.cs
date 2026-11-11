@@ -18,7 +18,6 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
     /// </summary>
     public int? AtOnce { get; init; }
 
-    /// <summary>How many adoptions go alone before the paced plan pauses itself; none said is the workspace plan's default.</summary>
     public int? Pilot { get; init; }
 }
 
@@ -77,13 +76,10 @@ public sealed record PlaceRepository(
 public sealed record PlacePlanned(
     PlaceAsk Asked, IReadOnlyList<PlaceRepository> Repositories, IReadOnlyList<PlaceChanged> Changes, IReadOnlyList<PlaceRefusal> Refusals, string Terminal)
 {
-    /// <summary>The copies of shipped defaults the home saves first, each once, however many repositories choose it.</summary>
     public IReadOnlyList<PlaceSave> Saves { get; init; } = [];
 
-    /// <summary>Whether nothing is refused: an apply could take it.</summary>
     public bool Applies => Refusals.Count == 0;
 
-    /// <summary>What an apply is pinned to (<see cref="PlaceDigests.Of"/>): the plan's changes and declarations, said once.</summary>
     public string Digest => PlaceDigests.Of(this);
 }
 
@@ -126,6 +122,9 @@ public static class PlacePlans
     public const string Integration = "integration";
 
     public const string NoLandingPlugin = "no-landing-plugin";
+
+    /// <summary>A second opinion or a look ticked on <i>Work in place</i>, which has no landing for them to come before.</summary>
+    public const string InPlaceGates = "in-place-gates";
 
     /// <summary>What an adoption part says where general driving stays off: the set-up quest is admitted alone.</summary>
     public const string AloneSaid = "what starts here while general driving stays off";
@@ -216,12 +215,6 @@ public static class PlacePlans
         if (ask.Preset == SetupPresets.Keep)
         {
             // Keeping how it lands is a subset of a delivery: no landing and no workflow choice is written, so a saved workflow survives.
-            if ((ask.Drive || Driven(after)) && !after.OpensOwnTree(name))
-            {
-                after = after.WithTrees(name, true);
-                changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
-            }
-
             // A step is the workflow's, edited at its one door: the ticks choose a copy's variant, and none is kept.
             if (ask.Opinion || ask.Look) Refuse(Delivery, "keeps-workflow", KeepsSteps);
             if (ask.Drive && !Driven(after))
@@ -235,14 +228,13 @@ public static class PlacePlans
             after = after.WithDrivable(name, false);
             changes.Add(new("SET_DRIVABLE", Delivery, "driven here", "on", "off"));
         }
+        else if (preset?.Land is { } && WorkflowDefaults.Of(preset.Id) is { } offered
+                 && PlaceKindUnserved.Of(NodeGraphs.Read(offered.GraphJson).Graph!, row.Kind, offered.Id, 1) is { } unserved)
+        {
+            Refuse(Delivery, BindingProblem.PlaceKindUnserved, $"`{name}` cannot follow it: {unserved.Said} *Work in place* runs in any department.");
+        }
         else if (preset?.Land is { } land)
         {
-            if (!after.OpensOwnTree(name))
-            {
-                after = after.WithTrees(name, true);
-                changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
-            }
-
             after = Workflow(after, name, workspace, ask, land, tip, plugins, planned, saves, changes, Refuse);
             if (ask.Drive && !Driven(after))
             {
@@ -254,7 +246,9 @@ public static class PlacePlans
         if (ask.Adoption)
         {
             // The press's own rules over the configuration the plan would leave, so the two refuse alike.
-            foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row)) Refuse(Adoption, refusal.Code, refusal.Sentence);
+            // A landing preset's shipped workflow sets its sessions apart; otherwise the workflow the repository follows says.
+            var apart = preset?.Land is { Method: not SetupLand.InPlace } || (home is not null && PlaceIsolates.Of(home, after, name, workspace) is not null);
+            foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row, apart)) Refuse(Adoption, refusal.Code, refusal.Sentence);
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
@@ -283,6 +277,13 @@ public static class PlacePlans
                 ? $"`{name}`'s remote is on `{host}`, and no landing plugin here opens a pull request there: a pull request is its platform's "
                   + "plugin's to open. Add one on Plugins, or choose *A branch to push*."
                 : $"`{name}` names no remote here, so there is no platform to open a pull request on: add its `origin`, or choose *A branch to push*.");
+            return config;
+        }
+
+        if (land.Method == SetupLand.InPlace && (ask.Opinion || ask.Look))
+        {
+            refuse(Delivery, InPlaceGates,
+                "a second opinion and your look come before a landing, and *Work in place* lands nothing: your review in its place is your look.");
             return config;
         }
 
@@ -370,7 +371,7 @@ public static class PlacePlans
         IReadOnlyList<QuestView> quests = ask.Drive || ask.Adoption ? await world.QuestsAsync(ct).ConfigureAwait(false) : [];
         var store = WorkflowPorts.Store(home);
         WorkflowOperations.RegistryRead read = _ =>
-            Task.FromResult(new ChoicesRegistry([.. registry.Select(each => (each.Repository, (string?)each.Workspace, each.Root))], null));
+            Task.FromResult(ChoicesRegistry.Of(registry));
 
         var rows = new List<PlaceRepository>();
         var saves = new List<PlaceSave>();
@@ -435,7 +436,7 @@ public static class PlacePlans
             }
         }).ToList();
         return new PlaceSide(
-            driven, config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase), config.OpensOwnTree(repository), land,
+            driven, config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase), PlaceIsolates.Of(store, config, repository, workspace) is not null, land,
             steps?.Any(step => step.Kind == WorkflowKinds.Opinion) == true, steps?.Any(step => step.Kind == WorkflowKinds.Look) == true, match,
             PlaceProjection.ValuesAt(config, repository, workspace, PlaceSource.RepositoryLevel), policies);
     }

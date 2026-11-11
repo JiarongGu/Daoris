@@ -22,7 +22,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | A run's stages | `Loop/Run/`, listed in `docs/index/registered.md` | Each stage a module registers (`[RunStage(name, phase, after)]`, `IRunStage`), run at its phase's anchor in `RunAsync` in the kit's order and built with the driver as its `IRunWiring`; a stage that returns a `StartRun` holds the start there, and no stage after it runs |
 | `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree and the repository's trees held until the record is open, the binding, the set-up step, what the continue stage settled and the opened record; a member read before the stage that writes it throws, naming that stage; the state lets go of the held trees and the carry-on's move record with the run |
 | `GrowTree` | `Loop/Run/Tree/` | The `Grown` phase: the tree the session runs in, found where an earlier session worked or grown from the line, with the repository's trees held until the record is open; a hold lets the fresh tree go |
-| `StartAgent`, `CleanCheckout`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, a clean checkout, the account the walk or a resume takes, the access setup |
+| `StartAgent`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, the account the walk or a resume takes, the access setup |
+| `FolderManifestReader`, `FolderExcludes`, `PlaceExcludes`, `ManifestBounds`, `FolderChanges`, `FolderTurns`, `PlaceKind`, `FolderAdd`, `FolderFirstManifest`, `FolderDeclarationReader` | `Departments/Manifest/`, `Service/PlaceKind.cs`, `Service/FolderAdd.cs`, `Service/FolderDeclarationReader.cs` | A folder that is no git checkout as a place (`PlaceKind.At`): `daoris repository add <folder> [--workspace] [--exclude <glob>]...` registers it as `folder` through the registry route (its root to a service on this machine only, its own `daoris.json` and lanes read from disk, a git checkout refused toward `connect`) and reads its first manifest then, kept as the place's last so the first turn is told what changed since; `daoris repository excludes <folder> [--add <glob>]… [--remove <glob>]…` (none: says them; the window's `REGISTRY_EXCLUDES`, shown on the Confirm card by `FolderExcludesView`, and the folder page's *Files to leave out* row) rewrites the registration's globs whole through the service's `POST /api/registry/{repository}/excludes` (a person's door, a folder's alone) and reads the manifest again with them; its page's *Open* (the window's `REGISTRY_OPEN_FOLDER`, by the registered name) opens its folder in the file manager; its manifest a stat walk listing every file but the excludes (the defaults `~$*`, `.~lock.*#`, `Thumbs.db`, `desktop.ini`, `*.tmp`, and the registration's own globs: one with a `/` read from the root, `**` crossing folders; kept on the start's manifest so the end and the review pass the same files) with its size, time and SHA-256, hashing only what moved since the last manifest or lies within two seconds of it, links not followed; past its bounds, 250,000 files and five minutes unless this machine's `manifest` setting says others (`ManifestSetting`, read from the file at each manifest as `ManifestBounds.Of(home)`), it lists nothing and is too large to follow, still worked in place; the paths added, changed and removed between two; a turn's start and end, the end keeping the place with nothing; a place whose last manifest is git's never read as one, and a `.jj` root not read |
+| `PlaceChanges`, `TextPatch` | `Departments/Review/` | A folder turn's review: the files it changed against its start, from its end or the folder as it stands while it runs, each text file's unified diff from the store's blobs, a file that is not text a row with no patch; `SESSION_DIFF` answers it as `source: place` before any git read |
+| `RunManifest`, `ManifestReader`, `ManifestStore`, `ContentStore`, `PlaceChangesSince`, `PlaceTurns` | `Departments/Manifest/` | A git place's manifest (its status with each listed path's hash) kept at `<home>/work/places/<workspace>/<department>/manifests/`, the newest 20 and every named one; each new text file's blob beside it, the store bounded at 1 GB; the paths changed between two manifests, the turn's own still uncommitted and those not its own; a turn's start and end in its place (`PlaceTurns`: the start kept with its root and the paths its line carried in, the end read once, a record's found under any place of the home; a commit made since the last manifest's head is named among the paths changed outside Daoris), and `Loop/Chat/ChatPlaceTold.cs` (a conversation in its own checkout reads the same start and is told it with its first message, after the browser's line) |
+| `SystemChangeSet`, `SystemPlans`, `SystemChanges`, `SystemStaleWords`, `SystemWire`, `SystemPlanning` | `Departments/Systems/` | A place reached only through its console (design §5): a session never changes it; it plans through the connector's `system_plan`, a keyed request (move `plan`, its changes as the text) that the loop running it hands to its department's adapter, answering the plan's number and each resource's op, or a refusal where its department is no system; each session plans under its own record, so two at once keep their own plans; its turn's change set is the adapter's typed operations (`create`, `update`, `delete`, each with its value before and after and the precondition it is applied under, the version it read), kept whole and never rewritten as `<home>/work/plans/<record>/plan-<n>.json` with what its apply came to beside it as `applied-<n>.json`; `SESSION_DIFF` answers the newest plan as `source: place`, each operation a row named by its resource with its value before and after as a patch; a stale apply's words for the work, and those of one changed while applying, name each such resource's present value and version (`SystemStaleWords`). The adapter's channel is the plugins area's (`Plugins/Systems/`), the apply the workflows area's |
+| `PlaceHomeMarker`, `PlaceHome` | `Departments/`, `Loop/Run/Choose/` | The marker in a git place's common git directory naming the home that works it in place, and the start's stage that holds another home's start there |
+| `PlacePrompt`, `PlaceTold`, `PlaceDenies`, `PlaceAccount` | `Agents/`, `Context/` | What a start in its place is told of it (the `place` section, bounded at 30 paths a list), the denies its rules take where it found paths not its own, and the section's account |
+| `PlaceHolders` | `WorkOrders/Domain/` | The place's holder at a look, as the ledger's lease reads it, and the sentence a start sits with |
 | `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
 | `TrustedTree`, `GoOnRecord` | `Loop/Run/Trust/`, `Loop/Run/Continue/` | The `Cleared` phase: whether the harness trusts the tree (`TrustAsk`, asked again of an account a resume's words walk to), then the record the person's words wait on, continued or handed on in a new session |
 | `OpenRecord` | `Loop/Run/Open/` | The `Opened` phase: the record opened through the ledger, the carry-on's move record fenced before it, and how the account was chosen said on it |
@@ -83,6 +90,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, poll, trees, the adapters' commands, notify, the restart marks (`Forgiven`) and the quiet bound; its doors over the units below, so callers name it alone |
 | `MachineSettings` | `Settings/List/MachineSettings.cs` | Every machine setting declared once: its one key, which the terminal's verb, the route, Ask Daoris's door and the page's words spell, and its field in `driver.json`; the page reads it as `SETTINGS` |
 | `QuietSetting` | `Settings/QuietSetting.cs` | `quietMinutes`, the one quiet setting: its bounds as the list declares them, its read, its edit and the watcher's Q |
+| `ManifestSetting`, `ManifestSettingEdit` | `Settings/ManifestSetting.cs`, `Settings/ManifestSettingEdit.cs` | `manifest` in `driver.json`, `{ files, minutes, copy }` each written only when set: the most files (1,000 to 10,000,000) and minutes (1 to 60) a folder's manifest read spends, and the most megabytes (1 to 1,048,576, 2 GB by default) a folder's followed files may hold to be copied for a session working apart, set one at a time by `daoris settings manifest files\|minutes\|copy <n>` and `SET_MANIFEST` (shown by `MachineSettingView.Manifest`), the first two also by Settings' one *A folder is too large to follow past* row; the answer's `manifestFiles`, `manifestMinutes` and `manifestCopy` |
 | `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigWrites`, `DriverConfigEdits`, `Effective` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands, and the keyed-map edits; its one writer, which reads the file under its lock before every change (a save, a standing choice, the git access and identity keys), writes atomically and drops the file's kept stamp; what a load decided from (the content key, and the staffing's revision where the store's staffing was laid over it, none where that store failed); the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
 | `LinePolicyKey`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | A line policy's reading, writing and sentences (`LinePolicyKey`), and the integrate policy, form and names it reads |
 | `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
@@ -112,10 +120,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/Sessions.cs`, `Service/Sessions/SessionLedger.cs`, `Service/Sessions/Lines.cs` | Session records, the ledger's opens, moves and says, the tree lock, a line's head; the store and the ledger are roots that wire, each door one line to a part |
 | The session records | `Service/Sessions/Records/` | `Session`, `SessionState`, `SessionKind`, `SaidWord`, `SaidFrom`, `SaidLevel`, and the ledger's outcomes and refusals (`SessionOpenOutcome`, `SessionAdvanceOutcome`, `SessionSayOutcome`, `SessionTakeOutcome`, `SessionAttemptOutcome`, `AskWordOutcome`, `SessionDeleteOutcome` and their refusals), one file each |
 | The store's parts | `Service/Sessions/` | `SessionSchema` (the table, its triggers and upgrades, each alter with its backfill and the rebuild one transaction), `SessionColumnNames` (a table's `adapter` and `harness_version` renamed `door` and `door_version` as it opens), `SessionIndexes` (the indexes each record a list answers is read by: who continues it, a quest's last run, the conversation that took a quest, a mirror's id), `SessionRowCodec` (a row and a word read and written), `SessionReads` (finds, the tree and workspace locks, lists, the sync's reads, the review), `SessionWrites` (create, move, mirror, take, the machine-local keeps, delete, the cursors) and `SessionSaidStore` (words kept, taken, moved, marked and settled) |
-| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a tree, the busy sentence), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
+| The ledger's parts | `Service/Sessions/` | `SessionOpening` (a quest's, a chat's, Ask Daoris's and an intake's open, and the keyed open that moves words), `SessionAdvances` (the lifecycle table `Allowed`, a move, the go-on out of an ended state and the park after a helper), `SessionHolders` (who holds a copy's tree, the busy sentence) and `SessionPlaceLease` (the writer's lease on the place itself, its `holds_place` mark and its busy sentence; `ReleasePlace` clears the mark), `SessionSays` (the say door and the supervisor's answer), `SessionSaidMoves` (take, mark, take back, move), `SessionAskWords`, `SessionKeeps` (the machine-local facts of a run), `SessionDeletes` (a record goes only where it served no quest, no ask or quest names it, no later record of its line continues it, and no remote holds it), with `SaidAnswers` and `SaidKeeping` the sentences and the one keep of a person's word they share, and `SessionGoAheads` and `SessionReviews` beside them |
 | `AskStore`, `AskDesk` | `Service/Asks/AskStore.cs`, `Service/Asks/AskDesk.cs` | Ask records, the person's words on them, publishing and deleting; the desk is a root that wires, each door one line to a part |
 | The ask records | `Service/Asks/Records/` | `Ask`, `AskState`, `AskWord` and `AskWordKind`, `AskRequest`, `AskDraft`, `AskOutcome` and `AskRefusal`, the review and kind choices and proposals, one file each |
-| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
+| The desk's parts | `Service/Asks/` | `AskStandings` (an ask read against its quests), `AskPublishing` (ask, publish, close: a new ask is kept by insert only, so an identical ask finishing later leaves the first's row as it stands; a close is final, a second is refused and the first reason stands), `AskPublishGuard` (each receiver asked once, and no session's publish beside the ask's intake), `AskQuests` (the quest an ask becomes), `AskChoices` (review, kind and workflow), `AskGoAheadAnswers` and `AskDeletes` |
 
 ## Its rules
 
@@ -146,11 +154,49 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     order, oldest open first. (from D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a
     conversation the person holds. It is at least one. (from D130, D181)
-12. In a repository without its own trees, one session runs at a time, in the root. With trees on, sessions run side by
-    side, one per tree; only a resume or a carry-on goes back into an existing tree. (from D51, D167)
+12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Work apart*; `Workflows/Kinds/Isolate/`), the
+    graph's one entry wired into its work: its `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any`, bounded by the cap
+    alone; a full count sits a start `apart`, `PlaceCount`) and its `overlap` (`go`, `wait`: rule 14). The look reads each place's step
+    into the snapshot through Work orders' port onto Workflows (`IWorkOrdersWorkflows.Isolations`, `PlaceIsolates`, `Snapshot.Isolations`) and a start carries the step it was planned under (`Consideration.Isolate`),
+    which the tree stage reads, so a save between the plan and the start never changes where it works. The release's `PlaceWorkStep`
+    converted the old per-repository trees switch and the line policies' `overlap` into the step; `daoris place trees` answers where
+    the step is. In a repository whose workflow sets nothing apart, one writer works in its own place at a time, under the ledger's lease: the record
+    whose turn runs there (queued, starting or working), or in a git place the parked or waiting line whose end marked
+    uncommitted paths of its own (`holds_place`) until a turn commits them, they are discarded or the person lets others work
+    there. The person's commit or stash in the checkout releases from the mark each path it took out (`PlaceMarkDiscards`,
+    `ReleasePlace` with its paths), the place going once none is left; the person's acts there are refused only while a turn
+    runs. A park with nothing uncommitted holds nothing. The open and the move into a running state take it, the move out of
+    one writes the mark or none, and nothing renews it on a clock; a start sits behind the holder in the planner's order
+    (`SittingFact.Place`). Under the lease a start reads and keeps its place's manifest with the paths its line carried in,
+    (a driven turn and a conversation alike), and is told what changed there outside Daoris since the last session, commits
+    the person made between turns included, and the uncommitted paths not its own, whose
+    add-all, commit-all and stash its rules then deny (`PlaceTurns`, `PlaceDenies`); every move out of a running state, the
+    orphan sweep's stop included, reads the turn's end once and sends what of its own stays uncommitted as the mark, so a
+    commit clears it. A folder that is no git repository is worked in place the same way: its turn alone holds it, its start
+    reads every file's size, time and hash and is told what changed outside Daoris and that there is no git there, its end
+    marks nothing, and its review is the files the turn changed with each text file's diff (`FolderTurns`, `PlaceChanges`).
+    Under the step a folder's session works in a copy of its own (`CopyStart`, `FolderCopies`): every followed file copied to
+    `copies/c-<8 hex>` under the place's folder in the home, the copy's own bytes hashed afresh as its return's base (a file that
+    cannot be read refuses the copy) and the records that work there named in its sidecar, so a carry-on goes back into it; its turns
+    are compared with the copy's own last manifest, never the folder's, and its review is the copy against that base. A folder past
+    the copy bound (`daoris settings manifest copy <megabytes>`, 2 GB by default; 20,000 files), too large to follow, or more than half
+    the home's free disk is not copied, and the start is held with words naming the bound and the size and how to go on (raise the
+    bound, or choose a workflow with no isolate step); it never works in the folder itself in a copy's place. The workflow's `return`
+    brings the copy back (the workflows area's return kind).
+    In either kind a path the turn changed that no tool event of its run names, from its start on, is said as changed while it
+    ran by none of its tools, above its review and to the line at its next turn (`TurnUnattributed`).
+    A git place's first in-place start marks its common git directory with its home, and another home on
+    this machine is held there while that home stands (`PlaceHomeMarker`). A pull or a promotion that would move the repository's
+    own checkout waits only for the lease's holder there, a turn running or a line parked with uncommitted paths of its own, read
+    inside the checkout's hold (`CheckoutBeside`, `PlaceHolders.Leases`); in a session's own tree it waits for any session running,
+    waiting or held to go on there. Passes and a session in a tree of its own take no lease. Under the step, sessions run side by
+    side, one per tree; only a resume, a carry-on, or a later quest of the same run (a chain's step there) goes back into an
+    existing tree. A later quest of a line that is a run of its own starts in a tree and on a branch of its own, a further part
+    of the line, so no two runs work one branch (`RoundJoining`, `LineRuns`, the run rule `QuestRuns`). (from D51, D167, D254,
+    D258, D260, D265)
 13. A quest held by a session in flight does not start again: one working it, or a start still opening. Each start is
     reserved (quest, tree, place under the cap) before it begins. (from D181)
-14. Under the landing rule's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
+14. Under the isolate step's `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the
     repository waits until that work is integrated, a done unit's open integration request included, whose quest the look reads
     where the open list lacks it. A quest that goes back into a tree (a retry or a limit carry-on of
     an open quest) is no first start and does not wait. (from D215)
@@ -161,9 +207,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *Resume*. Another machine may still take an open one. Neither is a strike. (from D126, D132)
 17. A taken quest whose take is not this machine's sits. Nothing carries it on or resumes it here; the ledger refuses the
     open as `TakenElsewhere`. (from D80, D178)
-18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a dirty root, a
-    harness absent or signed out, a tree that would not grow, trust not given) reports its sentence as the quest's
-    reason. (from D64, D73)
+18. At each start the plugins are asked first, and a hold names the plugin. A start held at spawn (a harness absent or
+    signed out, a tree that would not grow, trust not given) reports its sentence as the quest's reason. Uncommitted work
+    in the place does not hold a start: the lease and the manifest say whose it is. A start in a checkout another Daoris home
+    on this machine works in place is held, naming no path (`PlaceHome`). (from D64, D73, D254)
 
 ### Start, tree and resume
 
@@ -375,7 +422,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     tree. (from D46, D51, D83)
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined. A clean exit holding its
     own quest parks as `AwaitingPerson`, quoting its last words. A clean exit on another's take stands down. A messy exit
-    with the quest taken fails. (from D46, D83)
+    with the quest taken fails. A park the person or the steward finishes ends `completed` and leaves its quest as it stands; a
+    taken quest so left, or left so again by a go-on from such an end, is `Unclosed` (`UnclosedQuests`): a row of *What needs you*
+    by the quest until the person's done closes it or their word goes on with the session in its tree, and its tree's work stays to
+    review. (from D46, D83)
 38. On the native door, a turn that ended while its own background work ran is cut off as failed and carried on. On
     the protocol door the session keeps waiting on that work. (from D83, D105)
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word that the driver can
@@ -394,9 +444,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     and a requirement must quote them. (from D65, D133)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat that names its
     ask. It reads the declarations and publishes quests. It runs only where an Intake actor is set, one per ask, in
-    slots the quests leave. A parked intake ends when the person answers the ask. (from D65, D205)
+    slots the quests leave. A parked intake ends when the person answers the ask. An ask asks each receiver once: a publish to a
+    receiver it holds an open, taken or done quest for, by another hand than that quest's publisher, answers that quest and
+    publishes nothing; one publisher's several quests to a receiver are its pieces of the work. While its intake is queued, starting
+    or working, or before any intake has served it, a session's publish other than the intake's is refused, naming the intake; the
+    person's press never is. The answer to a new ask the declarations left open says the intake publishes it where Intake is set. A
+    publish names the session that made it (a session's terminal names its own) and says when it carries no requirement. (from D65, D205, D255)
 45. An ask's or a quest's work is paused and resumed whole here, and abandoned by a listed second press that discards
-    only what nothing else holds. (from D132)
+    only what nothing else holds and stops every live step of the work's runs as the person's, with their reason, so no review or
+    landing of it stays offered; the home migration's `abandoned-runs` step does the same once for the runs of a declined quest or a
+    closed ask that an older build left live. A run with a step waiting on the person (an Accept, a task or approval, a
+    go-ahead, a held attempt) lists its newest session here in To review for an Accept and in Waiting on you otherwise, whatever
+    that session's own ending or archive mark, in the window and in `daoris session list` alike. (from D132)
 46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from`
     forward, at most 256 hops, and a cycle or the bound reads as no head. (from D167, D212)
 
@@ -452,8 +511,8 @@ index with `tools/orient-index.mjs`), `test-map` and `code-map` for any new file
 
 ## Contradictions
 
-- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `OpensOwnTree` branch) runs sessions side by
-  side, one per tree, where the repository opens its own trees. The code reads right (as D115 and D167 already say).
+- D46 and D51 say one driven session per repository; `WorkOrders/Domain/RoundConsidering.cs` (the `Isolate` branch) runs sessions side by
+  side, one per tree, where the repository's workflow starts with an `isolate` step. The code reads right (as D115 and D167 already say).
 - D46 says a fresh session per quest; `Course/Domain/LineCourse.Decide.cs` (`Decide`, `Account`) resumes the agent's own conversation
   where it holds. D189 reads right.
 - D51 rule 2 says a tree is opened for one line and never reused; D214 hands trees from line to line. D214 is proposed

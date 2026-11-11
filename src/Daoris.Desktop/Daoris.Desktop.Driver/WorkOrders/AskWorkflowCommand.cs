@@ -72,12 +72,15 @@ public static class AskWorkflowCommand
     /// Why a kind or a workflow cannot be chosen for an ask in <paramref name="workspace"/>, or null where both can (design §4.2,
     /// §3.9): a kind its workspace declares, and a workflow saved here whose newest version reads, or <c>current</c>.
     /// </summary>
-    public static string? Unchoosable(string? kind, string? workflow, string workspace, AskWorkflowWorld world)
+    public static string? Unchoosable(string? kind, string? workflow, string workspace, AskWorkflowWorld world) =>
+        Unchoosable(kind, workflow, workspace, world.Config(), world.Home);
+
+    public static string? Unchoosable(string? kind, string? workflow, string workspace, DriverConfig config, string home)
     {
         if (kind is not null)
         {
             var named = RemoteTarget.Workspace(workspace);
-            world.Config().WorkspaceWorkflows.TryGetValue(named, out var shared);
+            config.WorkspaceWorkflows.TryGetValue(named, out var shared);
             if (shared?.KindOf(kind) is null)
             {
                 var spelled = ShellWord.Of(named, "<workspace>");
@@ -87,8 +90,13 @@ public static class AskWorkflowCommand
         }
 
         if (workflow is null or WorkflowKey.Current) return null;
-        return WorkOrdersWorkflows.Current.Unusable(world.Home, workflow);
+        return WorkOrdersWorkflows.Current.Unusable(home, workflow);
     }
+
+    public static Task<int> PressAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        InstanceDoor.ThroughAsync(instance, PersonPresses.AskWorkflow,
+            InstanceDoor.Said(("ask", ask.Ask), ("kind", ask.Kind), ("workflow", ask.Workflow), ("words", ask.Words)),
+            () => RunAsync(ask, world, output, ct), output, ct);
 
     /// <summary>Set the choice on the ask, as its page's will, and print the service's sentence.</summary>
     public static async Task<int> RunAsync(AskWorkflowAsk ask, AskWorkflowWorld world, TextWriter output, CancellationToken ct = default)

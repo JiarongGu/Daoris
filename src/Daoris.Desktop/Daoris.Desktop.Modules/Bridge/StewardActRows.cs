@@ -11,7 +11,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public interface IStewardWorld
 {
-    /// <summary>The driver's file as it stands now.</summary>
     DriverConfig Config();
 
     /// <summary>An edit of the driver's file, and the loop nudged.</summary>
@@ -37,6 +36,9 @@ public interface IStewardWorld
 
     /// <summary>Whether <paramref name="tree"/> is a tree this home opened.</summary>
     bool OwnTree(string? tree);
+
+    /// <summary>Whether the workflow <paramref name="repository"/> follows sets its sessions apart, each in a tree of its own.</summary>
+    Task<bool> ApartAsync(string repository, CancellationToken ct);
 
     /// <summary>The live session stopped by this instance's own stop, its note handed in at the call: never a request file.</summary>
     bool StopHere(string id, Noted note);
@@ -91,6 +93,9 @@ public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
     public bool AliveOnThisMachine(string id) => Loop.Processes.AliveOnThisMachine(id);
 
     public bool OwnTree(string? tree) => tree is { Length: > 0 } && new SessionTrees(Loop.Home).Holds(tree);
+
+    public async Task<bool> ApartAsync(string repository, CancellationToken ct) =>
+        PlaceIsolates.Of(Loop.Home, Config(), repository, await WorkspaceOfAsync(repository, ct).ConfigureAwait(false)) is not null;
 
     public bool StopHere(string id, Noted note)
     {
@@ -185,7 +190,6 @@ public static class StewardActRows
     [
         new Setting(StewardActNames.Drive, "drivable", true, noTree: true, "SET_DRIVABLE"),
         new Setting(StewardActNames.Undrive, "drivable", false, noTree: false, "SET_DRIVABLE"),
-        new Setting(StewardActNames.Trees, "ownTree", true, noTree: false, "SET_TREES"),
         new Setting(StewardActNames.Hold, "held", true, noTree: false, "SET_HOLD"),
         new Setting(StewardActNames.Resume, "held", false, noTree: false, "SET_HOLD"),
         new StopAct(),
@@ -252,8 +256,8 @@ public static class StewardActRows
             var repository = Target(run.Form);
             if (!await world.RegisteredAsync(repository, ct).ConfigureAwait(false)) return StewardWhy.Unregistered;
             var config = world.Config();
-            // Row 1: trees are opt-in, so a repository whose sessions open none works in the owner's checkout: the owner's to drive.
-            if (noTree && !config.OpensOwnTree(repository)) return StewardWhy.NoTree;
+            // Row 1: a repository whose workflow sets nothing apart works in the owner's checkout: the owner's to drive.
+            if (noTree && !await world.ApartAsync(repository, ct).ConfigureAwait(false)) return StewardWhy.NoTree;
             // Resume: only a hold the steward made this run that nothing has touched since (its memory the role's).
             if (name == StewardActNames.Resume
                 && (!run.Judge.StewardHolds(repository) || !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase)))
@@ -270,7 +274,6 @@ public static class StewardActRows
             WorldOf(run).Change(config => name switch
             {
                 StewardActNames.Drive or StewardActNames.Undrive => config.WithDrivable(repository, value),
-                StewardActNames.Trees => config.WithTrees(repository, true),
                 _ => config.WithHold(repository, value),
             });
             run.Judge.StewardDid(run.Id, name, repository: repository);

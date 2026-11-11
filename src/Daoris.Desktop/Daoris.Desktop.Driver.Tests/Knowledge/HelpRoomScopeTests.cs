@@ -91,7 +91,7 @@ public sealed class HelpRoomScopeTests : IDisposable
         // The machine's: the same in every workspace's room.
         Assert.Equivalent(whole.Agents, alpha.Agents, strict: true);
         Assert.Equal((whole.Adapter, whole.Helper, whole.Cap), (alpha.Adapter, alpha.Helper, alpha.Cap));
-        Assert.Equal(["engine"], alpha.Reads.Select(read => read.Name));
+        Assert.Equal(["engine", "console", "tools"], alpha.Reads.Select(read => read.Name));
         Assert.Equal(["console", "engine", "tools"], whole.Reads.Select(read => read.Name));
 
         // `default`'s room is the whole machine.

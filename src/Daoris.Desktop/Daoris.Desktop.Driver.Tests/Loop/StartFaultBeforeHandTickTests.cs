@@ -40,9 +40,7 @@ public sealed class StartFaultBeforeHandTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null, new HttpClient(closes, disposeHandler: false));
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"],
-            Trees = ["engine"],
-            Actors = StaffedRoles.On("acp-stub"),
+            Drivable = ["engine"],            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", "-e", "process.exit(0)"] },

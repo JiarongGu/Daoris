@@ -170,6 +170,13 @@ public sealed class ProviderRegistry
     /// <summary>The provider a door belongs to.</summary>
     public ProviderId ProviderOf(DoorId door) => Entry(door).Provider.Id;
 
+    /// <summary>The provider a door or an agent's id names, a door first; null for a name the registry does not know.</summary>
+    public Provider? ProviderNamed(string name)
+    {
+        var trimmed = name.Trim();
+        return _doors.TryGetValue(trimmed, out var entry) ? entry.Provider : _providers.GetValueOrDefault(trimmed);
+    }
+
     /// <summary>
     /// The door's account key: its harness's <c>accountOf</c> verbatim, else its provider's id, never followed further,
     /// and the name itself for a door with no program.

@@ -185,7 +185,6 @@ public sealed class McpToolsTests : McpToolsFixture
         var answered = (await asks.FindAsync(ask.Id))!;
         Assert.Equal(AskDesk.ByIntake, answered.Tier);
         Assert.Equal([quest.Id], answered.Quests);
-        // Its own circle, though nothing registered sits where it runs.
         Assert.Contains("in workspace `default`", await new KnowledgeSearchTools(_service, circle).RegistryAsync());
     }
 
@@ -262,7 +261,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
         var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
-        const string Unchecked = "It carries no requirements, so nothing of the person's words will be checked when it is done.";
+        const string Unchecked = "It carries no requirement of the person's, so nothing checks its done against what was asked";
 
         var bare = await tools.PublishQuestAsync("intake", "Owner", "Build the report", "Reached through the bridge.", shortTitle: "Report");
 
@@ -732,68 +731,28 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Empty(await _quests.ListAsync());
     }
 
-    /// <summary>
-    /// Ask Daoris's four further tools each write one proposal under the home, naming the
-    /// conversation its connector is handed — and a malformed one writes nothing, said in the agent's terms.
-    /// </summary>
+    /// <summary>Ask Daoris's further tools each write one proposal under the home, naming the conversation its connector is handed.</summary>
     [Fact]
-    public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
+    public void Ask_Daoris_proposes_a_screen()
     {
         var home = Path.Combine(_root, "help-home");
         var intake = new IntakeScope(null, "h1e1p000");
         var box = new HelpProposalBox(home);
-        var agent = new HelpAgentTool(intake, box);
-        var delete = new HelpDeleteTool(intake, box);
-        var account = new HelpAccountTool(intake, box);
         var go = new HelpGoTool(intake, box);
-        var session = new HelpSessionTool(intake, box);
 
-        Assert.Contains("Proposed", agent.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
-        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
-        Assert.Contains("Proposed", account.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
         Assert.Contains("Proposed", go.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
         // ENTRY1f1: the tool hands the box the item it names.
         Assert.Contains("Proposed", go.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
         // ENTRY1d2a: and the workspace Add repository opens with.
         Assert.Contains("Proposed", go.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
-        Assert.Contains("Nothing was proposed", delete.ProposeDelete("no id at all"));
-        // SESSUX1h2a: the session kind's tool, and delete's session door.
-        Assert.Contains("Proposed", session.ProposeSession("archive", "the person is done with them", sessions: "s1,s2"));
-        Assert.Contains("Proposed", session.ProposeSession("archive", "tidy up", ended: true));
-        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", session: "s9"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
             .ToList();
-        Assert.Equal(["account", "agent", "delete", "delete", "go", "go", "go", "session", "session"], written.Select(file => file.GetProperty("kind").GetString()).Order());
+        Assert.Equal(["go", "go", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
         Assert.Contains(written, file => file.GetProperty("kind").GetString() == "go"
             && file.GetProperty("workspace").ValueKind == JsonValueKind.String && file.GetProperty("workspace").GetString() == "work");
         Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
-    }
-
-    /// <summary>
-    /// Ask Daoris proposes adding a plugin that has landed, from its folder in a repository's
-    /// checkout, or switching one on or off; the file names the conversation, and a malformed one writes nothing.
-    /// </summary>
-    [Fact]
-    public void Ask_Daoris_proposes_adding_a_plugin_or_switching_one()
-    {
-        var home = Path.Combine(_root, "help-plugin-home");
-        var tools = new HelpPluginTool(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
-
-        Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
-        Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
-        Assert.Contains("Nothing was proposed", tools.ProposePlugin("add", "no folder named"));
-        // One of the install's own by its id, and an update of an installed one.
-        Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants pull requests opened", offer: "github-pull-request"));
-        Assert.Contains("Proposed", tools.ProposePlugin("update", "a newer one has landed", id: "example.lands"));
-
-        var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
-            .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
-            .ToList();
-        Assert.Equal(["add", "add", "enable", "update"], written.Select(file => file.GetProperty("door").GetString()).Order());
-        Assert.All(written, file => Assert.Equal(("plugin", "h1e1p000"),
-            (file.GetProperty("kind").GetString(), file.GetProperty("by").GetProperty("session").GetString())));
     }
 
     /// <summary>What an agent reading the list is told: what each quest carries, what follows it, what it follows.</summary>

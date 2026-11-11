@@ -50,6 +50,10 @@ export type AskConversationSlot = {
    * confirmation, in a strip of its own right above the box. Absent where the snapshot names no mode, which offers no choice.
    */
   access?: ReactNode;
+  /** What the conversation is about: its focus chip, first in the access chip's strip, which wraps it alone onto a line when narrow. */
+  focus?: ReactNode;
+  /** The focus named under the open conversation's title, as a breadcrumb with its marks. */
+  crumb?: ReactNode;
   /** *What it has*, drawn in the conversation's place while it is open, the box still below it. */
   wired?: ReactNode;
   /** Whether the next start runs with full access, which the opening words then say: it acts, not proposes. */
@@ -168,7 +172,8 @@ export function AskPanel({
     // The history holds its own head, its search and its rows' scroll.
     <div className="flex min-h-0 flex-1 flex-col">{conversation!.history}</div>
   ) : (
-    <div className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
+    // The panel is the container its strip's chips and the focus picker measure their width against.
+    <div className="@container flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
       {conversation && (
         <ConversationHead
           title={conversation.title ?? null}
@@ -176,6 +181,7 @@ export function AskPanel({
           onHistory={conversation.onHistory}
           onNew={conversation.onNew}
           newPending={conversation.newPending}
+          crumb={conversation.crumb}
         />
       )}
       {/* What it published, under its head and outside the scroll, so it stays in view as the words move. */}
@@ -194,8 +200,13 @@ export function AskPanel({
       {note && (
         <div className="grid shrink-0 grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 border-t border-line px-4 py-2">{note}</div>
       )}
-      {/* The access chip beside the box, in the side bar's dock as in its own region. */}
-      {conversation?.access && <div className="shrink-0 border-t border-line px-3 py-1.5">{conversation.access}</div>}
+      {/* The focus and access chips beside the box, in the side bar's dock as in its own region. */}
+      {(conversation?.focus || conversation?.access) && (
+        <div className="flex shrink-0 flex-wrap items-start gap-x-2 gap-y-1 border-t border-line px-3 py-1.5">
+          {conversation.focus}
+          {conversation.access && <div className="min-w-0">{conversation.access}</div>}
+        </div>
+      )}
       {conversation?.composer}
     </div>
   );
@@ -236,12 +247,13 @@ export function AskPanel({
  * wrapping where it must, so two pasted URLs read apart, and a new conversation at its end. Its heading takes the focus as a
  * conversation is opened from the history, so a keyboard lands where the person now is.
  */
-function ConversationHead({ title, focus, onHistory, onNew, newPending }: {
+function ConversationHead({ title, focus, onHistory, onNew, newPending, crumb }: {
   title: string | null;
   focus: number;
   onHistory?: () => void;
   onNew?: () => void;
   newPending?: boolean;
+  crumb?: ReactNode;
 }) {
   const { t } = useTranslation();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -250,7 +262,7 @@ function ConversationHead({ title, focus, onHistory, onNew, newPending }: {
   }, [focus]);
 
   return (
-    <header className="flex shrink-0 items-start gap-1 border-b border-line px-2 py-1">
+    <header className="flex shrink-0 flex-wrap items-start gap-x-1 border-b border-line px-2 py-1">
       {onHistory && (
         <Button
           variant="ghost"
@@ -279,6 +291,8 @@ function ConversationHead({ title, focus, onHistory, onNew, newPending }: {
           </Button>
         </Tip>
       )}
+      {/* The focus under the title, on a line of its own. */}
+      {crumb && <div className="-mx-2 basis-full">{crumb}</div>}
     </header>
   );
 }

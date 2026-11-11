@@ -64,7 +64,6 @@ public static class GitIdentityCommand
     public static bool Changes(IReadOnlyList<string> args) =>
         Answers(args) && !(args[0] == "identity" && args.Count > 1 && args[1] is "list" or "public-key") && !args.Any(arg => arg is "--help" or "-h");
 
-    /// <summary>The line a press the window confirmed and ran is said with.</summary>
     public const string Confirmed = "git: confirmed in Daoris's window and done there.";
 
     /// <summary>Run the words; the exit code is the family's.</summary>
@@ -74,12 +73,6 @@ public static class GitIdentityCommand
         {
             await error.WriteLineAsync($"git: `{(args.Count == 0 ? "" : args[0])}` is not a git verb.\n{Usage}").ConfigureAwait(false);
             return 2;
-        }
-
-        if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
-        {
-            await error.WriteLineAsync($"git: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
-            return 1;
         }
 
         IReadOnlyDictionary<string, string?> flags;
@@ -94,7 +87,16 @@ public static class GitIdentityCommand
             return 1;
         }
 
-        Task<int> Alone() => ActAsync(words, flags, world, output, error, ct);
+        async Task<int> Alone()
+        {
+            if (Changes(args) && world.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
+            {
+                await error.WriteLineAsync($"git: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
+                return 1;
+            }
+
+            return await ActAsync(words, flags, world, output, error, ct).ConfigureAwait(false);
+        }
         if (!Widens(words, flags)) return await Alone().ConfigureAwait(false);
         if (Pressed(words, flags) is not { } press) return await Alone().ConfigureAwait(false);
         return await world.Press(press.Route, press.Payload, Alone, _ =>
@@ -136,12 +138,13 @@ public static class GitIdentityCommand
                 return (PersonPresses.GitIdentity, new Dictionary<string, object?> { ["action"] = "read-only", ["identity"] = name, ["on"] = false });
             case ["identity", "remove", var name]:
                 return (PersonPresses.GitIdentity, new Dictionary<string, object?> { ["action"] = "remove", ["identity"] = name });
-            case ["use", ..] when words[^1] == GitIdentityUse.Own:
+            case ["use", ..]:
             {
+                var clear = flags.ContainsKey("--clear");
                 var payload = new Dictionary<string, object?>();
                 if (flags.ContainsKey("--machine")) payload["scope"] = "machine";
                 else if (Flag(flags, "--workspace") is { } workspace) (payload["scope"], payload["workspace"]) = ("workspace", workspace);
-                else if (words.Count == 3) (payload["scope"], payload["repository"], payload["remote"]) = ("repository", words[1], Flag(flags, "--remote") ?? "origin");
+                else if (words.Count == (clear ? 2 : 3)) (payload["scope"], payload["repository"], payload["remote"]) = ("repository", words[1], Flag(flags, "--remote") ?? "origin");
                 else return null;
                 if (payload["scope"] is "machine" or "workspace")
                 {
@@ -149,7 +152,12 @@ public static class GitIdentityCommand
                     payload["host"] = host;
                 }
 
-                payload["value"] = GitIdentityUse.Own;
+                if (!clear)
+                {
+                    if (words.Count != (payload["scope"] is "repository" ? 3 : 2)) return null;
+                    payload["value"] = words[^1];
+                }
+
                 return (PersonPresses.GitUse, payload);
             }
 
@@ -192,8 +200,9 @@ public static class GitIdentityCommand
     }
 
     /// <summary>
-    /// Whether the words are a widening: an import, a host's key trusted, <c>own</c> chosen, <c>read-only</c> turned off, an
-    /// identity removed (the pointers at it fall to a looser step).
+    /// Whether the words are pressed through the window: an import, a host's key trusted, <c>read-only</c> turned off, an
+    /// identity removed (the pointers at it fall to a looser step), and every <c>use</c>, whose card names the choice
+    /// (<c>own</c> widens what Daoris's git may use).
     /// </summary>
     public static bool Widens(IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags) =>
         words switch
@@ -202,7 +211,7 @@ public static class GitIdentityCommand
             ["identity", "test", ..] => flags.ContainsKey("--trust-host"),
             ["identity", "read-only", _, "off"] => true,
             ["identity", "remove", ..] => true,
-            ["use", ..] => words.Contains(GitIdentityUse.Own),
+            ["use", ..] => true,
             _ => false,
         };
 

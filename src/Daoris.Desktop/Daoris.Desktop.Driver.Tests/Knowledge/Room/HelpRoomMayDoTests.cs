@@ -178,7 +178,7 @@ public sealed class HelpRoomMayDoTests
     /// <summary>
     /// A server a plugin offers it that the person has not approved, or whose tools an update changes, is never
     /// taken away in silence. The room names what it would have, reads and writes apart, says it once at the start, and where it is
-    /// approved: the plugin's page, or its own proposal (`plugin_propose`'s `approve`), rather than only opening the page. One the
+    /// approved: the plugin's page, or its press (`daoris plugins approve`), rather than only opening the page. One the
     /// installed copy lacks and the install's newer copy offers is said with its update first.
     /// </summary>
     [Fact]
@@ -199,10 +199,10 @@ public sealed class HelpRoomMayDoTests
             + "things outside Daoris with `browser_click`, each write only as the person accepts it", room);
         Assert.Contains("- `wiki` (plugin `acme.wiki`): would read with `lookup`; approved once, and an update has changed its tools since, so it asks again", room);
         Assert.Contains("- `pages` (plugin `acme.pages`): this install's own `acme.pages` 1.1.0 offers it you, and the 1.0.0 installed "
-            + "here does not, so it is updated first (`plugin_propose`, `update`), then approved", room);
+            + "here does not, so it is updated first (`daoris plugin update acme.pages --yes`), then approved", room);
         Assert.Contains("Say so once, at the start of your first answer", room);
         Assert.Contains("Plugins → the plugin's page → Ask Daoris → Approve", room);
-        Assert.Contains("propose the approval with `plugin_propose` (`approve`", room);
+        Assert.Contains("press `daoris plugins approve <id> <server>`", room);
         Assert.DoesNotContain("These servers wait for the person's approval", room);
     }
 
@@ -311,13 +311,16 @@ public sealed class HelpRoomMayDoTests
         Assert.Contains("`daoris ask-daoris mode full`", room);
         Assert.Contains("never yours to propose", room);
         Assert.Contains("You change nothing yourself", room);
+        // It runs Daoris's own verb, and each change that verb presses waits on the person's card.
+        Assert.Contains("Daoris's own (`daoris`)", room);
+        Assert.Contains("each change it presses waits on the person's card", room);
     }
 
     /// <summary>
     /// In full access the room says it acts on this machine itself, with every server the plugins
     /// here declare and nothing to approve; it says nothing that is restricted mode's alone (no shell, nothing changed, servers
     /// waiting, reading switched off); and the doctrine still speaks: a repository's work through a quest, Daoris's housekeeping its
-    /// own, a push and a key the person's.
+    /// own. Its verb's presses are the person's, run at once and said here; it proposes only what the person asks to see first.
     /// </summary>
     [Fact]
     public void In_full_access_the_room_says_it_acts_itself_and_drops_what_is_restricted_modes_alone()
@@ -330,11 +333,14 @@ public sealed class HelpRoomMayDoTests
             PluginServersWaiting = [new("acme.wiki", "wiki", ["lookup"])],
         });
 
-        Assert.Contains("You act on this machine yourself, as the person chose", room);
+        Assert.Contains("You act on this machine as the person, as they chose", room);
+        Assert.Contains("each press runs at once as the person's own, said on this conversation", room);
+        Assert.Contains("only what the person asks to see first", room);
         Assert.Contains("say what you will do before you do it", room);
         Assert.Contains("`ask_propose`", room);
         Assert.Contains("Daoris's own housekeeping is yours to do", room);
-        Assert.Contains("Never push, sign in, or handle a key", room);
+        Assert.Contains("the person's own denies still hold", room);
+        Assert.DoesNotContain("Never push, sign in, or handle a key", room);
         Assert.Contains("every server they declare, with nothing to approve: `tickets` (plugin `acme.tickets`), `browser` (plugin `in-app-browser`)", room);
         foreach (var restricted in new[]
                  {

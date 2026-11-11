@@ -11,13 +11,12 @@ import { AskHistory } from './AskHistory';
 import { type AskConversationSlot, AskPanel } from './AskPanel';
 import type { HelpConversationRow } from './history';
 import { ProposalCard } from './ProposalCard';
-import { publishedCounts, publishedItems } from './published';
-import { PublishedList } from './PublishedList';
+import { publishedCounts, publishedItems } from './published/published';
+import { PublishedList } from './published/PublishedList';
 import { starters } from './starters';
 import { TAKEN, WORKING } from '../quests/fixtures';
 
-// Ask Daoris: its panel on a machine that lacks everything, on one that lacks nothing,
-// and in Chinese widths by the same props.
+// Ask Daoris: its panel on a machine that lacks everything, on one that lacks nothing, and in Chinese widths by the same props.
 
 const meta = {
   title: 'Help/AskPanel',
@@ -30,7 +29,6 @@ type Story = StoryObj<typeof meta>;
 
 export const LacksEverything: Story = {
   args: {
-    // The setup guide's standing: the starters lead to it while it is not done.
     setup: { done: 0, of: 5 },
     starters: starters({
       repositories: [], drivable: [], waiting: 2, unnamedLines: [], helper: null,
@@ -82,10 +80,10 @@ export const Proposing: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           <ProposalCard
             proposal={{
-              id: 'p1a2b3c4', kind: 'setting',
-              describe: 'Land `engine`\'s accepted work on a branch `feature/{quest}-{slug}`, its tree removed once landed.',
-              terminal: 'daoris place landing engine branch feature/{quest}-{slug} --tidy',
-              why: 'you asked for its work on feature branches',
+              id: 'p1a2b3c4', kind: 'workflow',
+              describe: 'Choose workflow `docs-to-pr` for `web-app`: new work only.',
+              terminal: 'daoris workflow use docs-to-pr --scope web-app',
+              why: 'you asked for a pull request per change',
             }}
             onApply={() => {}}
             onDismiss={() => {}}
@@ -96,10 +94,7 @@ export const Proposing: Story = {
   },
 };
 
-/**
- * A card for each door built since — an agent's update, an account's model and effort, a delete of
- * a record made by mistake, and a go to a screen, which changes nothing and carries no command.
- */
+/** A card for each door built since: a go to a screen, which changes nothing and carries no command. */
 export const ProposingEveryKind: Story = {
   args: {
     ...Talking.args,
@@ -109,88 +104,8 @@ export const ProposingEveryKind: Story = {
         <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
           {[
             {
-              id: 'u1', kind: 'agent' as const,
-              describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
-              terminal: 'daoris agent update claude-code-acp', why: 'you asked for the newest',
-            },
-            {
-              id: 's1', kind: 'account' as const,
-              describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
-              terminal: 'daoris agent settings claude-code --account work model opus effort high', why: 'you want it to think harder',
-            },
-            {
-              id: 'd1', kind: 'delete' as const,
-              describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-              terminal: 'daoris ask delete a1b2c3d4', why: 'it was a test',
-            },
-            {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',
-            },
-            {
-              id: 'x1', kind: 'plugin' as const,
-              describe: 'Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`, copied into Daoris\'s home under its id; the driver starts what it runs at its next look.',
-              terminal: 'daoris plugin add /checkouts/house-plugins/quiet-hours', why: 'you want quests held overnight',
-              plugin: {
-                id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.0.0',
-                command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider'],
-                harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
-              },
-            },
-            // The browser's settings, and bringing up to date before and after the person looked.
-            {
-              id: 'b1', kind: 'browser' as const,
-              describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
-              terminal: 'daoris browser links daoris', why: 'you want tickets opened where your sign-ins are',
-            },
-            {
-              id: 'y1', kind: 'sync' as const,
-              describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you — only origin\'s own refs move — and this card then lists what the press would do.',
-              terminal: 'daoris tree sync --repository engine', why: 'your pull request merged',
-              sync: { looked: false, rows: [] },
-            },
-            {
-              id: 'y2', kind: 'sync' as const,
-              describe: 'Bring `engine` up to date: 3 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris tree sync --repository engine --yes', why: 'your pull request merged',
-              sync: {
-                looked: true,
-                rows: [
-                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-                  { key: 'engine:daoris/s-step', step: 'replay' as const, moves: true, says: 'engine  daoris/s-step  replays 2 commit(s) of its own onto `main`, after `feature/q2-first`\'s work, which reached the line' },
-                  { key: 'engine:daoris/s-busy', step: 'replay' as const, moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
-                  { key: 'engine:feature/q2-first', step: 'delete' as const, moves: true, says: 'engine  feature/q2-first  its work is on the line' },
-                ],
-              },
-            },
-            // A look where a line could not be fetched and other repositories are left apart, said on the card.
-            {
-              id: 'y3', kind: 'sync' as const,
-              describe: 'Bring every repository with a checkout here up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
-              terminal: 'daoris tree sync --yes', why: 'your pull request merged',
-              sync: {
-                looked: true,
-                rows: [
-                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-                  { key: 'game:main', step: 'line' as const, moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
-                ],
-                notFetched: [{
-                  repository: 'game', fetch: 'fatal: Could not read from remote repository.',
-                  lastFetch: new Date(Date.now() - 2 * 86_400_000).toISOString(), reach: 'ssh',
-                }],
-                apart: ['docs', 'site', 'tools'],
-              },
-            },
-            // The helper and pass doors of a session proposal.
-            {
-              id: 'y4', kind: 'session' as const,
-              describe: 'Ask agent `codex`, read-only, a question about session `s1`\'s work at the driver\'s next look. Its answer comes to you, and reaches that session only once you pass it to the lead.',
-              terminal: 'daoris session helper s1 "does the retry loop stop?" --agent codex --after a7 --to-me', why: 'you want a second look',
-            },
-            {
-              id: 'y5', kind: 'session' as const,
-              describe: 'Pass the answer to ask `#a7`, kept for you, to session `s1`.',
-              terminal: 'daoris session pass a7', why: 'the answer reads right',
             },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
@@ -199,10 +114,7 @@ export const ProposingEveryKind: Story = {
   },
 };
 
-/**
- * The block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
- * sentence the driver's saying the quest is taken, *Go there* beside *Dismiss*, which only takes the card away.
- */
+/** A published quest a session has taken: a go card saying so, *Go there* beside *Dismiss*, which only takes the card away. */
 export const ProposingAGoToATakenQuest: Story = {
   args: {
     ...Talking.args,

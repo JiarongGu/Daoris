@@ -114,9 +114,8 @@ internal static class HelpRoomDescriptions
     private static class MayDo
     {
         /// <summary>
-        /// The checkouts it may read: every readable one here, from the driver's own setting, in every workspace in <c>default</c>'s room.
-        /// A workspace's room reads its own workspace's alone, of those reading across already
-        /// allows: they are what its spawn is granted, so the room lists what its rules allow.
+        /// The checkouts it may read: every readable one here, from the driver's own setting, in every workspace's, a workspace's room
+        /// listing its own workspace's first. They are what its spawn is granted, so the room lists what its rules allow.
         /// </summary>
         public static HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
         {
@@ -148,15 +147,16 @@ internal static class HelpRoomDescriptions
         private static HelpMachine Restricted(
             HelpMachine machine, HelpMachineSources sources, IReadOnlyList<RepoView> registry, Dictionary<string, string> workspaceOf)
         {
-            // The grants intersect, its workspace's checkouts and those reading across allows; the whole registry stays the
-            // one each checkout's workspace is named from.
-            var readable = sources.Workspace is { } circle
+            // Every checkout reading across allows, on the machine, its own workspace's first.
+            var own = sources.Workspace is { } circle
                 ? registry.Where(known => string.Equals(RemoteTarget.Workspace(known.Workspace), circle, StringComparison.OrdinalIgnoreCase))
-                : registry;
+                    .Select(known => known.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                : [];
             return machine with
             {
-                Reads = [.. AcrossReads.Readable(sources.Config, readable)
-                    .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
+                Reads = [.. AcrossReads.Readable(sources.Config, registry)
+                    .OrderBy(checkout => own.Contains(checkout.Repository) ? 0 : 1)
+                    .Select(checkout => new HelpRead(checkout.Repository, own.Contains(checkout.Repository) ? sources.Workspace! : workspaceOf[checkout.Repository], checkout.Path))],
                 // The servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
                 PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Approved)
                     .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
@@ -233,7 +233,7 @@ internal static class HelpRoomDescriptions
                     Checkout = known.Root is { Length: > 0 },
                     Drivable = Named(config.Drivable, known.Repository),
                     Held = Named(config.Holds, known.Repository),
-                    OwnTree = config.OpensOwnTree(known.Repository),
+                    OwnTree = (sources.Snapshot as Snapshot)?.IsolationOf(known.Repository) is not null,
                     Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
                     // A checkout whose line the facts have not judged yet, said so rather than as none git can name.
                     LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),

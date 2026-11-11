@@ -119,6 +119,8 @@ public sealed record AbandonOutcome(WorkScope Scope, string Id, AbandonVerdict V
     /// <summary>Each session archived.</summary>
     public IReadOnlyList<string> Archived { get; init; } = [];
 
+    public IReadOnlyList<string> RunsEnded { get; init; } = [];
+
     /// <summary>What the list kept by design, and each session stopped but left to review.</summary>
     public IReadOnlyList<AbandonKeep> Stayed { get; init; } = [];
 

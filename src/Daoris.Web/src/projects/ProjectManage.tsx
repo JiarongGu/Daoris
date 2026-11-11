@@ -4,6 +4,10 @@ import type { api, Registration } from '../data/api';
 import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
+import { FolderExcludesField, parseExcludes } from './FolderExcludesField';
+import { SystemChoiceField, systemsOffered } from './SystemChoiceField';
+import { chooseInPlace, choosesInPlace, type DepartmentKind } from './inPlace';
+import { usePlugins } from '../bridge/plugins';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
@@ -46,15 +50,56 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
   const register = useRegisterRepository();
   const [found, setFound] = useState<FolderInspection | null>(null);
   const [workspace, setWorkspace] = useState(initialWorkspace ?? '');
+  const [excludes, setExcludes] = useState('');
+  // A system reached only through its console, chosen in place of a folder: it has no folder to pick.
+  const [system, setSystem] = useState<string | null>(null);
+  const [systemName, setSystemName] = useState('');
+  const plugins = usePlugins({ enabled: system !== null });
   const filled = Boolean(initialWorkspace);
+  // A repository may be worked in place; a folder and a system always are, since no other shipped workflow runs there.
+  const [inPlace, setInPlace] = useState(false);
+
+  /** Told the department registered: where the add chooses *Work in place*, its set-up of one is applied in the same press. */
+  const added = (name: string, kind: DepartmentKind) => {
+    if (!choosesInPlace(kind, inPlace)) return;
+    chooseInPlace(name).then(
+      (applied) => notify(applied.done
+        ? t('projects.manage.inPlaceChosen', { name })
+        : t('projects.manage.inPlaceRefused', { name, why: applied.message })),
+      failure(notify),
+    );
+  };
 
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
-    onSuccess: (inspection) => { if (inspection) setFound(inspection); },
+    onSuccess: (inspection) => { if (inspection) { setFound(inspection); setSystem(null); } },
     onError: failure(notify),
   });
 
+  const addSystem = (chosen: string) => {
+    const name = systemName.trim() || (chosen.split('/')[1] ?? chosen);
+    register.mutate({
+      repository: name,
+      adopted: false,
+      kind: 'system',
+      system: chosen,
+      ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
+    }, {
+      onSuccess: (registered) => {
+        notify(t('projects.manage.added', { name, workspace: registered.workspace }));
+        added(registered.repository, 'system');
+        onAdded?.(registered.repository);
+        onClose();
+      },
+      onError: failure(notify),
+    });
+  };
+
   const add = () => {
+    if (system) {
+      addSystem(system);
+      return;
+    }
     if (!found) return;
     register.mutate({
       repository: found.name,
@@ -62,6 +107,8 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
       // What the shell found there, stated: registered is addressable, adopted is disciplined —
       // and a row that said adopted without a manifest would be driven with no connector.
       adopted: found.adopted,
+      kind: found.git ? 'git' : 'folder',
+      ...(!found.git && parseExcludes(excludes).length > 0 ? { excludes: parseExcludes(excludes) } : {}),
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted
         ? {
@@ -74,6 +121,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     }, {
       onSuccess: (registered) => {
         notify(t('projects.manage.added', { name: found.name, workspace: registered.workspace }));
+        added(registered.repository, found.git ? 'git' : 'folder');
         onAdded?.(registered.repository);
         onClose();
       },
@@ -107,7 +155,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
         <div className="flex items-center gap-2">
           <Button
             variant="primary"
-            disabled={!found?.exists || register.isPending}
+            disabled={(system === null ? !found?.exists : !system) || register.isPending}
             onClick={add}
           >
             {t('projects.manage.register')}
@@ -118,11 +166,28 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
     >
       <p className="text-body text-ink-soft">{t('projects.manage.addBody')}</p>
 
-      <Button className="mt-3" onClick={choose} disabled={pick.isPending}>
-        {t('projects.manage.choose')}
-      </Button>
+      <div className="mt-3 flex gap-2">
+        <Button onClick={choose} disabled={pick.isPending}>
+          {t('projects.manage.choose')}
+        </Button>
+        <Button onClick={() => { setSystem(''); setFound(null); }}>{t('projects.manage.chooseSystem')}</Button>
+      </div>
 
-      {!found && filled && <div className="mt-4 border-t border-line pt-3.5">{field}</div>}
+      {system !== null && (
+        <div className="mt-4 border-t border-line pt-3.5">
+          <SystemChoiceField
+            offered={systemsOffered(plugins.data?.plugins ?? [])}
+            system={system}
+            name={systemName}
+            onSystem={setSystem}
+            onName={setSystemName}
+          />
+          <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceSystem')}</p>
+          {field}
+        </div>
+      )}
+
+      {!found && system === null && filled && <div className="mt-4 border-t border-line pt-3.5">{field}</div>}
 
       {found && (
         <div className="mt-4 border-t border-line pt-3.5">
@@ -130,7 +195,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
             <Chip accent>{found.name}</Chip>
             <Chip>{found.adopted ? t('projects.manage.adopted') : t('projects.manage.notAdopted')}</Chip>
-            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.noGit')}</Chip>
+            <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.folder')}</Chip>
           </p>
           {found.summary && <p className="mt-2 text-body text-ink-soft">{found.summary}</p>}
 
@@ -144,9 +209,20 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-              {t('projects.manage.noGitWarning')}
+            <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">
+              {t('projects.manage.folderNote')}
             </p>
+          )}
+
+          {!found.git && <FolderExcludesField value={excludes} onChange={setExcludes} />}
+
+          {found.git ? (
+            <label className="mt-3 flex items-start gap-2 text-small text-ink-soft">
+              <input type="checkbox" className="mt-0.5" checked={inPlace} onChange={(event) => setInPlace(event.target.checked)} />
+              <span>{t('projects.manage.inPlaceTick')}</span>
+            </label>
+          ) : (
+            <p className="mt-3 text-small text-ink-soft">{t('projects.manage.inPlaceFolder')}</p>
           )}
 
           {field}

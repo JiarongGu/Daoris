@@ -31,6 +31,29 @@ public static class RegistryWords
         return lines;
     }
 
+    public static string AddDry(string folder, string? workspace) =>
+        $"daoris: would register {folder} as a folder, worked in place" + (string.IsNullOrEmpty(workspace) ? "" : $" in workspace `{workspace}`");
+
+    public static IReadOnlyList<string> FolderAdded(ConnectDone done, bool followed) =>
+    [
+        $"daoris: registered {done.Plan.Repository} as a folder with {done.Plan.Service}, worked in place",
+        followed
+            ? "  its manifest is read: the first session is told what changed in it since now"
+            : "  its manifest is read when the first session starts here",
+        .. string.IsNullOrEmpty(done.Workspace) ? (string[])[] : [$"  workspace: {done.Workspace}"],
+    ];
+
+    public static string SystemAddDry(ConnectPlan plan, string? workspace) =>
+        $"daoris: would register {plan.Repository} as system `{plan.Body["system"]}`, planned, reviewed and applied through its adapter"
+        + (string.IsNullOrEmpty(workspace) ? "" : $" in workspace `{workspace}`");
+
+    public static IReadOnlyList<string> SystemAdded(ConnectDone done) =>
+    [
+        $"daoris: registered {done.Plan.Repository} as system `{done.Plan.Body["system"]}` with {done.Plan.Service}",
+        "  a session there plans through its adapter and changes nothing; the plan is applied after its review",
+        .. string.IsNullOrEmpty(done.Workspace) ? (string[])[] : [$"  workspace: {done.Workspace}"],
+    ];
+
     public static string RetireDry(string repository) => $"daoris: would retire {repository} — the registration only; no file is ever touched";
 
     public static string Retired(string message) => $"daoris: {message}";

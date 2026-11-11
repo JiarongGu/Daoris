@@ -1,6 +1,5 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { workspaceOf } from '../data/workspaces';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
@@ -10,7 +9,10 @@ import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/frame/listKeys';
 import { marked } from '../work/rail/railSearch';
 import { searchable } from '../lib/searchable';
+import { HistoryShowing, type HistoryScope, RowFocus } from './focus/HistoryShowing';
+import { placeName } from './focus/ShowingPicker';
 import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups } from './history';
+import { homeGroups } from './historyHome';
 import { previewText, rowLine } from './preview';
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */
@@ -54,21 +56,17 @@ const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
  * - **It is read a page at a time**: the driver orders and searches every conversation and answers a page of
  *   them. A search says how many it found and that it searched every one; a list with more says how
  *   many of how many it shows, and *Show more* lists the next page and takes the reader to the first row it brought.
- * - **It is the window's workspace's, or every workspace's**: the choice between the
- *   two sits in its head, under what it is; every workspace's labels each row with its own, and a search says the scope it ran
- *   over. A window on every workspace has no workspace of its own to offer, so its list is every one's, labelled.
+ * - **It shows the window's workspace's conversations by day, or those of every workspace or about a place by home**: the
+ *   *Showing* chip sits in its head, under what it is; a search says what it ran over, and a row shows a focus chip only where
+ *   its focus is not its home. A window on every workspace has no workspace of its own to offer.
  */
 export function AskHistory({
   rows, total, loading = false, refreshing = false, error = null, search, shown = null, busy = false, refusal = null,
   restore = null, now, onMore, loadingMore = false, moreError = null, scope, onSearch, onNew, onClose, onRetry, ...acts
 }: {
   rows: HelpConversationRow[];
-  /**
-   * Whose conversations the list holds: `workspace`'s, or every workspace's for null, each row then labelled with
-   * its own; `here` is the window's workspace, which `onEvery` offers beside every workspace's. Absent, the list says nothing of
-   * workspaces, as before them.
-   */
-  scope?: { workspace: string | null; here?: string; onEvery?: (every: boolean) => void };
+  /** What the list shows (`Showing`) and the choice of it. Absent, the list says nothing of workspaces, as before them. */
+  scope?: HistoryScope;
   /** Why the last act pressed from a row's menu (a pin, a new conversation from it) did not happen; null when it did. */
   refusal?: string | null;
   /** How many the whole list holds, or how many a search found; the rows' own count until the driver says. */
@@ -114,11 +112,18 @@ export function AskHistory({
   const words = search.trim();
   const searching = searchable(words);
   const short = words.length > 0 && !searching;
-  const groups = historyGroups(rows, now);
+  const byHome = scope !== undefined && scope.showing.kind !== 'here';
+  const groups: { id: string; title: string; rows: HelpConversationRow[] }[] = byHome
+    ? homeGroups(rows, scope.window).map((group) => ({
+      id: `home-${group.home}`,
+      title: t(group.here ? 'help.history.groupHere' : 'help.history.groupHome', { workspace: group.home }),
+      rows: group.rows,
+    }))
+    : historyGroups(rows, now).map((group) => ({ id: group.id, title: t(`help.history.group.${group.id}`), rows: group.rows }));
   const count = total ?? rows.length;
-  // The workspace the list holds alone, which its sentences name; every workspace's labels each row instead.
+  // The workspace or the place the list holds alone, which its sentences name.
   const onlyIn = scope?.workspace ?? null;
-  const labelled = scope !== undefined && onlyIn === null;
+  const aboutPlace = scope?.showing.kind === 'about' ? placeName(scope.showing.place, t('help.focus.machine')) : null;
   // *Show more* pressed: how many rows there are and what is searched, so the first row the next page brings takes the focus.
   const pressed = useRef<{ words: string; at: number } | null>(null);
 
@@ -187,9 +192,7 @@ export function AskHistory({
             </Button>
           )}
         </div>
-        {scope?.here !== undefined && scope.onEvery && (
-          <WorkspaceChoice here={scope.here} every={onlyIn === null} onEvery={scope.onEvery} />
-        )}
+        {scope && <HistoryShowing scope={scope} />}
         <label className="flex min-h-7 items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 text-ink-faint focus-within:border-accent">
           <Icon name="search" size={12} className="shrink-0" />
           <input
@@ -235,7 +238,8 @@ export function AskHistory({
             <Notice
               icon="search"
               headline={t('help.history.none', { words })}
-              body={onlyIn ? t('help.history.noneHintIn', { workspace: onlyIn }) : t('help.history.noneHint')}
+              body={aboutPlace ? t('help.history.noneHintAbout', { place: aboutPlace })
+                : onlyIn ? t('help.history.noneHintIn', { workspace: onlyIn }) : t('help.history.noneHint')}
             >
               <Button onClick={clear}>{t('help.history.clearSearch')}</Button>
             </Notice>
@@ -243,7 +247,8 @@ export function AskHistory({
         ) : (
           <Notice
             icon="history"
-            headline={onlyIn ? t('help.history.emptyIn', { workspace: onlyIn }) : t('help.history.emptyHeadline')}
+            headline={aboutPlace ? t('help.history.emptyAbout', { place: aboutPlace })
+              : onlyIn ? t('help.history.emptyIn', { workspace: onlyIn }) : t('help.history.emptyHeadline')}
             body={t('help.history.empty')}
           >
             {onNew && <Button disabled={busy} onClick={onNew}>{t('help.history.start')}</Button>}
@@ -253,21 +258,21 @@ export function AskHistory({
         {/* What a search covered, said as it answers: never over a newer search's wait, whose rows are the last one's. */}
         {searching && !refreshing && rows.length > 0 && (
           <p role="status" className="m-0 px-2.5 pb-1 pt-1.5 text-meta text-ink-faint wrap-anywhere">
-            {onlyIn ? t('help.history.searchedIn', { count, words, workspace: onlyIn }) : t('help.history.searched', { count, words })}
+            {aboutPlace ? t('help.history.searchedAbout', { count, words, place: aboutPlace })
+              : onlyIn ? t('help.history.searchedIn', { count, words, workspace: onlyIn }) : t('help.history.searched', { count, words })}
           </p>
         )}
 
         {groups.map((group) => (
           <div key={group.id} role="group" aria-labelledby={`${headingId}-${group.id}`} className="mt-1.5 first:mt-0">
             <h4 id={`${headingId}-${group.id}`} className="m-0 truncate px-2.5 pb-1 pt-1.5 text-meta font-semibold text-ink-soft">
-              {t(`help.history.group.${group.id}`)}
+              {group.title}
             </h4>
             <ul aria-labelledby={`${headingId}-${group.id}`} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
               {group.rows.map((row) => (
                 <HistoryRow
                   key={row.session}
                   row={row}
-                  labelled={labelled}
                   current={row.session === shown}
                   busy={busy}
                   words={searching ? words : ''}
@@ -324,37 +329,8 @@ function Marked({ text, words }: { text: string; words: string }) {
   );
 }
 
-/**
- * Whose conversations the list holds: the window's workspace, or every one's, two presses that say which is chosen.
- * The window's own is named, as the switcher names it.
- */
-function WorkspaceChoice({ here, every, onEvery }: { here: string; every: boolean; onEvery: (every: boolean) => void }) {
-  const { t } = useTranslation();
-  const option = (chosen: boolean, label: string, onPress: () => void) => (
-    <Button
-      variant="ghost"
-      aria-pressed={chosen}
-      onClick={onPress}
-      className={cn(
-        'h-6 min-w-0 px-2 text-small wrap-anywhere',
-        chosen ? 'bg-accent-soft text-ink' : 'text-ink-soft',
-      )}
-    >
-      {label}
-    </Button>
-  );
-  return (
-    <div role="group" aria-label={t('help.history.scope')} className="flex min-w-0 flex-wrap items-center gap-1">
-      {option(!every, here, () => onEvery(false))}
-      {option(every, t('help.history.every'), () => onEvery(true))}
-    </div>
-  );
-}
-
-function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
+function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
   row: HelpConversationRow;
-  /** Every workspace's list: the row says its workspace, a row from before as `default`'s. */
-  labelled: boolean;
   current: boolean;
   busy: boolean;
   /** What a search found it by, to mark; empty when nothing is searched. */
@@ -376,7 +352,6 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
     ago(row.last),
     row.live ? t('help.history.running') : null,
     row.from ? t('help.history.fromEarlier') : null,
-    labelled ? t('help.history.in', { workspace: workspaceOf(row) }) : null,
   ].filter((mark): mark is string => mark !== null);
 
   const acts: MenuAct[] = [
@@ -435,6 +410,7 @@ function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen
             </span>
           )}
           <span className="min-w-0 wrap-anywhere">{marks.join(' · ')}</span>
+          <RowFocus row={row} />
           {/* The mode it ran under, said where it is full access, in the warning colour. */}
           {row.mode === 'full' && <span className="text-warn">{t('help.history.full')}</span>}
         </span>

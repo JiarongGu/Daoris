@@ -65,7 +65,7 @@ public sealed class StartTreeCloseTests : IDisposable
                 DriverConfig.Empty with
                 {
                     Drivable = ["engine"],
-                    Trees = ["engine"],
+                    DefaultWorkflow = IsolatedPlaces.In(_home),
                     Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [_agent] },
                 },
                 "build", [new ActorChoice("acp-stub")]),

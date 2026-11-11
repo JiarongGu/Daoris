@@ -22,10 +22,10 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 
     private static RepoView Engine(params string[] lanes) => new("engine", true, "/work/engine") { Lanes = lanes };
 
-    private static DriverConfig Config(bool driven, bool trees) => DriverConfig.Empty.WithDrivable("engine", driven).WithTrees("engine", trees);
+    private static (DriverConfig Config, bool Apart) Config(bool driven, bool trees) => (DriverConfig.Empty.WithDrivable("engine", driven), trees);
 
-    private static string Routed(DriverConfig config, RepoView repository, string work = ParticipantWork.Build) =>
-        StandingBlock.Compose(StandingBlocks.OnMachine(new StandingFacts { Repository = "engine" }, work, config, [repository], "work")).Text;
+    private static string Routed((DriverConfig Config, bool Apart) place, RepoView repository, string work = ParticipantWork.Build) =>
+        StandingBlock.Compose(StandingBlocks.OnMachine(new StandingFacts { Repository = "engine" }, work, place.Config, [repository], "work", place.Apart)).Text;
 
     // ——— The routing.
 
@@ -299,7 +299,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         var chat = new ChatMessage(new string('w', 8_000), [])
         {
             Preface = new string('p', ChatMessage.PrefaceLimit),
-            Block = StandingBlock.Compose(StandingBlocks.OnMachine(repository with { Repository = "engine" }, ParticipantWork.Chat, Config(true, true), [Engine("core", "web")], "work")),
+            Block = StandingBlock.Compose(StandingBlocks.OnMachine(repository with { Repository = "engine" }, ParticipantWork.Chat, Config(true, true).Config, [Engine("core", "web")], "work", apart: true)),
         };
         output.WriteLine($"chat: its first message {chat.Prompt.Length:N0} characters, its block {chat.Block.Text.Length:N0}");
         Assert.True(chat.Prompt.Length <= StandingBlock.Budget);

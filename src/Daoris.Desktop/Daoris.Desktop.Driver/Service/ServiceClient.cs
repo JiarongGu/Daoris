@@ -218,7 +218,16 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct = default) =>
         Registry.WireRepositoryAsync(repository, workspace, ct);
 
+    public Task<(bool Ok, string Message)> SetFolderExcludesAsync(string repository, IReadOnlyList<string> excludes, CancellationToken ct = default) =>
+        Registry.SetFolderExcludesAsync(repository, excludes, ct);
+
     public Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default) => Registry.ConnectAsync(root, workspace, ct);
+
+    public Task<ConnectDone> AddFolderAsync(string root, string? workspace, IReadOnlyList<string> excludes, CancellationToken ct = default) =>
+        Registry.AddFolderAsync(root, workspace, excludes, ct);
+
+    public Task<ConnectDone> AddSystemAsync(string home, string system, string? name, string? workspace, CancellationToken ct = default) =>
+        Registry.AddSystemAsync(home, system, name, workspace, ct);
 
     public Task<string> RetireAsync(string repository, CancellationToken ct = default) => Registry.RetireAsync(repository, ct);
 
@@ -392,6 +401,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// end hands the service the lines its memory rows' models are read from. Null hands none, and the rows name <c>unknown</c>.
     /// </summary>
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
+
+    public Func<string, CancellationToken, Task<IReadOnlyList<string>?>>? PlaceEnds { get; init; }
 
     /// <summary>One turn line as the service is handed it: the fields its memory rows' models are read from.</summary>
     public sealed record TurnLine(long Seq, DateTimeOffset? Started, DateTimeOffset Ended, string Model);

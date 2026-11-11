@@ -24,7 +24,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. The role door, which `SET_ROLE`,
-    /// `daoris role` and `role_propose` call, is the one door; the release's migration writes an older home's five orders once.
+    /// and `daoris role` call, is the one door; the release's migration writes an older home's five orders once.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
@@ -34,7 +34,6 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
         ("SET_ROLE", ["Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs"]),
         ("daoris role", ["Daoris.Desktop.Driver/Roles/RoleVerbs.cs"]),
-        ("role_propose", ["Daoris.Desktop.Driver/Help/Proposals/HelpRoleProposals.cs"]),
     ];
 
     [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|staffing\.Replace\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
@@ -43,7 +42,6 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     private static IEnumerable<string> Reaching()
     {
         var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
-        // The two projects a writer can live in, named apart so the merge tool's reach places each read in its lane.
         var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
         var modules = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
         foreach (var file in Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
@@ -62,7 +60,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["the migration's staffing step", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role", "role_propose"],
+            ["the migration's staffing step", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role"],
             Census.Select(each => each.Writer));
     }
 

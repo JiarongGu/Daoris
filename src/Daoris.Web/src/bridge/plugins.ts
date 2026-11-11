@@ -23,6 +23,7 @@ export type PluginEntry = {
   name: string;
   version: string;
   description: string;
+  systems?: { id: string; name: string; preconditions?: string }[];
   /** The person's word (`plugins.json`), independent of whether the plugin is sound. */
   enabled: boolean;
   /** Why it contributes nothing, in the driver's own sentence; null when sound. */

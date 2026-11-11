@@ -2,88 +2,21 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>
-/// The terminal twin a card shows, and every command a refusal names, spells an account
-/// and a workspace for any shell, as the CLI's hints and the page's twins do (<see cref="ShellWord"/>): in double quotes where
-/// a space needs them, and a placeholder where no spelling holds. The words around a command name them as they are.
-/// </summary>
+/// <summary>The terminal twin a card shows spells a workspace for any shell (<see cref="ShellWord"/>).</summary>
 public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 {
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Lists(string agent, params string[] accounts) =>
-        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [agent] = accounts };
-
-    /// <summary>
-    /// A machine whose accounts need spelling: the set's order <c>work, my acct, R&amp;D</c>.
-    /// </summary>
     private static readonly HelpMachineFacts Spelled = Machine with
     {
         Workspaces = ["default", "work", "my team", "R&D", "our lab"],
-        Doors =
-        [
-            new HelpDoorFacts("claude-code")
-            {
-                Present = true, Updates = "tool", Channel = "claude-code-releases", Owner = "claude-code",
-                Accounts = ["work", "my acct", "R&D"], SettingsKnown = true, Product = "Claude Code",
-            },
-        ],
-        Wiring = new HarnessSettings { Rotation = Lists("claude-code", "work", "my acct", "R&D") },
     };
 
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
 
-    private static HelpProposal Agent(string door, string? account, string? workspace, UseChange? use = null) =>
-        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use };
-
-    [Theory]
-    [InlineData("my acct", "daoris agent account use claude-code --keep \"my acct\"")]
-    [InlineData("R&D", "daoris agent account use claude-code --keep <account>")]
-    public void A_use_s_terminal_spells_its_kept_account(string keep, string terminal)
-    {
-        var plan = Plan(Agent("use", null, null, new UseChange(Keep: keep)));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    [Fact]
-    public void An_order_s_terminal_spells_its_accounts()
-    {
-        var plan = Plan(Agent("order", null, null) with { AccountOrder = new AccountOrder(["my acct", "R&D"], false) });
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal("daoris agent account order claude-code \"my acct\" <account>", plan.Terminal);
-    }
-
-    [Theory]
-    [InlineData("my acct", "daoris agent settings claude-code --account \"my acct\" model opus")]
-    [InlineData("R&D", "daoris agent settings claude-code --account <account> model opus")]
-    public void An_account_s_settings_terminal_spells_its_account(string account, string terminal)
-    {
-        var plan = Plan(Of("account", "settings", "claude-code") with { Account = account, Model = "opus" });
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    [Theory]
-    [InlineData("line", "my team", "main", "daoris place line --workspace \"my team\" main")]
-    [InlineData("language", "R&D", "zh", "daoris place language --workspace <workspace> zh")]
-    [InlineData("across", "my team", "read off", "daoris place across --workspace \"my team\" read off")]
-    public void A_workspace_setting_s_terminal_spells_its_workspace(string door, string workspace, string value, string terminal)
-    {
-        var plan = Plan(Setting(door, workspace: workspace, value: value));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
-    }
-
-    /// <summary>A workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
     [Theory]
     [InlineData("my team", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace \"my team\"")]
     [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]
     public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)
     {
-        // A list of steps is refused at the save, so the card carries a shipped graph.
         var graph = System.Text.Json.JsonDocument.Parse(WorkflowDefaults.Of("merge-after-accept")!.GraphJson);
         var plan = Plan(new HelpProposal("p8", "workflow", "new", null, null, null, null, "why", "h1", "proposed")
         {

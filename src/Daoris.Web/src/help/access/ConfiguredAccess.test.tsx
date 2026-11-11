@@ -24,7 +24,7 @@ const CHOSEN: HelpGrantChoice[] = [
 /** The checkouts the driver serves, each by its repository's name; `game` turned off. */
 const SERVED = { checkouts: ['engine', 'game'] };
 
-const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'shell'];
+const ALL: HelpGrantId[] = ['housekeeping', 'browser', 'checkouts', 'settings', 'acts', 'shell'];
 
 function show({ agent = CLAUDE, grants = CHOSEN, opened, built = SERVED, onChoose = vi.fn(), onManage = vi.fn() }: {
   agent?: HelpGrantAgent; grants?: HelpGrantChoice[]; opened?: HelpGrantId[]; built?: Partial<Record<HelpGrantId, readonly string[]>>;
@@ -48,7 +48,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     await i18n.changeLanguage('en');
   });
 
-  it('draws the five grants in the table’s order under its title, each with its reach, its default and its state', async () => {
+  it('draws the six grants in the table’s order under its title, each with its reach, its default and its state', async () => {
     await i18n.changeLanguage(language);
     show();
 
@@ -90,6 +90,22 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(onChoose).toHaveBeenCalledWith('housekeeping', 'discard-branch', true);
     await userEvent.click(box('housekeeping', 'inspect'));
     expect(onChoose).toHaveBeenCalledWith('housekeeping', 'inspect', false);
+  });
+
+  // A family of acts granted runs Ask Daoris's press of it with no card, as the person's own, read at each press.
+  it('offers the families of acts as operations, off by default, each chosen on its own', async () => {
+    await i18n.changeLanguage(language);
+    const onChoose = vi.fn();
+    show({ onChoose, grants: [...CHOSEN, { id: 'acts', chosen: ['pause'] }] });
+
+    expect(within(row('acts')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.default.off'))).toBeInTheDocument();
+    await userEvent.click(within(row('acts')).getByRole('button', { name: (name) => name.startsWith(i18n.t('help.grants.door.operations')) }));
+    expect(box('acts', 'pause')).toBeChecked();
+    expect(within(row('acts')).getByText(i18n.t('help.grants.never.acts'))).toBeInTheDocument();
+
+    await userEvent.click(box('acts', 'pause'));
+    expect(onChoose).toHaveBeenCalledWith('acts', 'pause', false);
   });
 
   // The browser's grant is its plugin's approval, made on that plugin's tab, the

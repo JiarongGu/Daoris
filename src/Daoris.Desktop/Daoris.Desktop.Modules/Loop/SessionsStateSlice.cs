@@ -40,7 +40,7 @@ public static class SessionsStateSlice
     public static readonly IReadOnlyList<string> Fields =
     [
         "id", "quest", "repository", "door", "state", "kind", "note", "evidence", "created", "updated", "workspace", "doorVersion",
-        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "access", "noteParts", "piece",
+        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "access", "noteParts", "piece", "holdsPlace",
         // The words waiting, each with whose it is, which the page reads a park's answer from.
         "said",
         // An account's limit made its failure: every list words it limited.

@@ -12,6 +12,9 @@ public static class ChildMarks
     /// <summary>The variable the holder's terminal carries its key in (<see cref="HolderKey.Variable"/>, which reads it from here).</summary>
     public const string RoleKeyVariable = "DAORIS_ROLE_KEY";
 
+    /// <summary>The variable a session's shell carries its delegate key in (<see cref="DelegateKey.Variable"/>, which reads it from here).</summary>
+    public const string DelegateKeyVariable = "DAORIS_DELEGATE_KEY";
+
     /// <summary>
     /// The two variables a Claude Code session's shell carries for its inbox: its socket and its token.
     /// No Daoris executable or start passes them on, so an agent Daoris starts never holds the steward's inbox.

@@ -193,7 +193,5 @@ public sealed class BroughtForwardLookTests : IDisposable
         Drivable = ["engine", "tools"],
         Actors = StaffedRoles.On("stub"),
         Cap = 3,
-        PollSeconds = 1,
-        Trees = ["engine"],
-    };
+        PollSeconds = 1,    };
 }

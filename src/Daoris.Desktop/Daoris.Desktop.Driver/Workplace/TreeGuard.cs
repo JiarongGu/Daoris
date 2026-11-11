@@ -32,6 +32,9 @@ public static class TreeGuard
 
     public const string ScriptName = "tree-guard.mjs";
 
+    /// <summary>The module the script imports to find a session's own subagent's worktree, written beside it.</summary>
+    public const string WorktreeScriptName = "subagent-worktree.mjs";
+
     /// <summary>The tools it judges — exact alternatives, the harness's own matcher shape.</summary>
     public const string Matcher = TreeGuardHook.Matcher;
 
@@ -39,17 +42,28 @@ public static class TreeGuard
     public const string EditMatcher = TreeGuardHook.EditMatcher;
 
     /// <summary>The script as shipped, from the assembly, with LF line endings.</summary>
-    public static string Source { get; } = ReadSource();
+    public static string Source { get; } = ReadSource(ScriptName);
 
-    /// <summary>The script under the home, written if absent or not as shipped; answers its path.</summary>
+    /// <summary>The module the script imports, as shipped, with LF line endings.</summary>
+    public static string WorktreeSource { get; } = ReadSource(WorktreeScriptName);
+
+    /// <summary>
+    /// The script under the home, and the module it imports before it, each written if absent or not as shipped; answers the script's path.
+    /// </summary>
     public static string Install(string home)
     {
         var folder = DaorisHome.Entry(home, HomeEntry.Hooks);
-        var path = Path.Combine(folder, ScriptName);
-        if (File.Exists(path) && AtomicFile.ReadText(path) == Source) return path;
+        Put(folder, WorktreeScriptName, WorktreeSource);
+        return Put(folder, ScriptName, Source);
+    }
+
+    private static string Put(string folder, string name, string source)
+    {
+        var path = Path.Combine(folder, name);
+        if (File.Exists(path) && AtomicFile.ReadText(path) == source) return path;
 
         Directory.CreateDirectory(folder);
-        AtomicFile.WriteText(path, Source);
+        AtomicFile.WriteText(path, source);
         return path;
     }
 
@@ -65,10 +79,10 @@ public static class TreeGuard
         return new(Install(home), Path.GetFullPath(tree)) { Also = [.. (also ?? []).Select(Path.GetFullPath)], Node = node.File ?? "node" };
     }
 
-    private static string ReadSource()
+    private static string ReadSource(string name)
     {
-        using var stream = typeof(TreeGuard).Assembly.GetManifestResourceStream("Daoris.Driver.tree-guard.mjs")
-            ?? throw new InvalidOperationException("the tree guard's script is missing from the build");
+        using var stream = typeof(TreeGuard).Assembly.GetManifestResourceStream($"Daoris.Driver.{name}")
+            ?? throw new InvalidOperationException($"the tree guard's `{name}` is missing from the build");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd().Replace("\r\n", "\n");
     }

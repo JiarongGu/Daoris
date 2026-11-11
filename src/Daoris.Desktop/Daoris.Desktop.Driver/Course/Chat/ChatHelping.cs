@@ -16,4 +16,15 @@ internal interface IChatHelping : IExecutor
 
     /// <summary>The room as it stands now for a conversation, and what is read to write it.</summary>
     Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, string? workspace, CancellationToken ct);
+
+    /// <summary>The focus a conversation's room is written for now: the one its file holds, else its room's own.</summary>
+    HelpFocus FocusOf(string sessionId, string? workspace) => HelpFocus.Home(workspace);
+
+    /// <summary>The words that start a turn with the focus they take, a change told in one line ahead of the first.</summary>
+    IReadOnlyList<SaidWordView> TakeFocus(string sessionId, string? workspace, IReadOnlyList<SaidWordView> words, IReadOnlyList<RepoView>? registry) => words;
+
+    /// <summary>A conversation's new part begins under the focus the one it carries holds.</summary>
+    void CarryFocus(string from, string to, string? workspace)
+    {
+    }
 }

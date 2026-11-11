@@ -41,7 +41,7 @@ public sealed class CheckoutHoldTickTests : IDisposable
         var log = Path.Combine(_home, "agent.log");
 
         // 1. Before trees: the session takes its quest and works in the checkout, and is stopped there with the quest still taken.
-        var checkout = Config(log) with { Trees = [] };
+        var checkout = Config(log, apart: false);
         var first = Driver(service, checkout, null).RunOnceAsync();
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
         Assert.True(_processes.Stop("s1"));
@@ -73,10 +73,10 @@ public sealed class CheckoutHoldTickTests : IDisposable
         }
     }
 
-    private DriverConfig Config(string log) => DriverConfig.Empty with
+    private DriverConfig Config(string log, bool apart = true) => DriverConfig.Empty with
     {
         Drivable = ["engine"],
-        Trees = ["engine"],
+        DefaultWorkflow = apart ? IsolatedPlaces.In(_home) : null,
         Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         PollSeconds = 1,

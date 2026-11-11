@@ -12,11 +12,12 @@ public static class TreesReviewWires
     /// <summary>The landing plan's count of uncommitted paths in the session's own tree: 0 where clean or not asked.</summary>
     public static int UncommittedCount(int? held) => held ?? 0;
 
-    /// <summary>Where a review's files are read from: the session's own tree, or its landed branch once the tree cannot be read.</summary>
+    /// <summary>Where a review's files are read from: the session's own tree, its landed branch once the tree is gone, or a folder's manifests.</summary>
     public static class ReviewSource
     {
         public const string Tree = "tree";
         public const string Branch = "branch";
+        public const string Place = "place";
     }
 
     /// <summary>
@@ -27,11 +28,12 @@ public static class TreesReviewWires
     /// <remarks>Never a machine path: the checkout the branch is read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
         string session, TreeDiff? diff, string source, LandedReview? landed, bool treeGone, TreeDiff? uncommitted = null,
-        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
+        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null, IReadOnlyList<string>? unattributed = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
         diff?.Truncated,
+        Unattributed = unattributed is { Count: > 0 } ? unattributed : null,
         Files = (diff?.Files ?? []).Select(file => new
         {
             file.Path,

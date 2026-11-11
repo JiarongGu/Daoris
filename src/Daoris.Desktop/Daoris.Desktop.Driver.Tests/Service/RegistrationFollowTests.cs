@@ -46,6 +46,56 @@ public sealed class RegistrationFollowTests
     }
 
     [Fact]
+    public async Task A_folder_is_followed_as_a_folder_and_read_as_git_once_its_root_becomes_a_checkout()
+    {
+        var root = ConformanceScratch.New("follow-folder");
+        try
+        {
+            var world = new World();
+            world.Rows.Add(Row("designs", root) with { Kind = PlaceKind.Folder, Summary = "The designs", Packs = ["docs"] });
+
+            var folder = Assert.Single((await RegistrationFollow.FollowAsync(world, only: null)).Followed);
+            Assert.Equal(RegistryOutcome.Folder, folder.Outcome);
+            Assert.False(RegistryOutcome.IsRefusal(folder.Outcome));
+            Assert.Null(RegistrationFollow.EventLine(folder));
+            Assert.Empty(world.Sent);
+
+            Directory.CreateDirectory(Path.Combine(root, ".git"));
+            var became = Assert.Single((await RegistrationFollow.FollowAsync(world, only: null)).Followed);
+            Assert.True(became.Sent);
+            Assert.Contains("is a git checkout now", became.Said);
+            var sent = Assert.Single(world.Sent);
+            Assert.Equal("git", sent["kind"]!.GetValue<string>());
+            Assert.Equal("The designs", sent["domain"]!["summary"]!.GetValue<string>());
+            Assert.Equal("docs", sent["packs"]![0]!.GetValue<string>());
+        }
+        finally
+        {
+            ConformanceScratch.Remove(root);
+        }
+    }
+
+    [Fact]
+    public async Task A_repository_whose_root_is_no_checkout_is_held_and_never_read_as_a_folder()
+    {
+        var root = ConformanceScratch.New("follow-held");
+        try
+        {
+            var world = new World();
+            world.Rows.Add(Row("game", root));
+
+            var followed = Assert.Single((await RegistrationFollow.FollowAsync(world, only: null)).Followed);
+
+            Assert.Equal(RegistryOutcome.NoLine, followed.Outcome);
+            Assert.Empty(world.Sent);
+        }
+        finally
+        {
+            ConformanceScratch.Remove(root);
+        }
+    }
+
+    [Fact]
     public async Task Every_line_with_a_commit_is_looked_at_by_the_analysis_set_up_or_not_and_no_other_row_is()
     {
         var world = new World();
@@ -356,10 +406,10 @@ public sealed class RegistrationFollowTests
     [Fact]
     public void Every_outcome_is_a_word_from_one_list_and_refusals_are_told_from_the_rest()
     {
-        Assert.Equal(11, RegistryOutcome.All.Count);
+        Assert.Equal(12, RegistryOutcome.All.Count);
         Assert.All(RegistryOutcome.All, word => Assert.Matches("^[a-z]+(-[a-z]+)*$", word));
         Assert.Equal(
-            [RegistryOutcome.Registered, RegistryOutcome.Unchanged, RegistryOutcome.DeclaresNothing],
+            [RegistryOutcome.Registered, RegistryOutcome.Unchanged, RegistryOutcome.DeclaresNothing, RegistryOutcome.Folder],
             RegistryOutcome.All.Where(word => !RegistryOutcome.IsRefusal(word)));
     }
 }

@@ -12,6 +12,8 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
 
     public IReadOnlySet<string> Owing(string home) => WorkflowObligations.Owing(home);
 
+    public IReadOnlyList<PersonWait> PersonWaits(string home) => PersonWaitReader.Read(home);
+
     public string? Unusable(string home, string workflow)
     {
         if (WorkflowStore.Load(home, workflow) is not { } found)
@@ -26,6 +28,9 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
             : null;
     }
 
+    public Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct) =>
+        AbandonRuns.EndAsync(new NodeRecordFiles(home), run => of(run.Run, run.Binding.Ask), words, clock, ct);
+
     public (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
         string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds)
     {
@@ -39,4 +44,7 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
 
         return (otherwise, mapped);
     }
+
+    public IReadOnlyDictionary<string, IsolateStep> Isolations(string home, DriverConfig config, IReadOnlyList<RepoView> repositories) =>
+        PlaceIsolates.Of(WorkflowPorts.Store(home), config, repositories);
 }

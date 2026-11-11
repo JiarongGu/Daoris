@@ -9,9 +9,9 @@ import { type HelpProposal, ProposalCard } from './ProposalCard';
 // A change Ask Daoris proposes, and the person's two presses.
 
 const LANDING = {
-  id: 'p1a2b3c4', kind: 'setting' as const,
-  describe: 'Land workspace `work`\'s accepted work on a branch `feature/{quest}-{slug}`.',
-  terminal: 'daoris place landing --workspace work branch feature/{quest}-{slug}',
+  id: 'p1a2b3c4', kind: 'workflow' as const,
+  describe: 'Choose workflow `docs-to-pr` for `web-app`, its work kept on branch `feature/{quest}-{slug}`.',
+  terminal: 'daoris workflow use docs-to-pr --scope web-app',
   why: 'the person asked for feature branches',
 };
 
@@ -40,83 +40,17 @@ describe('a proposal of Ask Daoris\'s', () => {
   });
 });
 
-// Every door built since, a card of its own kind — each with Apply (or its kind's word for it) and
-// Not now, since every one is the person's press.
 
-const UPDATE: HelpProposal = {
-  id: 'p2', kind: 'agent',
-  describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
-  terminal: 'daoris agent update claude-code-acp',
-  why: 'the person asked for the newest',
-};
-
-const ACCOUNT: HelpProposal = {
-  id: 'p3', kind: 'account',
-  describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
-  terminal: 'daoris agent settings claude-code --account work model opus effort high',
-  why: 'the person wants it to think harder',
-};
-
-const DELETE: HelpProposal = {
-  id: 'p4', kind: 'delete',
-  describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
-  terminal: 'daoris ask delete a1b2c3d4',
-  why: 'it was a test',
+const ASKED: HelpProposal = {
+  id: 'p2', kind: 'ask',
+  describe: 'Start an ask at `work`: tidy the docs.',
+  terminal: 'daoris ask work "tidy the docs"',
+  why: 'the person asked for it',
 };
 
 const GO: HelpProposal = {
   id: 'p5', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
   why: 'the person asked where to name its agent',
-};
-
-// A plugin that has landed, added from its folder, or one installed here switched on.
-const PLUGIN_ADD: HelpProposal = {
-  id: 'p6', kind: 'plugin',
-  describe: 'Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`, copied into Daoris\'s home under its id.',
-  terminal: 'daoris plugin add /checkouts/house-plugins/quiet-hours',
-  why: 'the person wants quests held overnight',
-  plugin: {
-    id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.0.0',
-    command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider', 'session/ended'],
-    harnesses: [{ name: 'acme-agent', command: ['acme-agent', '--acp'] }],
-    servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }],
-    copied: true,
-  },
-};
-
-// The bridge leaves a null out, so a switch's view arrives with no command and no `copied`.
-const PLUGIN_ON: HelpProposal = {
-  id: 'p7', kind: 'plugin', describe: 'Switch plugin `example.lands` on.', terminal: 'daoris plugin enable example.lands',
-  why: 'the person wants it on',
-  plugin: {
-    id: 'example.lands', name: 'example.lands', version: '', points: [], harnesses: [], servers: [],
-    problem: 'declares agent `claude-code`, which this build already carries.',
-  },
-};
-
-// One of the install's own plugins, by id, with what it needs; (c): an update, with what changes.
-const PLUGIN_OFFER: HelpProposal = {
-  id: 'p8', kind: 'plugin',
-  describe: 'Install Daoris\'s own plugin `github-pull-request` (GitHub pull request 1.0.0), which this install offers.',
-  terminal: 'daoris plugin add --offer github-pull-request',
-  why: 'the person wants pull requests opened',
-  plugin: {
-    id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0',
-    command: ['node', '${plugin}/land.mjs'], points: ['work/land'], harnesses: [], servers: [],
-    copied: true, needs: ['an identity: Settings → Git.'],
-  },
-};
-
-const PLUGIN_UPDATE: HelpProposal = {
-  id: 'p9', kind: 'plugin',
-  describe: 'Update plugin `acme.quiet-hours` from the folder it was added from.',
-  terminal: 'daoris plugin update acme.quiet-hours --yes',
-  why: 'a newer one has landed',
-  plugin: {
-    id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.1.0',
-    command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider'], harnesses: [], servers: [],
-    replaced: true, changes: [{ what: 'version', was: '1.0.0', now: '1.1.0' }, { what: 'servers', was: '', now: 'browser (npx -y @playwright/mcp@0.0.82)' }],
-  },
 };
 
 const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now') => {
@@ -129,77 +63,12 @@ const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now')
   expect(onDismiss).toHaveBeenCalledWith(proposal.id);
 };
 
-// The person's approval of what a plugin's server offers Ask Daoris, proposed; and its withdrawal.
-const GRANT: HelpProposal = {
-  id: 'p9', kind: 'plugin',
-  describe: 'Approve server `browser` of plugin `in-app-browser` for Ask Daoris.',
-  terminal: 'daoris plugin approve in-app-browser browser --writes browser_click',
-  why: 'the person wants Ask Daoris to read a page',
-  grant: {
-    plugin: 'in-app-browser', name: 'In-app browser', server: 'browser',
-    reads: ['browser_navigate', 'browser_snapshot'], writes: ['browser_click', 'browser_type'], accepted: ['browser_click'],
-  },
-};
-
-describe('an approval of what a plugin offers Ask Daoris', () => {
-  it('names the plugin, the server and every tool, reads and writes apart, in English and in 中文', async () => {
-    const onApply = vi.fn();
-    const { unmount } = render(<ul><ProposalCard proposal={GRANT} onApply={onApply} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.getByText('Ask Daoris asks for a plugin\'s tools')).toBeInTheDocument();
-    const tools = screen.getByRole('list', { name: 'what Ask Daoris would be handed' });
-    expect(within(tools).getByText(code('in-app-browser'), { exact: false })).toBeInTheDocument();
-    expect(tools).toHaveTextContent('server browser of plugin in-app-browser (In-app browser)');
-    expect(tools).toHaveTextContent('reads with browser_navigate, browser_snapshot');
-    expect(tools).toHaveTextContent('writes outside Daoris with browser_click, as you, accepted');
-    expect(tools).toHaveTextContent('writes outside Daoris with browser_type, not accepted: Ask Daoris is refused it');
-    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
-    expect(onApply).toHaveBeenCalledWith('p9');
-    unmount();
-
-    const { default: i18n } = await import('../locales/i18n');
-    await i18n.changeLanguage('zh');
-    try {
-      const shown = render(<ul><ProposalCard proposal={GRANT} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByRole('list', { name: '问道衍会拿到什么' })).toHaveTextContent('读取：browser_navigate, browser_snapshot');
-      shown.unmount();
-    } finally {
-      await i18n.changeLanguage('en');
-    }
-  });
-
-  it('a withdrawal names what Ask Daoris would no longer be handed', () => {
-    render(<ul><ProposalCard proposal={{ ...GRANT, grant: { ...GRANT.grant!, withdraw: true } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.getByText('Ask Daoris proposes taking a plugin\'s tools back')).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'what Ask Daoris would no longer be handed' })).toHaveTextContent('reads with browser_navigate');
-  });
-});
-
 describe('the kinds that reach every door', () => {
-  it('an agent\'s update says what moves and the command, with Apply and Not now', async () => {
-    await press(UPDATE, 'Apply');
+  it('an ask says what starts and the command, with Apply and Not now', async () => {
+    await press(ASKED, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('claude-code-acp'))).toBeInTheDocument();
-    expect(screen.getByText(code(UPDATE.terminal))).toBeInTheDocument();
-  });
-
-  it('an account\'s model and effort say the values in the tool\'s own words, with Apply and Not now', async () => {
-    await press(ACCOUNT, 'Apply');
-
-    expect(screen.getByText(code('opus'))).toBeInTheDocument();
-    expect(screen.getByText(code('high'))).toBeInTheDocument();
-    expect(screen.getByText(code(ACCOUNT.terminal))).toBeInTheDocument();
-  });
-
-  it('a delete says what goes and that it cannot be undone, and its Apply is a delete', async () => {
-    await press(DELETE, 'Delete');
-
-    expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
-    expect(screen.getByText(code('#q1a2b3c4'))).toBeInTheDocument();
-    expect(screen.getByText(/cannot be undone/)).toBeInTheDocument();
-    expect(screen.getByText(code(DELETE.terminal))).toBeInTheDocument();
+    expect(screen.getByText(code(ASKED.terminal))).toBeInTheDocument();
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
@@ -225,62 +94,6 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/, taken\.$/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Not now' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
-  });
-
-  // No command edits only the registry's row, so a move carries none, and its card is the plain one.
-  it('a move to a workspace says what moves and where, carries no command, with Apply and Not now', async () => {
-    const move: HelpProposal = {
-      id: 'p13', kind: 'repository', terminal: '', why: 'the person asked to keep engine beside the studio\'s work',
-      describe: 'Move `engine` from workspace `work` to workspace `studio` on this machine: one row of the registry changes, at once '
-        + 'and only here, and no file is touched.',
-    };
-
-    await press(move, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('engine'))).toBeInTheDocument();
-    expect(screen.getByText(code('studio'))).toBeInTheDocument();
-    expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
-  });
-
-  // Archiving sessions is the generic card, with its command; a session delete is the delete kind's.
-  it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
-    const archive: HelpProposal = {
-      id: 'p14', kind: 'session', terminal: 'daoris session archive s1 s2', why: 'the person is done with them',
-      describe: 'Archive 2 sessions: `s1`, `s2`. They leave the rail and keep their record.',
-    };
-
-    await press(archive, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('s1'))).toBeInTheDocument();
-    expect(screen.getByText(/the same at a terminal/)).toBeInTheDocument();
-  });
-
-  // Pausing or resuming is the generic card, its sentence the driver's describe.
-  it('a pause card is the generic one, with Apply and Not now', async () => {
-    const pause: HelpProposal = {
-      id: 'p16', kind: 'pause', terminal: 'daoris quests pause q1', why: 'the person asked to stop it',
-      describe: 'Pause quest `q1`: its running sessions stop, and nothing starts until it is resumed.',
-    };
-
-    await press(pause, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('q1'))).toBeInTheDocument();
-  });
-
-  // Clearing finished history is the generic card too, its sentence the driver's describe.
-  it('a clear card is the generic one, with Apply and Not now', async () => {
-    const clear: HelpProposal = {
-      id: 'p17', kind: 'clear', terminal: 'daoris quests clear q1', why: 'the person asked to clear it',
-      describe: 'Clear quest `q1`: 2 units cleared, 1 kept.',
-    };
-
-    await press(clear, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
   // The design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.
@@ -327,8 +140,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 
-  // A change to the draft open in the editor saves and chooses nothing: its changes, what to put right before it
-  // saves, and one press, which opens the editor and settles nothing there.
+  // A change to the open draft saves and chooses nothing: its changes, what to put right, and one press opening the editor.
   const DRAFTED: HelpProposal = {
     ...RELEASE_CARD,
     workflow: {
@@ -370,9 +182,7 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  // A graph chosen for a repository whose landing rule declares no gates says so,
-  // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
-  // as sent, since it names the Setup row to run.
+  // A repository whose landing rule declares no gates is said in the page's words; a cannot is a need, the driver's sentence as sent.
   it('says, per repository it reaches, that the version integrates with no gates, in English and in 中文', async () => {
     const chosen = { ...WORKFLOW.workflow!, choose: true, noGates: ['engine', 'game'] };
     const { default: i18n } = await import('../locales/i18n');
@@ -473,235 +283,18 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  it('a session delete card is the delete kind\'s, naming the session', async () => {
-    const remove: HelpProposal = {
-      id: 'p15', kind: 'delete', terminal: 'daoris session delete s9', why: 'a test run',
-      describe: 'Delete session `s9` and its transcript.',
-    };
-
-    await press(remove, 'Delete');
-
-    expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
-    expect(screen.getByText(code('s9'))).toBeInTheDocument();
-  });
-
-  it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
-    await press(PLUGIN_ADD, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes a plugin')).toBeInTheDocument();
-    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText(code('acme.quiet-hours'))).toBeInTheDocument();
-    // `${plugin}` as the manifest writes it, never a path on this machine.
-    expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
-    expect(runs.getByText(code('quest/consider'))).toBeInTheDocument();
-    expect(runs.getByText(code('session/ended'))).toBeInTheDocument();
-    expect(runs.getByText(code('acme-agent'))).toBeInTheDocument();
-    expect(runs.getByText(code('acme-agent --acp'))).toBeInTheDocument();
-    expect(runs.getByText(code('browser'))).toBeInTheDocument();
-    expect(runs.getByText(code('npx -y @playwright/mcp@latest'))).toBeInTheDocument();
-    expect(screen.getByText(/copies its folder into Daoris's home under its id/)).toBeInTheDocument();
-    expect(screen.getByText(code(PLUGIN_ADD.terminal))).toBeInTheDocument();
-  });
-
-  it('a plugin to switch says it is not copied, and what keeps it from contributing in the driver\'s words', () => {
-    render(<ul><ProposalCard proposal={PLUGIN_ON} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText(code('example.lands'))).toBeInTheDocument();
-    expect(runs.getByText(/runs no process of its own/)).toBeInTheDocument();
-    expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
-    expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
-  });
-
-  // Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
-  const BROWSER: HelpProposal = {
-    id: 'p10', kind: 'browser',
-    describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
-    terminal: 'daoris browser links daoris',
-    why: 'the person wants tickets opened where their sign-ins are',
-  };
-
-  it('a browser setting says what changes and the command that does the same, with Apply and Not now', async () => {
-    await press(BROWSER, 'Apply');
-
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(BROWSER.describe)).toBeInTheDocument();
-    expect(screen.getByText(code(BROWSER.terminal))).toBeInTheDocument();
-  });
-
-  // Bringing up to date, the screen's two presses on one card: the look, which fetches and so is
-  // the person's, then Apply on the rows the look listed.
-  const SYNC: HelpProposal = {
-    id: 'p11', kind: 'sync',
-    describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you.',
-    terminal: 'daoris tree sync --repository engine',
-    why: 'the person\'s pull request merged',
-    sync: { looked: false, rows: [] },
-  };
-  const LOOKED: HelpProposal = {
-    ...SYNC,
-    describe: 'Bring `engine` up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts.',
-    terminal: 'daoris tree sync --repository engine --yes',
-    sync: {
-      looked: true,
-      rows: [
-        { key: 'engine:main', step: 'line', moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
-        { key: 'engine:daoris/s-busy', step: 'replay', moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
-      ],
-    },
-  };
-
-  it('bringing up to date asks the person to look first, the press that fetches, and lists nothing yet', async () => {
-    await press(SYNC, 'Look for updates');
-
-    expect(screen.getByText('Ask Daoris proposes updates')).toBeInTheDocument();
-    expect(screen.getByText(/Looking fetches each line from origin, as you/)).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'what the press would do' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
-  });
-
-  it('once looked, it lists what the press would do in the terminal\'s words, and Apply does only what moves', async () => {
-    await press(LOOKED, 'Apply');
-
-    const rows = within(screen.getByRole('list', { name: 'what the press would do' }));
-    expect(rows.getByText('moves')).toBeInTheDocument();
-    expect(rows.getByText('stays')).toBeInTheDocument();
-    expect(rows.getByText(code('origin/main'))).toBeInTheDocument();
-    expect(screen.getByText(/Apply does only the rows that move/)).toBeInTheDocument();
-    expect(screen.getByText(code(LOOKED.terminal))).toBeInTheDocument();
-  });
-
-  // What the rows do not say, said on the card itself and not only in the look's message.
-  const unreadable = 'fatal: Could not read from remote repository.';
-  const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
-  const OFFLINE: HelpProposal = {
-    ...LOOKED,
-    sync: {
-      ...LOOKED.sync!,
-      rows: [
-        ...LOOKED.sync!.rows,
-        { key: 'game:main', step: 'line', moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
-        { key: 'tools:main', step: 'line', moves: false, says: 'tools  main  up to date with `origin/main` (not fetched)' },
-      ],
-      notFetched: [
-        { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh' },
-        { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh' },
-      ],
-      apart: ['docs', 'site'],
-    },
-  };
-
-  it('once looked, says on the card what was not fetched, by reason and since when, and what git needs to reach origin', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    const note = screen.getByRole('note', { name: 'Not fetched' });
-    const said = within(note);
-    expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
-    expect(said.getByText(unreadable)).toBeInTheDocument();
-    expect(said.getByText('game: last fetched 1d ago · tools: never fetched')).toBeInTheDocument();
-    expect(note.textContent).toMatch(/add a git identity for its host in Settings → Git/);
-    expect(note.textContent).not.toMatch(/credential helper/);
-  });
-
-  it('offers, for each host a fetch did not reach, the door to Add a git identity with that host filled, once', async () => {
-    const onGo = vi.fn();
-    const hosted: HelpProposal = {
-      ...OFFLINE,
-      sync: {
-        ...OFFLINE.sync!,
-        notFetched: [
-          { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh', host: 'git.example.com:2222' },
-          { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh', host: 'git.example.com:2222' },
-          { repository: 'site', fetch: unreadable, lastFetch: null, reach: 'https', host: 'github.com' },
-          { repository: 'docs', fetch: unreadable, lastFetch: null, reach: 'file', host: null },
-        ],
-      },
-    };
-    render(<ul><ProposalCard proposal={hosted} onApply={vi.fn()} onDismiss={vi.fn()} onGo={onGo} /></ul>);
-
-    const door = screen.getByRole('button', { name: 'Add a git identity for git.example.com:2222…' });
-    expect(screen.getAllByRole('button', { name: /^Add a git identity for / })).toHaveLength(2);
-    await userEvent.click(door);
-
-    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'git', gitHost: 'git.example.com:2222' });
-  });
-
-  it('has no such door where the window gives none, or where no host is known', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} onGo={vi.fn()} /><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.queryByRole('button', { name: /^Add a git identity for / })).not.toBeInTheDocument();
-  });
-
-  it('once looked, names on the card the repositories it left apart, and how a proposal includes one', () => {
-    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    const apart = within(screen.getByRole('group', { name: 'Repositories not looked at' }));
-    expect(apart.getByText('2 other repositories with a checkout here hold no branch of Daoris\'s')).toBeInTheDocument();
-    expect(apart.getByText(code('docs'))).toBeInTheDocument();
-    expect(apart.getByText(code('site'))).toBeInTheDocument();
-    expect(apart.getByText(/A proposal naming one looks at it/)).toBeInTheDocument();
-  });
-
-  it('says nothing besides its rows where every line was fetched and nothing was left apart, or before the look', () => {
-    render(<ul><ProposalCard proposal={LOOKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={{ ...SYNC, sync: { ...OFFLINE.sync!, looked: false } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.queryByRole('note', { name: 'Not fetched' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'Repositories not looked at' })).not.toBeInTheDocument();
-  });
-
-  it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
-    await press(PLUGIN_OFFER, 'Apply');
-
-    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText(/Settings → Git/)).toBeInTheDocument();
-    expect(runs.getByText(/^needs:/)).toBeInTheDocument();
-    expect(screen.getByText(code(PLUGIN_OFFER.terminal))).toBeInTheDocument();
-  });
-
-  it('an update says what changes, as the manifests write it, and that its folder is replaced keeping what it kept', async () => {
-    await press(PLUGIN_UPDATE, 'Apply');
-
-    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText(code('1.0.0'))).toBeInTheDocument();
-    expect(runs.getByText(code('1.1.0'))).toBeInTheDocument();
-    expect(runs.getByText(/^Servers: /)).toBeInTheDocument();
-    expect(screen.getByText(/replaces its folder from where it came from/)).toBeInTheDocument();
-    expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
-  });
-
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={DELETE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议删除')).toBeInTheDocument();
+      render(<ul><ProposalCard proposal={ASKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
-      // The go card's dismiss takes it out of the list, as a notice's does; the delete card keeps its 暂不.
+      // The go card's dismiss takes it out of the list, as a notice's does; the ask card keeps its 暂不.
       expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
-      expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(1);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
-      // The plugin card's chrome translates; the command stays as the manifest writes it.
-      expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
-      const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
-      expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
-      cleanup();
-      // What an offer needs and what an update changes, the chrome in 中文.
-      render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText(/^需要：/)).toBeInTheDocument();
-      expect(screen.getByText(/^版本：/)).toBeInTheDocument();
-      expect(screen.getByText(/从它的来处替换它的文件夹/)).toBeInTheDocument();
-      cleanup();
-      // Bringing up to date's chrome, the look's word the screen's own.
-      render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议更新到最新')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
-      cleanup();
-      // What the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
-      render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
-      expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

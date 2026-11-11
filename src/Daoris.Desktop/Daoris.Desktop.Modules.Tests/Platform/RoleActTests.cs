@@ -10,9 +10,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's immediate acts: each admitted in its
-/// exact form and nothing else, every act of the owner's refused <c>not-role</c>, each condition refused by its code with nothing written,
-/// each effect recorded as the steward's, and the steward's Try again a release only this run's memory honours, consumed once by its start.
+/// The steward's immediate acts: each admitted in its exact form and nothing else, every act of the owner's refused <c>not-role</c>, each condition refused by its code with nothing written, each effect recorded as the steward's.
 /// </summary>
 /// <remarks>
 /// Each test has its own scratch home under the checkout's <c>_fixtures</c>, handed by path: no test sets <c>DAORIS_HOME</c>, starts a
@@ -43,7 +41,6 @@ public sealed class RoleActTests : IDisposable
     {
         { "drive", """{"repository":"engine","drivable":true}""" },
         { "undrive", """{"repository":"engine","drivable":false}""" },
-        { "trees", """{"repository":"engine","ownTree":true}""" },
         { "hold", """{"repository":"engine","held":true}""" },
         { "resume", """{"repository":"engine","held":false}""" },
         { "stop", """{"id":"s1","said":true}""" },
@@ -69,7 +66,7 @@ public sealed class RoleActTests : IDisposable
         var (judge, key) = Appointed();
 
         Assert.Equal(
-            ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow",
+            ["drive", "undrive", "hold", "resume", "stop", "finish", "retry", "workflow",
              "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel", "handover"],
             StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
@@ -83,7 +80,6 @@ public sealed class RoleActTests : IDisposable
     [InlineData("drive", """{"Repository":"engine","DRIVABLE":true}""", null)]
     [InlineData("drive", """{"repository":"engine","REPOSITORY":"engine","drivable":true}""", "form")]
     [InlineData("drive", """{"repository":" engine","drivable":true}""", "form")]
-    [InlineData("trees", """{"repository":"engine","ownTree":false}""", "form")]
     [InlineData("finish", """{"id":"s1","state":"declined","said":true}""", "form")]
     [InlineData("stop", """{"id":"s1"}""", "form")]
     [InlineData("retry", """{"quest":"q1","session":"s1"}""", "form")]
@@ -105,8 +101,7 @@ public sealed class RoleActTests : IDisposable
     [Theory]
     [InlineData("QUEST_DONE")]
     [InlineData("decline")]
-    [InlineData("SET_TREES")]
-    [InlineData("trees-off")]
+    [InlineData("trees")]
     [InlineData("hand-over")]
     [InlineData("go-on")]
     [InlineData("setup")]
@@ -137,23 +132,22 @@ public sealed class RoleActTests : IDisposable
     }
 
     /// <summary>
-    /// A repository whose sessions open no trees of their own is the owner's to drive, refused <c>no-tree</c> with nothing
-    /// written; the steward gives it trees first, and then its drive is admitted, each recorded as the steward's.
+    /// A repository whose workflow sets no session apart is the owner's to drive, refused <c>no-tree</c> with nothing written; once its
+    /// workflow sets its work apart, its drive is admitted, recorded as the steward's.
     /// </summary>
     [Fact]
-    public async Task A_drive_of_a_repository_with_no_trees_is_refused_until_the_steward_gives_it_trees()
+    public async Task A_drive_of_a_repository_whose_workflow_sets_nothing_apart_is_refused_until_it_does()
     {
         await using var served = await ServedAsync(new World());
 
         Assert.Equal((false, StewardWhy.NoTree), Done(await served.ActAsync("drive", """{"repository":"engine","drivable":true}""")));
         Assert.DoesNotContain("engine", served.World.Config().Drivable);
 
-        Assert.Equal((true, null), Done(await served.ActAsync("trees", """{"repository":"engine","ownTree":true}""")));
+        served.World.Apart.Add("engine");
         Assert.Equal((true, null), Done(await served.ActAsync("drive", """{"repository":"engine","drivable":true}""")));
 
-        Assert.True(served.World.Config().OpensOwnTree("engine"));
         Assert.Contains("engine", served.World.Config().Drivable);
-        Assert.Equal(["drive", "trees"], served.Judge.StewardActsNow().Select(each => each.Act));
+        Assert.Equal(["drive"], served.Judge.StewardActsNow().Select(each => each.Act));
         Assert.True(served.Judge.StewardDrove("engine"));
     }
 
@@ -367,7 +361,7 @@ public sealed class RoleActTests : IDisposable
     public async Task A_steward_s_drive_causes_its_repository_s_starts_until_the_owner_acts_on_it()
     {
         var world = new World();
-        world.Change(config => config.WithTrees("engine", true));
+        world.Apart.Add("engine");
         await using var served = await ServedAsync(world);
         var starts = new RoleStarts(served.Judge, world.Path);
 
@@ -467,6 +461,11 @@ public sealed class RoleActTests : IDisposable
         public bool AliveOnThisMachine(string id) => Here.Contains(id);
 
         public bool OwnTree(string? tree) => tree is not null && Root.Length > 0 && tree.StartsWith(System.IO.Path.Combine(Root, "trees"), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>The repositories whose workflow sets their sessions apart.</summary>
+        public HashSet<string> Apart { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public Task<bool> ApartAsync(string repository, CancellationToken ct) => Task.FromResult(Apart.Contains(repository));
 
         public bool Stoppable { get; set; } = true;
 

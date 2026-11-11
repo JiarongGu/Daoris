@@ -63,6 +63,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   'parked-quest': 'quests',
   'steward-stopped': 'quests',
   'policy-hold': 'quests',
+  unclosed: 'quests',
   // The run's door opens its quest, where the work and its declined request are read.
   'request-declined': 'quests',
   // A person's task opens its run's work quest, as a declined request does.

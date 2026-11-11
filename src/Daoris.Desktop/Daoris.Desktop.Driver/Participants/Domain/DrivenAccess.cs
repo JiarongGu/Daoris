@@ -97,7 +97,11 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             var own = !adapter.Can.SetAtOpen ? "the permission mode driven sessions always ran in there"
                 : adapter.Postures.Ordinary is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
-            return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Id.Value}`, {own} (D81); {keeps}.") { Repository = repository };
+            return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Id.Value}`, {own} (D81); {keeps}.")
+            {
+                Posture = adapter.Can.SetAtOpen ? PostureAsked.Held(adapter.Postures.Ordinary) : null,
+                Repository = repository,
+            };
         }
 
         var unrestricted = permissions == AccessRules.Unrestricted;
@@ -110,16 +114,16 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             return new(permissions, refusal) { Refusal = refusal, Repository = repository };
         }
 
-        // AUTONOMY1b3a: on the protocol door each request waits for the person (HeldPermissions), refused at its bound; the native door
-        // has no wire to hold one on, since the harness answers its own asks under `-p`.
+        // Each request waits for the person (HeldPermissions), refused at its bound: on the protocol door's wire, and on the native door,
+        // where the harness answers its own asks under `-p`, through the ask hook (ClaudeAskHook).
         var waits = $"each request waits for the person to allow it once or refuse it, and one nobody answers in "
             + $"{(int)HeldPermissions.Bound.TotalMinutes} minutes is refused";
         var abilities = adapter.Can;
         var does = unrestricted
             ? "which asks nothing"
             : !abilities.HeldOnWire
-                ? "where a tool its rules do not allow is refused: the native door has no wire to hold a request on, so it cannot hold one "
-                  + "for the person, and the session uses only what its rules allow"
+                ? $"which asks before any tool its rules do not allow; with no wire to hold it on, the native door asks through Daoris's hook, "
+                  + $"and {waits}"
                 : !adapter.Can.TakesSettings
                     ? $"which asks before acting; {waits}, and this agent takes no rules, so it does unasked only what that mode allows"
                     : $"which asks before any tool its rules do not allow; {waits}";

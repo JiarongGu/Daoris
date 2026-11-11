@@ -58,10 +58,14 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual IReadOnlyDictionary<string, string> Outputs => NodePorts.None;
 
+    public virtual IReadOnlyList<string> Places => PlaceKind.Every;
+
     /// <summary>Each output carried on some outcomes alone, which a step the editor adds writes on its declaration.</summary>
     public virtual IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn => NodeArrivals.NoneOn;
 
     public virtual NodeArrivals Arrives => NodeArrivals.None;
 
     public virtual IReadOnlyList<string> Waits => [];
+
+    public virtual WorkflowRunWait? WaitOf(NodeStatus status) => null;
 }

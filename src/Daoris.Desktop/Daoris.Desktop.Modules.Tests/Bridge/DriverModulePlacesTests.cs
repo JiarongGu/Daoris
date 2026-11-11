@@ -15,7 +15,6 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
           "adapter": "claude-code",
           "drivable": ["engine", "game", "site"],
           "holds": ["game"],
-          "trees": ["engine"],
           "lines": { "engine": "release" },
           "workspaceLines": { "aurora": "develop" },
           "landings": { "engine": { "form": "branch", "pattern": "feature/{quest}-{slug}" }, "broken": { "tidy": true } },
@@ -60,7 +59,7 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         Assert.Equal(("zh", "workspace"), (values.GetProperty("language").GetProperty("value").GetString(), Of(values, "language")));
         Assert.Equal("workspace", Of(values, "opinion"));
         Assert.Equal("default", Of(values, "commits"));
-        Assert.True(engine.GetProperty("driven").GetBoolean() && engine.GetProperty("trees").GetBoolean() && !engine.GetProperty("held").GetBoolean());
+        Assert.True(engine.GetProperty("driven").GetBoolean() && !engine.GetProperty("trees").GetBoolean() && !engine.GetProperty("held").GetBoolean());
 
         // The game inherits its workspace's line, landing and workflow, and is held.
         var game = Repository(answer, "game").GetProperty("values");

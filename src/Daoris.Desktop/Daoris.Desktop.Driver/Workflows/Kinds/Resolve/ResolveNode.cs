@@ -50,6 +50,8 @@ internal sealed class ResolveNode : BuiltInNode, IObserves, IStarts, IReadsSteps
 
     public override NodeLook Look => NodeLook.Line;
 
+    public override IReadOnlyList<string> Places => PlaceKind.GitAlone;
+
     public NodeObservation Observe(NodeReading reading) => ResolveReading.Observe(reading);
 
     /// <summary>Its door, which hands the problem over off the pass; none where the loop's wiring holds no resolver.</summary>

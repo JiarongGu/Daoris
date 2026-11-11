@@ -119,7 +119,8 @@ public static class PluginKitCommand
             return Print(result, output);
         }
 
-        var trial = new TrialOptions(Point: points.FirstOrDefault(), Frame: options.TryGetValue("--frame", out var file) ? Frame(file) : null);
+        var trial = new TrialOptions(Point: points.FirstOrDefault(), Frame: options.TryGetValue("--frame", out var file) ? Frame(file) : null,
+            Origin: await GitRemotes.AddressOf(Directory.GetCurrentDirectory(), "origin", push: true, ct).ConfigureAwait(false));
 
         // A folder first: after `plugins new acme.x`, `plugins try acme.x` means the folder just made.
         if (PluginFolders.There(positional))

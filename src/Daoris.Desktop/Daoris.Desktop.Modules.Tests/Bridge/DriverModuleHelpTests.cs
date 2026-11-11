@@ -96,61 +96,20 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal("dismissed", HelpProposals.Find(Home, "g1a2b3c4")!.State);
     }
 
-    /// <summary>
-    /// A looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
-    /// <c>HelpSyncShown</c> reads: each repository not fetched with git's reason, when it last heard from origin and how
-    /// origin is reached, and the repositories the look left apart. Before a look, both are empty.
-    /// </summary>
-    [Fact]
-    public void A_sync_card_carries_what_was_not_fetched_and_the_repositories_left_apart_in_the_pages_shape()
-    {
-        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var then = new DateTimeOffset(2026, 9, 29, 8, 0, 0, TimeSpan.Zero);
-        var looked = new HelpSyncPlan(true, [new HelpSyncRow("engine:main", "line", true, "engine  main  fast-forwards 1 commit(s)")])
-        {
-            Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222")], ["docs"]),
-        };
-
-        var shown = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(looked), camel);
-
-        Assert.True(shown.GetProperty("looked").GetBoolean());
-        Assert.Equal("engine:main", shown.GetProperty("rows")[0].GetProperty("key").GetString());
-        var line = Assert.Single(shown.GetProperty("notFetched").EnumerateArray());
-        Assert.Equal(
-            ("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222"),
-            (line.GetProperty("repository").GetString(), line.GetProperty("fetch").GetString(), line.GetProperty("lastFetch").GetDateTimeOffset(),
-                line.GetProperty("reach").GetString(), line.GetProperty("host").GetString()));
-        Assert.Equal(["docs"], shown.GetProperty("apart").EnumerateArray().Select(name => name.GetString()));
-
-        var before = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(new HelpSyncPlan(false, [])), camel);
-        Assert.Empty(before.GetProperty("notFetched").EnumerateArray());
-        Assert.Empty(before.GetProperty("apart").EnumerateArray());
-        Assert.Null(HelpRoutes.SyncShown(null));
-    }
-
-    /// <summary>
-    /// An Apply names an agent action for the Agents screen to follow only where one started,
-    /// an update's or a pin's. A default is a file edit that starts nothing, so an applied one names none, and nor does
-    /// an update the route refused.
-    /// </summary>
     [Theory]
-    [InlineData("update", true, "update")]
-    [InlineData("pin", true, "pin")]
-    [InlineData("default", true, null)]
-    [InlineData("update", false, null)]
-    public void An_applied_agent_proposal_names_an_action_to_follow_only_where_one_started(string door, bool applied, string? followed)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void An_applied_proposal_answers_its_message_and_that_it_no_longer_stands(bool applied)
     {
-        var proposal = new HelpProposal("p1", "agent", door, " claude-code ", null, "work", null, "why", "h1", "proposed");
+        var proposal = new HelpProposal("p1", "ask", "ask", null, null, "work", null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
             HelpRoutes.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
-        var action = answer.GetProperty("harnessAction");
-        Assert.Equal(followed, action.ValueKind == JsonValueKind.Null ? null : action.GetProperty("action").GetString());
-        if (followed is not null) Assert.Equal("claude-code", action.GetProperty("harness").GetString());
         Assert.Equal(("told", applied), (answer.GetProperty("message").GetString(), answer.GetProperty("applied").GetBoolean()));
         Assert.False(answer.GetProperty("stands").GetBoolean());
+        Assert.False(answer.TryGetProperty("harnessAction", out _));
     }
 
     /// <summary>
@@ -230,13 +189,13 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The quests and asks are read from the service only while a proposal is judged against them, a delete or
-    /// a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
+    /// The quests and asks are read from the service only while a proposal is judged against them, a go naming an item on
+    /// Quests; a go to a place alone, or any other kind (a delete is a press now), asks the service for none.
     /// A go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
     /// that holds none reads neither, since the judge refuses it unread.
     /// </summary>
     [Theory]
-    [InlineData("delete", "quests", null, true, false)]
+    [InlineData("delete", "quests", null, false, false)]
     [InlineData("go", "quests", "q1a2b3c4", true, false)]
     [InlineData("go", "Quests ", "ask:a1", true, false)]
     [InlineData("go", "sessions", "s1a2b3c4", false, true)]
@@ -256,24 +215,6 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal(sessions, HelpProposalFacts.JudgedAgainstSessions([proposal]));
         Assert.False(HelpProposalFacts.JudgedAgainstRecords([]));
         Assert.False(HelpProposalFacts.JudgedAgainstSessions([]));
-    }
-
-    /// <summary>
-    /// A sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
-    /// <c>proposal.settled</c> for it; a look that found nothing to do settled the card, and says that.
-    /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void An_answer_says_whether_the_card_still_stands(bool stands)
-    {
-        var proposal = new HelpProposal("p11", "sync", "sync", null, null, null, null, "why", "h1", "proposed");
-
-        var answer = JsonSerializer.SerializeToElement(
-            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(false, "looked") { Stands = stands }),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-        Assert.Equal(stands, answer.GetProperty("stands").GetBoolean());
     }
 
     [Fact]

@@ -206,9 +206,15 @@ internal static class PipeReads
 
     public static PipeGround Quiet() => State(["minutes"], (a, _) => Raw(At(a, "quiet")) ?? "", p => Raw(Field(p, "minutes")));
 
+    public static PipeGround Manifest() => State(["files", "minutes", "copy"],
+        (a, p) => Raw(At(a, Field(p, "files") is not null ? "manifestFiles" : Field(p, "copy") is not null ? "manifestCopy" : "manifestMinutes")) ?? "",
+        p => Raw(Field(p, "files") ?? Field(p, "copy") ?? Field(p, "minutes")));
+
     public static PipeGround Cap() => State(["cap"], (a, _) => Raw(At(a, "cap")) ?? "", p => Raw(Field(p, "cap")));
 
     public static PipeGround HelpMode() => State(["mode"], (a, _) => Text(At(a, "helpMode")) ?? "", p => Text(p, "mode"));
+
+    public static PipeGround Terminal() => State(["tier"], (a, _) => Text(At(a, "terminal")) ?? "", p => Text(p, "tier"));
 
     public static PipeGround HelpGrant() => State(["grant", "operation", "chosen"],
         (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? "housekeeping"), "chosen")).Any(each => Text(each) == Text(p, "operation"))
@@ -254,6 +260,10 @@ internal static class PipeReads
     /// <summary>Over the workspace's address alone, never its key, which the read redacts.</summary>
     public static PipeGround RemoteWiring() => Setting("STATE", ["workspace"], _ => null,
         (a, p) => Text(At(Named(At(a, "remotes"), "workspace", Text(p, "workspace")), "url")) ?? "").Of("DAORIS.REMOTES");
+
+    public static PipeGround BrowserFiles() => Setting("STATE", [], _ => null,
+        (a, _) => Fp(Pick(a, "browser", "links", "extensions", "settingsProblem", "favoritesProblem"), Rows(At(a, "favorites"), ["url"], "title")))
+        .Of("DAORIS.BROWSER");
 
     public static PipeGround HarnessToAct() => Plan("HARNESSES", ["door", "profile"], _ => null, (a, p) => Harness(a, Text(p, "door")));
 

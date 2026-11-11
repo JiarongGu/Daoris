@@ -59,7 +59,7 @@ internal sealed class ExecutorStand(IChatRunning runner, ChatContext context) : 
         bool answers) =>
         runner.RepositoryPlace(config, registry, known, repository, workTree, continued, answers);
 
-    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace) => runner.HelpPlace(room, reads, workspace);
+    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace, HelpFocus? focus) => runner.HelpPlace(room, reads, workspace, focus);
 
     Task<bool> IChatRunning.AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) =>
         runner.AnswersFindingsAsync(sessionId, tree, config);

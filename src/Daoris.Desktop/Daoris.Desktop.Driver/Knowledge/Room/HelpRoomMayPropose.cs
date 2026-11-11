@@ -15,120 +15,102 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // Every door, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        // Every setting verb (`daoris place`, `settings`, `quest`, `git`); across said form by form, and a write-to as the say-so the canon
-        // asks for, which its card says too. `retry` too, of a quest the driver parked, named from the list;
-        // or one the person's stop holds, released from that stop.
-        text.Append("- `setting_propose`: every setting door below.\n");
-        text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
-        text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
-        text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
-        text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
-        text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
+        // Every setting is pressed, never proposed, its card the press's own sentence and command.
+        text.Append("- Every setting is pressed, never proposed, its card the press's own sentence and command: `daoris place drive|undrive|hold|resume <repository>`,\n");
+        text.Append("  `daoris place line|language <repository> …` (`--workspace <name>` for a whole workspace),\n");
+        text.Append("  `daoris place review|opinion|helpers|commits <repository> …`, `daoris place standing <repository> …`,\n");
+        text.Append("  `daoris place across <repository> read|write-to …`, `daoris quest retry <quest>`, `daoris git use …` and\n");
+        text.Append("  `daoris settings notify|cap|cooloff|quiet|keep …`.\n");
+        text.Append("  `daoris quest retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
+        text.Append("  as its page's *Try again* does; a quest on neither list is refused.\n");
         // An ask's short title, at most 40, the person's own where they gave one (the card says it).
         text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
         text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
         text.Append(RoomsProposal.Ask());
-        // Each is on the agent's page; there is no `default` door.
-        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.\n");
-        // The account doors the screen's How accounts are used fold offers, each a card the person applies;
-        // on Daoris's accounts, one set for every workspace, and naming no workspace.
-        text.Append("  Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:\n");
-        text.Append("  `use` sets how they are used (`use` goal or order, `keep` one of them or none,\n");
-        // The switch and the person's curve, in place of `early` and `near`.
-        text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` puts the\n");
-        text.Append("  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order; `ready` ends an account's\n");
-        text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
-        text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
-        text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
-        text.Append("- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and\n");
-        text.Append("  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own\n");
-        text.Append("  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,\n");
-        text.Append("  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
+        text.Append("- An agent's Update or a pin to one version is pressed, never proposed, as Agents → the agent's page → Ways in offers them:\n");
+        text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");
+        text.Append("  release, or runs an unpinned one's own updater, and is offered only where that screen shows Update; a pin names one\n");
+        text.Append("  exact release, like 2.1.300, never `latest`.\n");
+        text.Append("- Daoris's browser's settings are pressed, never proposed, as Settings → Browser sets them: `daoris browser use daoris|edge`,\n");
+        text.Append("  `daoris browser links system|daoris`, `daoris browser extensions offer|refuse` and `daoris browser favorite add|remove <address>`\n");
+        text.Append("  (`--title` names a favorite added); a favorite removed is one the list below keeps. Each but `links` holds from the browser's next start.\n");
+        // Daoris's accounts for an agent are one set that serves every workspace, so these name none.
+        text.Append("- How Daoris's accounts for an agent are used, ordered and ended early are pressed, never proposed, and name no workspace:\n");
+        text.Append("  `daoris agent account use <agent> …` (a way to use them, `--keep`, `--switch`, `--curve`), `daoris agent account order <agent> …`\n");
+        text.Append("  and `daoris agent account ready <agent> <account>|--own` (*Try now*; `--own` ends only an old cool-off of the tool's own sign-in).\n");
+        text.Append("- An account's own model and effort are pressed, never proposed, as Agents → the agent's page → Model and effort sets them:\n");
+        text.Append("  `daoris agent settings <agent> --account <name> model <model> effort <effort>`, for a tool whose settings Daoris knows and one\n");
+        text.Append("  of Daoris's accounts, never the tool's own sign-in. The values are the tool's own: one of its model aliases or a full model id,\n");
+        text.Append("  and an effort of low, medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
         text.Append("  to the tool's own default.\n");
-        text.Append("- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the\n");
-        text.Append("  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.\n");
-        text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
-        text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
-        // A session's delete is this kind's `session` door, judged as Sessions' Delete… is; Ask Daoris's
-        // own conversations are deleted in its History, never from here.
-        text.Append("  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,\n");
+        // A delete is pressed, its card the route's view.
+        text.Append("- A quest or an ask made by mistake (a duplicate, a test) is deleted by pressing, never proposed:\n");
+        text.Append("  `daoris quest delete <id>` or `daoris ask --delete <id>`, as the quest's drawer and the ask's record delete them. Only an open\n");
+        text.Append("  quest nobody has started on can go, and an ask goes with every quest it became, or not at all. Never press the delete of a\n");
+        text.Append("  taken, done or declined quest: its record stays, the press is answered to you at once and never shown, and declining it\n");
+        text.Append("  with the reason is the way instead. A delete cannot be undone.\n");
+        // A session's delete is judged as Sessions' Delete… is; Ask Daoris's own conversations are deleted in its History.
+        text.Append("  A session goes by `daoris sessions delete <id>` only where Sessions offers Delete…: a conversation that served no quest, ended,\n");
         text.Append("  this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest\n");
-        text.Append("  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.\n");
+        text.Append("  is archived instead, and Ask Daoris's own conversations are deleted in its History.\n");
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
         // Ask Daoris is the general entry, so a go may begin a conversation: the composer opens with the
         // words and the repository, and the person sends them.
         text.Append("  A go may fill Add or Import with a workspace, or open New conversation with a repository and the person's words in the composer.\n");
-        text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
-        text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
-        text.Append("  an added plugin into its home under its id, and never replaces one already installed. An `add` may name\n");
-        text.Append("  one of Daoris's own plugins by its id instead (`offer`, below), and an `update` (the plugin's `id`) takes a\n");
-        text.Append("  newer copy from where an installed one came from, the card saying what changes; one with no record of\n");
-        text.Append("  where it came from cannot be updated.\n");
-        // The person's approval of what a plugin's server offers Ask Daoris, by their press.
-        text.Append("  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,\n");
-        text.Append("  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you\n");
-        text.Append("  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.\n");
-        // The browser's settings, each as `daoris browser` spells it.
-        text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
-        text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
-        text.Append("  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).\n");
-        text.Append("  Each but `links` holds from the browser's next start.\n");
-        // Bring up to date, whose look fetches and so is the person's press, as on the screen.
-        text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →\n");
-        text.Append("  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at\n");
-        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace\n");
-        text.Append("  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
-        text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n");
+        text.Append("- A plugin is added, updated or switched by pressing, never proposed, as the Plugins place does: `daoris plugin add <folder>`\n");
+        text.Append("  (a plugin that has landed, its folder's whole path in the checkout of the repository that holds it), `daoris plugin add\n");
+        text.Append("  --offer <id>` (one of Daoris's own plugins, below), `daoris plugin update <id> --yes` (a newer copy from where it came\n");
+        text.Append("  from) and `daoris plugin enable|disable <id>`. Its card shows the person what it will run, or what an update changes.\n");
+        text.Append("  `daoris plugins approve <id> <server>` asks the person's approval of what a plugin's server offers you, with\n");
+        text.Append("  `--writes <tool>,…` naming only the writes outside Daoris they said they accept, or `--reads-only`; its card names every\n");
+        text.Append("  tool, and you are handed it from your next conversation. `daoris plugins withdraw <id> <server>` takes one back.\n");
+        // Bring up to date, judged at the ask by its list (TREES_SYNC's view).
+        text.Append("- Repositories are brought up to date after a pull request merged by pressing, never proposed, as the workspace's page →\n");
+        text.Append("  Branches → Updates does: `daoris tree sync --yes`, with `--repository <name>` or `--workspace <name>` to take those alone,\n");
+        text.Append("  or `--all` for every one with a checkout here. Each line is fetched from `origin` as the person and fast-forwarded, the\n");
+        text.Append("  branches still at work replayed onto it, the landed branches whose work reached it deleted. Its card shows the person each\n");
+        text.Append("  row that moves. Daoris never pushes.\n");
         // A quest's yes and a landed branch's hand-off stay in their own place, which a go reaches.
         text.Append("- Never proposed: accepting a quest's departure, and handing a landed branch to a landing plugin. They are the\n");
         text.Append("  person's own presses, on the quest's page and in the review, where `go_propose` takes them.\n");
-        // A move needs no path, so it is proposed by name; adding or importing needs a
+        // The press is the one way to ask: a move is pressed, its card the route's view. Adding or importing needs a
         // folder, which stays the person's pick, so a go opens the drawer with the workspace filled.
-        text.Append("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →\n");
-        text.Append("  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,\n");
-        text.Append("  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.\n");
+        text.Append("- A repository registered here is moved to a workspace by pressing, never proposed:\n");
+        text.Append("  `daoris repository wire <repository> --workspace <name>`, a workspace the room lists or a new name, which the\n");
+        text.Append("  move starts. Its card shows the person the move; one the registry would refuse is answered to you at once and never shown.\n");
         text.Append("  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens\n");
         text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n");
-        // The role catalogue's change, judged by the role door's judge and applied only by
-        // the person's press, whatever access the room has (no `settings_*` grant, extended to roles).
-        text.Append("- `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →\n");
-        text.Append("  Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left\n");
-        text.Append("  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give\n");
-        text.Append("  every seeded role back its seed and keep the added ones. A removed role's work\n");
-        text.Append("  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.\n");
-        // A `set` may carry the role's policy, judged by the policy's judge and said on the card as before and after.
-        text.Append("  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section\n");
-        text.Append("  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.\n");
-        // Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
-        // is the session's own conversation, which a go reaches.
-        text.Append("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,\n");
-        text.Append("  or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.\n");
-        text.Append("  An archived session leaves the list with its record whole, and a teammate's may be archived here too.\n");
-        text.Append("  A session still running, in Waiting on you or in To review is never archived: archive never hides what\n");
-        text.Append("  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,\n");
-        text.Append("  on the session's page, where `go_propose` takes them.\n");
-        // The person's helper doors, judged as the page's Ask another agent…, Ask again… and Pass to the lead are.
-        text.Append("  Door `helper` asks another agent, read-only, one question about one session's work (`question`, and `agent` to\n");
-        text.Append("  name it); `ask` asks again after an answered one, and `toMe` keeps the answer for the person, who passes it on.\n");
-        text.Append("  Door `pass` sends an answer kept for the person to the session that asked, naming the ask.\n");
-        // The pages' Pause… and Resume, judged by what a pause does with each piece of the
-        // work. Abandon is exempt: it declines quests with the person's reason, which is their answer.
-        text.Append("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or\n");
-        text.Append("  the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it\n");
-        text.Append("  until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a\n");
-        text.Append("  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest\n");
-        text.Append("  of the work stays.\n");
+        // The role catalogue's change, judged at the ask by the role door's judges (SET_ROLE's view).
+        text.Append("- A role of this machine's role catalogue is added, changed or removed by pressing, never proposed, as Agents → Roles\n");
+        text.Append("  does: `daoris role set <id> …` (its names, work, scope and choices, or a supervisor's kinds, acts, holder and window),\n");
+        text.Append("  `daoris role remove <id>`, `daoris role default <id>|--all`, a role's policy `daoris role policy <id> …` and a place's\n");
+        text.Append("  supervisor rules `daoris role rules --place <place> …`. A removed role's work waits until a role takes it; running work\n");
+        text.Append("  goes on. Its card shows the person the change; one the role door would refuse is answered to you at once and never shown.\n");
+        // Sessions' Archive and Unarchive, judged as the list judges them, pressed by id. A stop is the session's own
+        // conversation, which a go reaches.
+        text.Append("- Sessions are archived or unarchived by pressing, never proposed: `daoris sessions archive <id>…` and\n");
+        text.Append("  `daoris sessions unarchive <id>…`, by id as Sessions lists them. An archived session leaves the list with its record\n");
+        text.Append("  whole, and a teammate's may be archived here too. A session still running, in Waiting on you or in To review is never\n");
+        text.Append("  archived: archive never hides what needs the person, and the press is answered to you at once and never shown.\n");
+        text.Append("  Stopping a session is never pressed for the person: it is their own, on the session's page, where `go_propose` takes them.\n");
+        // The person's helper doors, as the page's Ask another agent…, Ask again… and Pass to the lead are.
+        text.Append("  `daoris sessions helper <id> \"…\"` asks another agent, read-only, one question about one session's work, and\n");
+        text.Append("  `daoris sessions pass <ask>` sends an answer kept for the person to the session that asked.\n");
+        // The pages' Pause… and Resume. Abandon is exempt: it declines quests with the person's reason, which is their answer.
+        text.Append("- One ask's work, or one quest's, is paused on this machine or resumed by pressing, never proposed:\n");
+        text.Append("  `daoris ask --pause <id>`, `daoris quest pause <id>` and their `--resume` and `resume`. A pause stops what of the work runs\n");
+        text.Append("  here as the person's own stop and starts nothing of it until it is resumed; a session waiting on the person stays parked,\n");
+        text.Append("  a running intake keeps reading, and a teammate's session is never reached. Resume lifts the pause and releases its stops;\n");
+        text.Append("  another pause over a quest of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
         text.Append("  ask's or the quest's page → Abandon…, or `daoris ask abandon <id>`, and never write the reason.\n");
-        // The pages' clears, judged by their first press, a closed quest's failed
-        // sessions alone being the `failed` door.
-        text.Append("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n");
-        text.Append("  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest\n");
-        text.Append("  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).\n");
-        text.Append("  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged\n");
-        text.Append("  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still\n");
-        text.Append("  open or taken, a session still running and anything waiting on the person are never cleared, and the route\n");
-        text.Append("  refuses them.\n");
+        // The pages' clears, judged at the ask by their first press's list (HISTORY_CLEAR's view).
+        text.Append("- Finished history is cleared from this machine by pressing, never proposed, as the pages' *Clear from this machine…* do:\n");
+        text.Append("  `daoris quest clear <id> --yes` (a closed quest's work), `daoris ask clear <id> --yes` (an ask's work with every quest it\n");
+        text.Append("  became), `daoris quest clear <id> --failed --yes` (a closed quest's failed sessions alone, the quest and its other sessions\n");
+        text.Append("  staying) and `daoris history clear --workspace <name> --yes`. Its card shows the person what would go; nothing brings it\n");
+        text.Append("  back. A quest an ask asked is cleared with its ask, never alone; work still open or taken, a session still running and\n");
+        text.Append("  anything waiting on the person are never cleared, and such a press is answered to you at once and never shown.\n");
         // A whole version judged as the editor judges it; changes, kinds and imports are
         // another door's, and a merge with nobody is a decision of its own.
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
@@ -172,13 +154,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
         text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
         text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
-        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*, a delete's
-        // press is *delete*, and a bring-up-to-date card's first is the look. A go card's second
+        // A card's presses are named by what they do, not *Apply*: a go card's first reads *go there*. A go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
-        text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
-        text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
         text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
         text.Append("A press of not now comes back to you as the person's next message;\n");
         text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");

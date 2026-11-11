@@ -209,11 +209,11 @@ public sealed class PipeCensusTests
 
     /// <summary>
     /// The plugins' presses <c>daoris plugin</c> sends: each a route of the driver's module the census
-    /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), and the replace no route
-    /// takes says why it acts alone.
+    /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), the replace's own route
+    /// among them.
     /// </summary>
     [Fact]
-    public void Each_plugin_press_names_a_route_the_census_classes_as_the_person_s_and_the_replace_says_why_it_is_alone()
+    public void Each_plugin_press_names_a_route_the_census_classes_as_the_person_s_and_the_replace_has_its_own()
     {
         Assert.NotEmpty(Daoris.Driver.PluginRoutes.Verbs);
         Assert.Equal(Daoris.Driver.PluginRoutes.Verbs.Count, Daoris.Driver.PluginRoutes.Verbs.Select(each => each.Verb).Distinct().Count());
@@ -234,7 +234,8 @@ public sealed class PipeCensusTests
                 $"`{verb}` sends {route.Route} as the person's, and the census classes it {census}");
         }
 
-        Assert.Single(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
+        Assert.DoesNotContain(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
+        Assert.Contains(Daoris.Driver.PluginRoutes.Verbs, each => each.Route?.Route == "PLUGIN_REPLACE");
     }
 
     /// <summary>
@@ -276,7 +277,7 @@ public sealed class PipeCensusTests
         string[] off =
         [
             "drive", "update",
-            "quest delete|accept|done|reopen|go-on|check|review", "ask \"…\"", "sync status", "ask channel <id>",
+            "quest check", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
             // The bench's verb times the git its own process starts.
             "git review <session>",
@@ -368,6 +369,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SYSTEM_PATH", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "WORK_RECORDS_FOLDER", PipeClass.Window)]
+    [InlineData("DAORIS.DRIVER", "REGISTRY_OPEN_FOLDER", PipeClass.Window)]
     // A terminal never reads or answers what waits for the window, and never reads the person key.
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]
@@ -563,9 +565,9 @@ public sealed class PipeCensusTests
         ];
         string[] inert =
         [
-            "SET_HOLD", "SET_DRIVABLE", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
+            "SET_HOLD", "SET_DRIVABLE", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
             "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
-            "SET_HELP_GRANT", "SET_NOTIFY", "SET_QUIET", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
+            "SET_HELP_GRANT", "SET_NOTIFY", "SET_QUIET", "SET_MANIFEST","SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
             // An acceptance of a repository's integration declaration, a standing choice that starts nothing.
             "INTEGRATION_GATES",
         ];

@@ -191,11 +191,12 @@ export function processList({ platform = process.platform, run = spawnSync } = {
  * do. `since` keeps a later process that reused the id out of it. Elsewhere a shell's single command replaces the shell, so
  * the kill reaches it, and this ends nothing.
  */
-export function endOrphans(parent, since) {
+export function endOrphans(parent, since, until = null) {
   if (process.platform !== 'win32' || !Number.isInteger(parent) || parent <= 0) return [];
+  const before = Number.isFinite(until) && until !== null ? ` -and $_.CreationDate -lt [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(until)}).LocalDateTime` : '';
   const orphans = powershell(
     `Get-CimInstance Win32_Process -Filter "ParentProcessId = ${parent}" -ErrorAction SilentlyContinue | `
-    + `Where-Object { $_.CreationDate -ge [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime } | `
+    + `Where-Object { $_.CreationDate -ge [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime${before} } | `
     + 'ForEach-Object { $_.ProcessId }')
     .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
   for (const pid of orphans) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });

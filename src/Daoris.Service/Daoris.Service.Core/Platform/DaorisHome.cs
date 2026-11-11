@@ -412,6 +412,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry RoleRooms = new("role-rooms", HomeCategory.Work, "work/rooms/roles/*", "work/rooms/roles/*");
     public static readonly HomeEntry Deps = new("deps", HomeCategory.Work, "work/deps/*", "work/deps/*");
     public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
+    public static readonly HomeEntry Places = new("places", HomeCategory.Work, "work/places/*/*", "work/places/*/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
@@ -452,7 +453,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
-        Deps, TreeFiles,
+        Deps, TreeFiles, Places,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,

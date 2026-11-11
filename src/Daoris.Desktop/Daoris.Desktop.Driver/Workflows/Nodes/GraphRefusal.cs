@@ -129,6 +129,12 @@ public static class GraphRefusal
     /// </summary>
     public const string MonitorWatch = "monitor-watch";
 
+    /// <summary>An <c>isolate</c> that is not the graph's one entry wired straight into a <c>claimed</c> by <c>after</c>, or a second one.</summary>
+    public const string IsolateEntry = "isolate-entry";
+
+    /// <summary>A <c>return</c> in a graph with no <c>isolate</c>: there is no copy to bring back, its work being done in the place itself.</summary>
+    public const string ReturnIsolate = "return-isolate";
+
     /// <summary>A <c>tidy</c> no monitor's <c>when merged</c> way reaches: it ends a chain only once its pull request merges.</summary>
     public const string TidyMerged = "tidy-merged";
 }

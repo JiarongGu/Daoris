@@ -15,7 +15,7 @@ public sealed class HelpPublishedRouteTests : DriverModuleBridge
     [Fact]
     public async Task A_published_ask_and_quest_are_in_their_conversations_list_and_survive_a_restart()
     {
-        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
+        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).Save(DriverConfigPath);
         var module = await UpAsync();
         Assert.Empty((await AnswerAsync(module, "HELP_PUBLISHED", new { session = "h1a2b3c4" })).GetProperty("published").EnumerateArray());
 

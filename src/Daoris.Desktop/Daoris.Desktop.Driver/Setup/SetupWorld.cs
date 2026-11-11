@@ -11,6 +11,9 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 {
+    public IsolateStep? IsolationOf(DriverConfig config, RepoView repository) =>
+        PlaceIsolates.Of(home, config, repository.Repository, repository.Workspace);
+
     /// <summary>How long a version question may take before the program is called unanswering.</summary>
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(15);
 

@@ -30,6 +30,22 @@ public sealed class RegistryImportTests : IDisposable
     }
 
     [Fact]
+    public void An_import_proposes_a_repository_s_kind_as_git_and_a_plain_folder_s_as_folder()
+    {
+        Repo("designs", null);
+        Repo("engine", null);
+        Directory.CreateDirectory(Path.Combine(_root, "engine", ".git"));
+        Repo("worktree", null);
+        File.WriteAllText(Path.Combine(_root, "worktree", ".git"), "gitdir: elsewhere");
+
+        var kinds = RegistryImport.Propose(_root).ToDictionary(proposal => proposal.Repository, proposal => proposal.Kind);
+
+        Assert.Equal(PlaceKinds.Folder, kinds["designs"]);
+        Assert.Equal(PlaceKinds.Git, kinds["engine"]);
+        Assert.Equal(PlaceKinds.Git, kinds["worktree"]);
+    }
+
+    [Fact]
     public void An_import_reads_each_declaration_from_its_own_manifest()
     {
         Repo("Cognition", """

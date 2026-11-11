@@ -140,9 +140,9 @@ internal sealed class RoundConsidering(PlanRound round)
         // A first start (not a retry or carry-on, whose work is already in its tree) whose declared paths meet an earlier unit's of the
         // repository, declared or changed on its branch, waits under `overlap: wait` until that unit's integration is settled; under
         // `warn` it starts saying so. A unit is earlier while it is taken, running, started at this look or still integrating.
+        var apart = snapshot.IsolationOf(quest.To);
         var overlap = into is not null || quest.Status != "Open" ? null : OverlapOf(quest);
-        if (overlap is not null
-            && config.LinePolicyOf(quest.To, repo.Workspace)?.Overlap == LandingIntegrate.Wait)
+        if (overlap is not null && apart is { OverlapWaits: true })
         {
             return new(quest, StartVerdict.RepositoryBusy, $"{overlap.Said} — it starts once that work is integrated.")
             {
@@ -152,8 +152,17 @@ internal sealed class RoundConsidering(PlanRound round)
 
         // The TREE is the lock, and where every session here opens its own there is no reason to run one at a time. What still
         // holds is the one tree a resume or a carry-on goes back into.
-        if (config.OpensOwnTree(quest.To))
+        if (apart is not null)
         {
+            // A first start, not one going back into its own tree, waits while the place's sessions apart fill the step's count.
+            if (into is not { Tree.Length: > 0 } && PlaceCount.Full(round, apart, quest.To, Itself) is { } atOnce)
+            {
+                return new(quest, StartVerdict.RepositoryBusy, $"{atOnce} work apart in `{quest.To}` at once — it starts when one of them ends.")
+                {
+                    Said = new(SittingFact.Apart) { Cap = atOnce, Repository = quest.To },
+                };
+            }
+
             if (into is { Tree: { Length: > 0 } tree }
                 && snapshot.Active.FirstOrDefault(s => Planner.SameTree(s.Tree, tree) && !Itself(s)) is { } holder)
             {
@@ -196,16 +205,14 @@ internal sealed class RoundConsidering(PlanRound round)
                 };
             }
         }
-        else if ((continuing
-                     ? snapshot.Active.FirstOrDefault(s =>
-                         string.Equals(s.Repository, quest.To, StringComparison.OrdinalIgnoreCase) && !Itself(s))?.Id
-                     : round.BlockedBy.GetValueOrDefault(quest.To)) is { } session)
+        else if (PlaceHolders.Of(snapshot, quest.To, repo.Root, Itself) is { } holder)
         {
-            return new(quest, StartVerdict.RepositoryBusy,
-                $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
-                + "is its one tree. Sessions there run side by side once they open trees of their own.")
+            return new(quest, StartVerdict.RepositoryBusy, PlaceHolders.Said(holder, quest.To))
             {
-                Said = new(SittingFact.InRepository) { Session = session },
+                Said = new(SittingFact.Place)
+                {
+                    Session = holder.Id, Repository = quest.To, Paths = SessionStates.IsParked(holder.State) ? holder.HoldsPlace : null,
+                },
             };
         }
         else if (round.StartedThisTick.TryGetValue(quest.To, out var ahead))
@@ -216,7 +223,6 @@ internal sealed class RoundConsidering(PlanRound round)
                 Said = new(SittingFact.Queued) { Quest = ahead },
             };
         }
-        // A start still opening in the root holds it, as its session will once it opens.
         else if (round.Opening.FirstOrDefault(start => string.Equals(start.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                                                        && !string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
                  is { Quest: { } before })
@@ -246,11 +252,12 @@ internal sealed class RoundConsidering(PlanRound round)
 
         round.StartedThisTick[quest.To] = quest.Id;
         round.StartsThisLook.Add(quest);
-        if (config.OpensOwnTree(quest.To) && into is { Tree: { Length: > 0 } back }) round.TreesThisTick.Add((back, quest.Id));
+        if (apart is not null && into is { Tree: { Length: > 0 } back }) round.TreesThisTick.Add((back, quest.Id));
         return new(quest, StartVerdict.Start,
             overlap is null ? $"starting in `{quest.To}`." : $"starting in `{quest.To}`; it {overlap.Said}.", repo.Root, repo.Workspace)
         {
             Overlaps = overlap,
+            Isolate = apart,
         };
     }
 

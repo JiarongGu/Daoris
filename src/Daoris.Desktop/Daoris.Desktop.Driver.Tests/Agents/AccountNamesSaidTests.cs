@@ -71,9 +71,7 @@ public sealed class AccountNamesSaidTests : IDisposable
 
     private static DriverConfig Config => DriverConfig.Empty with
     {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Actors = StaffedRoles.On("acp-stub"),
+        Drivable = ["engine"],        Actors = StaffedRoles.On("acp-stub"),
         PollSeconds = 1,
     };
 

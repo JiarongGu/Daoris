@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// Its permission prompts name the harness's own mode; a harness with none is held here, before any tree grows or any record opens,
 /// never run in its own mode under that label. A resume goes on under the same.
 /// </summary>
-[RunStage("access", RunPhase.Choose, "account")]
+[RunStage("access", RunPhase.Choose, "home")]
 internal sealed class StartAccess(IRunWiring wiring) : IRunStage
 {
     public ValueTask<StartRun?> RunAsync(RunRound run, CancellationToken ct)
@@ -14,7 +14,7 @@ internal sealed class StartAccess(IRunWiring wiring) : IRunStage
         DrivenAccess permissions;
         try
         {
-            permissions = DrivenAccess.For(access, run.Quest.To, wiring.Context.Adapters.Door(run.State.Agent));
+            permissions = DrivenAccess.For(access, run.Quest.To, wiring.Context.Adapters.Door(run.State.Agent)) with { Workspace = run.Start.Workspace };
         }
         catch (DriverException error)
         {

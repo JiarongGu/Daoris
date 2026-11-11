@@ -84,7 +84,7 @@ export const LANGUAGES = [{ code: 'en', name: 'English' }, { code: 'zh', name: '
  */
 export const SETUP_DEFAULTS: RepositorySetupProps = {
   repository: 'engine',
-  driving: { drivable: true, held: false, ownTree: true, onDrive: nothing, onHold: nothing, onTrees: nothing },
+  driving: { drivable: true, held: false, ownTree: true, onDrive: nothing, onHold: nothing },
   work: {
     line: { repository: 'engine', workspace: 'default', branch: 'main', source: 'workspace' },
     onLine: nothing,
