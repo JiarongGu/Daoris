@@ -63,14 +63,22 @@ test('every citation is respelled to the new place, a mention by name is kept, t
     /\| `2026-08-01-note\.md` \| A note \| D1 \|\n\| `2026-09-01-gate-design\.md` \| Contract: the gate \| Filed: no open row or area cites it \|\n\| `2026-09-02-gate-reads\.md` \| Gate reads \| Filed/);
 });
 
-test('a citation the move may not edit, or one reaching neither place, is refused; skipping leaves its design', () => {
-  const files = { ...tree(), 'daoris.lanes.json': '{ "_why": "see docs/2026-09-02-gate-reads.md" }', 'tools/x.test.mjs': "const f = 'fixture/2026-09-01-gate-design.md';\n" };
+test('a citation the move may not edit, reaching neither place, a fixture\'s or past the ratchet is refused; skipping leaves its design', () => {
+  const big = `// docs/2026-09-02-gate-reads.md\n${'x'.repeat(41 * 1024)}\n`;
+  const files = {
+    ...tree(),
+    'daoris.lanes.json': '{ "_why": "see docs/2026-09-02-gate-reads.md" }',
+    'tools/x.test.mjs': "const f = 'fixture/2026-09-01-gate-design.md';\n",
+    'tools/y.test.mjs': "write('docs/2026-09-01-gate-design.md', 'a fixture');\n",
+    'tools/big.mjs': big,
+    'tools/size-ratchet.json': JSON.stringify({ 'tools/big.mjs': Buffer.byteLength(big) }),
+  };
   const plan = planOf(files, ['docs/2026-09-01-gate-design.md', 'docs/2026-09-02-gate-reads.md']);
-  assert.deepEqual(plan.refused.map((r) => r.file).sort(), ['daoris.lanes.json', 'tools/x.test.mjs']);
+  assert.deepEqual(plan.refused.map((r) => r.file).sort(), ['daoris.lanes.json', 'tools/big.mjs', 'tools/x.test.mjs', 'tools/y.test.mjs']);
 
   const skipping = planSkippingRefused(Object.keys(files), (path) => files[path], ['docs/2026-09-01-gate-design.md', 'docs/2026-09-02-gate-reads.md']);
   assert.deepEqual([...skipping.moved.keys()], []);
-  assert.equal(skipping.skipped.length, 2);
+  assert.equal(skipping.skipped.length, 4);
 });
 
 test('a run moves the files with git, writes the citations, and leaves none behind', () => {

@@ -13,8 +13,9 @@
  * - one that reaches the document from where the citing file stands (`../docs/<name>`, a sibling's bare `<name>`), or
  *   from the tree's top (`docs/<name>`, a link ending in it), is respelled to reach it where it now stands;
  * - a bare name that reaches nothing from where it stands is a mention by name, which the move keeps true, and counted;
- * - any other (a path that reaches neither place, or one in a file the move may not edit: `daoris.lanes.json`,
- *   `daoris.lock`, `canon/`) is refused, and the whole run with it unless `--skip-refused` leaves that design where it is.
+ * - any other is refused, and the whole run with it unless `--skip-refused` leaves that design where it is: a path that
+ *   reaches neither place, one in a file the move may not edit (`daoris.lanes.json`, `daoris.lock`, `canon/`), a quoted
+ *   path on a line that writes it (a fixture's), and one whose respelling grows a file past the size ratchet.
  *
  * A moved document's own relative links are respelled from its new folder. The router's row of a moved document (a row
  * whose first cell is the document's name) leaves `docs/README.md` for `docs/archive/README.md`, with its subject.
@@ -26,11 +27,13 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { isMain, repositoryFiles, spawnGit, writeAtomic } from './fsx.mjs';
+import { BUDGET, scanSizes } from './size-ratchet.mjs';
 
 export const DOCS = 'docs';
 export const ARCHIVE = 'docs/archive';
 export const ROUTER = 'docs/README.md';
 export const ARCHIVE_ROUTER = 'docs/archive/README.md';
+const RATCHET = 'tools/size-ratchet.json';
 const DATE = /\d{4}-\d{2}-\d{2}/;
 const TEXT = /\.(?:md|mdx|txt|json|jsonc|ya?ml|toml|[cm]?[jt]sx?|cs|csproj|props|targets|xml|html|css|ps1|sh|cmd|razor|template)$/i;
 const PATH_CHAR = /[A-Za-z0-9_.~/-]/;
@@ -97,6 +100,7 @@ export function respellCitations(file, text, { moved, names, pattern }) {
   const toDir = posix.dirname(newPlace(file));
   const citerMoved = moved.has(file);
   const refused = [];
+  const respelled = [];
   let rewritten = 0;
   let byName = 0;
   let out = '';
@@ -134,11 +138,18 @@ export function respellCitations(file, text, { moved, names, pattern }) {
       refused.push({ file, line: lineAt(text, match.index), token, why: 'in a file the move may not edit' });
       continue;
     }
+    const lineEnd = text.indexOf('\n', end);
+    const line = text.slice(text.lastIndexOf('\n', start) + 1, lineEnd < 0 ? text.length : lineEnd);
+    if (/["']/.test(text[start - 1] ?? '') && /\b(?:Write|write)\w*\s*\(/.test(line)) {
+      refused.push({ file, line: lineAt(text, match.index), token, why: 'a path the file writes, a fixture\'s' });
+      continue;
+    }
     out += text.slice(at, start) + replacement;
     at = end;
     rewritten++;
+    respelled.push(name);
   }
-  return { text: out + text.slice(at), rewritten, byName, refused, names };
+  return { text: out + text.slice(at), rewritten, byName, refused, respelled };
 }
 
 /** A moved document's relative links to anything not dated at the top, respelled from its new folder. */
@@ -172,6 +183,11 @@ export function planFiling(files, read, paths) {
   const names = new Set(datedAtTop(files).map((path) => posix.basename(path)));
   const pattern = new RegExp([...names].sort((a, b) => b.length - a.length).map(escape).join('|'), 'g');
   const context = { moved, tracked, folders, names, pattern };
+  const ratchet = tracked.has(RATCHET) ? JSON.parse(read(RATCHET)) : {};
+  const outgrows = (file, text) => {
+    const over = scanSizes('.', { files: [file], read: () => text })[file];
+    return over !== undefined && over > (ratchet[file] ?? BUDGET);
+  };
 
   const edits = new Map();
   const refused = [];
@@ -192,6 +208,10 @@ export function planFiling(files, read, paths) {
     }
     const cited = respellCitations(file, text, context);
     refused.push(...cited.refused);
+    if (cited.respelled.length && outgrows(file, cited.text)) {
+      for (const name of new Set(cited.respelled)) refused.push({ file, line: 0, token: name, why: 'the size ratchet holds the file at its size' });
+      continue;
+    }
     rewritten += cited.rewritten;
     byName += cited.byName;
     text = cited.text;
