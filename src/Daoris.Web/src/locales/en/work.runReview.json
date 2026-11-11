@@ -31,7 +31,7 @@
   "work.runReview.sendBackMeanIt": "Send back",
   "work.runReview.stop": "Stop…",
   "work.runReview.stopTitle": "Stop this run",
-  "work.runReview.stopSays": "The run ends here, and nothing after its review begins.",
+  "work.runReview.stopSays": "The run ends here, and no step after its review begins.",
   "work.runReview.stopStays.branch": "Its branch stays as it is.",
   "work.runReview.stopStays.checkout": "Its commits stay where they are.",
   "work.runReview.stopStays.folder": "What it changed stays in the folder.",

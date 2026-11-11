@@ -1,9 +1,8 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRunReview, useRunReviewFile, useSessionRunReview } from '../../../bridge/repositories/runReview';
 import type { ReviewRow, RunReviewAnswer } from './runReviewWire';
 import { useOverruleSupervisor } from '../../../bridge/sessions/supervision';
-import { useRunNodeWord, useSessionDiff } from '../../../bridge/shell';
+import { useRunNodeWord, useRunReview, useRunReviewFile, useSessionDiff, useSessionRunReview } from '../../../bridge/shell';
 import { sentence } from '../../../locales/format';
 import { languageOf } from '../codeLines';
 import type { DiffLayout } from '../PatchView';
