@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A conversation whose start failed at its opening is continued by the person's next word: the same record goes on, its harness opening a
-/// conversation once its servers come up, and the word answered there.
+/// A conversation whose start failed at its opening began no conversation, so the person's next word continues it as a refused start's
+/// does: a fresh start of its actor, never a resume and never a brief, the word its first message, answered once its servers come up.
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, a stand-in server that never answers, and the in-process ledger of <see cref="ChatGoOnTests"/>.</remarks>
 [Trait(Category.Name, Category.Process)]
@@ -42,7 +42,7 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
 
     private string[] HeardLines() => StubFile.Lines(Heard);
 
-    [Fact(Skip = "ASKCHAT1: a start failed at its opening kept no conversation id, so its go-on takes the lost path and its briefed move never sends; the word is marked cannot go on")]
+    [Fact(Skip = "ASKCHAT1: the go-on takes the fresh start now, but this home gives Ask Daoris no role order, so the start finds Ask Daoris off; seed its order with acp-stub")]
     public async Task A_start_failed_at_its_opening_is_continued_by_the_next_word()
     {
         var ledger = new ChatLedger().Register("engine", _root);
@@ -59,6 +59,8 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             OpeningBound = TimeSpan.FromSeconds(2),
+            // The window's reading of the machine, which every Ask Daoris start reads its room by.
+            DescribeHelp = _ => Task.FromResult<HelpMachine?>(Machine),
         };
         string Seen(string id) => $"heard [{string.Join(" | ", HeardLines())}], state {ledger.State(id)}, records {ledger.Count}, "
             + $"record [{string.Join(" | ", events.After(id, 0).Events.Select(e => $"{e.Kind}:{e.Text}"))}]";
@@ -75,12 +77,14 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
             Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "are you there now?", Reaches = "resume", Door = "screen",
         });
 
+        // The fresh start is the ledger's next record.
+        const string fresh = "h2";
         await Poll.Until(
-            () => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Message && e.Text == "heard are you there now?"),
-            () => Seen(id));
-        Assert.Equal(1, ledger.Count);
-        Assert.Contains("prompt: are you there now?", HeardLines());
-        Assert.True(runner.Finish(id));
+            () => ledger.Count == 2 && events.After(fresh, 0).Events.Any(e => e.Kind == SessionEventKind.Message && e.Text == "heard are you there now?"),
+            () => Seen(id) + $"; fresh {(ledger.Count == 2 ? Seen(fresh) : "none")}");
+        Assert.Equal(["initialize", "session/new waits", "initialize", "session/new opened", "prompt: are you there now?"], HeardLines());
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e.Text?.Contains("cannot go on", StringComparison.Ordinal) == true);
+        Assert.True(runner.Finish(fresh));
     }
 
     /// <summary>

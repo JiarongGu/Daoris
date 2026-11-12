@@ -160,7 +160,9 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 return;
             }
 
-            await conclusion.ConcludeAsync(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
+            // Its open passed its bound before its harness opened a conversation: the record ends saying what did not come up, so its
+            // next word starts it afresh (PriorSession.NotUp).
+            await conclusion.ConcludeAsync(sessionId, "failed", chat?.NotUp ?? Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
         }
         finally
         {
