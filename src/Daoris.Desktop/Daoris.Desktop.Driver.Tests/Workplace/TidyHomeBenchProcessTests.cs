@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// refs, trees and records did not move since the last pass, and takes seconds, not minutes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TidyHomeBenchProcessTests(ITestOutputHelper output) : BranchTidyingFixture
 {
