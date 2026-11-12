@@ -82,7 +82,8 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("Every setting is pressed, its card", agents);
         Assert.Contains("`daoris ask --workspace <name> \"…\"`", agents);
         Assert.DoesNotContain("ask_propose", agents);
-        Assert.Contains("push, merge, discard, sign in", agents);
+        Assert.Contains("A push, a merge or a discard the person asks for goes on their card like any press.", agents);
+        Assert.Contains("Never sign in or handle a key", agents);
     }
 
     /// <summary>
@@ -229,7 +230,7 @@ public sealed class HelpRoomDoorsTests
         var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris workflow keep", StringComparison.Ordinal));
         Assert.Equal("`daoris workflow keep <session> [\"…\"]`", keep.Terminal);
         Assert.Equal("(no screen yet)", keep.Screen);
-        Assert.Equal(new HelpDoorAsk.Never("it is yours alone"), keep.Ask);
+        Assert.Null(keep.Ask);
         Assert.Contains("nothing switches by itself", keep.To);
     }
 

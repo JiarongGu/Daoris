@@ -103,10 +103,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 **Permissions and posture**
 
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, over the
-    defaults `connector`, `commit`, `no-push`, `no-publish`, `tree-guard` and the six own-home families (rule 15), each switched
-    off by the person but `no-push`, which only the session's git access Write opens. The union is the harness's command-line
-    settings tier; its precedence decides and `deny` wins. `tree-guard` refuses a write outside the session's tree and declared
-    targets, but a subagent's in the worktree its harness made (`.claude/worktrees/<name>`). (D72, D253)
+    defaults `connector`, `commit` and the six own-home families (rule 15), each switched off by the person, and `no-push`,
+    `no-publish` and `tree-guard`, which are off until the person switches them on (`defaultsOn`). The union is the harness's
+    command-line settings tier; its precedence decides and `deny` wins. `tree-guard`, where on, refuses a write outside the
+    session's tree and declared targets, but a subagent's in the worktree its harness made (`.claude/worktrees/<name>`). (D72, D253)
 19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, with the
     tree guard, the lineage hook and the hard denials); nothing is translated until measured. Codex, which states none, holds
     none of the person's denies: its standing block and access setup say so, the git doors judge its push, force and delete, and

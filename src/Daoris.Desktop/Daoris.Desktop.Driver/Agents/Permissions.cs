@@ -35,9 +35,9 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 }
 
 /// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id unless fixed, removable by nothing else.</summary>
-/// <param name="Fixed">
-/// Switched by nothing in the rules file: on for every session, and opened only by what composes it (<c>no-push</c>, by the session's
-/// git access Write, <see cref="GitAccessPolicy"/>).
+/// <param name="OptIn">
+/// Off until the person switches it on (<c>defaultsOn</c> in the rules file): a limit Daoris adds to no agent of its own accord
+/// (<c>no-push</c>, <c>no-publish</c>, the tree guard). Every other default is on until the person switches it off.
 /// </param>
 /// <param name="Hook">
 /// The tools a hook default judges, when it is one — a hook adds no rule, so its
@@ -49,7 +49,7 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 /// alone, because only the driver writes the spawn file; the CLI's table carries no twin of it.
 /// </param>
 public sealed record PermissionDefault(
-    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null, string? HardDeny = null, bool Fixed = false);
+    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null, string? HardDeny = null, bool OptIn = false);
 
 /// <summary>
 /// `permissions.json` as it stands: the machine's rules, each circle's, each repository's, and the
@@ -63,6 +63,9 @@ public sealed record PermissionFile(
     IReadOnlyList<string> DefaultsOff,
     string? Problem = null)
 {
+    /// <summary>The opt-in defaults the person switched on (<see cref="PermissionDefault.OptIn"/>).</summary>
+    public IReadOnlyList<string> DefaultsOn { get; init; } = [];
+
     /// <summary>Whatever a newer build wrote here, kept on every write.</summary>
     internal JsonObject Rest { get; init; } = [];
 
@@ -166,7 +169,7 @@ public static class PermissionRules
             "commit", RuleList.Allow,
             ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"],
             "A session commits its own work in its own tree, because committing is part of finishing a task "
-            + "— the push is still refused."),
+            + "— its push is the workflow's step."),
         // 🔴 The harness matches a Bash rule against the command as written, so
         // `git push …` alone lets `git -C . push` and `git -c <key>=<value> push` through, and auto mode's
         // classifier allows a push to the working repository by default. The option-first rules take
@@ -175,25 +178,29 @@ public static class PermissionRules
         // warning. The price, stated: a `git -C <dir> commit` whose message has "push" as a word before
         // another is refused too. What no rule can name — a quoted subcommand, an alias, a path to git, a
         // shell running it — is the classifier's, told below; on the pipe door nothing allows it anyway.
-        // A push is git access's Write alone, so this default is fixed and the policy opens its plain forms.
+        // These three are limits the person turns on, never defaults an agent meets: a push is a workflow step (push, pull request), and
+        // what an agent may do beyond it is its harness's own approval mode. Switched on, the git access Write still opens a push's plain forms.
         new(
             NoPushId, RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"],
-            "A push leaves this machine: git access's Write, set in Settings → Git, says whether a session may.",
+            "Off until you switch it on: a push leaves this machine, and while this is on a session may not push unless git access's Write, "
+            + "set in Settings → Git, lets it.",
             HardDeny: "Pushing to any remote in any form (for example git -C <dir> push, git -c <key>=<value> "
             + "push): this stays the person's.",
-            Fixed: true),
+            OptIn: true),
         new(
             NoPublishId, RuleList.Deny,
             [],
-            "Publishing a package or creating a release leaves this machine, and that stays the person's call.",
-            HardDeny: "Publishing a package or creating a release: these stay the person's."),
+            "Off until you switch it on: publishing a package or creating a release leaves this machine, and while this is on that stays your call.",
+            HardDeny: "Publishing a package or creating a release: these stay the person's.",
+            OptIn: true),
         new(
             TreeGuardId, RuleList.Deny,
             [],
-            "A session writes files only inside its own tree: an edit, a write or a shell command's write "
+            "Off until you switch it on: a session writes files only inside its own tree, and an edit, a write or a shell command's write "
             + "anywhere else is refused, through links as well. A change needed elsewhere is a quest.",
-            Hook: TreeGuardHook.Matcher),
+            Hook: TreeGuardHook.Matcher,
+            OptIn: true),
         .. OwnHomeDefaults.Defaults,
     ];
 
@@ -208,8 +215,7 @@ public static class PermissionRules
 
     /// <summary>
     /// What the harness's auto-mode classifier is told as hard denials: the sentence
-    /// of each default on that carries one — `no-push`'s always, `no-publish`'s unless the person switches it
-    /// off. The harness's own list is kept by Claude Code's rule language (<see cref="ClaudeRules.Render"/>), never here.
+    /// of each default on that carries one — `no-push`'s and `no-publish`'s only where the person switched them on. The harness's own list is kept by Claude Code's rule language (<see cref="ClaudeRules.Render"/>), never here.
     /// </summary>
     public static IReadOnlyList<string> HardDeny(PermissionFile file) =>
     [
@@ -218,12 +224,13 @@ public static class PermissionRules
             .Select(shipped => shipped.HardDeny!),
     ];
 
-    /// <summary>Whether a shipped default is on for this file: a fixed one always, any other unless switched off.</summary>
-    public static bool IsOn(PermissionFile file, PermissionDefault shipped) =>
-        shipped.Fixed || !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
+    /// <summary>Whether a shipped default is on for this file: an opt-in one only where the person switched it on, any other unless switched off.</summary>
+    public static bool IsOn(PermissionFile file, PermissionDefault shipped) => shipped.OptIn
+        ? file.DefaultsOn.Contains(shipped.Id, StringComparer.Ordinal)
+        : !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
 
-    /// <summary>Whether sessions are handed the tree guard: on unless the person switches it off.</summary>
-    public static bool GuardsTree(PermissionFile file) => !file.DefaultsOff.Contains(TreeGuardId, StringComparer.Ordinal);
+    /// <summary>Whether sessions are handed the tree guard: only where the person switched it on.</summary>
+    public static bool GuardsTree(PermissionFile file) => file.DefaultsOn.Contains(TreeGuardId, StringComparer.Ordinal);
 
     /// <summary>
     /// Whether a session handed <paramref name="rules"/> may call the connector's <paramref name="tool"/>
@@ -295,7 +302,7 @@ public static class PermissionRules
             var rest = new JsonObject();
             foreach (var (key, value) in root)
             {
-                if (key is not ("machine" or "workspaces" or "repositories" or "defaultsOff"))
+                if (key is not ("machine" or "workspaces" or "repositories" or "defaultsOff" or "defaultsOn"))
                 {
                     rest[key] = value?.DeepClone();
                 }
@@ -307,6 +314,7 @@ public static class PermissionRules
                 Scopes(root["repositories"]),
                 Json.TrimmedStrings(root["defaultsOff"]))
             {
+                DefaultsOn = Json.TrimmedStrings(root["defaultsOn"]),
                 Rest = rest,
                 Found = true,
             };
@@ -359,6 +367,7 @@ public static class PermissionRules
         if (ScopesNode(file.Workspaces) is { } workspaces) root["workspaces"] = workspaces;
         if (ScopesNode(file.Repositories) is { } repositories) root["repositories"] = repositories;
         if (file.DefaultsOff.Count > 0) root["defaultsOff"] = new JsonArray([.. file.DefaultsOff.Order(StringComparer.Ordinal).Select(id => (JsonNode)id)]);
+        if (file.DefaultsOn.Count > 0) root["defaultsOn"] = new JsonArray([.. file.DefaultsOn.Order(StringComparer.Ordinal).Select(id => (JsonNode)id)]);
         return root;
     }
 
@@ -426,10 +435,11 @@ public static class PermissionRules
                 $"no default `{id}` — Daoris ships {string.Join(", ", Defaults.Select(d => $"`{d.Id}`"))}.");
         }
 
-        if (Defaults.First(d => d.Id == id).Fixed)
+        if (Defaults.First(d => d.Id == id).OptIn)
         {
-            throw new DriverException(
-                $"`{id}` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris git access`.");
+            var onIds = file.DefaultsOn.Where(existing => existing != id).ToList();
+            if (on) onIds.Add(id);
+            return file with { DefaultsOn = onIds };
         }
 
         var off = file.DefaultsOff.Where(existing => existing != id).ToList();

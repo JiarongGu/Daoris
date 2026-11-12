@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris &lt;plugin&gt; &lt;command&gt; [args…] [--stdin]</c>: a command the plugin declares, run round by round in its own process
 /// (<see cref="PluginCommandRun"/>), its lines said, an address and a code shown, and each value it asks typed here, hidden where it
-/// says so, or read line by line from standard input with <c>--stdin</c>. The person's own: a session's terminal is refused. Exit: the
-/// command's own · 1 a session's terminal · 2 a refusal or a plugin that never ends.
+/// says so, or read line by line from standard input with <c>--stdin</c>. Exit: the command's own · 2 a refusal or a plugin that never ends.
 /// </summary>
 public static class PluginCommandConsole
 {
@@ -17,12 +16,6 @@ public static class PluginCommandConsole
 
     public static async Task<int> RunAsync(string home, string[] args, Terminal terminal, CancellationToken ct, PluginCommandRun.Starter? start = null)
     {
-        if (terminal.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
-        {
-            await terminal.Error.WriteLineAsync($"daoris {args[0]}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
-            return 1;
-        }
-
         var stdin = args.Contains("--stdin", StringComparer.Ordinal);
         var words = args.Where(arg => arg != "--stdin").ToList();
         try

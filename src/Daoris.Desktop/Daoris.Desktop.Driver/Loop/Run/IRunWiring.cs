@@ -79,7 +79,7 @@ internal interface IRunWiring
     /// <summary>The rules one session may run under, composed for its circle and repository and handed as the harness's own settings tier.</summary>
     (string? File, object? Meta, HandedSection Handed) HandRules(
         AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
-        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy);
+        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy, bool unrestricted);
 
     /// <summary>The maker a carry-on's earlier part ran on, which its brief credits the uncommitted work to; null where none ran.</summary>
     EarlierMaker? LeftBy(PriorSession prior);

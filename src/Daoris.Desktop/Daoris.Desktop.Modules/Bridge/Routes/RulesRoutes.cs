@@ -96,8 +96,6 @@ public sealed class RulesRoutes(DriverLoop loop)
             // The tools a hook default judges — null for a rule default, which the bridge omits.
             shipped.Hook,
             On = PermissionRules.IsOn(file, shipped),
-            // A fixed default (no-push) has no switch on the page: git access composes it. False is left out as the bridge leaves null.
-            Fixed = shipped.Fixed ? true : (bool?)null,
         }).ToArray(),
         Scopes = new[] { (Scope: "machine", Name: (string?)null, Lists: file.Machine) }
             .Concat(file.Workspaces.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "workspace", Name: (string?)p.Key, Lists: p.Value)))

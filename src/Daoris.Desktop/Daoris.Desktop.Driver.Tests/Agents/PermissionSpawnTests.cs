@@ -23,6 +23,10 @@ public sealed class PermissionSpawnTests : IDisposable
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
         GitSeed.StartingPoint(_repository, "perm1@example.com", "PERM1");
+        PermissionRules.Save(_home, PermissionRules.Load(_home) with
+        {
+            DefaultsOn = [PermissionRules.NoPushId, PermissionRules.NoPublishId, PermissionRules.TreeGuardId],
+        });
     }
 
     public void Dispose()

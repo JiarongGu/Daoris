@@ -159,7 +159,7 @@ public sealed class DrivenAccessTests : IDisposable
     public void The_persons_denies_and_the_tree_guard_go_in_every_mode(string name)
     {
         PermissionRules.Save(
-            _home, PermissionRules.Add(PermissionFile.Empty, RuleScope.Machine, null, RuleList.Deny, "Read(//c/secrets/**)"));
+            _home, PermissionRules.Add(PermissionFile.Empty with { DefaultsOn = [PermissionRules.TreeGuardId] }, RuleScope.Machine, null, RuleList.Deny, "Read(//c/secrets/**)"));
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
         var adapter = adapters.Door(name);

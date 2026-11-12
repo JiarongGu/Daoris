@@ -247,10 +247,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     own conversation: accepting a departure, handing a landed branch to a plugin and a run's Accept (`daoris workflow accept`,
     refused `moved` on another record) are the person's presses. Where the person asks for work to be delivered without their
     press, Ask Daoris puts their requirements and through words on the ask when it makes it (`--require`, `--through`, `ask
-    through`), each verified verbatim against their messages in its conversation. In restricted mode it never presses a run's step;
-    in full access it presses an Accept or the pass of an unchecked done only where the person asked for the delivery in words and
-    the run still waits on it, said once. The room says this one rule in its section and its doors table. (D161, D193, D233, D253,
-    D261, D273, D277)
+    through`), each verified verbatim against their messages in its conversation. In restricted mode it proposes a run's step on the
+    person's card and never presses it; in full access it presses every step of a run (Accept, changes, pass over, stop, task,
+    approval, fix) as the person, said once and listed in Notifications. The room says one rule, do it or send it on: a simple act
+    on this machine is its own where its mode lets it press, work that changes a repository's content goes to that repository as a
+    quest or a session, and a refusal names its rule. (D161, D193, D233, D253, D261, D273, D277)
 56. The modes differ only in who says yes to a press of Daoris's verb, which both run. Every session's start is handed a delegate
     key of its own, kept only as a hash by session, stripped from every other start and forgotten at its end and an access swap;
     the verb proves a press with it over the hello's nonce. In restricted mode, the default, a proved press waits on a card naming

@@ -32,10 +32,10 @@ internal static class SessionRules
         string home, ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job, AcrossReach? across, string? said,
         bool opinion, bool helper, IReadOnlyList<string>? plugins, string? brainstorm,
-        IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner, bool supervise = false, bool step = false)
+        IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner, bool supervise = false, bool step = false, bool unrestricted = false)
     {
         // The record of the git access this session holds, begun at its start for every harness; the doors judge by it.
-        GitSessionAccess.Begin(home, sessionId, repository, workspace);
+        GitSessionAccess.Begin(home, sessionId, repository, workspace, unrestricted);
         if (adapters.RuleLanguage(adapter) is not { } language)
         {
             return (null, null, Handed(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));

@@ -23,6 +23,7 @@ public static class GitSessionAccess
     public const string FromSession = "session";
 
     private const string Tightened = "tightened";
+    private const string Unrestricted = "unrestricted";
     private static readonly TimeSpan Kept = TimeSpan.FromDays(14);
 
     private static string Folder(string home) => DaorisHome.Entry(home, HomeEntry.GitSessions);
@@ -34,7 +35,8 @@ public static class GitSessionAccess
     private static string PathOf(string home, string id) => Path.Combine(Folder(home), id + ".json");
 
     /// <summary>Begin a session's record at its start, keeping what a record of the same id already holds; and drop records past their keep.</summary>
-    public static void Begin(string home, string id, string? repository, string? workspace)
+    /// <param name="unrestricted">The session runs in full access: a Write nobody set is <c>allow</c> for it, as for the person at their own terminal.</param>
+    public static void Begin(string home, string id, string? repository, string? workspace, bool unrestricted = false)
     {
         if (!Valid(id)) return;
         try
@@ -42,7 +44,7 @@ public static class GitSessionAccess
             var folder = Folder(home);
             Directory.CreateDirectory(folder);
             var held = Parse(PathOf(home, id))?["tightened"] as JsonObject;
-            Put(PathOf(home, id), repository, workspace, held is null ? new JsonObject() : (JsonObject)held.DeepClone());
+            Put(PathOf(home, id), repository, workspace, held is null ? new JsonObject() : (JsonObject)held.DeepClone(), unrestricted);
             foreach (var old in Directory.EnumerateFiles(folder, "*.json").Where(file => DateTime.UtcNow - File.GetLastWriteTimeUtc(file) > Kept))
             {
                 File.Delete(old);
@@ -61,8 +63,17 @@ public static class GitSessionAccess
     public static GitAccess Held(string home, string? session, string? repository, string? workspace)
     {
         var resolved = GitAccessKeys.Resolve(home, repository, workspace);
-        return Valid(session) && Parse(PathOf(home, session!))?[Tightened] is JsonObject tightened ? Narrowed(resolved, tightened) : resolved;
+        if (!Valid(session) || Parse(PathOf(home, session!)) is not { } record) return resolved;
+        if (record[Unrestricted]?.GetValue<bool>() == true) resolved = Opened(resolved);
+        return record[Tightened] is JsonObject tightened ? Narrowed(resolved, tightened) : resolved;
     }
+
+    /// <summary>A full-access session's Write and Dangerous where nobody set one: <c>allow</c>, as the harness's own bypass mode allows them. Every value a person set stays.</summary>
+    private static GitAccess Opened(GitAccess resolved) => new([
+        .. resolved.Classes.Select(each => each is { Class: GitAccessKeys.Write, Value: GitAccessKeys.AsToday } or { Class: GitAccessKeys.Dangerous, Source: GitAccessKeys.DefaultSource }
+            ? new GitAccessClass(each.Class, GitAccessKeys.Allow, FromSession)
+            : each),
+    ]);
 
     /// <summary>The record of <paramref name="session"/> as it holds now; null where none is begun.</summary>
     public static GitSessionRecord? Read(string home, string? session)
@@ -114,7 +125,7 @@ public static class GitSessionAccess
             tightened[name] = named;
         }
 
-        Put(PathOf(home, session), held.Repository, held.Workspace, tightened);
+        Put(PathOf(home, session), held.Repository, held.Workspace, tightened, Parse(PathOf(home, session))?[Unrestricted]?.GetValue<bool>() == true);
         return Read(home, session)!;
     }
 
@@ -137,9 +148,10 @@ public static class GitSessionAccess
         }
     }
 
-    private static void Put(string path, string? repository, string? workspace, JsonObject tightened)
+    private static void Put(string path, string? repository, string? workspace, JsonObject tightened, bool unrestricted)
     {
         var record = new JsonObject { ["repository"] = repository, ["workspace"] = workspace, [Tightened] = tightened };
+        if (unrestricted) record[Unrestricted] = true;
         File.WriteAllText(path + ".writing", record.ToJsonString());
         File.Move(path + ".writing", path, overwrite: true);
     }
