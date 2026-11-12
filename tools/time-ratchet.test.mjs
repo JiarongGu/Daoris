@@ -80,7 +80,7 @@ test('a merge whose own census run is over its listed time fails the ratchet', (
 });
 
 test('the ratchet verify runs stands aside inside a merge, and says so', () => {
-  const ran = spawnSync(process.execPath, [join(import.meta.dirname, 'time-ratchet.mjs')], { encoding: 'utf8', env: { ...process.env, MERGE_GATES_RUN: '1' } });
+  const ran = spawnSync(process.execPath, [join(import.meta.dirname, 'time-ratchet.mjs')], { encoding: 'utf8', windowsHide: true, env: { ...process.env, MERGE_GATES_RUN: '1' } });
   assert.equal(ran.status, 0);
   assert.match(ran.stdout, /stands aside inside a merge/);
 });
