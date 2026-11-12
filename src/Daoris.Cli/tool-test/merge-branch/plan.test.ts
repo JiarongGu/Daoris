@@ -292,7 +292,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   const unit = repoPlan.find((gate) => gate.name === 'web-unit');
   assert.ok(unit, "the web gate's unit run is a declared gate of its own");
   assert.equal(unit.run, 'npm run test:web:unit');
-  assert.equal(scripts['test:web:unit'], 'npm --prefix src/Daoris.Web run test');
+  assert.equal(scripts['test:web:unit'], 'npm --prefix src/Daoris.Web run test -- --reporter=default --reporter=json --outputFile.json=../../_fixtures/test-timing/web-unit.json');
   assert.equal(web.run, 'npm run test:web:e2e');
   assert.equal(scripts['test:web:e2e'],
     'npm --prefix src/Daoris.Web run build && node tools/tree-base.mjs build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e');

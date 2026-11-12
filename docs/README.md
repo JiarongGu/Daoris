@@ -48,6 +48,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-01-self-development-design.md`|Contract: concurrent work, landing queue
 |`2026-10-24-ci-scope-design.md`|Accepted design: CI by reach (D207)
 |`2026-11-12-long-lived-repository-design.md`|Accepted design: what a change reads, measured (D278)
+|`2026-11-13-layers-design.md`|Design (settled, D286): LAYERS1, ports and adapters: the application on ports, each adapter a package pinned by fingerprint, its dependency tests run only when it moves
 
 ## Driver, sessions, sharing and landing contracts
 
@@ -95,6 +96,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
 |`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
 |`2026-11-12-test-diet-census.md`|Census: TESTDIET1, the test code and fixtures measured, with the cut in the order of what it saves
+|`2026-11-13-test-timing-census.md`|Census: TESTTIME1, each suite's time and its slowest classes from the gates' logs, their causes, and the cuts by minutes saved
 |`2026-11-11-start-load-database-design.md`|Proposed design: STARTPERF1, an index over the session events and a quests' change mark (D275)
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
@@ -113,6 +115,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-12-chat-ux-design.md`|Proposed design: CHATUX1 and ASKPUSH1, chatting with Daoris like a modern assistant's desktop app (D279 reserved)
 |`2026-11-12-conversation-foundation-design.md`|Design (settled, D280): CONVO1, one conversation under every chat, driven session and Ask Daoris
 |`2026-11-12-access-model-design.md`|Design (settled, D284): ACCESS1, Daoris extends every agent; one approval request; workflow steps the only waits
+|`2026-11-12-teamwork-design.md`|Design (settled, D285): TEAMWORK1, a large ask built by a layered team: parts as quests, checks capped instead of agents, hand-backs observed, a train through integration
 
 ## UI, browser, tools and plugin contracts
 

@@ -40,10 +40,6 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 /// <param name="Credits">The field that says the request drew on usage credits, which are billed.</param>
 /// <param name="Recorded">The frames the entry stands on.</param>
 /// <param name="Shape">A window's length in minutes and scope as the agent's key names it, for the usage history; null reads neither.</param>
-/// <param name="Models">
-/// The model families a scope may name, each with a limit of its own (<see cref="ModelLimits"/>): a scoped week at its limit, or a
-/// limit whose words name one, cools the account for that family alone. Null where the agent's limits are the whole account's.
-/// </param>
 public sealed record WindowWords(
     IReadOnlyDictionary<string, string> Windows,
     IReadOnlyList<string> Clear,
@@ -52,8 +48,7 @@ public sealed record WindowWords(
     double Scale,
     string Credits,
     IReadOnlyList<RecordedFrame> Recorded,
-    Func<string, (int? Minutes, string? Scope)>? Shape = null,
-    IReadOnlyList<string>? Models = null);
+    Func<string, (int? Minutes, string? Scope)>? Shape = null);
 
 /// <summary>One window as an agent says it in one frame: never the agent's words, only Daoris's.</summary>
 /// <param name="Window">Daoris's name for it: <c>session</c> or <c>weekly</c>.</param>

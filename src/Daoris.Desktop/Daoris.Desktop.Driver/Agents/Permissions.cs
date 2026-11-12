@@ -130,7 +130,7 @@ public static class PermissionRules
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
-                "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
+                "helper_ask", "helper_answer", "check_run", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "handback_read",
                 "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And

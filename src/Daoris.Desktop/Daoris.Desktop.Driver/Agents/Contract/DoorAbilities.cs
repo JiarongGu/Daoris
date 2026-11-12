@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// Interactive is always the door's declaration, never the transport's: <c>dsh</c> declares none and is refused a conversation.
-/// The rest are the transport's; a door that states one of them is read as it states it once the part declares it.
 /// </remarks>
 /// <param name="Transport">The transport the door rides; read by the transports alone.</param>
 /// <param name="Interactive">It holds a conversation (the door's declaration).</param>
@@ -39,42 +38,24 @@ public sealed record DoorAbilities(
     /// </summary>
     public bool ServersInherit { get; init; }
 
-    /// <summary>A contract door's abilities: its declared ones, the rest its transport's.</summary>
-    public static DoorAbilities Of(AgentDoor door) => Of(
-        door.Transport,
-        Declared(door.Abilities.Interactive, false),
-        Declared(door.Abilities.Resumes, door.Transport == Transport.Protocol),
-        Declared(door.Abilities.TakesSettings, false),
-        door.Dialect.IsKnown && door.Dialect.Required is INativeDialect) with
+    /// <summary>A door's abilities, each as <see cref="AbilityReading"/> reads it; the wiring flags are its transport's.</summary>
+    public static DoorAbilities Of(AgentDoor door)
     {
-        // A native door's servers inherit its environment unless its provider says otherwise.
-        ServersInherit = Declared(door.Abilities.ServersInherit, door.Transport == Transport.Native),
-    };
-
-    /// <summary>
-    /// A door's abilities from its declarations and its transport's: what every door of the transport is given, the protocol's
-    /// on the wire and the native's on the command line.
-    /// </summary>
-    /// <param name="nativeDialect">A native door reads its program's structured lines.</param>
-    public static DoorAbilities Of(Transport transport, bool interactive, bool resumes, bool takesSettings, bool nativeDialect)
-    {
-        var protocol = transport == Transport.Protocol;
+        var protocol = door.Transport == Transport.Protocol;
         return new(
-            transport,
-            interactive,
-            resumes,
-            takesSettings,
-            Structured: protocol || nativeDialect,
-            ServersOnWire: protocol,
+            door.Transport,
+            AbilityReading.Does(door, AbilityName.Interactive),
+            AbilityReading.Does(door, AbilityName.Resumes),
+            AbilityReading.Does(door, AbilityName.TakesSettings),
+            Structured: AbilityReading.Does(door, AbilityName.Structured),
+            ServersOnWire: AbilityReading.Does(door, AbilityName.ServersOnWire),
             RulesOnWire: protocol,
             SetAtOpen: protocol,
-            WordsAtNextStep: protocol,
+            WordsAtNextStep: AbilityReading.Does(door, AbilityName.WordsAtNextStep),
             HeldOnWire: protocol,
             ResumesByRestart: !protocol)
         {
-            ServersInherit = !protocol,
+            ServersInherit = AbilityReading.Does(door, AbilityName.ServersInherit),
         };
     }
-
-    private static bool Declared(Known<bool> ability, bool otherwise) => ability.IsKnown ? ability.Required : otherwise;
 }

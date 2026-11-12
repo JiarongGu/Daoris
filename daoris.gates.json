@@ -3,7 +3,7 @@
 
   "gates": [
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
-    { "name": "cli", "run": "npm run verify", "clock": true },
+    { "name": "cli", "run": "npm run verify", "clock": true, "regenerate": "node tools/contracts.mjs --if-stale" },
     { "name": "tool-tests", "run": "npm run tooltests", "clock": true,
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", ".codex/",
@@ -11,7 +11,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/", "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/",
         "tools/ci-background.mjs", "tools/desktop-publish.mjs", "tools/doc-duplicates.mjs", "tools/fsx.mjs",
         "tools/machine-admission.mjs", "tools/machine-admission.test.mjs", "tools/merge-branch.mjs", "tools/merge-queue.mjs",
-        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/worktree-setup.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
+        "tools/process-reach.mjs", "tools/processes.mjs", "tools/reached-checks.mjs", "tools/merge/", "tools/tsconfig.json", "tools/worktree-setup.mjs", "tools/merge-backlog.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
         "tools/stand-ins.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-recall.mjs", "tools/desktop-publish/", "tools/merge-branch/"
       ] },
     { "name": "comments", "run": "node tools/comment-gate.mjs",
@@ -51,19 +51,19 @@
       ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },
-    { "name": "web-types", "run": "npm run typecheck:web",
+    { "name": "web-types", "run": "npm run typecheck:web", "regenerate": "node tools/contracts.mjs --if-stale",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/tsconfig.json",
         "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "web-rules", "run": "npm run check:web-rules",
+    { "name": "web-rules", "run": "npm run check:web-rules", "regenerate": "node tools/contracts.mjs --if-stale",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "run": "node tools/reached-checks.mjs --check", "memoryGb": 6,
+    { "name": "reached", "run": "node tools/reached-checks.mjs --check", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
@@ -104,7 +104,7 @@
         "src/Daoris.Web/tsconfig.tsbuildinfo", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/.storybook/", "src/Daoris.Web/public/",
         "src/Daoris.Web/scripts/", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"",
+    { "name": "censuses", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-driver.trx\" && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census --results-directory _fixtures/test-timing --logger \"trx;LogFileName=censuses-modules.trx\"", "reuse": "inputs",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/Daoris.Cli/src/tools/", "src/Daoris.Desktop/Daoris.Desktop.App/", "src/Daoris.Desktop/Daoris.Desktop.Driver/",

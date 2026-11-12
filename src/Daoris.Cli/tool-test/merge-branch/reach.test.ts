@@ -135,7 +135,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // name in whichever module folder it sits.
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
-    ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch.test.ts'], [...BASE, 'tool-tests']],
+    ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, 'tool-tests']],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'service-process', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],

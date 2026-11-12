@@ -43,6 +43,7 @@ public static class ToolClasses
         ["quest_respond"] = ToolClass.Restricted,
         ["helper_ask"] = ToolClass.Restricted,
         ["helper_answer"] = ToolClass.Restricted,
+        ["check_run"] = ToolClass.Restricted,
         ["channel_post"] = ToolClass.Restricted,
         ["channel_read"] = ToolClass.Restricted,
         ["go_ahead_ask"] = ToolClass.Restricted,

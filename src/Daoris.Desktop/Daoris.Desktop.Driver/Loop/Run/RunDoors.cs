@@ -104,6 +104,9 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
     Task<bool> IRunWiring.WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
         driver.WaitsOnOwnHelperAsync(session, quest, openedAt, ct);
 
+    Task<bool> IRunWiring.WaitsOnOwnCheckAsync(string session, DateTimeOffset openedAt, CancellationToken ct) =>
+        driver.WaitsOnOwnCheckAsync(session, openedAt, ct);
+
     Task IRunWiring.ConcludedForOpinionAsync(
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct) =>
         driver.ConcludedForOpinionAsync(sessionId, quest, status, state, workTree, workspace, ct);

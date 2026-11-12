@@ -13,6 +13,11 @@ internal static class HelperWaitTrees
     /// </summary>
     internal static bool HoldsTree(PriorSession record) =>
         !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
+        && (Carries(record.NoteParts, EndNoteCodes.EndedAwaitsHelper) || Carries(record.NoteParts, EndNoteCodes.EndedAwaitsCheck));
+
+    /// <summary>Whether <paramref name="record"/> ended waiting on its own helper in particular: the helper's return to the person reads this, never a check's wait.</summary>
+    internal static bool WaitsOnHelper(PriorSession record) =>
+        !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
         && Carries(record.NoteParts, EndNoteCodes.EndedAwaitsHelper);
 
     /// <summary>Whether a note's parts carry a line of <paramref name="code"/>.</summary>

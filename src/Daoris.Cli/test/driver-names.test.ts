@@ -55,10 +55,11 @@ const isReader = (path: string): boolean =>
  * test, which asks for a name no file has.
  */
 const SCANNERS = new Set([
-  'src/Daoris.Cli/test/driver-names.test.ts', 'src/Daoris.Cli/tool-test/merge-branch.test.ts', 'src/Daoris.Web/src/test/driverSource.test.ts',
+  'src/Daoris.Cli/test/driver-names.test.ts', 'src/Daoris.Web/src/test/driverSource.test.ts',
   // The live-logins census plants a tree of its own in scratch, a driver file among it, and reads nothing of the repository's.
   'tools/live-logins.test.mjs',
 ]);
+const isScanner = (path: string): boolean => SCANNERS.has(path) || /^src\/Daoris\.Cli\/tool-test\/(merge-branch-[^/]+\.test\.ts|support\/merge-branch-kit\.ts)$/.test(path);
 
 /** Each way a reader reads a desktop source by name, and the project it looks in when the call does not name one. */
 const BY_NAME: readonly { call: RegExp; project?: string }[] = [
@@ -79,7 +80,7 @@ function namedReads(text: string): [string, string][] {
 }
 
 test('each name a reader reads a desktop source by is one file under its project (STRUCT1)', () => {
-  const readers = repositoryFiles().filter((path) => isReader(path) && !SCANNERS.has(path));
+  const readers = repositoryFiles().filter((path) => isReader(path) && !isScanner(path));
   const problems: string[] = [];
   const names = new Set<string>();
   for (const reader of readers) {
@@ -137,7 +138,7 @@ function fixedReads(path: string, text: string): string[] {
 }
 
 test("no reader joins a fixed folder to a file of the driver's projects, which a move would break (STRUCT1)", () => {
-  const found = repositoryFiles().filter((path) => isReader(path) && !SCANNERS.has(path))
+  const found = repositoryFiles().filter((path) => isReader(path) && !isScanner(path))
     .flatMap((path) => fixedReads(path, readFileSync(join(repoRoot, path), 'utf8')));
   assert.deepEqual([...new Set(found)].sort(), [...OWED].sort(), 'each a reader to find its file by name (driverFile, driverTestFile, SourceFiles.Driver)');
 });

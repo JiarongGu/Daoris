@@ -110,6 +110,8 @@ internal interface IRunWiring
     /// <summary>Whether a driven run that ends holding its quest waits on its own helper.</summary>
     Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct);
 
+    Task<bool> WaitsOnOwnCheckAsync(string session, DateTimeOffset openedAt, CancellationToken ct);
+
     /// <summary>A driven record that just concluded: a done whose rule reads it is owed a second opinion, which a later look asks.</summary>
     Task ConcludedForOpinionAsync(
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct);

@@ -294,6 +294,9 @@ export function gatePlan(declared, workflow = '', { keepDeclared = false } = {})
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
         ...(gate.clock ? { clock: true } : {}),
         ...(typeof gate.memoryGb === 'number' ? { memoryGb: gate.memoryGb } : {}),
+        ...(typeof gate.reuse === 'string' ? { reuse: gate.reuse } : {}),
+        ...(typeof gate.regenerate === 'string' ? { regenerate: gate.regenerate } : {}),
+        ...(typeof gate.timeoutMinutes === 'number' ? { timeoutMinutes: gate.timeoutMinutes } : {}),
       };
     });
 }
@@ -326,9 +329,13 @@ export function declaredIn(text, label) {
   }
   // `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
   // `"memoryGb"` is the free memory a gate needs before it starts, whatever its class (`memoryNeed`).
-  return gates.map(({ name, run, cwd, clock, memoryGb }) => ({
+  // `"reuse"` (`inputs`, or `inputs+diff` for a gate that also reads the merge's changed paths) lets a standing pass on equal
+  // inputs be replayed; `"regenerate"` is the command that makes a generated input the gate checks current before it runs.
+  // `"timeoutMinutes"` is the gate's wall-clock budget; absent, the lane's (`merge/timeout.ts`).
+  return gates.map(({ name, run, cwd, clock, memoryGb, reuse, regenerate, timeoutMinutes }) => ({
     name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}),
-    ...(typeof memoryGb === 'number' ? { memoryGb } : {}),
+    ...(typeof memoryGb === 'number' ? { memoryGb } : {}), ...(typeof timeoutMinutes === 'number' ? { timeoutMinutes } : {}),
+    ...(typeof reuse === 'string' ? { reuse } : {}), ...(typeof regenerate === 'string' ? { regenerate } : {}),
   }));
 }
 

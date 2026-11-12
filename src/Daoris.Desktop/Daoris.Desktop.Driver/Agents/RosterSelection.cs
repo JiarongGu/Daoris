@@ -141,7 +141,9 @@ internal sealed class RosterSelection(HarnessRoster roster)
         // The own account's reading judged for the asked model before anything is asked of it: one that refuses it is an
         // account that cannot carry the words, never ended or cooled.
         var unoffered = !string.IsNullOrWhiteSpace(account) && model is not null
-            && AgentOffers.Offers(roster.Home, resolved.Id.Value, (await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false))?.Version,
+            && AgentOffers.Offers(roster.Home, resolved.Id.Value,
+                roster.Settings.ResolveVersion(resolved.Id.Value, workspace, chosen: null)
+                    ?? (await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false))?.Version,
                 account.Trim(), roster.Clock()).Session.Judge(model) is not null;
 
         var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;

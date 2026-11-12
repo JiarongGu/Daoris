@@ -26,6 +26,7 @@ public static class KnowledgeServer
         typeof(GoAheadTools),
         typeof(QuestionTools),
         typeof(HelperTools),
+        typeof(CheckTools),
         typeof(PartnerTools),
         typeof(HandOverTools),
         typeof(LineTools),

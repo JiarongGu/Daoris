@@ -62,6 +62,10 @@ internal static class AgentListCommand
                 Say($"{Under}pinned {pinned} — "
                     + (binary is not null ? $"managed: {binary}" : "NOT INSTALLED, so the driver refuses to start a session on it"));
                 if (binary is null) Say($"{Under}`daoris agent pin {name} {pinned}` installs it");
+                if (set.Doors.Any(each => each.Value == name))
+                {
+                    foreach (var line in VersionCurrency.Of(home, set.Door(name), pinned)) Say($"{Under}measured at another version: {line}");
+                }
             }
 
             foreach (var (circle, map) in settings.WorkspaceVersions)

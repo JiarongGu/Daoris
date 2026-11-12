@@ -31,12 +31,12 @@ public sealed class DriverPartsTests : IDisposable
         Assert.Equal(
             ["kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
-                "reviews", "opinions", "helpers", "partners", "brainstorms", "meetings", "plan",
+                "reviews", "opinions", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
                 "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
                 "through-notices"],
             order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
+            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 22),
                 .. Enumerable.Repeat(LookPhase.Planned, 7), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 5)],
             order.Select(part => (LookPhase)part.Phase));
 
@@ -73,6 +73,7 @@ public sealed class DriverPartsTests : IDisposable
             pass => Assert.IsType<ReviewsLook>(pass),
             pass => Assert.IsType<OpinionsLook>(pass),
             pass => Assert.IsType<HelpersLook>(pass),
+            pass => Assert.IsType<ChecksLook>(pass),
             pass => Assert.IsType<PartnersLook>(pass),
             pass => Assert.IsType<BrainstormsLook>(pass),
             pass => Assert.IsType<MeetingsLook>(pass),

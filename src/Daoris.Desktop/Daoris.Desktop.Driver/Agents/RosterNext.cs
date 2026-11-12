@@ -48,7 +48,7 @@ internal sealed class RosterNext(HarnessRoster roster)
         if (config.Commands.GetValueOrDefault(resolved.Id.Value) is not { Count: > 0 } && settings.ResolveVersion(resolved.Id.Value, workspace, chosen: null) is { } pinned)
         {
             var managed = HarnessSettings.ManagedBinary(roster.Home, resolved.Id.Value, pinned, toolchain.Program.Binary) is not null;
-            return new AgentLastRead(resolved.Id.Value, owner, managed, managed ? (known is { Present: true } ? known.Version : pinned) : null, accounts) { Pinned = pinned };
+            return new AgentLastRead(resolved.Id.Value, owner, managed, managed ? pinned : null, accounts) { Pinned = pinned };
         }
 
         return new AgentLastRead(resolved.Id.Value, owner, known?.Present, known is { Present: true } ? known.Version : null, accounts);

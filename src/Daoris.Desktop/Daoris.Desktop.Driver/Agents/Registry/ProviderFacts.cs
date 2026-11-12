@@ -2,10 +2,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The agents' facts from each provider's registration: who each agent is, its account acts,
-/// and each door's sheet read by <see cref="Sheet.Of"/> over the measurements table. Nothing is negotiated here: an opening's answers
+/// and each door's sheet read by <see cref="Sheet.Of"/> over the door's stated abilities. Nothing is negotiated here: an opening's answers
 /// describe that opening alone.
 /// </summary>
-internal sealed class ProviderFacts(ProviderRegistry registry, IReadOnlyList<Measurement> measurements) : IAgentFacts
+internal sealed class ProviderFacts(ProviderRegistry registry) : IAgentFacts
 {
     private IReadOnlyList<AgentFacts>? _agents;
 
@@ -37,6 +37,6 @@ internal sealed class ProviderFacts(ProviderRegistry registry, IReadOnlyList<Mea
             identity.Mark,
             identity.StandIn,
             provider.Unavailable ? AgentActs.None : Sheet.ActsOf(provider, lead),
-            [.. doors.Select(door => Sheet.Of(provider, door, negotiated: null, measurements))]);
+            [.. doors.Select(door => Sheet.Of(provider, door, negotiated: null))]);
     }
 }

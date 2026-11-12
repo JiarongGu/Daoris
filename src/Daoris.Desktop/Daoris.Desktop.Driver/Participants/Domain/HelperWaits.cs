@@ -31,7 +31,7 @@ public static class HelperWaits
     /// Whether <paramref name="record"/> is a session of this machine's that ended waiting on its own helper: completed by that code,
     /// with nothing waiting on it, since words waiting go on (the helper's answer among them).
     /// </summary>
-    public static bool Waits(PriorSession record) => HoldsTree(record) && !record.WordsWaiting;
+    public static bool Waits(PriorSession record) => HelperWaitTrees.WaitsOnHelper(record) && !record.WordsWaiting;
 
     /// <summary>
     /// Whether <paramref name="record"/> ended waiting on its own helper and so still holds its tree:
