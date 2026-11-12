@@ -105,6 +105,7 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
   unanswerable: 'word',
+  left: 'word',
   review: 'ready',
 };
 
@@ -163,7 +164,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
   switch (item.kind) {
     // The work's session waits on the person's answer; the landing on their accept, in its review.
     case 'parked':
-    case 'review': return { session: item.id };
+    case 'review':
+    case 'left': return { session: item.id };
     // The session that would have parked, its move back to the person refused.
     case 'helper-ended': return { session: item.session ?? item.id };
     // The session whose memory waits; a sweep's end has none.
@@ -214,12 +216,12 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  * Each kind's place among the kinds of its group when two waited as long (the order of kinds): the accounts', parks, a
  * move back to the person refused, parked quests, go-aheads, held calls, git go-aheads, held answers, a terminal's presses
  * and folders; then asks, departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt,
- * a volume below its floor, a held git remote and quests nobody can take; then review.
+ * a volume below its floor, a held git remote and quests nobody can take; then unfinished work, then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'unclosed', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'second-check', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
-  'review',
+  'left', 'review',
 ];
 
 /** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
@@ -353,6 +355,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(wait ? { opinion: wait } : {}),
       };
     }
+    case 'left':
     case 'review': {
       const fact = row.placed ? placedFact(row.placed, row.placed.shown) : null;
       return { ...base, title: named(row.id), detail: fact ? i18n.t(fact.line, fact.values) : null, run: acceptRunOf(row.placed) };

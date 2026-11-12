@@ -93,6 +93,7 @@ export const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [
   parked: () => ['work.attention.door.answer'],
   intake: (item) => ['work.attention.door.intake', { id: item.id }],
   review: () => ['work.attention.door.review'],
+  left: () => ['work.attention.door.left'],
   // A refused move back to the person is looked at on its session's page, where its tree and its helper's card are.
   'helper-ended': () => ['work.attention.door.open'],
   // The decisions are made on the session's page, in its Memory section, where each row's words are read first.

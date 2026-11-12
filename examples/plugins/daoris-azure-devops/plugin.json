@@ -3,16 +3,17 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "3.2.0",
-  "changes": "Its pull-request step declares a goal, so a Daoris that starts a step's agent has an agent open the pull request with the plugin's own tools; elsewhere the step is performed on work/perform as before, and an attempt begun there is settled by its own check.",
+  "version": "3.3.0",
+  "changes": "With no token kept, or one Azure DevOps refuses, its calls (the pull request, its watch, work/state and the release watch) are made from a tab of its own in the signed-in session of Daoris's browser instead of failing no-token, and every answer's evidence says which way it was made. The pull-request step's agent is told the step's options and sets auto-complete through create-pull-request.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
-    "points": ["work/watch", "work/step", "work/perform", "work/state"]
+    "points": ["work/watch", "work/step", "work/perform", "work/state"],
+    "browser": true
   },
   "interfaces": {
     "commands": [
-      { "name": "login", "about": "Keeps a personal access token for Azure DevOps' REST API in this plugin's own storage.", "interactive": true, "adopts": { "hosts": ["dev.azure.com", "visualstudio.com"], "answer": "token" } },
+      { "name": "login", "about": "Keeps a personal access token for Azure DevOps' REST API in this plugin's own storage. Without one, the plugin uses the person's signed-in session in Daoris's browser.", "interactive": true, "adopts": { "hosts": ["dev.azure.com", "visualstudio.com"], "answer": "token" } },
       { "name": "logout", "about": "Forgets the kept token." },
       { "name": "status", "about": "Says whether a token is kept, since when, and whether Azure DevOps last refused it.", "tool": true },
       { "name": "create-pull-request", "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
@@ -23,7 +24,12 @@
           { "name": "branch", "type": "text", "title": { "en": "Pushed branch", "zh": "已推送的分支" }, "required": true },
           { "name": "target", "type": "text", "title": { "en": "Target branch", "zh": "目标分支" } },
           { "name": "title", "type": "text", "title": { "en": "Title", "zh": "标题" } },
-          { "name": "description", "type": "text", "title": { "en": "Description", "zh": "描述" } }
+          { "name": "description", "type": "text", "title": { "en": "Description", "zh": "描述" } },
+          { "name": "auto-complete", "type": "boolean", "title": { "en": "Set auto-complete", "zh": "设置自动完成" } },
+          { "name": "merge-strategy", "type": "choice", "title": { "en": "Auto-complete merge strategy", "zh": "自动完成的合并策略" }, "choices": ["merge", "squash", "rebase", "rebase-merge"] },
+          { "name": "delete-source-branch", "type": "boolean", "title": { "en": "Delete the source branch on completion", "zh": "完成时删除源分支" } },
+          { "name": "transition-work-items", "type": "boolean", "title": { "en": "Transition linked work items on completion", "zh": "完成时转换关联工作项" } },
+          { "name": "merge-commit-message", "type": "text", "title": { "en": "Merge commit message", "zh": "合并提交消息" } }
         ] },
       { "name": "pull-request-status", "title": { "en": "How a pull request stands", "zh": "拉取请求的状态" },
         "about": { "en": "Says whether a pull request, named by its address or id or found from its branch, is open, completed or abandoned, with its address and merge commit as data.", "zh": "说明一个拉取请求（按地址或编号指定，或从其分支找到）是进行中、已完成还是已放弃，数据含地址和合并提交。" },
@@ -51,7 +57,7 @@
       "id": "pull-request",
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
       "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one, and sets auto-complete where its options ask. It sends nothing but its API calls, with the personal access token its own login keeps.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用，并按选项设置自动完成。只发送它的 API 请求，使用它自己登录时保存的个人访问令牌。" },
-      "goal": { "en": "Open an Azure DevOps pull request from the pushed branch into the line with create-pull-request (finding the active one where there is one), check it with pull-request-status, and answer reached with its address as the evidence's url and its id as the pull-request output; answer failed with the code a tool's refusal names where it cannot be opened.", "zh": "用 create-pull-request 从已推送的分支向主线创建 Azure DevOps 拉取请求（已有进行中的则找到它），用 pull-request-status 确认，然后回答 reached，证据的 url 为其地址，pull-request 输出为其编号；无法创建时回答 failed，代码取工具拒绝时给出的代码。" },
+      "goal": { "en": "Open an Azure DevOps pull request from the pushed branch into the line with create-pull-request (finding the active one where there is one), passing the step's options autoComplete, mergeStrategy, deleteSourceBranch, transitionWorkItems and mergeCommitMessage as its auto-complete arguments where they are given, check it with pull-request-status, and answer reached with its address as the evidence's url, its id as the pull-request output, and the tool's own words (its auto-complete sentence and its Way line) as the message; answer failed with the code a tool's refusal names where it cannot be opened.", "zh": "用 create-pull-request 从已推送的分支向主线创建 Azure DevOps 拉取请求（已有进行中的则找到它），步骤选项 autoComplete、mergeStrategy、deleteSourceBranch、transitionWorkItems、mergeCommitMessage 若给出则作为其自动完成参数传入，用 pull-request-status 确认，然后回答 reached，证据的 url 为其地址，pull-request 输出为其编号，message 取工具自己的话（自动完成一句和 Way 一行）；无法创建时回答 failed，代码取工具拒绝时给出的代码。" },
       "reach": "performed",
       "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },
@@ -71,6 +77,6 @@
     }
   ],
   "tools": [
-    { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's plugin.mjs, and its calls to Azure DevOps' REST API (fetch)." }
+    { "id": "node", "versions": ">=22.0.0", "for": "Runs the plugin's plugin.mjs, its calls to Azure DevOps' REST API (fetch), and its connection to Daoris's browser (WebSocket)." }
   ]
 }

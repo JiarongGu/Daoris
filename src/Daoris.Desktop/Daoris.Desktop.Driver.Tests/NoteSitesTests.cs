@@ -92,6 +92,21 @@ public sealed class NoteSitesTests
     }
 
     [Fact]
+    public void A_done_that_departed_from_requirements_says_part_is_left_never_the_plain_done()
+    {
+        var one = Observation.Conclude(0, "Done", departed: 1);
+        Wrote(one, "completed", "the quest reached done, but it departed from 1 requirement: part of the work is left.", "ended.done-left");
+        Assert.Equal(1, (int?)one.Parts![0].Value("left"));
+
+        Wrote(Observation.Conclude(0, "Done", departed: 2), "completed",
+            "the quest reached done, but it departed from 2 requirements: part of the work is left.", "ended.done-left");
+        Wrote(Observation.Conclude(4, "Done", departed: 1), "completed",
+            "the quest reached done, but it departed from 1 requirement: part of the work is left (exit 4).", "ended.done-left", "ended.exit");
+        // Nothing departed: the plain done, as before.
+        Wrote(Observation.Conclude(0, "Done", departed: 0), "completed", "the quest reached done.", "ended.done");
+    }
+
+    [Fact]
     public void A_stand_down_an_exit_with_the_quest_taken_and_an_untouched_quest_each_have_their_code()
     {
         Wrote(Observation.Conclude(0, "Taken"), "stood-down", "exited cleanly with the quest taken — someone else has it.", "ended.stood-down");

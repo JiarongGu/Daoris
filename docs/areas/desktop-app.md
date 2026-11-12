@@ -230,7 +230,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     the person's tabs or another session's; each new tab is given the cookies of the browser's own context, where the person
     signs in (`share-sign-in.cjs`, its `--init-page`), and nothing goes back. Measured: on shared tabs a second session's snapshot
     broke the first one's clicks (5 s each); apart, about 0.6 s. The person's Edge on a Daoris profile stays an option. Daoris
-    keeps sign-ins across a restart itself. (from D78, D84, D277)
+    keeps sign-ins across a restart itself. A plugin whose manifest says `hooks.browser` is handed the endpoint as `DAORIS_BROWSER`
+    and works in a tab of its own in the signed-in profile, which a fresh context does not carry. (from D78, D84, D277, D281)
 
 **The setup guide and the views**
 

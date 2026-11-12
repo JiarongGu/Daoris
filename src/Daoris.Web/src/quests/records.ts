@@ -28,7 +28,12 @@ export function keptFilters(filters: QuestFilters): Record<string, unknown> | nu
  * A group of the list's quests: where each is in its life, and what a hold keeps waiting on the person, their yes to a
  * departure or their review of a set-up step.
  */
-export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quests: Quest[] };
+export type QuestGroup = { group: 'held' | 'left' | 'open' | 'progress' | 'closed'; quests: Quest[] };
+
+/** Whether a quest is done with a departure on it: unfinished, though the person said yes, which finishes none of it. */
+export function isLeft(quest: Pick<Quest, 'status' | 'answers'>): boolean {
+  return quest.status === 'Done' && (quest.answers ?? []).some((answer) => !answer.met?.trim() && !!answer.departed?.trim());
+}
 
 /**
  * The quests by where they are in their life: what a departure holds for the person's yes first, then open, taken, then
@@ -42,6 +47,7 @@ export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quest
 export function questGroups(quests: readonly Quest[], closed: boolean): QuestGroup[] {
   return [
     { group: 'held' as const, quests: quests.filter((quest) => quest.held === true) },
+    { group: 'left' as const, quests: quests.filter((quest) => quest.held !== true && isLeft(quest)) },
     // A live quest can be held too (a held submission, a step its source's reopen holds): it is listed
     // once, where it waits on the person, never in its status's group as well.
     { group: 'open' as const, quests: quests.filter((quest) => quest.status === 'Open' && quest.held !== true) },
@@ -49,7 +55,7 @@ export function questGroups(quests: readonly Quest[], closed: boolean): QuestGro
     ...(closed
       ? [{
         group: 'closed' as const,
-        quests: quests.filter((quest) => (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true),
+        quests: quests.filter((quest) => (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true && !isLeft(quest)),
       }]
       : []),
   ];
@@ -88,15 +94,16 @@ export function freshest<T extends { id: string; updated: string }>(listed: T | 
 export function questStanding(quest: Quest | undefined, read: boolean): ChoiceStanding {
   if (!quest) return read ? 'gone' : 'unread';
   const closed = quest.status === 'Done' || quest.status === 'Declined';
-  return closed && quest.held !== true && !quest.conflicts?.length ? 'closed' : 'live';
+  return closed && quest.held !== true && !isLeft(quest) && !quest.conflicts?.length ? 'closed' : 'live';
 }
 
 /** What a quest's pill says: its status, or `Submitted` for a taken quest with a current submission. */
-export type QuestShown = Quest['status'] | 'Submitted';
+export type QuestShown = Quest['status'] | 'Submitted' | 'Unfinished';
 
-export function shownStatus(quest: Pick<Quest, 'status' | 'submission'>): QuestShown {
+export function shownStatus(quest: Pick<Quest, 'status' | 'submission'> & Partial<Pick<Quest, 'answers'>>): QuestShown {
   // A submission is not a status: the quest stays taken, and only what it reads says where its work stands.
-  return quest.status === 'Taken' && quest.submission ? 'Submitted' : quest.status;
+  if (quest.status === 'Taken' && quest.submission) return 'Submitted';
+  return isLeft({ status: quest.status, answers: quest.answers }) ? 'Unfinished' : quest.status;
 }
 
 /** Whether two submissions are one: the machine that made it and its sequence there, as a close and a reopen name it. */

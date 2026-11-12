@@ -83,7 +83,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     staying theirs to settle by their `check`; they answer `work/state`, call their service's
     REST API with the token their own `login` keeps in their private storage (rule 29), say a refused token at `status`, run no
     git, `gh` or `az`, and declare node alone. Azure DevOps's step sets auto-complete where its options say so, and its `release`
-    step watches the merged commit's release or pipeline stages to their end, as its README says. A plugin with a `pull-request`
+    step watches the merged commit's release or pipeline stages to their end, as its README says. Where no token is kept or Azure
+    DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
+    manifest's `hooks.browser` hands each process the in-app browser's DevTools address as `DAORIS_BROWSER` (`PluginBrowser`), the
+    calls are page-side `fetch`es that read no cookie, and each answer's evidence ends `Way: the token.` or `Way: the browser.`
+    (D281). A plugin with a `pull-request`
     step has one work process per place awaiting it, never one shared: its waits, its unsound mark (three unasked exits within an
     hour, then not started until the person's *Try again*, `daoris plugin try-again <id>`) and its idle stop are its place's own,
     its generations unique across places, and an attempt goes to the place its unit was told for. A place whose hand is refused (no

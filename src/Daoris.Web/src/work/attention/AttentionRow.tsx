@@ -28,7 +28,7 @@ import { AT_AN_AGENT, DOOR_ONLY, HANDLER, IN_A_CIRCLE, INTEGRATION_LABEL, opensN
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'unclosed' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
+  | 'review' | 'left' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
   | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task' | 'second-check';
 
 /** A second check's flag not yet seen, as a `second-check` row carries it: the reader's claim about one of Ask Daoris's acts. */

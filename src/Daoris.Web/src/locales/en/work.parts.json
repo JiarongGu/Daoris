@@ -43,6 +43,8 @@
   "work.parts.edge.asked": "asked",
   "work.parts.line.part": "{{state}} in part {{n}}",
   "work.parts.line.partUnnumbered": "{{state}} in another part",
+  "work.parts.line.left": "Done in part {{n}}, part of the work left",
+  "work.parts.line.leftUnnumbered": "Done in another part, part of the work left",
   "work.parts.line.reviewer": "{{state}}: its reviewer",
   "work.parts.line.partner": "{{state}}: its partner",
   "work.parts.line.helper": "{{state}}: its helper",

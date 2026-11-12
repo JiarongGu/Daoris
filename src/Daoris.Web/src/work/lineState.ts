@@ -13,7 +13,7 @@ const STATE_WORD: Record<SessionStateName, ShownState> = {
 };
 
 /** A line's state read from another session than the one drawn: its word, who it is read from, and that part's number. */
-export type LineSaid = { shown: ShownState; by: string; role: string; part: number | null };
+export type LineSaid = { shown: ShownState; by: string; role: string; part: number | null; left?: true };
 
 /**
  * The line's state where another part or a co-worker decides it, named; null where the session drawn decides it itself, and where
@@ -28,12 +28,17 @@ export function lineSaid(
   const record = sessions?.find((each) => each.id === line.by);
   const shown = record ? shownOf(record, groupings?.find((each) => each.session === line.by), undefined) : STATE_WORD[line.state];
   const at = parts?.indexOf(line.by) ?? -1;
+  // A part whose done left work reads done on its own record; its line is unfinished, which is the person's.
+  if (line.reason === 'left' && line.role === 'part') {
+    return { shown: 'awaiting-person', by: line.by, role: line.role, part: at >= 0 ? at + 1 : null, left: true };
+  }
   return { shown, by: line.by, role: line.role, part: at >= 0 ? at + 1 : null };
 }
 
 /** A line's state said where another part or co-worker decides it: *working in part 2*, *working: its helper*. */
 export function lineWords(t: TFunction, said: LineSaid): string {
   const state = t(shownKey(said.shown));
+  if (said.left) return said.part ? t('work.parts.line.left', { n: said.part }) : t('work.parts.line.leftUnnumbered');
   if (said.role !== 'part') return t(`work.parts.line.${said.role}`, { state, defaultValue: state });
   return said.part ? t('work.parts.line.part', { state, n: said.part }) : t('work.parts.line.partUnnumbered', { state });
 }

@@ -20,6 +20,7 @@
   "note.ended.answered-unfinished": "#{{awaits}} 答复后它继续工作，结束时委托仍已接下（退出码 {{exit}}）。",
   "note.ended.carried-unfinished": "它接续了委托，结束时委托仍已接下（退出码 {{exit}}）。",
   "note.ended.done": "委托已完成。",
+  "note.ended.done-left": "委托已标为完成，但偏离了其中 {{left}} 项要求：仍有部分未做完。",
   "note.ended.declined": "会话已谢绝，理由写在委托上。",
   "note.ended.stood-down": "它正常退出，委托已被别人接下。",
   "note.ended.source-reopened": "它停了下来，委托仍已接下，因为你重新打开了它所基于的委托 #{{quest}} 的工作；你选择在新的工作上继续后，它会在同一工作树中继续。",

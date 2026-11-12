@@ -43,6 +43,8 @@
   "work.parts.edge.asked": "委托",
   "work.parts.line.part": "第 {{n}} 段{{state}}",
   "work.parts.line.partUnnumbered": "另一段{{state}}",
+  "work.parts.line.left": "第 {{n}} 段已完成，仍有部分未做完",
+  "work.parts.line.leftUnnumbered": "另一段已完成，仍有部分未做完",
   "work.parts.line.reviewer": "它的评审者{{state}}",
   "work.parts.line.partner": "它的搭档{{state}}",
   "work.parts.line.helper": "它的助手{{state}}",

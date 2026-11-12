@@ -55,3 +55,18 @@ test('an origin that names no Azure DevOps repository is said, exit 1', async (t
   assert.equal(refused.exit, 1);
   assert.match(refused.said[0], /names no Azure DevOps repository/);
 });
+
+test('create-pull-request sets auto-complete by the token\'s identity where its arguments ask, and says it; with none it says it is off', async (t) => {
+  const api = await standIn();
+  const plugin = start(t, { DAORIS_HOST_API: api.address, ...signedIn(TOKEN) });
+  await plugin.ask('initialize', { protocolVersion: 1, points: POINTS });
+
+  const off = await run(plugin, 'create-pull-request', { origin: WEB, branch: 'daoris/s-1' });
+  const set = await run(plugin, 'create-pull-request', { origin: WEB, branch: 'daoris/s-1', 'auto-complete': true, 'merge-strategy': 'squash', 'delete-source-branch': true });
+
+  assert.match(off.said[0], /Auto-complete off\./);
+  assert.match(set.said[0], /Auto-complete set \(squash, source branch deleted\)/);
+  assert.equal(set.data.id, 1, 'the pull request already active is the one set');
+  assert.deepEqual(api.pulls[0].completionOptions, { mergeStrategy: 'squash', deleteSourceBranch: true, transitionWorkItems: false });
+  assert.deepEqual(api.pulls[0].autoCompleteSetBy, { id: 'identity-1', displayName: 'Daoris' });
+});

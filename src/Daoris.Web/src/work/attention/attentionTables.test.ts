@@ -9,7 +9,7 @@ describe('the kinds of What needs you', () => {
       parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', unclosed: 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
       permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding', 'second-check': 'word',
+      'hand-over': 'word', unanswerable: 'word', left: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding', 'second-check': 'word',
     });
   });
 
@@ -19,7 +19,7 @@ describe('the kinds of What needs you', () => {
    */
   it('is the place its door opens, for every kind', () => {
     expect(ATTENTION_PLACE).toEqual({
-      parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
+      parked: 'sessions', review: 'sessions', left: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', unclosed: 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',

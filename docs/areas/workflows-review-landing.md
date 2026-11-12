@@ -184,7 +184,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
     (`tidy-merged`) and a `push` no `branch` landing leads to (`land-tail`). (D241, D245, D247)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
-    goal, the run's place and commit, the landing's evidence, the step's outcomes and schema) is kept under
+    goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
     `workflows/agent-steps/<invocation>.json`, and the step's session starts off the pass: staffed as the place's builds, a chat on
     no quest at the run's checkout holding no tree, lease or cap, read-only, with only its plugin's `daoris-plugins` server and
     `step_answer`, refusing the person's words (*Workflow step* in Sessions). `step_answer` keeps one answer, `reached` with a
@@ -284,7 +284,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris's own tree, never the person's checkout, the work's branch or its tree; `resolve` reserves a session tree as a hand-off
     row, a start there held (`held.reserved`) unless it carries the row's ask key; one door asks a tree's session to commit.
 55. Every step of a live run that only the person moves is read from the bound runs, never stored: an active `review`, `human` or
-    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`. Sessions places the run's newest session in Needs you with
+    `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, and a step left failed (`left`: a failure kept for the person with no word on it, read for a quest closed done
+    alone). Sessions places the run's newest session in Needs you with
     its `waits`, opening the run's view, and *What needs you* lists each with its presses.
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
