@@ -22,7 +22,6 @@ public sealed record HelpPressNow(
     /// <summary>That it asked the person on a card in restricted mode rather than ran: the receipt's and Notifications' <i>Asked you</i>.</summary>
     public bool Asked { get; init; }
 
-    /// <summary>The step of the run <see cref="Target"/> names and the act pressed on it, where the press was a run's step; else null.</summary>
     public HelpPressStep? Step { get; init; }
 }
 

@@ -85,7 +85,6 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>A check's newest attempt held unknown for the person, or settled by their stop; null on any other step.</summary>
     public WorkflowRunHeld? Held { get; init; }
 
-    /// <summary>The person's through words this step was passed or accepted on, with the ask they are kept on; null for any other outcome.</summary>
     public RunStepThrough? Through { get; init; }
 
     /// <summary>

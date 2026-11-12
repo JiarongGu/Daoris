@@ -93,10 +93,6 @@ public sealed class HelpAccessSwapTests : IDisposable
         await Poll.Until(() => busy.Finished == 1, () => "the turn's end never ended it");
     }
 
-    /// <summary>
-    /// The person's first word, said while its agent still opens, is a turn under way: a focus chosen then ends the conversation at that
-    /// turn's end, never before its first answer, so the word is answered and kept.
-    /// </summary>
     [Fact]
     public async Task A_focus_chosen_before_the_first_answer_keeps_the_word_said_while_the_agent_opens()
     {

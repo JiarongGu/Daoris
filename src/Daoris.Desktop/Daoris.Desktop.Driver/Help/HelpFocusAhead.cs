@@ -13,9 +13,7 @@ public static class HelpFocusAhead
 
     /// <summary>
     /// Whether <paramref name="session"/> has no words yet, nothing waiting, and its newest start (<see cref="HelpWired"/>) handed a room
-    /// for another place than the focus it holds now. A start that kept no focus, or none yet, reopens nothing. A word of the person's
-    /// shown waiting, or held in its turns (<paramref name="queue"/>) while its agent still opens, is a word said: reopening would end the
-    /// conversation that holds it before its first answer, so the change waits for that turn's end instead.
+    /// for another place than the focus it holds now. A word held in its turns (<paramref name="queue"/>) is a word said, which the reopen would end unanswered.
     /// </summary>
     public static bool Reopens(string home, string session, SessionEvents events, ChatQueue? queue = null)
     {

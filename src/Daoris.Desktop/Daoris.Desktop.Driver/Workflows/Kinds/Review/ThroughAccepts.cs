@@ -16,10 +16,7 @@ public static class ThroughAccepts
     private const string Opening = "accepted on your words, \"";
     private const string Closing = "\", kept on ask #";
 
-    /// <summary>
-    /// The quote and ask a step passed or accepted as the person's word stands on, read back from the words <see cref="Words"/> kept with
-    /// its outcome; null for any other word, a supervisor's included.
-    /// </summary>
+    /// <summary>The quote and ask of a step moved on through words, read back from what <see cref="Words"/> kept; null for any other word.</summary>
     public static RunStepThrough? On(NodeStatus status)
     {
         if (status is not { State: NodeStates.Reached or NodeStates.Skipped, By: NodeSource.Person, Words: { } words }) return null;

@@ -57,7 +57,6 @@ export interface RunStep {
   acts?: string[] | null;
   /** The person's word on a graph run's node, kept and not applied yet; none where none waits. */
   asked?: NodeWordKept | null;
-  /** The person's through words this step was passed or accepted on, and the ask they are kept on; none for any other outcome. */
   through?: { ask: string; quote: string } | null;
   /** The command a refused step's plugin named as its fix and declares: its door opens the round card. */
   needs?: { plugin: string; command: string; title?: Authored | null } | null;

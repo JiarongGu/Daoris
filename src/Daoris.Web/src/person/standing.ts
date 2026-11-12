@@ -40,7 +40,6 @@ export type HelpPressNow = {
   beyond?: boolean;
   /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
   asked?: boolean;
-  /** The step of the run `target` names and the act pressed on it, where the press was a run's step. */
   step?: { node: string; act: string } | null;
 };
 

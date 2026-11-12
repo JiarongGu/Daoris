@@ -3,8 +3,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The step of a run an Ask Daoris press acted on and the act pressed (an Accept, the pass of an unchecked done, a skip), so the person reads
-/// in Notifications which step of which run was pressed for them, not only that a run's workflow was.
+/// The step of a run an Ask Daoris press acted on and the act pressed (an Accept, the pass of an unchecked done, a skip), so Notifications
+/// names the step and the run pressed for the person, not only the route.
 /// </summary>
 /// <param name="Node">The step's id in the run's graph.</param>
 /// <param name="Act">The act pressed on it, as the run's door names it.</param>

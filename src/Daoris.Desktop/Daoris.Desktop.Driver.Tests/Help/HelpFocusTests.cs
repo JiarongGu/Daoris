@@ -129,10 +129,6 @@ public sealed class HelpFocusTests : IDisposable
         Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
     }
 
-    /// <summary>
-    /// The person's first word, shown waiting while the agent opened ahead still opens, or held in its turns before any answer, is a
-    /// word said: a focus chosen then reopens nothing, so the conversation that holds the word is never ended for the change before it answers.
-    /// </summary>
     [Fact]
     public void A_focus_chosen_before_the_first_answer_reopens_nothing_that_holds_the_persons_word()
     {

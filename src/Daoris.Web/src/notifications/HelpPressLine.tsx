@@ -13,7 +13,6 @@ function PressLine({ press, busy, onOpen, onReverse }: {
   onReverse: (press: HelpPressNow) => void;
 }) {
   const { t, i18n } = useTranslation();
-  // A run's step is said by its act on it, the step and the run, not by the route's whole list of acts.
   const act = press.step
     ? t('notifications.helpPressed.step', {
       act: t(`notifications.helpPressed.stepAct.${press.step.act}`, { defaultValue: press.step.act }), node: press.step.node, run: press.target ?? '',
