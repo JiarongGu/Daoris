@@ -26,7 +26,7 @@ const isDependencyUnit = (unit) => Array.isArray(unit.needs) && unit.needs.lengt
  * 2026-11-11: the driver's 16, the modules' 7, the page's unit run 11, the tool-tests 22, each whole): a bound is a fraction of a
  * suite's time, and what it leaves is counted in `left`.
  */
-export const REACHED_BOUNDS = Object.freeze({ dotnet: 80, vitest: 80, node: 12 });
+export const REACHED_BOUNDS = Object.freeze({ dotnet: 40, vitest: 80, node: 12 });
 
 const RUNNER_ORDER = ['dotnet', 'vitest', 'node'];
 const WEB = 'src/Daoris.Web';

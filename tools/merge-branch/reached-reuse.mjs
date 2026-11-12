@@ -81,7 +81,9 @@ export function reuseContext({ map, files, read, toolchain, gates }) {
   const wholeOf = (suite) => TS_SUITES.find((each) => each.suite === suite)?.whole ?? [];
   const tsUnitReaches = (unit, path) => {
     if (path === unit.file || wholeOf(unit.suite).includes(path)) return true;
-    if (unit.reach.wide.length) return WIDE_ROOTS.test(path);
+    // A unit whose reach the census cannot bound (it runs the tool whole) is reached by its subject's own files; a change to what
+    // it only uses is the CI's and the night's to run it for, since it is the slowest of the tool's tests.
+    if (unit.reach.wide.length) return WIDE_ROOTS.test(path) && (path === unit.subject || path.startsWith(`${String(unit.subject).replace(/\.[^.]+$/, '')}/`));
     return tsReaches(unit.reach, path);
   };
   const reaches = (unit, path) => (unit.kind === 'dotnet' ? dotnetReaches(unit, path) : tsUnitReaches(unit, path));
