@@ -54,6 +54,17 @@ describe("Notifications' group of what Ask Daoris pressed", () => {
   });
 
   it.each([
+    ['en', 'Accept review of run q7'],
+    ['zh', '接受 进展 q7 的 review'],
+  ])("names a run's step it pressed and the act, read from the press (%s)", async (language, said) => {
+    await i18n.changeLanguage(language);
+    const step = press('h5', 'WORKFLOW_NODE', { scope: 'run', target: 'q7', step: { node: 'review', act: 'accept' } });
+    expect(standingOf({ helpPresses: [{ ...step }] })?.helpPresses[0]).toMatchObject({ step: { node: 'review', act: 'accept' } });
+    render(<HelpPressLine standing={{ ...STANDING, helpPresses: [step] }} onOpen={vi.fn()} onReverse={vi.fn()} defaultOpen />);
+    expect(screen.getByText(said)).toBeTruthy();
+  });
+
+  it.each([
     ['en', 'in api, outside its focus', 'in engine'],
     ['zh', '在 api 中，在其聚焦之外', '在 engine 中'],
   ])('names each press\'s place, and one beyond its conversation\'s focus at the press (%s)', async (language, beyond, within_) => {
