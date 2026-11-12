@@ -574,6 +574,9 @@ export const useChooseAskWorkflow = () =>
 export const useChooseAskReview = () =>
   useAskChange(({ id, choice, words }: { id: string; choice: string; words?: string }) => api.chooseAskReview(id, choice, words));
 
+/** The person's *Take back* of their through words on an ask. */
+export const useTakeBackAskThrough = () => useAskChange(({ id }: { id: string }) => api.takeBackAskThrough(id));
+
 /**
  * The person's reopen of a sealed submission: the step it published is withdrawn or held, so the quests
  * and the asks are read again, as a respond's are.

@@ -25,6 +25,7 @@ import { askFacts, askWaits, LONG_TITLE } from './askFacts';
 import { NextDoor } from '../work/head/NextDoor';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
+import { AskThrough } from './AskThrough';
 import { AskWorkflowKind } from './AskWorkflowKind';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
@@ -103,7 +104,7 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel, staleGoAheads, atWork,
+  work, history, considered = [], nameOf, environments, onChooseReview, onTakeBackThrough, onChooseKind, workflow, lines = [], channel, staleGoAheads, atWork,
 }: {
   /**
    * Who is at work on the ask: its read as the query holds it, and the doors the section
@@ -149,6 +150,8 @@ export function AskPage({
    * Absent where there is no door to set it through. Answered where it is pressed: a refusal is said under that press.
    */
   onChooseReview?: (choice: string, words: string | undefined, answered: Answered) => void;
+  /** Take back the person's through words on the ask; absent where nothing can. */
+  onTakeBackThrough?: (answered: Answered) => void;
   /** What a person calls an account, from the roster; absent, the intake's record's id is said. */
   nameOf?: AccountNamer;
   ask: Ask;
@@ -466,6 +469,13 @@ export function AskPage({
            choice is theirs alone, and a proposal applies only on their press. */
         <PageSection title={t('asks.record.review')}>
           <AskReview ask={ask} environments={environments} busy={busy} onChoose={onChooseReview} />
+        </PageSection>
+      )}
+
+      {ask.throughWords?.at(-1)?.words && (
+        /* The person's words asking for its work to be delivered with no press of theirs, with their take-back. */
+        <PageSection title={t('asks.record.throughTitle')}>
+          <AskThrough ask={ask} busy={busy} onTakeBack={onTakeBackThrough} />
         </PageSection>
       )}
 
