@@ -16,6 +16,9 @@ internal sealed class ChatRun(
 {
     private ChatContext Context => wiring.Context;
 
+    /// <summary>Each phase of a conversation's opening is held to this (<see cref="ChatOpening"/>); a test's is shorter.</summary>
+    public TimeSpan OpeningBound { get; set; } = ChatOpening.DefaultBound;
+
     /// <param name="goOn">
     /// An ended chat going on: its record already moved to working by the ledger's one move out of an ended state, its own conversation
     /// resumed rather than opened, and the person's words waiting its first turn. Null for a new conversation.
@@ -72,10 +75,14 @@ internal sealed class ChatRun(
         var drivesBrowser = false;
         string? modeSaid = null;
         string? helpMode = null;
+        var help = string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal);
+        // Every step up to its spawn is held to the opening's bound and reached by the person's stop.
+        using var opening = new ChatOpening(processes.Openings, sessionId, OpeningBound);
+        var opened = opening.Enter(ct);
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything is spawned.
-            if (goOn is null && !working) await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+            if (goOn is null && !working) await service.AdvanceAsync(sessionId, "starting", ct: opened).ConfigureAwait(false);
 
             // Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
@@ -86,7 +93,7 @@ internal sealed class ChatRun(
             // as its transcript's first line does.
             if (ran is not null && helpMode is not null && helpMode != ran)
             {
-                await service.KeepHelpModeAsync(sessionId, helpMode, ct).ConfigureAwait(false);
+                await service.KeepHelpModeAsync(sessionId, helpMode, opened).ConfigureAwait(false);
             }
 
             // Its process as its door makes it, with its toolchain's environment and its tools at the start, as every driven session's.
@@ -113,7 +120,7 @@ internal sealed class ChatRun(
             // go-on as a first start, and its process's lineage token issued, a go-on's the one issued at its move, its retry's its own.
             start = new TransportStart(info, StartClass.Person) { Moved = goOn?.Proc };
             run = agent.Run(new ChatTransportHost(home, processes, service, Context.Conversations, Context.Output), start);
-            var proc = await run.BracketAsync(sessionId, ct).ConfigureAwait(false);
+            var proc = await run.BracketAsync(sessionId, opened).ConfigureAwait(false);
 
             // The skills plugins hand this conversation's destination, composed under the home and handed by the harness's own session-only
             // door; the protocol door carries them beside its rules below.
@@ -133,7 +140,7 @@ internal sealed class ChatRun(
             // A conversation in a tree of its own is held to its run's checks at every execution, its open, a hand-over's next record and a
             // go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's command denied under
             // `light`, and the conversation told only then.
-            var heavy = await told.HeldChecksAsync(sessionId, workTree, place, config, agent, ct).ConfigureAwait(false);
+            var heavy = await told.HeldChecksAsync(sessionId, workTree, place, config, agent, opened).ConfigureAwait(false);
             if (agent.Rules is { } language)
             {
                 var file = PermissionRules.Load(home);
@@ -160,14 +167,24 @@ internal sealed class ChatRun(
             if (place.Plugins)
             {
                 IReadOnlyList<string> drivers;
-                (pluginServers, browserNotice, drivesBrowser, drivers) = await ChatServers.HandAsync(
-                    home, browser, plugins, sessionId, ct, place.ServersTo, place.EveryServer,
-                    () => PluginToolsHand.Entry(
-                        home,
-                        place.ServersTo == PluginServerTo.Help
-                            ? new PluginToolsAt(sessionId, new PluginPlace(null, place.Circle), "en")
-                            : PluginToolsAt.OfQuest(sessionId, config, place.Name, null),
-                        PluginToolsHand.Program(home))).ConfigureAwait(false);
+                try
+                {
+                    (pluginServers, browserNotice, drivesBrowser, drivers) = await ChatServers.HandAsync(
+                        home, browser, plugins, sessionId, opening.Enter(ct), place.ServersTo, place.EveryServer,
+                        () => PluginToolsHand.Entry(
+                            home,
+                            place.ServersTo == PluginServerTo.Help
+                                ? new PluginToolsAt(sessionId, new PluginPlace(null, place.Circle), "en")
+                                : PluginToolsAt.OfQuest(sessionId, config, place.Name, null),
+                            PluginToolsHand.Program(home))).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException error) when (opening.PastBound(error, ct))
+                {
+                    // A plugin's server is no server Daoris's own work needs: past its bound it is left out, said, and the opening goes on.
+                    (pluginServers, browserNotice, drivesBrowser, drivers) = ([], ChatOpening.LeftOut(opening.Bound), false, []);
+                }
+
+                opened = opening.Enter(ct);
                 // A new conversation's agent is told of the browser with its first message; one going on resumes a conversation already told
                 // when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) Context.Browsers[sessionId] = line;
@@ -217,7 +234,7 @@ internal sealed class ChatRun(
             if (overriding is null)
             {
                 using var startLog = new MachineLog(home, "driver");
-                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, request, info.Environment, agent.ChoiceVariables), ct: ct)
+                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, request, info.Environment, agent.ChoiceVariables), ct: opened)
                     .ConfigureAwait(false);
             }
             // Never once the driver is closing. The run's spawn passes the start gate, which a conversation's press may reach before its first
@@ -238,7 +255,7 @@ internal sealed class ChatRun(
             // by the request that started it, so its spawn is on no request's token.
             start = start with { DrivesBrowser = drivesBrowser };
             run.HandStart(start);
-            await run.SpawnAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
+            await run.SpawnAsync(sessionId, opening.Enter(CancellationToken.None)).ConfigureAwait(false);
         }
         catch (Exception error)
         {
@@ -253,14 +270,15 @@ internal sealed class ChatRun(
             SpawnFiles.RemoveFolder(skills);
             told.LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
-            await conclusion.ConcludeAsync(
-                sessionId, "failed",
-                cancelled
-                    ? Noted.Of(ChatNoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
-                    : Observation.Failure(error.Message),
-                onEnded).ConfigureAwait(false);
+            // The person's stop of its opening ends it as their stop; past a phase's bound, it fails saying what did not come up.
+            var ended = cancelled
+                ? Noted.Of(ChatNoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
+                : opening.Stopped ? ChatEnded.EndedNote(stopped: true, notKept: false)
+                : opening.PastBound(error, ct) ? ChatOpening.NotUp(help, $"`{agent.Name}`", opening.Bound)
+                : Observation.Failure(error.Message);
+            await conclusion.ConcludeAsync(sessionId, opening.Stopped ? "stopped" : "failed", ended, onEnded).ConfigureAwait(false);
             if (cancelled) throw;
-            return new(null, error.Message);
+            return new(null, opening.Stopped || opening.PastBound(error, ct) ? ended.Note : error.Message);
         }
 
         // Its turns are kept in the usage history under the account it runs as, as a driven session's are: bound before any word is queued to it.
@@ -461,7 +479,10 @@ internal sealed class ChatRun(
             {
                 if (goOn.Named()) _ = goOnDoor.WentOnAsync(sessionId, goOn, agent.Name);
             },
-            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, connectors, agent),
+            // Its open held to the opening's bound: a harness waiting on a server Daoris's work needs that never comes up fails it, said.
+            Protocol = chat is null ? null : held.Of(
+                run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, connectors, agent,
+                () => ChatOpening.NotUp(help, ChatOpening.Waited(agent.Name, offered), OpeningBound)) with { OpenBound = OpeningBound },
         });
 
         var watch = watching.WatchAsync(

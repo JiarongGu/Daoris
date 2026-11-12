@@ -257,11 +257,15 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
+    /// <summary>The conversations being opened here whose process is not started yet, which the person's stop reaches.</summary>
+    public OpeningStops Openings { get; } = new();
+
     /// <summary>
     /// End a session's process, marking the end as the person's — or, with a <paramref name="reason"/>,
     /// as the driver's own, for that reason. True when there is one to stop; false is an answer too —
     /// the session already finished and its record says how, or another driver on this machine holds
-    /// it, or nothing does and its record is an orphan (<see cref="Orphans"/>).
+    /// it, or nothing does and its record is an orphan (<see cref="Orphans"/>). The person's stop of one being opened here before its
+    /// process exists ends its opening (<see cref="Openings"/>).
     /// </summary>
     /// <param name="note">
     /// For the person's stop, what its record says in place of the plain one: a pause's stop names the pause.
@@ -272,11 +276,16 @@ public sealed class SessionProcesses(string? markers = null)
         Entry? entry;
         lock (_gate)
         {
-            if ((entry = Held(sessionId)) is null) return false;
-            entry.StopRequested = true;
-            entry.Reason ??= reason;
-            entry.Note ??= note;
+            if ((entry = Held(sessionId)) is not null)
+            {
+                entry.StopRequested = true;
+                entry.Reason ??= reason;
+                entry.Note ??= note;
+            }
         }
+
+        // One being opened with no process yet: its opening ends as the person's stop.
+        if (entry is null) return reason is null && Openings.Stop(sessionId);
 
         try
         {

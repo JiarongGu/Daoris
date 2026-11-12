@@ -15,9 +15,10 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
 {
     /// <param name="cwd">The folder the session works in.</param>
     /// <param name="connectors">What its door is handed of the servers: the plan its open reads.</param>
+    /// <param name="notUp">What its open past its bound says (<see cref="OpeningPastBound"/>); null says it as any failed open.</param>
     public TransportProtocol Of(
         TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, ConnectorPlan connectors,
-        ChatAgent agent)
+        ChatAgent agent, Func<Noted>? notUp = null)
     {
         void Record(SessionEvent e) => wiring.Context.Events.Keep(sessionId, e, run.Say);
 
@@ -64,6 +65,14 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         chat.NotOffered = refused.Refusal;
                         pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || wiring.Of<ChatReplacement>().Onward(pending, sessionId, word)));
                         chat.Opened(null, run.Say, Record);
+                        break;
+                    case OpeningPastBound when notUp is not null:
+                        // Its harness never opened its conversation, as one waiting on a server that never comes up does not: what it waited
+                        // on is said, and the words stay kept for the next send.
+                        chat.Opened(null, run.Say, Record);
+                        var past = notUp();
+                        run.Say($"— {past.Note}");
+                        Record(new SessionEvent { Kind = SessionEventKind.Note, Text = past.Note, Parts = past.Parts });
                         break;
                     default:
                         // Every failure ends the open: one that escaped, an unreadable answer or a pipe that broke mid-write, left the queue
