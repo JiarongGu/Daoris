@@ -113,6 +113,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-12-chat-ux-design.md`|Proposed design: CHATUX1 and ASKPUSH1, chatting with Daoris like a modern assistant's desktop app (D279 reserved)
 |`2026-11-12-conversation-foundation-design.md`|Design (settled, D280): CONVO1, one conversation under every chat, driven session and Ask Daoris
 |`2026-11-12-access-model-design.md`|Design (settled, D284): ACCESS1, Daoris extends every agent; one approval request; workflow steps the only waits
+|`2026-11-12-teamwork-design.md`|Design (settled, D285): TEAMWORK1, a large ask built by a layered team: parts as quests, checks capped instead of agents, hand-backs observed, a train through integration
 
 ## UI, browser, tools and plugin contracts
 
