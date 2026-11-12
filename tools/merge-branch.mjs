@@ -450,6 +450,11 @@ import { holderRuns, pidAlive, processStart, sameHolder } from './merge-branch/h
 import { holdingLock, lockText, putComplete, removeWhileSame, takeLock } from './merge-branch/locks.mjs';
 import { diffPaths, isInside, zPaths } from './merge-branch/paths.mjs';
 import { stepTrees } from './merge-branch/step-trees.mjs';
+import { abnormalEnd } from './merge/processes.ts';
+import { flowDepsOf, mainRedsOf, shellRunner } from './merge/flow-deps.ts';
+import { runOne, settleMerge, verdictExtras } from './merge/flow.ts';
+import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
+import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
@@ -507,37 +512,14 @@ export const stageCommand = (commit) => `node tools/merge-branch.mjs --ci --stag
  * command that writes each, are the repository's declaration: `daoris.gates.json`'s
  * `generated`, which a landing's replay reads too. A repository declaring none writes nothing.
  */
-export function readGenerated(root) {
-  const file = join(root, 'daoris.gates.json');
-  if (!existsSync(file)) return [];
-  let parsed;
-  try {
-    parsed = JSON.parse(readFileSync(file, 'utf8'));
-  } catch (error) {
-    throw new Refusal(`daoris.gates.json is not valid JSON: ${error.message}`);
-  }
-  const entries = Array.isArray(parsed?.generated) ? parsed.generated : [];
-  for (const entry of entries) {
-    if (typeof entry?.paths !== 'string' || !entry.paths.trim() || typeof entry?.run !== 'string' || !entry.run.trim()) {
-      throw new Refusal("daoris.gates.json: every generated entry needs both 'paths' and 'run'");
-    }
-  }
-  return entries.map(({ paths, run }) => ({ folder: paths.trim().replace(/\/+$/, ''), run }));
-}
+const refuseWith = (message, code) => new Refusal(message, code);
+export const readGenerated = (root) => readFolders(root, refuseWith);
+export const isGenerated = inFolders;
 
-/** Whether a path is one a merge writes rather than merges, by the folders `generated` names. */
-export const isGenerated = (path, generated) => generated.some(({ folder }) => path.startsWith(`${folder}/`));
-
-/** Each generated folder written from the tree as it stands, and staged; one line each. A command that fails refuses the merge's gates. */
-function writeGenerated(root) {
-  for (const { folder, run } of readGenerated(root)) {
-    // A repository's own script gets a gate's environment, not the invoker's shell.
-    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true, windowsHide: true, env: gateEnvironment() });
-    if (ran.status !== 0) throw new Refusal(`${run} could not write ${folder}/ into the merge:\n${(ran.stderr || ran.stdout || '').trim()}`, 1);
-    git(root, ['add', '-A', '--', folder]);
-    console.log(`${folder}/: written from the merged tree (${ran.stdout.trim().replace(/^[\w-]+: /, '')})`);
-  }
-}
+/** Each generated folder written from the tree as it stands, and staged (`merge/generated.ts`). */
+const writeGenerated = (root) => writeFolders(root, {
+  env: gateEnvironment(), stage: (folder) => git(root, ['add', '-A', '--', folder]), refuse: refuseWith, say: (line) => console.log(line),
+});
 
 // ---------------------------------------------------------------------------------------------------
 // The backlog's line conflicts, resolved by the merge base
@@ -1428,15 +1410,8 @@ export function rerunPassed(output) {
 // ---------------------------------------------------------------------------------------------------
 // A rehearsal that died, rather than failed
 
-/**
- * An exit that says a process ended rather than that a gate judged: a POSIX shell that could not run the
- * command (126, 127), cmd's for one it cannot find (9009), a signal (128 to 255; this tool reads one as
- * 128), and a Windows crash status, which reaches this tool through cmd and npm unsigned (0xC0000142,
- * a process that could not start under load, is 3221225794) and elsewhere in its signed form.
- */
-export function processExit(code) {
-  return code === 126 || code === 127 || code === 9009 || (code >= 128 && code <= 255) || code >= 0xC0000000 || code < 0;
-}
+// An exit that says a process ended rather than that a gate judged (`merge/processes.ts`).
+export { abnormalEnd as processExit };
 
 /**
  * The lines of a gate's log that are the gate's own: after the steps before it (`command` names the
@@ -1473,7 +1448,7 @@ export function rehearsalDecision(log, code, command) {
   if (own.some((line) => FAILED_CHECKS.some((pattern) => pattern.test(line)))) {
     return { rerun: false, reason: 'it reported failed checks, so it is never run again' };
   }
-  if (processExit(code)) return { rerun: true, reason: `exit ${code} ended its process before a verdict` };
+  if (abnormalEnd(code)) return { rerun: true, reason: `exit ${code} ended its process before a verdict` };
   if (own.length === 0) return { rerun: true, reason: 'it printed nothing of its own' };
   return { rerun: false, reason: 'it said why it stopped and reported no failed check, so it is never run again' };
 }
@@ -3009,8 +2984,8 @@ function laneLines(schedule) {
   return out;
 }
 
-/** A result that stops the run: a failure, but for one that died of memory and runs again at the run's end. */
-const stops = (result) => result.verdict === 'FAIL' && !result.again;
+/** A result that stops the run: a failure, but for one that died of memory and runs again at the run's end, and one that ended abnormally. */
+const stops = (result) => result.verdict === 'FAIL' && !result.again && !result.abnormal;
 
 /**
  * The failure that ends a stage's CI run. The rerun-alone has already judged by now: a sighting that passed
@@ -3369,6 +3344,12 @@ export function machineAdmission(env = process.env, { home = env.DAORIS_HOME } =
 
 const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true }).out.trim() || null;
 
+/** What `merge/flow-deps.ts` runs on: this tool's gate runner, reach table, failure reader and stores. */
+const flowSeams = () => ({
+  runGate, pathsReaching, table: REACH, lanesOf: (root) => readLanes(root)?.lanes ?? [], slowestClasses, failuresOf, signatureKey, isProcessGate,
+  readVerdicts, readFindings, expired: (finding) => knownRedStanding(finding).expired,
+});
+
 /**
  * The gates run in order, each verdict recorded with the tree it ran on, as its gate ends, so a run
  * cut short keeps what it learned. `onResult` hears each result. A gate the run's `trees` ended gives no verdict.
@@ -3379,6 +3360,10 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
 } = {}) {
   const commit = headCommit(root);
+  const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
+  for (const line of regenerated.lines) console.log(line);
+  if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
+  const flow = flowDepsOf(flowSeams(), root, verdictsHome(root));
   return runGates(root, gates, dir, {
     waitFor,
     keepGoing,
@@ -3395,7 +3380,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // A Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees, step });
+      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step, noBuild: reuseBuild(beside?.built, tree) });
       Object.assign(result, { tree, at: started });
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
@@ -3407,7 +3392,7 @@ function runRecorded(root, gates, dir, {
           : {};
         // Every verdict carries the kind of run that gave it (`ci-background.mjs`'s `RUN_KINDS`, or `merge`, `checkout`).
         // A scoped run writes a gate verdict only for a gate it ran whole, never for a git half with deferred classes.
-        if (gateVerdict(gate)) addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes }]);
+        if (gateVerdict(gate)) addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes, ...verdictExtras(result) }]);
         addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
       }
       onResult(result);
@@ -3447,11 +3432,18 @@ async function gateMerge(root, state, plan) {
       writeState(root, state);
     },
   });
-  const failed = results.filter((result) => result.verdict === 'FAIL');
+  const home = verdictsHome(root);
+  const settled = settleMerge({
+    branch, at: nowIso(), ms: results.reduce((sum, result) => sum + (result.ms ?? 0), 0), results,
+    mains: mainRedsOf(flowSeams(), root, home), previous: readRecords(join(home, MERGE_RECORD)),
+  });
+  appendRecord(join(home, MERGE_RECORD), settled.record);
+  const failed = settled.failed;
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   const notRun = gates.length - results.length;
 
   console.log('');
+  for (const line of settled.lines) console.log(line);
   if (failed.length) {
     const names = failed.map((result) => result.gate.name).join(' ');
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map(gateNamed).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);

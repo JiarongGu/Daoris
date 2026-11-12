@@ -10,6 +10,8 @@
  * service (`/api/quests?workspace=`, a read) when `--service` is given, else from `<home>/quests/*.json`. A figure
  * whose source holds nothing is "not recorded" or "not read", with the place it would have to be logged: never a zero.
  * `--merge-queue` is this repository's `local/merge-queue.json`, where integration requests land or are handed back.
+ * `--merge-record` is the merge tool's own record, `local/merge-record.jsonl` (under `--repo` when that is given): one line per
+ * merge run with each gate's time, its first pass, the reds set down as main's and what ran over its budget.
  * Builder mode times subagent transcripts with the clock `subagent-time.mjs` already keeps.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -17,6 +19,7 @@ import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { isMain } from './fsx.mjs';
 import { clockOf } from './subagent-time.mjs';
+import { MERGE_RECORD, readRecords, summarize } from './merge/merge-record.ts';
 
 const HOUR = 3600000;
 const TOKENS = ['input', 'output', 'cacheRead', 'cacheWrite'];
@@ -214,6 +217,8 @@ export async function collect(options) {
     : 'not read: pass --merge-queue <local/merge-queue.json>';
 
   if (options.repo && firstPass && typeof firstPass === 'object') firstPass.mergeCommitsOnMain = mergesOnMain(options.repo, options);
+  const recordFile = options.mergeRecord ?? (options.repo ? join(options.repo, MERGE_RECORD) : null);
+  const mergeFlow = recordFile ? summarize(readRecords(recordFile).filter((each) => inRange(each.at))) : 'not read: pass --merge-record <local/merge-record.jsonl>';
   const askTurns = turns.filter((t) => t.actor === 'ask-daoris' && inRange(t.ended ?? t.written));
   const lyntai = lyntaiOf(memoryCalls(events, inRange));
   lyntai.store = await storeCounts(home);
@@ -235,6 +240,7 @@ export async function collect(options) {
     cost: { perQuest, perActor, total: Object.values(perActor).reduce(addTokens, zero()) },
     completion: { requirements, met, departed, unanswered: requirements - met - departed },
     firstPass,
+    mergeFlow,
     friction: frictionOf(logRows),
     leftovers: leftoversOf(home, work, landings),
     askDaoris: {
@@ -289,6 +295,7 @@ export function render(r) {
   put('requirements met / departed', `${r.completion.met} / ${r.completion.departed} of ${r.completion.requirements} (unanswered ${r.completion.unanswered})`);
   L.push('First pass');
   put('integrated / handed back', typeof r.firstPass === 'string' ? r.firstPass : `${r.firstPass.integrated} / ${r.firstPass.handedBack}${r.firstPass.mergeCommitsOnMain === undefined ? '' : ` (merge commits on main: ${r.firstPass.mergeCommitsOnMain})`}`);
+  put('merge runs / first pass', typeof r.mergeFlow === 'string' ? r.mergeFlow : `${r.mergeFlow.runs} / ${r.mergeFlow.firstPass}; reds set down as main's ${r.mergeFlow.mainReds}; gates replayed ${r.mergeFlow.replayed}; over budget: ${r.mergeFlow.overBudget.join(', ') || 'none'}`);
   L.push('Friction');
   put('permission.refused', `${r.friction.permissionRefused} ${JSON.stringify(r.friction.permissionRefusedByTool)}`);
   put('refusals answered to agents', r.friction.refusalsToAgents);

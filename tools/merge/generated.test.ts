@@ -16,21 +16,18 @@ test('each regeneration the chosen gates declare is run once, in the plan\'s ord
   assert.deepEqual(regenerations([{ name: 'comments' }]), []);
 });
 
-test('a stale generated file is regenerated and staged where tracked, so the gate that checks it finds it current', () => {
+test('a stale generated file is regenerated first, so the gate that checks it finds it current', () => {
   const ran: string[] = [];
-  const staged: string[] = [];
   const out = regenerate([{ command: 'gen --if-stale', gates: ['cli'] }], {
     run: (command) => { ran.push(command); return { status: 0, output: 'written 2 files' }; },
-    stage: () => { staged.push('add'); },
   });
   assert.deepEqual(ran, ['gen --if-stale']);
-  assert.equal(staged.length, 1);
   assert.equal(out.ok, true);
   assert.match(out.lines[0]!, /regenerated before cli: gen --if-stale \(written 2 files\)/);
 });
 
 test('a regeneration that fails stops the merge\'s gates with its own words, never a red gate for a stale file', () => {
-  const out = regenerate([{ command: 'gen', gates: ['cli'] }], { run: () => ({ status: 1, output: 'dotnet missing' }), stage: () => {} });
+  const out = regenerate([{ command: 'gen', gates: ['cli'] }], { run: () => ({ status: 1, output: 'dotnet missing' }) });
   assert.equal(out.ok, false);
   assert.match(out.lines[0]!, /could not regenerate for cli: gen \(dotnet missing\)/);
 });
