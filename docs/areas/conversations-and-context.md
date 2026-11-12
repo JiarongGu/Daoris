@@ -374,8 +374,9 @@ of everything it handed, section by section.
   outliving its processes and its agent; a word kept before it is acknowledged; *Stop* ends the reply and holds what waits; the
   next word continues every end; agent and account switched between turns. Rows a (ASKCHAT1) to l in
   `docs/2026-11-12-conversation-foundation-design.md` §7.
-- **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
-  edit and retry, folded thinking and tools). Needs a design.
+- **CHATUX1:** the conversation surfaces lack a reading column, a composer that is one box with one primary press, per-message
+  handles (copy, retry, edit), in-field keys, a run that says what it did, and a session conversation's list by date, rename and pin.
+  Designed and proposed (`docs/2026-11-12-chat-ux-design.md`, D279 reserved); nothing built.
 - **ASKPUSH1:** a driven session's *Send now* on a door that cannot steer (a driven native run, started with no stdin) still waits
   for the turn's end; its stop-and-resume fallback is not built. The real-process proof of each harness against a stub model
   (`tools/steer-proof.mjs`) drives the harness as Daoris frames it, not through the driver.
