@@ -7,6 +7,9 @@ const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${refs.map((name) => `<ProjectReference Include="..\\${name}\\${name}.csproj" />`).join('')}</ItemGroup>
 </Project>`;
 
+const DESKTOP = 'src/Daoris.Desktop';
+const at = (dir, name) => `${dir}/${name}/${name}.csproj`;
+
 const tree = (projects) => ({
   files: Object.keys(projects),
   read: (path) => projects[path],
@@ -16,9 +19,9 @@ const clean = { packages: {}, ambient: {}, slowTests: {} };
 
 test('LAYERS1: an application or unit-test project that references an adapter is named, and a root may', () => {
   const found = tree({
-    'src/Daoris.Desktop/Daoris.Desktop.Driver/Daoris.Desktop.Driver.csproj': project(['Daoris.Adapters.Git']),
-    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj': project(['Daoris.Adapters.Machine']),
-    'src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Daoris.Desktop.Driver.Host.csproj': project(['Daoris.Adapters.Git']),
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(['Daoris.Adapters.Git']),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(['Daoris.Adapters.Machine']),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Host')]: project(['Daoris.Adapters.Git']),
     'src/Daoris.Adapters/Daoris.Adapters.Git/Daoris.Adapters.Git.csproj': project(['Daoris.Ports']),
     'src/Daoris.Adapters/Daoris.Adapters.Git.Tests/Daoris.Adapters.Git.Tests.csproj': project(['Daoris.Adapters.Git']),
   });
@@ -42,8 +45,8 @@ test('LAYERS1: Ports references nothing, and Testing only Ports', () => {
 
 test('LAYERS1: an application takes no package but analyzers and test libraries, but those on the list that only shrinks', () => {
   const found = tree({
-    'src/X/Daoris.Desktop.Driver/Daoris.Desktop.Driver.csproj': project([], ['Microsoft.Data.Sqlite', 'Microsoft.CodeAnalysis.BannedApiAnalyzers']),
-    'src/X/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj': project([], ['xunit', 'Microsoft.NET.Test.Sdk', 'Some.Library']),
+    [at('src/X', 'Daoris.Desktop.Driver')]: project([], ['Microsoft.Data.Sqlite', 'Microsoft.CodeAnalysis.BannedApiAnalyzers']),
+    [at('src/X', 'Daoris.Desktop.Driver.Tests')]: project([], ['xunit', 'Microsoft.NET.Test.Sdk', 'Some.Library']),
   });
   assert.equal(checkReferences(found, clean).length, 2);
   const listed = { ...clean, packages: { 'Daoris.Desktop.Driver': ['Microsoft.Data.Sqlite'], 'Daoris.Desktop.Driver.Tests': ['Some.Library'] } };
@@ -58,7 +61,7 @@ test('LAYERS1: the ambient reads are counted per subdomain and only tighten, at 
     'src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/B.cs': 'AmbientPorts.Read(); AmbientPorts.Read();',
     'src/Daoris.Desktop/Daoris.Desktop.Driver/Store/C.cs': 'nothing',
     'src/Daoris.Ports/Ambient/AmbientPorts.cs': 'class AmbientPorts {}',
-    'src/Daoris.Desktop/Daoris.Desktop.Driver/Daoris.Desktop.Driver.csproj': project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
   };
   const found = scanAmbient(tree(sources));
   assert.deepEqual(found, { 'Daoris.Desktop.Driver/Loop': 3 });
