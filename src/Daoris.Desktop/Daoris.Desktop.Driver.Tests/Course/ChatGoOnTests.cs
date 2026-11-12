@@ -1093,6 +1093,10 @@ internal sealed class ChatLedger : HttpMessageHandler
         };
         // The conversation it continues, why and who asked, as the service answers them on loopback.
         StandInLedger.Continues(session, asked);
+        // A record carries its conversation's id as line: the part it continues, or its own.
+        session["line"] = session["from"]?.GetValue<string>() is { } earlier
+            ? _sessions.FirstOrDefault(each => each["id"]?.GetValue<string>() == earlier)?["line"]?.GetValue<string>() ?? earlier
+            : session["id"]!.GetValue<string>();
         _sessions.Add(session);
         return session;
     }

@@ -105,7 +105,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var first = await CommitAsync(Checks);
         var second = await CommitAsync(More);
         var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
-        var configPath = Path.Combine(_home, "driver.json");
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         full.Save(configPath);
         var owed = new IntegrationOwed();
 
