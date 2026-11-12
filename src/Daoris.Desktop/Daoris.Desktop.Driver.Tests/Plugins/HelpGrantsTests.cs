@@ -9,12 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelpGrantsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-grants-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = ScratchFolders.New("daoris-grants-");
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => ScratchFolders.Remove(_home);
 
     private PluginCatalog Tickets(string allow = """["search", "get_issue"]""", string writes = """["create_issue"]""")
     {

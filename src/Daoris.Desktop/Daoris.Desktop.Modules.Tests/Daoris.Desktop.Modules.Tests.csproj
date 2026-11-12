@@ -29,6 +29,8 @@
          helper, compiled in, so both projects' fixtures start git one way. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="TestGit.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestHomes.cs" Link="TestHomes.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\ScratchFolders.cs" Link="ScratchFolders.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\RoutedHandler.cs" Link="RoutedHandler.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Roles\StaffedRoles.cs" Link="StaffedRoles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestDoors.cs" Link="TestDoors.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Agents\TestAgent.cs" Link="TestAgent.cs" />

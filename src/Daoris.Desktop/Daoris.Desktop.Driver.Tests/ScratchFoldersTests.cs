@@ -1,5 +1,4 @@
-using Daoris.Desktop.Driver.Tests;
-namespace Daoris.Desktop.Modules.Tests;
+namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A test's scratch folder is removed once what holds it lets go, within a bound, and a folder still
@@ -7,13 +6,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class ScratchFoldersTests : IDisposable
 {
-    private readonly string _root = Path.Combine(
-        TestHomes.Root, "daoris-scratch-folders-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = ScratchFolders.New("daoris-scratch-folders-");
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_root)) ScratchFolders.Remove(_root);
-    }
+    public void Dispose() => ScratchFolders.Remove(_root);
 
     private string FolderWithFile(out string file)
     {
@@ -70,5 +65,17 @@ public sealed class ScratchFoldersTests : IDisposable
     public void A_folder_already_gone_is_removed()
     {
         Assert.True(ScratchFolders.Remove(Path.Combine(_root, "never-made")));
+    }
+
+    [Fact]
+    public void A_new_home_is_a_fresh_uncreated_path_under_the_test_homes()
+    {
+        var first = ScratchFolders.New("daoris-scratch-");
+        var second = ScratchFolders.New("daoris-scratch-");
+
+        Assert.Equal(TestHomes.Root, Path.GetDirectoryName(first));
+        Assert.Matches("^daoris-scratch-[0-9a-f]{8}$", Path.GetFileName(first));
+        Assert.NotEqual(first, second);
+        Assert.False(Directory.Exists(first));
     }
 }

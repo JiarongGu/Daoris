@@ -135,20 +135,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and the sessions it is given.</summary>
-    private sealed class StandInService(string sessions = "[]") : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            var body = request.RequestUri!.AbsolutePath switch
-            {
-                "/api/registry" => """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]""",
-                "/api/sessions" => sessions,
-                _ => "[]",
-            };
-            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            {
-                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
-            });
-        }
-    }
+    private sealed class StandInService(string sessions = "[]") : RoutedHandler(
+        ("/api/registry", Registry(("game", "aurora", null), ("engine", "aurora", null), ("tools", null, null))),
+        ("/api/sessions", sessions));
 }
