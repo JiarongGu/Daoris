@@ -2,7 +2,8 @@
  * A test that runs over its time limit is on a tracked list at the time it takes, and no other test may go over.
  *
  *   node tools/time-ratchet.mjs           check the gates' duration records against tools/time-ratchet.json (exit 0 clean, 1 breach, 2 tool error)
- *   node tools/time-ratchet.mjs --write   cut the list down to what the records now show (never adds a test, never raises one)
+ *   node tools/time-ratchet.mjs --since <ms>  judge only the records written at or after that epoch time (a merge's own gates')
+ *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
  * has `process` in it), `web-unit.json` from Vitest and `tool-tests.xml` from the node reporter. A test is over when it takes
@@ -11,7 +12,7 @@
  * (a fresh checkout, no gate run yet) nothing is checked. The list only shrinks: a test that got faster is cut down by `--write`,
  * and a new slow test is fixed, never added.
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
@@ -83,11 +84,12 @@ export function readJunit(text, root) {
 }
 
 /** Every test over its limit in the records of `dir`, as key -> { ms, limit } (the slowest run of a key wins), and every key the records hold. */
-export function scanRecords(dir, root) {
+export function scanRecords(dir, root, { since = null } = {}) {
   const over = {};
   const seen = new Set();
   if (!existsSync(dir)) return { over, seen };
   for (const file of readdirSync(dir).sort()) {
+    if (since !== null && statSync(join(dir, file)).mtimeMs < since) continue;
     const text = () => readFileSync(join(dir, file), 'utf8');
     const tests = file.endsWith('.trx') ? readTrx(text()) : file === 'web-unit.json' ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
     const limit = limitFor(file);
@@ -135,12 +137,18 @@ export function tighten(found, list, seen = new Set()) {
 }
 
 function main() {
+  const at = process.argv.indexOf('--since');
+  const since = at >= 0 ? Number(process.argv[at + 1]) : null;
+  if (since === null && process.env.MERGE_GATES_RUN === '1') {
+    console.log("time-ratchet: stands aside inside a merge: the merge tool runs it once after every gate, on the records its own gates wrote");
+    return 0;
+  }
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const listFile = join(root, 'tools', 'time-ratchet.json');
   const dir = join(root, '_fixtures', 'test-timing');
   try {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
-    const { over: found, seen } = scanRecords(dir, root);
+    const { over: found, seen } = scanRecords(dir, root, { since });
     if (process.argv.includes('--write')) {
       const next = tighten(found, list, seen);
       writeAtomic(listFile, JSON.stringify(next, null, 2) + '\n');

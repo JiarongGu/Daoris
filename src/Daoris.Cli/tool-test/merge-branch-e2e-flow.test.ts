@@ -47,7 +47,7 @@ describe('the merge tool\'s flow, end to end in a scratch repository', { concurr
     assert.match(result.out, /1 gate failed: killed/);
   });
 
-  test('each merge appends a record: its branch, each gate with its time, a first pass, and a second run is not one', async () => {
+  test('each merge appends a record: its branch, each gate with its time, the time ratchet last, a first pass, and a second run is not one', async () => {
     const repo = scratch('flow-record', [{ name: 'first', run: 'node gate.mjs first' }]);
     branch(repo.root, 'feature/one', { 'work/a.txt': 'x\n' });
     git(repo.root, 'checkout', '--quiet', 'main');
@@ -56,7 +56,7 @@ describe('the merge tool\'s flow, end to end in a scratch repository', { concurr
     const [one] = records(repo.root);
     assert.equal(one!['branch'], 'feature/one');
     assert.equal(one!['firstPass'], true);
-    assert.deepEqual(one!['gates'].map((gate: { name: string }) => gate.name), ['first']);
+    assert.deepEqual(one!['gates'].map((gate: { name: string }) => gate.name), ['first', 'time-ratchet']);
     assert.equal(typeof one!['gates'][0].ms, 'number');
 
     git(repo.root, 'merge', '--abort');
