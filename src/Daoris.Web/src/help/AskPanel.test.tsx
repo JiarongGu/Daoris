@@ -46,7 +46,7 @@ describe('Ask Daoris', () => {
         framed={false}
         starters={[]}
         helper="claude-code-acp"
-        conversation={{ body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn() }}
+        conversation={{ body: <p>the conversation</p>, composer: <p>the box</p>, onNew: vi.fn() }}
         onGo={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -88,7 +88,7 @@ describe('Ask Daoris', () => {
   /** Open, the history takes the conversation's place, its head, its words and its box together. */
   it('draws the history in the conversation’s place while it is open, with no box to write in', () => {
     const slot = {
-      body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn(), title: 'what is a workspace?',
+      body: <p>the conversation</p>, composer: <p>the box</p>, onNew: vi.fn(), title: 'what is a workspace?',
       history: <p>the history</p>, onHistory: vi.fn(), historyOpen: true,
     };
     render(<AskPanel starters={[]} helper="claude-code-acp" conversation={slot} onGo={vi.fn()} onClose={vi.fn()} />);
@@ -119,7 +119,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s open conversation in %s', (language)
 
   const TITLE = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567 so the sprint closes';
   const slot = (over: Partial<AskConversationSlot> = {}): AskConversationSlot => ({
-    body: <p>the conversation</p>, composer: <form aria-label="the box"><textarea aria-label="words" /></form>, ended: false,
+    body: <p>the conversation</p>, composer: <form aria-label="the box"><textarea aria-label="words" /></form>,
     title: TITLE, onNew: vi.fn(), onHistory: vi.fn(), history: <p>the history</p>, ...over,
   });
   const draw = (conversation: AskConversationSlot, framed = true) =>
@@ -171,7 +171,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s open conversation in %s', (language)
     render(
       <AskPanel
         starters={[]} helper="claude-code-acp" scroller={scroller} onGo={vi.fn()} onClose={vi.fn()}
-        conversation={slot({ ended: true, tail: <button type="button">to the tail</button>, note: <p>what the next words do</p> })}
+        conversation={slot({ tail: <button type="button">to the tail</button>, note: <p>what the next words do</p> })}
       />,
     );
 

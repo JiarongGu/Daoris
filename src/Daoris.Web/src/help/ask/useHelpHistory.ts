@@ -10,18 +10,16 @@ import { searchable } from '../../lib/searchable';
 import { type HelpConversationRow, sameWorkspace } from '../history';
 import { type Session } from '../../data/api';
 
-export function useHelpHistory({ here, registered, helper, chosen, setChosen, shown, live, picked }: {
+export function useHelpHistory({ here, registered, helper, chosen, setChosen, shown }: {
   here: string | null | undefined;
   registered: string[] | undefined;
   helper: string | null;
   chosen: string | null;
   setChosen: React.Dispatch<React.SetStateAction<string | null>>;
   shown: Session | null;
-  live: boolean;
-  picked: Session | null;
 }) {
-  // The history: open or not, its search, and each conversation's row, which says whether one that ended goes on
-  // in itself. The panel's own rows are asked whenever an agent is named, so the conversation shown knows its own.
+  // The history: open or not, its search, and each conversation's row. The panel's own rows are asked whenever an agent is
+  // named, so the conversation shown knows its own.
   const [historyOpen, setHistoryOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [historyRefusal, setHistoryRefusal] = useState<string | null>(null);
@@ -69,15 +67,8 @@ export function useHelpHistory({ here, registered, helper, chosen, setChosen, sh
   const listed = (id: string) => rows.data?.conversations.find((row) => row.session === id)
     ?? found.data?.conversations.find((row) => row.session === id) ?? null;
   const rowOf = (id: string) => listed(id) ?? (openedRow?.session === id ? openedRow : null);
-  // Whether an ended one shown can go on in itself is the history's answer, so until it answers it is being checked:
-  // read as "cannot", words typed under one that could would have started a fresh conversation without its own.
-  const checking = shown !== null && listed(shown.id) === null && (rows.isPending || rows.isFetching);
+  // Every conversation shown takes the next word, whatever ended its last reply: the driver resumes its own, or goes on in a
+  // new part handed Daoris's brief where its own is lost, so the row answers no question of whether it can.
   const known = shown ? rowOf(shown.id) : null;
-  const shownRow = checking ? null : known;
-  // An ended one the person chose goes on in itself with their words, where its own conversation is kept.
-  const goesOn = shown !== null && !live && picked !== null && shownRow?.resumable === true;
-  // One the person chose that has ended and does not go on, or is still being checked: read, and written in only once they
-  // choose a new conversation from it, or a blank one.
-  const readOnly = shown !== null && !live && picked !== null && !goesOn;
-  return { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking };
+  return { setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow: known };
 }

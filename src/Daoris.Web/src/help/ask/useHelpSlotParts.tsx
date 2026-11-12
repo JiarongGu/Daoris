@@ -2,7 +2,6 @@ import type * as React from 'react';
 import { type ReactNode } from 'react';
 import { sentence } from '../../locales/format';
 import { Button } from '../../design/ui';
-import { type HelpConversationRow } from '../history';
 import { accountNames } from '../../work/accountNames';
 import { namer } from '../../settings/accounts/namer';
 import { type ChatLimitHeld, chatLimitWaitSaid, limitWaitOf } from '../../work/waits/limitWait';
@@ -15,7 +14,7 @@ import { type AccountsAnswer, type AccountUseChange } from '../../settings/accou
 import { type StopAnswer } from '../../bridge/sessions/sessions';
 import { type StoppedWaiting } from '../../bridge/sessions/conversation';
 
-export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, ended, picked, checking, goesOn, onNew, shownRow, press, choose, setFocusBox, choosing, setChoosing }: {
+export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, choosing, setChoosing }: {
   shown: Session | null;
   limitHeld: { session: string; held: ChatLimitHeld; } | null;
   roster: UseQueryResult<HarnessRoster, Error>;
@@ -33,15 +32,6 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
   setLimitRefusal: React.Dispatch<React.SetStateAction<{ session: string; sentence: string; } | null>>;
   startedFrom: { session: string; title: string; } | null;
   line: (key: string, values?: Record<string, string> | undefined) => React.JSX.Element;
-  ended: boolean;
-  picked: Session | null;
-  checking: boolean;
-  goesOn: boolean;
-  onNew: () => void;
-  shownRow: HelpConversationRow | null;
-  press: (key: string, onClick: () => void) => React.JSX.Element;
-  choose: (id: string) => void;
-  setFocusBox: React.Dispatch<React.SetStateAction<number>>;
   choosing: { from?: string | undefined; unknown?: boolean | undefined; } | null;
   setChoosing: React.Dispatch<React.SetStateAction<{ from?: string | undefined; unknown?: boolean | undefined; } | null>>;
 }) {
@@ -88,32 +78,11 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
       }}
     />
   ) : null;
+  // A conversation no reply runs in is open all the same: a stop ended the reply alone, and the next word continues it.
   const own: ReactNode = !shown ? undefined
     : startedFrom?.session === shown.id ? line('help.startedFrom', { title: startedFrom.title })
-      : !ended ? undefined
-        : picked !== null ? (
-          checking ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.checking')}</p>
-            : goesOn ? line('help.endedGoesOn')
-              : (
-                <>
-                  {line('help.endedAnew')}
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="primary" disabled={startFrom.isPending} onClick={() => beginFrom(shown.id)}>
-                      {t('help.history.startFrom')}
-                    </Button>
-                    <Button disabled={startFrom.isPending} onClick={onNew}>{t('help.new')}</Button>
-                  </div>
-                </>
-              )
-        )
-          // The newest that ended, shown by default: a message starts a new one, and it may be gone on in instead.
-          : shownRow ? (
-            <>
-              {line('help.ended')}
-              {shownRow.resumable ? press('help.goOn', () => { choose(shown.id); setFocusBox((was) => was + 1); })
-                : press('help.history.startFrom', () => beginFrom(shown.id))}
-            </>
-          ) : undefined;
+      : live ? undefined
+        : line(shown.state === 'stopped' ? 'help.stopped' : 'help.continues');
 
   // Ahead of what the next words do: words that wait while this machine's workspaces are read, which go once they are.
   const note: ReactNode = choosing ? (

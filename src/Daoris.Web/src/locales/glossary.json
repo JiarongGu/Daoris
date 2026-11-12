@@ -228,7 +228,7 @@
         "harness.pin.action", "harness.pin.open", "harness.pin.unpin", "harness.profile.addKey",
         "harness.profile.keySave", "harness.profile.removeMeanIt",
         "harness.settings.open",
-        "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.goOn", "help.history.open",
+        "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.stop", "help.history.open",
         "help.history.save", "help.history.deleteMeanIt", "help.history.back", "help.history.retry", "help.history.start",
         "help.history.clearSearch", "help.history.more", "help.history.useOriginal", "projects.git.history.more",
         "quests.requirements.accept",

@@ -17,7 +17,7 @@ import { type WordsAnswer, type SessionTurns } from '../../bridge/sessions/conve
 import { type TFunction } from 'i18next';
 import { type Session } from '../../data/api';
 
-export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, goesOn, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus, takeFocus, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
+export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoingOn, sessions, shown, sent, turns, live, helpSessions, help, setCleared, hereNow, setChosen, setFirstWords, setSpoken, firstWords, setRefusal, startedFrom, setStartedFrom, here, putBack, drafts, setDrafts, start, startIn, startFocus, takeFocus, helper, mine, readiedLive, readying, opening, editDraft, onOpened, newest, setHistoryOpen, setFocusBox, end, setLeft, setOpenedRow, shownListing, setFocusHead, setHistoryRefusal, setRestore, left, rowOf, startFrom, setFocusWhenListed }: {
   where: HelpWhere | undefined;
   sends: React.RefObject<number>;
   setSent: React.Dispatch<React.SetStateAction<Sent[]>>;
@@ -38,7 +38,6 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   setFirstWords: React.Dispatch<React.SetStateAction<FirstWords | null>>;
   setSpoken: React.Dispatch<React.SetStateAction<{ session: string; title: string; } | null>>;
   firstWords: FirstWords | null;
-  goesOn: boolean;
   setRefusal: React.Dispatch<React.SetStateAction<string | null>>;
   startedFrom: { session: string; title: string; } | null;
   setStartedFrom: React.Dispatch<React.SetStateAction<{ session: string; title: string; } | null>>;
@@ -190,10 +189,10 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   }, [sessions.dataUpdatedAt, firstWords?.late]);
 
   const onSend = (text: string, files: File[]) => {
-    logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && (live || goesOn) ? { session: shown.id } : {}) });
+    logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The one running, or one that ended the person chose and that goes on in itself, whichever workspace it started in.
-    if (shown && (live || goesOn)) {
+    // The one shown, whatever ended its last reply and whichever workspace it started in: the driver continues it.
+    if (shown) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
       deliver(shown.id, text, files);
       return;
@@ -294,11 +293,12 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   // their way to one; never twice under React's development double-mount, which keeps this ref. One that
   // is refused says nothing and is not asked again: the send asks for itself, and says why.
   //
-  // In the window's workspace: idle is none of its own running, and a window that switches opens its new
-  // workspace's once per round. A window that shows several opens none, since which workspace is the person's to say.
+  // In the window's workspace: idle is a blank panel with none of its own running, since a conversation shown takes the next
+  // word itself, and a window that switches opens its new workspace's once per round. A window that shows several opens none,
+  // since which workspace is the person's to say.
   const [round, setRound] = useState(0);
   const openedAhead = useRef(new Set<string>());
-  const idle = helper !== null && sessions.isSuccess && typeof here === 'string'
+  const idle = helper !== null && sessions.isSuccess && typeof here === 'string' && shown === null
     && !mine.some((session) => SESSION_ACTIVE.has(session.state))
     && !readiedLive && !start.isPending && firstWords === null;
   useEffect(() => {

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
-import { Button } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { DOCK } from '../work/frame/layout';
 import { Markdown } from '../work/conversation/Markdown';
@@ -62,7 +61,6 @@ export const Talking: Story = {
         </div>
       ),
       composer: <div className="border-t border-line px-4 py-3 text-small text-ink-faint">the composer</div>,
-      ended: false,
       onNew: () => {},
     },
   },
@@ -81,10 +79,6 @@ export const AGoLink: Story = {
       ),
     },
   },
-};
-
-export const Ended: Story = {
-  args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
 };
 
 // The open conversation as the dock holds it, at its 300 px floor and at the 430 px the owner's window gave it,
@@ -130,7 +124,7 @@ const inTheDock = (Story: () => ReactNode) => (
 );
 
 const conversation = (over: Partial<AskConversationSlot> = {}): AskConversationSlot => ({
-  body: record('how do I set the accent, and the ticket’s summary?'), composer: box(), ended: false,
+  body: record('how do I set the accent, and the ticket’s summary?'), composer: box(),
   title: 'how do I set the accent, and the ticket’s summary?', onNew: () => {}, onHistory: () => {}, history: null, ...over,
 });
 
@@ -176,66 +170,29 @@ export const OpenAwayFromTail: Story = {
   ...docked, args: { ...docked.args, conversation: conversation({ tail: <BackToBottom onPress={() => {}} /> }) },
 };
 
-/** One the person chose that ended and goes on in itself: what the next words do, right above the box. */
-export const GoesOn: Story = {
+/** One the person stopped: the reply ended, the conversation did not; what the next word does, right above the box. */
+export const Stopped: Story = {
   ...docked,
   args: {
     ...docked.args,
     conversation: conversation({
-      ended: true, escapeToList: true, note: said('This conversation has ended. Write to go on in it: it remembers what was said.'),
+      escapeToList: true, note: said('Stopped. Your next word continues this conversation.'),
       composer: box({ placeholder: 'write to go on in this conversation. Enter sends, Shift+Enter makes a newline.' }),
     }),
   },
 };
 
-/** One that ended and cannot go on: no box until the person chooses a new conversation from it, or a blank one. */
-const readOnly = (words: { ended: string; from: string; blank: string }) => conversation({
-  ended: true, escapeToList: true, composer: null,
-  note: (
-    <>
-      {said(words.ended)}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary">{words.from}</Button>
-        <Button>{words.blank}</Button>
-      </div>
-    </>
-  ),
-});
-
-export const ReadOnly: Story = {
-  ...docked,
-  args: {
-    ...docked.args,
-    conversation: readOnly({
-      ended: 'This conversation has ended, and it cannot go on in itself. Start a new conversation from its words, or a blank one.',
-      from: 'New conversation from it', blank: 'New conversation',
-    }),
-  },
-};
-
-export const ReadOnlyChinese: Story = {
-  ...docked,
-  args: {
-    ...docked.args,
-    conversation: {
-      ...readOnly({
-        ended: '这段对话已结束，无法在其中继续。可以由它的内容开始新对话，或开始一个空白的新对话。', from: '由此开始新对话', blank: '新对话',
-      }),
-      title: '怎样设置强调色，以及工单的摘要？', body: record('怎样设置强调色，以及工单的摘要？'),
-    },
-  },
-  decorators: [inTheDock, chinese],
-};
-
-export const Checking: Story = {
+export const StoppedChinese: Story = {
   ...docked,
   args: {
     ...docked.args,
     conversation: conversation({
-      ended: true, composer: null,
-      note: <p role="status" className="m-0 text-small text-ink-soft">Checking whether this conversation can go on…</p>,
+      escapeToList: true, note: said('已停止。你的下一句话会继续这段对话。'),
+      title: '怎样设置强调色，以及工单的摘要？', body: record('怎样设置强调色，以及工单的摘要？'),
+      composer: box({ placeholder: '写下消息，在这段对话中继续。回车发送，Shift+回车换行。' }),
     }),
   },
+  decorators: [inTheDock, chinese],
 };
 
 /** A new conversation with nothing said yet: its head says so, and offers no new one over it. */
@@ -288,7 +245,7 @@ export const Frame680History: Story = {
   decorators: [atTheFrame],
 };
 
-export const Frame680ReadOnlyChinese: Story = {
-  args: { ...ReadOnlyChinese.args, framed: true, width: 680 },
+export const Frame680StoppedChinese: Story = {
+  args: { ...StoppedChinese.args, framed: true, width: 680 },
   decorators: [atTheFrame, chinese],
 };

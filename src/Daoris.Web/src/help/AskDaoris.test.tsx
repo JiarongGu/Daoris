@@ -592,7 +592,6 @@ describe('Ask Daoris, with an agent named', () => {
    * first (as *New conversation* does, without ending anything), and the draft goes in the box, not under the ended transcript.
    */
   describe('a draft handed to it', () => {
-    const ENDED_NOTICE = 'This conversation has ended. A message starts a new one.';
     const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
     const offer = (readied: string | null = null, text = '> a per-frame budget\n\n') => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -613,7 +612,6 @@ describe('Ask Daoris, with an agent named', () => {
 
       await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
       await act(async () => {});
-      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
       expect(sent()).toEqual([]);
       expect(invoke.mock.calls.filter(([, type]) => type === 'END_CHAT')).toEqual([]);
     });
@@ -636,7 +634,6 @@ describe('Ask Daoris, with an agent named', () => {
 
       await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
       await act(async () => {});
-      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
       expect(sent()).toEqual([]);
     });
 
@@ -962,16 +959,41 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
 
-  /** The next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
-  it('says a conversation that ended has, and that a message starts the next', async () => {
-    SESSIONS = [{ ...HELP, state: 'completed' }];
+  /** A stop ends the reply, never the conversation: its box stays, nothing opens ahead, and the next word goes to it. */
+  it('keeps a stopped conversation open, says the next word continues it, and sends that word to it', async () => {
+    SESSIONS = [{ ...HELP, state: 'stopped' }];
     bridge({ sessionId: 'n3xt0000', message: 'opened' });
     show();
 
     const panel = await screen.findByRole('complementary', { name: 'Ask Daoris' });
-    await waitFor(() => expect(starts()).toBe(1));
-    await act(async () => {});
-    expect(await within(panel).findByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
+    expect(await within(panel).findByText('Stopped. Your next word continues this conversation.')).toBeInTheDocument();
+    await userEvent.type(within(panel).getByLabelText('Message'), 'and the remote?');
+    await userEvent.click(within(panel).getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'and the remote?' },
+    }));
+    expect(starts()).toBe(0);
+  });
+
+  /** Its one Stop, while a reply runs on any door, stops the reply's whole process tree through the session's stop. */
+  it('stops the reply in flight with its one Stop, offering no ending', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [], taking: true };
+      if (type === 'STOP_SESSION') return { stopped: true, orphan: false, elsewhere: false };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const panel = await screen.findByRole('complementary', { name: 'Ask Daoris' });
+    await userEvent.click(await within(panel).findByRole('button', { name: 'Stop' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: HELP.id } }));
+    expect(within(panel).queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
   });
 });
 
@@ -1077,7 +1099,7 @@ describe('Ask Daoris’s history', () => {
     const list = await screen.findByRole('region', { name: 'Conversation history' });
     await userEvent.click(within(list).getAllByRole('button', { name: /^what is a workspace\?/ })[0]);
 
-    expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
+    expect(await screen.findByText('Your next word continues this conversation.')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
     const listed = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_CONVERSATIONS').length;
     const before = listed();
@@ -1120,17 +1142,20 @@ describe('Ask Daoris’s history', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', expect.anything());
   });
 
-  /** The newest that ended still starts a new conversation by default, as before; *Go on in it* chooses it. */
-  it('offers to go on in the newest that ended, and starts a new one unless the person chooses it', async () => {
+  /** The newest that ended, shown by default, takes the next word itself: no press first, and nothing opened ahead. */
+  it('continues the newest that ended with the next word, opening no other', async () => {
     withHistory([row({})]);
     show();
 
-    const press = await screen.findByRole('button', { name: 'Go on in it' });
-    expect(screen.getByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
-    await userEvent.click(press);
-
-    expect(await screen.findByText(/Write to go on in it/)).toBeInTheDocument();
+    expect(await screen.findByText('Your next word continues this conversation.')).toBeInTheDocument();
     expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', expect.stringMatching(/^write to go on in this conversation/));
+    await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: EARLIER.id, text: 'and a remote?' },
+    }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', expect.anything());
   });
 
   /**
@@ -1169,14 +1194,22 @@ describe('Ask Daoris’s history', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', expect.anything());
   });
 
-  /** One whose own conversation is not kept cannot go on in itself: a new one starts from its words, handed as a file. */
-  it('starts a new conversation from the words of one that cannot go on in itself', async () => {
+  /** A row's *New conversation from it*, from the history's menu. */
+  async function startFromRow(title: string) {
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to history' }));
+    screen.getByRole('button', { name: i18n.t('help.history.menu', { title }) }).focus();
+    await userEvent.keyboard('{Enter}');
+    const press = await screen.findByRole('menuitem', { name: 'New conversation from it' });
+    SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
+    await userEvent.click(press);
+  }
+
+  /** A new conversation from an earlier one's words, its brief handed with the first message. */
+  it('starts a new conversation from the words of an earlier one', async () => {
     withHistory([row({ resumable: false })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
     show();
 
-    const press = await screen.findByRole('button', { name: 'New conversation from it' });
-    SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
-    await userEvent.click(press);
+    await startFromRow('what is a workspace?');
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: EARLIER.id } }));
     expect(await screen.findByText('This conversation starts from “what is a workspace?”: Daoris\'s brief of it goes with your first message.'))
@@ -1194,9 +1227,7 @@ describe('Ask Daoris’s history', () => {
     withHistory([row({ resumable: false, title, opening: title })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
     show();
 
-    const press = await screen.findByRole('button', { name: 'New conversation from it' });
-    SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
-    await userEvent.click(press);
+    await startFromRow(title);
 
     expect(await screen.findByText(`This conversation starts from “${title}”: Daoris's brief of it goes with your first message.`))
       .toHaveClass('wrap-anywhere');
@@ -1327,29 +1358,21 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     expect(box()).toHaveValue('');
   });
 
-  it('takes no words under one it chose that cannot go on, offering a new conversation from it first and a blank one beside', async () => {
-    historyBridge(() => ({ conversations: [row(A.id, 'about A?', { resumable: false }), row(B.id, 'about B?')], cut: false }),
-      { sessionId: 'fr0m0000', message: 'opened', from: A.id });
+  it('takes words under every conversation it chose, one that cannot resume its own included, and sends them to it', async () => {
+    historyBridge(() => ({ conversations: [row(A.id, 'about A?', { resumable: false }), row(B.id, 'about B?')], cut: false }));
     show();
 
     await open('about A?');
-    expect(box()).toBeNull();
-    expect(screen.getByText(i18n.t('help.endedAnew'))).toBeInTheDocument();
-    const offer = screen.getByRole('button', { name: i18n.t('help.history.startFrom') });
-    expect(offer).toHaveClass('bg-accent');
-    expect(within(offer.parentElement!).getByRole('button', { name: i18n.t('help.new') })).toBeInTheDocument();
-    // No row says it starts anew: opening one only reads it.
-    expect(screen.queryByText(/starts anew|将开始新对话/)).toBeNull();
+    expect(screen.getByText(i18n.t('help.continues'))).toBeInTheDocument();
+    await userEvent.type(box()!, 'more on A');
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('work.composer.send') }));
 
-    SESSIONS = [A, B, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
-    await userEvent.click(offer);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: A.id } }));
-    await waitFor(() => expect(box()).toHaveFocus());
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: A.id, text: 'more on A' } }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', expect.anything());
   });
 
-  // A search reaches every conversation, past the pages the whole list has read, and its row says whether one
-  // can go on as the list's does.
-  it('knows from the search that found it whether a conversation can go on, while the whole list has not answered', async () => {
+  // A search reaches every conversation, past the pages the whole list has read; the one it opens takes words at once.
+  it('takes words under one a search found while the whole list has not answered', async () => {
     historyBridge((words) => (words
       ? { conversations: [row(A.id, 'about A?', { found: 'about A?', resumable: false })], total: 1, next: null }
       : new Promise(() => {})));
@@ -1359,9 +1382,8 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await userEvent.type(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }), 'about');
     await userEvent.click(await door('about A?'));
 
-    expect(await screen.findByText(i18n.t('help.endedAnew'))).toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('help.checking'))).toBeNull();
-    expect(box()).toBeNull();
+    expect(await screen.findByText(i18n.t('help.continues'))).toBeInTheDocument();
+    expect(box()).not.toBeNull();
   });
 
   it('keeps knowing that one a search found past the list’s pages goes on, once the search is cleared', async () => {
@@ -1386,26 +1408,6 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await screen.findByRole('heading', { name: 'about A?' });
     expect(box()).not.toBeNull();
     expect(screen.queryByText(i18n.t('help.endedAnew'))).toBeNull();
-  });
-
-  it('says it is checking whether a conversation can go on while the whole list has not answered, and takes no words', async () => {
-    // The whole list has not answered; a search has, and is then cleared, so no list read names the one shown.
-    historyBridge((words) => (words
-      ? { conversations: [row(A.id, 'about A?', { found: 'about A?' })], total: 1, next: null }
-      : new Promise(() => {})));
-    show();
-
-    await userEvent.click(await back());
-    await userEvent.type(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }), 'about');
-    await userEvent.click(await door('about A?'));
-    await userEvent.click(await back());
-    await userEvent.clear(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }));
-    await userEvent.keyboard('{Escape}');
-
-    // Called by the row it is opened from meanwhile.
-    await screen.findByRole('heading', { name: 'about A?' });
-    expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('help.checking'));
-    expect(box()).toBeNull();
   });
 
   it('pages through every conversation with the driver’s next, and asks again from the start after a change', async () => {
@@ -1622,7 +1624,7 @@ describe('Ask Daoris’s access and what it has', () => {
     await act(() => moved());
     act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
 
-    expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
+    expect(await screen.findByText('Your next word continues this conversation.')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Message'), 'and now?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
@@ -1632,7 +1634,7 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
   });
 
-  it('starts a new conversation after one that ended for no access change, as before', async () => {
+  it('keeps one that ended for no access change open too, its next word continuing it', async () => {
     SESSIONS = [HELP];
     ROWS = [row({ mode: 'restricted' })];
     access({ sessionId: 'n3xt0000', message: 'opened' });
@@ -1644,7 +1646,8 @@ describe('Ask Daoris’s access and what it has', () => {
     await act(() => moved());
     act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
 
-    expect(await screen.findByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
+    expect(await screen.findByText('Your next word continues this conversation.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toBeEnabled();
   });
 
   it('shows the mode chosen before any start, and says what full access does above the box', async () => {
