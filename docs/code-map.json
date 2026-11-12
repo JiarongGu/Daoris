@@ -77,6 +77,11 @@
       "summary": "the devkit's tests"
     },
     {
+      "id": "Daoris.Ports",
+      "path": "src/Daoris.Ports",
+      "summary": "the effect contracts of the application: git, processes, the store's unit of work, the browser and the harness"
+    },
+    {
       "id": "Daoris.Service.Core",
       "path": "src/Daoris.Service/Daoris.Service.Core",
       "summary": "the knowledge index, the registry, quests as history, session records and the sync"
@@ -100,6 +105,16 @@
       "id": "Daoris.Service.Tests",
       "path": "src/Daoris.Service/Daoris.Service.Tests",
       "summary": "the service's tests"
+    },
+    {
+      "id": "Daoris.Testing",
+      "path": "src/Daoris.Testing",
+      "summary": "the fakes of the ports and the contract cases that hold each fake to its real adapter"
+    },
+    {
+      "id": "Daoris.Testing.Tests",
+      "path": "src/Daoris.Testing.Tests",
+      "summary": ""
     },
     {
       "id": "daoris-web",
@@ -150,6 +165,11 @@
     },
     {
       "from": "Daoris.Desktop.Driver",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver",
       "to": "Daoris.Service.Http",
       "kind": "http"
     },
@@ -186,6 +206,11 @@
     {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Desktop.PieceStart",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Testing",
       "kind": "project"
     },
     {
@@ -251,6 +276,21 @@
     {
       "from": "Daoris.Service.Tests",
       "to": "Daoris.Service.Mcp",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Tests",
+      "to": "Daoris.Testing",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Testing",
+      "to": "Daoris.Ports",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Testing.Tests",
+      "to": "Daoris.Testing",
       "kind": "project"
     },
     {
