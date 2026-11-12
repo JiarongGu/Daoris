@@ -457,6 +457,9 @@ import { inFolders, readFolders, regenerate, regenerations, writeFolders } from 
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
+import { staleRun, sweepLines, sweepQueue } from './merge/queue-stale.ts';
+import { saidDrained } from './merge/said-drained.ts';
+import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
@@ -468,7 +471,7 @@ export {
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
-export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines } from './merge-branch/reached.mjs';
+export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
 
@@ -3342,6 +3345,7 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
 } = {}) {
   const commit = headCommit(root);
+  const stepFor = kind === 'merge' && step === gateStep ? mergeStep : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
@@ -3362,7 +3366,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // A Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step, noBuild: reuseBuild(beside?.built, tree) });
+      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree) });
       Object.assign(result, { tree, at: started });
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
@@ -3404,7 +3408,7 @@ async function gateMerge(root, state, plan) {
 
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
   for (const line of selectionLines(selection)) console.log(line);
-  const results = await runRecorded(root, gates, dir, {
+  const results = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing,
     oneAtATime: state.oneAtATime === true,
     branch,
@@ -3413,7 +3417,7 @@ async function gateMerge(root, state, plan) {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  });
+  }), ratchetIn(root, gateEnvironment()));
   const home = verdictsHome(root);
   const settled = settleMerge({
     branch, at: nowIso(), ms: results.reduce((sum, result) => sum + (result.ms ?? 0), 0), results,
@@ -3422,7 +3426,7 @@ async function gateMerge(root, state, plan) {
   appendRecord(join(home, MERGE_RECORD), settled.record);
   const failed = settled.failed;
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
-  const notRun = gates.length - results.length;
+  const notRun = gates.length - (results.length - 1);
 
   console.log('');
   for (const line of [...settled.lines, timeoutState.note()]) if (line) console.log(line);
@@ -3508,7 +3512,7 @@ async function rerunGates(root, options) {
     console.log(`  ${pad('kept', 8)} ${pad(kept.name, 16)} ${pad(kept.verdict, 8)} from ${when(kept.at)}  ${results[kept.name]?.log ?? ''}${note}`);
   }
   state.results = { [branch]: results };
-  const ran = await runRecorded(root, gates, dir, {
+  const ran = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || options.keepGoing,
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
@@ -3517,15 +3521,16 @@ async function rerunGates(root, options) {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  });
+  }), ratchetIn(root, gateEnvironment()));
 
   const failedRan = ran.filter((result) => result.verdict === 'FAIL');
   const failed = [...failedRan.map(gateNamed), ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
-  const notRun = gates.length - ran.length;
+  const notRun = gates.length - (ran.length - 1);
   const keptNote = planned.kept.length
     ? `${count(planned.kept.length, 'verdict')} kept (${planned.kept.map((kept) => `${kept.name}, from ${when(kept.at)}`).join('; ')})`
     : 'no verdict kept';
   console.log('');
+  if (timeoutState.note()) console.log(timeoutState.note());
   if (failed.length || notRun) {
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.join(', ')}${notRun ? `; ${notRun} not run` : ''}; ${keptNote}.`);
     const memory = memoryLine(failedRan);
@@ -3533,7 +3538,7 @@ async function rerunGates(root, options) {
     console.log('  The merge is left in place: fix it and --rerun the gate again, or --continue gates the merge again whole, or git merge --abort.');
     return 1;
   }
-  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed${flakeNote(ran.filter((result) => result.verdict === 'FLAKE'))}; ${keptNote}.`);
+  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length - 1, 'gate')} run and passed${flakeNote(ran.filter((r) => r.verdict === 'FLAKE'))}; ${keptNote}.`);
   refreshKnowledgeServer(root);
   console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
   return 0;
@@ -3791,6 +3796,7 @@ async function rerunCheckout(root, options) {
   const remedy = after ? stageRemedy(after.gates) : null;
   const stage = after ? stageVerdict(after, plan) : "git could not write the checkout's tree, so whether the full set passed it cannot be told";
   console.log('');
+  if (timeoutState.note()) console.log(timeoutState.note());
   if (failed.length || notRun) {
     console.log(`merge-branch: the re-run on ${sha} did NOT pass: ${failed.join(', ')} failed${notRun ? `; ${notRun} not run` : ''}; ${stage}.`);
     const memory = memoryLine(failedRan);
@@ -5975,6 +5981,8 @@ let acceptedPass = [];
 
 /** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
 const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
+/** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
+const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
@@ -7060,17 +7068,20 @@ async function queueVerb(root, options) {
   const home = verdictsHome(root);
   if (options.recheck) {
     requireQueueHome(root, home, { run: true });
-    const out = withQueue(home, (queue) => (queue.stop ? { queue: { ...queue, recheck: { at: nowIso() } } } : { none: true }));
+    const merged = (tip) => git(home, ['merge-base', '--is-ancestor', tip, MAIN], { allowFail: true }).status === 0;
+    const out = withQueue(home, (queue) => sweepQueue(queue, { merged, alive: pidAlive, at: nowIso() }));
     if (out.none) {
-      console.log('merge-branch: the queue is not stopped; nothing to recheck');
+      console.log('merge-branch: the queue is not stopped, holds no stale run and no request main already holds; nothing to recheck');
       return 0;
     }
-    console.log("merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found");
-    await ensureRunner(home);
+    for (const line of sweepLines(out, MAIN)) console.log(line);
+    if (out.stopped || out.stale) await ensureRunner(home);
     return 0;
   }
   const queue = readQueue(home);
   for (const line of queueLines(queue, { branchTip: (branch) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], { allowFail: true }).out.trim() || null })) console.log(line);
+  const stale = staleRun(queue, pidAlive);
+  if (stale) console.log(`stale: ${stale}; --queue --recheck starts the runner, which resumes it`);
   console.log(queue.runner && pidAlive(queue.runner.pid) ? `runner: pid ${queue.runner.pid}, since ${queue.runner.started}` : 'runner: none runs');
   const admission = readAdmission(home);
   console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
@@ -7093,36 +7104,10 @@ async function dropQueuedVerb(root, options) {
   const asked = nowIso();
   const out = withQueue(home, (queue) => dropQueued(queue, options.branches, asked));
   console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);
-  if (out.ended) await saidDrained(home, out.ended, asked);
+  if (out.ended) {
+    await saidDrained({ read: () => readQueue(home), alive: pidAlive, line: drainedLine, sleep: sleepMs, waitMs: DRAIN_WAIT_MS, pollMs: DROP_POLL_MS, span, logFile: MERGE_QUEUE_LOG, say: console.log }, out.ended, asked);
+  }
   return 0;
-}
-
-/**
- * What the drop of a candidate ended. The runner owns the run's processes, so it ends them (within `DROP_POLL_MS`) and
- * records what it ended; this waits for that record, and says it. A candidate with no run in progress had none to end.
- * Only the runner's take of the drop (`draining`, at its next ask) is waited for on the clock, `DRAIN_WAIT_MS`: one that took
- * it always records what it ended, however long ending its trees takes, so that is waited for while the runner runs.
- */
-async function saidDrained(home, candidate, asked) {
-  const runner = candidate.run?.pid;
-  const running = ['running', 'bisecting', 'forming'].includes(candidate.state) && pidAlive(runner);
-  if (!running) {
-    console.log(`  ${candidate.tip.slice(0, 7)} had no run in progress (${candidate.state}), so there was nothing to end`);
-    return;
-  }
-  const until = Date.now() + DRAIN_WAIT_MS;
-  for (;;) {
-    const { drained, draining } = readQueue(home);
-    if (drained?.tip === candidate.tip && drained.at >= asked) {
-      console.log(`  the runner (pid ${runner}) ${drainedLine(drained)}, and takes the next queued work`);
-      return;
-    }
-    const took = draining?.tip === candidate.tip && draining.at >= asked;
-    if (!pidAlive(runner) || (!took && Date.now() >= until)) break;
-    await sleepMs(100);
-  }
-  const every = DROP_POLL_MS < 1000 ? `${DROP_POLL_MS} ms` : span(DROP_POLL_MS);
-  console.log(`  the runner (pid ${runner}) has not yet said it ended ${candidate.tip.slice(0, 7)}'s run; it asks every ${every}, and ${MERGE_QUEUE_LOG} says when it has`);
 }
 
 export async function main(argv) {

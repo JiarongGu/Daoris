@@ -4,7 +4,7 @@
 export const USAGE = [
   'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune] [--no-timeout]',
   '       node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]',
-  '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time] [--no-timeout]',
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
@@ -191,8 +191,8 @@ export function parseArgs(argv) {
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
   if (rerun) {
     if (options.rerun.length === 0) throw usageError('--rerun names the gates to run again: --rerun <gate>…');
-    if (flags.some((flag) => !['--rerun', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--rerun takes gate names, --keep-going and --one-at-a-time');
+    if (flags.some((flag) => !['--rerun', '--keep-going', '--one-at-a-time', '--no-timeout'].includes(flag))) {
+      throw usageError('--rerun takes gate names, --keep-going, --one-at-a-time and --no-timeout');
     }
     if (options.branches.length) throw usageError('--rerun takes no branch: it acts on the merge in place, or on the checkout when none is open');
   } else if (options.stale) {
