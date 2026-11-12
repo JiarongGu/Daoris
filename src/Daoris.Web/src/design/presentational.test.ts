@@ -126,6 +126,7 @@ const ORGANISMS = new Set<string>([
   './help/ask/useHelpFollow.tsx',
   './help/ask/useHelpSlotParts.tsx',
   './help/focus/useHelpFocus.tsx',
+  './help/receipt/useHelpReceipts.tsx',
   './help/ask/AskHeld.tsx',
   // The second check's line under a turn: it reads its packet only when the person asks to see what was sent.
   './help/secondCheck/ReadingLine.tsx',

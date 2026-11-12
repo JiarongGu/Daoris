@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RepositoryCreateArgsTests
 {
-    private static readonly string Folder = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "somewhere"));
+    private static readonly string Folder = Path.GetFullPath(Path.Combine(TestHomes.Root, "somewhere"));
 
     [Fact]
     public void A_creation_is_typed_as_its_name_and_the_words_it_asks()
