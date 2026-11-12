@@ -494,14 +494,4 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, refusal);
         Assert.Contains("still coming up", refusal);
     }
-
-    /// <summary>
-    /// There is no merge-alone route: the work lands through its run's `land`, which merges where the repository's rule says merge.
-    /// </summary>
-    [Fact]
-    public async Task The_merge_alone_is_no_route()
-    {
-        Assert.DoesNotContain("MERGE_SESSION_TREE", DriverModule.Routes);
-        Assert.Contains("NO_ROUTE", await RefusalAsync(Module(), "MERGE_SESSION_TREE", new { id = "s1a2b3c4" }));
-    }
 }

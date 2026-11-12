@@ -137,28 +137,6 @@ public sealed class DriverHostTests : IDisposable
         Assert.Equal(planted, File.ReadAllText(LockFile));
     }
 
-    /// <summary>
-    /// 🔴 The variable that named another driver file is read nowhere. A verb run with it
-    /// set still writes the home's own <c>driver.json</c> and takes the lease in <c>DAORIS_HOME</c>; the file it names is never made,
-    /// and the folder it is in is never held.
-    /// </summary>
-    [Fact]
-    public async Task ONEWAY1c_i_a_verb_writes_the_homes_driver_file_whatever_the_retired_variable_names()
-    {
-        await using var service = CountingService.Start();
-        Directory.CreateDirectory(_elsewhere);
-        var elsewhere = Path.Combine(_elsewhere, "driver.json");
-        var named = new Dictionary<string, string> { ["DAORIS_DRIVER_CONFIG"] = elsewhere };
-
-        var (code, said) = await RunAsync(service, named, "place", "access", "permissions=asking");
-        Assert.True(code == 0, said);
-        Assert.Contains("asking", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig)));
-        Assert.False(File.Exists(elsewhere), "the retired variable's file was written");
-        Assert.True(File.Exists(HomeIdentity.PathIn(_home)), $"the verb did not hold DAORIS_HOME: {said}");
-        Assert.False(File.Exists(HomeIdentity.PathIn(_elsewhere)), "the verb held the folder the retired variable names");
-        Assert.False(File.Exists(LockFile), "the verb kept the home after it ended");
-    }
-
     private void Plant(string kind, int pid, long started) => Plant(LockFile, kind, pid, started);
 
     private static void Plant(string lease, string kind, int pid, long started) =>

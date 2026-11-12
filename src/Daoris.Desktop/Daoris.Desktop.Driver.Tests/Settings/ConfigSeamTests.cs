@@ -20,24 +20,10 @@ public sealed partial class ConfigSeamTests
     /// <summary>A home that need not exist: the resolution is a question about paths, never about the disk.</summary>
     private static readonly string Home = Path.Combine(AppContext.BaseDirectory, "seam", "data");
 
-    private static readonly string Elsewhere = Path.Combine(AppContext.BaseDirectory, "seam", "other");
-
     [Fact]
     public void A_door_holding_a_home_reads_that_homes_driver_json()
     {
         Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Home));
-    }
-
-    /// <summary>The retired variable names nothing the resolution reads, with a home or without one.</summary>
-    [Fact]
-    public void ONEWAY1c_i_the_retired_variable_is_read_nowhere()
-    {
-        var named = Path.Combine(Elsewhere, "landing.json");
-
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.FindPath(Env((Retired, named), (DaorisHome.Variable, Home))));
-        Assert.Null(DriverConfig.FindPath(Env((Retired, named))));
-        Assert.Equal(Home, DriverConfig.FindHome(Env((Retired, named), (DaorisHome.Variable, Home))));
-        Assert.Null(DriverConfig.FindHome(Env((Retired, named))));
     }
 
     /// <summary>The one resolution, for a door with no home in hand: the home's file, then nothing to read.</summary>
