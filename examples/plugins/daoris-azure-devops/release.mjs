@@ -5,6 +5,7 @@ import { Refusal, call, choose, fit, fromBranch, idOf, located, project, release
 import { watchSeveral } from './several.mjs';
 import { until, watchRelease, watchRun } from './stages.mjs';
 import { builtNothing } from './triggers.mjs';
+import { unreleased } from './unreleased.mjs';
 
 const EVIDENCE = 'azure-devops-pull-request/release@1';
 // The watch ends this long before the attempt's deadline, so its outcome reaches Daoris before Daoris asks after it.
@@ -18,6 +19,7 @@ function settings(options) {
   const seconds = (value, otherwise) => (Number(value) > 0 ? Number(value) : otherwise);
   return {
     pipeline: named(given.pipeline), definition: named(given.releaseDefinition), stages: list(given.stages), deploy: list(given.deploy),
+    create: given.createRelease === true || String(given.createRelease).toLowerCase() === 'true',
     find: seconds(given.findSeconds, 600) * 1000, every: seconds(given.everySeconds, 30) * 1000,
   };
 }
@@ -47,7 +49,7 @@ async function definitionOf(repo, named) {
   const id = numeric(named);
   const found = id !== null
     ? await releases(repo, 'GET', `/definitions/${id}`).then((answer) => (answer.status === 200 ? answer.json : null))
-    : (await releases(repo, 'GET', `/definitions?searchText=${encodeURIComponent(named)}&isExactNameMatch=true&$expand=artifacts`)).json?.value?.[0];
+    : (await releases(repo, 'GET', `/definitions?searchText=${encodeURIComponent(named)}&isExactNameMatch=true&$expand=artifacts,triggers`)).json?.value?.[0];
   if (!found) throw new Refusal('no-release', `no release definition is named \`${named}\``);
   return found;
 }
@@ -144,19 +146,21 @@ export async function release(attempt, unit, say) {
     if (!['succeeded', 'partiallySucceeded'].includes(built.result)) {
       return failed('build-failed', `build ${numberOf(build)} of ${short} ${built.result ?? 'ended'}, so no release takes it.`, buildUrl);
     }
+    const none = await unreleased({ repo, build, definitions, asked, sourceId: sourceOf(build), buildNumber: numberOf(build), commit });
+    if (none?.words) return failed('no-release', none.words, buildUrl);
     if (definitions.length > 1) {
       const watched = await watchSeveral({ repo, build, definitions, asked, by: finding(), ends, say, commit, sourceId: sourceOf(build), buildNumber: numberOf(build) });
       if (watched.verdict === 'none') return failed('no-release', watched.words, buildUrl);
       return outcome('', watched, watched.url ?? buildUrl);
     }
-    const made = await until(async () => {
+    const made = none?.made ?? await until(async () => {
       const query = `definitionId=${definition.id}&artifactTypeId=Build&sourceId=${encodeURIComponent(sourceOf(build))}&artifactVersionId=${build.id}`;
       const found = (await releases(repo, 'GET', `/releases?${query}`)).json?.value ?? [];
       return found.length > 0 ? found.reduce((a, b) => (b.id > a.id ? b : a)) : undefined;
     }, finding(), asked.every, say);
     if (!made) return failed('no-release', `no release of ${definition.name} was made from build ${numberOf(build)} within ${asked.find / 1000} s.`, buildUrl);
     const watched = await watchRelease(repo, made.id, asked, ends, say, commit);
-    return outcome(`${made.name} of ${definition.name} from build ${numberOf(build)} (${short}): `, watched,
+    return outcome(`${made.name} of ${definition.name} from build ${numberOf(build)} (${short})${none?.made ? ', made here as no trigger makes one' : ''}: `, watched,
       web(made, `_releaseProgress?releaseId=${made.id}&_a=release-pipeline-progress`));
   } catch (error) {
     if (error instanceof Refusal) return failed(error.code, error.message);

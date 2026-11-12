@@ -118,6 +118,48 @@ test('a build no release was made from, with no stages of its own, is said as no
   assert.match(fromYaml.params.evidence.message, /build 20261110\.41 has no stages, and no release definition takes its artifact/);
 });
 
+/** A merged build no release was made from, taken by release definition 3 whose continuous-deployment trigger is off. */
+async function untriggered() {
+  const api = await merged();
+  api.releases.length = 0;
+  api.definitions[0].artifacts[0].alias = '_app-ci';
+  Object.assign(api.definitions[0], { triggers: [], environments:[stage(11, 'Production', 'notStarted', { conditions: [{ name: 'ReleaseStarted', conditionType: 'event' }] })] });
+  return api;
+}
+
+const releasesAsked = (api) => api.calls.filter((call) => call.method === 'GET' && call.path === '/acme/Proj/_apis/release/releases').length;
+
+test('a build whose release definition makes no release by itself is said so at the first look, and the step holds for the person', async (t) => {
+  const api = await untriggered();
+
+  const { step } = await released(t, api, { findSeconds: 60 });
+
+  assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
+  assert.match(step.params.evidence.message,
+    /^No release of app-release exists for build 20261110\.41 \(cccccccc\): its continuous-deployment trigger is off, so none is made by itself\. Make one and try the step again, or set the step's createRelease option\./);
+  assert.equal(step.params.evidence.url, BUILD_WEB);
+  assert.equal(releasesAsked(api), 1);
+  assert.equal(api.calls.some((call) => call.method === 'POST'), false);
+});
+
+test('createRelease makes the release no trigger makes, from the merged build, and watches it; a later attempt finds it rather than making another', async (t) => {
+  const api = await untriggered();
+  api.onRead = (method, path) => {
+    const made = api.releases[0];
+    if (method === 'GET' && made && path === `/acme/Proj/_apis/release/releases/${made.id}`) made.environments[0].status = 'succeeded';
+  };
+
+  const first = (await released(t, api, { createRelease: true })).step;
+  const again = (await released(t, api, { createRelease: true })).step;
+
+  assert.deepEqual([first.params.state, again.params.state], ['reached', 'reached']);
+  const posted = api.calls.filter((call) => call.method === 'POST' && call.path === '/acme/Proj/_apis/release/releases');
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0].body.definitionId, 3);
+  assert.deepEqual(posted[0].body.artifacts, [{ alias: '_app-ci', instanceReference: { id: '41', name: '20261110.41' } }]);
+  assert.match(first.params.evidence.message, /^Release-1 of app-release from build 20261110\.41 \(cccccccc\), made here as no trigger makes one: Production succeeded\./);
+});
+
 test('a pipeline\'s own stages are watched where no release definition takes its build, an approval said', async (t) => {
   const api = await merged({ classic: false });
   api.builds[1].status = 'inProgress';

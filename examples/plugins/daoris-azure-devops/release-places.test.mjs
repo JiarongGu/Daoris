@@ -125,13 +125,15 @@ test('two triggered definitions are watched together and a failure of one fails 
   assert.match(step.params.evidence.message, /Release-91 of Dev-B[^;]*: Dev failed its deployment/);
 });
 
-test('several definitions with a trigger on no merged branch and no release made from the build fail as no release, not ambiguous', async (t) => {
+test('several definitions with a trigger on no merged branch and no release made from the build fail as no release at the first look, not ambiguous', async (t) => {
   const api = await place({ definitions: [{ id: 25, name: 'QA-ConfigService' }, { id: 26, name: 'Prod-ConfigService', on: ['master'] }] });
 
-  const { step } = await released(t, api);
+  const { step } = await released(t, api, { findSeconds: 60 });
 
   assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
-  assert.match(step.params.evidence.message, /no release was made from build 20261110\.41 .*none of QA-ConfigService, Prod-ConfigService has a trigger on `dev`/);
+  assert.match(step.params.evidence.message,
+    /^No release exists for build 20261110\.41 \(cccccccc\): none of QA-ConfigService, Prod-ConfigService has a continuous-deployment trigger on `dev`, so none is made by itself\./);
+  assert.equal(asked(api, '/release/releases').length, 1);
 });
 
 const infrastructure = () => ({
