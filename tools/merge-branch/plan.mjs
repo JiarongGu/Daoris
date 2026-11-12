@@ -57,6 +57,9 @@ export const STAGE_REHEARSALS = Object.freeze(['rehearse:family', 'rehearse:depl
 /** Whether a gate runs a rehearsal of `STAGE_REHEARSALS`, read from its command as the lanes are. */
 export const isStageRehearsal = (gate) => STAGE_REHEARSALS.includes(scriptNamed(gate.run) ?? '');
 
+/** The gates a stage requires: all, or with `light` all but the stage's rehearsals, which the CI runs on the staged commit after the install is built. */
+export const stagePlan = (plan, { light = false } = {}) => (light ? plan.filter((gate) => !isStageRehearsal(gate)) : plan);
+
 /**
  * The heavy light gates: the suites that load the CPU for minutes (the CLI's verify, the .NET test suites, the web's
  * build and end-to-end run, and its unit run). A Process half started beside them failed timing tests that passed alone. A Process gate starts after these, not only after its own component's.

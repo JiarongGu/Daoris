@@ -309,3 +309,11 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   // Vitest's workers, a quarter of the machine, set in the page's config.
   assert.match(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'vite.config.ts'), 'utf8'), /maxWorkers: process\.env\.DAORIS_WEB_WORKERS \?\? '25%'/);
 });
+
+test("the light stage requires every gate of the plan but the stage's own rehearsals, which the CI runs after the install; the full stage requires all", () => {
+  const names = (light: boolean) => tool.stagePlan(repoPlan, { light }).map((gate) => gate.name);
+  assert.deepEqual(names(false), repoPlan.map((gate) => gate.name));
+  assert.deepEqual(repoPlan.map((gate) => gate.name).filter((name) => !names(true).includes(name)), ['rehearse-family', 'deployment']);
+  // The release rehearsal, the Process halves and every light gate stay required.
+  for (const name of ['rehearse', 'driver-process', 'driver-process-git', 'modules-process', 'cli', 'reached', 'web']) assert.ok(names(true).includes(name), name);
+});

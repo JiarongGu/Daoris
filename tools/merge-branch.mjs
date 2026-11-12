@@ -441,7 +441,7 @@ import { laneMatcher, globToRegExp } from './merge-branch/lanes-file.mjs';
 import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge-branch/reach.mjs';
 import {
   isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
-  laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, isGitHalf, dotnetComponent,
+  laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
 } from './merge-branch/plan.mjs';
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
@@ -455,7 +455,7 @@ export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
 export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
-  isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, isHeavyGate,
+  isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, stagePlan, isHeavyGate,
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
@@ -3664,20 +3664,21 @@ function stageLines(gates) {
  * verdicts record: each gate's newest verdict that still stands, or the stale one and the paths that
  * made it so. What `publish:desktop` asks before it builds. Exit 0 when it did, 1 when it did not.
  */
-function passedOnly(root) {
-  const plan = readPlan(root);
+function passedOnly(root, { light = false } = {}) {
+  const plan = stagePlan(readPlan(root), { light });
   const judged = judgeCheckout(root, plan);
   if (!judged) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
   const head = git(root, ['rev-parse', '--short', 'HEAD'], { allowFail: true }).out.trim() || 'no commit';
   const evidence = stageEvidence(root, judged.tree, plan);
   const passed = judged.passed && evidence.ok;
-  console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
+  console.log(`merge-branch: the ${light ? 'light stage' : 'full set'} has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
     + `${plan.length - judged.missing.length} of ${plan.length} gates${judged.passed && !evidence.ok ? ", but the stage's evidence is missing (CISCOPE1d)" : ''}.`);
   for (const line of stageLines(judged.gates)) console.log(line);
   for (const line of evidence.lines) console.log(line);
   // The smallest command that would pass it, which the publish's refusal names in turn. A stage with no
   // receipt, or a sweep overdue, needs the stage's own run in the gate tree, which also runs whatever the verdicts lack.
-  const remedy = evidence.remedy ?? stageRemedy(judged.gates);
+  // The light stage's run is the plain `--ci`, which owes the rehearsals and runs the rest.
+  const remedy = light && evidence.remedy ? { ...evidence.remedy, command: evidence.remedy.command.replace('--ci --stage', '--ci') } : evidence.remedy ?? stageRemedy(judged.gates);
   if (remedy) console.log(remedyLine(remedy));
   return passed ? 0 : 1;
 }
@@ -7162,7 +7163,7 @@ export async function main(argv) {
   if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
-  if (options.passed) return passedOnly(root);
+  if (options.passed) return passedOnly(root, { light: options.light });
   // With no merge open, --rerun and --stale act on the checkout as it stands.
   if (options.stale) {
     if (mergeInProgress(root)) throw new Refusal('a merge is open here: --rerun <gate>… re-gates it, and runs each gate a fixed path reaches; or git merge --abort');

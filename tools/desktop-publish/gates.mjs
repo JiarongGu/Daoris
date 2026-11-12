@@ -26,8 +26,8 @@ export function insideFixtures(to, repoRoot) {
  * anything else could not tell) and what it printed, gate by gate. A process rather than an import, so
  * nothing the deployment rehearsal runs imports the merge tool.
  */
-export function askGates(repoRoot, tool = join(dirname(dirname(fileURLToPath(import.meta.url))), 'merge-branch.mjs')) {
-  const asked = spawnSync(process.execPath, [tool, '--passed'], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
+export function askGates(repoRoot, { light = false } = {}, tool = join(dirname(dirname(fileURLToPath(import.meta.url))), 'merge-branch.mjs')) {
+  const asked = spawnSync(process.execPath, [tool, '--passed', ...(light ? ['--light'] : [])], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
   if (asked.error) return { code: 2, out: `node could not start: ${asked.error.message}` };
   return { code: asked.status ?? 2, out: `${asked.stdout ?? ''}${asked.stderr ?? ''}`.trim() };
 }
@@ -41,13 +41,13 @@ const indented = (text) => text.split(/\r?\n/).filter((line) => line.trim()).map
  * the one that runs it all, unless `force` (`--force-ungated`, the person's explicit override), when it publishes
  * and says it is ungated.
  */
-export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates, remedy = null } = {}) {
+export function ungatedRefusal(to, repoRoot, { force = false, light = false, ask = askGates, remedy = null } = {}) {
   if (insideFixtures(to, repoRoot)) return { refusal: null, note: null };
-  const { code, out } = ask(repoRoot);
+  const { code, out } = ask(repoRoot, { light });
   if (code === 0) return { refusal: null, note: `desktop-publish: ${out.split(/\r?\n/)[0].replace(/^merge-branch: /, '')}` };
   const why = code === 1
-    ? 'the full set of gates has not passed this checkout'
-    : 'could not tell whether the full set passed this checkout';
+    ? `the ${light ? "light stage's gates have" : 'full set of gates has'} not passed this checkout`
+    : `could not tell whether the ${light ? 'light stage' : 'full set'} passed this checkout`;
   if (force) {
     return { refusal: null, note: `desktop-publish: publishing ungated (--force-ungated): ${why}.\n${indented(out)}` };
   }
