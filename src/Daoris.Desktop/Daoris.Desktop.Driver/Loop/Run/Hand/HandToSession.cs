@@ -316,7 +316,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(held, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
                 var ruled = wiring.HandRules(
                     adapter, spawn, sessionId, start.Workspace, quest.To, folder, held.AttachmentsDirectory, across: across, plugins: skillPlugins,
-                    continued: blockFolder is null ? composed?.Kept : [.. composed?.Kept ?? [], blockFolder], heavy: heavy);
+                    continued: blockFolder is null ? composed?.Kept : [.. composed?.Kept ?? [], blockFolder], heavy: heavy,
+                    unrestricted: permissions.Permissions == AccessRules.Unrestricted);
                 return (spawn, notice, served, ruled, new Disposer(() => SpawnFiles.RemoveFolder(skills)));
             }
 

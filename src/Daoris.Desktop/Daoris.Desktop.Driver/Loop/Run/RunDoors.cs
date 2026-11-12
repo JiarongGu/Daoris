@@ -72,8 +72,10 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     (string? File, object? Meta, HandedSection Handed) IRunWiring.HandRules(
         AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
-        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy) =>
-        driver.HandRules(adapter, info, sessionId, workspace, repository, tree, kept, across: across, plugins: plugins, continued: continued, heavy: heavy);
+        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy, bool unrestricted) =>
+        driver.HandRules(
+            adapter, info, sessionId, workspace, repository, tree, kept, across: across, plugins: plugins, continued: continued, heavy: heavy,
+            unrestricted: unrestricted);
 
     EarlierMaker? IRunWiring.LeftBy(PriorSession prior) => MovedParts.LeftBy(Context, prior);
 

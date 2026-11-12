@@ -35,7 +35,7 @@ public sealed class DeadApprovalsTests
         var refused = Assert.Throws<DriverException>(() => RuleProposals.Effect(file, change));
 
         Assert.Contains("`no-push`", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("Settings", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("agent rules page", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]

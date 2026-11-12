@@ -68,9 +68,9 @@ public static class GitSessionAccess
         return record[Tightened] is JsonObject tightened ? Narrowed(resolved, tightened) : resolved;
     }
 
-    /// <summary>A full-access session's Write where nobody set one: <c>allow</c>. Every value a person set, and Dangerous, stay as they are.</summary>
+    /// <summary>A full-access session's Write and Dangerous where nobody set one: <c>allow</c>, as the harness's own bypass mode allows them. Every value a person set stays.</summary>
     private static GitAccess Opened(GitAccess resolved) => new([
-        .. resolved.Classes.Select(each => each is { Class: GitAccessKeys.Write, Value: GitAccessKeys.AsToday }
+        .. resolved.Classes.Select(each => each is { Class: GitAccessKeys.Write, Value: GitAccessKeys.AsToday } or { Class: GitAccessKeys.Dangerous, Source: GitAccessKeys.DefaultSource }
             ? new GitAccessClass(each.Class, GitAccessKeys.Allow, FromSession)
             : each),
     ]);

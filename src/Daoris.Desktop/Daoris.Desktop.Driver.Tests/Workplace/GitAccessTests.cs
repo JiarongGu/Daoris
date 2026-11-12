@@ -320,7 +320,7 @@ public sealed class GitAccessTests : IDisposable
     [Fact]
     public void The_classifier_says_a_push_as_git_access_does_and_publishing_keeps_its_own_sentence()
     {
-        var told = PermissionRules.HardDeny(PermissionFile.Empty);
+        var told = PermissionRules.HardDeny(PermissionFile.Empty with { DefaultsOn = [PermissionRules.NoPushId, PermissionRules.NoPublishId] });
 
         Assert.Equal(told, GitAccessPolicy.HardDeny(told, "deny"));
         var judged = GitAccessPolicy.HardDeny(told, "ask");
@@ -422,10 +422,12 @@ public sealed class GitAccessTests : IDisposable
 
         Assert.Equal("as-today", GitSessionAccess.Held(Home, "restricted", "engine", "Games").Of(GitAccessKeys.Write).Value);
         Assert.Equal("allow", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Write).Value);
-        Assert.Equal("deny", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Dangerous).Value);
+        Assert.Equal("allow", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Dangerous).Value);
+        Assert.Equal("deny", GitSessionAccess.Held(Home, "restricted", "engine", "Games").Of(GitAccessKeys.Dangerous).Value);
 
-        Put("""{"machineGitAccess":{"write":"deny"}}""");
+        Put("""{"machineGitAccess":{"write":"deny","dangerous":"deny"}}""");
         Assert.Equal("deny", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Write).Value);
+        Assert.Equal("deny", GitSessionAccess.Held(Home, "full", "engine", "Games").Of(GitAccessKeys.Dangerous).Value);
     }
 
     [Fact]

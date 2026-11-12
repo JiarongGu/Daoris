@@ -36,14 +36,14 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
             ],
             defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
-        // No-push is fixed on, its switch git access's Write; no-publish is switched alone.
-        Assert.True(defaults[2].GetProperty("on").GetBoolean());
-        Assert.True(defaults[2].GetProperty("fixed").GetBoolean());
+        // No-push, no-publish and the tree guard are opt-in: off until the person switches them on, each with a switch.
+        Assert.False(defaults[2].GetProperty("on").GetBoolean());
+        Assert.False(defaults[2].TryGetProperty("fixed", out _));
         Assert.False(defaults[3].GetProperty("on").GetBoolean());
-        Assert.False(defaults[3].TryGetProperty("fixed", out _));
+        Assert.False(defaults[4].GetProperty("on").GetBoolean());
         Assert.Equal("deny", defaults[3].GetProperty("list").GetString());
         // The driver's own sentence travels: what the number meant, never the number.
-        Assert.Contains("stays the person's call", defaults[3].GetProperty("why").GetString());
+        Assert.Contains("stays your call", defaults[3].GetProperty("why").GetString());
         // The tree guard is a hook: no rule, and the tools it judges named instead. The bridge
         // leaves a null out, so a rule default carries no `hook` the page could misread.
         Assert.Empty(defaults[4].GetProperty("rules").EnumerateArray());

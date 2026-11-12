@@ -54,11 +54,14 @@ public sealed class GitPushStepTests : IDisposable
         var permissions = PermissionRules.Load(_home);
         Assert.Equal(["commit", "no-publish"], permissions.DefaultsOff.Order(StringComparer.Ordinal));
         Assert.Equal(("access", true), (SessionPush().Code, SessionPush().Allowed));
-        // The session's rules open the plain push, and the classifier is told git access's sentence and nothing of publishing.
+        // No-push is off, so the session's rules deny no push and the classifier is told nothing; switched on, Write allow opens the plain push.
         var write = GitAccessKeys.Resolve(_home, "engine", null).Of(GitAccessKeys.Write).Value;
-        var rules = GitAccessPolicy.Compose(PermissionRules.Compose(permissions, "default", "engine"), write);
+        Assert.Empty(GitAccessPolicy.Compose(PermissionRules.Compose(permissions, "default", "engine"), write).Deny);
+        Assert.Empty(PermissionRules.HardDeny(permissions));
+        var switchedOn = PermissionRules.SwitchDefault(permissions, PermissionRules.NoPushId, on: true);
+        var rules = GitAccessPolicy.Compose(PermissionRules.Compose(switchedOn, "default", "engine"), write);
         Assert.Contains("Bash(git push:*)", rules.Allow);
-        Assert.Equal([GitAccessPolicy.Judged], GitAccessPolicy.HardDeny(PermissionRules.HardDeny(permissions), write));
+        Assert.Equal([GitAccessPolicy.Judged], GitAccessPolicy.HardDeny(PermissionRules.HardDeny(switchedOn), write));
         Assert.Equal(2, run.Changed.Count);
     }
 

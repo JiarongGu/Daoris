@@ -28,7 +28,7 @@ public static partial class DeadApprovals
         var noPush = PermissionRules.Defaults.First(shipped => shipped.Id == PermissionRules.NoPushId);
         if (PermissionRules.IsOn(file, noPush) && NamesPush().IsMatch(rule))
         {
-            return "this rule can never take effect: the `no-push` default, which you switched on (Settings → the repository's agent rules), "
+            return "this rule can never take effect: the `no-push` default, which you switched on (on the agent rules page), "
                    + "denies every push and a deny beats an allow or an ask. Switch `no-push` off, or set the place's git access Write "
                    + "(`daoris git access … write=ask|allow`), which opens a push while it is on.";
         }

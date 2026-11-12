@@ -146,9 +146,16 @@ public sealed class PermissionRulesTests : IDisposable
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
 
         Assert.Equal(Allowed, rules.Allow);
-        Assert.Equal(NoPush, rules.Deny);
+        Assert.Empty(rules.Deny);
         Assert.Empty(rules.Ask);
+        Assert.Equal(NoPush, PermissionRules.Compose(OptedIn(PermissionRules.Load(_home)), "default", "engine").Deny);
     }
+
+    /// <summary>The limits Daoris adds to no agent of its own accord, switched on as the person does.</summary>
+    private static PermissionFile OptedIn(PermissionFile file) => file with
+    {
+        DefaultsOn = [PermissionRules.NoPushId, PermissionRules.NoPublishId, PermissionRules.TreeGuardId],
+    };
 
     /// <summary>
     /// 🔴 Rebuilding the index is the machine's job, never a session's: the connector's refresh is the
@@ -221,23 +228,31 @@ public sealed class PermissionRulesTests : IDisposable
         var rules = PermissionRules.Compose(file, "default", "engine");
 
         Assert.DoesNotContain("Bash(git commit:*)", rules.Allow);
-        Assert.Equal(NoPush, rules.Deny);
+        Assert.Empty(rules.Deny);
         Assert.Equal(["commit"], file.DefaultsOff);
 
         var back = PermissionRules.Compose(PermissionRules.SwitchDefault(file, "commit", on: true), "default", "engine");
         Assert.Contains("Bash(git commit:*)", back.Allow);
     }
 
-    /// <summary>A push is git access's Write alone, so <c>no-push</c> has no switch, and a file that lists it off still hands it.</summary>
+    /// <summary><c>no-push</c> is off until the person switches it on, which hands its forms and its sentence; off again hands neither.</summary>
     [Fact]
-    public void No_push_is_not_switched_here_since_git_access_says_whether_a_session_pushes()
+    public void No_push_is_off_by_default_and_the_person_switches_it_on_and_off()
     {
-        var refused = Assert.Throws<DriverException>(() => PermissionRules.SwitchDefault(PermissionRules.Load(_home), "no-push", on: false));
+        var file = PermissionRules.Load(_home);
+        Assert.Empty(PermissionRules.Compose(file, "default", "engine").Deny);
+        Assert.Empty(PermissionRules.HardDeny(file));
 
-        Assert.Contains("git access", refused.Message);
-        var listed = PermissionRules.Load(_home) with { DefaultsOff = ["no-push"] };
-        Assert.Equal(NoPush, PermissionRules.Compose(listed, "default", "engine").Deny);
-        Assert.Contains(PermissionRules.HardDeny(listed), sentence => sentence.StartsWith("Pushing to any remote", StringComparison.Ordinal));
+        var on = PermissionRules.SwitchDefault(file, "no-push", on: true);
+        Assert.Equal(["no-push"], on.DefaultsOn);
+        Assert.Equal(NoPush, PermissionRules.Compose(on, "default", "engine").Deny);
+        Assert.Contains(PermissionRules.HardDeny(on), sentence => sentence.StartsWith("Pushing to any remote", StringComparison.Ordinal));
+
+        var off = PermissionRules.SwitchDefault(on, "no-push", on: false);
+        Assert.Empty(off.DefaultsOn);
+        Assert.Empty(PermissionRules.Compose(off, "default", "engine").Deny);
+        var listedOff = file with { DefaultsOff = ["no-push"] };
+        Assert.Empty(PermissionRules.Compose(listedOff, "default", "engine").Deny);
     }
 
     [Fact]
@@ -464,7 +479,8 @@ public sealed class PermissionRulesTests : IDisposable
 
         Assert.NotNull(file.Problem);
         Assert.Contains(PermissionRules.FileName, file.Problem);
-        Assert.Contains("Bash(git push:*)", PermissionRules.Compose(file, "default", "engine").Deny);
+        Assert.Contains("Bash(git commit:*)", PermissionRules.Compose(file, "default", "engine").Allow);
+        Assert.Empty(PermissionRules.Compose(file, "default", "engine").Deny);
     }
 
     /// <summary>
@@ -509,7 +525,7 @@ public sealed class PermissionRulesTests : IDisposable
             [.. Connector, .. Commit],
             permissions.GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal(["WebFetch"], permissions.GetProperty("ask").EnumerateArray().Select(e => e.GetString()));
-        Assert.Contains("Bash(git push)", permissions.GetProperty("deny").EnumerateArray().Select(e => e.GetString()));
+        Assert.False(permissions.TryGetProperty("deny", out var deny) && deny.GetArrayLength() > 0);
 
         SpawnFiles.Remove(path);
         Assert.False(File.Exists(path));
@@ -537,7 +553,8 @@ public sealed class PermissionRulesTests : IDisposable
     {
         var on = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
         foreach (var rule in Commit) Assert.Contains(rule, on.Allow);
-        Assert.Contains("Bash(git push:*)", on.Deny);
+        Assert.Empty(on.Deny);
+        Assert.Contains("Bash(git push:*)", PermissionRules.Compose(OptedIn(PermissionRules.Load(_home)), "default", "engine").Deny);
 
         var off = PermissionRules.Compose(Off(PermissionRules.Load(_home), "commit"), "default", "engine");
         foreach (var rule in Commit) Assert.DoesNotContain(rule, off.Allow);
@@ -566,9 +583,9 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("git -c push.default=current push origin main")]
     [InlineData("git --git-dir=.git push origin main")]
     [InlineData("git --no-pager push")]
-    public void A_push_in_each_form_meets_a_deny_rule_in_the_composed_file(string command)
+    public void A_push_in_each_form_meets_a_deny_rule_in_the_composed_file_once_no_push_is_on(string command)
     {
-        var file = PermissionRules.Load(_home);
+        var file = OptedIn(PermissionRules.Load(_home));
         var path = ClaudeRules.Render(
             _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
 
@@ -594,7 +611,7 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("git -C /work/game commit -m \"Expose a streaming budget\"")]
     public void The_push_denies_refuse_none_of_the_work_a_session_is_allowed(string command)
     {
-        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+        var rules = PermissionRules.Compose(OptedIn(PermissionRules.Load(_home)), "default", "engine");
 
         Assert.DoesNotContain(rules.Deny, rule => BashRule.Matches(rule, command));
     }
@@ -607,9 +624,9 @@ public sealed class PermissionRulesTests : IDisposable
     /// never from a repository's own settings.
     /// </summary>
     [Fact]
-    public void The_spawn_file_tells_auto_modes_classifier_a_push_in_any_form_is_the_persons()
+    public void The_spawn_file_tells_auto_modes_classifier_a_push_in_any_form_is_the_persons_once_the_limits_are_on()
     {
-        var file = PermissionRules.Load(_home);
+        var file = OptedIn(PermissionRules.Load(_home));
         var path = ClaudeRules.Render(
             _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
 
@@ -648,13 +665,14 @@ public sealed class PermissionRulesTests : IDisposable
     /// has taken publishing back, and its sentence alone goes.
     /// </summary>
     [Fact]
-    public void With_no_publish_switched_off_the_classifier_is_told_the_push_sentence_alone()
+    public void With_only_no_push_on_the_classifier_is_told_the_push_sentence_alone_and_with_none_nothing()
     {
-        var file = Off(PermissionRules.Load(_home), "no-publish");
+        var file = PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.NoPushId, on: true);
 
         var told = Assert.Single(PermissionRules.HardDeny(file));
         Assert.StartsWith("Pushing to any remote", told, StringComparison.Ordinal);
-        Assert.Equal(2, PermissionRules.HardDeny(PermissionRules.Load(_home)).Count);
+        Assert.Equal(2, PermissionRules.HardDeny(OptedIn(PermissionRules.Load(_home))).Count);
+        Assert.Empty(PermissionRules.HardDeny(PermissionRules.Load(_home)));
     }
 
     // ——— The tree guard, a hook rather than a rule.
@@ -670,8 +688,10 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Empty(shipped.Rules);
         Assert.Equal(TreeGuard.Matcher, shipped.Hook);
 
-        Assert.True(PermissionRules.GuardsTree(PermissionRules.Load(_home)));
-        Assert.False(PermissionRules.GuardsTree(Off(PermissionRules.Load(_home), PermissionRules.TreeGuardId)));
+        Assert.False(PermissionRules.GuardsTree(PermissionRules.Load(_home)));
+        var on = PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.TreeGuardId, on: true);
+        Assert.True(PermissionRules.GuardsTree(on));
+        Assert.False(PermissionRules.GuardsTree(PermissionRules.SwitchDefault(on, PermissionRules.TreeGuardId, on: false)));
     }
 
     /// <summary>

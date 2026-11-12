@@ -63,6 +63,7 @@ public static class HomeMigration
         new OldBinStep(),
         new PluginSwitchesStep(),
         new ConversationFactsStep(),
+        new AccessDefaultsOffStep(),
     ];
 
 

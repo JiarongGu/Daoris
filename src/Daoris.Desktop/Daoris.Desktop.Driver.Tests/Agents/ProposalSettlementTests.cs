@@ -140,14 +140,15 @@ public sealed class ProposalSettlementTests : IDisposable
     [Fact]
     public void A_yes_on_a_default_that_denies_switched_off_is_returned_and_a_persons_yes_on_it_applies()
     {
+        PermissionRules.Save(_home, PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.NoPublishId, on: true));
         Propose("p7", "default", defaultId: "no-publish", on: false);
 
         var settled = ProposalSettlement.Settle(_home, "p7", Role, yes: true, null, At);
         Assert.Equal((SettleOutcome.Returned, WideningAllows.SwitchesOffDenial), (settled.Outcome, settled.Why));
-        Assert.Empty(PermissionRules.Load(_home).DefaultsOff);
+        Assert.Contains("no-publish", PermissionRules.Load(_home).DefaultsOn);
 
         ProposalSettlement.Settle(_home, "p7", RuleSettler.Person, yes: true, null, At);
-        Assert.Contains("no-publish", PermissionRules.Load(_home).DefaultsOff);
+        Assert.DoesNotContain("no-publish", PermissionRules.Load(_home).DefaultsOn);
     }
 
     [Theory]
