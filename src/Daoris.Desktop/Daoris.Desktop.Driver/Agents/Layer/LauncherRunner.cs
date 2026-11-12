@@ -106,7 +106,6 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         CancellationToken ct = default) =>
         LinesAsync(command, args, Framed(stdinLines), workingDirectory, environment, ct);
 
-    /// <summary>A turn arms no inactivity clock, so a hold on the pause has nothing to stop: a request held for the person waits as long as it is held.</summary>
     public bool CanPauseInactivity => true;
 
     public IAsyncEnumerable<string> ExchangeLinesAsync(

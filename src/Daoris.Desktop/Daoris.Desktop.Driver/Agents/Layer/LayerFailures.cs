@@ -25,14 +25,15 @@ internal static class LayerFailures
     /// <param name="coolOff">The default cool-off, for a recovery not stated.</param>
     /// <param name="turn">What the turn showed after its prompt is written, which the delivery is read from; null where the layer states none.</param>
     public static NormalizedFailure Normalize(
-        AgentFailure failure, string door, string where, string? words, DateTimeOffset seen, TimeSpan coolOff, AgentTurnEvidence? turn = null)
+        AgentFailure failure, string door, string where, string? words, DateTimeOffset seen, TimeSpan coolOff, AgentTurnEvidence? turn = null,
+        IReadOnlyDictionary<string, string>? windows = null)
     {
         var kind = KindOf(failure.Kind);
         var by = Mark + failure.By;
         var restriction = failure.Restriction is { } held
             ? new FailureRestriction(CauseOf(held.Cause), SubjectOf(held.Subject), RecoveryOf(held.Recovery))
             : null;
-        var limit = kind == AgentErrorKind.Limit ? LimitOf(failure.By, failure.Restriction, restriction?.Recovery, seen, coolOff) : null;
+        var limit = kind == AgentErrorKind.Limit ? LimitOf(failure.By, failure.Restriction, restriction?.Recovery, seen, coolOff, windows) : null;
         var access = kind == AgentErrorKind.Access ? AccessOf(failure.AccessReadings) : null;
 
         return new NormalizedFailure(
@@ -60,10 +61,11 @@ internal static class LayerFailures
     /// code is read.
     /// </summary>
     private static LimitSeen LimitOf(
-        string entry, AgentRestriction? held, FailureRecovery? recovery, DateTimeOffset seen, TimeSpan coolOff)
+        string entry, AgentRestriction? held, FailureRecovery? recovery, DateTimeOffset seen, TimeSpan coolOff,
+        IReadOnlyDictionary<string, string>? windows)
     {
         var stated = LayerStatedReset.Of(held?.Recovery.Stated, recovery, seen);
-        var window = held?.Window is { Length: > 0 } word ? ClaudeWindows.Words.Windows.GetValueOrDefault(word, word) : null;
+        var window = held?.Window is { Length: > 0 } word ? windows?.GetValueOrDefault(word, word) ?? word : null;
         // A scope names what is hit, which is what a model family's cool-off reads it from.
         return ResetBounds.Limit(held?.Scope is { Length: > 0 } scope ? scope : entry, window, stated, seen, coolOff);
     }

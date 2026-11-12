@@ -28,6 +28,8 @@ internal sealed class LayerReadings(
 {
     private const string NoResult = "no-result-frame";
 
+    public IReadOnlyDictionary<string, string>? Windows { get; init; }
+
     private const string NoTerminal = "no-terminal-event";
 
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
@@ -221,7 +223,7 @@ internal sealed class LayerReadings(
         {
             Failure = LayerFailures.Normalize(
                 ended.Failure ?? new AgentFailure(AgentFailureKind.Fatal, "no-failure-fields"), door, DoorWhere.Result, ended.Diagnostic,
-                clock.GetUtcNow(), coolOff, ended.Turn);
+                clock.GetUtcNow(), coolOff, ended.Turn, Windows);
             ModelRefused = _refusals.Refused(Failure, door, DoorWhere.Result, ranNothing: !_ran, stopped: false);
             failed.Add(new WireReading.Failed(Failure.Failure));
         }

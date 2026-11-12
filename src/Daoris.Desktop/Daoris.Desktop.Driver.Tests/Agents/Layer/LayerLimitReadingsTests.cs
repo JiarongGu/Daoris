@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The layer's last three readings of a failed or limited turn, each translated before the first move reads it: the two access readings
-/// kept apart for the account readers, the limit's window, scope and stated reset under D125's bounds, and an allowance report read by the
+/// kept apart for the account readers, the limit's window, scope and stated reset under the cool-off bounds, and an allowance report read by the
 /// one reader the native door's rate-limit frame goes through. On failures and events the tests make.
 /// </summary>
 public sealed class LayerLimitReadingsTests
@@ -16,7 +16,7 @@ public sealed class LayerLimitReadingsTests
     private static readonly TimeSpan Hour = TimeSpan.FromHours(1);
 
     private static NormalizedFailure Read(AgentFailure failure) =>
-        LayerFailures.Normalize(failure, "native", DoorWhere.Prompt, "words", Seen, Hour);
+        LayerFailures.Normalize(failure, "native", DoorWhere.Prompt, "words", Seen, Hour, windows: ClaudeWindows.Words.Windows);
 
     private static AgentFailure Limit(RestrictionRecovery recovery, string? window = null, string? scope = null) =>
         new(AgentFailureKind.Limit, "tests:limit")

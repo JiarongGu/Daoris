@@ -3,7 +3,7 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A limit's reset as the layer states it, put on <see cref="StatedReset"/>: how the failure wrote the reset decides whether D125's grace
+/// A limit's reset as the layer states it, put on <see cref="StatedReset"/>: how the failure wrote the reset decides whether the grace on a dated reset
 /// applies, and the instant the layer resolved it to is the moment the bounds weigh. A reset the layer only resolved, with no statement
 /// kept, is <see cref="ResetPrecision.Resolved"/>; a recovery that ends by no moment, or whose moment cannot be resolved, states none.
 /// </summary>

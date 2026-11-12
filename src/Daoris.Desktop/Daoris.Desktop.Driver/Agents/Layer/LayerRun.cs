@@ -247,6 +247,7 @@ internal sealed class LayerRun(
         LauncherRunner? runner = null;
         var readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals), registration.Steps)
         {
+            Windows = registration.Windows,
             Killed = () => _killed || hold?.StopAsked == true,
             Clean = () => runner?.Exit == 0,
         };
