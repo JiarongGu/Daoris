@@ -43,8 +43,7 @@ public sealed record Door(string Method, string Pattern, DoorClass Class, string
     /// <summary>
     /// What a person's door's effect is attributed to the person by on a quest's records: the kind of
     /// write that makes the quest the owner's for the run, and the evidence the desktop's reader finds it by; or none, with why. Every
-    /// <see cref="DoorClass.Person"/> door and form declares one, and so does an <see cref="DoorClass.Agent"/> door whose keyed call
-    /// is still the person's press (<c>PersonDoorTableTests</c>, and the desktop's census sweep).
+    /// <see cref="DoorClass.Person"/> door and form declares one, as does an agent's door whose keyed call is the person's press.
     /// </summary>
     public OwnerMark? Marks { get; init; }
 }
@@ -325,7 +324,6 @@ public static class PersonDoors
         // and only they keep or drop what an ended session staged.
         new("POST", "/api/memory/{id}/decide", DoorClass.Person, "a memory end's approval") { Marks = OwnerMark.None("a memory row, no quest") },
         new("POST", "/api/sessions/{id}/memory", DoorClass.Person, "an ended session's memory changes kept or dropped") { Marks = OwnerMark.None("a memory row, no quest") },
-        // Any caller closes or deletes (D284): the key only attributes, so a keyed call still marks the quest the person's.
         new("POST", "/api/asks/{id}/close", DoorClass.Agent, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
         new("DELETE", "/api/asks/{id}", DoorClass.Agent, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
         new("DELETE", "/api/quests/{id}", DoorClass.Agent, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },

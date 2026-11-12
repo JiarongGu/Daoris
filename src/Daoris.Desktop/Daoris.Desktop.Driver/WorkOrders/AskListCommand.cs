@@ -26,7 +26,7 @@ public static class AskListCommand
         return meant;
     }
 
-    /// <summary>The refusal of an ask whose whole text is one word that names a verb, saying which verb was probably meant; null for any other ask.</summary>
+    /// <summary>The refusal of an ask whose whole text is one word that names a verb, naming the verb probably meant; null for any other ask.</summary>
     public static string? MeantVerb(AskArguments read)
     {
         if (read.Words.Count != 1 || read.Files.Count > 0 || read.Links.Count > 0) return null;

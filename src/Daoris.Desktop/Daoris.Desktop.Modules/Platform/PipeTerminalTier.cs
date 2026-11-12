@@ -6,17 +6,13 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// A person's press that proves no session's key, judged by the machine's terminal tier (<see cref="TerminalTiers"/>, read at each
-/// press): under <c>act</c> it is the person's press already confirmed, run with no card on the delegate's path
-/// (<see cref="PipeDelegate.Pressed"/>) and attributed to a terminal, whatever its route and wherever the pipe places its process; a
-/// steward's act that would ask the person is judged the same. Under <c>ask</c> it is asked on the card as before. Each press run under
-/// act is kept in the tier's record (<see cref="TerminalActs"/>): what it named, the command it is, its admission and its end.
+/// press): under <c>act</c> it is the person's press already confirmed, run with no card (<see cref="PipeDelegate.Pressed"/>) and
+/// attributed to a terminal, for every route and wherever the pipe places its process, a steward's asking act too. Under <c>ask</c> it
+/// is asked on the card. Each is kept in the tier's record (<see cref="TerminalActs"/>): what it named, its command, admission and end.
 /// </summary>
 internal static class PipeTerminalTier
 {
-    /// <summary>
-    /// The covered judgement under act, for every route and wherever the pipe places the process (the place only attributes, D284); null
-    /// under ask, where the press is asked as before.
-    /// </summary>
+    /// <summary>The covered judgement under act; null under ask.</summary>
     public static PipeDelegateJudgement? Judge(InstancePipe pipe) =>
         pipe.TerminalTier?.Invoke() == TerminalTiers.Act ? new(PipeDelegateTier.Covered, Terminal: true) : null;
 

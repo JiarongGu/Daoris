@@ -730,7 +730,6 @@ public sealed class ConfirmationTests
 
         Assert.Empty(await ListedAsync(host));
 
-        // A re-wiring, as the door binds it; a name in another case binds the same, and is shown as sent.
         var one = await AskAsync(host, "POST", Wire, """{"Workspace":"w"}""");
         Assert.Equal(200, one.Status);
         Assert.Equal([("/Workspace", "string", "w")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));

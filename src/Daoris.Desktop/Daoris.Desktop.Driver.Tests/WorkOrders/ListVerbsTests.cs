@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>daoris ask list</c> and <c>daoris quest list</c> are reads, and an ask whose whole text is one word that names a verb of
-/// <c>ask</c> is refused, saying which verb was probably meant, never made an ask.
+/// <c>ask</c> is refused, naming the verb probably meant, never made an ask.
 /// </summary>
 public sealed class ListVerbsTests
 {

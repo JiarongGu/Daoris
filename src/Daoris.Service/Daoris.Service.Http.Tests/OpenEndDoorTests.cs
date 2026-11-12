@@ -3,7 +3,7 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// An ask's close and delete and a quest's delete are any caller's (D284 point 2): a keyless call, as Ask Daoris's connector or a
+/// An ask's close and delete and a quest's delete are any caller's: a keyless call, as Ask Daoris's connector or a
 /// terminal makes it, is answered and the reason it gave is kept; the key only attributes.
 /// </summary>
 public sealed class OpenEndDoorTests(KeyedHost host) : IClassFixture<KeyedHost>

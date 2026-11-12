@@ -153,7 +153,6 @@ public sealed class PersonDoorTableTests
         // A memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
         ("POST", "/api/memory/{id}/decide", Person),
         ("POST", "/api/sessions/{id}/memory", Person),
-        // Any caller's: the key only attributes (D284).
         ("POST", "/api/asks/{id}/close", Agent),
         ("DELETE", "/api/asks/{id}", Agent),
         ("DELETE", "/api/quests/{id}", Agent),
@@ -199,7 +198,6 @@ public sealed class PersonDoorTableTests
 
         Assert.Equal(40, Routes.Count(route => route.Class == Open));
         // An outside agent's read, post and leave, and the person's admission of it.
-        // And the ends no wait guards, opened to every caller: an ask's close and delete, a quest's, a session's, a lost take's.
         Assert.Equal(14, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(34, Routes.Count(route => route.Class == Driver));
@@ -249,7 +247,6 @@ public sealed class PersonDoorTableTests
         Assert.Empty(person.Where(each => each.Marks is null).Select(each => each.Item1));
         Assert.All(person, each => Assert.Contains(each.Marks!.Kind, OwnerMarkKinds.All));
         Assert.All(person, each => Assert.False(string.IsNullOrWhiteSpace(each.Marks!.Evidence), each.Item1));
-        // An agent's door may keep a mark for the call that carried the key (a delete), no other class does.
         Assert.Empty(PersonDoors.Table.Where(door => door.Class is not (Person or Agent) && door.Marks is not null).Select(door => door.Pattern));
 
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/asks")!.Marks!.Kind);

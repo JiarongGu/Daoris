@@ -126,7 +126,6 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         }
         else if (claim is null && @class == PipeClass.Person && !holding && !covered)
         {
-            // Also a steward's act that would ask the person: under act no route is carded.
             delegated = PipeTerminalTier.Judge(pipe);
         }
 
