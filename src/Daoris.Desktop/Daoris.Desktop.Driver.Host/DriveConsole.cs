@@ -97,6 +97,7 @@ internal static class DriveConsole
                     var record = await NewsAttention.ReadAsync(service, piece, closing.Token);
                     // The driven work's parks and ends told at `work/event` as they are claimed.
                     if (WorkEventNews.Of(piece, record) is { } happened) hooks.Tell(happened);
+                    if (await LineGoesOn.OfNewsAsync(service, piece, closing.Token)) continue;
                     var item = NewsAttention.Of(piece, record);
                     // Kept in Notifications whatever the switch says: the desktop's windows read the record again and say what this host wrote.
                     Notices.Keep(home, [item], DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));

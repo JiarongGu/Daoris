@@ -155,8 +155,10 @@ public static class NeedsAPerson
 
         // A run whose every wait is the person's Accept, one row by the session Sessions' list places for it in Needs you: never a
         // reader of its own. Ask Daoris's conversations are reached from its own panel, never from Sessions. A done left unfinished is a `left` row.
+        var decides = LineNeeds.Decides(facts.Groups);
         foreach (var placed in facts.Groups.Where(placed => Text(placed, "group") == SessionGroup.NeedsYou && Text(placed, "reason") is SessionReason.Review or SessionReason.Left))
         {
+            if (!decides(Text(placed, "session"))) continue;
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
@@ -175,7 +177,7 @@ public static class NeedsAPerson
         var decided = OwnAsks(facts);
         foreach (var session in facts.Sessions.Where(session =>
                      Parks(session) && !standsFor.Contains(Text(session, "id") ?? "") && !facts.Supervised.Contains(Text(session, "id") ?? "")
-                     && !decided.Contains(Text(session, "id") ?? "")))
+                     && !decided.Contains(Text(session, "id") ?? "") && decides(Text(session, "id"))))
         {
             var row = Row("parked", Text(session, "id"), Text(session, "updated"), Scope(session));
             row["where"] = Text(session, "repository");

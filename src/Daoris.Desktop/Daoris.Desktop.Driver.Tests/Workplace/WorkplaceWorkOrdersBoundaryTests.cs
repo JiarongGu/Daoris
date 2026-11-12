@@ -198,13 +198,15 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
             Record("c1", null, "completed", 1, entry: "session:c1/engine", head: "c3"),
             Record("c2", null, "completed", 2, entry: "session:c1/engine", from: "c1", fromWhy: HandOverWhy.CarryOn, head: "c3"),
             Record("c3", null, "completed", 3, entry: "session:c1/engine", from: "c2", fromWhy: HandOverWhy.CarryOn, head: "c3"),
-            Record("a1", "q9", "completed", 4, entry: "session:c1/engine", head: "a1"));
+            Record("a1", "q9", "completed", 4, entry: "session:c1/engine", head: "a1", line: "q9"));
         var quests = new[] { new QuestView("q9", "game", "engine", "Asked", "A body.", "Taken") { PublishedBy = "c1" } };
 
-        var entry = Assert.Single(SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0)));
+        var entries = SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0));
 
-        Assert.Equal("c3", entry.Head);
-        Assert.Equal(["c3", "c3", "c3", "a1"], entry.Parts.Select(part => part.Head));
+        var chain = Assert.Single(entries, entry => entry.Line == "c1");
+        Assert.Equal("c3", chain.Head);
+        Assert.Equal(["c3", "c3", "c3"], chain.Parts.Select(part => part.Head));
+        Assert.Equal("a1", Assert.Single(entries, entry => entry.Line == "q9").Head);
     }
 
     [Fact]
@@ -227,21 +229,21 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
     }
 
     [Fact]
-    public void An_asks_sibling_quests_have_no_head_each_part_marked_with_its_own_lines()
+    public void An_asks_sibling_quests_are_a_row_each_with_the_head_of_its_own_line()
     {
         var records = new JsonArray(
-            Record("s1", "q1", "completed", 1, entry: "ask:a1/engine", head: "s1"),
-            Record("s2", "q2", "completed", 2, entry: "ask:a1/engine", head: "s2"));
+            Record("s1", "q1", "completed", 1, entry: "ask:a1/engine", head: "s1", line: "q1"),
+            Record("s2", "q2", "completed", 2, entry: "ask:a1/engine", head: "s2", line: "q2"));
         var quests = new[]
         {
             new QuestView("q1", "ask #a1", "engine", "One", "A body.", "Done"),
             new QuestView("q2", "ask #a1", "engine", "Two", "A body.", "Done"),
         };
 
-        var entry = Assert.Single(SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0)));
+        var entries = SessionEntries.Read(SessionLook.From(records.ToJsonString(), quests, [], _ => 0));
 
-        Assert.Null(entry.Head);
-        Assert.Equal(["s1", "s2"], entry.Parts.Select(part => part.Head));
+        Assert.Equal(["s1", "s2"], entries.Select(entry => entry.Head).Order(StringComparer.Ordinal));
+        Assert.Equal(["ask:a1/engine", "ask:a1/engine"], entries.Select(entry => entry.Key));
     }
 
     [Fact]
@@ -262,9 +264,10 @@ public sealed class WorkplaceWorkOrdersBoundaryTests : IDisposable
         Assert.Equal("c2", waiting.Opens);
     }
 
-    private static JsonObject Record(string id, string? quest, string state, int minute, string? entry = null, string? from = null, string? fromWhy = null, string? head = null) =>
+    private static JsonObject Record(string id, string? quest, string state, int minute, string? entry = null, string? from = null, string? fromWhy = null, string? head = null, string? line = null) =>
         new()
         {
+            ["line"] = line ?? entry?.Split(':')[1].Split('/')[0] ?? quest ?? id,
             ["head"] = head,
             ["id"] = id,
             ["repository"] = "engine",

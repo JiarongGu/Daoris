@@ -55,8 +55,8 @@ public sealed record EntryPart(string Session, string? Quest, string Shown, stri
 }
 
 /// <summary>
-/// One line of work in one repository: the unit the person counts, read from the records that share a
-/// key.
+/// One line of work in one repository: the unit the person counts, read from the records of one conversation (their <c>line</c>), a
+/// row each; lines of one ask in one repository share the key, and an Accept lands them together (<see cref="LandingEntries"/>).
 /// </summary>
 /// <param name="Key">The service's key, <c>&lt;origin&gt;/&lt;repository&gt;</c>, read as an opaque string.</param>
 /// <param name="Origin">The text before the key's first <c>/</c>: <c>ask:&lt;id&gt;</c>, <c>quest:&lt;id&gt;</c>, <c>session:&lt;id&gt;</c>.</param>
@@ -67,10 +67,12 @@ public sealed record EntryPart(string Session, string? Quest, string Shown, stri
 public sealed record SessionEntry(string Key, string Origin, string Repository, string Group, string Leading, IReadOnlyList<EntryPart> Parts)
 {
     /// <summary>
-    /// Where the first part's line ends: the part the session goes on in. Null for an ask's
-    /// sibling quests, whose lines none continues, and where the service named none.
+    /// Where the first part's line ends: the part the session goes on in. Null where the service named none.
     /// </summary>
     public string? Head { get; init; }
+
+    /// <summary>The line's own id (its records' <c>line</c>): what tells two lines of one key apart. Empty where an entry is made by hand.</summary>
+    public string Line { get; init; } = "";
 
     /// <summary>The records serving its parts (<see cref="EntryCoworker"/>), oldest first: drawn inside it, never listed as entries of their own.</summary>
     public IReadOnlyList<EntryCoworker> Coworkers { get; init; } = [];
