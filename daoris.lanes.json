@@ -103,7 +103,8 @@
           "src/Daoris.Service/Daoris.Service.Http/Daoris.Service.Http.csproj",
           "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj",
           "src/Daoris.Service/Daoris.Service.Mcp/Daoris.Service.Mcp.csproj",
-          "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj"
+          "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj",
+          "src/Daoris.Service/Daoris.Service.Application.Rehearsals/Daoris.Service.Application.Rehearsals.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }
@@ -116,6 +117,7 @@
         "src/Daoris.Ports/**",
         "src/Daoris.Testing/**",
         "src/Daoris.Testing.Tests/**",
+        "src/Daoris.Adapters/**",
         "src/Layers.props",
         "src/BannedSymbols.Effects.txt"
       ],
@@ -123,7 +125,9 @@
         "units": [
           "src/Daoris.Ports/Daoris.Ports.csproj",
           "src/Daoris.Testing/Daoris.Testing.csproj",
-          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj"
+          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai.Tests/Daoris.Adapters.Memory.Lyntai.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

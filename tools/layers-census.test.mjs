@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
+import { checkAmbient, checkBudget, checkMemory, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -97,4 +97,22 @@ test('LAYERS1: a gate\'s trx is read as its tests with their milliseconds, and a
 
 test('LAYERS1: no duration records is a clean run that says so', () => {
   assert.deepEqual(checkBudget([], clean), []);
+});
+
+test('LAYERS1: the service\'s application naming Lyntai\'s memory or storage types is named, and its adapter and its vectors may', () => {
+  const SERVICE = 'src/Daoris.Service';
+  const found = {
+    files: [
+      at(SERVICE, 'Daoris.Service.Core'), `${SERVICE}/Daoris.Service.Core/Knowledge/Planted.cs`, `${SERVICE}/Daoris.Service.Core/Knowledge/Search.cs`,
+      'src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/Daoris.Adapters.Memory.Lyntai.csproj',
+      'src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/LyntaiMemory.cs',
+    ],
+    read: (path) => (path.endsWith('.csproj') ? project()
+      : path.endsWith('Planted.cs') ? 'using Lyntai.Storage.Sqlite;\n// GraphMemoryEngine in a comment is no use\nvar engine = new GraphMemoryEngine(name, store);\n'
+      : path.endsWith('Search.cs') ? 'using Lyntai.Inference;\nIVectorStore vectors = new InMemoryVectorStore();\n'
+      : 'using Lyntai.Storage;\nnew SqliteMemoryGraphStore(new SqliteConnectionFactory(path));\n'),
+  };
+  const problems = checkMemory(found);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /Knowledge\/Planted\.cs names Lyntai's memory or storage types 2 times/);
 });

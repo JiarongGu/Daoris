@@ -18,9 +18,10 @@ import { fileURLToPath } from 'node:url';
 import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
+import { checkMemory } from './layers-census/memory.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 
-export { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient, BUDGET_MS };
+export { checkAmbient, checkBudget, checkMemory, checkReferences, parseTrx, scanAmbient, BUDGET_MS };
 
 const EMPTY = { packages: {}, ambient: {}, slowTests: {} };
 
@@ -39,7 +40,9 @@ function main() {
       return 0;
     }
     const list = { ...EMPTY, ...JSON.parse(readFileSync(listFile, 'utf8')) };
-    const problems = [...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkBudget(records, list)];
+    const problems = [
+      ...checkReferences(tree, list), ...checkAmbient(scanAmbient(tree), list.ambient), ...checkBudget(records, list), ...checkMemory(tree),
+    ];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
     if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet and the unit budget hold');

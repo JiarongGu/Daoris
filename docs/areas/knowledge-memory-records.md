@@ -44,7 +44,9 @@ one job each, checked by `verify`.
 | Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
 | Call keys | `Core/Sessions/CallLineage.cs`, `Core/Sessions/CallKeys/` | A call's `_meta` lineage read by one ordered list of agents' keys, one file per agent (Claude Code's first, so a call carrying both is read as its); the list is held to the driver census's `service.callKeys` twin |
 | `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, the waits no session holds `MemoryOpWaits`, its rows' types `Memory/Records/` |
-| `LyntaiMemory`, `MemoryEngine` | `Core/Knowledge/Memory/` | One engine per repository over `memory.db`, and its read-only view for others |
+| `IMemoryEngines`, `MemoryEngine` | `src/Daoris.Ports/Memory/` | The memory engine's port: one engine per repository, its reads, its guarded writes and its read-only view for others |
+| `LyntaiMemory` | `src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/` | The port over Lyntai's graph engine and `memory.db`, composed by the hosts (`HostComposition.BuildMemory`) and handed to `ServiceFactory`; the core names no Lyntai storage type |
+| `StandInMemory`, `MemoryContract` | `src/Daoris.Testing/Memory/` | The stand-in the unit classes run on, held to Lyntai's engine by one contract its adapter's dependency tests run too; the classes over the real engine are in `Daoris.Service.Application.Rehearsals` |
 | `MemoryApplier`, `MemoryCoordinator` | `Core/Knowledge/Memory/` | Applies released rows, recovers at start, paces the sweep |
 | `MemorySweep`, `MemoryPresenter`, `MemoryView` | `Core/Knowledge/Memory/` | Rechecks citations, shows an entry as current only when checked, reads another repository's memory |
 | `MemoryProposals`, `MemoryDesk` | `Core/Knowledge/Memory/` | A proposal as a quest to the owner; the person's approve, decline, Keep and Drop |
