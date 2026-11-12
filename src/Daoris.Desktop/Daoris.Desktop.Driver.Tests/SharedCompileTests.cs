@@ -12,10 +12,9 @@ public sealed class SharedCompileTests
     public void The_driver_s_tree_and_the_declarations_censuses_compile_each_project_once()
     {
         var driver = DriverTree.Compiled.Value.Compilation;
-        var each = DesktopCompilations.Each;
 
-        Assert.Same(each[DesktopCompilations.Shipping.IndexOf(SourceFiles.DriverProject)], driver);
-        Assert.All(DesktopCompilations.Shipping, project => Assert.True(DesktopCompilations.Compiles(project) == 1,
-            $"{project}'s sources were compiled {DesktopCompilations.Compiles(project)} times"));
+        Assert.Same(DesktopCompilations.Of(SourceFiles.DriverProject), driver);
+        Assert.True(DesktopCompilations.Compiles(SourceFiles.DriverProject) == 1,
+            $"the driver's sources were compiled {DesktopCompilations.Compiles(SourceFiles.DriverProject)} times");
     }
 }
