@@ -35,7 +35,6 @@ internal static class DeclarationLiterals
     /// <summary>Every string of <paramref name="compilation"/>'s sources outside the store's folder that names a declaration.</summary>
     internal static List<LiteralHit> Hits(Compilation compilation)
     {
-        var hits = new List<LiteralHit>();
         var trees = DesktopCompilations.Trees(compilation).Where(tree => !tree.FilePath.StartsWith("Daoris.Desktop.Driver/Workplace/Declarations/", StringComparison.Ordinal)).ToList();
         // Only a node with a constant leaf can be known, so the model binds no other: a literal, or a name some source declares const.
         var consts = trees.SelectMany(tree => tree.GetRoot().DescendantNodes()).SelectMany(node => node switch
@@ -44,31 +43,35 @@ internal static class DeclarationLiterals
             LocalDeclarationStatementSyntax local when local.IsConst => local.Declaration.Variables.Select(each => each.Identifier.ValueText),
             _ => [],
         }).ToHashSet(StringComparer.Ordinal);
-        foreach (var tree in trees)
+        // Each tree is read on its own thread, through the model the other censuses bind it in; the hits keep the trees' order.
+        return [.. trees.AsParallel().AsOrdered().Select(tree => In(compilation, tree, consts)).ToList().SelectMany(each => each).Distinct()];
+    }
+
+    private static List<LiteralHit> In(Compilation compilation, SyntaxTree tree, HashSet<string> consts)
+    {
+        var hits = new List<LiteralHit>();
+        var model = SharedModels.Of(compilation, tree);
+        foreach (var node in tree.GetRoot().DescendantNodes())
         {
-            var model = compilation.GetSemanticModel(tree);
-            foreach (var node in tree.GetRoot().DescendantNodes())
+            var named = node switch
             {
-                var named = node switch
-                {
-                    LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } literal => Judged(literal.Token.ValueText),
-                    InterpolatedStringTextSyntax fragment => Judged(fragment.TextToken.ValueText),
-                    BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AddExpression } sum when sum.Parent is not BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AddExpression } && Leafed(sum, consts) =>
-                        model.GetConstantValue(sum) is { HasValue: true, Value: string folded } ? Judged(folded) : null,
-                    InterpolatedStringExpressionSyntax whole => model.GetConstantValue(whole) is { HasValue: true, Value: string folded } ? Judged(folded) : null,
-                    InvocationExpressionSyntax call when Called(call) is { } name && (name == "Named" || Members.Contains(name) && Leafed(call, consts)) =>
-                        Invoked(model.GetOperation(call) as IInvocationOperation),
-                    BinaryExpressionSyntax { RawKind: (int)SyntaxKind.EqualsExpression or (int)SyntaxKind.NotEqualsExpression } compare when Named(compare.Left) || Named(compare.Right) =>
-                        Compared(model.GetOperation(compare) as IBinaryOperation),
-                    IsPatternExpressionSyntax pattern when Named(pattern.Expression) =>
-                        model.GetOperation(pattern) is IIsPatternOperation { Value: var value, Pattern: IConstantPatternOperation { Value: var constant } } && IsEntryName(value) ? Entry(constant) : null,
-                    _ => null,
-                };
-                if (named is not null) hits.Add(new(tree.FilePath, DesktopCompilations.Line(node), MemberOf(node), named));
-            }
+                LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } literal => Judged(literal.Token.ValueText),
+                InterpolatedStringTextSyntax fragment => Judged(fragment.TextToken.ValueText),
+                BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AddExpression } sum when sum.Parent is not BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AddExpression } && Leafed(sum, consts) =>
+                    model.GetConstantValue(sum) is { HasValue: true, Value: string folded } ? Judged(folded) : null,
+                InterpolatedStringExpressionSyntax whole => model.GetConstantValue(whole) is { HasValue: true, Value: string folded } ? Judged(folded) : null,
+                InvocationExpressionSyntax call when Called(call) is { } name && (name == "Named" || Members.Contains(name) && Leafed(call, consts)) =>
+                    Invoked(model.GetOperation(call) as IInvocationOperation),
+                BinaryExpressionSyntax { RawKind: (int)SyntaxKind.EqualsExpression or (int)SyntaxKind.NotEqualsExpression } compare when Named(compare.Left) || Named(compare.Right) =>
+                    Compared(model.GetOperation(compare) as IBinaryOperation),
+                IsPatternExpressionSyntax pattern when Named(pattern.Expression) =>
+                    model.GetOperation(pattern) is IIsPatternOperation { Value: var value, Pattern: IConstantPatternOperation { Value: var constant } } && IsEntryName(value) ? Entry(constant) : null,
+                _ => null,
+            };
+            if (named is not null) hits.Add(new(tree.FilePath, DesktopCompilations.Line(node), MemberOf(node), named));
         }
 
-        return [.. hits.Distinct()];
+        return hits;
     }
 
     /// <summary>The name <paramref name="value"/> gives a declaration by its tail, or null.</summary>

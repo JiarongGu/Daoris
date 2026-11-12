@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -45,7 +46,7 @@ internal static class DesktopCompilations
             .Select(path => (Path.GetFileNameWithoutExtension(path), (MetadataReference)MetadataReference.CreateFromFile(path)))];
     });
 
-    /// <summary>Each shipping project's compilation, made once a run.</summary>
+    /// <summary>Each shipping project's compilation, made once a run; the driver's is the one the structure classes read too.</summary>
     internal static ImmutableArray<CSharpCompilation> Each => Built.Value;
 
     /// <summary>A path's form in every census: relative to the desktop tree, <c>/</c> between its parts.</summary>
@@ -61,9 +62,19 @@ internal static class DesktopCompilations
         return [.. SourceFiles.All(project, "*.cs").Concat(linked).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
-    /// <summary>One compilation of <paramref name="project"/>'s sources.</summary>
-    internal static CSharpCompilation Of(string project) =>
-        Compile(project, Sources(project).Select(path => (Relative(path), File.ReadAllText(path))), project != "Daoris.Desktop.Driver");
+    private static readonly ConcurrentDictionary<string, Lazy<CSharpCompilation>> Compiled = new(StringComparer.Ordinal);
+
+    private static readonly ConcurrentDictionary<string, int> Made = new(StringComparer.Ordinal);
+
+    /// <summary>How many compilations of <paramref name="project"/>'s sources this run has made.</summary>
+    internal static int Compiles(string project) => Made.GetValueOrDefault(project);
+
+    /// <summary>The one compilation of <paramref name="project"/>'s sources a run, made at its first ask and read by every census after.</summary>
+    internal static CSharpCompilation Of(string project) => Compiled.GetOrAdd(project, named => new(() =>
+    {
+        Made.AddOrUpdate(named, 1, (_, made) => made + 1);
+        return Compile(named, Sources(named).Select(path => (Relative(path), File.ReadAllText(path))), named != "Daoris.Desktop.Driver");
+    })).Value;
 
     /// <summary>A compilation of <paramref name="sources"/> (each a path under the desktop tree and its text), named as an assembly.</summary>
     internal static CSharpCompilation Compile(string assembly, IEnumerable<(string Path, string Text)> sources, bool driverBuilt)
