@@ -258,6 +258,9 @@ public sealed record Quest(
         : QuestReviewing.Waits(this) ? QuestHold.Unreviewed
         : null;
 
+    /// <summary>Done with a departure on it, derived and never lifted by the person's yes: outstanding work, and its ask is not done.</summary>
+    public bool Left => Status == QuestStatus.Done && Answers.Any(answer => answer.IsDeparture);
+
     /// <summary>
     /// Whether it waits: closed done, held for one of <see cref="Hold"/>'s
     /// causes. What follows it, a chain's next step or a quest waiting on it, waits with it.

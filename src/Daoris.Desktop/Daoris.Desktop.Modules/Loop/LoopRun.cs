@@ -83,6 +83,7 @@ internal sealed class LoopRun(
         lineage.Start();
         using var lineageResumed = loop.Power?.Hear(lineage.Resumed);
 
+        PluginBrowser.Hand(browser);
         // A plugin's word goes to the console under `plugin:<id>`; what the set does, without its words, to the log and the health record.
         shared.Hooks = PluginsAtStart.Set(homeDirectory, say: null, loop.Output, log, loop.Health);
         var adoptions = new PluginTokenAdoptions(homeDirectory, log);

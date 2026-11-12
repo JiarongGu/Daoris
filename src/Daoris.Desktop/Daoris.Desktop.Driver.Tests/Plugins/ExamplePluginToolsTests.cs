@@ -31,7 +31,7 @@ public sealed class ExamplePluginToolsTests
         var node = Assert.Single(manifest.Tools);
         Assert.Null(node.Problem);
         Assert.Equal("node", node.Id);
-        Assert.Equal(">=18.0.0", node.Versions);
+        Assert.Equal(plugin == "daoris-azure-devops" ? ">=22.0.0" : ">=18.0.0", node.Versions);
         Assert.False(string.IsNullOrWhiteSpace(node.For));
         Assert.Empty(node.Ready);
     }

@@ -17,7 +17,7 @@
 
 Daoris: the brief and the survey whole; D191, D22 and D213 whole (its points, the notes of rows a and b, the direction of 2026-10-29); the
 provider design's §11 and §12 (`docs/archive/2026-10-26-agent-provider-design.md:1001-1199`); the infrastructure design's §1 to §8
-(`docs/2026-10-27-provider-infrastructure-design.md:1-300`); FOUNDATION1's §2.4 and Part B's table (`docs/archive/2026-10-25-foundation-design.md:435-460`,
+(`docs/archive/2026-10-27-provider-infrastructure-design.md:1-300`); FOUNDATION1's §2.4 and Part B's table (`docs/archive/2026-10-25-foundation-design.md:435-460`,
 `:1674-1739`); `Agents/Contract/Provider.cs`, `Known.cs`, `Ports.cs`, `AgentRun.cs`, `ProviderParts.cs:100-133`; both trees'
 `Directory.Packages.props` and the desktop's project references. Lyntai: its study whole, with §3.1 rows d and s-vii, §7 and §9 as
 `2fb2dc7e` changes them; `docs/agent-provider-layer.md` whole; its D18, D19, D20, D70, D219, D221, D222, D225 to D228, D233, and D234 and
@@ -294,7 +294,7 @@ Roles, the rule `LineAccount` (`Agents/LineAccount.cs:201`), the cool-off the ro
 `DoorFailure`, `AgentErrors.Read` reads it as a limit, and the roster cools the account under Daoris's key and the profile, its end the
 restriction's `ResetAt` or `RetryNotBefore` where stated (`AgentFailure.cs:66-97` *(AG20)*), else D125's sixty minutes. An owner action
 (a credit refusal) is handled as today's credit case is until stage B, and is never written into `until` as a made-up date
-(`docs/2026-10-27-provider-infrastructure-design.md:269-271`). A cooling entry an older build wrote is read as today: no field is added.
+(`docs/archive/2026-10-27-provider-infrastructure-design.md:269-271`). A cooling entry an older build wrote is read as today: no field is added.
 
 AGENTINFRA1's restriction against the layer's: cause and subject agree member for member (study §2); the subject key is the layer's internal
 scope string (`AgentPoolReducer.cs:33-41` *(AG20)*), so Daoris keeps its own (owner and profile, model, endpoint); the owner action's reason
@@ -586,7 +586,7 @@ Each travels as a quest that states the need and its evidence, never the change;
 | **Y3** | An application that converses with an agent needs a run kept across turns: a word taken while a turn runs, a stop that keeps the conversation, a permission request waiting for a person, background work read until it ends. | Claude Code's protocol queueing and native held stdin, built and measured (Q6); Codex's protocol adapter unmeasured | D233's option made a row | L6, L7 | fourth |
 | **Y4** | An application that lets a person choose how freely an agent acts needs the door to carry the agent's own permission mode, or refuse one it cannot. | Daoris's three postures (`ProviderParts.cs:119-120`); the layer's two intents (`ClaudeAgentArgs.cs:83-93`); no mode set by the ACP door (survey §8) | new | L5, L6 | third |
 | **Y5** | An application that starts each turn with variables of its own needs a turn's environment, applied as a registration's is, a null removing one. | Daoris's variables per start (D213 point 6); §0 item 3 | new, or AG17 widened | none (one registration per start meanwhile) | any |
-| **Y6** | An application that tells a person what to do about a hold needs the owner action's reason: refill, sign in, grant a permission, change a configuration. | `docs/2026-10-27-provider-infrastructure-design.md:126-130`; the layer's owner action carries none (survey §8) | new | AGENTINFRA1 stage B | third |
+| **Y6** | An application that tells a person what to do about a hold needs the owner action's reason: refill, sign in, grant a permission, change a configuration. | `docs/archive/2026-10-27-provider-infrastructure-design.md:126-130`; the layer's owner action carries none (survey §8) | new | AGENTINFRA1 stage B | third |
 | **Y7** | An application that composes plugins for a CLI agent's session needs the door to hand them, or refuse. | `Ports.cs:35-36`; `ClaudeAgentOptions.cs:6-40` | new, the Claude door's own option | L5 | third |
 | **Y8** | An application that composes without a container needs each built-in door's provider, its claims included, constructible directly. | §0 item 2; the driver's no container (survey §11) | new | none (a private container meanwhile) | any |
 | filed | AG10, AG17 | the study's | filed | L4, L5 | second |

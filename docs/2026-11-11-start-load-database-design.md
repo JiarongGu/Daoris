@@ -1,7 +1,7 @@
 # Proposed design: an index over the session events, and a change mark for the quests (STARTPERF1, D275)
 
 **Standing:** proposed. D275 is reserved for the choice in §6, taken after Codex's read. Nothing in STARTPERF1's branch moves storage;
-the [measurement](2026-11-11-start-load-measurements.md) is the evidence it reads.
+the [measurement](archive/2026-11-11-start-load-measurements.md) is the evidence it reads.
 
 ## 1. What the measurement says of the storage
 

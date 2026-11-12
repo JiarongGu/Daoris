@@ -2,6 +2,7 @@
 // and an answer the step cannot go on from thrown as a `Refusal` with the code the step fails by.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
+import { available, noted, through } from './browser.mjs';
 import { kept, refused } from './credential.mjs';
 
 const VERSION = 'api-version=7.1';
@@ -58,9 +59,8 @@ export class Refusal extends Error {
 
 export const TRANSIENT = ['unavailable', 'rate-limited'];
 
-async function ask(method, url, body, version) {
-  const token = kept()?.token;
-  if (!token) throw new Refusal('no-token', 'no personal access token is kept: run `daoris daoris-azure-devops login`');
+/** The call with the kept token, as `{ status, json }`; Azure DevOps refusing the token is thrown as `unauthorized`. */
+async function withToken(token, method, url, body, version) {
   let response;
   try {
     response = await fetch(`${url}${url.includes('?') ? '&' : '?'}${version}`, {
@@ -86,25 +86,72 @@ async function ask(method, url, body, version) {
     refused();
     throw new Refusal('unauthorized', `Azure DevOps refused the token (${response.status})${why}`);
   }
-  if (response.status === 429) throw new Refusal('rate-limited', 'Azure DevOps is limiting this token for now');
-  if (response.status >= 500) throw new Refusal('unavailable', `Azure DevOps answered ${response.status}`);
-  return { status: response.status, json };
+  return answered(response.status, json, 'this token');
+}
+
+/** An answer the step goes on from, or the refusal a limit or an outage is: the same by either way. */
+function answered(status, json, whom = 'this call') {
+  if (status === 429) throw new Refusal('rate-limited', `Azure DevOps is limiting ${whom} for now`);
+  if (status >= 500) throw new Refusal('unavailable', `Azure DevOps answered ${status}`);
+  return { status, json };
+}
+
+/** The call from the person's signed-in page in Daoris's browser (browser.mjs). */
+async function withBrowser(method, url, body, version, root) {
+  let reply;
+  try {
+    reply = await through(method, `${url}${url.includes('?') ? '&' : '?'}${version}`, body, root);
+  } catch (error) {
+    throw new Refusal('unavailable', `Daoris's browser could not make the call: ${error?.message ?? error}`);
+  }
+  if (reply.lapsed) {
+    throw new Refusal('signed-out', "the Azure DevOps sign-in in Daoris's browser has lapsed and renewing it did not bring it back: sign in to Azure DevOps there, then try again");
+  }
+  return answered(reply.status, reply.json);
+}
+
+// The token the process last found refused: until a different one is kept, its calls go straight to the browser.
+let refusedToken = null;
+
+/**
+ * One call, by the kept token where Azure DevOps takes it, else through the person's signed-in session in Daoris's browser: no token
+ * kept, or the kept one refused (a 401, 403 or its sign-in page). With no browser handed, the token's own failure stands.
+ */
+async function ask(method, url, body, version, root) {
+  const token = kept()?.token;
+  if (token && token !== refusedToken) {
+    try {
+      const done = await withToken(token, method, url, body, version);
+      noted('token');
+      return done;
+    } catch (error) {
+      if (!(error instanceof Refusal) || error.code !== 'unauthorized' || !available()) throw error;
+      refusedToken = token;
+    }
+  }
+  if (!available()) {
+    throw token
+      ? new Refusal('unauthorized', 'Azure DevOps refused the kept token: run `daoris daoris-azure-devops login` with a new one')
+      : new Refusal('no-token', 'no personal access token is kept: run `daoris daoris-azure-devops login`');
+  }
+  noted('browser', token !== undefined);
+  return withBrowser(method, url, body, version, root);
 }
 
 const apis = (repo) => `${encodeURIComponent(repo.project)}/_apis`;
 
 /** A call on the repository's own Git API. */
 export const call = (repo, method, path, body) =>
-  ask(method, `${repo.base}/${apis(repo)}/git/repositories/${encodeURIComponent(repo.repository)}${path}`, body, VERSION);
+  ask(method, `${repo.base}/${apis(repo)}/git/repositories/${encodeURIComponent(repo.repository)}${path}`, body, VERSION, repo.base);
 
 /** A call on the project's API (builds, their timelines). */
-export const project = (repo, method, path, body) => ask(method, `${repo.base}/${apis(repo)}${path}`, body, VERSION);
+export const project = (repo, method, path, body) => ask(method, `${repo.base}/${apis(repo)}${path}`, body, VERSION, repo.base);
 
 /** A call on the organization's API (`connectionData`). */
-export const organization = (repo, method, path) => ask(method, `${repo.base}/_apis${path}`, null, PREVIEW);
+export const organization = (repo, method, path) => ask(method, `${repo.base}/_apis${path}`, null, PREVIEW, repo.base);
 
 /** A call on the project's release management API. */
-export const releases = (repo, method, path, body) => ask(method, `${repo.releases}/${apis(repo)}/release${path}`, body, PREVIEW);
+export const releases = (repo, method, path, body) => ask(method, `${repo.releases}/${apis(repo)}/release${path}`, body, PREVIEW, repo.releases);
 
 export const heads = (branch) => `refs/heads/${branch}`;
 export const withoutHeads = (ref) => (typeof ref === 'string' ? ref.replace(/^refs\/heads\//, '') : null);

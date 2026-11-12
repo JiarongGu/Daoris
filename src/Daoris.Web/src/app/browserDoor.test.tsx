@@ -4,25 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The browser's door, the way the application holds it: the whole window over a mocked shell, so the browser's door
-// and where a link goes are what a person meets on the window.
+// The browser's door and where a link goes, as a person meets them: the whole window over a mocked shell.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@shenora/react', async () => {
-  const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
-  return {
-    ...actual,
-    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
-    useShenoraEvent: () => {},
-    useWindowMaximized: () => false,
-  };
-});
+vi.mock('@shenora/react', async () => (await import('../test/doubles/appShell')).appShellMock(invoke, { notifyReady }));
 
 import '../locales/i18n';
+import { stubFetch } from '../test/doubles/fetchRoutes';
 import { App } from './App';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
@@ -41,25 +33,21 @@ const CHAT = {
   created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', workspace: 'default',
 };
 
-function respond(url: string): Response {
-  if (url.startsWith('/api/registry')) {
-    return Response.json([{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }]);
-  }
-  if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical', note: '' });
-  if (url.startsWith('/api/quests')) return Response.json([QUEST]);
-  if (url.startsWith('/api/sessions')) return Response.json(url.includes('daoris%3Ahelp') ? [] : [CHAT]);
-  if (url.startsWith('/api/sync')) return Response.json({ workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] });
-  return Response.json([]);
-}
+const SERVICE = {
+  '/api/registry': [{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }],
+  '/api/status': { semantic: false, tier: 'lexical', note: '' },
+  '/api/quests': [QUEST],
+  '/api/sessions': (url: string) => (url.includes('daoris%3Ahelp') ? [] : [CHAT]),
+  '/api/sync': { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] },
+};
 
-/** A set-up step's set-up waiting for the person here, as the driver's state says it. */
 const IN_REVIEW = {
   quest: 'q2', title: 'Show #q1 in `local` for review', environment: 'local', look: 'http://localhost:4200/reports',
   shows: 'the new column, turned on', served: false,
 };
 
 function machine(links: 'system' | 'daoris' | undefined, drivingBrowser?: string[], inReview?: (typeof IN_REVIEW)[]) {
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  stubFetch(SERVICE);
   invoke.mockImplementation(async (module: string, type: string) => {
     if (module === 'DAORIS.BROWSER') return { favorites: [], extensions: 'offer', browser: 'daoris', edgeFound: true, ...(links ? { links } : {}) };
     if (module === 'DAORIS.WINDOWS') return { opened: true, windows: [] };

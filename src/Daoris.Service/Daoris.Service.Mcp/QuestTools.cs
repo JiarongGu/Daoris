@@ -379,6 +379,14 @@ public sealed class QuestTools(
                         + accepted.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
                 }
 
+                // Never the plain done: what it departed from is still wanted, accepted or not.
+                if (quest.Left)
+                {
+                    text.AppendLine("  unfinished: it departed from "
+                        + $"{string.Join(", ", quest.Answers.Where(answer => answer.IsDeparture).Select(answer => $"requirement {answer.Requirement}"))}, "
+                        + "so part of the work is left, and the ask is not done until it is finished or the person closes the ask.");
+                }
+
                 blocks.Add(new(quest.To, text.ToString()));
             }
         }

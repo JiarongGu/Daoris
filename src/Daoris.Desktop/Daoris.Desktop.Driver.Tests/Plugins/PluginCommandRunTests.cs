@@ -12,11 +12,11 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PluginCommandRunTests : IDisposable
 {
     private const string Token = "throwaway-adopted-token";
-    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-command-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = ScratchFolders.New("daoris-plugin-command-");
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        ScratchFolders.Remove(_home);
     }
 
     private void Install(string interfaces = """{ "commands": [{ "name": "login", "about": "Keeps a token.", "interactive": true, "adopts": { "hosts": ["tickets.example"], "answer": "token" } }, { "name": "status", "about": "Says what is kept." }], "storage": { "for": "the token" } }""")

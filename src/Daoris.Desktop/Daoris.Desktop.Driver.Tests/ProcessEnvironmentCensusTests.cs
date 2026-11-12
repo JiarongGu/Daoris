@@ -38,6 +38,7 @@ public sealed class ProcessEnvironmentCensusTests
         ["Workplace/Deps/DependencyStoreTests.cs"] = ("a variable a dependency's `env` names, and one it does not, are planted in the process to show which reaches the key and the install", null),
         ["Agents/Layer/LayerHoldProcessTests.cs"] = ("a variable of the process's is planted to show a run's process does not inherit one its shell removed", null),
         ["Plugins/PlaceHandTests.cs"] = ("a private storage folder the desktop inherited is planted to show a plugin's start never passes it on", null),
+        ["Plugins/PluginBrowserTests.cs"] = ("a browser address the desktop inherited is planted to show a plugin's start never passes it on unless it declares the browser", null),
         ["Review/IntegrationRunnerCallTests.cs"] = ("a variable of the process's is planted to show the runner's gate environment leaves it out", null),
         ["Roles/SessionsCommandRoleTerminalTests.cs"] = ("the role key a terminal command holds is read from the process's environment", null),
         ["Service/RemoteTargetTests.cs"] = ("the service's URL variable is read from the process's environment, and the editor's read must ignore it", null),

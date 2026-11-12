@@ -60,11 +60,15 @@ public static class Observation
     /// Whether its last turn ended on its model's provider refusing a call (<see cref="HarnessEnding.ProviderRefused"/>):
     /// the door's word, so <paramref name="lastWords"/> are the provider's error, quoted as its words and never as a question.
     /// </param>
+    /// <param name="departed">
+    /// How many requirements its done departed from, as the quest's answers say (<see cref="QuestLeft"/>): where any, the end says
+    /// part of the work is left and never the plain done.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
         string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false,
-        bool awaitsHelper = false, bool providerRefused = false) => questStatus switch
+        bool awaitsHelper = false, bool providerRefused = false, int departed = 0) => questStatus switch
     {
         // Ask and wait: the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -152,6 +156,14 @@ public static class Observation
 
         // The quest reaching its close outranks a messy exit: the work is what matters, and the exit
         // is noted for the reader rather than allowed to overrule the record.
+        // A done that departed from what the person required is not finished work, so it never reads as the plain done.
+        "Done" when departed > 0 => SessionConclusion.Of("completed", Exit(
+            Noted.Of(
+                EndNoteCodes.EndedDoneLeft,
+                $"the quest reached done, but it departed from {departed} requirement{(departed == 1 ? "" : "s")}: part of the work is left"
+                + (exitCode == 0 ? "." : $" (exit {exitCode})."),
+                ("left", departed)),
+            exitCode)),
         "Done" => SessionConclusion.Of("completed", Exit(
             Noted.Of(EndNoteCodes.EndedDone, exitCode == 0 ? "the quest reached done." : $"the quest reached done (exit {exitCode})."),
             exitCode)),

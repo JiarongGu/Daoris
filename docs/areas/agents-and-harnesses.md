@@ -236,8 +236,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`
     and the service stores' renames (`SessionColumnNames` and its kin), deleted with nocompat1's steps; a plugin's `session.ended`
     frame's `adapter`, renamed with the work-event grammar's next version; a machine-log line's `adapter`, until its file ages out.
-    An older remote host's `adapter` reads as the door `unknown`. `OldSeamNamesCensusTests` and `StoredOldNamesCensusTests` hold
-    the rest. (D232)
+    An older remote host's `adapter` reads as the door `unknown`. `StoredOldNamesCensusTests` holds the rest. (D232)
 
 ## Where a change goes
 

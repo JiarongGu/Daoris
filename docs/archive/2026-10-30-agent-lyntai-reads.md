@@ -237,7 +237,7 @@ in kind: pure functions over a set of holds, the clock and an event, owning no c
 higher revision when its attempt fails; admission over a seat's covering scopes, a door's allowance among them; a probe lease with its
 token; a report by that token resolving the lease; and a clear by id and revision (`AgentAccountPool.cs:17-31`, `:105-140` *(AG20)*).
 LQ12 names admission, a revision-checked release and a lease. AGENTINFRA1 also binds a restriction to its credential identity and epoch,
-so that an observation for an old credential never releases its replacement (`docs/2026-10-27-provider-infrastructure-design.md:171-174`,
+so that an observation for an old credential never releases its replacement (`docs/archive/2026-10-27-provider-infrastructure-design.md:171-174`,
 `:183-185`), which the layer's hold does not carry (`AgentPoolReducer.cs:7-9` *(AG20)*).
 *Change:* LQ12 states the five operations, each pure over a snapshot whose holds carry their revisions, so a host's lock or
 compare-and-set sees a concurrent writer, the stored form the host's; and §5.2 either asks the credential epoch as part of a hold's subject
@@ -247,7 +247,7 @@ or names it the host's envelope.
 terminal's `daoris agent` verbs write `cooling.json` on one home, under a lock taken across processes (`Agents/AccountCooling.cs:236-246`;
 `Tests/Agents/CoolingTwinTests.cs:8-10`: the screen's *Try now* and the terminal's `profile ready`), and a status question is locked across
 processes because the terminal's `agent list` asks the same accounts (`Agents/ProbeLock.cs:14-16`). AGENTINFRA1's isolated home admits no
-legacy connector or competing loop (`docs/2026-10-27-provider-infrastructure-design.md:273-277`), not the same build's terminal verbs. So
+legacy connector or competing loop (`docs/archive/2026-10-27-provider-infrastructure-design.md:273-277`), not the same build's terminal verbs. So
 the layer's one-process pool (`AgentAccountPool.cs:32-34` *(AG20)*) cannot be stage B's store, and LQ12 is needed.
 *Change:* §3.2 and LQ12's evidence cite these lines; FOUNDATION1 §19.1 (`docs/archive/2026-10-25-foundation-design.md:2731`) is about two shells on
 one home and supports the claim less directly.
@@ -325,7 +325,7 @@ Paths use the design’s aliases: `Driver/` and `Tests/` denote the desktop driv
 
    **Change:** request generation-safe restriction identity and lease ownership, with admission and reservation committed against the complete applicable state. Include removal/recreation followed by stale clear, lease expiry followed by takeover and late completion, and a new covering hold inserted during admission. These are source-derived counterexamples, **not executed measurements**.
 
-   An isolated home does **not** establish one writer. AGENTINFRA1 excludes legacy clients and competing loops (`docs/2026-10-27-provider-infrastructure-design.md:273–284`); it does not define a universal single-process storage guarantee. Existing probes explicitly coordinate terminal and desktop processes (`Driver/Agents/ProbeLock.cs:14–18`), and cooling holds a cross-process lock (`AccountCooling.cs:238–247`). Keep LQ12’s multiprocess requirement. The actual isolated runtime’s writer inventory remains **unmeasured**.
+   An isolated home does **not** establish one writer. AGENTINFRA1 excludes legacy clients and competing loops (`docs/archive/2026-10-27-provider-infrastructure-design.md:273–284`); it does not define a universal single-process storage guarantee. Existing probes explicitly coordinate terminal and desktop processes (`Driver/Agents/ProbeLock.cs:14–18`), and cooling holds a cross-process lock (`AccountCooling.cs:238–247`). Keep LQ12’s multiprocess requirement. The actual isolated runtime’s writer inventory remains **unmeasured**.
 
 7. **Non-blocking — re-pointing pending lines is better than retaining abandoned row identifiers.**  
    I accept Design `:521–523` over my proposal’s original-row rule. The reader validates `row` against a closed list (`Tests/Agents/ProviderConformance.cs:240–245`, `:359–374`); retaining a row this design no longer builds misstates the closing obligation. Existing native and protocol frame cases explicitly name k and i (`Tests/fixtures/providers/claude-code/pending.json:23–26`).
@@ -533,7 +533,7 @@ As written, the new rule can therefore stop a continuation that today proceeds a
 
 P:814 now covers failure observation, admission/reservation, leasing, reporting an attempt by token, and revision-bound clear. None explicitly represents a positive status or credit observation obtained **without an admitted agent attempt**.
 
-The accepted infrastructure contract requires an authoritative newer report to discharge the matching restriction, and permits a positive credit check to resolve `OwnerAction(refill)` (`docs/2026-10-27-provider-infrastructure-design.md:176–185`). A one-attempt clear is deliberately different.
+The accepted infrastructure contract requires an authoritative newer report to discharge the matching restriction, and permits a positive credit check to resolve `OwnerAction(refill)` (`docs/archive/2026-10-27-provider-infrastructure-design.md:176–185`). A one-attempt clear is deliberately different.
 
 Lyntai already has a separate `Lift` operation, but it handles only stated-time recoveries and explicitly excludes owner-action and unknown recovery (`L/Core/Agents/AgentPoolReducer.cs:173–190`). Merely exposing that operation would not satisfy the accepted contract either.
 
@@ -637,7 +637,7 @@ Every other line relied on holds, including the capture's `:145-196`, `AgentRun.
 
 **O3-F9 (not blocking; before LQ16 is sent). LQ16's second half must ask for the frame as stated.** Today's walk reads `unifiedWindows` with each window's `utilization` and precision, the standing, and the overage and credit state (`AccountReadings.cs:123-180`, `:310-314`); LQ16 lists these as LQ14 does, or the move blanks windows (round 2 found the same of the usage server's headline windows).
 
-**O3-F10 (not blocking; before LQ12 is sent). LQ12's evidence table is narrower than the infrastructure design's.** That design lets a bounded status probe discharge an `Unknown` recovery (`docs/2026-10-27-provider-infrastructure-design.md:180`); LQ12 confines a newer report to "a stated recovery" (:934).
+**O3-F10 (not blocking; before LQ12 is sent). LQ12's evidence table is narrower than the infrastructure design's.** That design lets a bounded status probe discharge an `Unknown` recovery (`docs/archive/2026-10-27-provider-infrastructure-design.md:180`); LQ12 confines a newer report to "a stated recovery" (:934).
 
 **O3-F11 (not blocking). AG20 has landed on Lyntai's `master`.** `bbbe285b` merges `0cbd84c1`, the layer's sources identical to `2fb2dc7e`'s; D234's standing text unchanged. Refresh §0.2 row 1, §4.2's "two answers", §11 item 2 and R-a's "if accepted"; re-base unmarked Lyntai lines on `bbbe285b`. Whether the merge counts as the owner's acceptance is Lyntai's to record: unmeasured.
 
@@ -658,7 +658,7 @@ References: **P** = `docs/2026-10-30-agent-lyntai-design.md`; **D/** = `src/Daor
 | **C2-1 — oracle equivalence** | **Open.** P:776–805 supplies the observation list, projection, clock and identity handling, expected provenance and sabotage. Its required one-to-one source correspondence cannot represent the readers’ actual relationship; C3-1. |
 | **C2-2 — complete trusted ingress** | **Open.** I accept widening LQ11 instead of adding another request. P:486–503 restores phase and adds typed access disposition. However, the account handlers still require another sentence reading, including one called by `OpeningAccount`; C3-2. |
 | **C2-3 — continuation after tool activity** | **Open, narrowed.** P:519–533 correctly withdraws *Uncertain holds* and preserves the guarded go-on. Its delivery-to-receipt mapping is still wrong for protocol session creation, and its blanket retry wording conflicts with distinct opening and native-resume rules; C3-3 and C3-5. |
-| **C2-4 — independent positive evidence** | **Closed.** P:463–471 and :934 add the sixth operation, matching identity/revision/subject and keeping one-attempt release separate; R-B includes it at P:872. This addresses the accepted infrastructure contract at `docs/2026-10-27-provider-infrastructure-design.md:176–185`, beyond Lyntai’s stated-recovery-only `Lift` at L/Core/Agents/AgentPoolReducer.cs:174–190. |
+| **C2-4 — independent positive evidence** | **Closed.** P:463–471 and :934 add the sixth operation, matching identity/revision/subject and keeping one-attempt release separate; R-B includes it at P:872. This addresses the accepted infrastructure contract at `docs/archive/2026-10-27-provider-infrastructure-design.md:176–185`, beyond Lyntai’s stated-recovery-only `Lift` at L/Core/Agents/AgentPoolReducer.cs:174–190. |
 | **C2-5 — initialization dependency** | **Closed.** P:1039–1045 adds response-dependent sequencing, withheld-answer and initialization-error cases; LQ15 at P:937 keeps sequencing inside the library. The cited old readers wait at D/Agents/ClaudeUsage.cs:197–203 and CodexUsage.cs:241–250; L/Basic/CliUsageSource.cs:133–142 eagerly queues requests. |
 | **C2-6 — AG20 citations** | **Closed; decline accepted. I withdraw C2-6.** Raw Git-blob LF counts at **both** `2fb2dc7e` and `0cbd84c1` are **6,770**. D234 starts at `docs/DECISIONS.md:6709`, standing :6711–6713; D235 starts at :6747, standing :6749–6750, procedure :6753–6763. §17’s counts hold. AG20 is now on `master`; the earlier master-status statements are historical. |
 

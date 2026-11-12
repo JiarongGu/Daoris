@@ -126,6 +126,29 @@ phrasing came back. `tools/read-path-bench.mjs`, before and after:
 The largest area, and with it the largest change's start, fell by 44 KB; the median moved little, since the median area was
 already cut.
 
+**The third cut, and the backlog (2026-11-12).** The desktop app went from 8,382 words to 5,274 (sixty-four rules: what its parts
+table held as rules joined three of them or became rule 64), co-working and messages from 5,921 to 4,517 (rules 50 and 51 lifted
+from its parts table), code structure and process from 4,772 to 2,898 (rule 7's route classes left to the index, rule 17's
+figures to the archive's OPTIMIZE1d entry, the merge tool's cell said as rule 19) and install, home and update from 4,563 to 3,924,
+each rule kept under its number. Knowledge, memory and records (4,408) and doctrine and the CLI (4,241) were already under the
+line and stay as they are; conversations and context (7,863) waits for its builders. The backlog went from 15,663 words to 8,154:
+every row other than the six under build says what is left and its design, all 113 ids kept, the built clauses the archive lacked
+moved to it; the six rows under build hold 2,110 words, and the rest is 6,044. Seven designs more were filed. `tools/read-path-bench.mjs`,
+before and after:
+
+| | Before | After |
+|---|---|---|
+| Floor over the repository as it is: first, within three, hits from history | 1/12, 5/12, 24/36 | 1/12, 5/12, 24/36 |
+| Floor less history: first, within three | 5/12, 9/12 | 5/12, 9/12 |
+| Floor over the present alone: first, within three | 10/12, 11/12 | 10/12, 11/12 |
+| An area, median and largest | 29.5 KB, 53.3 KB | 28.9 KB, 49.0 KB |
+| A row, median and largest | 0.4 KB, 8.8 KB | 0.3 KB, 3.1 KB |
+| The bytes at a change's start, at the median area and the largest | 56.2 KB, 88.3 KB | 55.4 KB, 78.4 KB |
+| Dated documents at `docs/`'s top | 76, 6.0 MB | 69, 5.9 MB |
+
+No hit moved: the searches already found these areas, and a cut changes how much a change reads once there. The largest start
+fell by 10 KB, its row by 5.7 KB; the largest area is now the one under build.
+
 ## 4. The candidates
 
 1. **A present search** (adopted). A question about how something works now is searched in what is true now (the brief, the area
@@ -190,4 +213,5 @@ again shows memory at least as good. Asked of Lyntai, with the bench's numbers:
   remembered into `memory.db` and asked through `LyntaiMemory`) is not a tool yet, and is run again at each Lyntai answer.
 - **The ten designs left at the top.** Each needs its citing file changed first: the lanes file's `_why`, a file under the
   size ratchet shrunk, a fixture renamed.
-- **Each area cut to 4,500 words, the backlog to open rows, the examples** (§6, steps 3 to 5).
+- **The rest of the cuts and the examples** (§6, steps 3 to 5): conversations and context once its builders settle; the six
+  backlog rows under build, as they settle, which brings the backlog under its 6,600; the examples by the same steps.
