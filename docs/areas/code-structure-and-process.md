@@ -162,7 +162,9 @@ finishes first and the whole set runs once.
     declared `regenerate` command makes a generated input current before the gates; a gate that ends abnormally is said so and the run
     goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
     in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and
-    said in the summary) is killed and fails as over-budget. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
+    said in the summary) is killed and fails as over-budget. The time ratchet (`tools/time-ratchet.mjs`) is judged once inside a merge, after every gate has finished, on the
+    timing records that merge's own gates wrote (`--since` its start), as a last check that fails like a gate and is named in the
+    summary; verify's own run of it stands aside inside a merge, and outside one judges what the records hold. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
     set down as main's, what ran over budget), read by `tools/dev-metrics.mjs`. `TASKS.md` merges by its rows' ids
     (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
     a gate a merge now runs, the last green on 2026-11-02.

@@ -458,6 +458,7 @@ import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
 import { clearMerged, staleRun } from './merge/queue-stale.ts';
+import { ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
@@ -3343,6 +3344,10 @@ function runRecorded(root, gates, dir, {
   kind = null, gateVerdict = () => true, step = gateStep, waitFor = null,
 } = {}) {
   const commit = headCommit(root);
+  // Inside a merge the time ratchet is the merge's own last check, so verify's stands aside (tools/time-ratchet.mjs).
+  const stepFor = kind === 'merge' && step === gateStep
+    ? (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } })
+    : step;
   const regenerated = regenerate(regenerations(gates), { run: shellRunner(root, gateEnvironment()) });
   for (const line of regenerated.lines) console.log(line);
   if (!regenerated.ok) throw new Refusal(regenerated.lines.at(-1), 1);
@@ -3363,7 +3368,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // A Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step, noBuild: reuseBuild(beside?.built, tree) });
+      const result = await runOne(flow, { where, gate, logs, beside: beside ?? {}, tree, trees, step: stepFor, noBuild: reuseBuild(beside?.built, tree) });
       Object.assign(result, { tree, at: started });
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
@@ -3405,7 +3410,7 @@ async function gateMerge(root, state, plan) {
 
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
   for (const line of selectionLines(selection)) console.log(line);
-  const results = await runRecorded(root, gates, dir, {
+  const results = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing,
     oneAtATime: state.oneAtATime === true,
     branch,
@@ -3414,7 +3419,7 @@ async function gateMerge(root, state, plan) {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  });
+  }), ratchetIn(root, gateEnvironment()));
   const home = verdictsHome(root);
   const settled = settleMerge({
     branch, at: nowIso(), ms: results.reduce((sum, result) => sum + (result.ms ?? 0), 0), results,
@@ -3423,7 +3428,7 @@ async function gateMerge(root, state, plan) {
   appendRecord(join(home, MERGE_RECORD), settled.record);
   const failed = settled.failed;
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
-  const notRun = gates.length - results.length;
+  const notRun = gates.length - (results.length - 1);
 
   console.log('');
   for (const line of [...settled.lines, timeoutState.note()]) if (line) console.log(line);
@@ -3509,7 +3514,7 @@ async function rerunGates(root, options) {
     console.log(`  ${pad('kept', 8)} ${pad(kept.name, 16)} ${pad(kept.verdict, 8)} from ${when(kept.at)}  ${results[kept.name]?.log ?? ''}${note}`);
   }
   state.results = { [branch]: results };
-  const ran = await runRecorded(root, gates, dir, {
+  const ran = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || options.keepGoing,
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
@@ -3518,11 +3523,11 @@ async function rerunGates(root, options) {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
     },
-  });
+  }), ratchetIn(root, gateEnvironment()));
 
   const failedRan = ran.filter((result) => result.verdict === 'FAIL');
   const failed = [...failedRan.map(gateNamed), ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
-  const notRun = gates.length - ran.length;
+  const notRun = gates.length - (ran.length - 1);
   const keptNote = planned.kept.length
     ? `${count(planned.kept.length, 'verdict')} kept (${planned.kept.map((kept) => `${kept.name}, from ${when(kept.at)}`).join('; ')})`
     : 'no verdict kept';
