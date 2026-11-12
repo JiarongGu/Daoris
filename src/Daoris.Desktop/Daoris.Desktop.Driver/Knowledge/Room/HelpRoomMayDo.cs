@@ -41,9 +41,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         // A discard of a session branch granted is the helper's to press with no card.
         var discards = machine.Acts.Contains(ActFamilies.Discard);
         text.Append(discards
-            ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
-            : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
-        text.Append("where they already are.\n\n");
+            ? "A push or a merge the person asks for goes on their card like any press. "
+            : "A push, a merge or a discard the person asks for goes on their card like any press. ");
+        text.Append("Never sign in or handle a key: those stay the person's own presses, where they already are.\n\n");
         text.Append(HelpDoorThrough.Carded);
         if (machine.Acts.Count > 0) text.Append(HelpRoomFamilies.Granted(machine.Acts));
         text.Append("Opening a department (`daoris repository create`) or asking for a room (`daoris place … --room`) waits on the\n");

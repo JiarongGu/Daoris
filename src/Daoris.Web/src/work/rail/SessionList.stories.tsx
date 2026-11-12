@@ -297,3 +297,49 @@ export const ContinuesAndHelpsChinese: Story = { ...ContinuesAndHelps, decorator
 export const ContinuesAndHelpsDark: Story = { ...ContinuesAndHelps, decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
 /** The same, by repository: each repository's group draws its helper under the session it helps, its reviewer under its work. */
 export const ContinuesAndHelpsByRepository: Story = { args: { ...ContinuesAndHelps.args, arrangement: 'repository' } };
+
+/**
+ * A line's state, read from all its parts and co-workers: the session whose own record stopped but whose newer part works
+ * shows *Working* in part 2, a finished session whose helper works shows *Working* with the helper named, and one whose helper
+ * waits on the person is in *Needs you* through the helper. In English, 中文 and dark.
+ */
+const LINE_PARTS: Session[] = [
+  session({ id: 'e4r11e00', state: 'stopped', kind: 'chat', created: at(90), updated: at(40) }),
+  session({ id: 'n3w3r000', state: 'working', kind: 'chat', from: 'e4r11e00', fromWhy: 'limit', created: at(40), updated: at(1) }),
+  session({ id: 'd0ne5e55', state: 'completed', quest: '7a82cc', created: at(80), updated: at(30) }),
+  session({ id: 'w0rk3r00', state: 'working', kind: 'chat', serves: 'd0ne5e55', created: at(20), updated: at(1) }),
+  session({ id: 'h3ld0000', state: 'completed', repository: 'game', quest: '5e7a11', created: at(120), updated: at(60) }),
+  session({ id: 'w41t3r00', state: 'awaiting-person', kind: 'chat', serves: 'h3ld0000', created: at(50), updated: at(10) }),
+];
+const lineRead = (by: string, state: 'working' | 'needs-you', role: string) => ({
+  state, group: state, reason: state === 'working' ? 'working' : 'question', by, role,
+});
+const LINE_GROUPINGS: SessionGrouping[] = [
+  {
+    session: 'e4r11e00', group: 'done', state: 'done', reason: 'stopped', shown: 'stopped', archived: false, teammate: false,
+    line: lineRead('n3w3r000', 'working', 'part'),
+  },
+  {
+    session: 'n3w3r000', group: 'working', state: 'working', reason: 'working', shown: 'working', archived: false, teammate: false,
+    line: lineRead('n3w3r000', 'working', 'part'),
+  },
+  {
+    session: 'd0ne5e55', group: 'done', state: 'done', reason: 'completed', shown: 'completed', archived: false, teammate: false,
+    line: lineRead('w0rk3r00', 'working', 'helper'),
+  },
+  {
+    session: 'w0rk3r00', group: 'working', state: 'working', reason: 'working', shown: 'working', archived: false, teammate: false,
+    line: lineRead('w0rk3r00', 'working', 'helper'),
+  },
+  {
+    session: 'h3ld0000', group: 'done', state: 'done', reason: 'completed', shown: 'completed', archived: false, teammate: false,
+    line: lineRead('w41t3r00', 'needs-you', 'helper'),
+  },
+  {
+    session: 'w41t3r00', group: 'needs-you', state: 'needs-you', reason: 'question', shown: 'awaiting-person', archived: false, teammate: false,
+    line: lineRead('w41t3r00', 'needs-you', 'helper'),
+  },
+];
+export const LineState: Story = { args: { sessions: LINE_PARTS, groupings: LINE_GROUPINGS, selected: 'e4r11e00' } };
+export const LineStateChinese: Story = { ...LineState, decorators: [chinese] };
+export const LineStateDark: Story = { ...LineState, decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };

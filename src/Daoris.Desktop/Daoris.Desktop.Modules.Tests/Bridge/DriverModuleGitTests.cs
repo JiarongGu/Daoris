@@ -299,6 +299,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     {
         var root = await InitAsync();
         var commit = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        Aged(Path.Combine(root, ".git"));
         var module = await UpAsync(root);
 
         var first = await AnswerAsync(module, "GIT_COMMIT", new { repository = "engine", commit });
@@ -575,6 +576,18 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         await GitAsync(root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", subject);
         await GitAsync(root, "switch", "--quiet", "main");
         return (await GitAsync(root, "rev-parse", branch)).Trim();
+    }
+
+    private static void Aged(string folder)
+    {
+        var past = DateTime.UtcNow.AddMinutes(-5);
+        foreach (var entry in Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.AllDirectories))
+        {
+            if (Directory.Exists(entry)) Directory.SetLastWriteTimeUtc(entry, past);
+            else File.SetLastWriteTimeUtc(entry, past);
+        }
+
+        Directory.SetLastWriteTimeUtc(folder, past);
     }
 
     private async Task<string> InitAsync()

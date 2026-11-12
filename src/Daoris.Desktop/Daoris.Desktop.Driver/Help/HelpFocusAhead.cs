@@ -17,7 +17,7 @@ public static class HelpFocusAhead
     /// </summary>
     public static bool Reopens(string home, string session, SessionEvents events, ChatQueue? queue = null)
     {
-        var kept = new HelpConversations(home).Read(session);
+        var kept = new ConversationFacts(home).Read(session);
         if (kept.FocusNext is not null || kept.Focus is not { } focus) return false;
         if (queue is { Taking: true } or { Opening: true } or { Queued.Count: > 0 }) return false;
         if (Spoken(events, session)) return false;

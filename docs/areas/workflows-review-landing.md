@@ -39,7 +39,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3. A repository naming any development workflow replaces its workspace's whole. No door writes `current` as a choice; a file
    holding it is still read. (D157, D227)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
-   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192)
+   `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
+   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
+   repository (the look says the checks changed in one sentence), by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
+   --accept|--withdraw [--plan]`) in restricted mode, shown as checks added, removed and changed by name with their commands
+   (`DeclarationChange`), the row ending at the press. (D283)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A
    choice is refused (`place-kind`), nothing written, where a department it reaches cannot run one of its steps by its place's
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a
@@ -93,7 +97,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
     failed to ready by the person, a new attempt its plugin is sent. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step watches a branch the line holds whole (`on-line`) or that is
-    gone (`branch-gone`); it is not governed again until its chain comes back. A word names its author; a second on a node is
+    gone (`branch-gone`), never while a step after a reached landing stands (a monitor, a plugin's release), since that reads the
+    landing, which a tidied branch and the line's holding the commit leave readable; it is not governed again until its chain
+    comes back. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
+    counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
     checked as kept and again as applied against the work read afresh, either miss `moved`. `changes` may name the part they go

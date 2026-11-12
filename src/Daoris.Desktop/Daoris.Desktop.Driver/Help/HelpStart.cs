@@ -264,7 +264,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
 
         try
         {
-            new HelpConversations(wiring.Context.Home).StartedFrom(id, pending.Current, HelpConversations.NotOffered);
+            new ConversationFacts(wiring.Context.Home).StartedFrom(id, pending.Current, HelpConversations.NotOffered);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

@@ -48,7 +48,6 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(ClaudeLineageHook.Source, File.ReadAllText(path));
     }
 
-    /// <summary><see cref="SessionProcesses.AnyAlive"/> reads a held marker, so one naming a process gone is none alive.</summary>
     [Fact]
     public void A_marker_is_read_as_no_process_while_its_move_into_place_still_holds_it()
     {
@@ -97,25 +96,6 @@ public sealed class ReadShareSessionTests : IDisposable
 
         Assert.Equal(["s1"], dropped);
         Assert.False(File.Exists(path));
-    }
-
-    /// <summary><see cref="SessionArchive.Marks"/> reads the archive marks while their move into place still holds them.</summary>
-    [Fact]
-    public void Archive_marks_are_read_while_their_move_into_place_still_holds_them()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var at = new DateTimeOffset(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
-        var archive = new SessionArchive(_home);
-        archive.Archive(["done"], [new SessionGrouping("done", SessionGroup.Done, "completed")], ["done"], at);
-
-        IReadOnlyDictionary<string, DateTimeOffset> marks;
-        using (MoveHold.Take(archive.FilePath))
-        {
-            Assert.Throws<IOException>(() => File.ReadAllText(archive.FilePath));
-            marks = archive.Marks();
-        }
-
-        Assert.Equal(at, Assert.Single(marks, mark => mark.Key == "done").Value);
     }
 
     /// <summary><see cref="SessionRequests.Pending"/> reads a request while the move that put it in place still holds it.</summary>

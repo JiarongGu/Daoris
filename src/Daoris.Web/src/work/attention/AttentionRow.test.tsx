@@ -537,12 +537,12 @@ describe('settling one where it stands', () => {
   it('says a declaration owed acceptance and opens Setup, never accepting it from the row', async () => {
     const owed: Attention = {
       id: 'declaration:engine', kind: 'integration', title: 'engine', where: 'engine', since: '2026-10-31T09:20:00Z',
-      detail: '`daoris.gates.json` on main (`0123456`) declares an integration you have not accepted, so none of it runs. Read it on Setup and accept it.',
+      detail: 'The checks in `daoris.gates.json` on main are not accepted, so none of them runs. Read what they are on Setup and accept them.',
       integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456789abcdef0123456789abcdef01234567', state: 'unaccepted' },
     };
     const open = vi.fn();
     render(<AttentionRow item={owed} acts={everyAct()} onOpen={open} />);
-    expect(screen.getByText('declaration waits for your acceptance')).toBeInTheDocument();
+    expect(screen.getByText('checks wait for your acceptance')).toBeInTheDocument();
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Open Setup']);
     await userEvent.click(screen.getByRole('button', { name: 'Open Setup' }));
     expect(open).toHaveBeenCalledWith(owed);
@@ -556,7 +556,7 @@ describe('settling one where it stands', () => {
         integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456', state: 'changed' },
       };
       render(<AttentionRow item={owed} acts={everyAct()} onOpen={vi.fn()} />);
-      expect(screen.getByText('集成声明等你采纳')).toBeInTheDocument();
+      expect(screen.getByText('检查项等你采纳')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '打开配置' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');

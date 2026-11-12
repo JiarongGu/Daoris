@@ -10,9 +10,9 @@ public static class SessionEntries
     /// needs you, working and pending any part is in, else failed or done as its newest part outside the Archived fold ended.
     /// </summary>
     /// <remarks>
-    /// <para><b>The key is opaque.</b> Records are grouped on the string the service answers, which a record from before it is
-    /// answered derived there (<see cref="SessionRecord.EntryKey"/> covers a host that sends none); nothing here decides what
-    /// joins an entry, so no twin of that rule exists.</para>
+    /// <para><b>One entry per line.</b> Records are grouped on their <c>line</c> (a conversation's id, <see cref="LineKeys"/>), so lines of
+    /// one ask in one repository are an entry each, sharing the key the service answers (<see cref="SessionRecord.EntryKey"/>, opaque
+    /// here); an Accept lands entries of one key together (<see cref="LandingEntries"/>).</para>
     ///
     /// <para><b>An ended intake whose ask became quests leaves the list</b>: it is its ask's, and its ask's page names it. Its ask
     /// became quests where a quest of this look is asked by it, or a session of its ask remains. A running intake, or one that
@@ -48,7 +48,7 @@ public static class SessionEntries
         var lines = look.Records
             .Where(record => !coworkers.Contains(record.Id))
             .Where(record => !(Intake(record) && !record.Live && record.Ask is { } ask && askedOf.Contains("ask:" + ask)))
-            .GroupBy(record => record.EntryKey, StringComparer.Ordinal)
+            .GroupBy(record => record.Teammate ? record.Id : record.Line ?? record.Id, StringComparer.Ordinal)
             .Select(line => (Line: line, Coworkers: serving.Where(coworker => line.Any(record => record.Id == coworker.Serves)).ToList()))
             .Where(each => only is null || each.Line.Concat(each.Coworkers).Any(record => only.Contains(record.Id, StringComparer.Ordinal)));
 
@@ -63,13 +63,16 @@ public static class SessionEntries
             var group = Ongoing.FirstOrDefault(each => placed.Any(part => GroupOf(part.Row) == each))
                 ?? placed.Select(part => GroupOf(part.Row)).LastOrDefault(each => each != SessionGroup.Archived)
                 ?? SessionGroup.Archived;
-            var lead = placed.Last(part => GroupOf(part.Row) == group);
+            // The part its line's state is read from leads; where a co-worker decides it, the newest part of that group.
+            var decider = placed.FindIndex(part => part.Record.Id == placed[^1].Row.Line?.By && GroupOf(part.Row) == group);
+            var lead = decider >= 0 ? placed[decider] : placed.Last(part => GroupOf(part.Row) == group);
             var parts = Began(placed.Select(part => part.Record).ToList(), placed.Select(part => part.Row).ToList(), quests);
-            var key = line.Key;
+            var key = placed[0].Record.EntryKey;
             var read = EntryKey.Parse(key);
             entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts)
             {
-                Head = HeadOf(read.Origin, parts),
+                Line = line.Key,
+                Head = parts[0].Head,
                 Coworkers = [.. serves.Select(coworker => new EntryCoworker(
                     coworker.Id, LineRole.Of(coworker)!, coworker.Serves!, rowOf[coworker.Id].Shown, rowOf[coworker.Id].State))],
             }, position[lead.Record.Id]));
@@ -88,7 +91,7 @@ public static class SessionEntries
         // No tree is walked to find the entries (they are the records'); then only their parts' trees are.
         var look = await SessionGroups.LookAsync(service, config, unadopted, lastLook, home, [], cancellationToken).ConfigureAwait(false);
         if (waits is not null) look = look with { Waits = waits };
-        var entries = SessionGroups.ReadEntries(look).Where(which).ToList();
+        var entries = LandingEntries.Together(SessionGroups.ReadEntries(look).Where(which));
         var ids = entries.SelectMany(entry => entry.Parts.Select(part => part.Session)).ToList();
         var holds = new SessionTrees(home);
         look = await SessionGroups.JudgeAsync(look, holds.Holds, holds.WorkAsync, ids, cancellationToken).ConfigureAwait(false);
@@ -106,21 +109,6 @@ public static class SessionEntries
     /// <summary>An ask's intake: the conversation that answers it.</summary>
     private static bool Intake(SessionRecord record) =>
         (record.Ask is not null && record.Quest is null) || record.Entry?.EndsWith("/intake", StringComparison.Ordinal) == true;
-
-    /// <summary>
-    /// Where the first part's line ends. An ask's entry whose parts (those no part published) end on more than one line is a set of
-    /// sibling quests: none continues another, so it has no head.
-    /// </summary>
-    private static string? HeadOf(string origin, IReadOnlyList<EntryPart> parts)
-    {
-        if (origin.StartsWith("ask:", StringComparison.Ordinal)
-            && parts.Where(part => part.Began != PartBegan.Asked && part.Head is not null).Select(part => part.Head).Distinct(StringComparer.Ordinal).Count() > 1)
-        {
-            return null;
-        }
-
-        return parts[0].Head;
-    }
 
     private static List<EntryPart> Began(
         IReadOnlyList<SessionRecord> records, IReadOnlyList<SessionGrouping> rows, IReadOnlyDictionary<string, QuestView> quests)

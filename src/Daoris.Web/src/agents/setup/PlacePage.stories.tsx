@@ -61,7 +61,7 @@ function WorkflowBody({ workspace = false }: { workspace?: boolean }) {
       />
     );
   }
-  return <PlaceWorkflowBodyView setup={PLACE_SETUP} workflow={{ name: 'engine', current: answerFor(view.route), view, onView, onAcceptGates: nothing, editor: WORKFLOW_EDITOR }} />;
+  return <PlaceWorkflowBodyView setup={PLACE_SETUP} workflow={{ name: 'engine', current: answerFor(view.route), view, onView, editor: WORKFLOW_EDITOR }} />;
 }
 
 function Page({ row = ENGINE, kind = 'repository', opened, driving = DRIVING, back = false }: {

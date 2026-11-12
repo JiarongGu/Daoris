@@ -34,6 +34,7 @@ public sealed class SessionsCommandTests : IDisposable
         string? ask = null, bool deletable = false, int minutes = 0, string? entry = null) => new()
         {
             ["entry"] = entry,
+            ["line"] = kind == "driven" ? quest ?? id : id,
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
             ["deletable"] = deletable, ["door"] = "claude-code",
             ["created"] = T0.AddMinutes(minutes).ToString("O"), ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"),
@@ -418,7 +419,7 @@ public sealed class SessionsCommandTests : IDisposable
         ],
         [Quest("q1", "Cap the hydration per frame", "Done"), Quest("q4", "Draw the minimap", "Done", to: "game")]);
 
-    /// <summary>The listing is by entry, one line each with its parts, the parts indented under it.</summary>
+    /// <summary>The listing: entries, parts indented.</summary>
     [Fact]
     public async Task The_listing_is_by_entry_with_its_parts_indented_under_it()
     {
@@ -438,7 +439,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain("1ntake01", said);
     }
 
-    /// <summary>With <c>--json</c> the rows stay as they were, the intake's among them, and <c>entries</c> is added beside them.</summary>
+    /// <summary>With <c>--json</c> the rows stay, the intake's among them, and <c>entries</c> is added.</summary>
     [Fact]
     public async Task With_json_it_keeps_the_rows_and_adds_the_entries()
     {
@@ -824,7 +825,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (archived, said) = await RunAsync(Family(), ["archive", "d0ne0000"], log);
         Assert.Equal(0, archived);
         Assert.Contains("archived d0ne0000", said);
-        Assert.True(new SessionArchive(_home).Marks().ContainsKey("d0ne0000"));
+        Assert.True(new ConversationArchive(_home).Marks().ContainsKey("d0ne0000"));
 
         var (kept, keptSaid) = await RunAsync(Family(), ["archive", "w0rk1ng0", "p4rk3d00"], log);
         Assert.Equal(1, kept);
@@ -847,12 +848,12 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, listed);
         Assert.Contains("would archive 3 sessions that ended", list);
         Assert.Contains("kept in the list: 2 needing you", list);
-        Assert.Empty(new SessionArchive(_home).Marks());
+        Assert.Empty(new ConversationArchive(_home).Marks());
 
         var (yes, done) = await RunAsync(Family(), ["archive", "--ended", "--yes"]);
         Assert.Equal(0, yes);
         Assert.Contains("archived 3 sessions that ended", done);
-        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new SessionArchive(_home).Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new ConversationArchive(_home).Marks().Keys.Order());
     }
 
     [Fact]
@@ -865,7 +866,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Contains("unarchived d0ne0000", said);
         Assert.Contains("c0ffee11 was not archived", said);
-        Assert.Empty(new SessionArchive(_home).Marks());
+        Assert.Empty(new ConversationArchive(_home).Marks());
     }
 
     /// <summary>Delete through the screen's owner: a conversation that served no quest goes, logged as the terminal's.</summary>

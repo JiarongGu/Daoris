@@ -169,7 +169,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         var next = (await client.RecordAsync("h2"))!;
         Assert.Equal(("acp-stub", "account-2", HelpRoom.Repository), (next.Adapter, next.Profile, next.Repository));
         Assert.Equal((await client.RecordAsync(issued))!.Workspace, next.Workspace);
-        var kept = new HelpConversations(_home).Read("h2");
+        var kept = new ConversationFacts(_home).Read("h2");
         Assert.Equal((issued, HelpConversations.NotOffered), (kept.From, kept.Handed));
         lock (replaced) Assert.Equal([(issued, "h2")], replaced);
     }

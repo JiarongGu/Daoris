@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - A work-workspace run's monitor and release never closed: its run had ended `branch-gone` under them
+
+- **Symptom:** a run's pull-request monitor stayed *working* an hour after its pull request completed, and a release attempt stayed `begun`
+  in the plugin's journal until the person passed it over; the desktop log repeated `plugin.step` `not-sender` (9 to 10 every ~4 minutes) and
+  `not-attempt` beside it.
+- **Root cause:** the closed-quest end (207d42b095) read a branch no longer standing as proof that no standing step could move, though a
+  step after a reached landing reads the landing, not the branch. Tidying the branch (or the line holding the squashed commit) ended the run
+  `branch-gone` / `on-line` with its monitor or release still to come; an ended run is not governed, so the monitor never read the completed
+  pull request and a release started in the same pass was never reconciled or heard. The `not-sender` lines were the plugin's journal replaying
+  settled attempts recorded under its old id at every resync, refused for their sender; `not-attempt` was an invocation no record holds.
+- **Fix:** `ClosedRunEnds.Why` ends no run while a step after a reached landing stands; a settled attempt's outcome sent again under another
+  plugin id is a replay, counted nothing (`WorkHearing`); the `reopened-runs` migration lapses such ends already kept.
+- **Verification:** `ClosedRunEndPastLandingTests` fail on the old rule (`branch-gone` and `on-line` returned with the monitor active);
+  `ReopenedRunsStepTests` and `WorkPerformerTests.An_outcome_sent_again_for_a_settled_attempt_by_another_plugin_id_is_a_replay_and_counts_nothing` cover the rest.
+
 ## 2026-11-12 - The driver stalled minutes after every start: a disposed git handle leaked the scheduler's slots
 
 - **Symptom:** on the installed build, after each start the driver worked two to six minutes, then every look timed out at 5 s

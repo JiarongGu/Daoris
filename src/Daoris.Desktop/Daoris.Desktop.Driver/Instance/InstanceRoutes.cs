@@ -244,11 +244,11 @@ public static class PersonPresses
     /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c>: a clear.</summary>
     public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
 
-    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c>: an Ask Daoris conversation's name, or its first question again.</summary>
-    public static InstanceRoute HelpRename { get; } = Person("HELP_RENAME");
+    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c>: a conversation's name, or its first question again; the one route for every conversation.</summary>
+    public static InstanceRoute ConversationRename { get; } = Person("CONVERSATION_RENAME");
 
-    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c>: an Ask Daoris conversation kept at the top of its history, or not.</summary>
-    public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
+    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c>: a conversation kept at the top of its list, or not; the one route for every conversation.</summary>
+    public static InstanceRoute ConversationPin { get; } = Person("CONVERSATION_PIN");
 
     /// <summary><c>help focus &lt;id&gt; &lt;place&gt;</c>: what an Ask Daoris conversation is about, taken with its next words.</summary>
     public static InstanceRoute HelpFocus { get; } = Person("HELP_FOCUS");
@@ -373,9 +373,9 @@ public static class PersonPresses
         ("history clear --workspace <name> --yes", HistoryClear),
         ("quest clear <id> [--failed] --yes", HistoryClear),
         ("ask --clear <id> --yes", HistoryClear),
-        ("help rename <id> \"…\"|--clear", HelpRename),
-        ("help pin <id>", HelpPin),
-        ("help unpin <id>", HelpPin),
+        ("help rename <id> \"…\"|--clear", ConversationRename),
+        ("help pin <id>", ConversationPin),
+        ("help unpin <id>", ConversationPin),
         ("help focus <id> machine|<workspace>|<workspace>/<repository>", HelpFocus),
         ("help delete <id> --yes", SessionDelete),
         ("opinion ask <session>", AskOpinion),

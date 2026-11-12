@@ -68,22 +68,30 @@ public sealed class DriverWatch(
     private readonly IntegrationOwed _owed = new();
 
     /// <summary>The repositories whose integration declaration waits for the owner's acceptance, as the last look read them; none before a look.</summary>
-    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _owed.Owed;
+    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _owed.Under(DriverConfig.Load(configPath));
 
     /// <summary>
-    /// The look's read of the declarations owed acceptance (<see cref="IntegrationOwed"/>): git only where a line's tip moved. A read that
+    /// The look's read of the declarations owed acceptance (<see cref="IntegrationOwed"/>): git only where a line's tip moved. What a
+    /// repository in full access commits on its own line is accepted here as it lands, and said in one sentence each (returned). A read that
     /// fails keeps what the last one found and is said, never a reason to fail the look.
     /// </summary>
-    internal async Task OwedLookAsync(DriverConfig config, CancellationToken ct)
+    internal async Task<IReadOnlyList<string>> OwedLookAsync(DriverConfig config, CancellationToken ct)
     {
+        var said = new List<string>();
         try
         {
             await _owed.LookAsync(config, await service.RegistryAsync(ct).ConfigureAwait(false), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            foreach (var owned in _owed.ByMode(DriverConfig.Load(configPath)))
+            {
+                if (await DeclarationAcceptance.AcceptByModeAsync(home, configPath, owned, ct).ConfigureAwait(false) is { } line) said.Add(line);
+            }
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or IOException or UnauthorizedAccessException)
         {
             Log?.Failed("the read of the declarations owed acceptance", error);
         }
+
+        return said;
     }
 
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own.</summary>

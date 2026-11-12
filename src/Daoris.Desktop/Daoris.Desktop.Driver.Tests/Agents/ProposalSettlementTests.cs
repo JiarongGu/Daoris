@@ -140,14 +140,15 @@ public sealed class ProposalSettlementTests : IDisposable
     [Fact]
     public void A_yes_on_a_default_that_denies_switched_off_is_returned_and_a_persons_yes_on_it_applies()
     {
+        PermissionRules.Save(_home, PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.NoPublishId, on: true));
         Propose("p7", "default", defaultId: "no-publish", on: false);
 
         var settled = ProposalSettlement.Settle(_home, "p7", Role, yes: true, null, At);
         Assert.Equal((SettleOutcome.Returned, WideningAllows.SwitchesOffDenial), (settled.Outcome, settled.Why));
-        Assert.Empty(PermissionRules.Load(_home).DefaultsOff);
+        Assert.Contains("no-publish", PermissionRules.Load(_home).DefaultsOn);
 
         ProposalSettlement.Settle(_home, "p7", RuleSettler.Person, yes: true, null, At);
-        Assert.Contains("no-publish", PermissionRules.Load(_home).DefaultsOff);
+        Assert.DoesNotContain("no-publish", PermissionRules.Load(_home).DefaultsOn);
     }
 
     [Theory]
@@ -166,6 +167,7 @@ public sealed class ProposalSettlementTests : IDisposable
     [InlineData("Bash(gh release create:*)")]
     public void A_widening_that_would_let_a_publish_through_waits_for_the_person_while_no_publish_is_on(string rule)
     {
+        PermissionRules.Save(_home, PermissionRules.SwitchDefault(PermissionRules.Load(_home), PermissionRules.NoPublishId, on: true));
         Propose("p8", "add", scope: "repository", name: "engine", list: "allow", rule: rule);
 
         var settled = ProposalSettlement.Settle(_home, "p8", Role, yes: true, null, At);

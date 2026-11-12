@@ -102,7 +102,7 @@ public sealed class HelpFocusTests : IDisposable
         Assert.Null(answer.Refused);
         Assert.Equal(Engine, answer.Focus);
         Assert.Null(answer.FocusNext);
-        var kept = new HelpConversations(_home).Read("h1");
+        var kept = new ConversationFacts(_home).Read("h1");
         Assert.Equal(Engine, kept.Focus);
         Assert.Null(kept.FocusNext);
         Assert.Equal([Engine], kept.Foci);
@@ -152,7 +152,7 @@ public sealed class HelpFocusTests : IDisposable
         var changed = Choose(record, Engine);
         Assert.Equal(HelpFocus.OfWorkspace("Games"), changed.Focus);
         Assert.Equal(Engine, changed.FocusNext);
-        var kept = new HelpConversations(_home).Read("h1");
+        var kept = new ConversationFacts(_home).Read("h1");
         Assert.Null(kept.Focus);
         Assert.Equal(Engine, kept.FocusNext);
         Assert.Null(kept.Foci);
@@ -160,7 +160,7 @@ public sealed class HelpFocusTests : IDisposable
         var kept2 = Choose(record, HelpFocus.OfWorkspace("games"));
         Assert.Equal(HelpFocus.OfWorkspace("Games"), kept2.Focus);
         Assert.Null(kept2.FocusNext);
-        Assert.Null(new HelpConversations(_home).Read("h1").FocusNext);
+        Assert.Null(new ConversationFacts(_home).Read("h1").FocusNext);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public sealed class HelpFocusTests : IDisposable
         Assert.Equal(HelpFocusing.NotHelp, Choose(other, Engine).Refused);
         Said("h2", "Why?");
         Assert.Equal(HelpFocusing.Ended, Choose(Help("h2", "completed"), Engine).Refused);
-        Assert.Null(new HelpConversations(_home).Read("h2").FocusNext);
+        Assert.Null(new ConversationFacts(_home).Read("h2").FocusNext);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public sealed class HelpFocusTests : IDisposable
         Said("w1", "In Work, about engine");
         Said("w2", "In Work only");
         var records = new[] { Help("g1", workspace: "Games"), Help("w1", workspace: "Work"), Help("w2", workspace: "Work") };
-        new HelpConversations(_home).Change("w1", kept => kept with { Focus = HelpFocus.OfWorkspace("Work"), Foci = [HelpFocus.OfWorkspace("Work"), Engine] });
+        new ConversationFacts(_home).Change("w1", kept => kept with { Focus = HelpFocus.OfWorkspace("Work"), Foci = [HelpFocus.OfWorkspace("Work"), Engine] });
 
         string[] About(HelpFocus place) => new HelpConversations(_home).List(records, Events, _ => false, about: place)
             .Conversations.Select(row => row.Session).Order().ToArray();
@@ -227,7 +227,7 @@ public sealed class HelpFocusTests : IDisposable
     {
         Said("h1", "What blocks the release?");
         var mark = new HelpFocusMark("w2", Monday, HelpFocus.OfWorkspace("Games"), Engine, false);
-        new HelpConversations(_home).Change("h1", kept => kept with { Marks = [mark] });
+        new ConversationFacts(_home).Change("h1", kept => kept with { Marks = [mark] });
         var row = Assert.Single(new HelpConversations(_home).List([Help("h1")], Events, _ => false).Conversations);
         Assert.Equal([mark], row.Marks);
     }

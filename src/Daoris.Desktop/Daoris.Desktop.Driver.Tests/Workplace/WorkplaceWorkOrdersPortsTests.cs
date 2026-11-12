@@ -65,14 +65,15 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
     [Fact]
     public void The_archive_judges_a_row_by_the_facet_alone()
     {
-        var archive = new SessionArchive(_home);
+        var archive = new ConversationArchive(_home);
+        SessionRecord[] records = [.. new[] { "done", "you", "working", "pending", "failed" }.Select(id => new SessionRecord(id, "daoris", "completed"))];
         IWorkplaceSessionRow[] rows =
         [
             new Row("done", SessionGroup.Done), new Row("you", SessionGroup.NeedsYou), new Row("working", SessionGroup.Working),
             new Row("pending", SessionGroup.Pending), new Row("failed", SessionGroup.Failed),
         ];
 
-        var answer = archive.Archive(["done", "you", "working", "pending", "failed", "gone"], rows, ["done", "failed"], At);
+        var answer = archive.Archive(["done", "you", "working", "pending", "failed", "gone"], rows, records, At);
 
         Assert.Equal(
             [("done", ArchiveVerdict.Archived), ("you", ArchiveVerdict.NeedsYou), ("working", ArchiveVerdict.Live),
@@ -212,7 +213,7 @@ public sealed class WorkplaceWorkOrdersPortsTests : IDisposable
         {
             WorkplaceWorkOrders.Current = null!;
             Assert.Single(grown.Entries());
-            Assert.Empty(new SessionArchive(_home).Marks());
+            Assert.Empty(new ConversationArchive(_home).Marks());
             var missing = Assert.Throws<InvalidOperationException>(() => grown.Forget("engine", ["daoris/x"]));
             Assert.Contains("Work orders installs them", missing.Message);
             Assert.Throws<InvalidOperationException>(() => TidyEffect.Pending(_home, At));

@@ -316,18 +316,18 @@ public sealed class HelpCommandTests : IDisposable
 
         await RunAsync(ledger, "unpin", "h2");
         Assert.Equal((0, "help: h2 is called by its first question again.\n"), await RunAsync(ledger, "rename", "h2", "--clear"));
-        Assert.Equal(HelpKept.None, new HelpConversations(_home).Read("h2"));
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("h2"));
     }
 
     /// <summary>A name that is too long is refused in the store's words, exit 1, and nothing is kept.</summary>
     [Fact]
     public async Task A_name_too_long_is_refused()
     {
-        var (exit, said) = await RunAsync(Ledger(), "rename", "h1", new string('x', HelpConversations.NameLimit + 1));
+        var (exit, said) = await RunAsync(Ledger(), "rename", "h1", new string('x', ConversationFacts.NameLimit + 1));
 
         Assert.Equal(1, exit);
         Assert.Contains("at most 80 characters", said);
-        Assert.Equal(HelpKept.None, new HelpConversations(_home).Read("h1"));
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("h1"));
     }
 
     /// <summary>Any other session, or none, is refused, exit 1, naming the verb that acts on the others.</summary>
@@ -337,7 +337,7 @@ public sealed class HelpCommandTests : IDisposable
     public async Task Any_other_session_is_refused(string id, string why)
     {
         Assert.Equal((1, why), await RunAsync(Ledger(), "pin", id));
-        Assert.Equal(HelpKept.None, new HelpConversations(_home).Read(id));
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read(id));
     }
 
     /// <summary>A delete is listed first, as the panel asks once; it takes nothing until it is pressed with --yes.</summary>

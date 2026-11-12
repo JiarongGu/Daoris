@@ -127,7 +127,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Equal(new HarnessConversation("acp-stub", "conv-s1"), new HarnessConversations(_home).Read("s1"));
 
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,SessionArchive.FileName), """{"archived":[{"session":"s1","at":"2026-10-03T09:00:00Z"}]}""");
+        new ConversationFacts(_home).Archive(["s1"], new DateTimeOffset(2026, 10, 3, 9, 0, 0, TimeSpan.Zero));
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         var before = service.Record("s1");
@@ -150,7 +150,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Equal(["Also log the port.", "And use 9090."], prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
         Assert.True(prompt["resumed"]!.GetValue<bool>());
 
-        Assert.False(new SessionArchive(_home).Marks().ContainsKey("s1"));
+        Assert.False(new ConversationArchive(_home).Marks().ContainsKey("s1"));
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "w1", Text: "Also log the port." });
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "w2", Text: "And use 9090." });
 

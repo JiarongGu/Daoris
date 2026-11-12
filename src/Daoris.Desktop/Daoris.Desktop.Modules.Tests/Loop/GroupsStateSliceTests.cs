@@ -147,7 +147,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         foreach (var (entry, pushed) in pulledEntries.Zip(ordered))
         {
             Assert.True(JsonNode.DeepEquals(Wire(entry), pushed), $"pulled {entry.GetRawText()}\npushed {pushed}");
-            Assert.Same(pushed, entries[entry.GetProperty("entry").GetString()!]);
+            Assert.Same(pushed, entries[entry.GetProperty("leading").GetString()!]);
         }
 
         Assert.NotNull(loop.SessionsLooked.Within(TimeSpan.FromMinutes(1), DateTimeOffset.UtcNow));

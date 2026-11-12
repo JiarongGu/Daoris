@@ -73,7 +73,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "gitAsk", "obligation", "task",
+            "convert", "gitAsk", "obligation", "task", "secondCheck",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -129,6 +129,7 @@ public static class AttentionStateSlice
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // A run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
+        ["secondCheck"] = ["session", "range", "index", "says", "certainty", "call", "at", "reader", "independence"],
         // A run waiting on a person's task, its node and the presses it waits for.
         ["task"] = ["run", "node", "acts", "work"],
         // What memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
@@ -178,6 +179,7 @@ public static class AttentionStateSlice
         ["row.convert"] = "convert",
         ["row.declined"] = "declined",
         ["row.task"] = "task",
+        ["row.secondCheck"] = "secondCheck",
         ["row.memory"] = "memory",
         ["memory.end"] = "memoryEnd",
         ["row.integration"] = "integration",

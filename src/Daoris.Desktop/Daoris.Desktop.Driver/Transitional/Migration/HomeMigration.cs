@@ -58,10 +58,13 @@ public static class HomeMigration
         new SecondCheckStep(),
         new HelpProposalsStep(),
         new ClosedRunsStep(),
+        new ReopenedRunsStep(),
         new TreeRecordsStep(),
         new UnboundRecordsStep(),
         new OldBinStep(),
         new PluginSwitchesStep(),
+        new ConversationFactsStep(),
+        new AccessDefaultsOffStep(),
     ];
 
 

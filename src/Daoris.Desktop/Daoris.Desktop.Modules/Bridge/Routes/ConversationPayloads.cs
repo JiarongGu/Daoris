@@ -48,5 +48,11 @@ public sealed record SessionInputPress(
     string Id, string Text, string? Level, string? Question, System.Text.Json.JsonElement? Draft, System.Text.Json.JsonElement? Files,
     string? Preface, string? Key, IReadOnlyList<string>? Paths, bool Said = false);
 
+/// <summary>A conversation named by any of its parts' ids; no name clears it.</summary>
+public sealed record ConversationRename(string Id, string? Name, bool Said = false);
+
+/// <summary>A conversation pinned or unpinned, named by any of its parts' ids.</summary>
+public sealed record ConversationPin(string Id, bool Pinned, bool Said = false);
+
 /// <summary>One option of a session's chat set to a value.</summary>
 public sealed record SetSessionOptionPress(string Id, string Option, string Value);

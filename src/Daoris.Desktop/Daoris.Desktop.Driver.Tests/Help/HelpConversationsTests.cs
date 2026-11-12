@@ -49,9 +49,9 @@ public sealed class HelpConversationsTests : IDisposable
         Said("h1", "Original question about the port", "Earlier answer");
         Said("h2", "Held words", "Next answer");
         var history = new HelpConversations(_home);
-        history.StartedFrom("h2", "h1", HelpConversations.Brief);
-        history.Rename("h1", "My conversation");
-        history.Pin("h1", true, Monday);
+        new ConversationFacts(_home).StartedFrom("h2", "h1", HelpConversations.Brief);
+        new ConversationFacts(_home).Rename("h1", "My conversation");
+        new ConversationFacts(_home).Pin("h1", true, Monday);
         var records = new[] { Help("h1"), Help("h2", "working") };
         var listed = history.List(records, Events, Resumes, limit: 1);
         var row = Assert.Single(listed.Conversations);
@@ -72,8 +72,8 @@ public sealed class HelpConversationsTests : IDisposable
         Said("h1", "Original question about the port", "Earlier answer");
         Said("h3", "Held words", "Next answer");
         var history = new HelpConversations(_home);
-        history.StartedFrom("h2", "h1", HelpConversations.Brief);
-        history.StartedFrom("h3", "h2", HelpConversations.NotOffered);
+        new ConversationFacts(_home).StartedFrom("h2", "h1", HelpConversations.Brief);
+        new ConversationFacts(_home).StartedFrom("h3", "h2", HelpConversations.NotOffered);
 
         var listed = history.List([Help("h1"), Help("h2", "failed"), Help("h3", "working")], Events, Resumes);
 
@@ -125,8 +125,8 @@ public sealed class HelpConversationsTests : IDisposable
         SaidAt(Monday.AddDays(1), "h3", "question h3", "answer");
         SaidAt(Monday.AddDays(3), "h4", "question h4", "answer");
         var kept = new HelpConversations(_home);
-        kept.Pin("h1", true, Monday.AddHours(1));
-        kept.Pin("h3", true, Monday.AddHours(2));
+        new ConversationFacts(_home).Pin("h1", true, Monday.AddHours(1));
+        new ConversationFacts(_home).Pin("h3", true, Monday.AddHours(2));
 
         var listed = kept.List([Help("h1"), Help("h2"), Help("h3"), Help("h4")], Events, Resumes).Conversations;
 
@@ -143,11 +143,11 @@ public sealed class HelpConversationsTests : IDisposable
         SaidAt(Monday, "h1", "question h1", "answer");
         SaidAt(Monday.AddDays(1), "h2", "question h2", "answer");
         var kept = new HelpConversations(_home);
-        kept.Pin("h1", true, Monday);
-        kept.Pin("h1", false, Monday);
+        new ConversationFacts(_home).Pin("h1", true, Monday);
+        new ConversationFacts(_home).Pin("h1", false, Monday);
 
         Assert.Equal(["h2", "h1"], kept.List([Help("h1"), Help("h2")], Events, Resumes).Conversations.Select(row => row.Session));
-        Assert.False(File.Exists(kept.PathOf("h1")));
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("h1"));
     }
 
     /// <summary>A name the person gives is the title; clearing it gives the first question back.</summary>
@@ -157,14 +157,14 @@ public sealed class HelpConversationsTests : IDisposable
         Said("h1", "what is a workspace?", "A circle.");
         var kept = new HelpConversations(_home);
 
-        kept.Rename("h1", "  Workspaces, explained  ");
+        new ConversationFacts(_home).Rename("h1", "  Workspaces, explained  ");
         var named = Assert.Single(kept.List([Help("h1")], Events, Resumes).Conversations);
         Assert.Equal(("Workspaces, explained", "Workspaces, explained"), (named.Name, named.Title));
 
-        kept.Rename("h1", null);
+        new ConversationFacts(_home).Rename("h1", null);
         var cleared = Assert.Single(kept.List([Help("h1")], Events, Resumes).Conversations);
         Assert.Equal((null, "what is a workspace?"), (cleared.Name, cleared.Title));
-        Assert.False(File.Exists(kept.PathOf("h1")), "nothing kept is no file");
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("h1"));
     }
 
     /// <summary>A name is one line of the person's words: a line break or a name longer than a title is refused, in a sentence.</summary>
@@ -173,7 +173,7 @@ public sealed class HelpConversationsTests : IDisposable
     [InlineData("a name far longer than any title in the history ought to be, so the list would cut it anyway, and more")]
     public void A_name_that_is_not_one_short_line_is_refused(string name)
     {
-        var refused = Assert.Throws<DriverException>(() => new HelpConversations(_home).Rename("h1", name));
+        var refused = Assert.Throws<DriverException>(() => new ConversationFacts(_home).Rename("h1", name));
         Assert.Contains("name", refused.Message);
     }
 
@@ -181,38 +181,28 @@ public sealed class HelpConversationsTests : IDisposable
     [Fact]
     public void An_id_that_is_not_a_sessions_is_refused()
     {
-        Assert.Throws<DriverException>(() => new HelpConversations(_home).Rename("../escape", "x"));
-        Assert.Throws<DriverException>(() => new HelpConversations(_home).Pin("../escape", true, Monday));
+        Assert.Throws<DriverException>(() => new ConversationFacts(_home).Rename("../escape", "x"));
+        Assert.Throws<DriverException>(() => new ConversationFacts(_home).Pin("../escape", true, Monday));
     }
 
-    /// <summary>The file is Daoris's own JSON, BOM-less and LF, beside the conversation's other files under the home.</summary>
     [Fact]
-    public void The_file_is_written_beside_the_sessions_files_as_the_home_writes_them()
+    public void The_name_and_pin_are_one_row_of_the_desktop_store_and_survive_a_new_reader()
     {
-        var kept = new HelpConversations(_home);
-        kept.Rename("h1", "Landing");
-        kept.Pin("h1", true, Monday);
+        var facts = new ConversationFacts(_home);
+        facts.Rename("h1", "Landing");
+        facts.Pin("h1", true, Monday);
 
-        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions,"h1.help.json"), kept.PathOf("h1"));
-        var bytes = File.ReadAllBytes(kept.PathOf("h1"));
-        Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF);
-        var text = Encoding.UTF8.GetString(bytes);
-        Assert.DoesNotContain("\r", text);
-        using var document = JsonDocument.Parse(text);
-        Assert.Equal("Landing", document.RootElement.GetProperty("name").GetString());
-        Assert.Equal(new HelpKept("Landing", Monday, null, null), kept.Read("h1"));
+        Assert.True(File.Exists(DesktopStore.LocationIn(_home)));
+        Assert.Equal(new HelpKept("Landing", Monday, null, null), new ConversationFacts(_home).Read("h1"));
     }
 
-    /// <summary>A file that does not read is nothing kept: the conversation lists by its question, and the next write starts it again.</summary>
     [Fact]
-    public void A_file_that_does_not_read_is_nothing_kept()
+    public void A_conversation_with_nothing_kept_lists_by_its_question()
     {
         Said("h1", "what is a workspace?", "A circle.");
-        var kept = new HelpConversations(_home);
-        File.WriteAllText(kept.PathOf("h1"), "{ \"name\": ");
 
-        Assert.Equal(HelpKept.None, kept.Read("h1"));
-        Assert.Equal("what is a workspace?", Assert.Single(kept.List([Help("h1")], Events, Resumes).Conversations).Title);
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("h1"));
+        Assert.Equal("what is a workspace?", Assert.Single(new HelpConversations(_home).List([Help("h1")], Events, Resumes).Conversations).Title);
     }
 
     /// <summary>
@@ -241,7 +231,7 @@ public sealed class HelpConversationsTests : IDisposable
     {
         Said("h1", "what is a workspace?", "A circle.");
         Said("h2", "and a remote?", "A shared host.");
-        new HelpConversations(_home).StartedFrom("h2", "h1", HelpConversations.Brief);
+        new ConversationFacts(_home).StartedFrom("h2", "h1", HelpConversations.Brief);
 
         var listed = new HelpConversations(_home).List([Help("h1"), Help("h2", "working")], Events, Resumes).Conversations
             .ToDictionary(row => row.Session);
@@ -262,7 +252,7 @@ public sealed class HelpConversationsTests : IDisposable
         Said("h1", "what is a workspace?", "A circle of repositories that share a remote.");
         Said("h2", "how do I land on a branch?", "Repositories → Setup → Line and landing.");
         Said("h3", "which agent runs intake?", "Settings → AI features.");
-        new HelpConversations(_home).Rename("h3", "Intake agent");
+        new ConversationFacts(_home).Rename("h3", "Intake agent");
 
         HelpListing Find(string words) => new HelpConversations(_home).List([Help("h1"), Help("h2"), Help("h3")], Events, Resumes, words);
 
@@ -326,7 +316,7 @@ public sealed class HelpConversationsTests : IDisposable
         var records = Many(250);
         SaidAt(Monday.AddDays(3), "h001", "and one more thing?", "Here.");
         var kept = new HelpConversations(_home);
-        kept.Pin("h000", true, Monday.AddDays(1));
+        new ConversationFacts(_home).Pin("h000", true, Monday.AddDays(1));
 
         var listing = kept.List(records, Events, Resumes);
 
@@ -347,8 +337,8 @@ public sealed class HelpConversationsTests : IDisposable
     {
         var records = Many(250);
         var kept = new HelpConversations(_home);
-        kept.Pin("h010", true, Monday.AddDays(1));
-        kept.Pin("h200", true, Monday.AddDays(2));
+        new ConversationFacts(_home).Pin("h010", true, Monday.AddDays(1));
+        new ConversationFacts(_home).Pin("h200", true, Monday.AddDays(2));
         SaidAt(Monday.AddDays(3), "h005", "again?", "Yes.");
         SaidAt(Monday.AddDays(3), "h006", "again?", "Yes.");
 

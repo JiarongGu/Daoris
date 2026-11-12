@@ -1,4 +1,5 @@
 import { COMMIT_DEFAULT, commitSummary } from '../../settings/repository/Commits';
+import { declarationOwed } from '../../settings/repository/DeclarationAcceptance';
 import { type LandedSetup, landedSummary } from '../../settings/repository/LandedRoute';
 import { HELPER_DEFAULT, helperSummary } from '../../settings/repository/Helpers';
 import { HAND_OVER_DEFAULT, handOverSummary } from '../../settings/repository/HandOver';
@@ -47,7 +48,7 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   const commitsOwn = commits?.source === 'repository';
   const landedOwn = landed?.start.landed.level === 'repository-landed';
   // The integration declaration at the line's tip waits for the person's acceptance: never accepted, or changed since.
-  const integrationOwed = !gatesApart && Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
+  const integrationOwed = !gatesApart && Boolean(landed?.onAcceptIntegration) && declarationOwed(landed?.start);
   const lineSaid = line
     ? marked(
         line.notReadYet

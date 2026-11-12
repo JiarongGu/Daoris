@@ -68,7 +68,8 @@ public sealed class HelpRoomTests : IDisposable
     {
         var plain = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
         Assert.DoesNotContain("families of acts", plain);
-        Assert.Contains("Never offer to push, merge, discard, sign in, or handle a key", plain);
+        Assert.Contains("A push, a merge or a discard the person asks for goes on their card like any press.", plain);
+        Assert.Contains("Never sign in or handle a key", plain);
 
         File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "acts": ["discard", "settings"] }""");
         var granted = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
@@ -77,7 +78,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("settings: `daoris settings notify|cap|cooloff|quiet …`", granted);
         Assert.DoesNotContain("clean-up: `daoris tree clean", granted);
         Assert.Contains("read at each press", granted);
-        Assert.Contains("Never offer to push, merge, sign in, or handle a key", granted);
+        Assert.Contains("A push or a merge the person asks for goes on their card like any press.", granted);
         Assert.DoesNotContain("housekeeping_", granted);
         Assert.DoesNotContain("`settings_", granted);
         // The room is written with the home's supervisor rules beside the access, so the render it is held to reads them too.
@@ -87,6 +88,23 @@ public sealed class HelpRoomTests : IDisposable
         File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"], "settings": ["cap"] }""");
         var older = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
         Assert.Equal(plain, older);
+    }
+
+    [Fact]
+    public void The_room_says_do_it_or_send_it_on_in_both_modes_and_full_access_presses_every_run_step()
+    {
+        var restricted = HelpRoom.Render(Machine with { Mode = HelpModes.Restricted });
+        var full = HelpRoom.Render(Machine with { Mode = HelpModes.Full });
+
+        Assert.Contains("Do it, or send it on", restricted);
+        Assert.Contains("you put on their card for their yes", restricted);
+        Assert.Contains("Do it, or send it on", full);
+        Assert.Contains("you finish yourself, never handing it back as still theirs", full);
+        Assert.Contains("daoris workflow accept|changes|skip|stop|done|approve|reject|fix", full);
+        Assert.Contains("say which rule refused it", full);
+        Assert.Equal(2, new[] { restricted, full }.Count(room => room.Contains("goes to that repository as a quest", StringComparison.Ordinal)));
+        Assert.DoesNotContain("it is yours alone", full);
+        Assert.DoesNotContain("never stops a step", full);
     }
 
     /// <summary>

@@ -116,10 +116,10 @@ export const AFailurePathAtTheFloorChineseDark: Story = {
  * **The start node first**: the default to Current, Documentation to its own workflow by
  * the workspace's choice, and the work that lands to `Verify the line`, its gates accepted at the line's tip; then the steps.
  */
-export const Routed: Story = { args: { current: ROUTED, onAcceptGates: nothing } };
+export const Routed: Story = { args: { current: ROUTED } };
 
 /** **Verify…**: the gates accepted, so the person may verify a branch or a commit of the repository. */
-export const WithVerify: Story = { args: { current: ROUTED, onAcceptGates: nothing, onVerify: (_ask, answered) => answered.done() } };
+export const WithVerify: Story = { args: { current: ROUTED, onVerify: (_ask, answered) => answered.done() } };
 export const WithVerifyChinese: Story = { ...WithVerify, decorators: [chinese] };
 
 /** **Verifications**: under the start node, the repository's verifications and their verdicts, one held for the person. */
@@ -132,7 +132,7 @@ export const WithVerifications: Story = {
 export const WithVerificationsChineseDark: Story = { ...WithVerifications, decorators: [chinese, dark] };
 
 /** The declaration at the tip changed since its acceptance: shown whole, nothing runs, and *Accept the gates* is the person's. */
-export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED }, onAcceptGates: nothing } };
+export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED } } };
 
 /** No landed route anywhere: the work that lands goes to *No verification here*, today's. */
 export const NoVerification: Story = { args: { current: { ...ROUTED, start: NO_VERIFICATION } } };

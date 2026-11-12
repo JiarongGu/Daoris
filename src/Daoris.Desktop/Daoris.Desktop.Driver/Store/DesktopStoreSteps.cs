@@ -751,5 +751,19 @@ internal static class DesktopStoreSteps
             );
             CREATE UNIQUE INDEX tree_hand_offs_open ON tree_hand_offs (tree) WHERE closed IS NULL;
             """)),
+
+        // A conversation's facts, one row by its id; a new table an older build never opens.
+        new(DesktopStore.ConversationFactsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE conversation_facts (
+              conversation TEXT PRIMARY KEY,
+              name         TEXT,
+              pinned       TEXT,
+              archived     TEXT,
+              from_start   TEXT,
+              handed       TEXT,
+              places       TEXT
+            );
+            """)),
     ];
 }

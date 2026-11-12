@@ -81,8 +81,9 @@ public sealed class RuleProposalsTests : IDisposable
         // A default that allows narrows when it goes off; one that denies or guards widens.
         { "default", null, null, "connector", false, null, ChangeEffect.Narrows },
         { "default", null, null, "commit", false, null, ChangeEffect.Narrows },
-        { "default", null, null, "no-publish", false, null, ChangeEffect.Widens },
-        { "default", null, null, "tree-guard", false, null, ChangeEffect.Widens },
+        { "default", null, null, "no-publish", true, null, ChangeEffect.Narrows },
+        { "default", null, null, "tree-guard", true, null, ChangeEffect.Narrows },
+        { "default", null, null, "tree-guard", false, null, ChangeEffect.Nothing },
         { "default", null, null, "commit", true, null, ChangeEffect.Nothing },
     };
 
@@ -112,14 +113,13 @@ public sealed class RuleProposalsTests : IDisposable
         Assert.Equal(ChangeEffect.Widens, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "commit", true)));
     }
 
-    /// <summary><c>no-push</c> has no switch to propose; git access's Write says whether a session pushes.</summary>
     [Fact]
-    public void A_proposal_to_switch_no_push_is_refused_naming_git_access()
+    public void A_proposal_to_switch_no_push_on_narrows_and_off_changes_nothing_while_it_is_off()
     {
-        var refused = Assert.Throws<DriverException>(() => RuleProposals.Effect(
-            PermissionRules.Load(_home), new ProposedChange("default", RuleScope.Machine, null, null, null, "no-push", false)));
+        var file = PermissionRules.Load(_home);
 
-        Assert.Contains("git access", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(ChangeEffect.Narrows, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "no-push", true)));
+        Assert.Equal(ChangeEffect.Nothing, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "no-push", false)));
     }
 
     // ——— The tick's settling.

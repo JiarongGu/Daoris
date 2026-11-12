@@ -239,12 +239,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `reason`; *Archived* folds a done or failed session alone, and a left one is the person's to set aside. Each
     row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first
     of needs you, working and pending any part is in, needs you and working where a co-worker serving a part is, else as its
-    newest part ended, naming the part or co-worker it is read from. An entry is placed by its parts' line, and a co-worker is in
-    the entry of the part it serves (`coworkers`), never an entry of its own; the list, the head and the terminal say the line's
-    state, and any part opens as its line's newest part, at that part. A tree holding commits no run waits on is offered on its
+    newest part ended, naming the part or co-worker it is read from. An entry is one line, its records sharing their `line`, a
+    row each in Sessions, placed by the line's state; a co-worker is in the entry of the part it serves (`coworkers`), never an
+    entry of its own. The list, the head, *What needs you* and the terminal say the line's state, and any part opens as its
+    line's newest part, at that part. A tree holding commits no run waits on is offered on its
     session, bar one running. `daoris session list --group` takes the five and `archived`. (D132, D273, D280, D282)
-46. The records of one line share an entry key, `<origin>/<repository>`. A line's head is found by walking `from` forward, at most
-    256 hops; a cycle or the bound reads as no head. (D167, D212)
+46. The records of one line share their `line`, and the lines of one ask or quest in one repository share an entry key,
+    `<origin>/<repository>`, which an Accept lands together (`LandingEntries`); an entry's slice partition is its leading session. A line's
+    head is found by walking `from` forward, at most 256 hops; a cycle or the bound reads as no head. (D167, D212)
 
 ### The tidy
 

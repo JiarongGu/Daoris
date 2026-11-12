@@ -645,8 +645,8 @@ public sealed class StatePublisherTests : DriverModuleBridge
     // A verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
     [InlineData("WORKFLOW_VERIFY", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]
-    [InlineData("HELP_RENAME", "sessions,help", "id")]
-    [InlineData("HELP_PIN", "sessions,help", "id")]
+    [InlineData("CONVERSATION_RENAME", "sessions,help", "id")]
+    [InlineData("CONVERSATION_PIN", "sessions,help", "id")]
     [InlineData("HELP_FOCUS", "sessions,help", "session")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     // A set-up's Apply adds the repository's rule, so an Apply may move the rules too.

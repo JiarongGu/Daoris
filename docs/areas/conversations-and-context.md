@@ -65,7 +65,9 @@ of everything it handed, section by section.
 | `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Events/Domain/LineKeys.cs` (below Context, which reads it too), `Course/Domain/LineCounts.cs`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
-| `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
+| `ConversationFacts`, `ConversationPlaces` | `Context/ConversationFacts.cs`, `Context/ConversationPlaces.cs` | What the person keeps of a conversation, one row each in the desktop store's `conversation_facts` by its id (a record's `line`, else its own id; Ask Daoris's is always its record's): name, pin, archive and its time, the earlier conversation it started from and what it was handed, and the places it spoke under. Every conversation's, one rename and pin pair (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by any part's id); a row holding nothing is removed. `ConversationFactsStep` (home migration) imported Ask Daoris's `<id>.help.json` files and `archived.json` once and took them out; it ends when no supported home holds either |
+| `ConversationArchive` | `Workplace/ConversationArchive.cs` | The archive judged and kept per conversation: archiving a part archives its conversation, refused whole where any part is live or needs the person; unarchiving or a word to any part shows it again |
+| `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history list over the facts: a briefed continuation (facts `from` with `handed` brief) folds into one row |
 | `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
 | `HelpFacts`, `HelpTreeFacts`, `HelpWorkFacts`, `HelpRoomCatchUp` | `Knowledge/HelpFacts.cs`, `HelpTreeFacts.cs`, `HelpWorkFacts.cs`, `HelpWorkRecords.cs`, `HelpTreesRecords.cs`, `HelpRoomCatchUp.cs` | The room's facts: topics, wakes and registration in the hub, the sessions' trees and the work's and clean-up's parts each in their own type, their records and the room's catch-up apart |
 | `HelpRoomDoors`, `HelpDoor`, `HelpDoorAsk` | `Knowledge/Room/HelpRoomDoors.cs`, `HelpDoorRowsSetup.cs`, `HelpDoorRowsMachine.cs`, `HelpDoorRowsActs.cs`, `HelpDoorPlaces.cs`, `HelpDoor.cs` | The doors table: rows in three files by the act they serve, in the order a person meets the tasks |
@@ -336,7 +338,11 @@ of everything it handed, section by section.
   `ResumeAsk` only hand it on. A new section needs its `HandedSections`/`HandedCuts` code and both catalogues' twin rows.
 - **Counts:** `Course/Domain/LineCounts.cs` reads them, `Roles/Domain/CountTexts.cs` words them, and the supervisor's
   rules are the roles area's.
-- **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, a route's view in
+- **Delete and clear take whole conversations:** `SessionDeletion` judges every part held of a session's conversation first (a ledger or
+  machine refusal of one keeps all, said with which part and that nothing was deleted), deletes each, and removes the conversation's facts
+  row with the last; the answer says how many parts went. A clear removes a cleared session's conversation's facts, and the failed-sessions
+  scope (`HistoryDesk.JudgeFailedAsync`) keeps a failed part whose conversation holds a part that did not fail, said.
+- **Ask Daoris:** history in `Context/HelpConversations.cs` over `Context/ConversationFacts.cs`; a door's answer, where one is wanted, a route's view in
   `Modules/Platform/Views/` with its row in the room's doors table.
 - **Never grow the hubs.** `Course/Chat/ChatGoOn.cs` (37 KB), `Loop/Chat/ChatRunner.cs` (37 KB) and `Loop/Chat/ChatRun.cs`
   (31 KB) stand near the 40 KB source budget and do not grow: `ChatGoOn` takes new go-on behaviour in a unit beside it,

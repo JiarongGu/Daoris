@@ -499,10 +499,11 @@ public sealed class Driver(
         AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
-        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false, bool supervise = false, bool step = false) =>
+        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false, bool supervise = false, bool step = false,
+        bool unrestricted = false) =>
         SessionRules.Hand(
             home, Context.Adapters, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
-            continued, heavy, partner, supervise, step);
+            continued, heavy, partner, supervise, step, unrestricted);
 
     internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>
         SessionRules.PartnerHanded(home, workspace, repository);

@@ -10,8 +10,7 @@ export type RuleScopeName = 'machine' | 'workspace' | 'repository';
 
 /** A rule set Daoris ships, with the reason it exists — switched on or off by id, removable by nothing else. */
 /** A default Daoris ships. `hook`, when present, is the tools a hook default judges: it adds no rule. */
-/** `fixed`: switched by nothing here (`no-push`, which git access's Write opens), so its row has no switch. */
-export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why: string; on: boolean; hook?: string; fixed?: boolean };
+export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why: string; on: boolean; hook?: string };
 
 /**
  * One scope's rules. 🔴 The machine's carries no `name` on the wire: the bridge leaves a null out,
@@ -281,17 +280,15 @@ export function AgentRules({
                   </span>
                 </span>
               )}
-              control={shipped.fixed
-                ? <span className="text-small text-ink-faint">{t('settings.rules.fixed')}</span>
-                : (
-                  <CheckField
-                    checked={shipped.on}
-                    disabled={busy}
-                    onChange={(on) => onSwitchDefault(shipped.id, on)}
-                    label={t('settings.rules.defaultOn', { id: shipped.id })}
-                    hideLabel
-                  />
-                )}
+              control={(
+                <CheckField
+                  checked={shipped.on}
+                  disabled={busy}
+                  onChange={(on) => onSwitchDefault(shipped.id, on)}
+                  label={t('settings.rules.defaultOn', { id: shipped.id })}
+                  hideLabel
+                />
+              )}
             />
           </li>
         ))}

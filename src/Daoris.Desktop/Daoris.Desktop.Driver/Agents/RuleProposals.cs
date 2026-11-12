@@ -108,7 +108,6 @@ public static class RuleProposals
     }
 
     /// <summary>What the change does to the rules as they stand — or a refusal in the driver's words.</summary>
-    /// <exception cref="DriverException">The rules could not take it.</exception>
     public static ChangeEffect Effect(PermissionFile file, ProposedChange change)
     {
         switch (change.Action)
@@ -119,7 +118,6 @@ public static class RuleProposals
                     ?? throw new DriverException(
                         $"no default `{change.Default}` — Daoris ships {string.Join(", ", PermissionRules.Defaults.Select(d => $"`{d.Id}`"))}.");
                 if (change.On is not { } on) throw new DriverException($"say whether the default `{shipped.Id}` goes on or off.");
-                if (shipped.Fixed) throw new DriverException($"`{shipped.Id}` is not switched: git access's Write says whether a session pushes.");
                 var isOn = PermissionRules.IsOn(file, shipped);
                 if (isOn == on) return ChangeEffect.Nothing;
                 var allows = shipped.List == RuleList.Allow && shipped.Hook is null;
@@ -130,7 +128,7 @@ public static class RuleProposals
             {
                 var rule = Rule(change);
                 var list = change.List ?? throw new DriverException("a rule goes in `allow`, `ask` or `deny`.");
-                if (PushProposals.Refusal(change) is { } push) throw new DriverException(push);
+                if (DeadApprovals.Refusal(file, change) is { } dead) throw new DriverException(dead);
                 var sits = Sits(file, change, rule);
                 if (sits == list) return ChangeEffect.Nothing;
                 return list switch
