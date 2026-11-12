@@ -7,6 +7,7 @@ is proved by the family rehearsal, and the two browsers are a manifest alone.
 |---|---|
 | [hold-by-title](hold-by-title/README.md) | a landing decision; the family rehearsal's fixture |
 | [daoris-github](daoris-github/README.md), [daoris-azure-devops](daoris-azure-devops/README.md) | Daoris's own plugins for GitHub and Azure DevOps: a pull request opened and read through the service's REST API, and on Azure DevOps its auto-complete and release followed |
+| [daoris-dev-report](daoris-dev-report/README.md) | commands and storage alone: a session files a report, the person's development agent reads the inbox from a terminal |
 | [browser](browser/README.md), [daoris-in-app-browser](daoris-in-app-browser/README.md) | a browser connection for sessions |
 
 A plugin's id is `<family>-<name>`, lowercase with dashes. Daoris's own plugins are the `daoris-` family; yours takes your own
