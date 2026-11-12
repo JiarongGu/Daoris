@@ -37,7 +37,7 @@ public static class PartEnds
     public static readonly IReadOnlyList<string> Classes =
     [
         "completed", "failed", "limited", "transient-bound", "access", "stopped-person", "stopped-role", "stopped-daoris", "refused-choice",
-        "awaits-helper", "stood-down", "unknown",
+        "awaits-helper", "awaits-check", "stood-down", "unknown",
     ];
 
     /// <summary>The codes that decide a class whatever the state is: the <c>ended.*</c> codes, and the shell's close of a conversation or of an update.</summary>
@@ -46,6 +46,7 @@ public static class PartEnds
         ["ended.choice-not-offered"] = "refused-choice",
         ["ended.transient"] = "transient-bound",
         ["ended.awaits-helper"] = "awaits-helper",
+        ["ended.awaits-check"] = "awaits-check",
         ["ended.stood-down"] = "stood-down",
         ["ended.stopped"] = "stopped-person",
         ["ended.quiet-pressed"] = "stopped-person",
@@ -99,6 +100,7 @@ public static class PartEnds
         ["stopped-daoris"] = "daoris",
         ["refused-choice"] = "choice",
         ["awaits-helper"] = "agent",
+        ["awaits-check"] = "agent",
         ["stood-down"] = "daoris",
         ["unknown"] = "unknown",
     }.ToFrozenDictionary(StringComparer.Ordinal);

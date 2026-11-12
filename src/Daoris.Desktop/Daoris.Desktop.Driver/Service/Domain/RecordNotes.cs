@@ -29,6 +29,9 @@ public static class RecordNotes
     /// <summary>A session that ended waiting on its own helper (<see cref="EndNoteCodes.EndedAwaitsHelper"/>).</summary>
     public const string EndedAwaitsHelper = "ended.awaits-helper";
 
+    /// <summary>A session that ended waiting on its own check (<see cref="EndNoteCodes.EndedAwaitsCheck"/>).</summary>
+    public const string EndedAwaitsCheck = "ended.awaits-check";
+
     /// <summary>A choice its agent refused at the open (<see cref="EndNoteCodes.EndedChoiceNotOffered"/>).</summary>
     public const string EndedChoiceNotOffered = "ended.choice-not-offered";
 

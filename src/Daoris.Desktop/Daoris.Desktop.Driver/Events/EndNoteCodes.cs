@@ -50,6 +50,12 @@ public static class EndNoteCodes
     /// service's ledger reads this spelling to bring the session back to the person when the helper ends with no answer.
     /// </summary>
     public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
+
+    /// <summary>
+    /// It ended its turn cleanly on its own open <c>check_run</c> so the check waits on the machine, not on a running session: it goes on
+    /// in the same conversation with the verdict. A twin of <see cref="EndedAwaitsHelper"/>: the service's ledger reads this spelling to keep its tree.
+    /// </summary>
+    public static readonly NoteCode EndedAwaitsCheck = new("ended.awaits-check", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);

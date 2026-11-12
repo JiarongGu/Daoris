@@ -133,6 +133,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public bool AwaitsHelper { get; init; }
 
     /// <summary>
+    /// Whether it ended waiting on its own check: completed by <see cref="EndNoteCodes.EndedAwaitsCheck"/>, read by its note's code,
+    /// never its English. False for every other record and from an older host.
+    /// </summary>
+    public bool AwaitsCheck { get; init; }
+
+    /// <summary>
     /// Whether an account's limit made its failure: the ledger's <c>limit</c> flag, which a row says as
     /// <see cref="ShownState.Limited"/>. False from an older host.
     /// </summary>

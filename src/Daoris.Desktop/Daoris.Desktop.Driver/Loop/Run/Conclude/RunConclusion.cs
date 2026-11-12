@@ -56,6 +56,8 @@ internal sealed class RunConclusion(
         // A clean end holding its quest, on its agent's own open helper ask and no question of the person's, waits on that helper.
         var awaitsHelper = stop is null && exitCode == 0 && status == "Taken"
                            && await wiring.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
+        var awaitsCheck = stop is null && exitCode == 0 && status == "Taken" && !awaitsHelper
+                          && await wiring.WaitsOnOwnCheckAsync(sessionId, openedAt, ct).ConfigureAwait(false);
         var conclusion = stop is not null
             // The driver's own stop, for a take that lost, stands it down: the quest is someone else's, and the reason says who. The
             // person's, a pause's naming the pause, is theirs, never interrupted. One reading, which a close cutting this off records too.
@@ -75,7 +77,7 @@ internal sealed class RunConclusion(
                     backgroundCut: ended.BackgroundCut,
                     // A closure graph's submission is its done, so its session is due, never parked.
                     submitted: QuestResults.Submitted(after),
-                    awaitsHelper: awaitsHelper,
+                    awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, so it failed, and never parks on the person.
                     providerRefused: ended.ProviderRefused,
                     departed: QuestLeft.Departed(after).Count)
@@ -174,7 +176,7 @@ internal sealed class RunConclusion(
             : state.Tree.ResumedIn is not null ? $" [own tree, resumed: {state.Tree.ResumedIn}]"
             : "";
         // A session waiting on its own helper goes on in this tree with the answer, so it keeps it, as a park does.
-        var waitsOnHelper = HelperWaits.Ended(conclusion.Parts);
+        var waitsOnHelper = HelperWaits.Ended(conclusion.Parts) || CheckWaits.Ended(conclusion.Parts);
         endings.HoldsTree = SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper;
         return new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
