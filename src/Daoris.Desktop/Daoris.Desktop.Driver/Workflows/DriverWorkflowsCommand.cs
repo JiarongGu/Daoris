@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's: 1 where a version would not read or a choice is refused, 2 where the words cannot be done.</para>
 /// </remarks>
 [CommandGroup("workflow", "show", "list", "defaults", "new", "edit", "apply", "export", "import", "use", "kind", "run", "keep", "skip", "stop",
-    "send", "ask-again", "go-on", "try-again", "accept", "changes", "done", "approve", "reject", "keep-yours", "take-session", "keep-both", "fix")]
+    "send", "ask-again", "go-on", "accept", "changes", "done", "approve", "reject", "keep-yours", "take-session", "keep-both", "fix")]
 public static class DriverWorkflowsCommand
 {
     /// <summary>The sub-verbs that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>

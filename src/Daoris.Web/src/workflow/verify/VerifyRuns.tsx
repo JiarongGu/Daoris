@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { ago } from '../../locales/format';
 import { PageSection } from '../../work/frame/ViewMain';
-import { CheckHeld } from '../CheckHeld';
+import { CheckHeld } from '../wait/CheckHeld';
 import { heldCheck, lineBatch, lineTone, lineWord } from './lineSaid';
 import type { CheckHeldAnswer, CheckHeldAsk, WorkflowRun, WorkflowRunAnswer } from '../run';
 

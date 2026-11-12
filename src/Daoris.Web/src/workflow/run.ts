@@ -108,8 +108,8 @@ export interface RunRequest {
 }
 
 /**
- * A check held unknown: its unit and attempt, for the person's word (`WORK_HELD`), the words they
- * may say (`again` is *Run again*, `stop` is *Not now*), and the word they gave that the driver's next look has not applied yet.
+ * An attempt held for the person (a check held unknown, a failed plugin step), for their word (`WORK_HELD`): the words they may say
+ * (`again` is *Run again* or *Try again*, `stop` is *Not now*), and the word they gave that the next look has not applied yet.
  */
 export interface CheckHeld {
   unit: string;
@@ -137,7 +137,7 @@ export interface CheckHeldAnswer {
  * What the person may say of a graph run's node: pass it over for the run, or stop it; a declined request's ask again and go
  * on; a review's changes, with their words.
  */
-export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'try-again' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
+export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {

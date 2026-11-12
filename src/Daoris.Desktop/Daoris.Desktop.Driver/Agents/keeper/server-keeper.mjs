@@ -1,5 +1,5 @@
 // Keeps a stdio MCP server's memory under a ceiling by starting it afresh when it has grown past it and no call is in
-// flight. The harness sees one server throughout: the client's initialize is replayed to the new one and its answer swallowed.
+// flight. The harness sees one server throughout: the new one is replayed the client's initialize and sent to its last page, unseen.
 // It offers and calls only the tools named, where any are (the plugin's declaration), and ends a call past its bound.
 //  node server-keeper.mjs <ceiling MB> <check every ms> <call bound ms> <tools, comma-separated, or -> <script> [arguments...]
 // Newline-delimited JSON-RPC, as the MCP stdio transport writes it. Anything that is not a line of JSON passes through.
@@ -14,10 +14,14 @@ const timers = new Map();
 const ended = new Set();
 const REPLAY = 'server-keeper-initialize';
 const REFRESH = 'server-keeper-snapshot';
+const REOPEN = 'server-keeper-reopen';
 const SNAPSHOT = 'browser_snapshot';
+const NAVIGATE = 'browser_navigate';
 const refreshing = new Map();
 let refreshes = 0;
 let stale = false;
+// The session's tabs are in a browser context of its own, closed with the server, so the new one returns to this page.
+let page = null;
 
 let child;
 let starting = false;
@@ -62,7 +66,8 @@ function fromServer(from, chunk) {
     const line = serverBuffer.slice(0, end);
     serverBuffer = serverBuffer.slice(end + 1);
     const message = parse(line);
-    if (message?.id === REPLAY) continue;
+    if (message?.id === REPLAY || message?.id === REOPEN) continue;
+    remember(message);
     if (message && refreshing.has(message.id)) {
       answerRefreshed(message);
       continue;
@@ -77,6 +82,12 @@ function fromServer(from, chunk) {
     }
     process.stdout.write(line + '\n');
   }
+}
+
+function remember(message) {
+  const text = message?.result?.content?.filter(part => part.type === 'text').map(part => part.text).join('\n');
+  const url = text && /^- Page URL: (\S+)$/m.exec(text)?.[1];
+  if (url) page = url;
 }
 
 function settle(id) {
@@ -132,11 +143,14 @@ function fromClient(line) {
   else toServer(line);
 }
 
-// A snapshot's element references die with the server that handed them out. A call that names one before any snapshot of the new
-// server is answered with a fresh snapshot, in words the agent can act on, and is not sent on.
+// A snapshot's element references (`ref`, or Playwright MCP's `target` such as `e12`) die with the server that handed them out: a
+// call naming one before any snapshot of the new server is answered with a fresh snapshot and not sent on.
+const REFERENCE = /^(f\d+)?e\d+$/;
+
 function namesElement(message) {
   const args = message?.params?.arguments;
-  return message?.method === 'tools/call' && args && typeof args === 'object' && ['ref', 'startRef', 'endRef'].some(key => key in args);
+  return message?.method === 'tools/call' && args && typeof args === 'object'
+    && (['ref', 'startRef', 'endRef'].some(key => key in args) || REFERENCE.test(String(args.target ?? '')));
 }
 
 function toServer(line) {
@@ -164,6 +178,24 @@ function answerRefreshed(message) {
   process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: original, result: { content: [{ type: 'text', text }] } }) + '\n');
 }
 
+function answered(id, params) {
+  const mine = child;
+  let watch;
+  const heard = new Promise(done => {
+    watch = chunk => {
+      if (chunk.includes(id)) done();
+    };
+    mine.stdout.on('data', watch);
+  });
+  mine.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params }) + '\n');
+  let timer;
+  const left = new Promise(done => { timer = setTimeout(done, bound); });
+  return Promise.race([heard, left]).finally(() => {
+    clearTimeout(timer);
+    mine.stdout.off('data', watch);
+  });
+}
+
 async function restart() {
   starting = true;
   const old = child;
@@ -185,6 +217,7 @@ async function restart() {
       mine.stdout.on('data', watch);
     });
     if (initialized) child.stdin.write(initialized + '\n');
+    if (page) await answered(REOPEN, { name: NAVIGATE, arguments: { url: page } });
   }
 
   starting = false;

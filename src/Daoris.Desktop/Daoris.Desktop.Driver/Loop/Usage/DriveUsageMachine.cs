@@ -67,13 +67,15 @@ internal static class DriveUsageMachine
               in one transaction that verifies the commit it names, so one that moved or that a holder now keeps is
               kept and said; its commits may then be lost from this machine once git collects them. Only the process
               holding the home acts. --plan lists and changes nothing. The page's is Branches' Kept for recovery.
-          work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop|record|resend
+          work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop|record|resend|again
               the steps whose attempt is held for you, because nothing else can say what became of it, and why;
               with a word, yours on one of them. A plugin's step: it happened (the step is reached on your word),
               it did not (a new attempt with a new key), or stop the step. A quest's close, whose outcome is its
               door's answer and never your word: record that answer again, resend the same close (its key, never
-              a new close), or stop the work's further steps. Only the process holding the home records it; the
-              next look applies it. The page's is What needs you, and the work's foot.
+              a new close), or stop the work's further steps. A step that failed with no retry coming: again,
+              a new attempt its plugin is sent, the run step's Try again (the run's view names the unit and the
+              attempt). Only the process holding the home records it; the next look applies it. The page's is
+              What needs you, and the work's foot.
           workflow show --repository <repo>|--workspace <name> [--kind <kind>]  ·  workflow show <id>[@<version>]
           workflow list  ·  workflow defaults  ·  workflow new <id> --from <default>|<id>[@<v>] [--with-opinion] [--with-look] [--name "…"]
           workflow edit|apply <id> <file> [--base <v>]  ·  workflow export <id> [--to <file>]  ·  workflow import <file>
@@ -97,8 +99,6 @@ internal static class DriveUsageMachine
           workflow send <run> <node>
           workflow ask-again <run> <node>  ·  workflow go-on <run> <node> "…"
               send a ready request that waits for you, or answer a declined one: ask it again, or go on without it.
-          workflow try-again <run> <node>
-              try a failed plugin step again, as a new attempt its plugin is sent.
           workflow accept <run> <node> ["…"]
           workflow changes <run> <node> "…"
               your Accept of the work on a run's review, which lands it as the run's workflow says; or the changes

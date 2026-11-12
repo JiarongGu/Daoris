@@ -100,7 +100,7 @@ public sealed class ServerKeeperProcessTests : IDisposable
             const { name, arguments: args } = message.params;
             if (name === 'keep') { kept.push(Buffer.alloc(Number(args.mb) * 1024 * 1024, 1)); text(message.id, 'kept'); }
             else if (name === 'browser_snapshot') text(message.id, `snapshot from ${process.pid}`);
-            else text(message.id, `clicked ${args.ref}`);
+            else text(message.id, `clicked ${args.target}`);
           }
         }
         """;
@@ -136,17 +136,17 @@ public sealed class ServerKeeperProcessTests : IDisposable
             await Call(1, "initialize", new { protocolVersion = "2024-11-05", capabilities = new { }, clientInfo = new { name = "test", version = "1" } });
             await keeper.StandardInput.WriteLineAsync("""{"jsonrpc":"2.0","method":"notifications/initialized"}""");
 
-            Assert.Equal("clicked e3", await Call(2, "tools/call", new { name = "browser_click", arguments = new { @ref = "e3" } }));
+            Assert.Equal("clicked e3", await Call(2, "tools/call", new { name = "browser_click", arguments = new { target = "e3" } }));
 
             await Call(3, "tools/call", new { name = "keep", arguments = new { mb = CeilingMb + 20 } });
             await Task.Delay(1500, timeout.Token);
 
-            var stale = await Call(4, "tools/call", new { name = "browser_click", arguments = new { @ref = "e3" } });
+            var stale = await Call(4, "tools/call", new { name = "browser_click", arguments = new { target = "e3" } });
             Assert.Contains("out of date", stale, StringComparison.Ordinal);
             Assert.Contains("snapshot from ", stale, StringComparison.Ordinal);
             Assert.DoesNotContain("clicked", stale, StringComparison.Ordinal);
 
-            Assert.Equal("clicked e7", await Call(5, "tools/call", new { name = "browser_click", arguments = new { @ref = "e7" } }));
+            Assert.Equal("clicked e7", await Call(5, "tools/call", new { name = "browser_click", arguments = new { target = "e7" } }));
         }
         finally
         {

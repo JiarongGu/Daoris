@@ -41,6 +41,20 @@ public sealed class ServerKeeperRestartProcessTests : IDisposable
         }
         """;
 
+    private const string Navigating = """
+        import { appendFileSync } from 'node:fs';
+        import { createInterface } from 'node:readline';
+        const say = (message) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...message }) + '\n');
+        for await (const line of createInterface({ input: process.stdin })) {
+          const message = JSON.parse(line);
+          if (message.method === 'initialize') say({ id: message.id, result: { protocolVersion: '2024-11-05', capabilities: {}, serverInfo: { name: 'stand-in', version: '1' } } });
+          else if (message.method === 'tools/call' && message.params.name === 'browser_navigate') {
+            appendFileSync(process.argv[2], `${process.pid} ${message.params.arguments.url}\n`);
+            say({ id: message.id, result: { content: [{ type: 'text', text: `### Page\n- Page URL: ${message.params.arguments.url}\n- Page Title: work` }] } });
+          }
+        }
+        """;
+
     private Process Keeper(string source, int everyMs, params string[] arguments)
     {
         var script = Path.Combine(_root, "stand-in.mjs");
@@ -110,6 +124,34 @@ public sealed class ServerKeeperRestartProcessTests : IDisposable
             }
 
             Assert.True(pids.Count >= 2, "the keeper never started the server afresh after the cancelled call");
+        }
+        finally
+        {
+            keeper.Kill(entireProcessTree: true);
+        }
+    }
+
+    [Fact]
+    public async Task A_server_started_afresh_is_sent_to_the_page_the_session_was_on()
+    {
+        var opened = Path.Combine(_root, "opened.txt");
+        using var keeper = Keeper(Navigating, 200, opened);
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+            await Initialize(keeper, timeout.Token);
+            await Send(keeper, new { jsonrpc = "2.0", id = 2, method = "tools/call", @params = new { name = "browser_navigate", arguments = new { url = "http://127.0.0.1:9/work" } } });
+            Assert.Contains("Page URL", await keeper.StandardOutput.ReadLineAsync(timeout.Token), StringComparison.Ordinal);
+
+            string[] Servers() => File.Exists(opened) ? [.. File.ReadAllLines(opened).Select(line => line.Split(' ')[0]).Distinct()] : [];
+            while (Servers().Length < 2 && !timeout.IsCancellationRequested) await Task.Delay(200, CancellationToken.None);
+
+            Assert.True(Servers().Length >= 2, "no server started afresh was sent to the session's page");
+            Assert.All(File.ReadAllLines(opened), line => Assert.EndsWith(" http://127.0.0.1:9/work", line, StringComparison.Ordinal));
+
+            await Send(keeper, new { jsonrpc = "2.0", id = 3, method = "tools/call", @params = new { name = "browser_navigate", arguments = new { url = "http://127.0.0.1:9/next" } } });
+            var next = JsonDocument.Parse(await keeper.StandardOutput.ReadLineAsync(timeout.Token) ?? "{}").RootElement;
+            Assert.Equal(3, next.GetProperty("id").GetInt32());
         }
         finally
         {

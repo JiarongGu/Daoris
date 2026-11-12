@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../locales/format';
-import { Button } from '../design/ui';
-import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from './run';
+import { sentence } from '../../locales/format';
+import { Button } from '../../design/ui';
+import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../run';
 
 /**
  * **A check held unknown for the person**: under its node, *Run again* (a new attempt at

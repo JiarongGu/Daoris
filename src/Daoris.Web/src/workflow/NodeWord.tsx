@@ -10,10 +10,10 @@ import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
-  'not-task', 'not-waiting', 'not-return', 'not-plugin-step',
+  'not-task', 'not-waiting', 'not-return',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'try-again', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -31,9 +31,7 @@ export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answe
  * **The driver judges, the page draws**: which acts a node offers is the driver's, so a go-ahead nobody raised is passed over here
  * and a landing is offered its stop alone. Each press goes out with its run and node (`onWord`) and comes back answered: kept closes the ask,
  * a refusal is said in it by its code, in the driver's sentence where the page has no words for the code.
- *
- * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's. *
- * A molecule: the step and the press arrive as props.
+ * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's.
  */
 export function NodeWord({ run, step, onWord }: {
   /** The run, as its record names it (`graph.run`). */
@@ -104,24 +102,7 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.goOn')}
             </Button>
           )}
-          {/* A failed plugin step is tried again, as a new attempt its plugin is sent. */}
-          {acts.includes('try-again') && (
-            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('try-again')}>
-              {t('workflow.run.node.tryAgain')}
-            </Button>
-          )}
         </div>
-      )}
-      {asking === 'try-again' && (
-        <InlineConfirm
-          tone="primary"
-          block
-          label={t('workflow.run.node.tryAgainTitle', { node })}
-          says={t('workflow.run.node.tryAgainSays', { node })}
-          meanIt={t('workflow.run.node.tryAgainMeanIt')}
-          onConfirm={(answered) => send('try-again', answered)}
-          onClose={close}
-        />
       )}
       {asking !== null && isTaskAct(asking) && (
         <TaskPress block act={asking} node={node} words={words} onWords={setWords} onConfirm={(answered) => send(asking, answered)} onClose={close} />

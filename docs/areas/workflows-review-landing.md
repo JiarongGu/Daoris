@@ -87,10 +87,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     target's tip, once read, rebinds only while nothing fed is active or reached. A node only a skipped producer feeds is skipped
     with it. An unbound step after a review, its tip unread, binds the commit the review accepted. A step's commits stay on
     `refs/daoris/steps/<run>/<node>/<attempt>` until the run ends settled. (D190, D259, D260)
-18. The runtime is the record's one writer: a door keeps the person's word (skip, stop, send, ask again, go on, try again, accept,
-    changes, done, approve, reject) and the next pass applies it; no run ends while a word waits. A failed plugin step offers
-    *Try again* on the run's step (`daoris workflow try-again <run> <node>`, `PluginStepRetry`): the table's failed to ready by the
-    person, a new attempt its plugin is sent; a step of another kind refuses it `not-plugin-step`. A run ends when its graph's end settles or
+18. The runtime is the record's one writer: a door keeps the person's word (skip, stop, send, ask again, go on, accept,
+    changes, done, approve, reject) and the next pass applies it; no run ends while a word waits. A failed plugin step's run step
+    holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
+    `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
+    failed to ready by the person, a new attempt its plugin is sent. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step watches a branch the line holds whole (`on-line`) or that is
     gone (`branch-gone`); it is not governed again until its chain comes back. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
