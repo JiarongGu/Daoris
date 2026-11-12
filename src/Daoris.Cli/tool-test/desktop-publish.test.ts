@@ -148,7 +148,7 @@ test('--stage stages only beside an install, never over a swap in progress, and 
  * same way, and this is where that is caught, the same day. The deployment rehearsal's own publishes go
  * into a scratch folder under `_fixtures`, which is never asked: it is one of the gates being run.
  */
-type Ask = (root: string, options?: { light?: boolean }) => { code: number; out: string };
+type Ask = (root: string) => { code: number; out: string };
 
 test('a publish into a scratch folder under _fixtures is never asked about gates; any other folder is', () => {
   const fx = makeFixture('publish-inside-fixtures');
@@ -176,9 +176,6 @@ test('a publish refuses a commit the full set has not passed, naming what is mis
   assert.equal(passed.refusal, null);
   assert.match(passed.note!, /the full set has passed/);
   assert.deepEqual(asked, [fx.root]);
-  let light: boolean | undefined;
-  ungatedRefusal(to, fx.root, { light: true, ask: (root, options) => { light = options?.light; return { code: 0, out: 'merge-branch: the light stage has passed this checkout\n' }; } });
-  assert.equal(light, true);
 
   const refused = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run every gate on it: node tools/merge-branch.mjs --full\n`) });
   assert.match(refused.refusal!, /the full set of gates has not passed/);
