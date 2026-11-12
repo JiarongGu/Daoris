@@ -182,7 +182,7 @@ describe('Review and save', () => {
     await user.type(name, 'Release for engine');
     await user.click(reviewButton());
     const review = await screen.findByRole('region', { name: 'Before it is saved' });
-    expect(within(review).getByText('A new workflow of 7 steps.')).toBeInTheDocument();
+    expect(within(review).getByText('A new workflow of 8 steps.')).toBeInTheDocument();
     expect(within(review).queryByRole('checkbox')).toBeNull();
     await user.click(within(review).getByRole('button', { name: 'Save as a new workflow' }));
 

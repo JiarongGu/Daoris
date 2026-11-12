@@ -277,7 +277,7 @@ describe('choosing where a way goes on the chart', () => {
 
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('button', { name: 'Choose on the chart where Once done goes from The work' }));
-    await user.keyboard('{End}{ArrowUp}{Enter}');
+    await user.keyboard('{End}{ArrowUp}{ArrowUp}{Enter}');
     expect(live()).toHaveTextContent('Once done, The work goes to The landing.');
   });
 
@@ -401,11 +401,11 @@ describe('the draft Ask Daoris is told', () => {
     const { unmount } = render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
     expect(openDraftNow()).toMatchObject({ place: 'engine', source: 'preset:merge-after-accept', workflow: 'merge-after-accept-2', base: null, selected: null });
-    expect(openDraftNow()!.graph.nodes).toHaveLength(7);
+    expect(openDraftNow()!.graph.nodes).toHaveLength(8);
 
     await user.click(await screen.findByRole('button', { name: 'Add a step between What the line holds and Your review' }));
     await user.click(await screen.findByRole('option', { name: /^The checks/ }));
-    await waitFor(() => expect(openDraftNow()!.graph.nodes).toHaveLength(8));
+    await waitFor(() => expect(openDraftNow()!.graph.nodes).toHaveLength(9));
     expect(openDraftNow()).toMatchObject({ selected: 'check' });
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Checked');
     expect(openDraftNow()).toMatchObject({ workflow: 'checked' });

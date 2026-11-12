@@ -54,6 +54,7 @@
   "workflow.wait.return.both-changed": "等待你为文件夹和会话的副本里都改过的文件做选择。",
   "workflow.step.monitor": "等待拉取请求合并",
   "workflow.step.tidy": "清理委托链",
+  "workflow.step.release": "结束工作树",
   "workflow.step.rebase": "变基",
   "workflow.step.resolve": "解决冲突",
   "workflow.step.merge": "合并",

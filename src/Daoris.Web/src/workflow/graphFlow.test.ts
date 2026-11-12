@@ -38,7 +38,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
       'plan-review-apply', 'pull-request', 'release',
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
-    expect([release.nodes.length, release.wires.length, release.end]).toEqual([11, 13, 'line']);
+    expect([release.nodes.length, release.wires.length, release.end]).toEqual([12, 14, 'line']);
   });
 
   it('are what the stories draw: their fixtures equal the files', () => {
@@ -102,7 +102,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
       expect(marked[0]!.mark!.word).toBe('Work done here');
     }
     expect(draw(shipped('release').graph).nodes.find((node) => node.id === 'line')!.mark).toEqual({ word: 'Work done here', foot: 'Steps after it still run' });
-    expect(draw(shipped('merge-after-accept').graph).nodes.find((node) => node.id === 'line')!.mark).toEqual({ word: 'Work done here', foot: null });
+    expect(draw(shipped('merge-after-accept').graph).nodes.find((node) => node.id === 'line')!.mark).toEqual({ word: 'Work done here', foot: 'Steps after it still run' });
   });
 
   it('draws Finished from no graph, only from a run\'s record', () => {
@@ -113,7 +113,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     }
     const ended = draw(shipped('merge-after-accept').graph, { finished: { word: 'done', tone: 'done' } });
     expect(ended.nodes.at(-1)).toMatchObject({ id: FINISHED, title: 'Finished', state: { word: 'done', tone: 'done' } });
-    expect(ended.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['line']);
+    expect(ended.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['tree']);
     // A record that has not finished draws none.
     expect(draw(shipped('merge-after-accept').graph, { finished: null }).nodes.some((node) => node.id === FINISHED)).toBe(false);
   });
@@ -148,14 +148,14 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     const none = decided('none');
     const nowhere = none.nodes.find((node) => node.title === 'No further step')!;
     expect(nowhere.reached).toBe(true);
-    expect(none.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual([nowhere.id]);
+    expect(none.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['tree', nowhere.id]);
 
     // `release` is routed: the run finished after the last step it took, and the unrouted outcome is a ◎ not taken.
     const release = decided('release');
     const left = release.nodes.find((node) => node.title === 'No further step')!;
     expect(left.reached).toBe(false);
     expect(left.state).toMatchObject({ word: 'route not taken' });
-    expect(release.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['publish']);
+    expect(release.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['tree', 'publish']);
   });
 
   it('folds the declared requests and holds into one group, counted, and opens it on request', () => {

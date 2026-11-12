@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The end of a run's worktree, performed through its door once the work has landed: each tree the run owns is ended behind the clean-up's proof
+/// The end of a run's tree, performed through its door once the work has landed: each tree the run owns is ended behind the clean-up's proof
 /// (<see cref="TreeReleases"/>) and the node reached with what went and what stayed and why. It never fails: a tree with uncommitted work or
 /// commits only it holds stays, said, and the sweep ends it once its work lands. In a graph that sets nothing apart it finds no tree and says so.
 /// </summary>
@@ -18,7 +18,7 @@ internal sealed class ReleaseNode : BuiltInNode, IStarts
 
     public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Release);
 
-    public override string? Title => "End the worktree";
+    public override string? Title => "End the tree";
 
     public override NodeLook Look => NodeLook.Line;
 

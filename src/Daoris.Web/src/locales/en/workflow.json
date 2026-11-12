@@ -54,6 +54,7 @@
   "workflow.wait.return.both-changed": "Waits for your choice on files changed in both the folder and the session's copy.",
   "workflow.step.monitor": "The pull request's watch",
   "workflow.step.tidy": "The chain's clean-up",
+  "workflow.step.release": "End the tree",
   "workflow.step.rebase": "The rebase",
   "workflow.step.resolve": "The resolution",
   "workflow.step.merge": "The merge",
