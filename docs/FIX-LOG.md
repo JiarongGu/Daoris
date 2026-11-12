@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-12 - The driver stalled minutes after every start: a disposed git handle leaked the scheduler's slots
+
+- **Symptom:** on the installed build, after each start the driver worked two to six minutes, then every look timed out at 5 s
+  (`look.slow` on start, follow, landing, tidy, nodes): nothing started, parked sessions never resumed, a conversation stayed *opening*.
+  Found and traced by the install's own Ask Daoris from its machine log.
+- **Root cause:** `GitPlace` began reading its process's exit directly (7dcd17b0ca). `GitPlace.HasExited` caught
+  `InvalidOperationException` and `Win32Exception`, but `Process.HasExited` on a handle the exit wait's `finally` had just disposed throws
+  `COMException` (0x80070006, `E_HANDLE`), which escaped; `GitScheduler.Ended` read `Exited` first, so the throw skipped
+  `_places.Free` and `_running.Remove`, leaking one place slot each time. Once the bound was used up, every git ask queued for good.
+- **Fix:** `HasExited` treats any `ExternalException` (covering both) as exited, as its comment already said; `Ended` reads `Exited`
+  inside a try, a throw counting as exited, so no fault can skip freeing the slot.
+- **Verification:** `GitPlaceExitTests` and the scheduler's classes pass; a deterministic test injecting a failing exit read follows.
+
 ## 2026-11-12 - A goal step's record failed the role census, and the seeded role table had no `step`
 
 - **Symptom:** `RoleCensusTests` and `StartPlanTests` threw on `StartPlan.RoleOf("step")`: no work of that name.
