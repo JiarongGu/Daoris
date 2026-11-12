@@ -18,7 +18,7 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
     [Description(
         "Ask another agent for a second reading of this repository: an explanation, a check of your reasoning, a place to look. "
         + "It reads your work as it stands when your turn ends (uncommitted included), changes nothing, takes one turn and asks no "
-        + "one. Its answer comes back as your next turn, marked as another agent's claim naming the work it read: check it before "
+        + "one; the person's rule for helpers decides if it starts. Its answer comes back as your next turn, marked as another agent's claim: check it before "
         + "relying on it. Say what you asked, then end your turn. Asked urgent, an answer reaches a later turn at its next step.")]
     public async Task<string> AskHelperAsync(
         [Description("The question, with what the helper should read, in at most 4000 characters.")] string? question,

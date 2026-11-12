@@ -36,7 +36,7 @@
     },
     "chat": {
       "only": [
-        "channel_post", "channel_read", "check_run", "go_ahead_ask", "handback_read", "handover_propose", "helper_ask", "knowledge_convergence", "knowledge_get",
+        "channel_post", "channel_read", "go_ahead_ask", "handback_read", "handover_propose", "helper_ask", "knowledge_convergence", "knowledge_get",
         "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose", "memory_search", "memory_write",
         "opinion_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "registry"
       ]
