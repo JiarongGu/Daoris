@@ -182,6 +182,12 @@ test('a script returning its arguments is read, and a test file is not', () => {
   assert.deepEqual(checkToolLocks(tools({ 'x.test.mjs': script("['status']"), 'node_modules/y.mjs': script("['status']") })).problems, []);
 });
 
+test('a typed module of the tools is read as a script is, and its Vitest files are not', () => {
+  const typed = script("['status', '--porcelain']").replace('(cwd, args)', '(cwd: string, args: string[])');
+  assert.equal(checkToolLocks(tools({ 'merge/x.ts': typed })).problems.length, 1);
+  assert.deepEqual(checkToolLocks(tools({ 'merge/x.test.ts': typed, 'merge/y.e2e.ts': typed })).problems, []);
+});
+
 test("the repository's own tools ask every status and diff with --no-optional-locks", () => {
   assert.deepEqual(checkToolLocks(root).problems, []);
 });

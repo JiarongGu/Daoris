@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnGit } from '../fsx.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { FlowDeps, GateResult, PlanGate } from './flow.ts';
 import { findingReds, verdictReds, type MainRed } from './main-red.ts';
@@ -34,7 +35,7 @@ export type Seams = {
 };
 
 const git = (cwd: string, args: string[]): string => {
-  const ran = spawnSync('git', ['--no-optional-locks', ...args], { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, windowsHide: true });
+  const ran = spawnGit(args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   if (ran.status !== 0) throw new Error(`git ${args[0]} failed: ${String(ran.stderr).trim()}`);
   return ran.stdout;
 };
@@ -75,7 +76,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
     reachSource: createHash('sha1').update(JSON.stringify([seams.table, lanes])).digest('hex'),
     readVerdicts: () => seams.readVerdicts(home).verdicts,
     entriesOf,
-    diffOf: (where) => git(where, ['diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean),
+    diffOf: (where) => git(where, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', 'HEAD']).split('\0').filter(Boolean),
     toolchain: toolchainOf(),
     slowestOf: (trx) => seams.slowestClasses(trx),
     failuresOf: (where, result, trx) => seams.failuresOf(where, result, trx)

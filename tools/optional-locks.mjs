@@ -195,9 +195,10 @@ function read(root, dir) {
     .filter(({ rel }) => !rel.split('/').some((part) => part.endsWith('.Tests')));
 }
 
-/** The tools' scripts under `root`, tests skipped, each `{ rel, raw, text }` as `read` gives them. */
+/** The tools' scripts and typed modules under `root`, tests skipped, each `{ rel, raw, text }` as `read` gives them. */
 function readTools(root, dir) {
-  return readFiles(root, dir, (name) => name.endsWith('.mjs') && !name.endsWith('.test.mjs'), blankScript);
+  const isTest = (name) => /\.test\.(mjs|ts)$|\.e2e\.ts$|\.d\.m?ts$/.test(name);
+  return readFiles(root, dir, (name) => /\.(mjs|ts)$/.test(name) && !isTest(name), blankScript);
 }
 
 /** The breaches under `root` (`{ problems, marked }`): a git status or diff asked without `--no-optional-locks`. */

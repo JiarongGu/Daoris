@@ -6,7 +6,8 @@
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
- * has `process` in it), `web-unit.json` from Vitest and `tool-tests.xml` from the node reporter. A test is over when it takes
+ * has `process` in it), `web-unit.json`, `tool-unit.json` and `tool-e2e.json` from Vitest and `tool-tests.xml` from the node
+ * reporter. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. With no records
  * (a fresh checkout, no gate run yet) nothing is checked. The list only shrinks: a test that got faster is cut down by `--write`,
@@ -18,14 +19,21 @@ import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
-export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000 };
+export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
+
+/** The Vitest reports: the page's and the merge tool's two projects. */
+const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
 
 /** The limit for a record file by its name. */
 export function limitFor(file) {
   if (file === 'web-unit.json') return LIMITS.web;
-  if (file === 'tool-tests.xml') return LIMITS.tool;
+  if (file === 'tool-unit.json') return LIMITS.toolUnit;
+  if (file === 'tool-tests.xml' || file === 'tool-e2e.json') return LIMITS.tool;
   return /process/i.test(file) ? LIMITS.process : LIMITS.unit;
 }
+
+/** `path` relative to `base` (ending in a slash) where it lies under it, compared without case: a drive letter is spelt either way. */
+const under = (path, base) => (path.toLowerCase().startsWith(base.toLowerCase()) ? path.slice(base.length) : path);
 
 const decode = (text) => text.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const attributes = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, name, value]) => [name, decode(value)]));
@@ -53,8 +61,7 @@ export function readVitest(text, root) {
   const base = slashes(root).replace(/\/$/, '') + '/';
   const tests = [];
   for (const file of JSON.parse(text).testResults ?? []) {
-    const name = slashes(file.name ?? '');
-    const relative = name.startsWith(base) ? name.slice(base.length) : name;
+    const relative = under(slashes(file.name ?? ''), base);
     for (const each of file.assertionResults ?? []) {
       if (each.status === 'pending' || each.status === 'skipped') continue;
       tests.push({ key: `${relative}::${each.fullName ?? each.title}`, ms: Math.round(each.duration ?? 0) });
@@ -75,8 +82,7 @@ export function readJunit(text, root) {
       if (!tag.endsWith('/>')) suites.push(attributes(tag).name);
     } else {
       const at = attributes(tag);
-      const file = slashes(at.file ?? '');
-      const relative = file.startsWith(base) ? file.slice(base.length) : file;
+      const relative = under(slashes(at.file ?? ''), base);
       tests.push({ key: `${relative}::${[...suites, at.name].join(' > ')}`, ms: Math.round(Number(at.time ?? 0) * 1000) });
     }
   }
@@ -91,7 +97,7 @@ export function scanRecords(dir, root, { since = null } = {}) {
   for (const file of readdirSync(dir).sort()) {
     if (since !== null && statSync(join(dir, file)).mtimeMs < since) continue;
     const text = () => readFileSync(join(dir, file), 'utf8');
-    const tests = file.endsWith('.trx') ? readTrx(text()) : file === 'web-unit.json' ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
+    const tests = file.endsWith('.trx') ? readTrx(text()) : VITEST_REPORTS.includes(file) ? readVitest(text(), root) : file === 'tool-tests.xml' ? readJunit(text(), root) : [];
     const limit = limitFor(file);
     for (const { key, ms } of tests) {
       seen.add(key);

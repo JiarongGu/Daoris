@@ -13,6 +13,23 @@ test('a record file is held to the limit of its kind', () => {
   assert.equal(limitFor('driver-process-git.trx'), LIMITS.process);
   assert.equal(limitFor('web-unit.json'), LIMITS.web);
   assert.equal(limitFor('tool-tests.xml'), LIMITS.tool);
+  assert.equal(limitFor('tool-unit.json'), LIMITS.toolUnit);
+  assert.equal(limitFor('tool-e2e.json'), LIMITS.tool);
+  assert.equal(LIMITS.toolUnit, 10_000);
+});
+
+test('the merge tool\'s Vitest reports are read, each against its own limit, under a root of either drive-letter case', () => {
+  const dir = join('_fixtures', 'time-ratchet-tool-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    const report = (name, ms) => JSON.stringify({ testResults: [{ name: `D:/repo/tools/merge/${name}`, assertionResults: [{ fullName: 'slow', duration: ms, status: 'passed' }] }] });
+    writeFileSync(join(dir, 'tool-unit.json'), report('flow.test.ts', 11_000));
+    writeFileSync(join(dir, 'tool-e2e.json'), report('merge.e2e.ts', 110_000));
+    assert.deepEqual(scanRecords(dir, 'd:\\repo').over, { 'tools/merge/flow.test.ts::slow': { ms: 11_000, limit: LIMITS.toolUnit } });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('a trx gives each executed test its milliseconds', () => {

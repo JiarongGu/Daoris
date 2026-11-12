@@ -1,10 +1,10 @@
 /**
  * Each reached command's report of what passed, so a pass is recorded per unit and not per command: a trx for a .NET class, a
- * junit report for a node test file and vitest's json for a page test file. A command that wrote none records its units only where
+ * junit report for a node test file and vitest's json for a page or merge tool test file. A command that wrote none records its units only where
  * it exited clean.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
 import { junitPasses, vitestPasses } from '../merge/file-passes.ts';
 import { passedClasses } from '../merge/trx-passes.ts';
 
@@ -14,8 +14,10 @@ const same = (a, b) => resolve(a).replaceAll('\\', '/').toLowerCase() === resolv
 /** The command's arguments with the report its runner writes under `name`, and where the report lands from the repository root. */
 export function withReport(each, name) {
   if (each.command === 'dotnet') return { args: [...each.args, '--results-directory', FOLDER, '--logger', `trx;LogFileName=${name}.trx`], report: `${FOLDER}/${name}.trx` };
-  if (each.command === 'npm') {
-    return { args: [...each.args, '--reporter=default', '--reporter=json', `--outputFile.json=../../${FOLDER}/${name}.json`], report: `${FOLDER}/${name}.json` };
+  if (each.args[0]?.endsWith('vitest/vitest.mjs')) {
+    // Vitest reads the report's path from its root, the folder the command runs in.
+    const report = `${FOLDER}/${name}.json`;
+    return { args: [...each.args, '--reporter=default', '--reporter=json', `--outputFile.json=${posix.relative(each.cwd, report)}`], report };
   }
   // The runner's options come before the files it names.
   const at = each.args.indexOf('--test-force-exit') + 1;

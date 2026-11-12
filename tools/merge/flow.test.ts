@@ -144,6 +144,7 @@ test('a gate past its budget has what it started killed, and fails as over-budge
     runGate: async (_w, each, _l, options) => {
       const trees = options.trees as { hold(pid: number): void; ended: string | null };
       trees.hold(77);
+      // patience: claim — a budget of 20 ms ends the gate well inside it; past it the gate answers PASS and the test fails
       for (let waited = 0; waited < 2000 && !trees.ended; waited += 5) await new Promise((done) => setTimeout(done, 5));
       return { gate: each, code: null, verdict: trees.ended ? 'ENDED' : 'PASS', note: 'ended', ms: 20, log: 'l' };
     },
@@ -161,6 +162,7 @@ test('a gate past its budget has what it started killed, and fails as over-budge
 });
 
 test('settling a merge sets down main\'s reds, fails the merge on the branch\'s, and builds the record and the budget lines', () => {
+  // patience: input — the time a gate's result records, not a wait
   const make = (name: string, verdict: string, failures: Array<{ unit: string; key: string }>, ms = 1000): GateResult => ({
     gate: { name, run: 'x' }, verdict, note: '', ms, failures, log: 'l',
   });
