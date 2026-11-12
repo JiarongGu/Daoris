@@ -64,8 +64,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     private static DriverConfig Config => ActorChoices.With(DriverConfig.Empty, "ask-daoris", [new ActorChoice("door")]);
 
     /// <summary>
-    /// The workspace named reaches the ledger's open; none named sends none. A second in the same workspace is the ledger's
-    /// refusal, naming the first. The accounts are one set: a workspace chooses none of its own.
+    /// The workspace named reaches the ledger's open; none named sends none. A second in the same workspace while the first runs
+    /// opens a record of its own. The accounts are one set: a workspace chooses none of its own.
     /// </summary>
     [Fact]
     public async Task The_workspace_reaches_the_ledger_s_open_and_its_account_is_the_set_s()
@@ -83,8 +83,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.Equal(("h2", "default"), (unnamed.SessionId, unnamed.Workspace));
         // The first holds the order's first account, so the second takes the next one the set has free.
         Assert.Equal("office", ledger.Record(unnamed.SessionId!)["profile"]!.GetValue<string>());
-        Assert.Null(again.SessionId);
-        Assert.Contains("h1", again.Message);
+        Assert.Equal(("h3", "alpha"), (again.SessionId, again.Workspace));
     }
 
     /// <summary>

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// Ask Daoris's conversation: a chat in the room the driver writes under its home, on the
 /// helper's agent — the knowledge connector handed, the room's allows and nothing of the person's, no
-/// plugin server, and one conversation running at a time.
+/// plugin server, and any number of conversations answering at once.
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, and a stand-in service. No model, no account.</remarks>
 [Trait(Category.Name, Category.Process)]
@@ -189,21 +189,34 @@ public sealed class HelpChatTests : IDisposable
         Assert.Equal([(placed.SessionId!, "failed")], ended);
     }
 
-    /// <summary>One conversation per machine: a second while one runs is refused in the ledger's words, naming it.</summary>
+    /// <summary>
+    /// Two conversations answering at once: a second starts while the first runs, and each answers its own words while the other's
+    /// turn is still open, so neither waits for the other.
+    /// </summary>
     [Fact]
-    public async Task A_second_conversation_while_one_runs_is_refused_naming_it()
+    public async Task Two_conversations_answer_at_once_each_its_own_words()
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        var (runner, _, _, client, config) = Runner(service);
+        var (runner, events, _, client, config) = Runner(service);
         using var _c = client;
         using var _r = runner;
         var first = (await runner.StartHelpAsync("acp-stub", config, Machine)).SessionId!;
         await Until(() => service.State(first) == "working", () => $"state {service.State(first)}");
 
-        var second = await runner.StartHelpAsync("acp-stub", config, Machine);
+        var second = (await runner.StartHelpAsync("acp-stub", config, Machine)).SessionId;
 
-        Assert.Null(second.SessionId);
-        Assert.Contains(first, second.Message);
+        Assert.NotNull(second);
+        Assert.NotEqual(first, second);
+        string Seen() => $"heard [{string.Join(" | ", StubFile.Lines(Heard))}], states {service.State(first)}/{service.State(second!)}";
+        await Until(() => service.State(second!) == "working", Seen);
+        // Each turn is answered only once both are on the wire: one waiting for the other would never be answered.
+        Assert.True(runner.Say(first, "together: one"));
+        Assert.True(runner.Say(second!, "together: two"));
+        string[] Answered(string id) =>
+            [.. events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Message).Select(e => e.Text!)];
+        await Until(() => Answered(first).Length == 1 && Answered(second!).Length == 1, Seen);
+        Assert.Equal(["heard together: one"], Answered(first));
+        Assert.Equal(["heard together: two"], Answered(second!));
     }
 
     /// <summary>
@@ -323,7 +336,7 @@ public sealed class HelpChatTests : IDisposable
     {
         var script = Path.Combine(_home, "acp-help-agent.mjs");
         File.WriteAllText(script, """
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, readFileSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
             const heard = process.argv[2];
@@ -348,6 +361,14 @@ public sealed class HelpChatTests : IDisposable
                 const said = raw.replace(/\n\nDaoris's standing block for this session: [\s\S]*$/, '');
                 if (said !== raw) note('block: ' + JSON.stringify(raw.slice(said.length + 2)));
                 note('prompt: ' + JSON.stringify(said));
+                // A turn answered only once two conversations' turns are both on the wire, bounded so a stand-in left behind ends.
+                if (said.startsWith('together: ')) {
+                  const until = Date.now() + 60000;
+                  while (readFileSync(heard, 'utf8').split('\n').filter((each) => each.startsWith('prompt: "together: ')).length < 2) {
+                    if (Date.now() > until) process.exit(3);
+                    await new Promise((done) => setTimeout(done, 20));
+                  }
+                }
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-help',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + said } } } });
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-help',
