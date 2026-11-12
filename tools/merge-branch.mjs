@@ -457,6 +457,7 @@ import { inFolders, readFolders, regenerate, regenerations, writeFolders } from 
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
 import { timeoutState } from './merge/timeout.ts';
+import { clearMerged, staleRun } from './merge/queue-stale.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
 import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
 export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
@@ -468,7 +469,7 @@ export {
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
 export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
-export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines } from './merge-branch/reached.mjs';
+export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines, unitsOfMerge } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
 
@@ -3526,6 +3527,7 @@ async function rerunGates(root, options) {
     ? `${count(planned.kept.length, 'verdict')} kept (${planned.kept.map((kept) => `${kept.name}, from ${when(kept.at)}`).join('; ')})`
     : 'no verdict kept';
   console.log('');
+  if (timeoutState.note()) console.log(timeoutState.note());
   if (failed.length || notRun) {
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.join(', ')}${notRun ? `; ${notRun} not run` : ''}; ${keptNote}.`);
     const memory = memoryLine(failedRan);
@@ -3791,6 +3793,7 @@ async function rerunCheckout(root, options) {
   const remedy = after ? stageRemedy(after.gates) : null;
   const stage = after ? stageVerdict(after, plan) : "git could not write the checkout's tree, so whether the full set passed it cannot be told";
   console.log('');
+  if (timeoutState.note()) console.log(timeoutState.note());
   if (failed.length || notRun) {
     console.log(`merge-branch: the re-run on ${sha} did NOT pass: ${failed.join(', ')} failed${notRun ? `; ${notRun} not run` : ''}; ${stage}.`);
     const memory = memoryLine(failedRan);
@@ -7060,17 +7063,28 @@ async function queueVerb(root, options) {
   const home = verdictsHome(root);
   if (options.recheck) {
     requireQueueHome(root, home, { run: true });
-    const out = withQueue(home, (queue) => (queue.stop ? { queue: { ...queue, recheck: { at: nowIso() } } } : { none: true }));
+    const merged = (tip) => git(home, ['merge-base', '--is-ancestor', tip, MAIN], { allowFail: true }).status === 0;
+    const out = withQueue(home, (queue) => {
+      const swept = clearMerged(queue, merged, nowIso());
+      const stale = staleRun(swept.queue, pidAlive);
+      const stopped = Boolean(queue.stop);
+      if (!stopped && !stale && swept.cleared.length === 0) return { none: true };
+      return { queue: stopped ? { ...swept.queue, recheck: { at: nowIso() } } : swept.queue, cleared: swept.cleared, stale, stopped };
+    });
     if (out.none) {
-      console.log('merge-branch: the queue is not stopped; nothing to recheck');
+      console.log('merge-branch: the queue is not stopped, holds no stale run and no request main already holds; nothing to recheck');
       return 0;
     }
-    console.log("merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found");
-    await ensureRunner(home);
+    if (out.cleared.length) console.log(`merge-branch: already in ${MAIN}, cleared from the queue: ${out.cleared.join(', ')}`);
+    if (out.stale) console.log(`merge-branch: ${out.stale}; the runner is started and resumes it`);
+    if (out.stopped) console.log("merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found");
+    if (out.stopped || out.stale) await ensureRunner(home);
     return 0;
   }
   const queue = readQueue(home);
   for (const line of queueLines(queue, { branchTip: (branch) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], { allowFail: true }).out.trim() || null })) console.log(line);
+  const stale = staleRun(queue, pidAlive);
+  if (stale) console.log(`stale: ${stale}; --queue --recheck starts the runner, which resumes it`);
   console.log(queue.runner && pidAlive(queue.runner.pid) ? `runner: pid ${queue.runner.pid}, since ${queue.runner.started}` : 'runner: none runs');
   const admission = readAdmission(home);
   console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);

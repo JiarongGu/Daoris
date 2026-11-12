@@ -95,11 +95,12 @@ export type Step = (command: string, cwd: string, fd: number, options?: { raise?
 export interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
 /** A unit of the census of test units that a change reaches, with the path that reached it. */
-export interface ReachedUnit { suite: string; kind: string; unit: string; name: string; file: string; by: string; project?: string }
+export interface ReachedUnit { suite: string; kind: string; unit: string; name: string; file: string; by: string; project?: string; settings?: string | null; needs?: string[] }
 export interface ReachedPlan {
-  groups: { runner: 'dotnet' | 'vitest' | 'node'; suite: string; project?: string; units: ReachedUnit[] }[];
+  groups: { runner: 'dotnet' | 'vitest' | 'node'; suite: string; project?: string; settings?: string | null; units: ReachedUnit[] }[];
   left: Record<string, number>;
   reached: number;
+  replayed?: Record<string, number>;
 }
 export interface Verdict {
   gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null;
@@ -291,7 +292,8 @@ export const tool = await import(
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];
   selectionLines: (gates: Selected[]) => string[];
-  reachedPlan: (units: ReachedUnit[], changed: string[], options?: { bounds?: Partial<Record<'dotnet' | 'vitest' | 'node', number>> }) => ReachedPlan;
+  reachedPlan: (units: ReachedUnit[], changed: string[], options?: { bounds?: Partial<Record<'dotnet' | 'vitest' | 'node', number>>; replayed?: Record<string, number> }) => ReachedPlan;
+  unitsOfMerge: (units: ReachedUnit[], paths: string[], seams: { tiers: Record<string, string[]>; reaches: (unit: ReachedUnit, path: string) => boolean }) => { units: ReachedUnit[]; night: Record<string, number> };
   reachedCommands: (plan: ReachedPlan) => { label: string; cwd: string; command: string; args: string[] }[];
   reachedLines: (plan: ReachedPlan) => string[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
