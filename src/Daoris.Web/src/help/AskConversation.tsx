@@ -135,7 +135,6 @@ export function useAskConversation(
   const accountUse = useAccountUse();
   const stopWaiting = useStopWaiting();
   const [limitHeld, setLimitHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
-  // The tool call the shown conversation's reply is inside, as its conversation tells it, for the line past its bound.
   const [calling, setCalling] = useState<{ session: string; call: RunningCall } | null>(null);
   const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const held = useChatTurns(shown && live ? [shown.id] : []);
@@ -271,8 +270,6 @@ export function useAskConversation(
   // The words on their way shown with the conversation they were said to, or with none while the list has not listed it yet.
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
-  // *Send now* while a reply runs, as a conversation's composer offers it: into the running turn where its agent steers, else
-  // the turn stopped for the words, by what its door says a word said now would do.
   const reach = useSessionReach(shown && live && turns.taking ? shown : null, true);
 
   const composer = (
@@ -320,7 +317,6 @@ export function useAskConversation(
   );
   const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, choosing, setChoosing });
 
-  // A call running past its bound is said above the box with Stop beside it, which ends the reply, never the conversation.
   const longCall = live && turns.taking && shown && calling?.session === shown.id
     ? <LongCallLine call={calling.call} stopping={stop.isPending} onStop={() => stop.mutate(shown.id)} />
     : null;

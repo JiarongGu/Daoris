@@ -72,7 +72,7 @@ public sealed class AskDaorisOpeningTests : IDisposable
         var said = Assert.Single(events.Page(id).Events, e => e.Parts?.Any(part => part.Code == "chat.help-not-up") == true);
         Assert.StartsWith("Ask Daoris could not start: `acp-stub`", said.Text);
         Assert.Contains("did not come up within 2 s", said.Text);
-        // The servers it was waiting on that Daoris's own work needs are named; a plugin's never is.
+        // The servers it waits on that Daoris's own work needs are named; a plugin's never is.
         foreach (var server in StubFile.Lines(Heard).Where(line => line.StartsWith("waiting on ", StringComparison.Ordinal)))
         {
             if (server == $"waiting on {KnowledgeConnector.ServerName}") Assert.Contains($"`{KnowledgeConnector.ServerName}`", said.Text);

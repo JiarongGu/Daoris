@@ -284,7 +284,6 @@ public sealed class SessionProcesses(string? markers = null)
             }
         }
 
-        // One being opened with no process yet: its opening ends as the person's stop.
         if (entry is null) return reason is null && Openings.Stop(sessionId);
 
         try

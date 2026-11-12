@@ -422,7 +422,6 @@ public sealed class OrphanedSessionTests : IDisposable
                             .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
                             .Select(s => s.DeepClone())]).ToJsonString());
 
-                    // Ask Daoris: any number answering at once, each opened as its own record, as the ledger does.
                     case ("POST", "/api/sessions/help"):
                     {
                         var body = Body();
@@ -463,7 +462,6 @@ public sealed class OrphanedSessionTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
-                    // The mode an Ask Daoris conversation going on runs under, on its record.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/help-mode", StringComparison.Ordinal):
                     {
                         var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/help-mode".Length]);

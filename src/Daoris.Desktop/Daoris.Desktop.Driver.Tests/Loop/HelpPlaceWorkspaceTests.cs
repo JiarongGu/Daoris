@@ -64,8 +64,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     private static DriverConfig Config => ActorChoices.With(DriverConfig.Empty, "ask-daoris", [new ActorChoice("door")]);
 
     /// <summary>
-    /// The workspace named reaches the ledger's open; none named sends none. A second in the same workspace while the first runs
-    /// opens a record of its own. The accounts are one set: a workspace chooses none of its own.
+    /// The workspace named reaches the ledger's open, none named none, a second in one workspace its own record; the accounts are one set.
     /// </summary>
     [Fact]
     public async Task The_workspace_reaches_the_ledger_s_open_and_its_account_is_the_set_s()

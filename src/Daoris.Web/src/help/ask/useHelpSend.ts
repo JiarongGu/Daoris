@@ -191,8 +191,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   const onSend = (text: string, files: File[], level?: Level) => {
     logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The one shown, whatever ended its last reply and whichever workspace it started in: the driver continues it, at the level
-    // chosen beside *Send* while a reply runs.
+    // The one shown, whatever ended its last reply and whichever workspace it started in: the driver continues it, at its level.
     if (shown) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
       deliver(shown.id, text, files, undefined, level);

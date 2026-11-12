@@ -1186,8 +1186,6 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
-                // Ask Daoris's open, its record in the room's "repository", each its own however many run in its workspace,
-                // none named being `default`'s.
                 case ("POST", "/api/sessions/help"):
                 {
                     var asked = JsonNode.Parse(body!)!;

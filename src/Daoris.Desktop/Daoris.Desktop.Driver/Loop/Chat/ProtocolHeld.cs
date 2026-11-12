@@ -67,8 +67,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         chat.Opened(null, run.Say, Record);
                         break;
                     case OpeningPastBound when notUp is not null:
-                        // Its harness never opened its conversation, as one waiting on a server that never comes up does not: what it waited
-                        // on is said, and the words stay kept for the next send.
+                        // What a harness waiting on a server that never comes up waits on is said; the words stay kept for the next send.
                         chat.Opened(null, run.Say, Record);
                         var past = notUp();
                         run.Say($"— {past.Note}");

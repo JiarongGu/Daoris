@@ -76,7 +76,6 @@ internal sealed class ChatRun(
         string? modeSaid = null;
         string? helpMode = null;
         var help = string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal);
-        // Every step up to its spawn is held to the opening's bound and reached by the person's stop.
         using var opening = new ChatOpening(processes.Openings, sessionId, OpeningBound);
         var opened = opening.Enter(ct);
         try

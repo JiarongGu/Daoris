@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ChatOpening : IDisposable
 {
-    /// <summary>Each phase's bound until measured figures move it (D280 §2.8).</summary>
+    /// <summary>Each phase's bound until measured figures move it.</summary>
     public static readonly TimeSpan DefaultBound = TimeSpan.FromSeconds(60);
 
     private readonly CancellationTokenSource _stop = new();
@@ -53,7 +53,7 @@ internal sealed class ChatOpening : IDisposable
 
     /// <summary>
     /// What did not come up when an opening on <paramref name="agent"/> passed its bound: its harness, and the servers Daoris's own work
-    /// needs among those it was handed, which it opens its conversation only once they are up. A plugin's server is never one of them.
+    /// needs among those it is handed, which it opens its conversation only once they are up. A plugin's server is never one of them.
     /// </summary>
     public static string Waited(string agent, IEnumerable<ServerEntry> handed) =>
         string.Join(", ", [$"`{agent}`", .. handed.Where(server => server.Name == KnowledgeConnector.ServerName).Select(server => $"`{server.Name}`")]);

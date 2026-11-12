@@ -189,10 +189,7 @@ public sealed class HelpChatTests : IDisposable
         Assert.Equal([(placed.SessionId!, "failed")], ended);
     }
 
-    /// <summary>
-    /// Two conversations answering at once: a second starts while the first runs, and each answers its own words while the other's
-    /// turn is still open, so neither waits for the other.
-    /// </summary>
+    /// <summary>Two conversations answering at once: each answers its own words while the other's turn is open.</summary>
     [Fact]
     public async Task Two_conversations_answer_at_once_each_its_own_words()
     {
