@@ -13,11 +13,9 @@ export const MERGE_RECORD = 'local/merge-record.jsonl';
 export type LeftProcess = { pid: number; created: string; stopped: boolean };
 export type GateRecord = {
   name: string; verdict: string; ms: number; replayed: boolean; mainRed: boolean; abnormal: boolean; slowest: Slow[]; over: boolean; left: LeftProcess[];
-  /** The tests (or the gate itself) that failed and passed when run again. */
   flakes?: string[];
 };
 export type MainRedRecord = { gate: string; unit: string; key: string };
-/** `wallMs` and `flakes` are optional because a line written without them is still read; such a run counts as unmeasured. */
 export type MergeRecord = {
   schema: 1; branch: string; at: string; ms: number; wallMs?: number; flakes?: number; attempt: number; firstPass: boolean; passed: boolean;
   gates: GateRecord[]; mainReds: MainRedRecord[]; overBudget: { gates: string[]; merge: boolean };

@@ -442,7 +442,6 @@ export const GIT_ENV = {
 // A builder's worktree sets the variables that locate a repository; inherited, they send a fixture's git to the real one's .git
 export const LOCATING = /^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)$/i;
 
-/** A test runner's own variables (node:test's, Vitest's, `NODE_ENV`), which the tool under test never inherits. */
 export const RUNNER_OWN = /^(NODE_TEST_CONTEXT|NODE_ENV|VITEST\w*)$/i;
 export const fixtureEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !LOCATING.test(key)));
 

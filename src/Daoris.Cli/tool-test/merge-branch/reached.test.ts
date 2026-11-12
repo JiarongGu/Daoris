@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { withReport } from '../../../../tools/merge-branch/reached-reports.mjs';
 import { repoRoot, tool } from '../support/merge-branch.ts';
 
 // The units a merge's paths reach, as the census of test units answers (`unitsReached`): each with the path that reached it.
@@ -69,7 +70,6 @@ test('a .NET suite runs as one filtered command per test project, its fast half 
     args: ['test', DRIVER, '--filter', '(Category!=Process)&(FullyQualifiedName~Daoris.Desktop.ATests|FullyQualifiedName~Daoris.Desktop.BTests)'],
   });
   assert.deepEqual(commands[1]!.args.slice(0, 2), ['test', modules]);
-  // Vitest's own entry under node, never npm's script, which on Windows needs a shell.
   assert.deepEqual(commands[2], {
     label: 'web-unit', cwd: 'src/Daoris.Web', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', 'src/work/WorkFrame.test.tsx'],
   });
@@ -126,13 +126,10 @@ test('the tool reads the census of this repository: a changed tool reaches the t
   assert.match(none.stdout, /no reached unit/);
 });
 
-test('a Vitest command writes its JSON report where the repository keeps timings, read from the folder it runs in', async () => {
-  const reports = await import(
-    // @ts-expect-error — untyped workspace tooling, as `support/merge-branch.ts` imports the tool
-    '../../../../tools/merge-branch/reached-reports.mjs') as { withReport: (each: object, name: string) => { args: string[]; report: string } };
-  const web = reports.withReport({ cwd: 'src/Daoris.Web', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', 'a.test.ts'] }, 'r-1');
+test('a Vitest command writes its JSON report where the repository keeps timings, read from the folder it runs in', () => {
+  const web = withReport({ cwd: 'src/Daoris.Web', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', 'a.test.ts'] }, 'r-1');
   assert.deepEqual(web.args.slice(3), ['--reporter=default', '--reporter=json', '--outputFile.json=../../_fixtures/test-timing/r-1.json']);
   assert.equal(web.report, '_fixtures/test-timing/r-1.json');
-  const tools = reports.withReport({ cwd: '.', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', '--config', 'tools/vitest.config.ts', 'x.e2e.ts'] }, 'r-2');
+  const tools = withReport({ cwd: '.', command: 'node', args: ['node_modules/vitest/vitest.mjs', 'run', '--config', 'tools/vitest.config.ts', 'x.e2e.ts'] }, 'r-2');
   assert.equal(tools.args.at(-1), '--outputFile.json=_fixtures/test-timing/r-2.json');
 });

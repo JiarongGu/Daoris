@@ -15,7 +15,6 @@ const same = (a, b) => resolve(a).replaceAll('\\', '/').toLowerCase() === resolv
 export function withReport(each, name) {
   if (each.command === 'dotnet') return { args: [...each.args, '--results-directory', FOLDER, '--logger', `trx;LogFileName=${name}.trx`], report: `${FOLDER}/${name}.trx` };
   if (each.args[0]?.endsWith('vitest/vitest.mjs')) {
-    // Vitest reads the report's path from its root, the folder the command runs in.
     const report = `${FOLDER}/${name}.json`;
     return { args: [...each.args, '--reporter=default', '--reporter=json', `--outputFile.json=${posix.relative(each.cwd, report)}`], report };
   }

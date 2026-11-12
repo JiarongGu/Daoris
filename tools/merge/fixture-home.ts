@@ -1,6 +1,6 @@
 /**
  * The merge tool's tests' scratch folders: each under the checkout's `_fixtures/tool-tests/`, which git ignores and
- * `tools/fixtures-keep.mjs` sweeps, never the system's temporary folder or the folder a test was started in.
+ * `tools/fixtures-keep.mjs` sweeps, never the system's temporary folder or the working directory.
  */
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

@@ -6,8 +6,7 @@
  *   node tools/time-ratchet.mjs --write  cut the list down to what the records now show (never adds a test, never raises one)
  *
  * The records are the files the gates write under `_fixtures/test-timing/`: a `.trx` for each dotnet gate (a Process half's name
- * has `process` in it), `web-unit.json`, `tool-unit.json` and `tool-e2e.json` from Vitest and `tool-tests.xml` from the node
- * reporter. A test is over when it takes
+ * has `process` in it), Vitest's `web-unit.json` and `tool-*.json` and the node reporter's `tool-tests.xml`. A test is over when it takes
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; an entry's key is the test's key or the start of it, so one entry may cover a suite's tests. With no records
  * (a fresh checkout, no gate run yet) nothing is checked. The list only shrinks: a test that got faster is cut down by `--write`,
@@ -21,7 +20,6 @@ import { isMain, writeAtomic } from './fsx.mjs';
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
 
-/** The Vitest reports: the page's and the merge tool's two projects. */
 const VITEST_REPORTS = ['web-unit.json', 'tool-unit.json', 'tool-e2e.json'];
 
 /** The limit for a record file by its name. */
@@ -32,7 +30,6 @@ export function limitFor(file) {
   return /process/i.test(file) ? LIMITS.process : LIMITS.unit;
 }
 
-/** `path` relative to `base` (ending in a slash) where it lies under it, compared without case: a drive letter is spelt either way. */
 const under = (path, base) => (path.toLowerCase().startsWith(base.toLowerCase()) ? path.slice(base.length) : path);
 
 const decode = (text) => text.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');

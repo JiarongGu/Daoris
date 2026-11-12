@@ -49,10 +49,6 @@ const globPattern = (glob) => new RegExp(`^${glob
   .replace(/\*/g, '[^/]*')
   .replace(/\u0000/g, '(?:.*/)?')}$`);
 
-/**
- * The merge tool's Vitest projects a command runs: each `vitest … run --config …tools/vitest.config.ts` names its projects with
- * `--project`, and one that names none runs them all.
- */
 function vitestProjects(text) {
   const projects = [];
   for (const run of text.split(/&&|\|\|/)) {

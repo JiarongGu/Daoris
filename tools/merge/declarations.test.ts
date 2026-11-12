@@ -15,8 +15,8 @@ test('a declaration file names what it declares, each overload once', () => {
 });
 
 test('each script a typed module imports has a declaration beside it that names exactly its exports', async () => {
-  const declared = readdirSync(TOOLS).filter((name) => name.endsWith('.d.mts'));
-  assert.ok(declared.includes('fsx.d.mts'), 'the file helpers are declared');
+  const declared = ['', 'merge-branch/'].flatMap((folder) => readdirSync(join(TOOLS, folder)).filter((name) => name.endsWith('.d.mts')).map((name) => `${folder}${name}`));
+  assert.ok(declared.includes('fsx.d.mts') && declared.includes('merge-branch/reached-reports.d.mts'), 'the scripts typed modules import are declared');
   for (const name of declared) {
     const script = join(TOOLS, name.replace(/\.d\.mts$/, '.mjs'));
     assert.ok(existsSync(script), `${name} declares a script that is not there`);
