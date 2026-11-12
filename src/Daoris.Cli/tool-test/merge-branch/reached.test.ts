@@ -85,7 +85,7 @@ test('the tool reads the census of this repository: a changed tool reaches the t
   const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
   const planned = run('--plan', '--paths', 'tools/merge-branch/reached.mjs');
   assert.equal(planned.status, 0, planned.stderr);
-  assert.match(planned.stdout, /reached: tool-tests: \d+ reached units? run/);
+  assert.match(planned.stdout, /reached: tool-tests: (\d+ of )?\d+ reached units? run/);
   assert.match(planned.stdout, /tool-tests: node --test .*tool-test\/merge-branch\/reached\.test\.ts/);
   // No path changed, none reached.
   const none = run('--plan', '--paths', '');
