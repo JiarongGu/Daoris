@@ -48,6 +48,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-01-self-development-design.md`|Contract: concurrent work, landing queue
 |`2026-10-24-ci-scope-design.md`|Accepted design: CI by reach (D207)
 |`2026-11-12-long-lived-repository-design.md`|Accepted design: what a change reads, measured (D278)
+|`2026-11-13-layers-design.md`|Design (settled, D286): LAYERS1, ports and adapters: the application on ports, each adapter a package pinned by fingerprint, its dependency tests run only when it moves
 
 ## Driver, sessions, sharing and landing contracts
 
