@@ -294,6 +294,9 @@ public sealed class RoleVerb : ChoiceVerb
             var said = world.Instance.Out;
             said.WriteLine(change switch
             {
+                RoleChange.SetRole { Role: var set } when HintsOf(world, choices) is { Count: > 0 } hints => $"daoris: role `{set.Id}` set: {Shape(set)}"
+                    + (choices is null ? "." : $"; {(choices.Count == 0 ? "off" : Choices(choices))}.")
+                    + string.Concat(hints.Select(hint => $"\n  note: {hint}")),
                 RoleChange.SetRole { Role: var set } => $"daoris: role `{set.Id}` set: {Shape(set)}"
                     + (choices is null ? "." : $"; {(choices.Count == 0 ? "off" : Choices(choices))}."),
                 RoleChange.RemoveRole => $"daoris: role `{id}` removed; a work no role takes holds its starts until it is given one. A running session goes on.",
@@ -304,6 +307,10 @@ public sealed class RoleVerb : ChoiceVerb
             return 0;
         });
     }
+
+    /// <summary>What the agents' last opens say of a set role's models: hints, never refusals.</summary>
+    private static IReadOnlyList<string> HintsOf(DriverChoicesWorld world, IReadOnlyList<ActorChoice>? choices) =>
+        choices is { Count: > 0 } && Path.GetDirectoryName(world.ConfigPath) is { Length: > 0 } home ? ModelHints.Of(home, ProviderRegistry.Built(), choices) : [];
 
     /// <summary><c>role</c> or <c>role &lt;id&gt;</c>: each role, its state, work, scope and choices; a work with no role said as holding.</summary>
     public override int? Said(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)

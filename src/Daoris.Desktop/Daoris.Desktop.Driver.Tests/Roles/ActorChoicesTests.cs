@@ -198,6 +198,41 @@ public sealed class ActorChoicesTests
     }
 
     /// <summary>
+    /// A Claude door's session models are the newest open's list on either of the agent's doors, so a model id offered after one open is
+    /// choosable at once; with no open the stamped alias list is the fallback, and says it is.
+    /// </summary>
+    [Fact]
+    public void A_new_model_is_offered_after_one_open_and_the_alias_list_is_only_the_stamped_fallback()
+    {
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "session-models", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var registry = ProviderRegistry.Built();
+
+            var before = SessionChoices.Of(home, registry, "claude-code")!;
+            Assert.Equal(AgentSettings.Models, before.Models);
+            Assert.Equal(AgentSettings.ModelsReadAt, before.Stamped);
+
+            Assert.Null(AgentOffers.Offered(home, "claude-code-acp", "0.106.0", "acct", ["default", "claude-fable-5-2", "claude-haiku-5-5"], ["low", "high"], DateTimeOffset.UtcNow));
+
+            foreach (var door in new[] { "claude-code", "claude-code-acp" })
+            {
+                var after = SessionChoices.Of(home, registry, door)!;
+                Assert.Equal(["default", "claude-fable-5-2", "claude-haiku-5-5"], after.Models);
+                Assert.Null(after.Stamped);
+            }
+
+            // The native door's efforts keep `max`, which only a native session carries.
+            Assert.Contains("max", SessionChoices.Of(home, registry, "claude-code")!.Efforts);
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
+
+    /// <summary>
     /// s-iv: the page's actors offer a door's session scope. Claude Code's native door carries `max`, its protocol door and the account's
     /// settings never do, and Codex, which states no settings file, offers only what its open has listed.
     /// </summary>

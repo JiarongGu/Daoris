@@ -58,6 +58,12 @@ public static class AgentSettings
         ["default", "sonnet", "opus", "haiku", "fable", "best", "sonnet[1m]", "opus[1m]", "fable[1m]", "opusplan"];
 
     /// <summary>
+    /// The program version <see cref="Models"/> was read at: a fallback offered only where no open of the agent has listed its models,
+    /// said with its version so a later program's list is known to differ.
+    /// </summary>
+    public const string ModelsReadAt = "Agent SDK 0.3.284, claude-agent-acp 0.84.0";
+
+    /// <summary>
     /// The efforts the tool's settings keep: its schema's <c>effortLevel</c>. <c>max</c> exists for one
     /// session and is never written to a file.
     /// </summary>

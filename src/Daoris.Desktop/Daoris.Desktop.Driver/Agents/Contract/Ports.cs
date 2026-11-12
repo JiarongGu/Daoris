@@ -162,7 +162,8 @@ public interface ISettingsFile
 public interface IDoorOffers
 {
     /// <summary>The choices a session on this door offers, or null where nothing states or has listed any.</summary>
-    ChoicesOffered? Of(string home, string door, ISettingsFile? provider);
+    /// <param name="sameAgent">The names of every door of the agent <paramref name="door"/> belongs to, whose opens list for it too; the door alone where null.</param>
+    ChoicesOffered? Of(string home, string door, ISettingsFile? provider, IReadOnlyList<string>? sameAgent = null);
 }
 
 /// <summary>What a conversation keeps under an account's home, by the agent's version.</summary>
