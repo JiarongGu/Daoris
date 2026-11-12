@@ -499,7 +499,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         var closed = await _quests.MoveAsync(outcome.Quest!.Id, QuestStatus.Declined, "Not ours.", Now.AddMinutes(1));
 
         Assert.Null(closed.FollowUp);
-        Assert.Equal([outcome.Quest.Id], (await _quests.ListAsync(receiver: "media-api")).Select(quest => quest.Id).ToArray());
+        Assert.Equal([outcome.Quest.Id], (await _quests.ListAsync(receiver: "media-api", includeClosed: true)).Select(quest => quest.Id).ToArray());
     }
 
     /// <summary>An ask that names a receiver and no step publishes a quest with no chain, as it always has.</summary>
