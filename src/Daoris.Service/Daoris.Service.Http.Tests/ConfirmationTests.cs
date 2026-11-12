@@ -707,13 +707,13 @@ public sealed class ConfirmationTests
     {
         var (host, _) = Keyed();
         using var _host = host;
-        const string Dismiss = "/api/quests/12/conflicts/dismiss";
+        const string Wire = "/api/registry/engine/workspace";
 
         var refused = new (string Method, string Path, string? Body, string What)[]
         {
-            ("POST", Dismiss, """{"":{"machine":"m-1","sequence":3}}""", "an empty name above the dismissal's fields"),
-            ("POST", Dismiss, """{"machin":"m-1","sequenc":3}""", "near spellings the binder ignores"),
-            ("POST", Dismiss, """{"machine":"m-1","Machine":"m-2","sequence":3}""", "a name twice, as the binder reads names"),
+            ("POST", Wire, """{"":{"workspace":"w"}}""", "an empty name above the door's fields"),
+            ("POST", Wire, """{"workspac":"w"}""", "near spellings the binder ignores"),
+            ("POST", Wire, """{"workspace":"a","Workspace":"b"}""", "a name twice, as the binder reads names"),
             ("POST", "/api/quests/12/review", """{"verdict":"reviewed","setUp":{"machine":"m-1","sequence":3,"extra":1}}""", "a nested name the door does not bind"),
             ("POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3","all":true}]}""", "a name inside a list"),
             ("POST", "/api/quests/12/accept", "{}", "a body on a door that binds none"),
@@ -730,11 +730,10 @@ public sealed class ConfirmationTests
 
         Assert.Empty(await ListedAsync(host));
 
-        // The dismissal of one conflict, as the door binds it; a name in another case binds the same, and is shown as sent.
-        var one = await AskAsync(host, "POST", Dismiss, """{"Machine":"m-1","sequence":3}""");
+        // A re-wiring, as the door binds it; a name in another case binds the same, and is shown as sent.
+        var one = await AskAsync(host, "POST", Wire, """{"Workspace":"w"}""");
         Assert.Equal(200, one.Status);
-        Assert.Equal(
-            [("/Machine", "string", "m-1"), ("/sequence", "number", "3")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));
+        Assert.Equal([("/Workspace", "string", "w")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));
     }
 
     /// <summary>
@@ -794,7 +793,7 @@ public sealed class ConfirmationTests
 
         // No such quest: made at the Confirm, its door refuses it.
         Assert.Equal(409, (await ConfirmAsync(host, await Asked("POST", "/api/quests/id-in-the-path/done", body))).Status);
-        Assert.Equal(200, (await RefuseAsync(host, await Asked("DELETE", "/api/quests/id-in-the-path", null))).Status);
+        Assert.Equal(200, (await RefuseAsync(host, await Asked("DELETE", "/api/registry/id-in-the-path", null))).Status);
         var withdrawn = await Asked("POST", "/api/quests/id-in-the-path/review", review, "s-review");
         Assert.Equal(200, (await WithdrawAsync(host, withdrawn, tokens[^1])).Status);
         Assert.Equal(200, (await ConfirmAsync(host, await Asked("POST", "/api/asks", ask, "s1"))).Status);
@@ -814,7 +813,7 @@ public sealed class ConfirmationTests
         Assert.Equal(
             [
                 ("asked", "POST", "/api/quests/{id}/done"), ("stale", "POST", "/api/quests/{id}/done"),
-                ("asked", "DELETE", "/api/quests/{id}"), ("refused", "DELETE", "/api/quests/{id}"),
+                ("asked", "DELETE", "/api/registry/{repository}"), ("refused", "DELETE", "/api/registry/{repository}"),
                 ("asked", "POST", "/api/quests/{id}/review"), ("withdrawn", "POST", "/api/quests/{id}/review"),
                 ("asked", "POST", "/api/asks"), ("made", "POST", "/api/asks"),
                 ("asked", "POST", "/api/asks"), ("asked", "POST", "/api/asks"),
