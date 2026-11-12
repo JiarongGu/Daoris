@@ -23,7 +23,6 @@ public sealed class NodeLifecycleTableTests
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
             // A declined request is gone on without, a request node alone.
             "failed>skipped:person",
-            // The person stops a failed node, which ends it and its run as stopped.
             "failed>stopped:person",
             // A failed delivery step whose branch the line holds has nothing left to deliver.
             "failed>skipped:daoris",

@@ -73,7 +73,6 @@ public sealed class KeptReadingTests : IDisposable
     public async Task A_reading_an_unstamping_writer_moved_on_is_read_again()
     {
         await ReadOnceAsync();
-        // A build before the stamp writes the row as it always has: its generation moves on and the stamp it never wrote stays.
         await ExecuteAsync($"UPDATE {SqliteKnowledgeStore.ReadingsTable} SET generation = generation + 1 WHERE repository = 'sibling';");
 
         var later = await SummaryAtAsync(Later);
@@ -114,7 +113,6 @@ public sealed class KeptReadingTests : IDisposable
 
     private async Task ExecuteAsync(string sql)
     {
-        // Unpooled, so its closed connection holds the file no longer and no pool of the process is cleared for it.
         await using var connection = new SqliteConnection($"Data Source={Database};Pooling=False");
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();

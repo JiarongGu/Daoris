@@ -89,7 +89,6 @@ public sealed class LineStandingsTests
         Assert.Equal(earlier.Line, Row(look, "5e55a001").Line);
     }
 
-    /// <summary>The person's yes on the departure is their word on it: the line reads done, part left, and asks nothing.</summary>
     [Fact]
     public void A_line_whose_quest_the_person_accepted_a_departure_of_reads_done_part_left_on_every_part()
     {

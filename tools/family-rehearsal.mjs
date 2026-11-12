@@ -4188,7 +4188,7 @@ const syncQuest = await api('POST', '/api/quests', {
 const syncRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 const syncRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.quest === syncQuest.json?.quest?.id);
-const syncTree = syncRecord?.tree ?? '';
+const syncTree = syncRecord?.tree ?? join(scratch, 'no-tree');
 const syncLanded = run(`dotnet "${driverDll}" tree land ${syncRecord?.id}`, scratch, cleanEnv);
 const landedBranch = /put the work on `([^`]+)`/.exec(syncLanded.out)?.[1] ?? '';
 check(
@@ -4208,14 +4208,11 @@ run(`git clone -q -b ${syncLine} "${syncOrigin}" "${syncPlatform}"`, scratch);
 run(`git ${GIT_ID} merge --squash origin/${landedBranch}`, syncPlatform);
 run(`git ${GIT_ID} commit -q -m "Land beside the line (#1)"`, syncPlatform);
 run(`git push -q origin ${syncLine}`, syncPlatform);
-// The session carried on in its tree after its landing: one commit of its own on its branch.
-// With no tree (the run before it failed) nothing is written: a path joined to an empty tree is the working directory's, the repository's own.
-const sessionBranch = existsSync(syncTree) ? run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim() : '';
-if (existsSync(syncTree)) {
-  writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
-  run(`git ${GIT_ID} add -A`, syncTree);
-  run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
-}
+// The session carried on after its landing: one commit on its branch.
+const sessionBranch = run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim();
+writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
+run(`git ${GIT_ID} add -A`, syncTree);
+run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
 
 const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
 const syncListed = run(`dotnet "${driverDll}" tree sync --repository newcomer`, scratch, cleanEnv);

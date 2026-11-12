@@ -19,7 +19,6 @@ public sealed class HelpWiredTests : IDisposable
 
     public HelpWiredTests() => Directory.CreateDirectory(_home);
 
-    /// <summary>The tree guard is the person's to switch on, so a restricted run's receipt says it guarded only where they did.</summary>
     private void GuardOn() =>
         PermissionRules.Save(_home, PermissionRules.Load(_home) with { DefaultsOn = [PermissionRules.TreeGuardId] });
 

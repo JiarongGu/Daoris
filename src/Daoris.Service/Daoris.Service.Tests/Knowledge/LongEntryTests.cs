@@ -37,7 +37,6 @@ public class LongEntryTests
         Fillers(fillers) + TailFact,
         ".claude/knowledge/release-handbook.md");
 
-    // A present kind like the handbook, so a plain question ranks the two by their words alone, as a history entry would be put after.
     private static readonly KnowledgeEntry Distractor = new(
         "beta", EntryKind.Knowledge, Provenance.Local, "Signed installers",
         "Every deploy stage hands the artifact to a runner that signs it with the release certificate before the pipeline builds the installer.",

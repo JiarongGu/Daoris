@@ -825,7 +825,6 @@ public sealed class SessionsCommandTests : IDisposable
         var (archived, said) = await RunAsync(Family(), ["archive", "d0ne0000"], log);
         Assert.Equal(0, archived);
         Assert.Contains("archived d0ne0000", said);
-        // The mark is its conversation's: a quest's session is archived under the quest's line.
         Assert.True(new ConversationArchive(_home).Marks().ContainsKey("q4"));
 
         var (kept, keptSaid) = await RunAsync(Family(), ["archive", "w0rk1ng0", "p4rk3d00"], log);

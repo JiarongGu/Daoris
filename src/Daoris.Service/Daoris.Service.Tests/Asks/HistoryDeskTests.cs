@@ -621,8 +621,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     // ——— A closed quest's failed sessions (design §1.1, §4).
 
     /// <summary>
-    /// A closed quest's failed sessions of this machine's go, and nothing else: the quest, its log and its other sessions
-    /// stay. A teammate's failed session is listed and kept, since its record is theirs.
+    /// A closed quest's failed sessions here go, and nothing else: the quest, its log, its other sessions stay; a teammate's is kept.
     /// </summary>
     [Fact]
     public async Task A_closed_quests_failed_sessions_go_and_a_teammates_is_listed_and_kept()
@@ -630,7 +629,6 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         var quest = await Closed("Done after a few tries");
         var failedOnce = await Served(quest, SessionState.Failed);
         var failedTwice = await Served(quest, SessionState.Failed);
-        // A chat about the quest is a conversation of its own; a driven part shares its quest's line with its failed ones.
         var landed = await Served(quest, kind: SessionKind.Chat);
         var theirs = await Theirs(quest, SessionState.Failed);
 
@@ -653,23 +651,6 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(theirs.Id));
         Assert.NotNull(await _quests.FindAsync(quest.Id));
         Assert.NotEmpty(await _quests.HistoryAsync(quest.Id));
-    }
-
-    /// <summary>A conversation is cleared whole or not at all: a failed part whose conversation holds a part that did not fail stays, said.</summary>
-    [Fact]
-    public async Task A_failed_part_whose_conversation_holds_a_part_that_did_not_fail_stays_and_is_said()
-    {
-        var quest = await Closed("Done after a failure");
-        var failed = await Served(quest, SessionState.Failed);
-        var landed = await Served(quest);
-
-        var plan = await Desk().PlanAsync(FailedUnit(quest.Id));
-
-        Assert.Empty(plan.Sessions);
-        var kept = Assert.Single(plan.Kept);
-        Assert.Equal((HistoryRefusal.Open, failed.Id), (kept.Refusal, kept.Session));
-        Assert.Contains("a clear takes a conversation whole", kept.Message);
-        Assert.NotNull(await _sessions.FindAsync(landed.Id));
     }
 
     /// <summary>

@@ -53,7 +53,6 @@ public sealed class TreePoolWindowsProcessTests : IDisposable
         _fixture = await PoolGitFixture.CreateAsync();
         var pool = _fixture.Pool();
         var slot = await _fixture.LetGoAsync(pool, 1, "s-aaaa0001");
-        // A tracked file the slot leaves unchanged: a change the slot holds is refused as changed, before any rename is tried.
         using var held = new FileStream(Path.Combine(slot.Path, "README.md"), FileMode.Open, FileAccess.Read, FileShare.None);
 
         var done = await pool.RetireAsync(_fixture.Site, 1, "quest-1");

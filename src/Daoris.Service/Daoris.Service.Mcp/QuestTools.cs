@@ -88,8 +88,7 @@ public sealed class QuestTools(
         WorkflowProposal? workflowProposal = null,
         CancellationToken ct = default)
     {
-        // A path becomes bytes at the door, on the machine that has the file: the exchange
-        // judges and keeps them, exactly as it does for the HTTP host's uploads.
+        // A path becomes bytes at the door, on the machine that has the file; the exchange judges and keeps them.
         var uploads = new List<QuestUpload>();
         foreach (var path in attachments ?? [])
         {

@@ -84,11 +84,9 @@ public sealed class SessionGroupsTests
             Held = (held ?? []).ToDictionary(each => each.Session, each => each.Holds, StringComparer.Ordinal),
         };
 
-    /// <summary>The look with each named session's conversation archived, as the store holds the mark: one per conversation, a record's line or itself.</summary>
     private static SessionLook Marked(SessionLook look, string[] archived) => look with
     {
-        Archived = look.Records.Where(record => archived.Contains(record.Id)).Select(ConversationArchive.Of)
-            .Distinct(StringComparer.Ordinal).ToDictionary(conversation => conversation, _ => T0, StringComparer.Ordinal),
+        Archived = look.Records.Where(r => archived.Contains(r.Id)).Select(ConversationArchive.Of).Distinct().ToDictionary(c => c, _ => T0),
     };
 
     /// <summary>The planner's start of a record the person's words wait on (<c>GoOn</c>): it goes on itself.</summary>
