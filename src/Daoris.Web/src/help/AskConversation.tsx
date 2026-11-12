@@ -10,6 +10,7 @@ import { LongCallLine } from '../work/conversation/LongCallLine';
 import type { RunningCall } from '../work/conversation/conversation';
 import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
+import { useHelpReceipts } from './receipt/useHelpReceipts';
 import { useHelpBeyond } from '../bridge/helpBeyond';
 import { useHelpReadings } from '../bridge/helpReadings';
 import { readingsBeneath } from './secondCheck/ReadingLine';
@@ -237,6 +238,8 @@ export function useAskConversation(
 
   // What each turn of the one shown looked at beyond its focus, drawn under that turn.
   const beyond = useHelpBeyond(shown?.id ?? null);
+  // What its presses made, under the turn that pressed them, beside what it looked at beyond its focus.
+  const madeBeneath = useHelpReceipts(shown?.id ?? null, onGo);
   // And the second check's line under the last turn each of its readings covers, with the check's chip beside the access chip.
   const readings = useHelpReadings(shown?.id ?? null);
   const readingPages = readings.data?.pages ?? [];
@@ -259,7 +262,7 @@ export function useAskConversation(
       turnRunning={live ? turns.taking : undefined}
       scroller={scroller}
       dividers={focusDividers(shownRow?.marks)}
-      beneath={(ask, until) => <>{beyondBeneathTurn(ask, until)}{readingBeneath(ask)}</>}
+      beneath={(ask, until) => <>{beyondBeneathTurn(ask, until)}{madeBeneath(ask, until)}{readingBeneath(ask)}</>}
       onTail={setTail}
       onWaiting={(session, _since, call) => setCalling(call ? { session, call } : null)}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}

@@ -118,6 +118,10 @@
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
+    "Setup/Create/RepositoryCreateApply.cs": {
+      "reads": "other",
+      "note": "a department's own ask (the receipt's), not a record's mark"
+    },
     "Workplace/IntegrationRows.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"

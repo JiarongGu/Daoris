@@ -138,6 +138,9 @@ public static class GraphRefusal
     /// <summary>A <c>tidy</c> no monitor's <c>when merged</c> way reaches: it ends a chain only once its pull request merges.</summary>
     public const string TidyMerged = "tidy-merged";
 
+    /// <summary>A <c>release</c> no way from a <c>land</c> reaches.</summary>
+    public const string ReleaseLanding = "release-landing";
+
     /// <summary>A step writing the work (<see cref="IWritesWork"/>) that a way reaches around the graph's review (<see cref="EffectOrder"/>).</summary>
     public const string ReviewOrder = "review-order";
 

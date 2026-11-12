@@ -99,6 +99,25 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         Assert.Equal(Key, Assert.Single(standIn.Heard).Key);
     }
 
+    /// <summary>A creation is judged again at the press: refused in the verb's words (exit 1, naming <c>--under</c>), or as <c>{ done, message }</c>.</summary>
+    [Fact]
+    public async Task A_create_press_is_judged_at_the_press_and_refuses_in_the_verbs_words_with_nothing_made()
+    {
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(new KeyRecording(_ => "[]")), personKey: Key));
+        var module = new DriverModule(Bus, loop);
+
+        var said = (await AnswerAsync(module, "REGISTRY_CREATE", new { name = "scratch", purpose = "a try", said = true })).GetProperty("said");
+        var plain = await AnswerAsync(module, "REGISTRY_CREATE", new { name = "scratch", purpose = "a try" });
+
+        Assert.Equal(1, said.GetProperty("code").GetInt32());
+        var lines = string.Join('\n', said.GetProperty("out").EnumerateArray().Select(each => each.GetString()));
+        Assert.Contains("refused:", lines);
+        Assert.Contains("--under", lines);
+        Assert.False(plain.GetProperty("done").GetBoolean());
+        Assert.Contains("--under", plain.GetProperty("message").GetString());
+    }
+
     /// <summary>An installed plugin is replaced wholesale by its own route, the window's add refusing it.</summary>
     [Fact]
     public async Task A_replace_of_an_installed_plugin_is_its_own_route_and_the_add_still_refuses_it()
@@ -117,6 +136,31 @@ public sealed class PersonVerbRoutesTests : DriverModuleBridge, IDisposable
         var replaced = await AnswerAsync(module, "PLUGIN_REPLACE", new { folder });
 
         Assert.Equal("1.1.0", replaced.GetProperty("version").GetString());
+    }
+
+    /// <summary>
+    /// A creation's plan is read, never written: every refusal at once in the plan's words, the digest the Confirm pins, and the first lines of
+    /// the quest it would publish; blank words are no words, so a plan with nothing to go on refuses each.
+    /// </summary>
+    [Fact]
+    public async Task A_creation_planned_says_every_refusal_its_digest_and_its_quests_and_writes_nothing()
+    {
+        var standIn = new KeyRecording(_ => "[]");
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://127.0.0.1:1", null, new HttpClient(standIn), personKey: Key));
+        var module = new DriverModule(Bus, loop);
+
+        var plan = await AnswerAsync(module, "REGISTRY_CREATE_PLAN", new { name = "scratch", purpose = "a try", work = "Build it." });
+        var blank = await AnswerAsync(module, "REGISTRY_CREATE_PLAN", new { name = " ", purpose = "" });
+
+        Assert.False(plan.GetProperty("applies").GetBoolean());
+        Assert.Contains(plan.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "no-folder");
+        Assert.Equal(64, plan.GetProperty("digest").GetString()!.Length);
+        Assert.Equal(["setup", "work"], plan.GetProperty("quests").EnumerateArray().Select(each => each.GetProperty("role").GetString()));
+        Assert.Equal("scratch", plan.GetProperty("asked").GetProperty("name").GetString());
+        Assert.Contains(blank.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "name-unusable");
+        Assert.Contains(blank.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == "no-purpose");
+        Assert.Empty(standIn.Heard);
     }
 
     /// <summary>A service standing in: the person key each request carried is kept, and its answer is the test's.</summary>

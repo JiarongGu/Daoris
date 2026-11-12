@@ -1,0 +1,22 @@
+{
+  "settings.growth.label": "New repositories and rooms",
+  "settings.growth.body": "An agent may open a repository or a room when its work needs a place of its own: Ask Daoris, a lead or a driven session, by one press that stops before any content. This says whether such a press runs as the access mode says (at once in full access, on your Confirm in restricted mode), waits for your Confirm even in full access, or is refused even in full access. Only you change it: no mode lets an agent press this switch. A repository’s value replaces its workspace’s.",
+  "settings.growth.twin.repository": "`daoris settings growth {{workspace}} --repository {{repository}} mode|asked|off`",
+  "settings.growth.twin.workspace": "`daoris settings growth {{workspace}} mode|asked|off`",
+  "settings.growth.says.mode": "An agent’s press that opens a repository or a room runs as the access mode says: at once in full access, on your Confirm in restricted mode.",
+  "settings.growth.says.asked": "An agent’s press that opens a repository or a room waits for your Confirm in Daoris’s window, even in full access.",
+  "settings.growth.says.off": "An agent’s press that opens a repository or a room is refused, even in full access; it works inside what exists.",
+  "settings.growth.from.repository": "Set for this repository.",
+  "settings.growth.from.workspace": "From the workspace {{workspace}}.",
+  "settings.growth.from.default": "Daoris’s default: nothing is set.",
+  "settings.growth.summary.mode": "new places as the mode says",
+  "settings.growth.summary.asked": "new places asked each time",
+  "settings.growth.summary.off": "new places refused",
+  "settings.growth.choice": "What an agent’s press that opens a repository or a room in {{name}} does",
+  "settings.growth.values.mode": "As the mode says",
+  "settings.growth.values.asked": "Ask me",
+  "settings.growth.values.off": "Off",
+  "settings.growth.saved.mode": "An agent’s press that opens a repository or a room in {{name}} now runs as the access mode says.",
+  "settings.growth.saved.asked": "An agent’s press that opens a repository or a room in {{name}} now waits for your Confirm, even in full access.",
+  "settings.growth.saved.off": "An agent’s press that opens a repository or a room in {{name}} is now refused, even in full access."
+}

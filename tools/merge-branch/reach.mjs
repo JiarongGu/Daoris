@@ -51,7 +51,15 @@ export const PATH_CHECKS = Object.freeze([
     paths: ['src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
     why: 'the desktop\'s censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge',
   },
+  {
+    gate: 'reached',
+    paths: ['src/**', 'tools/**', 'examples/**', 'canon/**', 'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json'],
+    why: 'the test units the merge\'s paths reach in the suites a merge can run in minutes (the driver\'s, the modules\', the service\'s, the page\'s unit tests and the tool-tests, by the census of test units, bounded per suite, DEVCYCLE1): a list or a text a test holds the change to, which the CI beside found hours after it landed',
+  },
 ]);
+
+/** The suites a merge runs whatever it changed: the CLI's verify holds the records, lists and documents, which no path places; about three minutes in a CI run. */
+export const MERGE_SUITES = Object.freeze(['cli']);
 
 const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) => check.gate === gate) ?? null;
 
@@ -119,6 +127,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
   };
   const gates = plan.map((gate) => {
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    if (!full && !gated && MERGE_SUITES.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge: the lists, records and documents it holds a branch cannot place by its paths' };
     const check = pathCheckOf(gate.name, pathChecks);
     if (check) {
       // A path check blocks the merges whose paths reach what it reads, and only those.

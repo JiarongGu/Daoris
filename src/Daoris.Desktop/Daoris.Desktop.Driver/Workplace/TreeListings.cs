@@ -53,8 +53,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         IEnumerable<string> Repositories(string workspace) =>
             Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
 
-        // Both places of the trees, each as found. The folders the look moved aside are no trees: git no
-        // longer knows them as such.
+        // Both places of the trees, each as found; the folders the look moved aside are no trees to git.
         var folders = (
             from root in context.TreesRoots.Where(Directory.Exists)
             from workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder)
@@ -64,14 +63,13 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         // A folder with no link to a repository is no tree, and git asked in it would answer for whatever repository holds the home.
         var branches = await TreeHeads.ReadAsync([.. folders.Select(each => each.tree).Where(tree => Path.Exists(Path.Combine(tree, ".git")))], ct)
             .ConfigureAwait(false);
+        var grown = context.Grown.All();
         foreach (var (workspace, repository, tree) in folders)
         {
             var (code, branch) = branches.TryGetValue(tree, out var read) ? read : (1, SessionTree.NotATree);
-            found.Add(new(
-                tree,
-                Path.GetFileName(workspace),
-                Path.GetFileName(repository),
-                code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
+            var named = code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)";
+            var owner = grown.LastOrDefault(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, Path.GetFileName(repository), named));
+            found.Add(new(tree, Path.GetFileName(workspace), Path.GetFileName(repository), named) { Run = owner?.Run, Reason = owner?.Kept });
         }
 
         // The folders moved aside at every place of the trees, the old place's included.

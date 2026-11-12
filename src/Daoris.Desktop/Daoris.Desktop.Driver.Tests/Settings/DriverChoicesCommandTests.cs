@@ -164,7 +164,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
         Assert.Equal(
-            ["list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+            ["list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
                 "brainstorms", "workflow", "keep",
                 // The role catalogue's door.
                 "role", "terminal", "settings"],

@@ -148,7 +148,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   ];
   for (const [what, paths, listed] of cases) {
     // In the plan's order: the web's typecheck is a check, before the CLI's verify.
-    const expected = ALL.filter((gate) => listed.includes(gate) || ALWAYS_REACHED.includes(gate));
+    const reachesUnits = paths.some((path) => /^(src|tools|examples|canon)\//.test(path) || ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json'].includes(path));
+    const expected = ALL.filter((gate) => listed.includes(gate) || ALWAYS_REACHED.includes(gate) || (gate === 'reached' && reachesUnits));
     assert.deepEqual(reaches(paths), expected, `${what}: what the table says can see it`);
     assert.deepEqual(runs(paths), expected.filter((gate) => !LONG.includes(gate)), `${what}: what a merge runs`);
     // The stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
@@ -156,7 +157,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   }
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
-    [...BASE, ...ALWAYS_REACHED, 'service', 'driver', 'modules', 'censuses', 'rehearse']);
+    [...BASE.slice(0, 3), 'reached', ...BASE.slice(3), ...ALWAYS_REACHED, 'service', 'driver', 'modules', 'censuses', 'rehearse']);
 
   // A merge touching the flowchart's layout lists the measured-box check, saying what reached it, and
   // --gated runs it.
@@ -179,7 +180,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   // A driver change runs eight gates, and says the desktop's long ones are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
-    ['universal', 'code-map', 'test-map', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family']);
+    ['universal', 'code-map', 'test-map', 'reached', 'cli', 'comments', 'driver', 'modules', 'censuses', 'rehearse-family']);
   for (const name of LONG.slice(1)) {
     const entry = driver.find((candidate) => candidate.gate.name === name)!;
     assert.equal(entry.run, false, name);
@@ -189,12 +190,13 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   // By default a merge runs the blocking checks alone; every other gate it reaches is listed, skipped, "in the CI beside";
   // the long gates keep their own reason; --gated runs what the paths reach; --full runs every gate and a rerun names one.
   const service = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
-  assert.deepEqual(mergeRuns(service), BLOCKING);
-  assert.deepEqual(mergeRuns([]), BLOCKING);
-  assert.deepEqual(runs(service), [...BASE, ...ALWAYS_REACHED, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit']);
+  assert.deepEqual(mergeRuns(service), [...BLOCKING, 'reached', 'cli'], 'the reached units and the CLI\'s verify run at every merge that changes a source');
+  assert.deepEqual(mergeRuns([]), [...BLOCKING, 'cli']);
+  assert.deepEqual(runs(service), [...BASE.slice(0, 3), 'reached', ...BASE.slice(3), ...ALWAYS_REACHED, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit']);
   assert.deepEqual(mergeRuns(service, true), ALL);
   const byDefault = selected(service, false, false);
-  for (const name of ['cli', 'tool-tests', 'service', 'rehearse', 'rehearse-family', 'web']) {
+  assert.equal(byDefault.find((entry) => entry.gate.name === 'cli')!.run, true, 'the lists and records are held at every merge');
+  for (const name of ['tool-tests', 'service', 'rehearse', 'rehearse-family', 'web']) {
     const entry = byDefault.find((candidate) => candidate.gate.name === name)!;
     assert.equal(entry.run, false, name);
     assert.match(entry.why, /^in the CI beside/, name);
@@ -218,16 +220,16 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
   assert.deepEqual(tool.laneSchedule(repoPlan, { scripts: rootScripts() }).components['web-types'], [], 'it builds no .NET component');
 
   // The plan names it, and why, as it names the other blocking checks.
-  assert.deepEqual(mergeRuns(page), [...BLOCKING, 'web-types', 'web-rules']);
+  assert.deepEqual(mergeRuns(page), [...BLOCKING, 'web-types', 'web-rules', 'reached', 'cli']);
   const entry = selected(page, false, false).find((candidate) => candidate.gate.name === 'web-types')!;
   assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/App\.tsx \(the web's typecheck/);
   assert.match(tool.selectionLines(selected(page, false, false)).join('\n'), /4\.\s+web-types\s+check\s+blocks the merge/);
-  assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types'], 'what configures its compiler');
+  assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types', 'reached', 'cli'], 'what configures its compiler');
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check, and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), [...BLOCKING, ...(paths[0]!.startsWith('src/') ? ['reached'] : []), 'cli', ...(paths[0]!.startsWith('src/Daoris.Desktop/') ? ['censuses'] : [])], paths[0]);
     assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -251,17 +253,17 @@ test("a merge that changes the web's sources blocks on its design and structure 
   assert.deepEqual(tool.laneSchedule(repoPlan, { scripts: rootScripts() }).components['web-rules'], [], 'it builds no .NET component');
 
   // The plan names it, and why, beside the web's typecheck.
-  assert.deepEqual(mergeRuns(story), [...BLOCKING, 'web-types', 'web-rules']);
+  assert.deepEqual(mergeRuns(story), [...BLOCKING, 'web-types', 'web-rules', 'reached', 'cli']);
   const entry = selected(story, false, false).find((candidate) => candidate.gate.name === 'web-rules')!;
   assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/design\/ui\.stories\.tsx \(the web's design and structure checks/);
   assert.match(tool.selectionLines(selected(story, false, false)).join('\n'), /5\.\s+web-rules\s+check\s+blocks the merge/);
-  assert.deepEqual(mergeRuns(['src/Daoris.Web/vite.config.ts']), [...BLOCKING, 'web-types', 'web-rules'], 'what configures its tests');
-  assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types'], 'the compiler alone is the typecheck\'s');
+  assert.deepEqual(mergeRuns(['src/Daoris.Web/vite.config.ts']), [...BLOCKING, 'web-types', 'web-rules', 'reached', 'cli'], 'what configures its tests');
+  assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types', 'reached', 'cli'], 'the compiler alone is the typecheck\'s');
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check, and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), [...BLOCKING, ...(paths[0]!.startsWith('src/') ? ['reached'] : []), 'cli', ...(paths[0]!.startsWith('src/Daoris.Desktop/') ? ['censuses'] : [])], paths[0]);
     assert.equal(runs(paths).includes('web-rules'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-rules'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -298,7 +300,7 @@ test('a path no rule places runs every gate but the long ones, and says which pa
   const unplaced = tool.selectGates(repoPlan, ['docs/x.md', 'src/Daoris.Somewhere/Program.cs'], { lanes: repoLanes, gated: true });
   assert.deepEqual(unplaced.unplaced, ['src/Daoris.Somewhere/Program.cs']);
   // But a path check, which its own paths reach.
-  const typechecks = tool.PATH_CHECKS.map((check) => check.gate);
+  const typechecks = tool.PATH_CHECKS.map((check) => check.gate).filter((gate) => gate !== 'reached');
   assert.deepEqual(unplaced.gates.filter((entry) => !entry.reached).map((entry) => entry.gate.name), typechecks, 'when unsure, a path reaches everything');
   assert.deepEqual(unplaced.gates.filter((entry) => entry.run).map((entry) => entry.gate.name), ALL.filter((gate) => !LONG.includes(gate) && !typechecks.includes(gate)));
   const driverProcess = unplaced.gates.find((entry) => entry.gate.name === 'driver-process')!;

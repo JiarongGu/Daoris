@@ -34,7 +34,15 @@ public static partial class SetupPressRules
 
     /// <summary>The rule a plan's press adds: the set-up's verbs, an index quest's own (<see cref="IndexRules"/>), or a reconcile's.</summary>
     public static IReadOnlyList<string> RulesOf(SetupPlan plan) =>
-        plan.Index is { } form ? IndexRules(form) : plan.Case == SetupCase.Reconcile ? ReconcileRules : Rules;
+        plan.Index is { } form ? IndexRules(form)
+        : plan.Case == SetupCase.Reconcile ? ReconcileRules
+        : plan.Case == SetupCase.Room ? RoomRules
+        : Rules;
+
+    /// <summary>The verbs a room's session runs. 🔴 Each is one the room's body asks for.</summary>
+    public static readonly IReadOnlyList<string> RoomVerbs = ["daoris --version", "daoris sync", "daoris check"];
+
+    public static IReadOnlyList<string> RoomRules { get; } = [.. RoomVerbs.Select(verb => $"Bash({verb})")];
 
     /// <summary>
     /// A reconcile's verbs: the set-up's, the brief's own, and <c>upstream --all</c>, which outside the canon's checkout

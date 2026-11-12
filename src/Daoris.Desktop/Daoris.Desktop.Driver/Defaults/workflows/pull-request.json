@@ -23,6 +23,7 @@
       { "id": "pull-request", "kind": "daoris-github/pull-request", "version": 1, "reach": "performed" },
       { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
       { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
+      { "id": "tree", "kind": "release", "version": 1, "reach": "performed" },
       { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
     ],
     "wires": [
@@ -35,6 +36,7 @@
       { "id": "d", "kind": "after", "from": "push", "to": "pull-request" },
       { "id": "m", "kind": "after", "from": "pull-request", "to": "monitor" },
       { "id": "t", "kind": "when", "from": "monitor", "to": "tidy", "outcome": "merged" },
+      { "id": "r", "kind": "after", "from": "tidy", "to": "tree" },
       { "id": "x", "kind": "when", "from": "monitor", "to": "closed", "outcome": "closed" }
     ]
   }

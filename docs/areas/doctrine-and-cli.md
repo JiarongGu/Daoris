@@ -38,6 +38,7 @@ as a pack.
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
 | Host composition | `Daoris.Desktop.Driver.Host/Program.cs`, `DriveConsole.cs`, `TreesConsole.cs`, `Trees*Verb.cs`, `TreesUsage.cs` | The program routes the words once and hands each group to its console; the headless loop is `DriveConsole`; `daoris tree` dispatches in `TreesConsole` to the verbs that own their bodies |
 | Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `Setup/Domain/SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
+| Room quest | `Driver/Setup/Room/`, `Setup/Domain/RoomBrief.cs` | A room asked of an adopted repository (`place --room`): the plan's refusals, the one quest to its own session carrying the canon's `rooms-and-classes` and the repository's own declaration, and the rule for `sync` and `check` |
 | Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `Domain/SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
 | Doctrine status read | `Driver/Setup/DoctrineStatusRead.cs`, `Domain/DoctrineStatus.cs`, `Domain/ReconcileBrief.cs` | Reads `daoris status --json` in a checkout; the reconcile quest's words |
 | Devkit | `src/Daoris.Devkit/Daoris.Devkit.Core/` (`GateRunner`, `*Gate.cs`, `GateDeclaration`, `VersionPin`), `Daoris.Devkit.Cli/Program.cs` | `daoris-devkit verify`, `scan`, `init`, `install-hooks`, `map` |
@@ -149,7 +150,7 @@ as a pack.
     (`budget.ts`) measures the region's body, as `inspect` does, beside the repository's own rule files, and a selected
     rule the region already holds adds only its change in size. (from D23, D117)
 33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` keeps its `CLAUDE.md` pointer and never writes
-    its text; a declared room with no text fails. (from D117)
+    its text; a declared room with no text fails. Asking one is a quest to the repository's own session (`place --room`, driving rule 53). (from D117, D276)
 34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling; a folder's ceiling measures
     each document directly in it. `check` fails on a fact (missing, escaping, a link, a stale table) and reports a judgement (a
     ceiling passed: the read path has grown). (from D122, D278)
@@ -199,7 +200,8 @@ as a pack.
 **Set-up of a repository**
 
 45. A set-up is the repository's own session's work, on its branch, landed by the workspace's rule. The press reads the
-    line, publishes one quest and adds a rule; Daoris runs no doctrine command into the repository. (from D32, D117, D124)
+    line, publishes one quest, with the person's work chained behind it as one step where `repository create` asks it (driving rule 52),
+    and adds a rule; Daoris runs no doctrine command into the repository. (from D32, D117, D124)
 46. The line decides the case: not adopted is the whole set-up; an older layout or an unfinished move is a move; clean and
     declaring nothing is the declaration; no index is the index quest; otherwise done. A reconcile is asked for, never
     found. (from D117, D124, D151, D230)
@@ -251,7 +253,7 @@ as a pack.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.
 - Driver: `Daoris.Desktop.Driver.Tests/Setup/` (`SetupPressTests`, `SetupBriefTests`, `SetupQuestsTests`,
-  `WorkspaceSetup*Tests`, `PlacePlanTests`, `PlaceApplyTests`, `DoctrineStatusTests`); `Loop/CommandTreeTests` (every word a
+  `WorkspaceSetup*Tests`, `PlacePlanTests`, `PlaceApplyTests`, `PlaceRoom*Tests`, `DoctrineStatusTests`); `Loop/CommandTreeTests` (every word a
   group declares routes) and the CLI's `cli-tree.test.ts` (every row runs in the CLI).
 - Devkit: `src/Daoris.Devkit/Daoris.Devkit.Tests/`.
 

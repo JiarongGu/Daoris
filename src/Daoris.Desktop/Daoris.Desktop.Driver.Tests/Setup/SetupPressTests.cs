@@ -133,6 +133,7 @@ public sealed class SetupPressTests : IDisposable
         var outcome = await SetupPress.ApplyAsync(plan, world, _home);
         Assert.True(outcome.Published);
         var (_, sentence, to) = Assert.Single(world.Published);
+        Assert.Null(Assert.Single(world.Thens));
         Assert.Equal("billing", to);
         Assert.StartsWith(plan.Title + "\n\n", sentence);
         Assert.Contains("Run the whole test suite before every commit.", sentence);
@@ -447,6 +448,20 @@ public sealed class SetupPressTests : IDisposable
         Assert.Equal(SetupPressRules.Rules, PermissionRules.Load(_home).Repositories["reports"].Allow);
     }
 
+    /// <summary>The one door publishes the plan's step, where it has one, behind the quest it asks.</summary>
+    [Fact]
+    public async Task A_plan_carrying_a_step_publishes_it_behind_its_quest_through_the_one_door()
+    {
+        var world = new World();
+        var plan = (await PlanAsync(world)) with { Then = new SetupThen("Do the work", "After {parent}, do it.") };
+
+        var outcome = await SetupPress.ApplyAsync(plan, world, _home);
+
+        Assert.True(outcome.Published);
+        Assert.Equal(new SetupThen("Do the work", "After {parent}, do it."), Assert.Single(world.Thens));
+        Assert.Equal(plan.Sentence, Assert.Single(world.Published).Sentence);
+    }
+
     /// <summary>A press the service refused takes back the rules it added, and keeps one the person already had.</summary>
     [Fact]
     public async Task A_refused_press_takes_back_only_the_rules_it_added()
@@ -571,6 +586,8 @@ public sealed class SetupPressTests : IDisposable
 
         public List<(string Workspace, string Sentence, string To)> Published { get; } = [];
 
+        public List<SetupThen?> Thens { get; } = [];
+
         public Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<RepoView>>(Registry);
 
         public Task<LineReading> ReadLineAsync(RepoView repository, DriverConfig config, CancellationToken ct) =>
@@ -597,9 +614,10 @@ public sealed class SetupPressTests : IDisposable
 
         public RepositoryDescription? Describe(string root) => Description;
 
-        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
+        public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct)
         {
             Published.Add((workspace, sentence, to));
+            Thens.Add(then);
             return Task.FromResult(Answer);
         }
     }

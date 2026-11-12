@@ -67,6 +67,8 @@ internal static class DriverConfigWriter
             // Written only when set, as the CLI writes them: absent is the default, `ask`.
             HandOverKey.WriteMap(writer, "handOver", config.HandOver);
             HandOverKey.WriteMap(writer, "workspaceHandOver", config.WorkspaceHandOver);
+            GrowthKey.WriteMap(writer, "growth", config.Growth);
+            GrowthKey.WriteMap(writer, "workspaceGrowth", config.WorkspaceGrowth);
             // Written only when set, as the CLI writes them: absent is the proposed defaults.
             BrainstormKey.WriteMachine(writer, config.Brainstorms);
             BrainstormKey.WriteMap(writer, "workspaceBrainstorms", config.WorkspaceBrainstorms);

@@ -174,6 +174,28 @@ caused one in `act`, never the warning in a filter.
 workspace; `npm run verify` also runs types, doctrine and document/tooling checks. Installed proof
 is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
 
+## The development cycle
+
+Main is the development branch, and the cycle's aim is main green and the install current within the hour.
+
+1. **Set up.** A builder runs `node tools/worktree-setup.mjs` from its worktree first (`--plan` says what it would do, `--build`
+   builds the driver's and the modules' test projects too): `local/*.props` of the main checkout copied as files, never linked;
+   dependencies installed from the lockfiles where missing or not from the lockfile as it stands; the merge drivers set, the
+   index written, the contracts generated and the test projects restored. It refuses a `local/` or a `node_modules` that is a link.
+2. **Land.** A finished branch lands through `node tools/merge-branch.mjs <branch>`, never a plain `git merge`. Its default runs
+   the blocking checks, the CLI's verify and the reached checks: the test units the merge's paths reach in the driver's, modules',
+   service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
+   over named for the CI. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   a CI run of hours.
+3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
+   rule, set by `npm ci` and by the setup), so a builder's `git merge main` and the merge tool agree; the archive, the changelog
+   and the fix log are append-only and merge by union.
+4. **Stage, then the full CI.** The install is staged from a tree whose light lane and reached Process classes passed
+   (`npm run publish:desktop -- --to <install> --service --stage --from-gated <commit> --light`, which asks
+   `node tools/merge-branch.mjs --passed --light`: every gate but the family and deployment rehearsals, with a plain `--ci`
+   run's receipt); the CI then runs the rehearsals on the staged commit (`--ci --stage <commit>`), and its reds are fixed as small
+   commits on main. The stage without `--light` still requires every gate.
+
 ## Integrate and record
 
 `tools/merge-branch.mjs` is this repository's integration tool. It reads declared gates and lane

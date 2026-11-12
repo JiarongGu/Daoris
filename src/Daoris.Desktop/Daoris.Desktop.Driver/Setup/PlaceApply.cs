@@ -5,7 +5,11 @@ namespace Daoris.Driver;
 /// <param name="Change">The standing choice's one edit (<c>DriverContext.Change</c>): the file read, edited and written, then the loop nudged.</param>
 public sealed record PlaceApplyDoors(
     IPlaceWorld Place, ISetupWorld Setup, string Home, IWorkplacePluginCatalog Plugins, bool Unadopted,
-    Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day);
+    Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day)
+{
+    /// <summary>Told what the verb's apply came to, where the caller says what it made afterwards (the window's receipt line); none asks nothing.</summary>
+    public Action<PlaceResult>? Made { get; init; }
+}
 
 /// <summary>What an apply came to: whether every operation is done, a code where it is refused, and each operation as the receipt keeps it.</summary>
 public sealed record PlaceResult(bool Done, string? Refused, string Message, string Digest, IReadOnlyList<PlaceOperation> Operations);
@@ -144,7 +148,7 @@ public static class PlaceApplies
             Workflow = save.Id, Default = save.Default, Opinion = save.Opinion, Look = save.Look,
         }));
         var configured = plan.Changes
-            .Where(each => each.Change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey)).Select(each => each.Change.Said).Distinct().ToList();
+            .Where(each => Written(each.Change)).Select(each => each.Change.Said).Distinct().ToList();
         if (configured.Count > 0 || chosen.Count > 0)
         {
             var said = string.Join("; ", configured.Concat(chosen.Select(each => $"accepts `{each.Repository}`'s declaration for {each.Purpose}")));
@@ -157,6 +161,7 @@ public static class PlaceApplies
                 PlaceOperations.AdoptionOf(row.Repository), PlaceOperations.Adoption, row.Repository, "a set-up asked of its own session", PlaceOutcomes.Pending)));
         }
 
+        operations.AddRange(PlaceRoomApplies.OperationsOf(plan));
         var receipt = new PlaceReceipt(digest, DateTimeOffset.UtcNow, plan.Asked, chosen, operations);
         receipts.Write(receipt);
         return new Begun(receipt, plan, null);
@@ -246,6 +251,11 @@ public static class PlaceApplies
             {
                 receipt = await AdoptAsync(doors, receipts, receipt, operation, ct).ConfigureAwait(false);
             }
+        }
+
+        foreach (var operation in receipt.Operations.Where(each => each.Kind == PlaceOperations.Room && each.Outcome == PlaceOutcomes.Pending).ToList())
+        {
+            receipt = await PlaceRoomApplies.AskAsync(doors, receipts, receipt, operation, ct).ConfigureAwait(false);
         }
 
         var done = receipt.Operations.All(each => each.Outcome == PlaceOutcomes.Done);
@@ -366,8 +376,8 @@ public static class PlaceApplies
         return config;
     }
 
-    /// <summary>A change the configuration's edit makes: not the copy saved before it, nor the set-up press.</summary>
-    private static bool Written(PlaceChange change) => change.Key is not (PlacePlans.SetupPressKey or PlacePlans.WorkflowSaveKey);
+    /// <summary>A change the configuration's edit makes: not the copy saved before it, nor a quest the apply asks (a set-up's or a room's).</summary>
+    private static bool Written(PlaceChange change) => !PlacePlans.IsPress(change.Key) && change.Key != PlacePlans.WorkflowSaveKey;
 
     /// <summary>The acceptance of the repository's declaration, one for every purpose it serves (<see cref="DeclarationAcceptance"/>).</summary>
     private static DriverConfig Accepted(string home, DriverConfig config, PlaceAccept accept, string workspace) =>
@@ -454,7 +464,7 @@ public static class PlaceApplies
     }
 
     /// <summary>The quest to <paramref name="repository"/> whose body carries the plan's key, or null where none does.</summary>
-    private static async Task<string?> KeyedAsync(PlaceApplyDoors doors, string digest, string repository, CancellationToken ct)
+    internal static async Task<string?> KeyedAsync(PlaceApplyDoors doors, string digest, string repository, CancellationToken ct)
     {
         var key = KeyOf(digest);
         var quests = await doors.Setup.QuestsAsync(ct).ConfigureAwait(false);
@@ -539,6 +549,7 @@ public static class PlaceApplies
         {
             PlaceOperations.Configuration => $"configuration {Word(each, "applied", "not applied")}",
             PlaceOperations.WorkflowSave => $"workflow `{each.Workflow}` {Word(each, "saved", "not saved")}",
+            PlaceOperations.Room => $"room {Word(each, "asked", "refused")}",
             _ => $"adoption{(adoptions > 1 ? $" of `{each.Repository}`" : "")} {Word(each, "asked", "refused")}",
         }).ToList();
         var notes = receipt.Operations.Where(each => (each.Outcome is PlaceOutcomes.Failed or PlaceOutcomes.Uncertain) && each.Note is { Length: > 0 }).Select(each => each.Note!);

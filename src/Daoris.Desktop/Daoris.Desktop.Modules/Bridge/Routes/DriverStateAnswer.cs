@@ -146,6 +146,11 @@ internal static class DriverStateAnswer
                 .Select(p => new { Repository = p.Key, Rule = new { p.Value.Mode } }).ToArray(),
             WorkspaceHandOver = config.WorkspaceHandOver.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = new { p.Value.Mode } }).ToArray(),
+            // The growth switch as set, as rows for the same reason: a workspace's and a repository's Settings read their own here.
+            Growth = config.Growth.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, p.Value }).ToArray(),
+            WorkspaceGrowth = config.WorkspaceGrowth.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, p.Value }).ToArray(),
             Commits = config.Commits.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)

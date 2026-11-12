@@ -15,6 +15,12 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
     /// <summary>What a folder the look moved aside is listed as, until the purge deletes it.</summary>
     public const string SetAside = "(moved aside)";
 
+    /// <summary>The workflow run that owns the tree, ending it by its <c>release</c> or the sweep (<see cref="GrownBranch.Run"/>); null where no run is known to.</summary>
+    public string? Run { get; init; }
+
+    /// <summary>Why the tree stays after its run's release or the sweep tried to end it (<see cref="GrownBranch.Kept"/>); null where none is kept.</summary>
+    public string? Reason { get; init; }
+
     /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
     public DateTimeOffset? MovedAside { get; init; }
 

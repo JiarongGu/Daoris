@@ -45,9 +45,10 @@
  * declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
  * long-lived build server carried a broken environment into a publish, so that rehearsal started after
  * `dotnet build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
- * By default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- * census of test units), and each path check one of its paths reaches (`PATH_CHECKS`: the web
- * `tsc --noEmit` and the design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside".
+ * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the census of test
+ * units), the CLI's verify (`MERGE_SUITES`), and each path check one of its paths reaches (`PATH_CHECKS`: the web
+ * typecheck and structure tests, the desktop's censuses, and `tools/reached-checks.mjs`, the test units the paths reach,
+ * bounded per suite); every other gate it reaches is listed and skipped, "in the CI beside".
  * `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  * merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  * places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -419,6 +420,8 @@ import {
 import { fenced, records, setApart, spaced } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { copyPrivateFiles, privateGateFiles } from './private-gate-files.mjs';
+import { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies } from './merge-branch/dependencies.mjs';
+export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
@@ -438,7 +441,7 @@ import { laneMatcher, globToRegExp } from './merge-branch/lanes-file.mjs';
 import { pathsReaching, selectGates, selectionLines, BLOCKING, ruleFor } from './merge-branch/reach.mjs';
 import {
   isProcessGate, isProcessLane, isHeavyGate, readDeclared, testBuild, noBuildCommand, gateKind, runsBesideGitHalf, LIGHT_WIDTH,
-  laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, isGitHalf, dotnetComponent,
+  laneSchedule, rootScripts, reuseBuild, slug, readPlan, declaredIn, gatePlan, isStageRehearsal, stagePlan, isGitHalf, dotnetComponent,
 } from './merge-branch/plan.mjs';
 import { REACH } from './merge-branch/reach-table.mjs';
 import { mergeByBase, mergeByRows, rowsRefused } from './merge-branch/backlog-merge.mjs';
@@ -452,11 +455,12 @@ export { stepTrees, endTree, descendants } from './merge-branch/step-trees.mjs';
 export { USAGE, Refusal, parseArgs } from './merge-branch/args.mjs';
 export { lineHunks, mergeByBase, mergeByRows, rowOf, rowsHeld, rowsRefused } from './merge-branch/backlog-merge.mjs';
 export {
-  isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, isHeavyGate,
+  isProcessGate, isLongGate, isProcessLane, isGitHalf, BESIDE_GIT_HALF, runsBesideGitHalf, STAGE_REHEARSALS, isStageRehearsal, stagePlan, isHeavyGate,
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
-export { BASELINE, BLOCKING, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
+export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
+export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
 
@@ -488,9 +492,6 @@ export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
 export const GATE_TREE = 'local/gate-tree';
 export const GATE_TREE_LOCK = 'local/gate-tree.lock';
 export const GATE_TREE_RECORD = 'local/gate-tree.json';
-
-/** The folders whose `package-lock.json` the gate tree installs from, as AGENTS.md has a fresh checkout do. */
-export const DEPENDENCY_FOLDERS = ['.', 'src/Daoris.Web'];
 
 /** The stage's path for a commit: what an owed rehearsal and a refused stage name. `tools/desktop-publish.mjs` names it too. */
 export const stageCommand = (commit) => `node tools/merge-branch.mjs --ci --stage ${String(commit).slice(0, 7)}`;
@@ -3663,20 +3664,20 @@ function stageLines(gates) {
  * verdicts record: each gate's newest verdict that still stands, or the stale one and the paths that
  * made it so. What `publish:desktop` asks before it builds. Exit 0 when it did, 1 when it did not.
  */
-function passedOnly(root) {
-  const plan = readPlan(root);
+function passedOnly(root, { light = false } = {}) {
+  const plan = stagePlan(readPlan(root), { light });
   const judged = judgeCheckout(root, plan);
   if (!judged) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
   const head = git(root, ['rev-parse', '--short', 'HEAD'], { allowFail: true }).out.trim() || 'no commit';
   const evidence = stageEvidence(root, judged.tree, plan);
   const passed = judged.passed && evidence.ok;
-  console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
+  console.log(`merge-branch: the ${light ? 'light stage' : 'full set'} has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
     + `${plan.length - judged.missing.length} of ${plan.length} gates${judged.passed && !evidence.ok ? ", but the stage's evidence is missing (CISCOPE1d)" : ''}.`);
   for (const line of stageLines(judged.gates)) console.log(line);
   for (const line of evidence.lines) console.log(line);
   // The smallest command that would pass it, which the publish's refusal names in turn. A stage with no
   // receipt, or a sweep overdue, needs the stage's own run in the gate tree, which also runs whatever the verdicts lack.
-  const remedy = evidence.remedy ?? stageRemedy(judged.gates);
+  const remedy = light && evidence.remedy ? { ...evidence.remedy, command: evidence.remedy.command.replace('--ci --stage', '--ci') } : evidence.remedy ?? stageRemedy(judged.gates);
   if (remedy) console.log(remedyLine(remedy));
   return passed ? 0 : 1;
 }
@@ -4108,33 +4109,6 @@ export function gateTreeVerdict(facts, { atMerge = false } = {}) {
     return { remove: false, why: `it holds ${sha}, and its stage has not read it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}; --prune removes it` };
   }
   return { remove: true, why: '', said: `the gate tree at ${sha}, never staged${leftLock}` };
-}
-
-/** Where a folder's install notes the lockfile it installed from: inside `node_modules`, which `npm ci` lays anew. */
-const DEPENDENCY_STAMP = '.gate-tree-lockfile';
-const fileHash = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
-
-/**
- * The folders of `DEPENDENCY_FOLDERS` with a `package-lock.json` whose dependencies are missing or were installed from
- * another lockfile than the one there now: a gate tree moved to a commit that changed one installs again.
- */
-export function staleDependencies(tree) {
-  return DEPENDENCY_FOLDERS.filter((folder) => {
-    const lockfile = join(tree, folder, 'package-lock.json');
-    if (!existsSync(lockfile)) return false;
-    try {
-      return readFileSync(join(tree, folder, 'node_modules', DEPENDENCY_STAMP), 'utf8').trim() !== fileHash(lockfile);
-    } catch {
-      return true;
-    }
-  });
-}
-
-/** The note that a folder's dependencies were installed from its lockfile as it is now. */
-export function stampDependencies(tree, folder) {
-  const stamp = join(tree, folder, 'node_modules', DEPENDENCY_STAMP);
-  mkdirSync(dirname(stamp), { recursive: true });
-  writeAtomic(stamp, `${fileHash(join(tree, folder, 'package-lock.json'))}\n`);
 }
 
 /** Each folder's dependencies the gate tree lacks, installed from its lockfile (`npm ci`, as AGENTS.md has a fresh checkout do). */
@@ -7188,7 +7162,7 @@ export async function main(argv) {
   if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
-  if (options.passed) return passedOnly(root);
+  if (options.passed) return passedOnly(root, { light: options.light });
   // With no merge open, --rerun and --stale act on the checkout as it stands.
   if (options.stale) {
     if (mergeInProgress(root)) throw new Refusal('a merge is open here: --rerun <gate>… re-gates it, and runs each gate a fixed path reaches; or git merge --abort');

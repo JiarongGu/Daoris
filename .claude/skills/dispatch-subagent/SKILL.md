@@ -16,8 +16,10 @@ unit is a feature a person can see working; the rows it covers become one block 
 - **Branch from main's tip.** A builder merges main in at the start and again before it hands back, and reruns its
   touched tests after that last merge. No batch branch is stacked on another.
 - **Merge a finished branch into main the same hour**, through `node tools/merge-branch.mjs <branch>`. Its default runs
-  the blocking set (`universal`, `code-map`, `test-map`) and the path checks its paths reach; a plain `git merge`
-  runs none. A conflict goes back to its builder.
+  the blocking set (`universal`, `code-map`, `test-map`), the CLI's verify, the path checks its paths reach (the web's
+  typecheck and structure tests, the censuses) and the test units they reach in the driver's, modules', service's, page's and
+  tools' suites (`tools/reached-checks.mjs`, bounded per suite, the rest named for the CI); a plain `git merge` runs
+  none of it, and is never how a branch lands. A conflict goes back to its builder.
 - **Commit only after the tool exits 0** and `git status` shows no `UU` path. A merge it leaves *NOT committed* is
   committed after `git add -A`, since its gates read the tree as `git add -A` would stage it.
 - **The CI runs on its own cycle**: `--ci <main>` in the background after merges land, never wrapped in `timeout`; its
@@ -52,8 +54,10 @@ Done when: <one line per point of the proof>.
 Follow the `change` skill. Hand back as your definition says.
 ```
 
-Fill the lines from the scout's pack, opening any pointer that looks wrong. A brief that reaches the service says to
-copy `local/lyntai-local.props` from the main checkout's `local/` into the worktree's.
+Fill the lines from the scout's pack, opening any pointer that looks wrong. Every brief starts the worker with
+`node tools/worktree-setup.mjs` (the branch-worker definition says so): it copies the main checkout's `local/*.props` into the
+worktree as files, installs each folder's dependencies from its lockfile and primes the index, the contracts and the restore, so a
+brief never lists those steps and a worker never links into the main checkout.
 
 **Every brief carries D231** (the worker's definition spells it out): its *Change* line names the subdomain a new unit
 belongs in, not only the hub's lines where the area lives today, and a composition root only wires.

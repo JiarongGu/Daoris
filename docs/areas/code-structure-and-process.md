@@ -128,6 +128,18 @@ finishes first and the whole set runs once.
     desktop's tests name `TestHomes.Root` and `TestHomesCensusTests` refuses the call. A golden holds one full render; each other
     case is held against it section by section, the sentence that makes a section differ asserted and every other section equal.
     (from TESTDIET1)
+21. The development cycle keeps main green and the install current within the hour: a builder runs `node tools/worktree-setup.mjs`
+    first (the main checkout's `local/*.props` copied as files, never linked; dependencies from the lockfiles through
+    `tools/merge-branch/dependencies.mjs`, shared with the gate tree; the merge drivers, the index, the contracts and the restore
+    primed); a branch lands through the merge tool, never a plain `git merge`. The merge also runs the CLI's verify (`MERGE_SUITES`:
+    the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs` runs the test units the census says
+    the paths reach in the driver's, modules', service's, page's and tools' suites, nearest the change first, bounded per suite by
+    `tools/merge-branch/reached.mjs`, the rest counted), so a list, census or structure red never lands. The CI runs beside on
+    main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
+    passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
+    after, and the full stage (`--ci --stage`) remains the one that owes every gate. `TASKS.md` merges by its rows' ids
+    (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
+    a gate a merge now runs, the last green on 2026-11-02.
 
 ## Where a change goes
 

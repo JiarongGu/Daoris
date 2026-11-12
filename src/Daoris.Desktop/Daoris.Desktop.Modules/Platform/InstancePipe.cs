@@ -233,6 +233,8 @@ public sealed class InstancePipe : IDisposable
 
     public Func<string?>? TerminalTier { get; set; }
 
+    public Func<IpcRequest, CancellationToken, Task<PipeGrowthStanding>>? Growth { get; set; }
+
     /// <summary>The record of what a terminal pressed under the tier's act; none keeps no record.</summary>
     public TerminalActs? TerminalActs { get; set; }
 

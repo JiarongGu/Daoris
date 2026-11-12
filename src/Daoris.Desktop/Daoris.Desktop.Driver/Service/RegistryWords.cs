@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// operation's result, the lines the TypeScript verbs said (<c>fixtures/driver-registry-text.json</c>), and the dry run's, which sends
 /// nothing.
 /// </summary>
-[CommandGroup("repository", "connect", "register", "retire", "wire", "import")]
+[CommandGroup("repository", "connect", "register", "retire", "wire", "import", "create")]
 public static class RegistryWords
 {
     public static IReadOnlyList<string> ConnectDry(ConnectPlan plan) =>

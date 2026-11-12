@@ -61,6 +61,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         if ((row.Refusal(asked) ?? viewed?.Refusal) is { } words)
         {
             Confirmations.Let(place);
+            if (reserved.Asker.Help) HelpAskedPress.Barred(pipe, reserved, words);
             EndReserved(reserved, pipe.Refuse(request, InstancePipe.NotAllowed, words));
             return;
         }
@@ -107,7 +108,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             _state.Lines[id] = mine;
         }
 
-        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Ended);
+        if (reserved.Asker.Help) HelpAskedPress.Kept(pipe, reserved, placed, shown.Shown.Id, shown.Ended);
 
         // A close that began after the claim keeps it as any press waiting: its record kept and its line answered. The close
         // alone: a drain answers no waiting line, and the close it ends in keeps this one when it begins.

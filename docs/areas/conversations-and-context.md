@@ -287,7 +287,8 @@ of everything it handed, section by section.
     (`CallFound`), and each press it made whose place was beyond, one run in full access as *Did* and one asked on a card as
     *Asked you* with the card's state, judged against the focus
     held then (`HelpBeyond`: nothing is beyond this machine, a repository's own workspace is near), each row offering *Make …
-    the focus*; a shell command is never parsed. The focus is chosen
+    the focus*; a shell command is never parsed. A press that opened a place (a department, a room) is said under its turn as one
+    line, the place made and its quest one press away (`help/receipt/`, from the press record's `receipt`). The focus is chosen
     in the chip that leads the panel's composer bar, a picker of the window's place, *Recent*, this machine and the other
     workspaces with their repositories (`help/focus/FocusPicker.tsx`), the chip saying a focus the driver widened from a place
     gone until another is chosen, and named under the conversation's title as a

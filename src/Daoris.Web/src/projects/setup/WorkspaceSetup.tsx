@@ -7,6 +7,7 @@ import { HELPER_DEFAULT, type HelperEdit, HelperField, type HelperRule, helperRo
 import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, type HandOverRule, handOverRowSays, handOverSummary,
 } from '../../settings/repository/HandOver';
+import { GROWTH_DEFAULT, GrowthSetting, type GrowthValue, growthSummary } from '../../settings/repository/Growth';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
@@ -44,6 +45,8 @@ export type WorkspaceDefaults = {
   helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
   /** What an agent's ask to hand its session over does in its repositories: `daoris settings handover --workspace`. */
   handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
+  /** Whether an agent's press that opens a repository or a room here runs as the access mode says, is asked or is refused: `daoris settings growth`. */
+  growth?: { set?: GrowthValue; onChange: (value: GrowthValue) => void } | null;
 };
 
 /** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none. Details draws it. */
@@ -131,7 +134,7 @@ export function WorkspaceSetup({
   const mine = rows === 'all' || rows === 'sessions';
   const ofLine = rows !== 'sessions';
   const { line, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
-  const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
+  const { language, read, helpers, handOver, growth } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
   const gitShown = mine ? git : null;
 
@@ -145,6 +148,7 @@ export function WorkspaceSetup({
       : []),
     ...(helpers ? [helpers.set ? helperSummary(t, helpers.set) : daoris(helperSummary(t, HELPER_DEFAULT))] : []),
     ...(handOver ? [handOver.set ? handOverSummary(t, handOver.set) : daoris(handOverSummary(t, HAND_OVER_DEFAULT))] : []),
+    ...(growth ? [growth.set ? growthSummary(t, growth.set) : daoris(growthSummary(t, GROWTH_DEFAULT))] : []),
     ...(read
       ? [read.set === undefined
           ? daoris(t('projects.setup.summary.read'))
@@ -183,7 +187,7 @@ export function WorkspaceSetup({
 
   const opensItself: Record<WorkspaceSection, boolean> = {
     defaults: Boolean(line?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
-      || commits?.set || helpers?.set || handOver?.set),
+      || commits?.set || helpers?.set || handOver?.set || growth?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     reach: ruleCount > 0 || undeclared > 0,
     // A host its repositories reach and no identity serves opens it; so does git access set here.
@@ -295,6 +299,17 @@ export function WorkspaceSetup({
               editor={() => (
                 <HandOverField name={workspace} set={handOver.set} inherited={HAND_OVER_DEFAULT} busy={busy} onChange={handOver.onChange} />
               )}
+            />
+          )}
+          {growth && (
+            <GrowthSetting
+              name={workspace}
+              twin={t('settings.growth.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              value={growth.set ?? GROWTH_DEFAULT}
+              source={growth.set ? 'workspace' : 'default'}
+              workspace={workspace}
+              busy={busy}
+              onChange={growth.onChange}
             />
           )}
           {read && (

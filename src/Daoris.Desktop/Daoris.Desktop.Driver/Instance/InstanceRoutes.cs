@@ -344,6 +344,9 @@ public static class PersonPresses
     /// <summary><c>repository import [&lt;folder&gt;]</c>: every repository a folder's subdirectories propose, registered.</summary>
     public static InstanceRoute RegistryImport { get; } = Person("REGISTRY_IMPORT");
 
+    /// <summary><c>repository create &lt;name&gt; --purpose "…"</c>: a department made, with its history, registration, drive and set-up quest.</summary>
+    public static InstanceRoute RegistryCreate { get; } = Person("REGISTRY_CREATE");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -407,6 +410,7 @@ public static class PersonPresses
         ("repository wire <repository> --workspace <name>", RegistryRewire),
         ("repository excludes <folder> [--add <glob>]… [--remove <glob>]…", RegistryExcludes),
         ("repository import [<folder>] [--workspace <name>]", RegistryImport),
+        ("repository create <name> --purpose \"…\" [--kind git|folder] [--workspace <name>] [--under <folder>] [--line <branch>] [--work \"…\"]", RegistryCreate),
         ("browser favorite add <address> [--title \"…\"]", BrowserFavorite),
         ("browser favorite remove <address>", BrowserFavorite),
         ("browser use daoris|edge", BrowserSetting),

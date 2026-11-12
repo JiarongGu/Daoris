@@ -15,6 +15,7 @@ export const RELEASE_GRAPH = {
     { id: 'review', kind: 'review', version: 1, reach: 'pressed' },
     { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
     { id: 'line', kind: 'line', version: 1, reach: 'observed' },
+    { id: 'tree', kind: 'release', version: 1, reach: 'performed' },
     {
       id: 'find', kind: 'local-release/find', version: 1, reach: 'performed',
       outcomes: ['release', 'none'],
@@ -42,6 +43,7 @@ export const RELEASE_GRAPH = {
     { id: 'c', kind: 'after', from: 'check', to: 'review' },
     { id: 'd', kind: 'after', from: 'review', to: 'landing' },
     { id: 'e', kind: 'after', from: 'landing', to: 'line' },
+    { id: 'r', kind: 'after', from: 'line', to: 'tree' },
     { id: 'f', kind: 'back', from: 'review', on: 'rejected', to: 'work' },
     { id: 'g', kind: 'after', from: 'line', to: 'find' },
     { id: 'h', kind: 'when', from: 'find', outcome: 'release', to: 'release' },
@@ -92,6 +94,7 @@ export const MERGE_GRAPH = {
     { id: 'review', kind: 'review', version: 1, reach: 'pressed' },
     { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
     { id: 'line', kind: 'line', version: 1, reach: 'observed' },
+    { id: 'tree', kind: 'release', version: 1, reach: 'performed' },
   ],
   wires: [
     { id: 'a', kind: 'after', from: 'work', to: 'requests' },
@@ -100,6 +103,7 @@ export const MERGE_GRAPH = {
     { id: 'b', kind: 'after', from: 'content', to: 'review' },
     { id: 'e', kind: 'after', from: 'review', to: 'landing' },
     { id: 'c', kind: 'after', from: 'landing', to: 'line' },
+    { id: 'r', kind: 'after', from: 'line', to: 'tree' },
   ],
 };
 

@@ -46,6 +46,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("Never sign in or handle a key: those stay the person's own presses, where they already are.\n\n");
         text.Append(HelpDoorThrough.Carded);
         if (machine.Acts.Count > 0) text.Append(HelpRoomFamilies.Granted(machine.Acts));
+        text.Append("Opening a department (`daoris repository create`) or asking for a room (`daoris place … --room`) waits on the\n");
+        text.Append("person's card naming you, and runs on their yes. It is in no family of acts the person can grant, so a grant never\n");
+        text.Append("runs it unasked.\n\n");
         // A repository question otherwise meets a shell refused before it ran, then a guess at the repository's branches
         // presented as its tree, or a turn spent on a ticket's URL. Said plainly, so none happens. The checkouts reading across
         // allows are read through one typed tool Daoris judges at each call, still no shell; so the room names no path.
@@ -186,6 +189,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("Read the family through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs\n");
         text.Append("more than this page.\n\n");
         text.Append(HelpDoorThrough.AsThePerson);
+        text.Append("Opening a department (`daoris repository create`) or asking for a room (`daoris place … --room`) runs at once as the\n");
+        text.Append("person's own, said once on this conversation's console, logged and kept in the press record the person reads in\n");
+        text.Append("Notifications. They are not asked first, so say which place you will open and why before you press it.\n\n");
         // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
         text.Append("a quest: ask for it with `daoris ask --workspace <name> \"…\"`, so that repository's agent does it with its own tools, or\n");

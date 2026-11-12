@@ -108,6 +108,46 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
     }
 
+    /// <summary>A room asked over the route is judged with the plan's refusals in their codes, and its terminal twin says the verb's own lines.</summary>
+    [Fact]
+    public async Task A_room_asked_of_a_repository_not_adopted_and_of_one_whose_line_cannot_be_read_is_refused_and_asks_nothing()
+    {
+        var (module, service, client) = await ModuleAsync();
+        var written = File.ReadAllBytes(DriverConfigPath);
+
+        var plan = await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "atlas" }, room = "tools/web", purpose = "the web app needs its own conventions" });
+        var unread = await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "tools" }, room = "tools/web", purpose = "why" });
+        var outside = await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "engine" }, room = "../elsewhere", purpose = "why" });
+
+        Assert.Equal([SetupRefusals.NotAdopted], plan.GetProperty("refusals").EnumerateArray().Select(each => each.GetProperty("code").GetString()));
+        Assert.False(plan.GetProperty("applies").GetBoolean());
+        Assert.Equal([PlaceApplyRefusals.Unread], unread.GetProperty("refusals").EnumerateArray().Select(each => each.GetProperty("code").GetString()));
+        Assert.Contains(outside.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == PlaceRoomRefusals.Path);
+        Assert.Equal("tools/web", plan.GetProperty("asked").GetProperty("room").GetString());
+        Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
+        lock (service.Asked) Assert.All(service.Asked, asked => Assert.Contains(asked, new[] { "GET /api/registry", "GET /api/quests" }));
+
+        var said = (await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "atlas" }, room = "tools/web", purpose = "the web app needs its own conventions", said = true }))
+            .GetProperty("said");
+        var alone = await PlacePlans.PlanAsync(
+            new PlaceWorld(client), DriverConfig.Load(DriverConfigPath), Home, PluginCatalog.Load(Home, ProviderRegistry.Built().Names), true,
+            new PlaceAsk(["atlas"], "") { Room = "tools/web", Purpose = "the web app needs its own conventions" });
+        Assert.Equal(PlaceCommand.Lines(alone), said.GetProperty("out").EnumerateArray().Select(line => line.GetString()));
+        Assert.Equal(1, said.GetProperty("code").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_room_the_plan_refuses_is_an_apply_refused_with_nothing_written()
+    {
+        var (module, _, _) = await ModuleAsync();
+        var written = File.ReadAllBytes(DriverConfigPath);
+
+        var answer = await AnswerAsync(module, "PLACE_APPLY", new { repositories = new[] { "atlas" }, room = "tools/web", purpose = "why", digest = new string('0', 64) });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
+    }
+
     /// <summary>The registry: aurora's engine, driven, and atlas and tools, not, their checkouts elsewhere; one queued quest to atlas.</summary>
     private sealed class StandIn : HttpMessageHandler
     {

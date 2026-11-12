@@ -25,8 +25,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     /// </summary>
     /// <param name="hold">That it is sent with <c>hold: true</c>: a start that holds what it opens, once the person confirms it.</param>
     /// <param name="claim">The <c>delegate</c> it is sent with: a session's proof of its delegate key (<see cref="PipeDelegate"/>).</param>
+    /// <param name="judged">The press's tier judged already, as the growth switch left it (<see cref="PipeGrowth"/>).</param>
     public (string? Now, Task<string>? Later) Accept(
-        IpcRequest request, string? key, PipeConnection connection, bool hold = false, PipeDelegateClaim? claim = null)
+        IpcRequest request, string? key, PipeConnection connection, bool hold = false, PipeDelegateClaim? claim = null, PipeGrowthJudged? judged = null)
     {
         if (string.Equals(request.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase))
         {
@@ -117,16 +118,28 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // no card, so nothing is shaped for one; every other press asks as before.
         var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
+        if (@class == PipeClass.Person && PipeOutsideOnly.IsAlone(request.Module, request.Type)
+            && (claim is not null || pipe.StandingConfirmation.Caller.Place(connection.Client) == StandingPlace.InAgentJob))
+        {
+            _log.Info("person-alone.refused", ("route", $"{request.Module}.{request.Type}"), ("proved", claim is not null ? "yes" : "no"), ("door", PipeDoor.Terminal));
+            return (IpcJson.Serialize(pipe.Refuse(request, PipeOutsideOnly.PersonAlone, PipeOutsideOnly.PersonAloneSentence)), null);
+        }
+
         // A press proving its session's delegate key is judged by that session's tier, and one proving none by the terminal's tier.
-        PipeDelegateJudgement? delegated = null;
-        if (claim is not null && @class == PipeClass.Person && !holding && !asked && !covered)
+        PipeDelegateJudgement? delegated = judged?.Delegated;
+        if (judged is null && claim is not null && @class == PipeClass.Person && !holding && !asked && !covered)
         {
             delegated = pipe.Delegate.Judge(request, key!, claim, connection);
             if (delegated.Tier == PipeDelegateTier.Refused) return (IpcJson.Serialize(pipe.Refuse(request, PipeDelegate.Unproved, PipeDelegate.UnprovedSentence)), null);
         }
-        else if (claim is null && @class == PipeClass.Person && !holding && !covered)
+        else if (judged is null && claim is null && @class == PipeClass.Person && !holding && !covered)
         {
             delegated = PipeTerminalTier.Judge(pipe);
+        }
+
+        if (judged is null && delegated is { Tier: PipeDelegateTier.Covered } && PipeGrowth.Governs(request) && pipe.Growth is { } growth)
+        {
+            return (null, PipeGrowth.ThenAsync(pipe, growth, request, delegated, claim, connection, ruled => Accept(request, key, connection, hold, claim, ruled)));
         }
 
         // A person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.

@@ -19,7 +19,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// (<see cref="SweepItem.Removable"/>: empty, landed by ancestry or by content, carried), with every guard read. With no tree
     /// it goes; with a tree, only one of this home's on a branch that moved since it grew (<see cref="SweepItem.Worked"/>). A tree
     /// whose branch never moved is a conversation's place, which words to its session go on in: removed, they could not,
-    /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes: by the owner's decision a finished session's
+    /// so it stays the press's, whatever its kind. A tree a run owns (<see cref="GrownBranch.Run"/>) is that run's to end (<see cref="TreeReleases"/>). A tree holding only ignored paths goes: by the owner's decision a finished session's
     /// own scratch goes with its tree, named in its record; uncommitted and untracked paths keep
     /// it, as the judgement's <c>dirty</c>.
     /// A landed branch goes only once its work is on the line (<see cref="SweepItem.OnLine"/>): landed on another branch of the
@@ -29,7 +29,7 @@ internal sealed class TreeSetAside(TreeContext context)
     internal bool GoesByItself(SweepItem item) =>
         item is { Removable: true, Unread: false }
         && (item.Kind != SweepKind.Landed || item.OnLine)
-        && (item.Tree is null || (context.Holds(item.Tree) && item.Worked));
+        && (item.Tree is null || (context.Holds(item.Tree) && item.Worked && context.Grown.Of(item.Repository, item.Branch)?.Run is null));
 
     /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into.</summary>
     internal const string SetAsideFolder = ".tidied";

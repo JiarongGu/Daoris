@@ -16,4 +16,7 @@ public static class ChoiceGrammar
     /// <summary>Whether the words (after <c>workflow</c>) write: a writing sub-verb with no <c>--plan</c>.</summary>
     public static bool WorkflowChanges(IReadOnlyList<string> args) =>
         args.Count > 0 && WorkflowWrites.Contains(args[0]) && !args.Contains("--plan");
+
+    /// <summary>Whether the words of <c>growth</c> (the verb first) set a value: one operand past the workspace's, the repository's flag value apart.</summary>
+    public static bool GrowthChanges(IReadOnlyList<string> args) => ChoiceArgs.Operands(args, ["--repository"]).Count > 2;
 }

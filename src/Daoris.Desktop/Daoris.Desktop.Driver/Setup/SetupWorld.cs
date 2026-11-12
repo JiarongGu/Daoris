@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Daoris.Contracts.Knowledge;
+using Daoris.Contracts.Quests;
 
 namespace Daoris.Driver;
 
@@ -83,8 +84,8 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     public RepositoryDescription? Describe(string root) => SelfDescriptionFiles.Read(root);
 
-    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct) =>
-        service.AskAsync(workspace, sentence, [], [], to, ct);
+    public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, SetupThen? then, CancellationToken ct) =>
+        service.AskAsync(workspace, sentence, [], [], to, ct, then: then is null ? null : [new QuestStepWire(to, then.Title, then.Body)]);
 
     /// <summary>The <c>PATH</c> a child starts with.</summary>
     private string? ChildPath(ToolsRead read)

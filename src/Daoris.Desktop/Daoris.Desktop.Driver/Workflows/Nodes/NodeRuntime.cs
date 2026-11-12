@@ -560,6 +560,7 @@ public sealed class NodeRuntime(
             await Keeping.EndAsync(governed, run, said, (commit, token) => git.OnLine(run.Root, run.Run.Binding.Repository, run.Run.Binding.Workspace, commit, token), ct)
                 .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
+            Keeping.OwnTrees(run);
         }
     }
 
