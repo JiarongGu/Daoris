@@ -1,84 +1,50 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { workflowHolds } from '../../workflow/gate';
-import { WorkflowHold } from '../../workflow/WorkflowHold';
 import type { Session } from '../../data/api';
 import { sentence } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { store, stored } from '../../lib/stored';
-import {
-  useAcceptUnderWay, useDiscardSessionTree, useLanding, useReadingSince, useRunNodeWord, useSay, useSessionDiff, useUnderWay, useUnderWaySubject,
-} from '../../bridge/shell';
+import { useDiscardSessionTree, useReadingSince, useSessionDiff, useUnderWay } from '../../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
 import type { DiscardOffer } from '../groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { LandedNote } from './LandedNote';
-import { landsOnBranch } from './Lands';
-import { EntryAccept, type EntryPress } from './EntryAccept';
-import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
-import { opinionHolds, opinionState } from '../gates/opinion';
-import { reviewHolds, reviewState } from '../gates/review';
-import { PassNote } from './PassNote';
-import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
-import { PlaceNote } from './PlaceNote';
+import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 import { UnattributedNote } from './UnattributedNote';
 
 /** How a reader likes the changes laid out — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
 
 /**
- * Review: what the session actually did, and what the person does about it.
+ * A session's own changes: what it did in its tree, and what the person does about the tree.
  *
  * @remarks
+ * **Reading the work and deciding on it are different places.** Accepting, asking for changes and stopping a run are the
+ * review page's (`review/<run>`, which reads the run's record); this pane only shows a session's changes where no run
+ * governs them, and holds the tree's own discard.
+ *
  * **A multibuffer, not a tree beside a pane**: every changed file is one row in one
  * scroll and opens in place. That is the shape that makes a forty-file review finishable, and the
- * per-file *viewed* mark is the other half of it.
- *
- * **Reading and acting are separate routes.** The diff route is read-only by construction; the acts
- * are their own, so a surface built to *show* the work cannot change it by accident.
- *
- * **The verbs are Daoris's, never an editor's**: *accept* — land the work as the repository's rule
- * says: merged into its line, or put on a branch for the person to push, and the pane says
- * which before the press — *discard the tree*, and *send it back as a quest*. Never keep/reject per hunk: the
- * session already committed, and reaching in to fix what you are reviewing is what Daoris forbids.
- * Sending it back is the one move Daoris has that an editor does not, and it is a door into the
- * platform's own composer rather than a second publish path.
+ * per-file *viewed* mark is the other half of it. The diff route is read-only by construction.
  *
  * **Discard asks twice, and the second sentence is the host's.** The first press is unforced, which
  * is what makes the tree layer refuse and name what would be lost; only then is the destructive press
- * offered. Destroying work is never a side effect of tidying.
+ * offered. Destroying work is never a side effect of tidying. An act's refusal renders verbatim: "the checkout is not
+ * clean" and "the tree holds commits nobody merged" are different facts with different next moves, and only the host
+ * knows which. The review's own refusal ("no tree here", "no range recorded") is worded by its code.
  *
- * **An act's refusal renders verbatim** — "the checkout is not clean" and "the tree holds commits
- * nobody merged" are different facts with different next moves, and only the host knows which. The
- * review's own refusal ("no tree here", "no range recorded") is worded by its code.
+ * **A landed session reads as landed**. Where this machine's landing record holds the session's landing, the pane says
+ * where the work landed, above what it reads; once a tidy took the tree, what it reads is the landed branch, in the
+ * repository's own checkout. Discarding is offered only where a tree is still here.
  *
- * **A landed session reads as landed**. Where this machine's landing record holds the
- * session's landing, the review says where the work landed, above what it reads; once a tidy took the
- * tree, what it reads is the landed branch, in the repository's own checkout. While the review reads as
- * landed — the branch stands, or the tree is gone — accepting and sending back are not offered, and
- * discarding only where a tree is still here.
- *
- * **Work the line holds by content is never offered to land again**. Where a squash merge or a
- * cherry-pick put the tree's commits on the line or a branch of the person's (`discards`, the reader's fact the session's head
- * reads), the landing door refuses them, so no *Accept* stands: in its place the driver's sentence says where the work is, and
- * the head's *Discard branch…* asks once with the ref the commits stay at, pressed through the head's own press. The review's
- * two-step Discard stands only where that one would not go unforced, since the tree holds what no commit does.
- *
- * **A tree with nothing beyond its line has nothing to land**. Where the review's answer says the tree
- * holds no commit past the line, lists no file and nothing uncommitted, the foot says so where *Accept* would be, offers neither
- * *Accept* nor *Send back…*, and *Discard tree* leads. The head names the branch the tree stands on once the answer says it, over
- * the record's `daoris/` guess, and none where the tree is detached.
- *
- * **A part left out of its entry's Accept leads with Discard**. Where the plan
- * says the person left this part out when its line of work landed (`leftOutOf`, its conversation's note), the foot says so first,
- * *Discard tree* leads, and *Accept* follows it, quiet: landing it later is a press of its own.
- *
- * **A part's Accept holds while its line of work lands**. Where its entry's one Accept, or
- * its ask's, is under way in any window, read by the entry's and the ask's subject, its own *Accept* reads *Landing…* and waits:
- * a press of its own would land on the same branch meanwhile.
+ * **Work the line holds by content is discarded as the head offers it** (`discards`, the reader's fact the session's head
+ * reads): the head's *Discard branch…* asks once with the ref the commits stay at, pressed through the head's own press. The
+ * pane's two-step Discard stands only where that one would not go unforced, since the tree holds what no commit does. A tree
+ * with nothing beyond its line leads with *Discard tree*. The head names the branch the tree stands on once the answer says
+ * it, over the record's `daoris/` guess, and none where the tree is detached.
  *
  * **It says what it is doing while git reads**. The frame stands at once with what the record holds —
  * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
@@ -89,18 +55,12 @@ const LAYOUT = 'daoris.reviewLayout';
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
 export function DiffPane({
-  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree, entry = null, ask = null, entryPress = null,
+  session, record, title = null, hasTree = false, onPreview, discards = null, onDiscardTree,
 }: {
-  /** The session's one *Accept…*: drawn in the place of this part's own, the frame's, its ask open in one place. */
-  entryPress?: EntryPress | null;
   session: string | null;
-  /** The line of work the session is a part of (its entry's key), whose one Accept holds this one's while it lands. */
-  entry?: string | null;
-  /** The ask that line of work answers, whose one Accept lands it too; none for an intake or a line no ask began. */
-  ask?: string | null;
   /**
    * What its tree offers where the line holds its commits by content, as the driver's reader says it for the
-   * session's head: shown in *Accept*'s place. Absent where it offers none, or nothing has answered.
+   * session's head: shown in the discard's place. Absent where it offers none, or nothing has answered.
    */
   discards?: DiscardOffer | null;
   /** That discard's press, the head's own (the review's Discard, unforced), told back to its ask. Absent where nothing presses it. */
@@ -114,14 +74,11 @@ export function DiffPane({
   title?: string | null;
   /**
    * Whether this session holds a working tree OF ITS OWN on this machine — which is what the
-   * acts act on. The record carries it and only a loopback caller is told, so the page can ask this
+   * act acts on. The record carries it and only a loopback caller is told, so the page can ask this
    * without the driver: a mirrored record from another machine has no tree here, and a session in
-   * the repository's own checkout has no tree of its own. Offering to merge or discard either would
-   * be offering something that can only ever refuse.
+   * the repository's own checkout has no tree of its own.
    */
   hasTree?: boolean;
-  /** The door into the quest composer. Absent where there is nowhere to send it. */
-  onSendBack?: () => void;
   /** Opens one file's preview in the side bar, by its path in the review. */
   onPreview?: (path: string) => void;
 }) {
@@ -137,56 +94,22 @@ export function DiffPane({
   const since = diff.isFetching ? started : null;
   // Where this session's work landed, where this machine's landing record holds it.
   const landed = diff.data?.landed ?? null;
-  // The host decides whether the review reads as landed — its landed branch stands, or its tree is gone — and
-  // the acts follow it: no second landing (refused while the branch stands), no sending back.
   const asLanded = Boolean(landed?.asLanded);
-  // A tree the host could not read, or says is gone: nothing to land or discard there.
+  // A tree the host could not read, or says is gone: nothing to discard there.
   const treeGone = diff.data?.source === 'branch'
     || (diff.error as { code?: unknown } | null)?.code === 'SESSION_TREE_GONE';
   const treeHere = hasTree && !reading && !treeGone;
-  // Work the line holds by content: the landing door refuses it, so its discard stands where Accept would.
+  // Work the line holds by content: its discard stands where the plain one would.
   const held = treeHere && !asLanded && discards ? discards : null;
   const heldPress = held && heldDiscardable(held, onDiscardTree) ? onDiscardTree! : null;
-  // A tree holding nothing beyond its line, committed or not, has nothing to land, so no plan is asked. Where the line
-  // is not read, as before.
+  // A tree holding nothing beyond its line, committed or not, has nothing to keep: discarding it is the next move.
   const answered = diff.data;
   const nothingBeyond = treeHere && !held && answered?.behind?.ahead === 0 && answered.files.length === 0
     && !answered.uncommitted?.files.length
     ? answered.behind
     : null;
-  const plannable = treeHere && !asLanded && !held && !nothingBeyond;
-  const sendBack = asLanded || nothingBeyond ? undefined : onSendBack;
-  // The Accept is the review record's word (`WORKFLOW_NODE`'s `accept`) on the record the plan drew.
-  const word = useRunNodeWord();
-  // What a press would do, asked only where there is a tree to land and the review does not read as landed.
-  const landing = useLanding(plannable ? session : null);
-  const accept = landing.data?.accept ?? null;
-  // While the review's gate holds the work, the review says it waits where *Accept* would be, and
-  // offers no *Accept*, which the landing door would refuse; the session's head carries the verdict's presses.
-  const waits = reviewHolds(landing.data);
-  const workflow = workflowHolds(landing.data);
-  // So too while the second opinion's gate holds it: *Accept* here is one press that shows
-  // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
-  const opinionWaits = opinionHolds(landing.data);
-  const canAccept = plannable && !workflow && !waits && !opinionWaits && accept !== null;
-  // What the plan says a press would be refused with now: a plugin that cannot land, a name, or a standing branch the press
-  // may not move on.
-  const refusedNow = landing.data?.problem || null;
-  // A replay onto the line that conflicts, as the plan tries it. In Accept's place, the words its session is asked to rebase with.
-  const conflict = canAccept ? landing.data?.conflict ?? null : null;
-  // A part the person left out of its entry's Accept, as its conversation keeps it.
-  // The review says so and leads with *Discard tree*; *Accept* stays after it, landing it later being a press of its own.
-  const leftOutOf = plannable ? landing.data?.leftOutOf ?? null : null;
-  const say = useSay();
   const discard = useDiscardSessionTree();
-  // What is under way for this session, whichever view or window pressed it: its Accept, and its line of work's or its ask's, which lands this part too.
-  const underWay = {
-    accept: useAcceptUnderWay(accept?.run ?? null),
-    discard: useUnderWay('DISCARD_SESSION_TREE', session),
-    entry: useUnderWaySubject('LAND_ENTRY', entry),
-    ask: useUnderWaySubject('LAND_ASK', ask),
-  };
-  const landsNow = underWay.accept || underWay.entry || underWay.ask;
+  const discarding = useUnderWay('DISCARD_SESSION_TREE', session);
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
   // they have ticked off. Keyed by path, reset by attending a different session.
@@ -249,21 +172,21 @@ export function DiffPane({
   // The forced discard's second press, told back to its ask: the driver's refusal and a thrown one are said inside
   // the ask, which stays; once the tree is gone, the foot says so and the ask closes. An answer for a session no longer
   // attended says nothing, as `act` does.
-  const forceDiscard = (answered: Answered) => {
+  const forceDiscard = (confirmed: Answered) => {
     const askedFor = session;
     if (!askedFor) return;
     discard.mutateAsync({ id: askedFor, force: true }).then(
       (result) => {
         if (attended.current !== askedFor) return;
         if (!result.done) {
-          answered.refused(result.message);
+          confirmed.refused(result.message);
           return;
         }
         setSaid(result.message);
-        answered.done();
+        confirmed.done();
       },
       (error: unknown) => {
-        if (attended.current === askedFor) answered.refused(sentence(error));
+        if (attended.current === askedFor) confirmed.refused(sentence(error));
       },
     );
   };
@@ -310,15 +233,14 @@ export function DiffPane({
   const files = diff.data?.files ?? [];
   const uncommitted = diff.data?.uncommitted?.files ?? [];
 
-  // One discard where the held one is offered: unforced, the review's own would do the same without naming the ref.
+  // One discard where the held one is offered: unforced, the pane's own would do the same without naming the ref.
   const discardTree = !treeHere || heldPress || confirmingDiscard
     ? null
     : (
       <Button
-        // The next move where nothing is beyond the line, or where the person left this part out of its entry's
-        // Accept, so it leads; beside *Accept*, it stays quiet.
-        variant={nothingBeyond || leftOutOf ? 'primary' : 'ghost'}
-        disabled={underWay.discard}
+        // The next move where nothing is beyond the line, so it leads.
+        variant={nothingBeyond ? 'primary' : 'ghost'}
+        disabled={discarding}
         // Unforced. A tree with nothing to lose is simply removed; one holding uncommitted
         // work or unmerged commits comes back REFUSED with the sentence naming what would go —
         // and that refusal is what arms the second press.
@@ -333,101 +255,20 @@ export function DiffPane({
     );
 
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
-  // worth discarding, and one whose record travelled here holds none at all. Sending the work back
-  // is about the work, not the tree, so it stands wherever there is a door for it — but for
-  // work that already landed, whose next move is its branch's, not the session's.
-  const acts = !treeHere && !sendBack ? null : (
+  // worth discarding, and one whose record travelled here holds none at all.
+  const acts = !treeHere ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && !confirmingDiscard && <p className="m-0 text-small text-ink-soft">{said}</p>}
-      {/* Where Accept would be, a tree with nothing beyond its line: a landed one's note already says where it went. */}
-      {!said && nothingBeyond && !asLanded && <NothingToLand line={nothingBeyond.line} />}
-      {/* A part the person left out of its entry's Accept: said first, since its next move is Discard's. */}
-      {!said && leftOutOf && (
-        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          <Inline text={t('work.review.leftOutOf', { branch: leftOutOf })} />
-        </p>
-      )}
-      {/* Where a press sends the work, before it is pressed — and who pushes it where a plugin
-          does. An answer without the rule carries no form, and the pane then claims nothing. */}
-      {/* A branch that already stands, an entry's or a chain's, is moved on, not made; the session's own lands as it
-          stands. */}
-      {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
-        <p className="m-0 text-small text-ink-faint">
-          <Inline text={landsOnBranch(t, {
-            target: landing.data.target, plugin: landing.data.plugin, stands: landing.data.stands, own: landing.data.own,
-          })} />
-        </p>
-      )}
-      {/* What the press leaves out because the line holds it, and what it replays, said before it. */}
-      {!said && canAccept && <LeftOutLines leftOut={landing.data?.leftOut} lands={landing.data?.lands} />}
-      {conflict && <RebaseAsk key={session} conflict={conflict} onSay={(text) => say.mutateAsync({ id: session, text }).then((answer) => answer.sent)} />}
-      {/* The sentence a press would be refused with now, a standing branch's among them: Accept waits on it. */}
-      {!said && canAccept && refusedNow && (
-        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          <Inline text={t('work.review.landingProblem', { problem: refusedNow })} />
-        </p>
-      )}
-      {/* The Accept is kept on a session carried on to clear its tree, which lands the work once it is clean. */}
-      {landing.data?.carried && (
-        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
-          {t('work.review.carriedOn')}
-        </p>
-      )}
-      {/* Said before the press, which stays open: Accept carries its session on to commit them. */}
-      {!said && canAccept && (landing.data?.uncommitted ?? 0) > 0 && (
-        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          {t('work.review.landingUncommitted', { count: landing.data!.uncommitted })}
-        </p>
-      )}
-      {!said && canAccept && landing.data?.form === 'merge' && landing.data.target && (
-        <p className="m-0 text-small text-ink-faint">
-          <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
-        </p>
-      )}
-      {!said && plannable && workflow && <WorkflowHold gate={workflow} />}
-      {!said && plannable && opinionWaits && (
-        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
-          {t('opinion.line')}{' · '}{t(`opinion.state.${opinionState(opinionWaits.state)}`)}
-        </p>
-      )}
-      {!said && plannable && waits && (
-        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
-          <Inline text={waits.environment ? t('review.waits', { environment: waits.environment }) : t('review.titleAny')} />
-          {' · '}{t(`review.state.${reviewState(waits.state)}`)}
-        </p>
-      )}
-      {/* Where Accept would be, work the line holds by content: the driver's sentence, as the head says it. */}
+      {/* Where the discard would be, work the line holds by content: the driver's sentence, as the head says it. */}
       {!said && held && (
         <p className="m-0 text-small text-ink-soft"><Inline text={held.says} /></p>
       )}
 
-      {/* The Accept waits for the pass that lands it, never behind a tree's hold, and says for how long. */}
-      {underWay.accept && <PassNote />}
-
       <div className="flex flex-wrap items-center gap-2">
-        {leftOutOf && discardTree}
-        {entryPress && <EntryAccept {...entryPress} draw="press" />}
-        {!entryPress && canAccept && !conflict && (
-          <Button
-            variant={leftOutOf ? 'default' : 'primary'}
-            // A press that could only be refused is not offered: the sentence above says why.
-            disabled={landsNow || Boolean(refusedNow)}
-            onClick={() => act(word.mutateAsync({
-              run: accept!.run, node: accept!.node, act: 'accept', words: null, attempt: accept!.attempt, revision: accept!.revision,
-            }).then((answer) => ({ done: answer.done, message: answer.message ?? '' })))}
-          >
-            {!landsNow ? t('work.review.accept') : t(underWay.accept ? 'work.review.acceptingPass' : 'work.review.accepting')}
-          </Button>
-        )}
-
         {heldPress && !askingHeld && <HeldDiscardButton onAsk={() => setAskingHeld(true)} />}
-
-        {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
-
-        {!leftOutOf && discardTree}
+        {discardTree}
       </div>
-      {entryPress && <EntryAccept {...entryPress} draw="ask" />}
-      {treeHere && !heldPress && confirmingDiscard && (
+      {!heldPress && confirmingDiscard && (
         /* The unforced press's refusal named what would go and armed this (above): it is the ask's own sentence, so the foot
            does not say it twice. The forced press stays open until the driver answers, and a refusal is said inside the ask
            (UXFIX2b2b), never in the foot. */
@@ -435,7 +276,7 @@ export function DiffPane({
           label={t('work.review.discardTitle')}
           says={<p className="m-0 text-small text-ink-soft">{said}</p>}
           meanIt={t('work.review.discardMeanIt')}
-          busy={underWay.discard}
+          busy={discarding}
           onConfirm={forceDiscard}
           onClose={() => setConfirmingDiscard(false)}
         />
@@ -469,9 +310,7 @@ export function DiffPane({
   const place = diff.data?.source === 'place';
   const note = (
     <>
-      {place
-        ? <PlaceNote />
-        : landed ? <LandedNote landed={landed} source={diff.data?.source === 'branch' ? 'branch' : 'tree'} /> : null}
+      {!place && landed ? <LandedNote landed={landed} source={diff.data?.source === 'branch' ? 'branch' : 'tree'} /> : null}
       <UnattributedNote paths={diff.data?.unattributed} />
     </>
   );
@@ -498,11 +337,10 @@ export function DiffPane({
     );
   }
 
-  // The acts are about the TREE, not the diff — so a session that landed NOTHING still gets them.
-  // Its tree is real, it is holding a slot, and discarding it is exactly what a person wants next.
+  // The acts are about the TREE, not the diff — so a session that changed NOTHING still gets them: its tree is real, it
+  // is holding a slot, and discarding it is exactly what a person wants next.
   if (files.length === 0 && uncommitted.length === 0) {
     // A tree whose HEAD the line holds whole: its work merged and the line checked out, or nothing done yet.
-    // "Nothing landed" would be false where its work did land, so it says what is true either way.
     const even = diff.data?.behind?.ahead === 0 ? diff.data.behind : null;
     return (
       <section className="flex min-h-0 flex-col">
@@ -511,11 +349,9 @@ export function DiffPane({
           <>
             {note}
             <div className="min-h-0 flex-1">
-              <EmptyState
-                icon="check"
-                headline={even ? t('work.review.even.headline') : t('work.review.empty.headline')}
-                body={even ? t('work.review.even.body', { line: even.line }) : t('work.review.empty.body')}
-              />
+              {even && (
+                <EmptyState icon="check" headline={t('work.review.even.headline')} body={t('work.review.even.body', { line: even.line })} />
+              )}
             </div>
           </>,
         )}

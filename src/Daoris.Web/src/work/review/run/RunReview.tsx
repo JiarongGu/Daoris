@@ -82,15 +82,15 @@ function Follows({ steps }: { steps: RunReviewStep[] }) {
  * changes drawn by the record's kind, and what follows the review.
  *
  * @remarks
- * **Drawn from the record, pinned.** A folder's and a copy's files are the record's rows, opened on what `fileBody` draws of the record's
- * versions; a plan is its operations; an answer is its handback rendered as Markdown; a branch's and a checkout's files are `gitFiles`,
- * the page's. A newer revision is announced over the bar and read only on *Read it*: what is drawn is never swapped under the reader.
+ * **Drawn from the record, pinned.** A folder's and a copy's files are the record's rows, a branch's and a checkout's the driver's list
+ * between the record's commits, each opened on what `fileBody` draws of the record's versions; a plan is its operations; an answer is its
+ * handback rendered as Markdown. A newer revision is announced over the bar and read only on *Read it*: what is drawn is never swapped under the reader.
  *
  * **Viewed** marks are the reader's, by a file's path and content (`viewed`), so a file a newer revision left untouched keeps its mark.
  *
  * An organism's body with no bridge: the page hands it the answer and its presses.
  */
-export function RunReview({ answer, viewed, onWord, onRead, onOverrule, overruling, overruleSaid, fileBody, gitFiles }: {
+export function RunReview({ answer, viewed, onWord, onRead, onOverrule, overruling, overruleSaid, fileBody }: {
   answer: RunReviewAnswer;
   viewed: ViewedMarks;
   onWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
@@ -99,10 +99,8 @@ export function RunReview({ answer, viewed, onWord, onRead, onOverrule, overruli
   onOverrule?: (decision: string) => void;
   overruling?: boolean;
   overruleSaid?: string | null;
-  /** What a folder's or a copy's row draws once opened: its two versions compared. */
+  /** What a row draws once opened: its two versions at the record compared. */
   fileBody?: (row: ReviewRow) => ReactNode;
-  /** A branch's or a checkout's files with their diffs. */
-  gitFiles?: ReactNode;
 }) {
   const { t } = useTranslation();
   const record = answer.record ?? null;
@@ -123,7 +121,7 @@ export function RunReview({ answer, viewed, onWord, onRead, onOverrule, overruli
       <div className="border-b border-line">
         {(kind === 'folder' || kind === 'copy') && <RecordRows rows={record?.rows ?? []} viewed={viewed} body={fileBody} />}
         {kind === 'plan' && <PlanOperations system={answer.says?.system ?? record?.place ?? ''} operations={answer.operations} />}
-        {(kind === 'branch' || kind === 'checkout') && gitFiles}
+        {(kind === 'branch' || kind === 'checkout') && <RecordRows rows={answer.files ?? []} viewed={viewed} body={fileBody} />}
         {kind === 'answer' && <p className="m-0 px-3 py-2 text-small text-ink-soft">{t('work.runReview.nothing')}</p>}
       </div>
       <Follows steps={answer.follows ?? []} />

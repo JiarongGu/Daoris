@@ -286,7 +286,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 57. The review page reads a run's review by its run alone (`RUN_REVIEW`): the record, the steps before it, presses only on the
     attempt the review stands on, the supervisor's held decision with *Overrule*, the steps an Accept may start. A newer record is
     announced with *Read it*, never swapped in. A folder's file is drawn at the record's hash, or from the place only while it still
-    hashes so, else refused `moved`. *Viewed* marks stay on this machine by path and content.
+    hashes so, else refused `moved`; a branch's or a checkout's files are the answer's list between the record's commits
+    (`ReviewCommitFiles`), each drawn at those commits, whatever the checkout holds now. A Markdown file is read rendered, its changes
+    one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are this
+    page's alone: a session's own changes (`DiffPane`) keep the tree's discard and draw no Accept, Send back or landing plan, and the
+    run view draws no *Ask for changes…* under a review.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.

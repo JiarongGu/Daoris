@@ -4,8 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The session's review says the work waits for the person's
-// review where *Accept* would be, and offers no *Accept* the landing door would refuse; where nothing waits, it is as before.
+// A session's own changes, where no run governs them: the tree's discard, its uncommitted work, its line and its nothing-beyond case.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -36,37 +35,27 @@ function pane() {
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <DiffPane session="s1a2b3c4" hasTree onSendBack={vi.fn()} />
+        <DiffPane session="s1a2b3c4" hasTree />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
 }
 
-describe("the review's foot while a review's gate holds the work", () => {
+describe("the review's foot, where no run governs the session's changes", () => {
   afterEach(() => { invoke.mockReset(); });
 
-  it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold instead of Accept', async (state) => {
-    answer({ ...PLAN, workflow: { state, holds: true, says: 'Holds: choose a saved workflow in the terminal.' } });
-    pane();
-    expect(await screen.findByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('choose a saved workflow');
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-  });
-
-  it('says it waits for the review in its environment, in the gate\'s state, and offers no Accept', async () => {
-    answer({ ...PLAN, review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2' } });
+  it.each([
+    ['a gate that holds the work', { ...PLAN, review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2' } }],
+    ['a workflow that holds it', { ...PLAN, workflow: { state: 'unread', holds: true, says: 'Holds: choose a saved workflow in the terminal.' } }],
+    ['a gate that lets it go', PLAN],
+  ])('offers the tree’s discard alone, with %s: Accept and Send back are the review page’s', async (_case, landing) => {
+    answer(landing);
     pane();
 
-    expect(await screen.findByText(/Waits for your review in/)).toHaveTextContent('Waits for your review in local · shown');
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Discard tree' })).toBeInTheDocument();
-  });
-
-  it('offers Accept as before where the gate lets the work go', async () => {
-    answer(PLAN);
-    pane();
-
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Discard tree' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Accept|Send back/ })).toBeNull();
     expect(screen.queryByText(/Waits for your review/)).toBeNull();
+    expect(invoke.mock.calls.filter(([, type]) => type === 'LANDING')).toHaveLength(0);
   });
 });
 
@@ -201,20 +190,10 @@ describe('the review of a tree holding uncommitted work', () => {
     expect(screen.queryByText('Nothing landed')).toBeNull();
   });
 
-  it('says before the press that Accept carries the session on to commit the files, and leaves Accept pressable', async () => {
-    drive({ uncommitted: UNCOMMITTED }, { ...PLAN, uncommitted: 5 });
+  it('says nothing of uncommitted work where the answer lists none', async () => {
+    drive({});
     pane();
-
-    // An Accept on a dirty tree carries the session on, where a refusal would not.
-    expect(await screen.findByText(/Accept carries its session on to commit the 5 uncommitted files/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
-  });
-
-  it('says nothing of it where the plan counts none', async () => {
-    drive({}, { ...PLAN, uncommitted: 0 });
-    pane();
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
-    expect(screen.queryByText(/uncommitted files are committed/)).toBeNull();
+    expect(await screen.findByText('src/report/compare.ts')).toBeInTheDocument();
     expect(screen.queryByText(/Not committed yet/)).toBeNull();
   });
 });
@@ -258,19 +237,20 @@ describe('the review against the latest line', () => {
     expect(screen.queryByText('Nothing landed')).toBeNull();
   });
 
-  it('says "Nothing landed" as before where the tree holds commits beyond the line and none of its own', async () => {
+  it('claims nothing beyond the line where the tree holds commits beyond it and none of its own', async () => {
     // A chain's step that made no commit yet: measured from its parent's tip, past the line.
     drive({ files: [], behind: { line: 'main', commits: 0, ahead: 2 } });
     pane();
 
-    expect(await screen.findByText('Nothing landed')).toBeInTheDocument();
+    expect(await screen.findByText(/Reading|Discard tree/)).toBeInTheDocument();
     expect(screen.queryByText('Nothing beyond the line')).toBeNull();
+    expect(screen.queryByText('Nothing landed')).toBeNull();
   });
 });
 
 /**
- * A tree that holds nothing beyond the line has nothing to land. Its review says so where *Accept*
- * would be, offers neither *Accept* nor *Send back…*, asks no landing plan, and leads with *Discard tree*. Its head names the
+ * A tree that holds nothing beyond the line has nothing to keep. Its review offers neither *Accept* nor *Send back…*,
+ * asks no landing plan, and leads with *Discard tree*. Its head names the
  * branch the tree stands on once the review answers, over the record's guess, and none where the tree is detached.
  */
 describe('the review of a tree with nothing beyond the line', () => {
@@ -306,22 +286,19 @@ describe('the review of a tree with nothing beyond the line', () => {
     render(
       <QueryClientProvider client={client}>
         <Tooltip.Provider>
-          <DiffPane session="s1a2b3c4" record={RECORD} title="Fix the gap" hasTree onSendBack={vi.fn()} />
+          <DiffPane session="s1a2b3c4" record={RECORD} title="Fix the gap" hasTree />
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
   }
 
-  it('says there is nothing to land where Accept would be, and offers neither Accept nor Send back', async () => {
+  it('says it holds nothing beyond the line, offers neither Accept nor Send back, and asks no landing plan', async () => {
     drive(EVEN);
     attended();
 
     expect(await screen.findByText('Nothing beyond the line')).toBeInTheDocument();
-    expect(screen.getByText(/nothing to land/)).toHaveTextContent('There is nothing to land: everything its tree holds is on main already.');
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
-    expect(screen.queryByText(/Accepting puts this work/)).toBeNull();
-    // Nothing would land, so no plan is asked for: `useLanding` is handed no session.
+    expect(screen.queryByText(/nothing to land/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Accept|Send back/ })).toBeNull();
     expect(landings()).toHaveLength(0);
   });
 
@@ -341,14 +318,13 @@ describe('the review of a tree with nothing beyond the line', () => {
       uncommitted: { files: [{ path: 'src/draft.ts', status: 'modified', added: 1, removed: 0, patch: '@@ -1 +1 @@\n+x' }], truncated: false },
     }],
     ['was not measured against its line', { files: [], behind: null }],
-  ])('offers Accept as before where the tree %s', async (_case, diff) => {
+  ])('leaves Discard tree quiet where the tree %s', async (_case, diff) => {
     drive(diff);
     attended();
 
-    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send back…' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Discard tree' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Discard tree' }).className).toContain('bg-transparent');
-    expect(screen.queryByText(/nothing to land/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Accept|Send back/ })).toBeNull();
   });
 
   it("names the branch its tree stands on once the review answers, over the record's guess", async () => {
