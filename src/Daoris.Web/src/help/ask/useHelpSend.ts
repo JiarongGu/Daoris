@@ -87,7 +87,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
    * by the machine: its words are kept, saying so, and never put back in the box, where a second send would say them twice.
    * They settle by the conversation's own record or the list's next read.
    */
-  const deliver = (id: string, text: string, files: File[], lost?: () => void) => {
+  const deliver = (id: string, text: string, files: File[], lost?: () => void, level?: Level) => {
     // The draft open as these words are sent: what the conversation is told of it is frozen with them.
     const open = openDraftNow();
     const now = where ? prefaceOf({ ...where, draft: draftWhere(open) }) : undefined;
@@ -98,7 +98,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     const at = Date.now();
     if (!lost) setSent((all) => [...all, { n, words, files, session: id, at, late: false }]);
     const done = () => setSent((all) => all.filter((each) => each.n !== n));
-    send.mutate({ id, text, files, ...(preface ? { preface } : {}), ...(draft ? { draft } : {}) }, {
+    send.mutate({ id, text, files, ...(preface ? { preface } : {}), ...(draft ? { draft } : {}), ...(level ? { level } : {}) }, {
       onSuccess: (answer) => {
         done();
         if (!answer.sent) {
@@ -188,13 +188,14 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     // Only the list's next read settles them.
   }, [sessions.dataUpdatedAt, firstWords?.late]);
 
-  const onSend = (text: string, files: File[]) => {
+  const onSend = (text: string, files: File[], level?: Level) => {
     logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The one shown, whatever ended its last reply and whichever workspace it started in: the driver continues it.
+    // The one shown, whatever ended its last reply and whichever workspace it started in: the driver continues it, at the level
+    // chosen beside *Send* while a reply runs.
     if (shown) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
-      deliver(shown.id, text, files);
+      deliver(shown.id, text, files, undefined, level);
       return;
     }
 

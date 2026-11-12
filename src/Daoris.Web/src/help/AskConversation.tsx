@@ -4,6 +4,8 @@ import { sentence } from '../locales/format';
 import { NO_TURNS, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
 import { Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
+import { useSessionReach } from '../bridge/sessions/conversation';
+import { levelsOf } from '../work/say';
 import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
 import { useHelpBeyond } from '../bridge/helpBeyond';
@@ -264,6 +266,9 @@ export function useAskConversation(
   // The words on their way shown with the conversation they were said to, or with none while the list has not listed it yet.
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
+  // *Send now* while a reply runs, as a conversation's composer offers it: into the running turn where its agent steers, else
+  // the turn stopped for the words, by what its door says a word said now would do.
+  const reach = useSessionReach(shown && live && turns.taking ? shown : null, true);
 
   const composer = (
     <Composer
@@ -288,6 +293,7 @@ export function useAskConversation(
           : going.length > 0 ? t('help.sending')
             : turns.opening || !turns.taking ? t('help.opening') : undefined}
       taking={turns.taking}
+      levels={levelsOf(reach)}
       // Stop ends the reply's whole process tree, its tools' servers with it, on every door; the conversation stays.
       stoppable
       stopping={stop.isPending}
