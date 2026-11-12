@@ -5,6 +5,42 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MERGEFLOW1b (part) — `reached` reuses passes per class, dependency tiers, the time ratchet judged on a merge's own records (2026-11-13)
+
+> **MERGEFLOW1b (part)** (tools): Outcome: `reached` keeps a pass per test class (per node and page file too) keyed by every file reaching it, its suite's declaration and the toolchain, replayed on the same inputs; a command names at most 120 units, a suite runs at most 40 classes nearest the change; `tiers.needs` runs a Process class at a merge only when a changed path is its dependency's code; `--rerun` takes `--no-timeout`; `--queue` names a stale run and `--queue --recheck` clears requests main holds; the time ratchet runs once, last, on the merge's own timing records. A broad replay's `reached` took 7 min 49 s, the rest on the row. Merged in `03fc4536ca`.
+
+## APPROVE1y closed — a platform's token is its plugin's, never the git identity's (2026-11-13, D274)
+
+> **APPROVE1y** (records): Outcome: closed. The work workspace's API token was set on 2026-11-11, and under D274 a platform's credential is the plugin's own, signed in by its commands and kept in its private storage, so no pull request waits on a token on the git identity; the identity's `api` token setters go with PLUGINEXT1 i. The `plugin try` check is archived under 2026-11-11.
+
+## TIMECUT1 — the time ratchet at the test budget, and the slowest test classes cut (2026-11-13)
+
+> **TIMECUT1** (tools, driver tests): Outcome: `tools/time-ratchet.mjs` in `verify` lists each test over the budget (a unit test in seconds, a Process case under two minutes) in `tools/time-ratchet.json`, a list that only shrinks; the unit half's kill bound 60 s, the Process hang bound two minutes; `HelpTreesReadTests` 12 min 21 s to 1 min 44 s on a tree farm, `RouteBudgetProcessTests` 95 s to 49 s, three Process cases off the list; two tool tests' race on one props file ordered. Merged in `a23606248c`.
+
+## LAYERS1 row a — `Daoris.Ports`, `Daoris.Testing` and the layers census (2026-11-13, D286)
+
+> **LAYERS1 a** (driver, service, tools; D286): Outcome: `src/Daoris.Ports` (base library only) holds the first ports: git ring 1, processes and admission, the desktop store's unit of work, the in-app browser, the agent provider, the ambient `PortSet`; `src/Daoris.Testing` the one `MovedClock`, a scripted git and the git contract; `tools/layers-census.mjs` the reference graph, the ambient ratchet and the one-second unit budget, with its lane and gate. Merged in `e0857de7eb`.
+
+## MERGEFLOW1 — the merge's flow as typed modules: a pass replayed, main's reds set apart, a budget per gate (2026-11-13)
+
+> **MERGEFLOW1** (tools): Outcome: typed modules in `tools/merge/` under `tools/tsconfig.json`: a pass replayed where its reaching inputs, command and toolchain are unchanged; a failure main already has named, never failing the merge; a test project built once per tree; generated files written before the gates; a gate past its budget killed with what it started; one run per checkout; a record per merge; the merge tests split by concern. Merged in `1bc09d31dd`; its follow-ups are MERGEFLOW1b.
+
+## TESTTIME1 — per-test durations kept, a time limit per tool, `Needs` traits, the timing census (2026-11-13)
+
+> **TESTTIME1** (tools, tests): Outcome: each non-Process .NET gate writes a trx, the web unit run a json report and the tool tests a junit report under `_fixtures/test-timing`; one hang limit per tool (TIMECUT1 set their bounds); every driver and modules Process class but fourteen names what it needs (`[Trait(Category.Needs, Needed.X)]`, `NeedsTraitTests`); `docs/2026-11-13-test-timing-census.md` says where the time goes. Merged in `1bc09d31dd`.
+
+## LOOKPERF1 — the look's tidy starts no git in an idle repository (2026-11-13)
+
+> **LOOKPERF1** (driver): Outcome: a tidy pass that removed, kept, held and said nothing leaves a stamp of git's own files, the trees' folders and the branch records, and while it stands (up to thirty minutes) the repository starts no git: thirty repositories and forty-two trees, a warm pass 20.3 s and 129 git starts to 83 ms and none; one moved repository 1.4 s and 5. Not yet measured on the install. Merged in `1bc09d31dd`.
+
+## The agent-provider foundation, steps 1 to 3 — Lyntai's layer read, one truth for a door's abilities, models from the agents (2026-11-13)
+
+> **Provider foundation 1 to 3** (driver, web; AGENTLYNTAI1, AGENTPROVIDER1): Outcome: the layer path reads Lyntai's access readings, a limit's window, scope and stated reset, and allowance reports, and the launcher pauses inactivity for a held request; each AGENTLYNTAI1 wait names what it waits on; `AbilitiesPart` holds each door ability with its source and measured version, a pending suite line naming an open row; model families read from what the agent offers; a start records the pinned version. Merged in `1bc09d31dd`.
+
+## TEAMWORK1 row a — the check broker, a turn that ends while its check waits, the observed hand-back (2026-11-13, D285)
+
+> **TEAMWORK1 a** (driver, service, web; D285): Outcome: a session asks a heavy check through `check_run`; the broker runs it in the asker's tree, one at a time under the machine's admission; the turn ends `awaits-check`, its tree held, and the verdict is Daoris's word that reopens it; the look reads each done session's hand-back from its tree (base, touched paths, reached gates' verdicts, processes left) and asks a missing check itself. What is left of a is on the row. Merged in `1bc09d31dd`.
+
 ## ASKFIX1: what the work workspace's Ask Daoris found, fixed (2026-11-12)
 
 > **ASKFIX1** (driver, modules, web, plugins): Outcome: a to g as their commits say; d's one way (D228): a failed plugin step's run step holds its failed attempt (`PluginFailureHeld`, `Held` with `again`) as a check's does, and the window's *Try again* (`FailedStepHeld`) presses that attempt's `again` through `WORK_HELD`, the press What needs you makes; `daoris workflow try-again`, `PluginStepRetry` and the run step's `try-again` act, its words and keys are gone.
