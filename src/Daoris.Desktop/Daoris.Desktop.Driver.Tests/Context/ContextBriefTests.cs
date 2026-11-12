@@ -428,23 +428,25 @@ public sealed class ContextBriefTests
     // ——— The line, and only the line.
 
     [Fact]
-    public void The_line_follows_each_part_s_from_link_back_and_never_a_part_beside_it()
+    public void The_line_is_its_conversation_s_parts_up_to_the_one_moved_from_and_never_a_part_beside_it()
     {
+        var at = DateTimeOffset.Parse("2026-11-12T09:00:00Z");
         var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
         {
-            ["s1"] = new("s1", null, "stopped") { Adapter = "claude-code" },
-            ["s2"] = new("s2", null, "stopped") { Adapter = "claude-code", From = "s1", FromWhy = HandOverWhy.CarryOn },
-            // A part of the same entry running beside the line, continuing nothing on it.
-            ["s9"] = new("s9", null, "working") { Adapter = "codex-acp" },
-            ["s3"] = new("s3", null, "stopped") { Adapter = "codex-acp", From = "s2", FromWhy = HandOverWhy.Press },
+            ["s1"] = new("s1", null, "stopped") { Adapter = "claude-code", Line = "s1", Created = at },
+            ["s2"] = new("s2", null, "stopped") { Adapter = "claude-code", Line = "s1", From = "s1", FromWhy = HandOverWhy.CarryOn, Created = at.AddMinutes(1) },
+            // A part of the same entry running beside the line, on a conversation of its own.
+            ["s9"] = new("s9", null, "working") { Adapter = "codex-acp", Line = "s9", Created = at.AddMinutes(2) },
+            ["s3"] = new("s3", null, "stopped") { Adapter = "codex-acp", Line = "s1", From = "s2", FromWhy = HandOverWhy.Press, Created = at.AddMinutes(3) },
+            ["s4"] = new("s4", null, "working") { Adapter = "codex-acp", Line = "s1", From = "s3", FromWhy = HandOverWhy.Press, Created = at.AddMinutes(4) },
         };
 
-        Assert.Equal(["s1", "s2", "s3"], ContextBriefs.LineOf(records, "s3").Select(part => part.Session));
-        Assert.Equal([null, HandOverWhy.CarryOn, HandOverWhy.Press], ContextBriefs.LineOf(records, "s3").Select(part => part.Why));
-        Assert.Equal(["s9"], ContextBriefs.LineOf(records, "s9").Select(part => part.Session));
-        // A link that comes back on itself ends where it would repeat.
+        Assert.Equal(["s1", "s2", "s3"], LineKeys.Upto("s3", records).Select(part => part.Session));
+        Assert.Equal([null, HandOverWhy.CarryOn, HandOverWhy.Press], LineKeys.Upto("s3", records).Select(part => part.Why));
+        Assert.Equal(["s9"], LineKeys.Upto("s9", records).Select(part => part.Session));
+        // A link that comes back on itself moves no part off its conversation.
         records["s1"] = records["s1"] with { From = "s3", FromWhy = HandOverWhy.Retry };
-        Assert.Equal(["s1", "s2", "s3"], ContextBriefs.LineOf(records, "s3").Select(part => part.Session));
+        Assert.Equal(["s1", "s2", "s3"], LineKeys.Upto("s3", records).Select(part => part.Session));
     }
 
     [Fact]

@@ -57,7 +57,7 @@ public sealed class HelpRoomExchangesTests
             SessionRecord[] records =
             [
                 new("s1", "engine", "completed"),
-                new("s2", "engine", "working") { From = "s1", Workspace = "work" },
+                new("s2", "engine", "working") { From = "s1", Line = "s1", Workspace = "work" },
                 new("h1", "engine", "working") { Serves = "s2" },
                 new("s3", "atlas", "completed"),
                 new("r1", "atlas", "working") { Serves = "s3", Opinion = "o1", Adapter = "codex-acp" },

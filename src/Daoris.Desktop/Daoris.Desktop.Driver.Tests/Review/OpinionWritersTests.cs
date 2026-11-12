@@ -10,10 +10,10 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class OpinionWritersTests
 {
     private static PriorSession Record(
-        string id, string adapter, string? quest = "q1", string? from = null, string state = "completed", int minute = 0) =>
+        string id, string adapter, string? quest = "q1", string? from = null, string state = "completed", int minute = 0, string? line = null) =>
         new(id, null, state)
         {
-            Adapter = adapter, Quest = quest, From = from, Created = new DateTimeOffset(2026, 10, 24, 9, minute, 0, TimeSpan.Zero),
+            Adapter = adapter, Quest = quest, From = from, Line = line ?? from, Created = new DateTimeOffset(2026, 10, 24, 9, minute, 0, TimeSpan.Zero),
         };
 
     private static IReadOnlyDictionary<string, PriorSession> Records(params PriorSession[] records) =>
@@ -26,7 +26,7 @@ public sealed class OpinionWritersTests
         var records = Records(
             Record("s0", "codex-acp", quest: null, minute: 0),
             Record("s1", "claude-code-acp", quest: null, from: "s0", minute: 5),
-            Record("s2", "claude-code-acp", quest: null, from: "s1", minute: 9));
+            Record("s2", "claude-code-acp", quest: null, from: "s1", minute: 9, line: "s0"));
 
         Assert.Equal(["codex-acp", "claude-code-acp"], OpinionWriters.Agents(records, "s2", []));
     }

@@ -280,8 +280,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         {
             if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
             {
-                // Only an account the person picked is held to its account: an agent pick walks its agent's
-                // accounts, the refused one passed by the reading kept.
+                // Only an account the person picked is held to its account; an agent pick walks its agent's accounts.
                 order = ChatPending.Recovering(
                     actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config, staff, role);
                 pinned = context.Conversations.PickedOn(sessionId, record.Profile) ? record.Profile : null;
@@ -298,15 +297,8 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
         if (order.Count == 0) return new StartedFrom(null, false, null, $"{(isHelp ? "Ask Daoris" : "Chat")} is off, so `{sessionId}`'s words wait.");
 
-        // A refused continuation: its line holds an earlier part that held a conversation, the refused parts skipped as `LastRun` skips them.
         var records = ServiceClient.ReadRecords(json);
-        var continues = false;
-        for (var at = record.From; at is { Length: > 0 } && records.TryGetValue(at, out var earlier); at = earlier.From)
-        {
-            if (earlier.NotOffered) continue;
-            continues = true;
-            break;
-        }
+        var continues = LineKeys.Upto(sessionId, records).Any(part => part.Session != sessionId && !part.Record.NotOffered);
 
         var brief = continues
             ? await ContextBriefs.ComposeAsync(
@@ -321,7 +313,6 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
-        // Where the open moved the words, the fresh start's first message is the new part's moved words.
         var moving = MovedWords.Moving(started);
         var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
         var files = moved?.Files ?? [.. words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files))];

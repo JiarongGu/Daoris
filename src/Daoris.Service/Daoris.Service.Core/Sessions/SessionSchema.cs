@@ -145,6 +145,9 @@ internal static class SessionSchema
         await SchemaColumns.EnsureAsync(db, "sessions", "from_why", "from_why TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(db, "sessions", "from_by", "from_by TEXT NULL", ct).ConfigureAwait(false);
 
+        await SchemaColumns.EnsureAsync(db, "sessions", "line", "line TEXT NULL", ct).ConfigureAwait(false);
+        await SessionLines.BackfillAsync(db, ct).ConfigureAwait(false);
+
         // The entry's key, written at every open. It travels, so a mirror holds it too. A record from before it
         // says none, and the reader answers the rule's key for it without writing it here.
         await SchemaColumns.EnsureAsync(db, "sessions", "entry", "entry TEXT NULL", ct).ConfigureAwait(false);

@@ -58,6 +58,7 @@ public static class SessionRecords
                 Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
                 From = Text(session, "from") is { Length: > 0 } from ? from : null,
                 FromWhy = Text(session, "fromWhy") is { Length: > 0 } why ? why : null,
+                Line = Text(session, "line") is { Length: > 0 } line ? line : null,
                 Head = Text(session, "head") is { Length: > 0 } head ? head : null,
                 // An Ask Daoris record's mode, answered on loopback alone; absent from an older host.
                 HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,

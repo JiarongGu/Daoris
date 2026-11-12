@@ -62,7 +62,7 @@ public sealed class ContinuationAdmissionsTests : IDisposable
         var trimmed = ContinuationAdmissions.CountOf(ContinuationAdmissions.ReadOn(null, History(Log(Turn(Helper("w1")), first: 5), trimmed: true), At));
         Assert.Equal((1, LineCounts.AtLeast, LineCounts.LogTrimmed), (trimmed.N, trimmed.Known, trimmed.Why));
 
-        var cut = ContinuationAdmissions.CountOf(ContinuationAdmissions.ReadOn(null, History(Twice(), cut: LineKey.CycleCut), At));
+        var cut = ContinuationAdmissions.CountOf(ContinuationAdmissions.ReadOn(null, History(Twice(), cut: LineKey.StepCut), At));
         Assert.Equal((2, LineCounts.AtLeast, LineCounts.WalkCut), (cut.N, cut.Known, cut.Why));
 
         var missing = new LineHistory("s0", [new HistoryPart("s0", null), new HistoryPart("s1", new PartEvents(Log(Turn(Helper("w1"))), false))], null);

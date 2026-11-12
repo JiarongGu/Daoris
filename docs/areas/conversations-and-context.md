@@ -63,7 +63,7 @@ of everything it handed, section by section.
 | `ContextBrief`, `ContextBriefs` | `Context/Domain/ContextBrief.cs`, `BriefLine.cs` (its input records), `BriefReading.cs` (the line read into turns), `Context/Events/ContextBriefs.cs` | The brief (pure), and the read of the line it is composed from |
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
-| `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A line's key, its counts, and Daoris's words for them |
+| `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Course/Domain/`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history: names, pins, what a conversation started from and was handed |
 | `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
@@ -81,8 +81,13 @@ of everything it handed, section by section.
    with a why and who. The ledger writes the entry key at the open and never rewrites it. (from D167, D189)
 3. Every continuation writes its `from` link first. The whys are `press`, `near`, `limit`, `agent`, `curve`, `resume`,
    `carry-on`, `retry`, `not-offered`, and a policy's `transient`, `failed`, `quiet`, `budget`. (from D189, D163, D226)
-4. A line has one key, `LineKeys.Of`: walk back by `from` on this machine; the quest's id for a driven part, else the first
-   part's id. Moves, counts and the go-on admission all read it. (from D229)
+4. A line is a conversation, and its id never moves: each record carries it as `line`, set as the record opens
+   (`SessionLines`): the line of the part it continues where this machine holds it, else its quest's for a driven part, else its
+   own id. Membership is one read, the records held here whose `line` names it in the order they were created (`LineKeys`);
+   sending, reading, the brief, moves, counts and the go-on admission read it and nothing walks back by `from` for it
+   (`ConversationMembersCensusTests`). The ledger's step gives each record an older ledger kept without a line its walk's key once,
+   a walk cut by a cycle or past 256 hops keying the part to itself, whose counts read at least; it stays until no supported
+   ledger holds a record without a line. A teammate's record is on no line here. (from D229, D280)
 5. A session's events (`<id>.events.jsonl`) and verbatim transcript stay on the machine. No HTTP surface reads them.
    The next event's number, when its record was last written and whether its turn ended are read from the record's end; what
    a part spent is read on from where its last read stopped (`SessionSpentKept`), the whole record again only where it no

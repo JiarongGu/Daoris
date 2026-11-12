@@ -177,7 +177,7 @@ public sealed class ExchangesTests
         var records = new Dictionary<string, PriorSession>
         {
             ["s1"] = new("s1", null, "completed"),
-            ["s2"] = new("s2", null, "working") { From = "s1" },
+            ["s2"] = new("s2", null, "working") { From = "s1", Line = "s1" },
         };
         var look = Look([Ask("a1", asker: "s1"), Ask("a2", asker: "s9")], State("a1", HelperStates.Started)) with
         {

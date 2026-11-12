@@ -111,7 +111,7 @@ public static class Exchanges
     public static IReadOnlyList<Exchange> Of(ExchangeLook look, string session)
     {
         var parts = look.Records is { } records
-            ? ContextBriefs.LineOf(records, session).Select(part => part.Session).ToList()
+            ? LineKeys.Upto(session, records).Select(part => part.Session).ToList()
             : [];
         if (!parts.Contains(session, StringComparer.Ordinal)) parts.Add(session);
         var on = parts.ToHashSet(StringComparer.Ordinal);

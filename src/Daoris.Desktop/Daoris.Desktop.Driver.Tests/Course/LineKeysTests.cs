@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one line key, over <c>fixtures/line-counts.json</c> among the driver's tests, which
-/// the service's walk is held to as well (<c>LineKeysFixtureTests</c>). A driven line keys by its quest across a hand-over, a carry-on and
-/// a resume with no <c>from</c>; a conversation continued from a driven part is on its quest's line; a conversation alone keys by its first
-/// part; a teammate's part ends the walk before it; a cycle and the bound key the line by the part itself and read at least.
+/// The conversation's membership, read from each record's <c>line</c> over <c>fixtures/line-counts.json</c> among the driver's tests,
+/// whose keys the service's <c>SessionLinesTests</c> sets. A driven line keys by its quest across a hand-over, a carry-on and a resume with
+/// no <c>from</c>; a conversation continued from a driven part is on its quest's line; a conversation alone keys by its first part; a
+/// teammate's part is on none; a part whose walk the ledger's step found cut is its own conversation and reads at least.
 /// </summary>
 public sealed class LineKeysTests
 {
@@ -47,27 +47,35 @@ public sealed class LineKeysTests
     }
 
     [Fact]
-    public void A_line_of_the_bound_is_whole_and_one_hop_past_it_is_cut_and_keyed_by_the_part_itself()
+    public void A_conversation_longer_than_any_walk_keeps_its_id_and_every_part()
     {
-        var whole = Chain(LineKeys.Bound + 1);
-        var past = Chain(LineKeys.Bound + 2);
+        var records = Chain(400);
 
-        var inside = LineKeys.Of($"r{LineKeys.Bound + 1}", whole);
-        var outside = LineKeys.Of($"r{LineKeys.Bound + 2}", past);
+        var key = LineKeys.Of("r400", records);
 
-        Assert.Equal("r1", inside.Key);
-        Assert.Null(inside.Cut);
-        Assert.Equal($"r{LineKeys.Bound + 2}", outside.Key);
-        Assert.Equal(LineKey.BoundCut, outside.Cut);
+        Assert.Equal(("r1", 400, (string?)null), (key.Key, key.Parts.Count, key.Cut));
+        Assert.Equal(["r1", "r2", "r3"], LineKeys.Upto("r3", records).Select(part => part.Session));
+        Assert.Equal([null, "press", "press"], LineKeys.Upto("r3", records).Select(part => part.Why));
     }
 
     [Fact]
-    public void The_bound_is_the_service_walk_s_own()
+    public void A_record_kept_without_a_line_is_a_conversation_of_its_own()
     {
-        Assert.Equal(256, LineKeys.Bound);
+        var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
+        {
+            ["a1"] = new("a1", null) { Kind = "chat" },
+            ["a2"] = new("a2", null) { Kind = "chat", From = "a1", FromWhy = "press" },
+        };
+
+        Assert.Equal("a2", LineKeys.Of("a2", records).Key);
+        Assert.Equal(["a2"], LineKeys.Of("a2", records).Parts);
     }
 
     private static IReadOnlyDictionary<string, PriorSession> Chain(int parts) =>
         Enumerable.Range(1, parts).ToDictionary(
-            n => $"r{n}", n => new PriorSession($"r{n}", null) { Kind = "chat", From = n == 1 ? null : $"r{n - 1}" }, StringComparer.Ordinal);
+            n => $"r{n}", n => new PriorSession($"r{n}", null)
+            {
+                Kind = "chat", Line = "r1", From = n == 1 ? null : $"r{n - 1}", FromWhy = n == 1 ? null : "press",
+                Created = DateTimeOffset.Parse("2026-11-12T09:00:00Z").AddSeconds(n),
+            }, StringComparer.Ordinal);
 }

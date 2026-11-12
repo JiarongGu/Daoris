@@ -106,6 +106,7 @@ public sealed class OpinionLookTests : IDisposable
         var (host, _, _) = await DoneAsync(required: false, reviewers: [reviewer]);
         host.Session("s0", "failed", adapter: "codex-acp");
         host.Set("s1", "from", "s0");
+        host.Set("s1", "line", "s0");
         host.Set("s1", "fromWhy", HandOverWhy.Limit);
         var driver = Driver(host);
 
