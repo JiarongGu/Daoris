@@ -2889,7 +2889,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
   const full: Verdict[] = ALL.map((gate) => ({ gate, verdict: 'PASS', tree: 'F', at: at(9) }));
   const inPlan = (gates: string[]) => ALL.filter((gate) => gates.includes(gate));
 
-  // The browser test reaches the web gate and the baseline; every other verdict stands, the driver's among them.
+  // The browser test reaches the web gate and the baseline; every other verdict stands.
   const web = tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: full });
   assert.deepEqual(web.missing, inPlan([...BASE, ...ALWAYS_REACHED, 'reached', 'web']));
   const w = Object.fromEntries(web.gates.map((gate) => [gate.name, gate]));
