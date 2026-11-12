@@ -90,6 +90,7 @@ public sealed class HelpAccessTests : IDisposable
         var file = PermissionFile.Empty with
         {
             Machine = new RuleLists(["Bash(npm test:*)"], ["Bash(git commit:*)"], ["WebFetch(domain:secrets.example)"]),
+            DefaultsOn = [PermissionRules.NoPushId],
         };
 
         Assert.Same(place, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Restricted, Adapter("claude-code-acp"))));

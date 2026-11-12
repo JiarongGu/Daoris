@@ -19,6 +19,10 @@ public sealed class HelpWiredTests : IDisposable
 
     public HelpWiredTests() => Directory.CreateDirectory(_home);
 
+    /// <summary>The tree guard is the person's to switch on, so a restricted run's receipt says it guarded only where they did.</summary>
+    private void GuardOn() =>
+        PermissionRules.Save(_home, PermissionRules.Load(_home) with { DefaultsOn = [PermissionRules.TreeGuardId] });
+
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -123,6 +127,7 @@ public sealed class HelpWiredTests : IDisposable
     public async Task The_receipt_is_what_the_spawn_was_handed_field_for_field_in_each_mode(string adapter, string mode)
     {
         Plugin();
+        GuardOn();
         await using var service = StandInService.Start(_home);
 
         var spawned = await StartAsync(service, "help0001", adapter, mode);
