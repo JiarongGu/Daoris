@@ -20,6 +20,7 @@ public static class SessionsGroupsWires
         entry.Head,
         entry.Opens,
         Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy, part.Head }).ToArray(),
+        Coworkers = entry.Coworkers.Select(coworker => new { coworker.Session, coworker.Role, coworker.Serves, coworker.Shown, coworker.State }).ToArray(),
     };
 
     /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints.</summary>
@@ -56,5 +57,6 @@ public static class SessionsGroupsWires
         // whether it waits on the person's answer to its permission request.
         Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting, call.Told } : null,
         Waits = row.Waits?.Select(wait => new { wait.Run, wait.Node, wait.Why, wait.Since }).ToArray(),
+        Line = row.Line is { } line ? new { line.State, line.Group, line.Reason, line.By, line.Role } : null,
     };
 }

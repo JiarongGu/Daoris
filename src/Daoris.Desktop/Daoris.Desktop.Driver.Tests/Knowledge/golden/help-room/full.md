@@ -8,8 +8,9 @@ this machine: how to set up a workspace, what a screen means, why a start was re
 a repository, write a rule, or start a task. Written by Daoris each time the conversation opens; an
 edit here is overwritten.
 
-Its focus is this machine: every workspace. The person chose what this conversation is about, and may
-choose a workspace or a repository instead; a change reaches you in one line ahead of their words.
+Its focus, what the person chose this conversation to be about, is told in its first words: this machine, a workspace
+or a repository, where its tools start. A change reaches you in one line ahead of their words. The focus limits nothing:
+name a workspace, or `all`, to look beyond it.
 
 ## What you may do
 

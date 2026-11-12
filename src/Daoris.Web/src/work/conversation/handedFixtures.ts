@@ -58,7 +58,7 @@ export const BARE: InstructionAccount = {
 };
 
 /**
- * A set-up step's (the `set-up` golden, REVIEWENV1c2): the chain's step that shows the work of the step before for the person's
+ * A set-up step's (the driver's `set-up` start): the chain's step that shows the work of the step before for the person's
  * review, its own section from the review rule set on this machine for its repository, named by its environment.
  */
 export const SET_UP: InstructionAccount = {

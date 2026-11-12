@@ -8,11 +8,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class PluginForgetTests : IDisposable
 {
-    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-forget-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = ScratchFolders.New("daoris-plugin-forget-");
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        ScratchFolders.Remove(_home);
     }
 
     private string Install(string storage)

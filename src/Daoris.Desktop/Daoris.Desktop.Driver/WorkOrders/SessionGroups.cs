@@ -38,13 +38,13 @@ public static class SessionGroups
         state == "awaiting-person" && !answered && !id.Contains('/');
 
     /// <summary>Every session's place, in the order a list shows them; with <paramref name="only"/>, those sessions' alone.</summary>
-    /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to land.</param>
+    /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to land, and a line's state is its every part's.</param>
     public static IReadOnlyList<SessionGrouping> Read(SessionLook look, IReadOnlyCollection<string>? only = null)
     {
         var facts = new SessionStateReader(look);
-        var placed = look.Records
-            .Where(record => only is null || only.Contains(record.Id, StringComparer.Ordinal))
-            .Select(record => (Record: record, Row: facts.Place(record)))
+        var rows = LineStandings.With([.. look.Records.Select(facts.Place)], look.Records);
+        var placed = look.Records.Zip(rows, (record, row) => (Record: record, Row: row))
+            .Where(each => only is null || only.Contains(each.Record.Id, StringComparer.Ordinal))
             .ToList();
 
         return [.. SessionGroup.Order.SelectMany(group => Ordered(group, placed.Where(each => each.Row.Group == group))).Select(each => each.Row)];

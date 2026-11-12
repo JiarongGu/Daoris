@@ -100,6 +100,10 @@
       "reads": "other",
       "note": "a brainstorm door's own ask call, with a repository argument; no record's mark tells a work"
     },
+    "WorkOrders/Sessions/LineStanding.cs": {
+      "reads": "tells",
+      "note": "tells a co-worker's role (reviewer, partner, helper) by its marks, to read a line's state from it; no row of this design moves it"
+    },
     "WorkOrders/Sessions/SessionsEnding.cs": {
       "reads": "tells",
       "row": "1q",

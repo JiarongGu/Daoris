@@ -3,7 +3,7 @@
 **Proposed, for the owner's yes.** The direction is D254: a session works in its department's own place by default, one writer at a
 time; isolation for parallel work is a workflow's step; git stays the file control wherever a place uses it; a place need not be a
 git repository. Written by Claude Opus 5.5 on 2026-11-10 from main at `d085f3b023`, from the survey
-(`docs/2026-11-10-isolation-beyond-git-survey.md`, cited *survey*), whose first ranked candidate it details. Read with
+(`docs/archive/2026-11-10-isolation-beyond-git-survey.md`, cited *survey*), whose first ranked candidate it details. Read with
 `docs/areas/driving.md` (cited *driving rule n*), `docs/areas/workflows-review-landing.md` (*workflows rule n*),
 `docs/areas/git-and-remotes.md`, the tree pool design (`docs/2026-10-26-tree-pool-design.md`, its rooms R5.3 and R5.4), the node kit
 (D247) and PROCSTEPS1 (`docs/2026-11-09-process-steps-design.md`, landing as a composition). Paths are under
@@ -310,7 +310,7 @@ returning the copy's folder and its base manifest, `EndedAsync(copy)` and `Remov
   place's own volume: its copies sit in the home's `work/copies/` where the home lies on that volume, else in a copies folder the person
   names once per volume (the machine setting `copiesFolders`). `Refusal` clones a probe file once per volume and remembers the answer.
   Its cost is near nothing on disk and grows with the count of files (survey), which row g measured
-  (`docs/2026-11-11-placework1g-clone-measurements.md`): about 5 KB a file on disk, 1.6 to 2.6 ms a file in time on a Dev Drive,
+  (`docs/archive/2026-11-11-placework1g-clone-measurements.md`): about 5 KB a file on disk, 1.6 to 2.6 ms a file in time on a Dev Drive,
   refused at once on NTFS.
 - **`copy`** (`CopyIsolation`, folder): a full copy into the home's `work/copies/`, bounded by the place's last manifest (the machine
   setting `copyBound`, proposed at 2 GB and 20,000 files). Over the bound it **waits instead**: the start takes the place's lease and

@@ -361,7 +361,7 @@ export function WorkFrame({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
+    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 

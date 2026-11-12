@@ -14,34 +14,18 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 
 ## Its parts
 
-| Unit | File | Its job |
-|---|---|---|
-| Launcher | `src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
-| `InstallHome` | `Mod/Update/InstallHome.cs` | Finds the install above `app/`; sets the home, the account variable once, D105's override, D63's move-in; the working folder; the window's memory |
-| `FolderMove` | `Mod/Update/FolderMove.cs` | A folder moved across volumes: renamed on one volume, else copied whole and the source removed; a failed copy removes what it made, so the target is as it was; a copy that landed is a move even where a held file keeps the source (`Move` returns whether it went) |
-| `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
-| `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
-| `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
-| `HomeEntry` and its `Table` | `Drv/Platform/DaorisHome.cs`, beside `DaorisHome` | Every home file: name, category, new place, old place |
-| Home twins | `src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs`, `src/Daoris.Cli/src/platform/home.ts` | The same table and rules, cell for cell |
-| `HomeLease`, `HomeIdentity` | `Drv/Platform/HomeLease.cs`, `HomeIdentity.cs` | One writer per home (`run/home.lease`); the home's id (`data/home.json`) |
-| `StagedBuild` | `Drv/Install/StagedBuild.cs` | `update/` layout, manifest read and check, the swap journal, the request reader, what runs from a folder |
-| `InstallSwap`, `HeldFiles` | `Drv/Install/InstallSwap.cs`, `HeldFiles.cs` | The swap, confirm, roll back, recover; who holds a file. Compiled into the launcher |
-| `InstallUpdate` | `Drv/Install/InstallUpdate.cs` | `data/update.json` written and cleared; the drained config; the drain's hold words |
-| `InstallUpdater` | `Mod/Update/InstallUpdater.cs` | The application's half: watch, drain, check, start the launcher, close, say the outcome; each build's refusal kept with the word it met (`UpdateRefusals.cs`) |
-| `UpdateModule`, `UpdateLauncher` | `Mod/Update/UpdateModule.cs`, `UpdateLauncher.cs` | The page's `STATE`/`SET`; the launcher's start through the start gate |
-| `UpdateCommand` | `Drv/Install/UpdateCommand.cs` | The terminal's door, `daoris update` |
-| `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
-| `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
-| `InstallRollback`, `DeliveryGoingBack` | `Drv/Workplace/InstallRollback.cs`, `Drv/Workplace/DeliveryGoingBack.cs` | Refuses going back to an older build while a delivery is unresolved; installs that refusal into Install's port |
-| `UpdateRefusal`, `GoingBackRefusals` | `Drv/Install/UpdateRefusal.cs`, `Drv/Install/GoingBackRefusals.cs` | Why a staged build is not installed now, asked by the application and `daoris update --now` alike, and the version this build runs; the going back asked through the port Workplace fills, the deliveries being above Install |
-| `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: the connection, the writer stamp, settled-gated imports; its numbered steps are `DesktopStoreSteps.cs` beside it (`DesktopStore.Steps` is the door), its open options `DesktopStoreOptions.cs` |
-| `HomeMigration` | `Drv/Transitional/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
-| `Tools` | `Drv/Install/Tools.cs` (records in `ToolWay.cs`, `ToolsRead.cs`) | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
-| `ToolInstall`, `ToolResources`, `ToolsCommand` | `Drv/Install/` same names | Download, verify, lay out; the lists and locations; `daoris tool` |
-| Host locators | `Drv/Service/ServiceHostLocator.cs`, `Drv/Knowledge/KnowledgeConnector.cs` | Which HTTP host and connector run: the install's, then the home's `bin` |
-| Publish | `tools/desktop-publish.mjs`, `tools/service-publish.mjs` | Lay out or stage an install; build the two service hosts |
-| Deployment rehearsal | `tools/deployment-rehearsal.mjs` | Publishes to scratch and drives the artefact, update phase included |
+Each type is in a file of its name; `docs/index/README.md` says where a seam, verb or fixture is. Which folder owns which job:
+
+| Where | Its job |
+|---|---|
+| `src/Daoris.Desktop/Daoris.Desktop.Launcher/` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
+| `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), a folder moved across volumes (`FolderMove`: a failed copy leaves the target as it was), the one-time placing into D172's places (`HomePlacing`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
+| `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
+| `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
+| `Drv/Workplace/` | Going back refused while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port |
+| `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore`, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
+| `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
+| `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
 
 ## Its rules
 
@@ -164,9 +148,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     a publish builds: every publish recipe passes `-p:DaorisStamp=true`, which the root `Directory.Build.props`, imported by each
     tree's, reads. A development build reads no git, writes no source link and carries `+dev`, so the System page's build fact
     reads `dev`, and the instance hello and the store's recorded build (`store_version.build`) name one build for every development
-    commit; neither decides on it. Measured on both desktop test projects: after a switch between two commits of one tree, all 12 projects compiled with
-    the commit stamped (90 s) and none without it (20 s); an unchanged build compiles none either way (10 s); after 30 minutes
-    and after 7 hours of main, 7 and 9 of the 12 (TREEPOOL1's R5.8). (from D139, D233)
+    commit; neither decides on it, and a switch between commits recompiles nothing for the stamp (measured in TREEPOOL1's R5.8).
+    (from D139, D233)
 
 **Updating**
 
@@ -224,24 +207,14 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
     nothing; a step that throws, or whose record cannot be written, stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
-54. This release's migration is `nocompat1`, in the order of `HomeMigration.Steps`: the staffing into the store; the caps as
-    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; a run bound to a workflow version no graph reads, rebound to its place's choice; a review's words that name no record (`review-records`,
-    `ReviewLegacy`: a person's Accept given with no commit kept as legacy only where the run's pinned graph has nothing after its review,
-    its receipt saying it was given before Daoris drew a revision, else dropped and said on the run; a supervisor's dropped stale); `driver.json`'s keys
-    no code writes; `no-push` as git access; `harnesses.json`'s old names and pooled sections; a waiting say's `now`; unkeyed
-    solicited attempts; held presses with no question; the event logs' `answered` receipts, `chat.told-routing` notes and old
-    handed sections; the session records' `answer` column; finished records' English-only notes; closed quests with a
-    six-character id; terminals' `*.turn` marks; the desktop store's names (store step 22: a binding's `door`, the staffing's
-    projection tables dropped); the binding files into the store; the wired, usage, lineage and brainstorm files' door names;
-    a stored standing confirmation grant, removed; configured access's old lists as families of acts; the supervisors' records with
-    their grants and kinds; an abandoned work's runs stopped; the trees switch and `overlap` as an `isolate` step; *Second
-    check*'s first staffing; and a closed quest's runs whose standing steps cannot move ended by the runtime's own
-    judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`; the records nothing reads
-    removed uncopied: a tree's files record and install logs whose tree no longer stands (`tree-records`), a run's node record whose
-    binding is gone (`unbound-records`), and the `bin` entry's old place (`old-bin`, rule 23); and `plugins.json`'s `off` lists as
-    the machine's words in `switches` (`plugin-switches`); and Ask Daoris's `<id>.help.json` files and the `archived.json` marks into the
-    conversations' facts (`conversation-facts`, `ConversationFactsStep`: a conversation archived where its newest part was marked). The
-    next release that changes a shape replaces them. (from D232)
+54. This release's migration is `nocompat1`, its steps in the order of `HomeMigration.Steps`, each named for the records it
+    converts. Two judge rather than convert: `review-records` keeps a person's Accept given with no commit as legacy only where the
+    run's pinned graph has nothing after its review, its receipt saying it was given before Daoris drew a revision, else drops it
+    and says so on the run (a supervisor's such word dropped stale); `closed-runs` ends a closed quest's runs whose standing steps
+    cannot move by the runtime's own judgement, counted by why in `home.migrated`'s `counts`. Records nothing reads are removed
+    uncopied (`tree-records`, `unbound-records`, `old-bin`). `conversation-facts` imports Ask Daoris's `<id>.help.json` files and the
+    `archived.json` marks into the conversations' facts (a conversation is archived where its newest part was marked) and takes both out.
+    The next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 
 - **Install layout or publish:** `tools/desktop-publish.mjs`, with its twins in the same change: `StagedBuild`'s names,
@@ -258,14 +231,10 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
-**Tests that pin the area.** Driver: `Install/StagedBuildTests`, `BuildVersionTests`, `InstallUpdateTests`, `UpdateDrainTests`,
-`UpdateCommandTests`, `StartConfirmationTests`, `HeldFilesTests`, the `Tool*Tests`; `Platform/DaorisHomeTests`, `HomeLeaseTests`,
-`HomeIdentityTests`; `Store/DesktopStore*Tests`; `Install/HomeMigrationTests`;
-`Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
-`FolderMoveTests`, `HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateRefusalRetryTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
-`UpdateWatchTests`; `Windows/TaskbarIdentityTests`; `EveryModuleChildIsHandedTheToolsTests`. Service:
-`Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`, `home-census.test.ts`, `tool-test/desktop-publish.test.ts`,
-`test/deployment-rehearsal.test.ts`.
+**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit, `HomeMigrationTests`,
+`ServiceHostLocatorTests`, `PinnedUpdatesTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
+`EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
+`home-census.test.ts`, `tool-test/desktop-publish.test.ts`, `test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
 `cli` (`npm run verify`: the home census, the size ratchet); `tool-tests` for the publish; and

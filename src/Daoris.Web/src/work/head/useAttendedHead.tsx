@@ -14,7 +14,8 @@ import { accountNames } from '../accountNames';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from '../acts';
 import type { useAttendedBox } from '../conversation/useAttendedBox';
 import { type entryOfSession, nameOfEntry } from '../entries';
-import { shownOf } from '../groups';
+import { type SessionGrouping, shownOf } from '../groups';
+import { lineSaid, lineWords } from '../lineState';
 import type { heavyPartOf } from '../heavySlot';
 import { heavyLine } from '../HeavySlotLine';
 import { askName, linkedSessions, sessionTitle } from '../identity';
@@ -47,8 +48,10 @@ type Waits = ReturnType<typeof useAttendedWaits>;
 export function useAttendedHead({
   t, language, attended, here, live, quest, grouping, registry, roster, sheets, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
-  atWorkHeld, heavyPart, heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision,
+  atWorkHeld, heavyPart, heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
 }: {
+  groupings?: readonly SessionGrouping[];
+  attend?: (id: string) => void;
   /** The attended line's counts and its rules' acts: the head's chip where a rule holds the line or is one count from it. */
   supervision: LineSupervision;
   t: TFunction;
@@ -229,7 +232,8 @@ export function useAttendedHead({
       acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy, attended),
     }
     : null;
-  const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
+  const attendedLine = attended ? lineSaid(attended.id, grouping, groupings, sessions, attendedEntry?.parts.map((part) => part.session)) : null;
+  const attendedShown = attended ? attendedLine?.shown ?? shownOf(attended, grouping, taking[attended.id]) : null;
   // Its facts line by its state: the row's facts and the record's, so the head and the row agree.
   const headFactsOf: SessionFactsOf | null = attended && attendedShown ? {
     session: attended,
@@ -263,6 +267,7 @@ export function useAttendedHead({
       session={attended}
       title={attendedTitle}
       shown={attendedShown}
+      line={attendedLine ? { said: lineWords(t, attendedLine), onOpen: attend && (() => attend(attendedLine.by)) } : null}
       facts={sessionFacts(t, headFactsOf)}
       // The line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}

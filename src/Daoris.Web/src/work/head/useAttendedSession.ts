@@ -7,6 +7,7 @@ import { SESSIONS_SLICE, useQuests, useRegistry, useSessions } from '../../data/
 import { type Notify, SESSION_ACTIVE, useErrorNotify } from '../../design/ui';
 import { askOfEntry, entryOfSession, isIntakeEntry } from '../entries';
 import { isHelper, isIntake, isOpinion, sessionOrigin } from '../identity';
+import { lineHeadOf } from '../lineState';
 
 /**
  * The sessions the Work frame reads and the one attended: its line of work, its quest, and what kind of session it
@@ -36,7 +37,9 @@ export function useAttendedSession({ selected, onSelect, notify }: {
 
   useErrorNotify(sessions.error, notify);
 
-  const attended = (sessions.data ?? []).find((session) => session.id === selected) ?? null;
+  // Any part opens its line's session, the line's newest part, at that part: the head, the composer and the state are the line's.
+  const attended = lineHeadOf(sessions.data, selected);
+  const openedAt = attended && selected && selected !== attended.id ? selected : null;
   // Its ask's channel: the attended line of work's panel, where an ask began it. The same read the
   // ask's page holds, under one key; a conversation, an intake and a line rooted in a quest alone have none.
   const attendedEntry = attended ? entryOfSession(entries, attended.id) : null;
@@ -78,6 +81,6 @@ export function useAttendedSession({ selected, onSelect, notify }: {
 
   return {
     sessions, sessionsResyncing, openings, groups, entries, where, quests, registry, harnesses, accounts, attended, attendedEntry,
-    channelAsk, quest, live, conversation, here, intake, oneTurn,
+    channelAsk, quest, live, conversation, here, intake, oneTurn, openedAt,
   };
 }

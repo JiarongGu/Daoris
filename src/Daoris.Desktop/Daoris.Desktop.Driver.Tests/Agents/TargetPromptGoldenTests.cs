@@ -302,7 +302,88 @@ public sealed class TargetPromptGoldenTests
     [Theory]
     [InlineData("bare")]
     [InlineData("full")]
+    public void The_quests_instruction_is_its_golden_text(string which)
+    {
+        // The golden's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
+        HelpRoomGoldenTests.Settle(GoldenPath($"{which}.md"), TargetPrompt.Compose(Of(which)), HelpRoomGoldenTests.WriteRequested);
+        // The text the account is kept beside is the same instruction, byte for byte.
+        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Composed(Of(which)).Text);
+    }
+
+    /// <summary>
+    /// Every other start against the golden one it grows from: for each section that differs, or that only it has, the sentence
+    /// that makes it differ. Every other section is that golden's, byte for byte, in its order.
+    /// </summary>
+    private static readonly Dictionary<string, (string Base, (string Section, string Says)[] Varies)> Variants = new()
+    {
+        ["carry-on"] = ("full",
+        [
+            ("quest", "You are carrying on quest `#abc123`, asked by `ask #a1b2c3`. It is already taken"),
+            ("carry-on", "An earlier session on this quest stopped to ask the person, and they answered"),
+            ("close", "Finish from there rather than starting again"),
+        ]),
+        ["carry-on-brief"] = ("full",
+        [
+            ("quest", "You are carrying on quest `#abc123`, asked by `ask #a1b2c3`. It is already taken"),
+            ("carry-on", "was cut off before it closed it: the agent's turn failed with the quest still taken."),
+            ("brief-opening", "continue session `s1a2b3c4`, which ran on claude-code"),
+            ("brief-turns", "What was said and done, in order, each word with the turn that took it."),
+            ("brief-words", "edited `src/report.ts`; a command failed: `npm test`."),
+            ("brief-state", "The state of the work, as Daoris read it when it composed this brief:"),
+            ("close", "Finish from there rather than starting again"),
+            ("block", "Memory this line read, as it stands now:"),
+        ]),
+        ["retried"] = ("bare",
+        [
+            ("carry-on", "committed work in this tree and failed before it took the quest: the connector could not start."),
+            ("brief-opening", "continue session `s1a2b3c4`, which ran on claude-code"),
+            ("brief-turns", "What was said and done, in order, each word with the turn that took it."),
+            ("brief-words", "edited `src/report.ts`; a command failed: `npm test`."),
+            ("brief-state", "The state of the work, as Daoris read it when it composed this brief:"),
+            ("close", "then finish its work from there rather"),
+        ]),
+        ["set-up"] = ("bare",
+        [
+            ("quest", "You are the agent for `reports`, working inside its own repository and nowhere else."),
+            ("carried", "It follows quest `#abc123`, which is done"),
+            ("set-up", "This quest is a set-up step. It shows the work of its chain to the person in `local`"),
+            ("close", "First take the quest (respond to `#def456` with `take`)"),
+            ("asking", "then respond to `#def456` with `wait`"),
+            ("attributed", "A go-ahead is asked once, on the ask: where your connector offers `go_ahead_ask`"),
+        ]),
+        ["own-tree"] = ("bare", [("landing", "the person puts this tree's branch on `feature/T-9-add-the-note-field` and opens a pull request")]),
+        ["part"] = ("bare", [("carry-on", "You are in session `283ef343`'s tree, on its branch, so its work is here")]),
+        ["part-alongside"] = ("bare", [("carry-on", "Session `62c005bc` is still at work in that tree, so you run beside it in a tree of your own")]),
+        ["channel"] = ("bare", [("carry-on", "On the ask's channel (ask `#a1b2c3`) since this line of work last read it")]),
+        ["ready"] = ("bare", [("close", "then say it is ready: `ready` when its work is done")]),
+        ["heavy"] = ("bare", [("close", "run this repository's heavy gates (`build`, `test`) through `daoris gate")]),
+        ["light"] = ("bare", [("close", "`daoris gate run` refuses this tree, and your harness refuses each one's declared command.")]),
+        ["light-said"] = ("bare", [("close", "Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.")]),
+        ["routed"] = ("bare", [("close", "Daoris has handed you its browser."), ("block", "Routing standing here: open.")]),
+        ["routed-one-at-a-time"] = ("bare", [("block", "Routing standing here: one at a time.")]),
+        ["routed-not-driven"] = ("bare", [("block", "Routing standing here: not driven.")]),
+    };
+
+    /// <summary>The instruction cut at its account's sections, each by name.</summary>
+    private static List<(string Name, string Text)> Sections(SessionTarget target)
+    {
+        var (text, account) = TargetPrompt.Composed(target);
+        var sections = new List<(string, string)>();
+        var at = 0;
+        foreach (var section in account.Sections.Where(section => section.Chars is > 0))
+        {
+            sections.Add((section.Name, text.Substring(at, section.Chars!.Value)));
+            at += section.Chars!.Value;
+        }
+
+        Assert.Equal(text.Length, at);
+        return sections;
+    }
+
+    [Theory]
     [InlineData("carry-on")]
+    [InlineData("carry-on-brief")]
+    [InlineData("retried")]
     [InlineData("set-up")]
     [InlineData("own-tree")]
     [InlineData("part")]
@@ -312,17 +393,33 @@ public sealed class TargetPromptGoldenTests
     [InlineData("heavy")]
     [InlineData("light")]
     [InlineData("light-said")]
-    [InlineData("carry-on-brief")]
-    [InlineData("retried")]
     [InlineData("routed")]
     [InlineData("routed-one-at-a-time")]
     [InlineData("routed-not-driven")]
-    public void The_quests_instruction_is_its_golden_text(string which)
+    public void Another_start_is_the_golden_it_grows_from_but_where_its_facts_differ(string which)
     {
-        // The golden's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
-        HelpRoomGoldenTests.Settle(GoldenPath($"{which}.md"), TargetPrompt.Compose(Of(which)), HelpRoomGoldenTests.WriteRequested);
-        // The text the account is kept beside is the same instruction, byte for byte.
-        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Composed(Of(which)).Text);
+        var (from, varies) = Variants[which];
+        var before = Sections(Of(from));
+        var after = Sections(Of(which));
+        var names = before.Select(section => section.Name).ToList();
+
+        Assert.Equal(names, after.Select(section => section.Name).Where(names.Contains));
+        Assert.All(after.Where(section => !names.Contains(section.Name)), section => Assert.Contains(section.Name, varies.Select(each => each.Section)));
+        foreach (var (name, text) in after)
+        {
+            var says = varies.FirstOrDefault(each => each.Section == name).Says;
+            var was = before.FirstOrDefault(section => section.Name == name).Text ?? "";
+            if (says is null)
+            {
+                Assert.True(was == text, $"{which}: `{name}` differs from {from}'s, and no sentence here says why");
+                continue;
+            }
+
+            Assert.Contains(says, text);
+            Assert.DoesNotContain(says, was);
+        }
+
+        Assert.All(varies, each => Assert.Contains(each.Section, after.Select(section => section.Name)));
     }
 
     /// <summary>
@@ -354,21 +451,6 @@ public sealed class TargetPromptGoldenTests
     [Theory]
     [InlineData("bare")]
     [InlineData("full")]
-    [InlineData("carry-on")]
-    [InlineData("set-up")]
-    [InlineData("own-tree")]
-    [InlineData("part")]
-    [InlineData("part-alongside")]
-    [InlineData("channel")]
-    [InlineData("ready")]
-    [InlineData("heavy")]
-    [InlineData("light")]
-    [InlineData("light-said")]
-    [InlineData("carry-on-brief")]
-    [InlineData("retried")]
-    [InlineData("routed")]
-    [InlineData("routed-one-at-a-time")]
-    [InlineData("routed-not-driven")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
