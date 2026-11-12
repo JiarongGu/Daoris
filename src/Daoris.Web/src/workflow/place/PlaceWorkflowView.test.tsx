@@ -431,7 +431,7 @@ describe('Change… and Edit steps…', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
     await screen.findByRole('list', { name: 'How the steps go on' });
     expect(openDraftNow()).toMatchObject({ route: 'kind:docs', pipeline: 'development', source: 'docs-to-pr@v1' });
-    expect(openDraftNow()!.graph.nodes).toHaveLength(7);
+    expect(openDraftNow()!.graph.nodes).toHaveLength(8);
   });
 
   it('open an empty draft where the route draws no graph, as it always did', async () => {

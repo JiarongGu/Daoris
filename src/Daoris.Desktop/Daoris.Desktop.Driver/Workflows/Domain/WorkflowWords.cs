@@ -94,7 +94,7 @@ public static class WorkflowWords
                     ? "Merged into its line"
                     : $"On a branch named `{Set("pattern")}`{((string?)Set("accept") == "automatic" ? ", accepted automatically" : "")}"
                         + (Set("plugin") is null ? ", for you to push" : $", pushed by `{Set("plugin")}`");
-                set += $"{(Set("tidy") is true ? "; its tree and branch go once it lands" : "")}.";
+                set += ".";
                 break;
             // A graph-only kind, drawn by its node's kind, said by what the rule asks.
             case NodeKinds.Integrate:

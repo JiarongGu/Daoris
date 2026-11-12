@@ -115,6 +115,9 @@ public static class NodeKinds
     /// </summary>
     public const string Tidy = "tidy";
 
+    /// <summary>A run's trees ended once its work landed: each behind the clean-up's proof, one holding work kept, with why.</summary>
+    public const string Release = "release";
+
     public const string Rebase = "rebase";
 
     /// <summary>A problem a step could not settle, handed to whoever the workflow names, bounded per stop, and returned to its rebase.</summary>
@@ -258,6 +261,9 @@ public static class NodeSource
 
     /// <summary>A folder's return as its door writes it: every file of the copy back in the folder, or nothing to bring back.</summary>
     public const string Return = "return";
+
+    /// <summary>A run's release as its door writes it: each tree the run owned ended, or kept with its reason.</summary>
+    public const string Release = "release";
 }
 
 /// <summary>

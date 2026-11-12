@@ -247,13 +247,20 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     content, carried by a pull request whose merge is here, or inside an ended landing. An agent's done is a claim. An unread proof
     ends nothing. (D88, D102, D148)
 48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or content, or
-    carried; with a tree, only this home's tree on a branch that moved. Landed work goes only once it is on the line, and a branch
+    carried; with a tree, only this home's tree on a branch that moved and that no run owns (rule 51). Landed work goes only once it is on the line, and a branch
     its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
     keeping pass purges it. (D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or untracked work
     keeps it, and so does an ignored folder of more than 5,000 files, counted by name before any file is read. (D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears, judging each
     again right before it goes. A removal git would refuse for the tree's lock takes no link off it first. (D88)
+51. A workflow run owns its trees: each governed pass writes the run on its branches' records (`GrownBranch.Run`), and a run's
+    tree is ended by its graph's `release` (workflows rule 31b) or, for a run that ended settled or whose record is gone, by the
+    look's sweep (`TreeReleases.SweepAsync`, in the lease holder's tidy of each repository, said once in its report). The sweep
+    leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's
+    own unforced proof, so a tree with uncommitted work or commits no branch of the person's holds stays and its reason is kept
+    on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a
+    tree no run owns is the look's tidy's and the person's. (D228)
 
 ## Where a change goes
 

@@ -215,7 +215,7 @@ describe('What happens next: the rows of a step, and the kind of way the row and
     expect(moreWaysOf(PALETTE, more, 'line').map(said)).toEqual(['trigger:line>find', 'wait:line>find']);
     expect(moreWaysOf(PALETTE, release, 'find')).toEqual([]);
     // A trigger starts a step the source does not wait on, once.
-    expect(triggerTargetsOf(more, 'line')).toEqual(['release', 'publish']);
+    expect(triggerTargetsOf(more, 'line')).toEqual(['tree', 'release', 'publish']);
   });
 
   it('reads earlier as an ancestor upstream through after, trigger, data and when, never a step drawn above', () => {

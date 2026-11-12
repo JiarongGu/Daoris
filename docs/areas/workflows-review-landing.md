@@ -183,6 +183,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     branch deleted through the journal with its Undo, `tidied` written when every part ended, else `partly` for the next pass;
     nothing fails it. The save refuses a `monitor` not watching one stateful step (`monitor-watch`), a `tidy` off `when merged`
     (`tidy-merged`) and a `push` no `branch` landing leads to (`land-tail`). (D241, D245, D247)
+31b. A `release` ends the trees a run owns once its work has landed: it is performed through its door, once per node and attempt
+    (`TreeReleases`), and removes each session branch the run owns (`GrownBranch.Run`, written on its record at every governed
+    pass) with its tree behind the clean-up's own unforced proof. A tree with uncommitted work, or commits no branch of the
+    person's holds, stays: the refusal is kept on its record (`GrownBranch.Kept`), drawn in the tree list beside its owner run, and
+    said in the step's words. It reaches either way and fails nothing; in a graph that sets nothing apart it finds no tree and says
+    so. A save refuses one no way from a `land` reaches (`release-landing`). The shipped development workflows put one after the
+    landing (after the line, or the tidy), the editor draws it in `Git` after the line, and a drawn graph matches its shipped copy
+    with or without it (`MigratedGraphs.Shape`). A run that holds none, ended or abandoned, has its trees ended by the look's sweep
+    (driving rule 51). (D228)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
     goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
     `workflows/agent-steps/<invocation>.json`, and the step's session starts off the pass: staffed as the place's builds, a chat on
@@ -207,7 +216,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which
     advances only while its pull request can take it. (D82, D149)
 37. Branches a landing made are kept in `<home>/landings.json`, traced once gone. A landing removes no tree and no other session
-    branch; a session branch goes only by its own door or the look's tidy, behind D88's proof. A gone session branch stays traced
+    branch; a session branch goes only by its own door, the look's tidy or, where a run owns its tree, that run's `release` or
+    the sweep (rule 31b), behind D88's proof. A gone session branch stays traced
     while its unit owes anything, and a live run holds every subject its nodes observe, so an accepted `land` finds its branch.
     (D88, D102, D232)
 38. A pull request's state is asked of the plugin that opened it, at most once a minute each. A landed session's review reads its
@@ -263,7 +273,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     door runner, once per start key, under the run's own step (`StepAuthority`). (D247)
 50. `isolate` is a graph's one entry, wired straight into `claimed` and performed by the start before the record opens. Its options
     are `kind` (`auto`, `worktree`, `copy`; one its place lacks holds the start), `at-once` (`2` to `24`, or `any`) and `overlap`
-    (`go`, `wait`); a graph without one runs one session at a time in the place's checkout (driving rules 12 to 14).
+    (`go`, `wait`); a graph without one runs one session at a time in the place's checkout (driving rules 12 to 14). The trees it
+    makes are ended by a `release` after the landing, else by the sweep (rule 31b).
 51. A `human` node is a manual operation, reached by the person's *Done* or, for an approval, *Approve* with an optional note, or
     rejected by *Reject* with a reason, as a review's changes are. Its outcome (`done`, `approved`, or none) routes a `when` wire, a
     rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
