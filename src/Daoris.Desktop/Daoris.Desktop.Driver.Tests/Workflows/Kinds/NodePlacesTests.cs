@@ -10,7 +10,7 @@ public sealed class NodePlacesTests
 {
     private static readonly string[] GitAlone =
     [
-        NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy, NodeKinds.Integrate, NodeKinds.Line, NodeKinds.ContentHolds,
+        NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy, NodeKinds.Release, NodeKinds.Integrate, NodeKinds.Line, NodeKinds.ContentHolds,
         NodeKinds.Rebase, NodeKinds.Resolve, NodeKinds.Merge,
     ];
 

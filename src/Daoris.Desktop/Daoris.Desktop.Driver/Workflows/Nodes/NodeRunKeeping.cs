@@ -101,6 +101,20 @@ internal sealed class NodeRunKeeping(
               + ", so they stay as they are; it is judged again once its chain comes back here.");
     }
 
+    /// <summary>
+    /// The run named on the record of every branch its quests produced, so the tree each holds has an owner that ends it (<see cref="TreeReleases"/>);
+    /// a branch already naming the run writes nothing.
+    /// </summary>
+    public void OwnTrees(RunScope scope)
+    {
+        if (!holdsLease()) return;
+        var grown = new SessionBranches(records.Home);
+        foreach (var branch in scope.Branches)
+        {
+            if (branch.Records.Branch is { } entry) grown.Own(entry.Repository, entry.Branch, scope.Run.Run);
+        }
+    }
+
     /// <summary>A run's step refs let go of at its settled end (<see cref="StepRefs.Releases"/>); one git refuses is let go of at the next pass.</summary>
     public async Task ReleaseStepsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
     {

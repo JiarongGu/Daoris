@@ -115,6 +115,12 @@ public static class NodeKinds
     /// </summary>
     public const string Tidy = "tidy";
 
+    /// <summary>
+    /// The end of a run's worktree once its work has landed: each tree the run owns ended behind the clean-up's proof, and one holding work
+    /// nothing else holds kept, with why. Reached either way.
+    /// </summary>
+    public const string Release = "release";
+
     public const string Rebase = "rebase";
 
     /// <summary>A problem a step could not settle, handed to whoever the workflow names, bounded per stop, and returned to its rebase.</summary>
@@ -258,6 +264,9 @@ public static class NodeSource
 
     /// <summary>A folder's return as its door writes it: every file of the copy back in the folder, or nothing to bring back.</summary>
     public const string Return = "return";
+
+    /// <summary>A run's release as its door writes it: each tree the run owned ended, or kept with its reason.</summary>
+    public const string Release = "release";
 }
 
 /// <summary>
