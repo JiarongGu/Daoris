@@ -6,7 +6,7 @@ and ASKPUSH1). D279 is reserved for the choices that reject an alternative (§9)
 built. Web paths start at `src/Daoris.Web/src/`, driver paths at `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 **Widths.** **N** is 300 px, the side bar's floor; **D** is 24rem, the dock's default; **W** is the right region at 45% of a 1546 px
-window; **C** is a centre column in a 1920 px window with the list open (`docs/2026-10-20-ui-ux-design.md` §3.4).
+window; **C** is a centre column in a 1920 px window with the list open (`docs/archive/2026-10-20-ui-ux-design.md` §3.4).
 
 ## 0. In short
 

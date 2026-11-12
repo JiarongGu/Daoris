@@ -362,13 +362,14 @@ public sealed class HelpRoomTests : IDisposable
         // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpRoomSections.All[0].GetType().Name}.cs"))!;
 
-        // The doors section's rows and places are parts beside it (`HelpDoor*`); every other file of the folder is one section's own.
+        // Parts beside their sections: the doors' (`HelpDoor*`) and *What you may do*'s checkouts; every other file is one section's own.
+        string[] parts = ["HelpRoomFullReads.cs"];
         var files = Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories);
         Assert.Equal(
             HelpRoomSections.All.Select(section => $"{section.GetType().Name}.cs").Order(StringComparer.Ordinal),
             files.Where(file => File.ReadAllText(file).Contains(" : IHelpRoomSection", StringComparison.Ordinal)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         Assert.All(
-            files.Select(Path.GetFileName).Where(name => !HelpRoomSections.All.Any(section => $"{section.GetType().Name}.cs" == name)),
+            files.Select(Path.GetFileName).Where(name => !HelpRoomSections.All.Any(section => $"{section.GetType().Name}.cs" == name) && !parts.Contains(name)),
             name => Assert.StartsWith("HelpDoor", name, StringComparison.Ordinal));
         foreach (var section in HelpRoomSections.All)
         {

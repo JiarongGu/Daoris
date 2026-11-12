@@ -70,6 +70,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         // What a harness waiting on a server that never comes up waits on is said; the words stay kept for the next send.
                         chat.Opened(null, run.Say, Record);
                         var past = notUp();
+                        chat.NotUp = past;
                         run.Say($"— {past.Note}");
                         Record(new SessionEvent { Kind = SessionEventKind.Note, Text = past.Note, Parts = past.Parts });
                         break;

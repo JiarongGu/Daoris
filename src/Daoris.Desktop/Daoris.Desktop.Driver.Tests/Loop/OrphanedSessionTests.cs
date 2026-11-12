@@ -386,10 +386,17 @@ public sealed class OrphanedSessionTests : IDisposable
 
                 var (status, body) = Answer(context.Request);
                 var bytes = Encoding.UTF8.GetBytes(body);
-                context.Response.StatusCode = status;
-                context.Response.ContentType = "application/json";
-                await context.Response.OutputStream.WriteAsync(bytes);
-                context.Response.Close();
+                try
+                {
+                    context.Response.StatusCode = status;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.OutputStream.WriteAsync(bytes);
+                    context.Response.Close();
+                }
+                catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or IOException)
+                {
+                    // A caller that cancelled its request mid-move hears no answer; the next request is served, as a real host serves it.
+                }
             }
         }
 
