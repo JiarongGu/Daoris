@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * Pressing a part in the strip or on the flow's rail opens its line's session at it and scrolls to it, so the part pressed is the
- * one in view: an earlier part's box (`data-opened`), else the newest part's.
- */
+/** Pressing a part opens its line's session at it and scrolls to it: an earlier part's box (`data-opened`), else the newest's. */
 export function useSeekPart() {
   const [seeking, setSeeking] = useState(0);
   const partBox = useRef<HTMLDivElement>(null);

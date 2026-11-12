@@ -50,9 +50,7 @@ export function useAttendedHead({
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
   atWorkHeld, heavyPart, heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
 }: {
-  /** The reader's rows, which the part or co-worker its line's state is read from is found among. */
   groupings?: readonly SessionGrouping[];
-  /** Open a session: the part or co-worker its line's state is read from. */
   attend?: (id: string) => void;
   /** The attended line's counts and its rules' acts: the head's chip where a rule holds the line or is one count from it. */
   supervision: LineSupervision;
@@ -234,7 +232,6 @@ export function useAttendedHead({
       acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy, attended),
     }
     : null;
-  // Its line's state where another part or a co-worker decides it, named, with the door to it; its pill says that state.
   const attendedLine = attended ? lineSaid(attended.id, grouping, groupings, sessions, attendedEntry?.parts.map((part) => part.session)) : null;
   const attendedShown = attended ? attendedLine?.shown ?? shownOf(attended, grouping, taking[attended.id]) : null;
   // Its facts line by its state: the row's facts and the record's, so the head and the row agree.

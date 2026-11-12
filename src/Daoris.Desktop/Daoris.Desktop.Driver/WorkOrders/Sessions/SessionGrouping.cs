@@ -14,10 +14,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// </summary>
     public string Reason { get; init; } = "";
 
-    /// <summary>
-    /// The state of the line its record is a part of, or serves as a co-worker (<see cref="LineStandings"/>), which the list, the head
-    /// and Notifications say for it; null only where the look does not hold its record.
-    /// </summary>
+    /// <summary>The state of the line it is a part of or serves (<see cref="LineStandings"/>), which the list and the head say for it.</summary>
     public LineStanding? Line { get; init; }
 
     /// <summary>Whether this machine's archive mark stands. A session that needs the person is shown in its group whatever the mark says.</summary>

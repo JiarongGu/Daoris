@@ -95,12 +95,7 @@ export type SessionGrouping = {
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
   waits?: { run: string; node: string; why: string; since?: string | null }[] | null;
-  /**
-   * The state of the line its record is a part of, or serves as a co-worker: the first of needs you, working and pending any part
-   * is in, needs you and working where a co-worker is, else as its newest part ended. `by` is the session it is read from and
-   * `role` whether that is a `part` or which co-worker (`reviewer`, `partner`, `helper`). The list, the head, What needs you and
-   * Notifications say it, never the record's own state. Absent from an older host.
-   */
+  /** Its line's state (`LineStandings`): `by` the part or co-worker it is read from, `role` `part` or which co-worker. */
   line?: { state: SessionStateName; group: SessionGroupName; reason: string; by: string; role: string } | null;
 };
 

@@ -39,10 +39,7 @@ import { PageHead } from '../frame/ViewMain';
  * pins beneath it rather than under it.
  */
 export function SessionPageHead({ session, title, shown, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null }: {
-  /**
-   * Its line's state where another part or a co-worker decides it (`lineWords`), first on the facts line, with *Open* to that part
-   * or co-worker; its pill says that state. Null where the session itself decides it.
-   */
+  /** Its line's state where another part or a co-worker decides it (`lineWords`), with *Open* to that one. */
   line?: { said: string; onOpen?: () => void } | null;
   /** The count a rule holds the line at, or one short of it (`supervisionChip`), said last on the facts line before the choice's chip. */
   chip?: SupervisionChip | null;

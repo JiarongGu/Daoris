@@ -35,13 +35,11 @@ const note = (seq: number, code: string, values: Record<string, unknown> = {}) =
 /** A record of the line, a conversation of the repository, in the order the driver lists them. */
 type Part = {
   id: string; state?: string; from?: string; fromWhy?: string; adapter?: string; kind?: string; began?: string; after?: string; shown?: string;
-  /** Its line's state as the reader answers it on its row. */
   standing?: { state: string; group: string; reason: string; by: string; role: string };
 };
 
 /** The line as the driver answers it: the records, its entry's parts oldest first, and each part's events. */
 function answering(parts: Part[], events: Record<string, unknown[]>, entry: Part[] = parts) {
-  // Each record's conversation as the service sets it at the open: the line of the part it continues, else its own id.
   const lineOf = (part: Part): string => {
     const before = parts.find((each) => each.id === part.from);
     return before ? lineOf(before) : part.id;
