@@ -1,8 +1,7 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fixtureFolder } from './fixture-home.ts';
 import { appendRecord, buildRecord, readRecords, summarize, type GateRecord, type MergeRecord } from './merge-record.ts';
 
 const gate = (name: string, over: Partial<GateRecord> = {}): GateRecord => ({
@@ -42,7 +41,7 @@ test('the record carries each gate\'s time, its slowest classes, and the gates a
 });
 
 test('records append one line each, read back in order, a torn line skipped', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'merge-record-'));
+  const { dir, remove } = fixtureFolder('merge-record');
   try {
     const file = join(dir, 'sub', 'merge-record.jsonl');
     assert.deepEqual(readRecords(file), []);
@@ -50,7 +49,7 @@ test('records append one line each, read back in order, a torn line skipped', ()
     appendRecord(file, buildRecord({ ...base, branch: 'b2', gates: [gate('cli')] }));
     assert.deepEqual(readRecords(file).map((each) => each.branch), ['b1', 'b2']);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    remove();
   }
 });
 

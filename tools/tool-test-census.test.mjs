@@ -21,7 +21,7 @@ after(() => rmSync(scratch, { recursive: true, force: true }));
 
 let n = 0;
 /** A fresh tree with `tools` test files and `tool-test` test files on disk and `verify` listing `listed`; returns its root. */
-function tree({ tools = [], toolTests = [], listed = [], extraGate = '', cliListed = [] }) {
+function tree({ tools = [], toolTests = [], listed = [], extraGate = '', cliListed = [], verifyMore = '' }) {
   const dir = join(scratch, `t${n++}`);
   const put = (rel, text) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
@@ -30,7 +30,7 @@ function tree({ tools = [], toolTests = [], listed = [], extraGate = '', cliList
   for (const name of tools) put(`tools/${name}`, '');
   for (const name of toolTests) put(`src/Daoris.Cli/tool-test/${name}`, '');
   put('package.json', JSON.stringify({ scripts: {
-    verify: `node x.mjs && node --test ${listed.join(' ')}`,
+    verify: `node x.mjs && node --test ${listed.join(' ')}${verifyMore}`,
     tooltests: 'npm run tooltests -w daoris',
   } }));
   put('src/Daoris.Cli/package.json', JSON.stringify({ scripts: {
@@ -83,6 +83,17 @@ test('a listed test that is gone is refused', () => {
   const { problems } = checkToolTests(dir);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /^tools\/gone\.test\.mjs: listed by gate cli and not there/);
+});
+
+test('a merge tool test is owned by the gate whose Vitest run names its project, and one no run names is an orphan', () => {
+  const merge = ['merge/a.test.ts', 'merge/deep/b.test.ts', 'merge/c.e2e.ts'];
+  const unit = ' && vitest run --config tools/vitest.config.ts --project unit';
+  const e2e = ['&& node ../../node_modules/vitest/vitest.mjs run --config ../../tools/vitest.config.ts --project e2e'];
+  assert.deepEqual(checkToolTests(tree({ tools: merge, verifyMore: unit, cliListed: e2e })), { problems: [], count: 3 });
+  const { problems } = checkToolTests(tree({ tools: merge, verifyMore: unit }));
+  assert.deepEqual(problems.map((each) => each.split(':')[0]), ['tools/merge/c.e2e.ts']);
+  const both = checkToolTests(tree({ tools: merge, verifyMore: ' && vitest run --config tools/vitest.config.ts', cliListed: e2e })).problems;
+  assert.match(both.join('\n'), /^tools\/merge\/c\.e2e\.ts: run by 2 gates \(cli, tool-tests\)/m, 'a run that names no project runs them all');
 });
 
 test('npm scripts are followed into the CLI package, and a glob is read relative to it', () => {

@@ -1,16 +1,16 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
+import { fixtureFolder } from './fixture-home.ts';
 import { runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
 import type { StoredVerdict } from './verdict-store.ts';
 
 const gate = { name: 'censuses', run: 'dotnet test src/A --filter Category=Census', reuse: 'inputs' };
 
 function harness(over: Partial<FlowDeps> = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'flow-'));
+  const { dir, remove } = fixtureFolder('flow');
   mkdirSync(join(dir, 'logs'));
   const asked: Array<{ run: string; noBuild: unknown }> = [];
   const deps: FlowDeps = {
@@ -34,7 +34,7 @@ function harness(over: Partial<FlowDeps> = {}) {
     lastSlowest: () => [],
     ...over,
   };
-  return { dir, deps, asked, done: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, deps, asked, done: remove };
 }
 const call = (h: ReturnType<typeof harness>, over: { tree?: string; gate?: typeof gate } = {}) => runOne(h.deps, {
   where: h.dir, gate: over.gate ?? gate, logs: join(h.dir, 'logs'), beside: {}, tree: over.tree ?? 'T2', trees: null, step: undefined, noBuild: false,

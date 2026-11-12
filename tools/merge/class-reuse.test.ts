@@ -1,7 +1,7 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { fixtureFolder } from './fixture-home.ts';
 import { PassedClasses, classKey, splitByReuse, unitId, type KeyContext, type Unit } from './class-reuse.ts';
 
 const a: Unit = { suite: 'driver', unit: 'A.Tests.OneTests' };
@@ -34,7 +34,7 @@ test('a file no class reads, the declaration and the toolchain: only the last tw
 });
 
 test('only the classes whose key has no standing pass are run, and a pass is kept per class across a save', () => {
-  const folder = mkdtempSync(join(process.cwd(), 'class-reuse-'));
+  const { dir: folder, remove } = fixtureFolder('class-reuse');
   try {
     const file = join(folder, 'store.json');
     const store = new PassedClasses(file);
@@ -46,15 +46,15 @@ test('only the classes whose key has no standing pass are run, and a pass is kep
     assert.deepEqual(second.run, [a]);
     assert.deepEqual(second.replayed, [b]);
   } finally {
-    rmSync(folder, { recursive: true, force: true });
+    remove();
   }
 });
 
 test('a store that does not read is empty, never a failure', () => {
-  const folder = mkdtempSync(join(process.cwd(), 'class-reuse-'));
+  const { dir: folder, remove } = fixtureFolder('class-reuse');
   try {
     assert.equal(new PassedClasses(join(folder, 'missing.json')).has('x', 'y'), false);
   } finally {
-    rmSync(folder, { recursive: true, force: true });
+    remove();
   }
 });

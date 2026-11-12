@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { GATE_BUDGET_MS, MERGE_BUDGET_MS, budgetLines, loggedRun, overBudget } from './timing.ts';
 
