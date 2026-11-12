@@ -22,7 +22,7 @@ public sealed class TidyIdlenessTests : IDisposable
         File.WriteAllText(Path.Combine(_root, ".git", "refs", "heads", "main"), new string('a', 40) + "\n");
     }
 
-    public void Dispose() => Directory.Delete(_scratch, recursive: true);
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     private TidyIdleness Idleness() => new(Path.Combine(_scratch, "home"), () => _now);
 
