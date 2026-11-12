@@ -316,6 +316,7 @@ export function tsSubject(file) {
   const cli = /^src\/Daoris\.Cli\/test\/([^/]+)\//.exec(file);
   if (cli) return `src/Daoris.Cli/src/${cli[1]}`;
   if (file.startsWith('src/Daoris.Cli/test/')) return 'src/Daoris.Cli';
+  if (/^src\/Daoris\.Cli\/tool-test\/merge-branch-[^/]+\.test\.ts$/.test(file)) return 'tools/merge-branch.mjs';
   const tool = /^src\/Daoris\.Cli\/tool-test\/(.+)\.test\.ts$/.exec(file);
   if (tool) return `tools/${tool[1]}.mjs`;
   const web = /^src\/Daoris\.Web\/src\/([^/]+)\//.exec(file);
