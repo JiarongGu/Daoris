@@ -57,7 +57,8 @@ public static class BenchmarkHome
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(home);
         Directory.CreateDirectory(repositories);
-        foreach (var name in Names) Checkout(repositories, name);
+        // Each checkout is its own folder and its own git, so they are made side by side.
+        Parallel.ForEach(Names, new ParallelOptions { MaxDegreeOfParallelism = 8, CancellationToken = ct }, name => Checkout(repositories, name));
         Wrote("the checkouts");
 
         using var environment = new ScopedEnvironment(new Dictionary<string, string?>
@@ -112,6 +113,8 @@ public static class BenchmarkHome
         ComposedService service, string home, Func<string, string> Root, IReadOnlyList<Quest> quests, IReadOnlyList<string> asks, CancellationToken ct)
     {
         var lastChat = new Dictionary<string, string>(StringComparer.Ordinal);
+        // A session's folder is files only, written on the pool while the next session's records are kept.
+        var folders = new List<Task>(EndedSessions);
         for (var i = 0; i < EndedSessions; i++)
         {
             var at = At(i * 2600);
@@ -153,8 +156,11 @@ public static class BenchmarkHome
             var ended = i % 11 == 0 ? SessionState.Failed : i % 7 == 0 ? SessionState.Stopped : SessionState.Completed;
             await service.Sessions.SetStateAsync(
                 session.Id, ended, $"Ended after the {Topic(i)} step.", null, "transcript.jsonl", at.AddMinutes(40), ct);
-            Folder(home, session.Id, i);
+            var (id, index) = (session.Id, i);
+            folders.Add(Task.Run(() => Folder(home, id, index), ct));
         }
+
+        await Task.WhenAll(folders);
     }
 
     private static async Task OpenAsync(ComposedService service, string home, Func<string, string> Root, IReadOnlyList<Quest> quests, CancellationToken ct)
