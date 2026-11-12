@@ -15,6 +15,7 @@ import { taskRead } from './taskRead';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
+import { acceptRunOf } from './attentionRun';
 import { workCutFor } from './attentionCounts';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
@@ -354,7 +355,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     }
     case 'review': {
       const fact = row.placed ? placedFact(row.placed, row.placed.shown) : null;
-      return { ...base, title: named(row.id), detail: fact ? i18n.t(fact.line, fact.values) : null };
+      return { ...base, title: named(row.id), detail: fact ? i18n.t(fact.line, fact.values) : null, run: acceptRunOf(row.placed) };
     }
     case 'parked-quest':
       return {

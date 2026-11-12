@@ -10,7 +10,6 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
-import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
@@ -21,7 +20,6 @@ import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
 const ACC = { run: 'q1', node: 'review' };
-const ACC_PRESS = { ...ACC, act: 'accept' };
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
@@ -947,53 +945,39 @@ describe('acting on what a session landed', () => {
   /**
    * A failed session's commits stay in its tree, so the page offers to land
    * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
-   * beside what it left, and *Accept…* asks once, saying where the rule puts it, then presses the review's own landing; the
-   * driver's sentence is said once it landed, and a refusal inside the ask.
+   * beside what it left, and *Review* opens the run's review, where the one Accept is pressed; the page draws no Accept.
    */
-  it('offers a failed session’s commits to land on its page, and lands them through the review’s own door', async () => {
+  it('offers a failed session’s commits on its page, and opens the run’s review from its Review door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-    let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return { sessions: [{ session: 's1a2b3c4', group: 'done', state: 'done', shown: 'failed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
       if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
-      if (type === 'WORKFLOW_NODE') return landed;
+      if (type === 'RUN_REVIEW') return { refused: 'not-run' };
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
     });
-    const notify = vi.fn();
 
-    show('s1a2b3c4', notify);
+    show('s1a2b3c4', vi.fn());
     // The head's, in the main area: the strip at the foot draws the same line.
     const head = within(screen.getByRole('main'));
-    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
+    const door = await head.findByRole('button', { name: 'Review' });
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', expect.anything());
+
+    await userEvent.click(door);
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1', session: null, attempt: 0 }) }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
-    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-    await within(ask).findByText(/on a new branch/);
-    expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/delta, for you to push and open a pull request from.');
-
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: ACC_PRESS, timeoutMs: 7 * 60_000 });
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/delta` — 1 commit(s).'));
-    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
-
-    // A refusal is the driver's sentence, said inside the ask, which stays open.
-    landed = { session: 's1a2b3c4', done: false, message: 'the session\'s tree has uncommitted work — 2 path(s) — which a branch would leave behind.' };
-    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
-    expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
-      .toHaveTextContent('which a branch would leave behind.');
   });
 
   /**
-   * Where more
-   * than one part of the attended line of work offers work to land, its page offers one Accept under the Parts strip; the plan is
-   * read only once its ask opens, and the press lands the entry.
+   * Where more than one part of the attended line of work offers work to land, its page draws no Accept of the line's: a part's
+   * work is accepted on its own run's review, and the one for an ask's lines is Sessions' list by ask.
    */
-  it('offers one Accept for every part of a line of work that has work to land', async () => {
+  it('draws no Accept for a line of work’s parts on a session’s page, its Review door the only press', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
     SESSIONS = [
       { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
@@ -1013,195 +997,21 @@ describe('acting on what a session landed', () => {
         };
       }
       if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC };
-      if (type === 'ENTRY_LANDING') {
-        return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
-          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
-      }
-      if (type === 'LAND_ENTRY') return { entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] };
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
     });
-    const notify = vi.fn();
 
-    show('s1a2b3c4', notify);
+    show('s1a2b3c4', vi.fn());
     const main = within(screen.getByRole('main'));
-    const press = await main.findByRole('button', { name: 'Accept all 2 parts…' });
+    expect((await main.findAllByRole('button', { name: 'Review' }))[0]).toBeEnabled();
+    expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
 
-    await userEvent.click(press);
-    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
-    expect(await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.')).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', { payload: { entry: 'ask:a3/engine' } });
-
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_ENTRY', { payload: { entry: 'ask:a3/engine' }, timeoutMs: expect.any(Number) });
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landed 2 part(s) on `feature/a3`.'));
-  });
-
-  /**
-   * The session's *Accept all* is one owner drawn in the head and at the foot, its ask open in
-   * one of them at a time; where the foot's ask is open, the head's press is held, so words begun in the ask are not put down.
-   */
-  it('holds the head’s Accept all while its ask is open at the foot', async () => {
-    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
-    SESSIONS = [
-      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
-      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
-    ];
-    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return {
-          sessions: [
-            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
-            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
-          ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
-            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
-        };
-      }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC };
-      if (type === 'ENTRY_LANDING') {
-        return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
-          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
-      }
-      if (type === 'SESSION_DIFF') return DIFF;
-      return DRIVER_STATE;
-    });
-
-    show('s1a2b3c4', vi.fn());
-    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-    const presses = await screen.findAllByRole('button', { name: 'Accept all 2 parts…' });
-    expect(presses).toHaveLength(2);
-    const head = presses.find((press) => !strip.contains(press))!;
-
-    await userEvent.click(within(strip).getByRole('button', { name: 'Accept all 2 parts…' }));
-    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
-    expect(strip.contains(ask)).toBe(true);
-    expect(head).toBeDisabled();
-    // The part's own press is the session's now: none stands beside it.
-    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
-  });
-
-  /**
-   * The work wait stands on the session's offer, one or more parts: a head with no
-   * work of its own beside a part that has some shows the session's *Accept…*.
-   */
-  it('offers the session’s Accept where the head has no work beside a part that has', async () => {
-    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
-    SESSIONS = [
-      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
-      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
-    ];
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return {
-          sessions: [
-            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false },
-            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
-              lands: { branch: 'daoris/s-5e6f7a8', tree: 's-5e6f7a8', commits: 1, uncommitted: 0 } },
-          ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
-            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
-        };
-      }
-      if (type === 'SESSION_DIFF') return DIFF;
-      return DRIVER_STATE;
-    });
-
-    show('s1a2b3c4', vi.fn());
-    const main = within(screen.getByRole('main'));
-    expect(await main.findByRole('button', { name: 'Accept…' })).toBeEnabled();
-    expect(await screen.findByRole('region', { name: 'Waiting on you' })).toBeInTheDocument();
-  });
-
-  /**
-   * While a line of work's one Accept lands it, the session's press in the head
-   * waits, read by the entry the press names, and comes back once it answers.
-   */
-  it('holds the session’s Accept in the head while its line of work lands, and draws none beside its changes', async () => {
-    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
-    SESSIONS = [
-      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
-      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
-    ];
-    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
-    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'needs-you', began: 'opened', after: null, askedBy: null });
-    let landed: (answer: unknown) => void = () => {};
-    invoke.mockImplementation((_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return Promise.resolve({
-          sessions: [
-            { session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
-            { session: 's5e6f7a8', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
-          ],
-          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'needs-you', leading: 's5e6f7a8',
-            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
-        });
-      }
-      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace', accept: ACC });
-      if (type === 'ENTRY_LANDING') {
-        return Promise.resolve({ entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
-          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] });
-      }
-      if (type === 'LAND_ENTRY') return new Promise((resolve) => { landed = resolve; });
-      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
-      return Promise.resolve(DRIVER_STATE);
-    });
-
-    show('s1a2b3c4', vi.fn());
-    const main = within(screen.getByRole('main'));
-    expect(await main.findByRole('button', { name: 'Accept all 2 parts…' })).toBeEnabled();
-    await userEvent.click(await main.findByRole('button', { name: 'Accept all 2 parts…' }));
-    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
-    await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
-
+    // Its changes draw no press of their own either: accepting is the review page's.
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
-    // The session's changes draw no press of their own: accepting is the review page's.
     expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
-
-    await act(async () => landed({ entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] }));
-  });
-
-  /**
-   * *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
-   * of them at a time: opening it in one puts the other down, a branch name typed there with it.
-   */
-  it('opens the work\'s ask in one place at a time, the head\'s or the foot\'s', async () => {
-    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
-          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
-      }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
-      if (type === 'SESSION_DIFF') return DIFF;
-      return DRIVER_STATE;
-    });
-    const asks = () => screen.queryAllByRole('group', { name: 'accept daoris/s-4e6837ed' });
-
-    show('s1a2b3c4', vi.fn());
-    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-    const presses = await screen.findAllByRole('button', { name: 'Accept…' });
-    expect(presses).toHaveLength(2);
-    const head = presses.find((press) => !strip.contains(press))!;
-
-    await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
-    expect(asks()).toHaveLength(1);
-    expect(strip.contains(asks()[0]!)).toBe(true);
-    await userEvent.type(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' }), 'mine/x');
-
-    await userEvent.click(head);
-    expect(asks()).toHaveLength(1);
-    expect(strip.contains(asks()[0]!)).toBe(false);
-    expect(within(strip).getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
-    // The name typed at the foot went with its ask.
-    expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
   });
 
   /**
@@ -1237,20 +1047,20 @@ describe('acting on what a session landed', () => {
       show('c0ffee11');
       await waitFor(() => expect(diffs()).toBe(1));
       expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Review' })).not.toBeInTheDocument();
 
       turn(true);
       review = () => BEYOND;
       turn(false);
       const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      expect(await within(strip).findByRole('button', { name: 'Review' })).toBeInTheDocument();
 
       // The next turn's answer is not in yet: the one before it, which offered, offers nothing meanwhile.
       turn(true);
       review = () => new Promise(() => {});
       turn(false);
       await waitFor(() => expect(diffs()).toBe(3));
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Review' })).not.toBeInTheDocument();
     });
 
     it('offers none where the driver would land nothing, its work held by content', async () => {
@@ -1260,83 +1070,19 @@ describe('acting on what a session landed', () => {
       show('c0ffee11');
       await waitFor(() => expect(diffs()).toBe(1));
       expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Review' })).not.toBeInTheDocument();
     });
 
-    it('offers *Accept…* at its foot and its head once the turn has ended', async () => {
+    it('offers its *Review* door at its foot and its head once the turn has ended', async () => {
       SESSIONS = [TALK];
       invoke.mockImplementation(answering(BEYOND));
 
       show('c0ffee11');
       const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
-      // The head's and the foot's, one press.
-      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(2);
-    });
-
-    /**
-     * A chat run's press refused for its second opinion, asked at that press, says so at the foot
-     * in the reader's language from the press's code, never the driver's English alone.
-     */
-    it.each([
-      ['en', 'A second opinion is asked on this work; press Accept again once it settles.', 'Accept…', 'Accept'],
-      ['zh', '已为这些工作请求第二意见；它有定论后再按一次采纳。', '采纳…', '采纳'],
-    ])('says a chat run’s press refused for the opinion it asked at the foot, in %s', async (language, words, open, press) => {
-      SESSIONS = [TALK];
-      const base = answering(BEYOND);
-      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => type === 'WORKFLOW_NODE'
-        ? { session: 'c0ffee11', done: false, message: 'A second opinion is asked: `codex` reads it from the driver\'s next look; press Accept again once it settles.', press: 'asked' }
-        : base(module, type, ...(rest as [])));
-      await i18n.changeLanguage(language);
-      try {
-        show('c0ffee11');
-        const strip = await screen.findByRole('region', { name: language === 'en' ? 'Waiting on you' : '等你处理' });
-        await userEvent.click(await within(strip).findByRole('button', { name: open }));
-        const ask = within(strip).getByRole('group', { name: /daoris\/s-c0ffee11/ });
-        await vi.waitFor(() => expect(within(ask).getByRole('button', { name: press })).toBeEnabled());
-        await userEvent.click(within(ask).getByRole('button', { name: press }));
-        expect(await within(ask).findByRole('alert')).toHaveTextContent(words);
-      } finally {
-        await i18n.changeLanguage('en');
-      }
-    });
-
-    /**
-     * A chat run whose graph asks a look reads it as one that cannot start, and offers *Accept without the look…*: the person's words skip
-     * the run's look node, then the one Accept lands it; in the reader's language.
-     */
-    it.each([
-      ['en', 'Accept without the look…', 'Accept without the look', 'why you pass over the look'],
-      ['zh', '不经审阅采纳…', '不经审阅采纳', '跳过审阅的原因'],
-    ])('skips a chat run’s look node and then accepts, in %s', async (language, open, press, field) => {
-      SESSIONS = [TALK];
-      const base = answering(BEYOND);
-      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
-        if (type === 'LANDING') {
-          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC,
-            review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', lookNode: 'look',
-              says: 'Waits for your look, and it cannot start.' } };
-        }
-        if (type === 'WORKFLOW_NODE') return { run: 'chat-c0ffee11', node: 'look', act: 'skip', done: true };
-        return base(module, type, ...(rest as []));
-      });
-      await i18n.changeLanguage(language);
-      try {
-        show('c0ffee11');
-        const strip = await screen.findByRole('region', { name: language === 'en' ? 'Waiting on you' : '等你处理' });
-        await userEvent.click(await within(strip).findByRole('button', { name: open }));
-        const ask = within(strip).getByRole('group', { name: press });
-        expect(within(ask).getByRole('button', { name: press })).toBeDisabled();
-        await userEvent.type(within(ask).getByRole('textbox', { name: field }), 'no environment for this');
-        await userEvent.click(within(ask).getByRole('button', { name: press }));
-        await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith(
-          'DAORIS.DRIVER', 'WORKFLOW_NODE', expect.objectContaining({ payload: ACC_PRESS })));
-        expect(invoke).toHaveBeenCalledWith(
-          'DAORIS.DRIVER', 'WORKFLOW_NODE', expect.objectContaining({ payload: { run: 'chat-c0ffee11', node: 'look', act: 'skip', words: 'no environment for this' } }));
-        expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_WITHOUT_LOOK', expect.anything());
-      } finally {
-        await i18n.changeLanguage('en');
-      }
+      expect(await within(strip).findByRole('button', { name: 'Review' })).toBeInTheDocument();
+      // The head's and the foot's, one door.
+      expect(screen.getAllByRole('button', { name: 'Review' })).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     });
 
     it('offers no way past a chat run’s look that names no look node', async () => {
@@ -1358,12 +1104,12 @@ describe('acting on what a session landed', () => {
 
       show('c0ffee11');
       expect(await screen.findByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Review' })).not.toBeInTheDocument();
       expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
 
       act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
       const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      expect(await within(strip).findByRole('button', { name: 'Review' })).toBeInTheDocument();
     });
 
     it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
@@ -1373,13 +1119,13 @@ describe('acting on what a session landed', () => {
       show('c0ffee11');
       await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything()));
       expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Review' })).not.toBeInTheDocument();
       expect(screen.queryByRole('region', { name: 'Waiting on you' })).not.toBeInTheDocument();
     });
   });
 
-  // The strip stands aside while the head's waits are on screen, never from under an ask open in it.
-  it('keeps the strip up while the work\'s ask is open in it, though the head came on screen', async () => {
+  // The strip stands aside while the head's waits are on screen, and is up while they are not.
+  it('stands the strip aside while the head’s Review door is on screen, and keeps it where the head is off screen', async () => {
     const watched = watchScreen();
     try {
       SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -1393,31 +1139,27 @@ describe('acting on what a session landed', () => {
         return DRIVER_STATE;
       });
       show('s1a2b3c4', vi.fn());
-      await screen.findAllByRole('button', { name: 'Accept…' });
+      await screen.findAllByRole('button', { name: 'Review' });
       await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
       watched.show(false);
       const strip = screen.getByRole('region', { name: 'Waiting on you' });
-      await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
-      await userEvent.click(screen.getByRole('main'));
+      expect(within(strip).getByRole('button', { name: 'Review' })).toBeInTheDocument();
 
+      // The head on screen, the strip stands aside: the head's *Review* is the one on screen.
       watched.show(true);
-      expect(within(strip).getByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeInTheDocument();
-      // Put down, and the person gone from it, the strip stands aside: the head's *Accept…* is the one on screen.
-      await userEvent.click(within(strip).getByRole('button', { name: 'Never mind' }));
-      await userEvent.click(screen.getByRole('main'));
-      expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull();
-      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(1);
+      await waitFor(() => expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull());
+      expect(within(screen.getByRole('main')).getAllByRole('button', { name: 'Review' }).length).toBeGreaterThan(0);
     } finally {
       watched.restore();
     }
   });
 
   /**
-   * Where a level asks a second opinion, the session's page draws it before *Accept…*
-   * from the landing's plan, its findings read from the gate, and *Accept…*, which answers a dispute, sends the gate's token back.
+   * Where a level asks a second opinion, the session's page draws it before the *Review* door
+   * from the landing's plan, its findings read from the gate; the Accept that answers a dispute is the review page's.
    * *Ask again* is the driver's own press.
    */
-  it('draws the second opinion on a session’s page, and Accept… answers its dispute with the gate’s token', async () => {
+  it('draws the second opinion on a session’s page, with Review the door to where its dispute is answered', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     const token = 'o1:4f9c2a7e:disputed:1:0';
     const disputed = {
@@ -1456,19 +1198,12 @@ describe('acting on what a session landed', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_OPINION', { payload: { id: 's1a2b3c4' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('A second opinion on session s1a2b3c4\'s work is asked.'));
 
-    await userEvent.click(head.getByRole('button', { name: 'Accept…' }));
-    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-    expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { ...ACC_PRESS, answers: token }, timeoutMs: 7 * 60_000 });
+    expect(head.getAllByRole('button', { name: 'Review' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
   });
 
-  /**
-   * A session whose work a squash-merged pull request carried, its
-   * tree still standing, is not offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
-   * its page offers no *Accept…*: the driver's sentence says where the work is, and *Discard branch…* asks once with the
-   * driver's sentence naming the ref the commits stay at, then presses the review's Discard, unforced.
-   */
+  /** Where the line holds a session's commits by content, its page offers *Discard branch…* alone, asked once, pressing the review's Discard unforced. */
   it('offers a squash-merged session’s discard on its page, never its landing, and discards through the review’s door unforced', async () => {
     const kept = 'refs/daoris/discarded/daoris/s-4e6837ed';
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -1491,7 +1226,7 @@ describe('acting on what a session landed', () => {
     // The head's, in the main area: the strip at the foot draws the same line.
     const head = within(screen.getByRole('main'));
     await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
-    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
@@ -1504,11 +1239,7 @@ describe('acting on what a session landed', () => {
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-4e6837ed' })).toBeNull());
   });
 
-  /**
-   * The review's own *Accept* must not be offered for that session, or the landing
-   * door would land a second copy. Its review offers no *Accept*: the driver's sentence stands in its place, and the head's
-   * *Discard branch…* asks once and presses the review's Discard unforced, through the head's own press.
-   */
+  /** Its review offers no *Accept* for that session: the driver's sentence stands in its place, and the head's own press discards unforced. */
   it('offers a squash-merged session’s discard in its review where Accept stood, through the head’s own press', async () => {
     const kept = 'refs/daoris/discarded/daoris/s-4e6837ed';
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];

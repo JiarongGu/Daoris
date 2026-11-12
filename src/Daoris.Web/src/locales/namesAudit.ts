@@ -1,8 +1,6 @@
 /** The budget judgements the names report leaves for the window, each a name whose length is what it says. */
 export const BUDGET_LEFT = [
   'help.setup:en', 'help.setup:zh',
-  // The chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
-  'review.act.withoutLook:en',
   'scope.every:en', 'scope.every:zh',
   'signin.titleNew:en', 'signin.titleNew:zh',
   // The owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
@@ -27,10 +25,10 @@ export const STRAY_AUDITED = [
   // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
   'projects.workspace.machines.none:zh',
   'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
-  'settings.daoris.toolHome.absent:zh', 'settings.daoris.toolHome.caseFolded:zh', 'settings.daoris.toolHome.listWhy.inside-daoris:zh',
-  'settings.daoris.toolHome.listWhy.unread:zh', 'settings.daoris.toolHome.what:zh',
   // data/harnesses is a folder's literal name on disk, which the agent term does not rename.
   'settings.daoris.space.whose.agents:en',
+  'settings.daoris.toolHome.absent:zh', 'settings.daoris.toolHome.caseFolded:zh', 'settings.daoris.toolHome.listWhy.inside-daoris:zh',
+  'settings.daoris.toolHome.listWhy.unread:zh', 'settings.daoris.toolHome.what:zh',
   'settings.rules.why:en',
   // A subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
   'work.atWork.child.finished:zh',

@@ -48,7 +48,6 @@ export function AttendedPane({
   heavy: Page['heavy'];
   partRows: NonNullable<Page['parts']>['rows'];
   onShowPart: (id: string) => void;
-  /** Opens *At work* at the request named. */
   openAtWork: (exchange: string) => void;
   attend: (id: string) => void;
   onOpenQuest?: (quest: string) => void;
@@ -60,7 +59,7 @@ export function AttendedPane({
     related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
     postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, supervision,
   } = record;
-  const { ownBranch, landEntry, entryOffered, entryAccept, workAskAt } = work;
+  const { ownBranch, landEntry, entryOffered, workAskAt } = work;
   const { waits, pieceSection, toEvent, ruleAskAt, seekAt } = waitsState;
   const { continues, helps, originAsk } = headState;
   const { taking, lastTurns } = boxState;
@@ -103,7 +102,6 @@ export function AttendedPane({
       nameOf={nameOf}
       // Its entry's parts: every act on this page stays the part shown's, and the strip picks it.
       parts={attendedParts ? { entry: attendedParts, attended: attended.id, rows: partRows, onShow: onShowPart } : undefined}
-      entryAccept={entryAccept}
       // Its ask's channel, kept to this line of work: a post is the person's words, and a refusal is the service's code.
       channel={attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
         channel: channel.channel,

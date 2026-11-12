@@ -161,7 +161,7 @@ describe("the session's Workflow view", () => {
 
     const accept = render(<WorkflowRunView answer={answerOf(OPINION_SETTLED)} doors={doors} />);
     await userEvent.click(within(row('landing')).getByRole('button', { name: 'Open its review' }));
-    expect(doors.review).toHaveBeenCalledWith('s1');
+    expect(doors.review).toHaveBeenCalledWith('q1');
     accept.unmount();
 
     render(<WorkflowRunView answer={answerOf(PULL_REQUEST_OPEN)} doors={doors} />);
@@ -219,7 +219,7 @@ describe("the session's Workflow view", () => {
     expect(opinion).toHaveTextContent("Go on anyway is on the session's own page, beside its second opinion, and at a terminal");
     expect(opinion).toHaveTextContent('daoris session opinion anyway s1 "…" goes on without it');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Open its review' }));
-    expect(review).toHaveBeenCalledWith('s1');
+    expect(review).toHaveBeenCalledWith('q1');
     expect(document.body).toHaveTextContent('At Second opinion · waiting on you');
   });
 

@@ -260,13 +260,15 @@ export function WorkFrame({
   const [taken, setTaken] = useState<typeof intent>(null);
   // The run `review/<run>` opened, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null } | null>(null);
+  const onReviewRun = (run: string) => {
+    setReviewing({ run, over: following?.id ?? null });
+    openView('review');
+  };
   if (intent && intent !== taken) {
     setTaken(intent);
     const run = reviewOfIntent(intent);
-    if (run) {
-      setReviewing({ run, over: following?.id ?? null });
-      openView('review');
-    } else if (intent === 'start') newConversationPressed();
+    if (run) onReviewRun(run);
+    else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
     else if (intent === 'atWork') openView('atWork');
@@ -343,10 +345,10 @@ export function WorkFrame({
   const heavyPart = attended && attendedRuns ? heavyPartOf(heavySlot.data, attended.id) : null;
   useNow(grouping?.calling || heavyPart ? 15_000 : null);
   const work = useSessionLanding({
-    t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
+    notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, onReviewRun,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { entryAt, workAskAt } = work;
+  const { workAskAt } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
@@ -367,7 +369,7 @@ export function WorkFrame({
   const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
@@ -490,7 +492,6 @@ export function WorkFrame({
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
               workAsk={workAskAt('foot')}
-              entry={entryAt('foot')}
               ruleAsk={ruleAskAt('foot')}
               toEvent={toEvent}
               seek={seekAt('foot')}

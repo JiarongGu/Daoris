@@ -209,6 +209,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.not-kept': { values: [] },
   'chat.restarted': { values: [] },
   'chat.cut': { values: [] },
+  // An opening past its bound: what did not come up, and the plugins' servers left out.
+  'chat.help-not-up': { values: ['what', 'seconds'] },
+  'chat.not-up': { values: ['what', 'seconds'] },
+  'chat.servers-left-out': { values: ['seconds'] },
   'update.closed': { values: ['build'] },
   // Ask Daoris's start, where the machine's reading for its room did not answer in time.
   'help.room-as-written': { values: ['seconds'] },
@@ -338,6 +342,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'words.not-sent': { values: [] },
   'words.start-not-taken': { values: ['session'] },
   'words.not-kept': { values: [] },
+  'words.sent-now-in-turn': { values: [] },
+  'words.sent-now-next-turn': { values: [] },
   // A server that drives Daoris's own browser, withheld: why follows as a code of the host's or an exception's words.
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },

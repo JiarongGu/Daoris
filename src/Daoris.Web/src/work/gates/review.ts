@@ -101,7 +101,7 @@ export const waitsForLook = (quest: Quest): boolean =>
   Boolean(quest.setUpIn) && stepState(quest) === 'shown' && setUpRef(newestSetUp(quest)) !== null;
 
 /** A press the gate offers, named as the page draws it. */
-export type ReviewPress = 'reviewed' | 'notYet' | 'showAgain' | 'skip' | 'setUp' | 'withoutLook';
+export type ReviewPress = 'reviewed' | 'notYet' | 'showAgain' | 'skip' | 'setUp';
 
 /**
  * What each state offers, in the order it shows them: no set-up step, *Set it up* and *Skip…*; shown and
@@ -117,8 +117,6 @@ export function reviewPresses(state: ReviewState, { local = false }: { local?: b
     case 'being-set-up':
     case 'not-yet':
     case 'not-held': return ['skip'];
-    // No look can be set up for a conversation's work, so its way past is the person's skip of the look node, where the run has one.
-    case 'cannot-start': return ['withoutLook'];
     default: return [];
   }
 }

@@ -72,7 +72,7 @@ export function useAttendedWaits({
 }) {
   const { resolve, parkGoAhead, personDone, onResolve, answerFromCard, choiceFromCard, parkPicked, onParkPick, onGoAhead } = boxWords;
   const {
-    lands, headReview, behind, headOpinion, landing, accept, discards, discardHeld, landsNow, discardsNow, entryAccept,
+    lands, headReview, behind, headOpinion, landing, reviewRun, discards, discardHeld, landsNow, discardsNow,
   } = work;
   // The rules agents proposed, the band's own read, and their answer's one owner: the attended session's own open
   // ones are a wait where the person talks to it. The machine's file, so a browser has none.
@@ -259,16 +259,13 @@ export function useAttendedWaits({
     gitAccess: heldGitAccess,
     // Its review, wherever the review stands: the move beside unlanded work.
     onReview: () => openView('review'),
-    // Commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
-    // once it landed and a refusal said inside the ask.
+    // Commits its tree holds, offered to land beside what it left; the Accept is the review page's, which `onReviewRun` opens.
     lands,
     review: headReview,
     behind,
     opinion: headOpinion,
     landing: landing.data,
-    planning: landing.isPlaceholderData,
-    // The review record's Accept, with the second opinion's token it answers; the branch is the run's `land`'s to name.
-    onLand: lands && accept ? (answered, answers) => accept(answered, answers) : undefined,
+    onReviewRun: lands ? reviewRun : undefined,
     onSayRebase: (text) => say.mutateAsync({ id: attended.id, text }).then((answer) => answer.sent),
     // Its discard, never forced from here (`discardHeld`).
     discards,
@@ -281,7 +278,7 @@ export function useAttendedWaits({
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
   // leads to its line where it is on screen.
   const answerBelow = answering || (talking && box.kind === 'chat');
-  const standing = attended && here && waits ? waitsOf({ ...waits, entry: entryAccept, answerBelow }) : [];
+  const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
   // Where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
   const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);

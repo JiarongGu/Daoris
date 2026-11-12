@@ -7,7 +7,7 @@ import { STEP_REVIEWED, STEP_SHOWN } from '../gates/reviewFixtures';
 import { SessionHead } from './SessionHead';
 
 // Where the review's gate holds a session's work, the head
-// says *Review in `<environment>`* in the gate's state where *Accept…* would be, and offers no *Accept…*.
+// says *Review in `<environment>`* in the gate's state where the door to the run's review would be, and offers no door.
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4', quest: 'q1', repository: 'reports', door: 'claude-code', state: 'completed', kind: 'driven',
@@ -20,31 +20,31 @@ const gate = () => screen.getByRole('region', { name: /Review in|Review before/ 
 describe("the head's review gate", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold and offers no Accept', (state) => {
-    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+  it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold and offers no door to the review', (state) => {
+    render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state, holds: true, says: 'Holds: keep this workflow in the terminal.' } }} />);
-    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('keep this workflow');
   });
 
-  it('withdraws an open Accept confirmation when a workflow hold arrives', async () => {
-    const { rerender } = render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} landing={PLAN} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-    rerender(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+  it('withdraws the door to the run’s review when a workflow hold arrives', () => {
+    const { rerender } = render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()} landing={PLAN} />);
+    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    rerender(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state: 'unread', holds: true, says: 'Binding unread.' } }} />);
-    expect(screen.queryByRole('button', { name: /Accept/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
   });
 
-  it.each(['follows', 'kept'])('offers Accept when the workflow %s lets go', (state) => {
-    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+  it.each(['follows', 'kept'])('offers the door when the workflow %s lets go', (state) => {
+    render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state, holds: false, says: 'Follows the bound workflow.' } }} />);
-    expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Workflow before it lands' })).toBeNull();
   });
 
   it('translates the workflow hold chrome and preserves the driver words', async () => {
     await i18n.changeLanguage('zh');
-    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+    render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()}
       landing={{ ...PLAN, workflow: { state: 'unread', holds: true, says: 'Binding unread.' } }} />);
     expect(screen.getByRole('region', { name: '落地前的工作流' })).toHaveTextContent('Binding unread.');
     expect(screen.queryByRole('button', { name: /接受/ })).toBeNull();
@@ -55,13 +55,13 @@ describe("the head's review gate", () => {
     const user = userEvent.setup();
     render(
       <SessionHead
-        session={session()} lands={LANDS} onLand={vi.fn()}
+        session={session()} lands={LANDS} onReviewRun={vi.fn()}
         landing={{ ...PLAN, review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2', says: 'Waits for your review in `local`: …' } }}
         review={{ step: STEP_SHOWN, served: true, acts: { reviewed, skip: vi.fn() } }}
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
     expect(gate()).toHaveTextContent('Review in local');
     expect(gate()).toHaveTextContent('Set-up step #q2 showed it at a1b2c3d4.');
     await user.click(within(gate()).getByRole('button', { name: 'Reviewed' }));
@@ -73,7 +73,7 @@ describe("the head's review gate", () => {
     const user = userEvent.setup();
     render(
       <SessionHead
-        session={session()} lands={LANDS} onLand={vi.fn()}
+        session={session()} lands={LANDS} onReviewRun={vi.fn()}
         landing={{ ...PLAN, review: { state: 'not-shown', environment: 'local', level: 'repository' } }}
         review={{ acts: { setUp, skip: vi.fn() } }}
       />,
@@ -89,7 +89,7 @@ describe("the head's review gate", () => {
     const user = userEvent.setup();
     render(
       <SessionHead
-        session={session()} lands={LANDS} onLand={vi.fn()}
+        session={session()} lands={LANDS} onReviewRun={vi.fn()}
         landing={{ ...PLAN, review: { state: 'not-held', environment: 'local', quest: 'q2' } }}
         review={{ step: STEP_REVIEWED, acts: { skip: vi.fn(), open } }}
       />,
@@ -103,20 +103,20 @@ describe("the head's review gate", () => {
   it('says an unread gate in its own words, with the driver\'s sentence beneath', () => {
     render(
       <SessionHead
-        session={session()} lands={LANDS} onLand={vi.fn()}
+        session={session()} lands={LANDS} onReviewRun={vi.fn()}
         landing={{ ...PLAN, review: { state: 'unread', says: 'Whether this work waits for your review could not be read: connection refused.' } }}
       />,
     );
 
     expect(gate()).toHaveTextContent('Review before it lands');
     expect(gate()).toHaveTextContent('The driver says: Whether this work waits');
-    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
   });
 
-  it('offers Accept… as before where nothing waits for a review', () => {
-    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} landing={PLAN} />);
+  it('offers the door to the run’s review where nothing waits for a review', () => {
+    render(<SessionHead session={session()} lands={LANDS} onReviewRun={vi.fn()} landing={PLAN} />);
 
-    expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: /Review in/ })).toBeNull();
   });
 
@@ -124,7 +124,7 @@ describe("the head's review gate", () => {
     await i18n.changeLanguage('zh');
     render(
       <SessionHead
-        session={session()} lands={LANDS} onLand={vi.fn()}
+        session={session()} lands={LANDS} onReviewRun={vi.fn()}
         landing={{ ...PLAN, review: { state: 'shown', environment: 'local', quest: 'q2' } }}
         review={{ step: STEP_SHOWN, acts: { reviewed: vi.fn() } }}
       />,

@@ -62,11 +62,6 @@
   "review.state.cannot-start": "cannot start",
   "review.says.cannot-start": "This work waits for a review that cannot start.",
   "review.says.cannot-start-chat": "A conversation publishes no set-up step, so no review can be set up for its work. Accept it without the look, with your words, and it lands at the commit it stands at.",
-  "review.act.withoutLook": "Accept without the look…",
-  "review.ask.withoutLookTitle": "Accept without the look",
-  "review.ask.withoutLook": "Skip the look for this conversation's work and accept it: it lands at the commit it stands at now. Your words are kept on the skip.",
-  "review.ask.withoutLookWords": "why you pass over the look",
-  "review.ask.withoutLookMeanIt": "Accept without the look",
   "review.said.notYet": "Your words went to session {{session}} as its next turn.",
   "review.said.notYetUnheard": "Your words are kept, and no session here heard them: say them to session {{session}} from Daoris's window, or `daoris session say {{session}} \"…\"`."
 }
