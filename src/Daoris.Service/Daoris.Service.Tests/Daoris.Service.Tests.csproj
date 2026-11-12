@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Service.Core\Daoris.Service.Core.csproj" />
+    <!-- The fakes and the virtual clock the unit tiers share. -->
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
     <!-- The MCP door's own tools (D65): a path becomes bytes there, and a chain arrives as a list, so
          the door itself is tested rather than only the exchange behind it. -->
     <ProjectReference Include="..\Daoris.Service.Mcp\Daoris.Service.Mcp.csproj" />

@@ -1,0 +1,32 @@
+M:System.Diagnostics.Process.Start;a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.Diagnostics.ProcessStartInfo);a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.String);a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.String,System.String);a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.String,System.Collections.Generic.IEnumerable{System.String});a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.String,System.String,System.Security.SecureString,System.String);a process starts through IProcessHost
+M:System.Diagnostics.Process.Start(System.String,System.String,System.String,System.Security.SecureString,System.String);a process starts through IProcessHost
+M:System.Diagnostics.Process.Kill;a process ends through IChildRun
+M:System.Diagnostics.Process.Kill(System.Boolean);a process ends through IChildRun
+M:System.Diagnostics.Process.GetProcessById(System.Int32);a process is found through IProcessLiveness
+M:System.Diagnostics.Process.GetProcessById(System.Int32,System.String);a process is found through IProcessLiveness
+M:System.Diagnostics.Process.GetProcesses;a process is found through IProcessLiveness
+M:System.Diagnostics.Process.GetProcesses(System.String);a process is found through IProcessLiveness
+M:System.Diagnostics.Process.GetProcessesByName(System.String);a process is found through IProcessLiveness
+M:System.Diagnostics.Process.GetProcessesByName(System.String,System.String);a process is found through IProcessLiveness
+M:System.Threading.Thread.Sleep(System.Int32);wait on a TimeProvider
+M:System.Threading.Thread.Sleep(System.TimeSpan);wait on a TimeProvider
+M:System.Threading.Tasks.Task.Delay(System.Int32);delay on a TimeProvider
+M:System.Threading.Tasks.Task.Delay(System.Int32,System.Threading.CancellationToken);delay on a TimeProvider
+M:System.Threading.Tasks.Task.Delay(System.TimeSpan);delay on a TimeProvider
+M:System.Threading.Tasks.Task.Delay(System.TimeSpan,System.Threading.CancellationToken);delay on a TimeProvider
+P:System.DateTime.UtcNow;read a TimeProvider
+P:System.DateTime.Now;read a TimeProvider
+P:System.DateTimeOffset.UtcNow;read a TimeProvider
+P:System.DateTimeOffset.Now;read a TimeProvider
+P:System.TimeProvider.System;the root hands the application its TimeProvider
+T:System.Net.Sockets.TcpListener;a listen belongs to the Network adapter
+T:System.Net.HttpListener;a listen belongs to the Network adapter
+T:System.Net.Sockets.Socket;a socket belongs to the Network adapter
+T:System.IO.Pipes.NamedPipeServerStream;a pipe belongs to the Network adapter
+T:System.IO.Pipes.NamedPipeClientStream;a pipe belongs to the Network adapter
+M:System.Net.Http.HttpClient.#ctor;a client is built over a handler the root hands

@@ -1,7 +1,7 @@
-namespace Daoris.Driver;
+namespace Daoris.Ports.Browser;
 
 /// <summary>
-/// Daoris's own browser, as the driver sees it: a window of the shell that sessions drive over
+/// Daoris's own browser, as the application sees it: a window of the shell that sessions drive over
 /// the Chrome DevTools Protocol. The shell implements it; a host with no shell has none.
 /// </summary>
 public interface IInAppBrowser
@@ -27,4 +27,18 @@ public interface IInAppBrowser
     /// where the person chose that links open here. <paramref name="address"/> is already a web page's.
     /// </summary>
     void Open(string address);
+}
+
+/// <summary>
+/// The shell's word on Daoris's own browser for clearing its caches: the shell's browser host, handed to the application as it hands
+/// the in-app browser (<see cref="IInAppBrowser"/>). Only the shell can say whether its browser runs, and only it can hold the
+/// browser's start, so a terminal acting alone, with no shell to ask, keeps the caches.
+/// </summary>
+public interface IBrowserCaches
+{
+    /// <summary>
+    /// Run <paramref name="clear"/> while Daoris's own browser is not running, holding the host's start gate through it so none starts
+    /// meanwhile; null, with nothing run, where the browser runs.
+    /// </summary>
+    Task<T?> WhileStoppedAsync<T>(Func<T> clear, CancellationToken ct) where T : class;
 }

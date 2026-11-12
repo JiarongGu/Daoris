@@ -1,19 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The shell's word on Daoris's own browser for clearing its caches: the shell's
-/// browser host, handed to the driver as it hands the in-app browser (<see cref="IInAppBrowser"/>). Only the shell can say whether its
-/// browser runs, and only it can hold the browser's start, so a terminal acting alone, with no shell to ask, keeps the caches.
-/// </summary>
-public interface IBrowserCaches
-{
-    /// <summary>
-    /// Run <paramref name="clear"/> while Daoris's own browser is not running, holding the host's start gate through it so none starts
-    /// meanwhile; null, with nothing run, where the browser runs.
-    /// </summary>
-    Task<T?> WhileStoppedAsync<T>(Func<T> clear, CancellationToken ct) where T : class;
-}
-
 /// <summary>What one clear of the browser's caches did: each path's bytes removed, and each kept with why (<see cref="SpaceKept"/>).</summary>
 public sealed record BrowserCachesCleared(IReadOnlyDictionary<string, long> Removed, IReadOnlyDictionary<string, string> Kept);
 

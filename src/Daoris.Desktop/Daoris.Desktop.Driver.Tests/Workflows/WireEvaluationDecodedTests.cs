@@ -208,7 +208,7 @@ public sealed class WireEvaluationDecodedTests
         NodeDeclaration[] nodes =
         [
             Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look),
-            Node("deploy") with { Inputs = Ports("opinion", NodeObserving.EvidenceSchema(NodeKinds.Opinion)) },
+            Node("deploy") with { Inputs = Plugs("opinion", NodeObserving.EvidenceSchema(NodeKinds.Opinion)) },
         ];
         Wire[] wires = [After("a", "opinion", "look"), Data("b", "opinion", WireEnd.Evidence, "deploy", "opinion")];
         Graph Skipped()

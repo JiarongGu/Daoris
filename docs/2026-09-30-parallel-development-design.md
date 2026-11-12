@@ -161,6 +161,7 @@ touched them. Split one when two branches next meet in it.
 | `driver` | Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
 | `modules` | Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
 | `service` | Service | `src/Daoris.Service/` |
+| `layers` | Ports and testing | `src/Daoris.Ports/`, `src/Daoris.Testing/` and its tests, the shared layering props and banned-effects list, and the layers census (D286) |
 | `cli` | CLI | `src/Daoris.Cli/` |
 | `tools` | Tools | `tools/`, `.gitattributes`, the docs gates, the devkit, the gates' declaration and the release workflow |
 | `records` | Records | The steward's lane: `TASKS.md`, `docs/task-archive.md` and the lane map itself. A subagent never edits it; the parent keeps it as the steward |

@@ -667,7 +667,7 @@ Each goes in the row that replaces it, with its words, tests and area sentences:
 - **The parts kit and Ports.** A provider found as a part needs its part attribute, whose base `PartAttribute` is in `Daoris.Contracts`,
   while Ports is BCL-only; the `Agent.*` packages reference Contracts beside Ports, or the attribute's base moves. Row j settles which.
 - **The ambient record's name.** `Machine` names both the bridge record and the Machine adapter; row a names the record apart if the two
-  read as one.
+  read as one. Settled in row a: the record is `PortSet`, read through `AmbientPorts`, and `Machine` stays the adapter's name.
 - **Rows a to f and `reached`.** Whether a rehearsal class leaves `reached`'s selection per family in row f or all at once in row l is
   f's to read from the timing census.
 - **Verdicts across machines.** A lock row written on another machine, or by a CI, stands as main's rows do; verdicts shared through the

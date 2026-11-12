@@ -60,6 +60,11 @@
         "src/Daoris.Service/Daoris.Service.Core/", "src/Daoris.Service/Daoris.Service.Http/", "src/Daoris.Service/Daoris.Service.Mcp/",
         "src/Daoris.Service/Daoris.Service.Shared/", "tools/fsx.mjs"
       ] },
+    { "name": "layers", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests",
+      "paths": [
+        ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", "Directory.Build.props",
+        "src/", "tools/fsx.mjs", "tools/layers-census.mjs", "tools/layers-census.json", "tools/layers-census/"
+      ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },
     { "name": "web-types", "run": "npm run typecheck:web", "regenerate": "node tools/contracts.mjs --if-stale",
