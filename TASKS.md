@@ -38,6 +38,7 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `7a
 ## Install, home and update
 
 - [ ] **HOMELAYOUT5 — moving what D172 never moves, measured first** (ONEWAY1w, wave 5; D240 point 2): each harness's account homes, trees, rooms and kept files moved and measured on the install with the owner's sign-in per harness, which decides how ONEWAY1w ends D172's old places. → `docs/areas/install-home-update.md`, Open
+- [ ] **REOPEN1 — the `reopened-runs` migration step deleted** (D228): `ReopenedRunsStep` and its tests go once no home saved before the build that stopped ending a run under a step after a reached landing can start. → `docs/areas/install-home-update.md`
 
 ## Driving
 
