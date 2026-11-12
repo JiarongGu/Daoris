@@ -19,7 +19,7 @@ export function AskLines({ lines, onAttend }: { lines: readonly AskLine[]; onAtt
   return (
     <ul className="m-0 grid list-none gap-1.5 p-0">
       {lines.map((line) => (
-        <li key={line.entry} className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+        <li key={line.leading} className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
           {onAttend
             ? <button type="button" onClick={() => onAttend(line.opens)} className={`${DOOR} min-w-0 wrap-anywhere text-body`}>{line.repository}</button>
             : <span className="min-w-0 wrap-anywhere text-body text-ink">{line.repository}</span>}

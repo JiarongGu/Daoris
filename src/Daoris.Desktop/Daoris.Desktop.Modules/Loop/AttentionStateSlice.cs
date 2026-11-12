@@ -73,7 +73,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "gitAsk", "obligation", "task",
+            "convert", "gitAsk", "obligation", "task", "secondCheck",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],

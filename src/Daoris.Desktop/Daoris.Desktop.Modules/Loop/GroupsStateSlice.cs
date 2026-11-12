@@ -19,7 +19,7 @@ namespace Daoris.Desktop;
 /// ledger move by half a minute. Null before the service answers, which keeps the slice not judged.</para>
 ///
 /// <para><b>Two partitions, keyed</b> (<see cref="StateSlice.Keyed"/>): <see cref="Rows"/>, each row under its session as
-/// <see cref="SessionsGroupsWires.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its key as
+/// <see cref="SessionsGroupsWires.Grouped"/> writes it, and <see cref="Entries"/>, each entry under its leading session as
 /// <see cref="SessionsGroupsWires.Entry"/> writes it. A session's move pushes its row and its entry alone. Judged empty, a partition is pushed
 /// empty, never gone.</para>
 ///
@@ -46,7 +46,7 @@ public static class GroupsStateSlice
     /// <summary>The rows' partition: each session's row, keyed by its id.</summary>
     public const string Rows = "rows";
 
-    /// <summary>The entries' partition: each line of work, keyed by its entry.</summary>
+    /// <summary>The entries' partition: each line of work, keyed by its leading session (lines of one ask share an entry key).</summary>
     public const string Entries = "entries";
 
     /// <summary>
@@ -182,7 +182,7 @@ public static class GroupsStateSlice
         var entries = new JsonObject();
         foreach (var entry in SessionGroups.ReadEntries(look))
         {
-            if (!entries.ContainsKey(entry.Key)) entries[entry.Key] = Pick(Written(SessionsGroupsWires.Entry(entry)), "entry");
+            if (!entries.ContainsKey(entry.Leading)) entries[entry.Leading] = Pick(Written(SessionsGroupsWires.Entry(entry)), "entry");
         }
 
         return [new SliceJudged(Entries, entries), new SliceJudged(Rows, rows)];

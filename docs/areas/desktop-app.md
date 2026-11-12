@@ -142,14 +142,16 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     groups. The engine's menu stays in text fields and is suppressed elsewhere. (from D138)
 31. *Notifications* is one view, opened by the title bar's bell: presses waiting, *What needs you*, messages, and *Done and
     failed*. There is no *Confirm all*; a *What needs you* row is answered, never dismissed. *Done and failed* holds a
-    session's end and each watched step after a run's review once reached or failed, one line by run, node and attempt
+    session's end, none for a part whose line goes on (a later part or a co-worker that has not ended, `LineGoesOn`), and each
+    watched step after a run's review once reached or failed, one line by run, node and attempt
     (`RunOutcomeNotices`, claimed by the look's last pass, so it is kept once). Beside the presses waiting, counting toward no
     group or the bell, stand the steward's line and Ask Daoris's presses in full access with no card this run
     (`HelpPressLine`: the place, *outside its focus* where it was, the outcome, its conversation, a pause's *Resume*), its
     restricted mode's cards apart under *Asked you*; a restart empties it. (from D196, D253)
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
     `daoris notices` lists; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
-    (D283). A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
+    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). Overview keeps one summary line per group.
     (from D150, D181, D196)

@@ -340,6 +340,7 @@ internal sealed class LoopRun(
                 {
                     var record = await NewsAttention.ReadAsync(service, piece, ct).ConfigureAwait(false);
                     if (told is not null && WorkEventNews.Of(piece, record) is { } happened) told(happened);
+                    if (await LineGoesOn.OfNewsAsync(service, piece, ct).ConfigureAwait(false)) continue;
                     var item = NewsAttention.Of(piece, record);
                     loop.Notices.Keep([item]);
                     if (NotifyRule.Tells(item, loop.Notifying())) await AttentionTold.TellAsync(eventBus, item).ConfigureAwait(false);

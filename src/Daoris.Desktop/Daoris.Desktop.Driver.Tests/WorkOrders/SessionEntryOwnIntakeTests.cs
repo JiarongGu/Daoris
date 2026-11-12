@@ -9,7 +9,7 @@ public sealed class SessionEntryOwnIntakeTests
     private static JsonObject Record(string id, string? quest, string entry, string? ask, int minute) => new()
     {
         ["id"] = id, ["repository"] = ask is null ? "engine" : "ask #841c38", ["adapter"] = "claude-code", ["state"] = "completed",
-        ["kind"] = ask is null ? "driven" : "chat", ["quest"] = quest, ["ask"] = ask, ["entry"] = entry,
+        ["kind"] = ask is null ? "driven" : "chat", ["quest"] = quest, ["ask"] = ask, ["entry"] = entry, ["line"] = quest ?? id,
         ["created"] = new DateTimeOffset(2026, 10, 2, 9, minute, 0, TimeSpan.Zero).ToString("O"),
         ["updated"] = new DateTimeOffset(2026, 10, 2, 9, minute + 1, 0, TimeSpan.Zero).ToString("O"),
     };
@@ -27,8 +27,10 @@ public sealed class SessionEntryOwnIntakeTests
         var look = SessionLook.From(
             records.ToJsonString(), [Quest("q9", "ask #841c38", "1n7a8e00"), Quest("q8", "db", "5e55b000")], [], _ => 0);
 
-        var entry = Assert.Single(SessionGroups.ReadEntries(look));
+        var entries = SessionGroups.ReadEntries(look);
 
-        Assert.Equal([PartBegan.Opened, PartBegan.Asked], entry.Parts.Select(part => part.Began));
+        Assert.Equal(["ask:841c38/engine", "ask:841c38/engine"], entries.Select(entry => entry.Key));
+        Assert.Equal(
+            [PartBegan.Asked, PartBegan.Opened], entries.Select(entry => Assert.Single(entry.Parts).Began).Order(StringComparer.Ordinal));
     }
 }

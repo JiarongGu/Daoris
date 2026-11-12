@@ -579,8 +579,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// A driven session of this machine's on <paramref name="quest"/>, which it took: working, or in whatever state
-    /// it ended, in its own tree, on the adapter and account it ran as.
+    /// A driven session of this machine's that took <paramref name="quest"/>: working, or in the state it ended in, in its own tree.
     /// </summary>
     public void Driven(string session, string quest, string tree, string state = "working", string adapter = "stub", string? profile = null)
     {
@@ -592,7 +591,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             var driven = new JsonObject
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = served["to"]!.GetValue<string>(), ["state"] = state,
-                ["kind"] = "driven", ["door"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
+                ["kind"] = "driven", ["line"] = quest, ["door"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
                 ["updated"] = _clock.ToString("O"), ["took"] = true, ["said"] = new JsonArray(),
             };
             Works(driven);
