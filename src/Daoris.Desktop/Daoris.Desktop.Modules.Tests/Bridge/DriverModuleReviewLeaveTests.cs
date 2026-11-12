@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// 🔴 Nothing here reaches a network.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-leave"), IDisposable
 {
     private const string Session = "s1a2b3c4";

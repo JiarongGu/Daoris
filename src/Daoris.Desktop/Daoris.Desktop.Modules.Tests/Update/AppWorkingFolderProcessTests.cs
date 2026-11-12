@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// wait for it. So these start a real child where the application stands and try the swap's move of <c>app/</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class AppWorkingFolderProcessTests : IDisposable
 {
     private readonly string _install = Path.Combine(TestHomes.Root, "daoris-app-cwd-" + Guid.NewGuid().ToString("N")[..8]);

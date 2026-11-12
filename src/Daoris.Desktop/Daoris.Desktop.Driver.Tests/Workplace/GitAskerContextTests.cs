@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// tree B, with replacements off in its <c>config.worktree</c>, is answered as its own git answers, never from A's memo or listing.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitAskerContextTests : LandedFixture
 {

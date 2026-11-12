@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>origin</c>, so nothing is fetched and nothing is said of a fetch: the line here is the line.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ChatGoesOnInSyncProcessTests : IDisposable
 {
     private const string BroughtUp = "Before this turn Daoris brought this tree up to date with `main`: the line already holds 1 of its commit(s), "

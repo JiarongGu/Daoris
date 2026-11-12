@@ -18,6 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// differently; the return's take-up of a move the older come-up left standing under its dead run is a claim of its own.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-downgrade");

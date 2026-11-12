@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// is never moved and moves nothing under it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HomePlacingProcessTests : IDisposable
 {
     private readonly string _install = Path.Combine(TestHomes.Root, "daoris-home-placing-" + Guid.NewGuid().ToString("N")[..8]);

@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// read is held by how often it asked, which a neighbour's load does not move. Each runs once cold and is counted warm, the second time.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SessionReadsBenchProcessTests(ITestOutputHelper output) : DriverModuleBridge, IAsyncLifetime
 {
     private BenchHome? _bench;

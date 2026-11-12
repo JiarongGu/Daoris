@@ -107,6 +107,7 @@ public sealed class LineageTokensTests
 
 /// <summary>A watched token leaves at its process's real exit, seen through the set's own handle, told once.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LineageTokensProcessTests
 {
     [Fact]

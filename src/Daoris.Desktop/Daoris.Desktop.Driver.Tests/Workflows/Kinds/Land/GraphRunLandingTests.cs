@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that commit, and a commit made after the gate's judgement lands nothing until the next pass judges the new tip.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GraphRunLandingTests : GraphRunFixture
 {

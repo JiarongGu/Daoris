@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// finishes, and the files record's copy hashes and hook origin, over real git. Each case has a scratch home and repository of its own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolFinishGitTests : IDisposable
 {

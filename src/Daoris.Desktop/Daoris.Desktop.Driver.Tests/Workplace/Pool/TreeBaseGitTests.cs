@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the start tracks is never moved whole; the undo of a refused take takes back the bases its plan wrote, with their markers.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeBaseGitTests : IDisposable
 {

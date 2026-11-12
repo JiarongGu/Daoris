@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// same transfer, and moves nothing more.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class OpenMovesServiceProcessTests : IAsyncLifetime
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "open-moves", Guid.NewGuid().ToString("N")[..8]);

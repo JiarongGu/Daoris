@@ -21,6 +21,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// look on the install, and stays a known limit.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class StandingCallerTests : IDisposable
 {
     // A process id no Daoris holds: the prefix's names are this test's own.

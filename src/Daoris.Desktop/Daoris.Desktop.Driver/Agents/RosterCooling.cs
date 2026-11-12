@@ -136,6 +136,14 @@ internal sealed class RosterCooling(HarnessRoster roster)
         ModelsSpent(owner, account, door, windows, now, session);
     }
 
+    /// <summary>The model families <paramref name="door"/>'s agent offers, on any door of its accounts (<see cref="ModelFamilies"/>).</summary>
+    private IReadOnlyList<string> FamiliesOf(string door)
+    {
+        var owner = roster.Adapters.Names.Contains(door, StringComparer.OrdinalIgnoreCase) ? roster.Adapters.OwnerOfAgent(door).Value : door;
+        var agents = roster.Adapters.Names.Where(name => string.Equals(roster.Adapters.OwnerOfAgent(name).Value, owner, StringComparison.OrdinalIgnoreCase));
+        return ModelFamilies.Of(AgentOffers.Read(roster.Home), agents.Append(door), roster.Adapters.SettingsOf(door));
+    }
+
     /// <summary>
     /// A reading that puts a model family's week at its limit cools the account for that family until the week's reset, as its agent
     /// said it: the walk reads only the whole plan's windows, so the family's limit is kept as a cool-off of account plus
@@ -143,7 +151,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </summary>
     private void ModelsSpent(string owner, string account, string door, IReadOnlyList<WindowSeen> windows, DateTimeOffset now, string? session)
     {
-        foreach (var (family, reset) in ModelLimits.Spent(windows, WindowsOf(door)?.Models, now))
+        foreach (var (family, reset) in ModelLimits.Spent(windows, FamiliesOf(door), now))
         {
             AccountCooling.Keep(
                 roster.Home,
@@ -208,7 +216,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </summary>
     private (CoolingEntry Entry, LimitSeen Seen) Cool(string agent, string? profile, LimitSeen seen, DateTimeOffset now, string session, string door)
     {
-        var model = ModelLimits.In(seen, WindowsOf(door)?.Models);
+        var model = ModelLimits.In(seen, FamiliesOf(door));
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved, model);
         // A cool-off the file will not take is held in memory, never lost to a strike.
         AccountCooling.Keep(roster.Home, entry, now);

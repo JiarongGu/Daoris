@@ -22,6 +22,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// handed. The host is the service; nothing of an install running here is reached, and this process's environment is read and never set.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LateWordServiceProcessTests : IAsyncLifetime
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "late-word", Guid.NewGuid().ToString("N")[..8]);

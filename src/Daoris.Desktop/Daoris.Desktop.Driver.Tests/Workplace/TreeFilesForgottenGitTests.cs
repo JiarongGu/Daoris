@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of it by hand; a tree that stays keeps both.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeFilesForgottenGitTests : BranchTidyingFixture
 {

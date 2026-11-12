@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>_fixtures/</c>, and sets no variable of the process's environment.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitWaitsTests : IDisposable
 {
     private const string Limit = "Internal error: You've hit your weekly limit";

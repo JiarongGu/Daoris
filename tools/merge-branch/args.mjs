@@ -2,7 +2,7 @@
  * The tool's verbs and their flags, read into the options `main` acts on, and the refusal a verb stops with.
  */
 export const USAGE = [
-  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]',
+  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune] [--no-timeout]',
   '       node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]',
   '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
@@ -101,6 +101,7 @@ export function parseArgs(argv) {
     else if (arg === '--plan') options.plan = true;
     else if (arg === '--prune') options.prune = true;
     else if (arg === '--no-prune') options.autoPrune = false;
+    else if (arg === '--no-timeout') options.noTimeout = true;
     else if (arg === '--full') options.full = true;
     else if (arg === '--gated') options.gated = true;
     else if (arg === '--passed') options.passed = true;

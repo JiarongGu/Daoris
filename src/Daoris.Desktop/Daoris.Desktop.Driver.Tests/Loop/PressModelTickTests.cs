@@ -18,6 +18,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>default</c> alone and refuses any other model at the set with <c>Invalid params</c>, as Codex's door did on the install. Both are the
 /// one node stand-in, which writes down each frame it hears. No model, no real account, no sign-in.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class PressModelTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

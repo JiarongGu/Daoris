@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of the process's environment, <c>DAORIS_HOME</c> least.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class BriefedMoveTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "briefed-move", Guid.NewGuid().ToString("N")[..8]);

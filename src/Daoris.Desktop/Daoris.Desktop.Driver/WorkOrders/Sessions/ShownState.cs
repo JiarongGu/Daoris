@@ -30,6 +30,9 @@ public static class ShownState
     /// </summary>
     public const string AwaitingHelper = "awaiting-helper";
 
+    /// <summary>A session that ended its turn on its own check: the check waits its turn on the machine and the verdict goes on with it.</summary>
+    public const string AwaitingCheck = "awaiting-check";
+
     /// <summary>
     /// A <c>failed</c> record an account's limit ended: no failure, since its line goes on by itself at the reset or on another
     /// account. The page's <c>limited</c>.

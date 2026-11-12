@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// leaves behind. A ceiling of one megabyte puts every idle moment past it, so the keeper restarts whenever nothing is in flight.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ServerKeeperRestartProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "server keeper restart", Guid.NewGuid().ToString("N")[..8]);

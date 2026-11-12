@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Every process is started hidden: no window, no console, no real agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class RelayOnceProcessTests : IDisposable
 {
     private const string Run = "6c0f1a9e2b47";

@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class RepoConfigBenchProcessTests(ITestOutputHelper output)
 {
     private const int Rounds = 9;

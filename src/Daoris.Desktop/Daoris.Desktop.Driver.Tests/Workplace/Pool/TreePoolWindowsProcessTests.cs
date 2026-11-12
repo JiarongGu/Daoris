@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// characters is switched in, and a repository that tracks a submodule is never pooled.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class TreePoolWindowsProcessTests : IDisposable
 {
     private PoolGitFixture? _fixture;

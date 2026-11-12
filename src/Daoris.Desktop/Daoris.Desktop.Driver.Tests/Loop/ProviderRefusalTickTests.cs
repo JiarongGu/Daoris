@@ -11,6 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// must not park on the person, quoting the error as a question nobody could answer.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ProviderRefusalTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-api-refusal-" + Guid.NewGuid().ToString("N")[..8]);

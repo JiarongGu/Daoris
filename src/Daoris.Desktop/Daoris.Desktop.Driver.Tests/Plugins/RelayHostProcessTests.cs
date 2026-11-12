@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a plugin started through a shim, which the holder's agents' job still holds. Every process is started hidden: no window, no real agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class RelayHostProcessTests : IDisposable
 {
     private const string Run = "5d2e8c1a7b30";

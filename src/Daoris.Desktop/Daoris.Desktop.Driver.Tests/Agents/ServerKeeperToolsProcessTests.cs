@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reaching it, and a call past its bound is ended and said, the server told to cancel it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ServerKeeperToolsProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "server keeper tools", Guid.NewGuid().ToString("N")[..8]);

@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reviewer's, which this reuses machine for machine.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class HelperProcessTests : IDisposable
 {
     private const string AskId = "a1b2c3d4";

@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// refused switch, and the clearing's move-back. Each case has a scratch home and repository of its own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PoolUndoGitTests : IDisposable
 {

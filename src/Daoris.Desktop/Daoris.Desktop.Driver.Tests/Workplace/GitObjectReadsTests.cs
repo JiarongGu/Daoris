@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a question; a filtered blob of a partial clone asked again once as a fetch, and said missing where its promisor is gone.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitObjectReadsTests : TreeSyncFixture
 {

@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// it, each asserted against a real stand-in process the test starts and ends itself.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class AtWorkProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-atwork-proc-" + Guid.NewGuid().ToString("N")[..8]);

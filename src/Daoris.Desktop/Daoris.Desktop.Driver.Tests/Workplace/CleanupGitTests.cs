@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// commit, verified in the delete's own transaction, and one nothing else holds is kept.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class CleanupGitTests : LandedFixture
 {

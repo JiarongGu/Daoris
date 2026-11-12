@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reads this process's environment, which the Git classes beside each other may not.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class GitForWindowsProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-for-windows-process-" + Guid.NewGuid().ToString("N")[..8]);

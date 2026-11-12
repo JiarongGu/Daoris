@@ -11,6 +11,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and the test run must end with the agent's tree.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class DoneEndTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 // subject: src/Daoris.Desktop/Daoris.Desktop.Driver/Service — registration follows the line
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RegistrationLineProcessTests : IDisposable
 {

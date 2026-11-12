@@ -148,6 +148,12 @@ public static class Exchanges
                                     : exchange.Holds && exchange.To == Person);
     }
 
+    public static bool AsksPersonNothing(IReadOnlyList<Exchange> exchanges, string session) =>
+        !exchanges.Where(exchange => string.Equals(exchange.Part, session, StringComparison.Ordinal))
+            .Any(exchange => exchange.Source == Unread
+                ? exchange.Id is "question:unread" or "go-ahead:unread"
+                : exchange.Holds && exchange.To == Person);
+
     /// <summary>Whether any source is not read: a caller deciding that nothing waits must not read these as none.</summary>
     public static bool AnyUnread(IEnumerable<Exchange> exchanges) => exchanges.Any(exchange => exchange.Source == Unread);
 

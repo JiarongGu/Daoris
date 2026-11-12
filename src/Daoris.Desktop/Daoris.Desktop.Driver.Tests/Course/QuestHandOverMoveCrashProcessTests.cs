@@ -20,6 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// prompt tells <see cref="CarryOnRecord.Written"/>. The text door's one case is <c>HandOverQuestTickTests</c>.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class QuestHandOverMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly HandOverQuestHarness _h = new("quest-hand-over-crash");

@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a partner's hand retried after its take, nothing kept; and the helper's look through the one door, across a hand-over and a restart.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SettledServiceProcessTests : IAsyncLifetime
 {
     private const string Key = "press/3f1c";

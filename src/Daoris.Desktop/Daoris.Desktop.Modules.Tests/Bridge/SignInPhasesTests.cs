@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// its error stream and exit 0. Real processes, so the <c>Process</c> half.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class SignInPhasesTests : Bridge
 {
     private const string Link = "https://auth.openai.com/codex/device";

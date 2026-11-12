@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in the fast half; this holds it where the spawn, the process registry and the shutdown's kill are real.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -4,6 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>A library call that fails in any way is git's to answer, and a refusal names its cause.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryFailureTests : LandedFixture
 {

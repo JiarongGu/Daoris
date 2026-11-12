@@ -1,20 +1,8 @@
 [
-  { "case": "admission.not-widened", "door": "*", "row": "u", "why": "Reach is read only by the plan's walk row u builds, so no admission is held to a provider's statement yet." },
   { "case": "containment.not-widened", "door": "*", "row": "h", "why": "A recipe is plain data the shell completes and Platform's launcher (AgentStarts.StartAsync, D201) alone starts and contains through the run; that the door's process is born in the agents' job and cannot leave it is proved only on the installed launcher." },
   { "case": "applicability.one-fact-differs", "door": "*", "row": "r", "why": "A measurement admits by the effective configuration COAGENT1e's sheet reads, built as the roster's answer at row r." },
   { "case": "applicability.other-opening", "door": "*", "row": "r", "why": "A negotiated reading kept per door, version and account is the sheet's, read from row r." },
   { "case": "applicability.other-copy", "door": "*", "row": "r", "why": "The writable roots compared by their kind are the sheet's effective configuration, read from row r." },
-  { "case": "ability.structured", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.words-at-next-step", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.steering", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.stop-keeps-conversation", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.one-task-stopped", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.resume-fails-closed", "door": "*", "row": "g", "why": "Row g states each door's abilities as Known parts; the contract holds interactive, resumes and takes-settings alone today." },
-  { "case": "ability.requests-held", "door": "*", "row": "l", "why": "A request held for the person is HeldPermissions' two-way port, stated as a door's ability at row l." },
-  { "case": "ability.hands-servers", "door": "*", "row": "p", "why": "How a door hands servers is IServerHanding's, stated as a door's ability at row p." },
-  { "case": "ability.servers-inherit-environment", "door": "*", "row": "p", "why": "Whether a door's servers inherit its environment is stated with the connectors at row p." },
-  { "case": "ability.leaves-own-servers-out", "door": "*", "row": "p", "why": "Whether a door leaves its own servers out is stated with the connectors at row p." },
   { "case": "frames.unknown-unread", "door": "codex-acp", "row": "AGENTLYNTAI1e-ii", "why": "A frame the layer's protocol door does not read is kept as LQ7's bounded diagnostic, read through the door's binding at its move." },
-  { "case": "dialect.recorded-frames", "door": "codex-acp", "row": "AGENTLYNTAI1e-ii", "why": "Its frames are read over recorded frames under fixtures/providers/codex/ through the layer's protocol door at its move." },
   { "case": "dialect.cross-fed", "door": "codex-acp", "row": "j", "why": "Each protocol door reads its own dialect alone from row j, which feeds it the other doors' extensions." }
 ]

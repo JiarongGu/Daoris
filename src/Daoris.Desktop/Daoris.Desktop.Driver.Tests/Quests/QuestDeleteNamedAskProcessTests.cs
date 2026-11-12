@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repository the ask's proposal lists and leaves a mark each time it runs — so a re-route is a mark and a quest, never a guess.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class QuestDeleteNamedAskProcessTests : IAsyncLifetime, IDisposable
 {
     private const string Words = "retire the old gadget naming across every service";

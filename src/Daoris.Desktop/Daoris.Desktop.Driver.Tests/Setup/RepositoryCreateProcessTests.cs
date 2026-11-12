@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>DAORIS_</c> variable is dropped from the process's environment, so no run reaches this machine's own home or service.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class RepositoryCreateProcessTests : IAsyncLifetime
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "repository-create-process", Guid.NewGuid().ToString("N")[..8]);

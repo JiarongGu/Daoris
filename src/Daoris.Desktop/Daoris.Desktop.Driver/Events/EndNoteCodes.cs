@@ -50,6 +50,8 @@ public static class EndNoteCodes
     /// service's ledger reads this spelling to bring the session back to the person when the helper ends with no answer.
     /// </summary>
     public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
+
+    public static readonly NoteCode EndedAwaitsCheck = new("ended.awaits-check", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);

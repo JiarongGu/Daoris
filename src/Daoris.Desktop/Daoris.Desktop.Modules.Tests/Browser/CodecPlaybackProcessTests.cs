@@ -19,6 +19,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// its window opens in the background, and Chrome loads no media in a hidden page.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class CodecPlaybackProcessTests : Bridge
 {
     private static readonly TimeSpan Limit = Poll.Patience;

@@ -46,6 +46,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__opinion_answer",
         "mcp__daoris-knowledge__helper_ask",
         "mcp__daoris-knowledge__helper_answer",
+        "mcp__daoris-knowledge__check_run",
         "mcp__daoris-knowledge__partner_answer",
         "mcp__daoris-knowledge__channel_post",
         "mcp__daoris-knowledge__channel_read",
@@ -196,6 +197,7 @@ public sealed class PermissionRulesTests : IDisposable
     // A working session's ask for a helper and a helper's answer, each a file under the home.
     [InlineData("helper_ask")]
     [InlineData("helper_answer")]
+    [InlineData("check_run")]
     // A partner's answer for its piece, a file under the home, refused to every session that writes none.
     [InlineData("partner_answer")]
     // A session on an ask posts to and reads its channel; the service answers each for its own ask only.

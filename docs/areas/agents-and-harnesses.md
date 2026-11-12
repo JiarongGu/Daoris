@@ -16,7 +16,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 
 | Where | Its job |
 |---|---|
-| `Contract/` | The provider record (identity, doors, account pool, word tables, usage question, reach, each part known or stated absent), `DoorAbilities`, `AgentRun`, the `SpawnRequest` a start makes and the `ProcessRecipe` a spawn answers, the ports a provider fills (`Ports.cs`), a plugin's `DeclaredDoor` |
+| `Contract/` | The provider record (identity, doors, account pool, word tables, usage question, reach, each part known or stated absent), `DoorAbilities`, `AbilityReading`, `AgentRun`, the `SpawnRequest` a start makes and the `ProcessRecipe` a spawn answers, the ports a provider fills (`Ports.cs`), a plugin's `DeclaredDoor` |
 | `Registry/` | The one registry, of providers alone: `Providers.cs`'s built list, the plugins' doors joined, names resolved by kind, whose accounts a door runs as (`OwnerOfAgent`, `AgentNamed`), which agent a door is (`AgentOfDoor`), where it may work (`ProviderReach`) |
 | `Providers/<Name>/` | Each provider's facts, spawns, word tables, usage question and own-home reads: `ClaudeCode`, `Codex`, `Dsh`, `Stub` (`stub`, `acp-stub`), `AltStub` (`alt-stub`, `alt-acp-stub`, with words and a home variable of their own) |
 | `Transports/` | `Shell`, which completes every session's process from a recipe, and the session's git port |
@@ -183,8 +183,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (D210, D125)
 37. A limit cools that account until the reset the agent named plus 2 minutes, with 15 minutes' grace for a dated reset alone
     and nothing believed past 8 days, else the machine's `cooloff` (60 minutes); `ResetBounds` holds these bounds. A limit is never
-    a strike. A limit naming a model family the agent's windows declare, or a reading putting that family's week at 100% with its
-    reset ahead, cools that family alone (`models` in `cooling.json`); every other limit cools the whole account. *Try now* and a
+    a strike. A limit naming a model family the agent offers, or a reading putting that family's week at 100% with its
+    reset ahead, cools that family alone (a family is a word that tells one offered model from another, read from the agent's opens
+    and its settings aliases, `ModelFamilies`; no list of Daoris's names one) (`models` in `cooling.json`); every other limit cools the whole account. *Try now* and a
     sign-in end both. (D125, D205)
 38. A limited line resumes by itself at the look: its own conversation on its own account when ready. Else a driven line, and a
     repository's chat at its limit move, goes on on another account of the same agent in a new part carrying its conversation
@@ -222,7 +223,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 45. An account's own model and effort live in the tool's own settings file under that account, for Claude Code only, changed
     under its keep lock (`AgentSettings.Write`); Daoris offers nothing for a tool whose settings it has not read, and `max` is
     refused as an account default. What an agent offers is read by `AgentOffers.Offers`, per session and per account default.
-    (D98)
+    A Claude door's session models are the newest open's list on either of its doors; the settings alias list answers only where no
+    open has listed, stamped with the program version it was read at (`AgentSettings.ModelsReadAt`). A role's model the agent's last
+    open did not list is said as a hint by `daoris role set` (`ModelHints`), never refused. (D98)
 46. A conversation's model and effort options are those the agent offered on its wire. The session's mode is never offered as an
     option. (D98)
 47. Lyntai's agent layer (`Lyntai.Core`, `Lyntai.Providers.Basic`, never the metapackage) is taken by the driver alone from
@@ -231,12 +234,22 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     `Layer/` and their tests name it (`LayerCensusTests`). There both usage questions are read through the layer
     (`LayerUsageRead`), and a native door's driven start is held on `LayerRun` (`DrivenRuns`, `LayerHold`), one turn per process
     through the same host steps; a supervisor's turn and a partner's piece stay on `TransportRun`. A layer door's failure enters as
-    a `NormalizedFailure` (`LayerFailures`), answered by `AgentErrors.OfNormalized` with no table read, which only tests call yet;
-    the parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
+    a `NormalizedFailure` (`LayerFailures`), answered by `AgentErrors.OfNormalized` with no table read, which only tests call yet: its
+    access readings stay apart (a field's and the words'), a limit's window, scope and stated reset reach D125's bounds as stated
+    (`LayerStatedReset`), and an allowance report is put in the rate-limit frame's shape for the one reader of an agent's windows
+    (`LayerAllowance`). `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
+    person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
+    The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
 48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`
     and the service stores' renames (`SessionColumnNames` and its kin), deleted with nocompat1's steps; a plugin's `session.ended`
     frame's `adapter`, renamed with the work-event grammar's next version; a machine-log line's `adapter`, until its file ages out.
     An older remote host's `adapter` reads as the door `unknown`. `StoredOldNamesCensusTests` holds the rest. (D232)
+49. What a door can do is one reading (`AbilityReading`): the ability its provider states as a `Known` with its source and, where
+    measured, the versions it was taken at (`MeasuredAt`), else its transport's value said as a default that was not measured, else
+    absent. `DoorAbilities` and the provider sheet both read it, and `agent list` names each measurement and offers reading taken at
+    a version other than the pinned one (`VersionCurrency`). A start records the pinned install's version where that install runs,
+    never the machine's own look. A held-pending case of the conformance suite names an open backlog row (`TASKS.md`), and each real
+    door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`.
 
 ## Where a change goes
 
@@ -287,10 +300,12 @@ An older word the code departs from, then what reads right.
 
 ## Open
 
-- **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t; j, each
-  protocol door reading its own agent's extensions.
-- **AGENTLYNTAI1**: d's installed proof and account readers; s-ii, the three tools a headless turn cannot answer (the owner's
-  yes); b-iii, the ingress's later translations.
+- **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t, after
+  every door has moved; j, each protocol door reading its own agent's extensions, after 1e. All Daoris's own.
+- **AGENTLYNTAI1**: the owner's, d's acceptance and installed proof and s-ii's spend (the three tools a headless turn cannot answer).
+  Lyntai's, held for a third request: steering, the kept runs of `codex-acp` and dsh, Codex's refused open, the Claude CLI kept
+  run (1f-i), and a release (every member is on its `master`, none released, so Daoris builds on its local build). Daoris's own: the
+  protocol doors' moves in order (1e), each after its records (STEER3, MSG1h, AUTONOMY1b3d), and a decision on `nativeSubagentSessions`.
 - **AGENTERRORS1** c and e: the native door's failure reads, the measured `--resume`, its live and one-turn tries.
 - **LIMITRESUME1**: one native session seen ending on a limit, and the owner's yes.
 - **CODEXTOOLS1**: the installed proof that a first Codex turn uses the connector.
@@ -298,3 +313,5 @@ An older word the code departs from, then what reads right.
 - **BGWAIT2b**, **HELPMODE1a3**: woken-turn words, resume and fresh part per door, full access on the installed pins.
 - **MODELROLE1c4**: the installed proofs of a refused model passing an account and of a chat's chosen model.
 - **LIMITRESUME1**, too: no family's limit sentence is recorded (`ClaudeLimits.Words.Recorded`).
+- Posture words are still strings with marks (`PosturesPart`, `PostureAsked.Wire`), to become a typed record with ACCESS1's row l; the
+  Agents page and the role editor do not yet show the currency report and the model hint the terminal says.

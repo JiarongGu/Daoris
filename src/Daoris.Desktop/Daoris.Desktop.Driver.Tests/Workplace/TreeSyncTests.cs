@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// platform's squash merge is a second clone of it (<see cref="LandedFixture"/>).
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeSyncTests : TreeSyncFixture
 {

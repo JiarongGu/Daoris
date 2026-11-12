@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>In the Process half, beside a listener: never <c>Parallel=Git</c>.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitFailuresProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-failures-process-" + Guid.NewGuid().ToString("N")[..8]);

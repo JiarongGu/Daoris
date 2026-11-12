@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>🔴 <b>Nothing here reaches a network</b>: <c>origin</c> is a bare repository under the scratch folder (<see cref="LandedFixture"/>).</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitBranchesTests : LandedFixture
 {

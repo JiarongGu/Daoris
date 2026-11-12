@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the driver does and says each entry it refuses.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PluginKitInterfacesTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-kit-interfaces-" + Guid.NewGuid().ToString("N")[..8]);

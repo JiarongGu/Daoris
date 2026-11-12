@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// kept whole. The discard behind it takes the tree with its uncommitted work and its branch, or the branch alone.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SessionTreeOnlyHereTests : IDisposable
 {

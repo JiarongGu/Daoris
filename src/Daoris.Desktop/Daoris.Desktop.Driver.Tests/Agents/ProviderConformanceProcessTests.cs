@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// scratch is under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ProviderConformanceProcessTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("live");

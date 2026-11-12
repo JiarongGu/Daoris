@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// runs inside it. A census of the sources holds the one way.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class JournaledDeletesTests : TreeSyncFixture
 {

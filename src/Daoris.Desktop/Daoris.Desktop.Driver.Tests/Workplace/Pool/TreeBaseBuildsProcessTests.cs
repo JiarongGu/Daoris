@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the marker gone; a restore and a failed build release nothing; a path with no base says so and removes a marker the record no longer names.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class TreeBaseBuildsProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "tree-base-" + Guid.NewGuid().ToString("N")[..8]);

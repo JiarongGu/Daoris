@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// kit changes every example in the same commit, and each performer passes its cycle through the driver.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class PluginKitExampleTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-kit-examples-" + Guid.NewGuid().ToString("N")[..8]);

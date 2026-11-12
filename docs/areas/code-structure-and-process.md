@@ -119,7 +119,10 @@ finishes first and the whole set runs once.
     every wider row too. The queue's and admission records read as empty only where missing or unparseable, so a failed read stops
     the writer. Every lock (the verdict store's, the gate tree's, the CI watch's) is put in place complete (`locks.mjs` over
     `run-lock.mjs`), names its holder by pid and creation time, and is taken over only from a holder judged dead and still the one
-    judged; a take-over ends only that holder's children. (from D180)
+    judged; a take-over ends only that holder's children. One run at a time holds a checkout's open merge
+    (`local/merge-run.lock`): a second is refused naming the holder's pid and start, never let to collide. New merge behaviour is typed
+    TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`, tested beside it by `node --test`),
+    which `merge-branch.mjs` calls. (from D180, MERGEFLOW1)
 20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
     `ScratchFolders.New` under `TestHomes.Root` and goes with `ScratchFolders.Remove`; the service stood in over HTTP is a
     `RoutedHandler`; a wait on a signal is `Poll`; the web's window over a mocked shell is `test/doubles/appShell.ts` and its service
@@ -137,9 +140,28 @@ finishes first and the whole set runs once.
     `tools/merge-branch/reached.mjs`, the rest counted), so a list, census or structure red never lands. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
     passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
-    after, and the full stage (`--ci --stage`) remains the one that owes every gate. `TASKS.md` merges by its rows' ids
+    after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
+    main's: a gate declaring `reuse` (`reached`, `censuses`) replays a standing pass whose reaching inputs, command and toolchain are
+    unchanged (the verdict's `key`, in the one store `local/gate-verdicts.json`, under the merge tool's one reach table, whose digest
+    the key holds); a failure main already stands in under the same signature (its open findings, its failing verdicts on its own tree)
+    is named as main's and does not fail the merge; a test project is built once per tree (later gates run `--no-build`); a gate's
+    declared `regenerate` command makes a generated input current before the gates; a gate that ends abnormally is said so and the run
+    goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
+    in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, said in the summary) is killed and fails as
+    over-budget. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
+    set down as main's, what ran over budget), read by `tools/dev-metrics.mjs`. `TASKS.md` merges by its rows' ids
     (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
     a gate a merge now runs, the last green on 2026-11-02.
+22. The test budget is the owner's: a unit test runs in seconds, a Process case under two minutes, a gate under five minutes and a
+    whole suite under ten. It is enforced once per tool, in config, never at a call site: .NET's `VSTestBlameHangTimeout` in the
+    root `Directory.Build.props` (one minute for a half with no run-settings file, fifteen for a Process half, which ends the run and
+    names the test), the page's `testTimeout` and `hookTimeout` in `vite.config.ts` (a minute), and the tool tests' `--test-timeout`
+    in `src/Daoris.Cli/package.json`; each is a ceiling over the slowest test that passes today and comes down as
+    `docs/2026-11-13-test-timing-census.md`'s plan cuts the tests above it. A test that needs longer says so and why where it is
+    declared. Every gate records each test's duration under `_fixtures/test-timing/` (a trx per .NET gate, `web-unit.json`,
+    `tool-tests.xml`), so a census reads them and runs nothing. A Process class names each real dependency it needs with
+    `[Trait(Category.Needs, Needed.X)]` (git, process, harness, browser, network, filesystem) beside its category, and
+    `NeedsTraitTests` holds it; a test with no such trait is a unit test, with no process, git, clock wait or network. (from TESTTIME1)
 
 ## Where a change goes
 

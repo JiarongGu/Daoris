@@ -24,7 +24,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
     ];
 
     private static readonly string[] Working =
-        ["go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve"];
+        ["check_run", "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve"];
 
     /// <summary>🔴 The core set: the knowledge, memory, quests, the line, the registry, a helper's ask, the channel and the handbacks.</summary>
     [Fact]
@@ -55,7 +55,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
             ParticipantWork.Intake => Core.Except([.. memoryChanges, "helper_ask"]),
             ParticipantWork.Help => [.. Core.Except(["channel_post", "channel_read", "memory_propose", "quest_publish", "quest_respond", .. memoryChanges]),
                 "helper_answer"],
-            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", "helper_ask", "system_plan", .. memoryChanges]),
+            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", "check_run", "helper_ask", "system_plan", .. memoryChanges]),
         };
 
         Assert.Equal(expected.Order(StringComparer.Ordinal), Served(new SessionWork(work)));

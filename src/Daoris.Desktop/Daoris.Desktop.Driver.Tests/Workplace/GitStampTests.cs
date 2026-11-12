@@ -139,12 +139,16 @@ public abstract class GitStampCases : LandedFixture
 
 /// <summary>The stamp's files named by the runner's git.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitStampTests : GitStampCases;
 
 /// <summary>The stamp's files named by the MinGit the toolchain pins (<see cref="PinnedMinGit"/>).</summary>
 /// <remarks>Alone: it names the pinned git's home as the program's (<see cref="ProgramHome.Named"/>), which every class beside it reads.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class GitStampPinnedTests : GitStampCases
 {

@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in-process ledger of <see cref="ChatGoOnTests"/>, as <see cref="HandOverProcessTests"/> runs it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverLeftProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-handover-left-" + Guid.NewGuid().ToString("N")[..8]);

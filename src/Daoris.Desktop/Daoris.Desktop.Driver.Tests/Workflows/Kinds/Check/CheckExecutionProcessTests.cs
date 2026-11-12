@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real git, node and job processes: the Process half's.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class CheckExecutionProcessTests : IAsyncLifetime
 {
     private const string Unit = "run:v-0123456789abcdef";

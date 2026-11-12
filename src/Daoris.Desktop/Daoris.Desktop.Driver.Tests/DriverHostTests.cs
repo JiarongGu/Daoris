@@ -17,6 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// gitignored <c>_fixtures/</c>, never OS temp: no run here can reach this machine's own home or service.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class DriverHostTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "driver-host", Guid.NewGuid().ToString("N")[..8]);

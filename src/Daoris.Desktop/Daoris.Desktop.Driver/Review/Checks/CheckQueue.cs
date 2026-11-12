@@ -1,0 +1,24 @@
+namespace Daoris.Driver;
+
+/// <summary>
+/// The broker's order, pure: one check runs at a time on this machine, Daoris's own reading of a hand-back goes before a worker's own
+/// red-first run, and each class goes first come, first served, so neither starves. The machine's admission (<see cref="MachineAdmission"/>)
+/// still decides when a heavy run may start beside the terminal's and the merge tool's.
+/// </summary>
+public static class CheckQueue
+{
+    /// <summary>The next ask to run, or null where one runs already or none waits.</summary>
+    public static CheckAsk? Next(IReadOnlyList<CheckAsk> asks, Func<string, CheckState?> state) =>
+        asks.Any(ask => state(ask.Id)?.State == CheckStates.Running) ? null : Pending(asks, state).FirstOrDefault();
+
+    /// <summary>How many checks are to finish before <paramref name="ask"/> starts: the one running, and the waiting ones before it.</summary>
+    public static int Ahead(CheckAsk ask, IReadOnlyList<CheckAsk> asks, Func<string, CheckState?> state) =>
+        Ordered(asks, state).ToList().FindIndex(each => each.Id == ask.Id) is var at and >= 0 ? at : 0;
+
+    private static IEnumerable<CheckAsk> Pending(IReadOnlyList<CheckAsk> asks, Func<string, CheckState?> state) =>
+        asks.Where(ask => state(ask.Id) is null or { State: CheckStates.Queued })
+            .OrderBy(ask => ask.By == CheckAsk.ByDaoris ? 0 : 1).ThenBy(ask => ask.At).ThenBy(ask => ask.Id, StringComparer.Ordinal);
+
+    private static IEnumerable<CheckAsk> Ordered(IReadOnlyList<CheckAsk> asks, Func<string, CheckState?> state) =>
+        asks.Where(ask => state(ask.Id)?.State == CheckStates.Running).Concat(Pending(asks, state));
+}

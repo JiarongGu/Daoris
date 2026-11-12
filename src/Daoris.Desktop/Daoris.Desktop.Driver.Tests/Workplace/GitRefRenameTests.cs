@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <i>Finish</i> and <i>Undo</i>, each conditional; the reversal checking both names.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitRefRenameTests : TreeSyncFixture
 {

@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// act's run died between its start and its end, nothing run again.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitRefActTests : TreeSyncFixture
 {

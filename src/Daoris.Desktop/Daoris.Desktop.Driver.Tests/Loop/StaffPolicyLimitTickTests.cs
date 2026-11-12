@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and one yes releases one move. The held clock is the roster's (<c>.claude/knowledge/held-clocks.md</c>); nothing here waits on time.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class StaffPolicyLimitTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

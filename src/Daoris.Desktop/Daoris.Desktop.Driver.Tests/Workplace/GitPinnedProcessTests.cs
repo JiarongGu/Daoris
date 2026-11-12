@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ssh door, and the stand-in ssh host's fetch, clone and push.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitDoorsPinnedProcessTests : GitDoorsProcessTests
 {
     protected override bool Pinned => true;
@@ -19,6 +21,8 @@ public sealed class GitDoorsPinnedProcessTests : GitDoorsProcessTests
 /// <c>git-http-backend</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitHttpsPinnedProcessTests(GitTlsHost host) : GitHttpsProcessTests(host), IClassFixture<GitTlsHost>
 {
     protected override bool Pinned => true;
@@ -26,6 +30,8 @@ public sealed class GitHttpsPinnedProcessTests(GitTlsHost host) : GitHttpsProces
 
 /// <inheritdoc cref="GitDoorsPinnedProcessTests"/>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitSshPinnedProcessTests(GitSshHost host, PullRequestApiHost api, ITestOutputHelper output)
     : GitSshProcessTests(host, api, output), IClassFixture<GitSshHost>, IClassFixture<PullRequestApiHost>
 {

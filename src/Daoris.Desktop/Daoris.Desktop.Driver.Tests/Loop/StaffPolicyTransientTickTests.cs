@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no policy keeps its five tries and its hold for the person.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "staff-transient-tick", Guid.NewGuid().ToString("N")[..8]);

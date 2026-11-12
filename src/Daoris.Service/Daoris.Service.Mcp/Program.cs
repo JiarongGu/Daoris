@@ -138,6 +138,8 @@ builder.Services.AddSingleton(intake);
 builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
 // And a working session's ask for a helper, and a helper's answer, under the same home: a file each.
 builder.Services.AddSingleton(HelperBox.FromEnvironment());
+// And a working session's ask for a check, under the same home: one file the driver's broker takes.
+builder.Services.AddSingleton(CheckBox.FromEnvironment());
 // And a partner's answer for its piece, under the same home: one file, beside the driver's ask and state.
 builder.Services.AddSingleton(PartnerBox.FromEnvironment());
 // And the event files a session's line is read back from, under the same home: read on this machine, never served.

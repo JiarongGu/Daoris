@@ -307,7 +307,8 @@ A start that must not let what it starts in its first instant escape starts susp
 with the terminal's folder, environment and own standard handles, so the gates write where the terminal does rather than through
 the pipe, and answers the exit code. The run is held to its connection (a verb killed or its session ended stops it; Ctrl+C asks
 `RUN_STOP`); a terminal whose rights are not the application's (`TerminalRights`) is refused, and where no Daoris takes the run
-the verb says why and runs it itself. Off Windows there are no jobs. The census is read once, as the application stops
+the verb says why and runs it itself. A session's `check_run` is the same run asked through the broker (`CheckBroker`) and queued
+one at a time, its verdict the session's next word. Off Windows there are no jobs. The census is read once, as the application stops
 (`RunningProcessesLine`); the proofs are the `*ProcessTests` and `*CensusTests` of each start, the tests' own starts named in
 `TestProcessStarts`, and `node tools/process-tree.mjs` lists each Daoris process outside the application's tree.
 

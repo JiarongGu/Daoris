@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// live, kept from their processes, never from the code under test.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LineageRaceProcessTests : IDisposable
 {
     /// <summary>Which start a request is asked for, so the doors hold one start's and answer the other's.</summary>

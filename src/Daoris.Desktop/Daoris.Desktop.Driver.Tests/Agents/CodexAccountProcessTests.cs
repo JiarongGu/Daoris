@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A real process, so the <c>Process</c> half. The declaration, the words and the walk are <c>CodexAccountTests</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class CodexAccountProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-codexacct-run-" + Guid.NewGuid().ToString("N")[..8]);

@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a format the library cannot read is admitted to git's binary alone, so the library is never opened on it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryFormatsTests : LandedFixture
 {

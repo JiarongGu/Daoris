@@ -125,6 +125,7 @@ export const HOME_ENTRIES = [
   row('sessions', 'data', 'data/sessions', 'sessions'),
   row('helpers', 'data', 'data/helpers', 'helpers'),
   row('partners', 'data', 'data/partners', 'partners'),
+  row('checks', 'data', 'data/checks', 'checks'),
   row('handed', 'data', 'data/handed', 'handed'),
   row('setup', 'data', 'data/setup', 'setup'),
   row('workflows', 'data', 'data/workflows', 'workflows'),

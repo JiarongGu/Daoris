@@ -74,6 +74,7 @@ public static class SessionRecords
                 Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 // A completed record's note read for its code alone, and only a completed one's.
                 AwaitsHelper = Text(session, "state") == "completed" && Carries(session, RecordNotes.EndedAwaitsHelper),
+                AwaitsCheck = Text(session, "state") == "completed" && Carries(session, RecordNotes.EndedAwaitsCheck),
                 // An account's limit made its failure; absent from an older host.
                 Limit = session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True,
             };

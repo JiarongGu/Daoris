@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="GitReadOnce"/>), but for the graph's wasted speculative starts. Nothing moves the tree between the two reads.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewGraphTodayTests : LandedFixture
 {

@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// driver opens them. The service's store-level cases (<c>WorkRecordStoreTests</c>, <c>WorkRecordHostTests</c>) write the paths themselves.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class KeepSizeServiceProcessTests : KeepSizeFixture, IAsyncLifetime
 {
     private RealServiceHost? _host;

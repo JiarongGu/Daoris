@@ -36,6 +36,8 @@ public sealed partial class AgentsTextTests
     /// Process half runs them, and on Windows alone, which runs a <c>.cmd</c>.
     /// </summary>
     [Trait(Category.Name, Category.Process)]
+    [Trait(Category.Needs, Needed.Process)]
+    [Trait(Category.Needs, Needed.Git)]
     public sealed class StandIns
     {
         public static TheoryData<string> Names() => Rows(standIn: true);

@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsyncLifetime
 {
     private const int TreeCount = 10;

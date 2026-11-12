@@ -19,6 +19,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and the registry entry are exactly what a fake would get wrong. No model anywhere, and no account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Browser)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class DrivenSessionInputTests : IDisposable
 {
     private readonly string _home = Path.Combine(

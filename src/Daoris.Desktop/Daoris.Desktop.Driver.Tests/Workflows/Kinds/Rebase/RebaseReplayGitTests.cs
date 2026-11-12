@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Each leaves the person's checkout, the work's branch and its tree byte for byte as they were, and no tree of its own behind.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RebaseReplayGitTests : LandedFixture
 {

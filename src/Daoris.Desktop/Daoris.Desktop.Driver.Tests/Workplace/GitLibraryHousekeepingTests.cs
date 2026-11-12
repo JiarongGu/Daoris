@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// file git is about to rename over (Windows refuses that rename however the file is shared); a marker a crashed run left stops nothing.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitLibraryHousekeepingTests : LandedFixture
 {

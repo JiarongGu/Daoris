@@ -7,6 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Daoris, with its first message and before the person's words.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Browser)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ChatPlaceToldTests : IDisposable
 {

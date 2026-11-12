@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="SpaceLimits.PassAsync"/>'s <c>unit</c>); the downloads' and the choices' proofs are <see cref="SpaceLimitsTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class SpaceLimitsGitTests : KeepSizeFixture
 {

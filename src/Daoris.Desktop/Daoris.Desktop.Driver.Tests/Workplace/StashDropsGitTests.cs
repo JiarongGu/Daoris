@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// commit, the switch off and a session in the checkout each refuse with nothing changed.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class StashDropsGitTests : TreeSyncFixture
 {

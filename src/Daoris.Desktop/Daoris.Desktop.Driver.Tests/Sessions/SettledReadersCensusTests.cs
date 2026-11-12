@@ -38,6 +38,7 @@ public sealed partial class SettledReadersCensusTests
     private static readonly Dictionary<string, string> AsKept = new()
     {
         ["ChatGoOn.cs"] = "Daoris's limit word before a go-on: kept, the go-on goes on",
+        ["DriverChecks.cs"] = "a check's verdict said to the session that asked: kept, the check marked handed; a refusal leaves it for the next look",
         ["LimitWaits.cs"] = "the live wake's limit word: kept without a word, it goes in this process alone as a word a host before the door would not keep",
         ["ContinuationLimits.cs"] = "the limit word of a cool-off: kept with no word, so no word id is handed on and the line goes on as the carry-on it was planned",
         ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",

@@ -321,19 +321,9 @@ test('no canon file instructs a service-only action without its tool-absent path
 });
 
 /**
- * The declared gates and the release workflow are two lists that must agree — and they silently did
- * not.
- *
- * `daoris.gates.json` declared `dotnet test src/Daoris.Service` (248 tests) and the workflow never ran
- * it; the driver's 130 were in neither. What hid it for eight landings is the most useful part: the
- * rehearsals drive the service AND the driver end to end, so the workflow looked thorough and every
- * release rehearsal passed. **An end-to-end pass is not a substitute for the judgement underneath
- * it** — a store rule or a payload guard can break without any rehearsal noticing, which is precisely
- * what those unit suites exist to catch.
- *
- * Substring rather than exact match, because the workflow appends runner flags (`--nologo`). One
- * direction only: the workflow legitimately runs more than the gates (both rehearsals), and a test
- * that forbade that would be wrong about the thing it is guarding.
+ * The declared gates and the release workflow must agree: a declared suite the release never runs is a gap the rehearsals
+ * hide, since an end-to-end pass is no substitute for the unit judgement under it.
+ * Substring, since the workflow appends runner flags; one direction, since the workflow may run more than the gates.
  */
 test('every declared gate is actually run by the release workflow', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
@@ -352,7 +342,10 @@ test('every declared gate is actually run by the release workflow', () => {
   const runsVerify = /run:\s*npm run verify\s*$/m.test(workflow);
   // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
   // Process. Each of its commands is judged so, never the gate's text as a whole.
-  const runs = (command: string) => {
+  // A gate's per-test timing reporter is the gate's own record, not a different command the release must repeat.
+  const bare = (command: string) => command.replace(/ --results-directory \S+ --logger "trx;LogFileName=[^"]+"/g, '');
+  const runs = (raw: string) => {
+    const command = bare(raw);
     const category = /^dotnet test (\S+) --filter Category=(\w+)$/.exec(command);
     return workflow.includes(command) || (runsVerify && verify.includes(command))
       || (category !== null && category[2] !== 'Process' && workflow.includes(`dotnet test ${category[1]} --filter Category!=Process`));
@@ -361,7 +354,7 @@ test('every declared gate is actually run by the release workflow', () => {
   assert.ok(gates.gates.length >= 4, 'the gate list emptied — that is not a pass');
   for (const gate of gates.gates) {
     assert.ok(
-      workflow.includes(gate.run) || (runsVerify && verify.includes(gate.run)) || gate.run.split(' && ').every(runs),
+      workflow.includes(bare(gate.run)) || (runsVerify && verify.includes(bare(gate.run))) || gate.run.split(' && ').every(runs),
       `the '${gate.name}' gate is declared in daoris.gates.json but the release workflow never runs `
       + `it: ${gate.run}`);
   }
@@ -423,7 +416,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
     gates: { name: string; run: string }[];
   };
   const fast = gates.gates
-    .map((gate) => /^dotnet test (\S+) --filter Category!=Process$/.exec(gate.run)?.[1])
+    .map((gate) => /^dotnet test (\S+) --filter Category!=Process(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
     .filter((target): target is string => target !== undefined);
   const halves = gates.gates
     .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))

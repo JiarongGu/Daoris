@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="Cuts.Decided"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class EndedLimitMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("ended-limit-move-older");

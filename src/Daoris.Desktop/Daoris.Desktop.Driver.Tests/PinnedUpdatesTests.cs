@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// machine's, and its updates are the machine's business — it gains nothing, byte for byte.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PinnedUpdatesTests : IDisposable
 {
     private readonly string _home = Path.Combine(

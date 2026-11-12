@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// working file each move it; and every branch's full tip is read at once.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class LoopGroundsGitTests : DriverModuleBridge
 {
     private (LoopGrounds Grounds, ServiceProvider Services, InstancePipe Pipe) Composed()

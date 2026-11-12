@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A limit scoped to a model family: which family a reading or a limit's words name, and which starts a
-/// family's cool-off holds. Pure; the families are the agent's own declaration (<see cref="WindowWords.Models"/>).
+/// family's cool-off holds. Pure; the families are what the agent offers (<see cref="ModelFamilies"/>).
 /// </summary>
 /// <remarks>
 /// A start whose model is the account default is held by every cool-off of the account: the agent chooses what it runs, and a start

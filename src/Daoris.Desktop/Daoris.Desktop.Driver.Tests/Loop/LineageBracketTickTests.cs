@@ -9,6 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its capture drained; its environment and every line written for it carry that token, and the token leaves once its exit is seen.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LineageBracketTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-bracket-" + Guid.NewGuid().ToString("N")[..8]);

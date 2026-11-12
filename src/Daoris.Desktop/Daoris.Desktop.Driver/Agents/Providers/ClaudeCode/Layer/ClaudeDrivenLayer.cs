@@ -23,6 +23,7 @@ internal static class ClaudeDrivenLayer
         new(Door, builder => builder.AddClaudeCliAgentSession(command: command, id: Door, agent: Door))
         {
             ModelRefusals = ModelRefusals,
+            Windows = ClaudeWindows.Words.Windows,
             Steps = call => ClaudeStreamJson.Step(call.Name, call.ArgumentsJson, call.CallId),
             Beside = (streams, say) => new ClaudeStreams(streams, say),
             Options = (prompt, carriers) => new Lyntai.Providers.ClaudeCli.ClaudeAgentOptions
