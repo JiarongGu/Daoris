@@ -6,6 +6,8 @@ import { Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { useSessionReach } from '../bridge/sessions/conversation';
 import { levelsOf } from '../work/say';
+import { LongCallLine } from '../work/conversation/LongCallLine';
+import type { RunningCall } from '../work/conversation/conversation';
 import { focusDividers } from './focus/FocusDivider';
 import { beyondBeneath } from './focus/BeyondReceipt';
 import { useHelpBeyond } from '../bridge/helpBeyond';
@@ -133,6 +135,8 @@ export function useAskConversation(
   const accountUse = useAccountUse();
   const stopWaiting = useStopWaiting();
   const [limitHeld, setLimitHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
+  // The tool call the shown conversation's reply is inside, as its conversation tells it, for the line past its bound.
+  const [calling, setCalling] = useState<{ session: string; call: RunningCall } | null>(null);
   const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
@@ -258,6 +262,7 @@ export function useAskConversation(
       dividers={focusDividers(shownRow?.marks)}
       beneath={(ask, until) => <>{beyondBeneathTurn(ask, until)}{readingBeneath(ask)}</>}
       onTail={setTail}
+      onWaiting={(session, _since, call) => setCalling(call ? { session, call } : null)}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
       onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}
     />
@@ -315,6 +320,11 @@ export function useAskConversation(
   );
   const { limitLine, note } = useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, accounts, i18n, startFrom, stop, stopWaiting, accountUse, limitRefusal, beginFrom, live, setLimitRefusal, startedFrom, line, choosing, setChoosing });
 
+  // A call running past its bound is said above the box with Stop beside it, which ends the reply, never the conversation.
+  const longCall = live && turns.taking && shown && calling?.session === shown.id
+    ? <LongCallLine call={calling.call} stopping={stop.isPending} onStop={() => stop.mutate(shown.id)} />
+    : null;
+
   // What the open conversation's head calls it: the history's title, else the person's first words, else a conversation.
   const title = !shown ? null
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
@@ -322,7 +332,7 @@ export function useAskConversation(
   const slot: AskConversationSlot = {
     body: conversation, held: <AskHeld session={shown?.id} live={live} />, published, composer,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
-      : limitLine ? <>{limitLine}{note}</> : note,
+      : longCall || limitLine ? <>{longCall}{limitLine}{note}</> : note,
     // A new conversation from the head takes the shown one's applied focus.
     onNew: shown ? () => { focusing.inherit(); onNew(); } : undefined,
     newPending: end.isPending,
