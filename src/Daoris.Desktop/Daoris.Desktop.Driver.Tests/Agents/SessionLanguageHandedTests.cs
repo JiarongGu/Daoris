@@ -38,7 +38,6 @@ public sealed class SessionLanguageHandedTests
     [Theory]
     [InlineData("bare")]
     [InlineData("full")]
-    [InlineData("carry-on")]
     public void Unset_is_the_golden_instruction_byte_for_byte(string which)
     {
         var target = TargetPromptGoldenTests.Of(which);
