@@ -36,7 +36,7 @@ public sealed class PluginTokenAdoptionsTests : IDisposable
 
         Install();
         adoptions.Told(new StateChangedFrame(["plugins", "harnesses", "driver"], null));
-        await adoptions.Ask().WaitAsync(TimeSpan.FromSeconds(5));
+        await adoptions.Ask().WaitAsync(Poll.Patience);
         Assert.Equal(Token, Assert.Single(handed)["token"]);
         Assert.False(GitTokens.Has(_home, identity.Id, GitTokens.Api));
     }
@@ -62,7 +62,7 @@ public sealed class PluginTokenAdoptionsTests : IDisposable
         Assert.False(ran.Task.IsCompleted);
 
         adoptions.Told(new StateChangedFrame(["plugins", "harnesses", "driver"], null));
-        await ran.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await ran.Task.WaitAsync(Poll.Patience);
     }
 
     private void Install()
