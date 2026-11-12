@@ -28,11 +28,11 @@ const said = (seq: number, text: string) => ({ seq, at, kind: 'message', id: `m$
 
 /** The first part timed out; the carry-on finished in the same tree and waits for the person's yes. */
 const FIRST = {
-  ...DRIVEN, id: 'f1f1f1f1', state: 'failed', tree: 'C:/somewhere/.daoris/trees/default/engine/s-f1f1f1f1',
+  ...DRIVEN, id: 'f1f1f1f1', state: 'failed', tree: 'C:/somewhere/.daoris/trees/default/engine/s-f1f1f1f1', line: 'f1f1f1f1',
   created: '2026-10-30T08:00:00Z', updated: '2026-10-30T08:30:00Z',
 };
 const CARRIED = {
-  ...DRIVEN, id: 'c4c4c4c4', state: 'completed', from: 'f1f1f1f1', fromWhy: 'carry-on', tree: FIRST.tree,
+  ...DRIVEN, id: 'c4c4c4c4', state: 'completed', from: 'f1f1f1f1', fromWhy: 'carry-on', tree: FIRST.tree, line: 'f1f1f1f1',
   created: '2026-10-30T08:40:00Z', updated: '2026-10-30T09:00:00Z', note: 'Done; committed as a1b2c3d.',
 };
 const EVENTS: Record<string, unknown[]> = {

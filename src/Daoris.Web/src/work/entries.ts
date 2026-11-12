@@ -63,7 +63,7 @@ export type SessionEntry = {
   /** The part a row opens on: `leading` when the group is you or working, otherwise `head ?? leading`. Absent where the answer has none. */
   opens?: string;
   parts: EntryPart[];
-  /** The records serving its parts, oldest first. Absent from an older host. */
+  /** The records serving its parts, oldest first. */
   coworkers?: EntryCoworker[];
 };
 

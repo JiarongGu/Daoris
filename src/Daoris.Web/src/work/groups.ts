@@ -99,7 +99,7 @@ export type SessionGrouping = {
   line?: { state: SessionStateName; group: SessionGroupName; reason: string; by: string; role: string } | null;
 };
 
-/** A row's line's state: its `line`, else (an older host) its own row as the line's. */
+/** A row's line's state: its `line`, else its own row as the line's. */
 export type LineStanding = NonNullable<SessionGrouping['line']>;
 
 export const lineOf = (row: SessionGrouping): LineStanding =>

@@ -38,7 +38,7 @@ export function lineWords(t: TFunction, said: LineSaid): string {
   return said.part ? t('work.parts.line.part', { state, n: said.part }) : t('work.parts.line.partUnnumbered', { state });
 }
 
-/** The conversation a record is a part of: its `line`, else (an older host) itself. */
+/** The conversation a record is a part of: its `line`, else itself. */
 const lineKey = (session: Pick<Session, 'id' | 'line'>) => session.line ?? session.id;
 
 /** Its line's parts held here, oldest first: this machine's records whose `line` names it. A teammate's is on no line here. */

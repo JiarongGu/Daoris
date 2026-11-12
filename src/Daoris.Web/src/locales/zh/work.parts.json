@@ -47,5 +47,5 @@
   "work.parts.line.partner": "它的搭档{{state}}",
   "work.parts.line.helper": "它的助手{{state}}",
   "work.parts.line.open": "打开",
-  "work.parts.line.tip": "这条工作线的状态，读自它的每一段和每位协作者"
+  "work.parts.line.tip": "这一状态读自它的每一段，以及为它工作的会话"
 }
