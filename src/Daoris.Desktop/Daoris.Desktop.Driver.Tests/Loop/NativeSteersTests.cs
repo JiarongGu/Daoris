@@ -47,7 +47,7 @@ public sealed class NativeSteersTests
 
         steers.Echoed(wire.Uuid);
 
-        await landed.WaitAsync(TimeSpan.FromSeconds(5));
+        await landed.WaitAsync(Poll.Patience);
         var taken = wire.Recorded[1];
         Assert.Equal((SessionEventKind.User, null, held.Id), (taken.Kind, taken.Reaches, taken.Id));
         Assert.Equal([ChatNoteCodes.WordsSentNowInTurn.Code], wire.Codes);
@@ -71,7 +71,7 @@ public sealed class NativeSteersTests
 
         steers.TurnEnded();
 
-        await landed.WaitAsync(TimeSpan.FromSeconds(5));
+        await landed.WaitAsync(Poll.Patience);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class NativeSteersTests
 
         var landed = steers.Now(new ChatMessage("put MANGO in your reply", []))!;
 
-        await landed.WaitAsync(TimeSpan.FromSeconds(5));
+        await landed.WaitAsync(Poll.Patience);
         var note = wire.Recorded[^1];
         Assert.Equal(ChatNoteCodes.WordsNotSent.Code, note.Parts?[0].Code);
         Assert.Equal([wire.Recorded[0].Id!], note.Words);
@@ -99,7 +99,7 @@ public sealed class NativeSteersTests
         steers.Gone();
         steers.Echoed(uuid);
 
-        await landed.WaitAsync(TimeSpan.FromSeconds(5));
+        await landed.WaitAsync(Poll.Patience);
         Assert.Single(wire.Recorded);
     }
 

@@ -16,8 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// Each test serves its own pipe in this process, named by its own scratch home's id, so nothing here meets a running Daoris. The
-/// window's answer is the confirmations' own, as the bridge's <c>PERSON_CONFIRM</c> gives it; the conversations are a stand-in module's.
-/// The pipe is Windows': elsewhere a test returns at once.
+/// window's answer is the confirmations' own; the conversations are a stand-in module's. The pipe is Windows': elsewhere a test returns.
 /// </remarks>
 public sealed class PipeHoldTests : Bridge
 {
@@ -276,7 +275,7 @@ public sealed class PipeHoldTests : Bridge
     }
 
     [Fact]
-    public async Task A_held_word_during_an_update_s_drain_is_refused_stopping_and_the_hold_stays()
+    public async Task A_held_word_during_an_update_s_drain_passes_and_the_hold_stays()
     {
         if (!OperatingSystem.IsWindows()) return;
         var (pipe, client, chats, services, log) = await ServeAsync();
@@ -288,9 +287,8 @@ public sealed class PipeHoldTests : Bridge
         pipe.Draining = () => true;
 
         var words = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SESSION_INPUT", new { id = Session, text = "now", said = true }));
-        Assert.Equal(InstancePipe.Stopping, Code(words));
-        Assert.Equal("update", words.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
-        Assert.Equal(0, chats.Ran("SESSION_INPUT"));
+        Assert.True(words.GetProperty("success").GetBoolean(), words.GetRawText());
+        Assert.Equal(1, chats.Ran("SESSION_INPUT"));
         Assert.Equal(Session, Assert.Single(pipe.Holding.Now().Holds).Session);
 
         var stop = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "CANCEL_TURN", new { id = Session, said = true }));

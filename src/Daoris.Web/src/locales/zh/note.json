@@ -465,7 +465,6 @@
   "note.held.writing": "还不能继续：道衍的另一项写入正占用 `{{repository}}`，完成前不会在它的任何一棵树里启动会话；下一次查看时会启动。你的话会等着。",
   "note.held.reserving": "还不能继续：某个步骤正在为它的解决者预留 `{{repository}}` 的一棵树，完成前不会在它的任何一棵树里启动会话；下一次查看时会启动。你的话会等着。",
   "note.held.reserved": "还不能继续：运行 `{{run}}` 的 `resolve` 占用 `{{repository}}` 中的 `{{tree}}` 至 {{until}}，该步骤放开前不会在这棵树里启动会话；之后的下一次查看时会启动。你的话会等着。",
-  "note.held.answering": "还不能继续：问道衍正在对话 `{{session}}` 中回答；等它这一轮结束后，在这里说一句话就会带上这些话。你的话会等着。",
   "note.held.config-unread": "还不能继续：无法读取本机的 driver.json：",
   "note.held.lead": "还不能继续：",
   "note.held.tail": "你的话会等着。",
