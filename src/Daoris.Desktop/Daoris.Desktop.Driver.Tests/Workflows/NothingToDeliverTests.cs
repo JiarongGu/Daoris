@@ -117,7 +117,7 @@ public sealed class NothingToDeliverTests
     }
 
     /// <summary>
-    /// A pull-request step that failed (no token, not transient) and whose request was then opened and merged another way: the line's hold
+    /// A pull-request step that failed (no token, not transient) and whose request is then opened and merged another way: the line's hold
     /// passes the failed step over as nothing to deliver, so the run reaches its monitor, which reads it merged; held no longer, it stays failed.
     /// </summary>
     [Fact]
