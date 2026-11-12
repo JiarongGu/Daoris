@@ -463,7 +463,6 @@ public sealed class MoveStoreTests : IDisposable
 
         Assert.Null(taker.Take(gone, 1).Refused);
         Assert.Null(taker.Take(another, 1).Refused);
-        // A start the run could not read when it began: the lease's "cannot tell" holds (the machine's own is ProcessLivenessTests').
         Assert.Equal(MoveTakeRefusals.Live, taker.Take(unread, 1).Refused);
         Assert.Equal(MoveTakeRefusals.Live, taker.Take(live, 1).Refused);
         Assert.Equal(["run-taker", "run-taker"], new[] { gone, another }.Select(move => taker.Read(move)!.ClaimRun));
