@@ -12,7 +12,10 @@ public sealed class PluginInterfacesTests : IDisposable
 {
     private readonly string _home = ScratchFolders.New("daoris-plugin-interfaces-");
 
-    public void Dispose() => ScratchFolders.Remove(_home);
+    public void Dispose()
+    {
+        ScratchFolders.Remove(_home);
+    }
 
     private const string Hooks = """, "hooks": { "command": ["node", "plugin.mjs"], "points": ["work/state"] }""";
 

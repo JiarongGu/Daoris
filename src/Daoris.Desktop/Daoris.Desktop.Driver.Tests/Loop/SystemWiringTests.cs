@@ -31,7 +31,6 @@ public sealed class SystemWiringTests : IDisposable
             }
             catch (IOException)
             {
-                // A scratch folder something still holds is left for the OS to clean.
             }
         }
     }

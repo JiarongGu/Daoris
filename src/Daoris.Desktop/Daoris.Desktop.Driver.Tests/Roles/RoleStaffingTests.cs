@@ -350,7 +350,6 @@ public sealed class RoleStaffingTests : IDisposable
             .Select(each => each.Path).Distinct());
     }
 
-    /// <summary>A root wires the home's own file, and nothing with no home.</summary>
     [Fact]
     public void A_root_wires_the_homes_own_file_and_nothing_with_no_home()
     {

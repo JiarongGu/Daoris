@@ -10,7 +10,10 @@ public sealed class PluginForgetTests : IDisposable
 {
     private readonly string _home = ScratchFolders.New("daoris-plugin-forget-");
 
-    public void Dispose() => ScratchFolders.Remove(_home);
+    public void Dispose()
+    {
+        ScratchFolders.Remove(_home);
+    }
 
     private string Install(string storage)
     {

@@ -4,8 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The browser's door, the way the application holds it: the whole window over a mocked shell, so the browser's door
-// and where a link goes are what a person meets on the window.
+// The browser's door and where a link goes, as a person meets them: the whole window over a mocked shell.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -42,7 +41,6 @@ const SERVICE = {
   '/api/sync': { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] },
 };
 
-/** A set-up step's set-up waiting for the person here, as the driver's state says it. */
 const IN_REVIEW = {
   quest: 'q2', title: 'Show #q1 in `local` for review', environment: 'local', look: 'http://localhost:4200/reports',
   shows: 'the new column, turned on', served: false,

@@ -14,7 +14,10 @@ public sealed class PluginCommandRunTests : IDisposable
     private const string Token = "throwaway-adopted-token";
     private readonly string _home = ScratchFolders.New("daoris-plugin-command-");
 
-    public void Dispose() => ScratchFolders.Remove(_home);
+    public void Dispose()
+    {
+        ScratchFolders.Remove(_home);
+    }
 
     private void Install(string interfaces = """{ "commands": [{ "name": "login", "about": "Keeps a token.", "interactive": true, "adopts": { "hosts": ["tickets.example"], "answer": "token" } }, { "name": "status", "about": "Says what is kept." }], "storage": { "for": "the token" } }""")
     {

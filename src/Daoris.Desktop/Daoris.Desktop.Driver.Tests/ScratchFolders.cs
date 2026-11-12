@@ -1,14 +1,12 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A test's scratch home, named under <see cref="TestHomes.Root"/> and removed once what held it lets go: a killed
-/// stand-in host's files while Windows releases them, a module's machine log for a moment after the test, git's
-/// read-only objects. Asked again a bounded number of times, and a folder still held after the last is left behind
-/// rather than failing the test it served. Linked into the modules' tests.
+/// A test's scratch home, a fresh uncreated path under <see cref="TestHomes.Root"/>, removed once what held it lets go: a killed
+/// stand-in host's files while Windows releases them, a module's machine log for a moment after the test, git's read-only objects.
+/// Asked again a bounded number of times, a folder still held after the last is left behind rather than failing the test it served.
 /// </summary>
 internal static class ScratchFolders
 {
-    /// <summary>A fresh path under <see cref="TestHomes.Root"/>: <paramref name="name"/> and eight hex digits. Nothing is created.</summary>
     public static string New(string name) => Path.Combine(TestHomes.Root, name + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>Removes <paramref name="path"/>: true once it is gone, false when it is still held after the last try.</summary>

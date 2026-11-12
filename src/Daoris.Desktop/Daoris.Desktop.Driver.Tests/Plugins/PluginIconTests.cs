@@ -16,7 +16,10 @@ public sealed class PluginIconTests : IDisposable
 {
     private readonly string _home = ScratchFolders.New("daoris-plugin-icon-");
 
-    public void Dispose() => ScratchFolders.Remove(_home);
+    public void Dispose()
+    {
+        ScratchFolders.Remove(_home);
+    }
 
     private string Plugin(string id, string? icon)
     {

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The service's stand-in answers each named path its body as JSON, any other the fallback, and records what it was asked.</summary>
+/// <summary>The service's stand-in answers each named path its body as JSON, any other the fallback, and records each request.</summary>
 public sealed class RoutedHandlerTests
 {
     [Fact]

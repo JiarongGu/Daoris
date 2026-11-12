@@ -302,11 +302,9 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Contains(DriverChoicesCommand.Usage, _out.ToString(), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Beside the running Daoris a person's press is its route, confirmed in its window, whatever the terminal's environment
-    /// says (the marker refuses, its absence grants nothing, and the window's Confirm is the person's): sent with its
-    /// payload, said in the verb's words from the answer, and this process writes nothing.
-    /// </summary>
+    /// <summary>Beside the running Daoris a person's press is its route, confirmed in its window, whatever the terminal's environment
+    /// says (the marker refuses, its absence grants nothing, the window's Confirm is the person's): sent with its payload, said in the
+    /// verb's words from the answer, and this process writes nothing.</summary>
     [Fact]
     public async Task Beside_the_running_Daoris_a_press_is_its_route_whatever_the_marker_says()
     {

@@ -122,5 +122,17 @@ public sealed class DriverModuleFilesTests : DriverModuleBridge
         Assert.True(process.ExitCode == 0, await error);
     }
 
-    private sealed class StandIn(string? root) : RoutedHandler(("/api/registry", root is null ? "[]" : Registry(("engine", "aurora", root))));
+    private sealed class StandIn(string? root) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            object body = request.RequestUri!.AbsolutePath == "/api/registry" && root is not null
+                ? new object[] { new { repository = "engine", workspace = "aurora", root } }
+                : Array.Empty<object>();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"),
+            });
+        }
+    }
 }

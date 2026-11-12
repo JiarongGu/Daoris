@@ -602,5 +602,17 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     }
 
     /// <summary>The service: the registry with <c>engine</c>'s checkout at <paramref name="root"/> (none where null), and no sessions.</summary>
-    private sealed class StandIn(string? root) : RoutedHandler(("/api/registry", root is null ? "[]" : Registry(("engine", "aurora", root))));
+    private sealed class StandIn(string? root) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            object body = request.RequestUri!.AbsolutePath == "/api/registry" && root is not null
+                ? new object[] { new { repository = "engine", workspace = "aurora", root } }
+                : Array.Empty<object>();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"),
+            });
+        }
+    }
 }

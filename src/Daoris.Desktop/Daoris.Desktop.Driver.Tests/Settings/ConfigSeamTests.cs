@@ -34,10 +34,7 @@ public sealed partial class ConfigSeamTests
         Assert.Null(DriverConfig.FindPath(Env()));
     }
 
-    /// <summary>
-    /// The home a verb takes the lease in is the home the loop drives, the folder the machine's
-    /// file is in, found without reading or making anything.
-    /// </summary>
+    /// <summary>The home a verb takes the lease in is the loop's, the folder the machine's file is in, found reading and making nothing.</summary>
     [Fact]
     public void The_home_a_verb_takes_the_lease_in_is_the_one_the_loop_drives()
     {
