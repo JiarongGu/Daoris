@@ -48,7 +48,7 @@ public sealed class PluginWords(string message, int exit = 2) : Exception(messag
 /// is shared. Each change is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its
 /// window; else its operation, on the terminal's word, refused from a session's terminal. A replace is its own route
 /// (<c>PLUGIN_REPLACE</c>): the window's add adds and never replaces. Its words are one function per verb on both
-/// paths, today's text kept (<c>fixtures/plugins-text.json</c>).
+/// paths.
 /// </summary>
 /// <remarks>
 /// Exit codes are the CLI's, case by case: 0 said or done, a remove of what is not there among them · 1 an update's plan without

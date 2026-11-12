@@ -16,8 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>acp-stub</c> is the first agent (the stub's accounts <c>account-1</c> and <c>account-2</c>, whose first turn is refused by Claude
 /// Code's limit sentence) and <c>acp-other</c> the second, on another tool's account (<c>account-x</c>), which offers <c>codex-mini</c> and
 /// <c>default</c> alone and refuses any other model at the set with <c>Invalid params</c>, as Codex's door did on the install. Both are the
-/// one node stand-in, which writes down each frame it hears. No model, no real account, no sign-in.
-/// </remarks>
+/// one node stand-in, which writes down each frame it hears. No model, no real account, no sign-in.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class PressModelTickTests : IDisposable
 {
@@ -39,12 +38,7 @@ public sealed class PressModelTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "press@example.com");
-        Git("config", "user.name", "PRESSMODEL1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "press@example.com", "PRESSMODEL1");
 
         foreach (var (agent, account) in new[] { ("stub", "account-1"), ("stub", "account-2"), ("other", "account-x") })
         {

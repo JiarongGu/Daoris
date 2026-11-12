@@ -315,13 +315,14 @@ public sealed class GitReadsTests : IDisposable
         return root;
     }
 
-    private static async Task InitAsync(string root)
-    {
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await GitAsync(root, "config", "core.autocrlf", "false");
-    }
+    private static Task InitAsync(string root) =>
+        GitSeed.MadeAsync(root, "git-reads", async made =>
+        {
+            await GitAsync(made, "init", "--quiet", "-b", "main");
+            await GitAsync(made, "config", "user.email", "fixture@example.test");
+            await GitAsync(made, "config", "user.name", "Fixture");
+            await GitAsync(made, "config", "core.autocrlf", "false");
+        });
 
     /// <summary>A commit of every change in the tree, dated a second after the last, so date order is the same on every run.</summary>
     private async Task<string> CommitAsync(string root, string message, params (string File, string Content)[] files)

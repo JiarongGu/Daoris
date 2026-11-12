@@ -26,15 +26,17 @@ public sealed class TogetherChecksTests : IDisposable
 
     private async Task SeedAsync()
     {
-        Directory.CreateDirectory(_root);
-        await GitAsync("init", "-q", "-b", "main");
-        await GitAsync("config", "user.email", "t@example.test");
-        await GitAsync("config", "user.name", "t");
-        File.WriteAllText(Path.Combine(_root, "a.txt"), "0\n");
-        File.WriteAllText(Path.Combine(_root, "b.txt"), "0\n");
-        File.WriteAllText(Path.Combine(_root, "TASKS.md"), "# Tasks\n\n- [ ] base row\n");
-        await GitAsync("add", "-A");
-        await GitAsync("commit", "-q", "-m", "base");
+        await GitSeed.MadeAsync(_root, "together-checks", async root =>
+        {
+            await GitFixture.GitAsync(root, "init", "-q", "-b", "main");
+            await GitFixture.GitAsync(root, "config", "user.email", "t@example.test");
+            await GitFixture.GitAsync(root, "config", "user.name", "t");
+            File.WriteAllText(Path.Combine(root, "a.txt"), "0\n");
+            File.WriteAllText(Path.Combine(root, "b.txt"), "0\n");
+            File.WriteAllText(Path.Combine(root, "TASKS.md"), "# Tasks\n\n- [ ] base row\n");
+            await GitFixture.GitAsync(root, "add", "-A");
+            await GitFixture.GitAsync(root, "commit", "-q", "-m", "base");
+        });
         _base = await TipAsync();
     }
 

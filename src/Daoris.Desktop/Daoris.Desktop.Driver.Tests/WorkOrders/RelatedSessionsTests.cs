@@ -20,14 +20,16 @@ public sealed class RelatedSessionsTests : IDisposable
         var main = Path.Combine(_root, "main");
         if (!Directory.Exists(main))
         {
-            Directory.CreateDirectory(main);
-            await GitFixture.GitAsync(main, "init", "-q", "-b", "main");
-            await GitFixture.GitAsync(main, "config", "user.email", "t@example.test");
-            await GitFixture.GitAsync(main, "config", "user.name", "t");
-            File.WriteAllText(Path.Combine(main, "shared.txt"), "0\n");
-            File.WriteAllText(Path.Combine(main, "other.txt"), "0\n");
-            await GitFixture.GitAsync(main, "add", "-A");
-            await GitFixture.GitAsync(main, "commit", "-q", "-m", "base");
+            await GitSeed.MadeAsync(main, "related-sessions", async root =>
+            {
+                await GitFixture.GitAsync(root, "init", "-q", "-b", "main");
+                await GitFixture.GitAsync(root, "config", "user.email", "t@example.test");
+                await GitFixture.GitAsync(root, "config", "user.name", "t");
+                File.WriteAllText(Path.Combine(root, "shared.txt"), "0\n");
+                File.WriteAllText(Path.Combine(root, "other.txt"), "0\n");
+                await GitFixture.GitAsync(root, "add", "-A");
+                await GitFixture.GitAsync(root, "commit", "-q", "-m", "base");
+            });
             _base = (await GitFixture.GitAsync(main, "rev-parse", "HEAD")).Trim();
         }
 

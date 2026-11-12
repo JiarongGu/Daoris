@@ -8,8 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The driver hands every session it starts the rules composed for it, through a REAL
 /// tick: a real process, spawned by the executor, against a stand-in service on a loopback port. What
 /// is asserted is what the harness would have been handed — on each door — and that the file goes when
-/// the session does. No model anywhere, and no account.
-/// </summary>
+/// the session does. No model anywhere, and no account.</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class PermissionSpawnTests : IDisposable
 {
@@ -23,12 +22,7 @@ public sealed class PermissionSpawnTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "perm1@example.com");
-        Git("config", "user.name", "PERM1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "perm1@example.com", "PERM1");
     }
 
     public void Dispose()

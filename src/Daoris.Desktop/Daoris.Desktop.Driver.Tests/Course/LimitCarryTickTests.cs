@@ -12,8 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The stand-in keeps each conversation as a file under its account's home and resumes only one it finds there, so a resume on the next
 /// account proves the copy. Its first turn takes the quest, says its context and is refused by the account's limit; a resumed turn, or a
-/// briefed one, closes the quest. Two of the stand-in's accounts are in the set; the roster's clock and zone are the test's.
-/// </remarks>
+/// briefed one, closes the quest. Two of the stand-in's accounts are in the set; the roster's clock and zone are the test's.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class LimitCarryTickTests : IDisposable
 {
@@ -30,12 +29,7 @@ public sealed class LimitCarryTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "carry@example.com");
-        Git("config", "user.name", "carry");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "carry@example.com", "carry");
         foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(Home(account));
         new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }

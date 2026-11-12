@@ -96,6 +96,40 @@ internal static class GitSeed
         return root;
     }
 
+    /// <summary>A repository of a class's own shape, not the plain one: <paramref name="build"/> makes it in an empty folder once per
+    /// run, as the seed of <paramref name="shape"/>, and each call copies it as <paramref name="root"/>, so a class keeps its own steps,
+    /// identity and messages and makes them once. The seed's git starts nothing behind a commit (<see cref="NoMaintenanceAsync"/>).</summary>
+    public static async Task<string> MadeAsync(string root, string shape, Func<string, Task> build)
+    {
+        var seed = await SeedAsync($"made:{shape}", async folder =>
+        {
+            var made = Path.Combine(folder, "made");
+            Directory.CreateDirectory(made);
+            await build(made).ConfigureAwait(false);
+            await NoMaintenanceAsync(made).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        Copy(Path.Combine(seed, "made"), root);
+        return root;
+    }
+
+    /// <summary><see cref="MadeAsync"/> for a constructor, on the thread pool: the build's awaits never wait on the test's own context,
+    /// which a blocked constructor holds.</summary>
+    public static string Made(string root, string shape, Func<string, Task> build) =>
+        Task.Run(() => MadeAsync(root, shape, build)).GetAwaiter().GetResult();
+
+    /// <summary>The repository a tick's session works in, as the loop's classes make it: on <c>main</c>, the class's <paramref name="email"/>
+    /// and <paramref name="user"/> in its config, and one commit, <c>the starting point</c>, holding <c>README.md</c>; a copy of its seed.</summary>
+    public static string StartingPoint(string root, string email, string user, string readme = "# engine\n") =>
+        Made(root, $"start:{email}:{user}:{readme}", async folder =>
+        {
+            await GitAsync(folder, "init", "-q", "-b", "main").ConfigureAwait(false);
+            await GitAsync(folder, "config", "user.email", email).ConfigureAwait(false);
+            await GitAsync(folder, "config", "user.name", user).ConfigureAwait(false);
+            await File.WriteAllTextAsync(Path.Combine(folder, "README.md"), readme).ConfigureAwait(false);
+            await GitAsync(folder, "add", "-A").ConfigureAwait(false);
+            await GitAsync(folder, "commit", "-qm", "the starting point").ConfigureAwait(false);
+        });
+
     /// <summary>The same repository made step by step: a seed's build, and a test's own where it reads its first commit.</summary>
     public static async Task BuildPlainAsync(string root, string name)
     {
@@ -123,7 +157,7 @@ internal static class GitSeed
     }
 
     /// <summary>git for a seed's build: a failed step fails the build, which every copy of it would carry.</summary>
-    private static async Task GitAsync(string cwd, params string[] arguments)
+    public static async Task GitAsync(string cwd, params string[] arguments)
     {
         var run = await GitFixture.RunAsync(cwd, arguments).ConfigureAwait(false);
         if (run.ExitCode != 0) throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed in {cwd}: {run.Stderr.Trim()}");

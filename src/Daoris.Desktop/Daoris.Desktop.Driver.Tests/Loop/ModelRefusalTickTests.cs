@@ -13,8 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The stand-in agent offers <c>default</c>, <c>opus</c> and <c>sonnet</c>, and refuses the models its argument names for each stub
 /// account at <c>session/set_config_option</c>, as Claude's door does; it writes down each open's account and
-/// each model set, and closes its quest on its first prompt.
-/// </remarks>
+/// each model set, and closes its quest on its first prompt.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ModelRefusalTickTests : IDisposable
 {
@@ -27,12 +26,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "refusal@example.com");
-        Git("config", "user.name", "MODELROLE1c2");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "refusal@example.com", "MODELROLE1c2");
 
         foreach (var account in new[] { "account-1", "account-2" })
         {

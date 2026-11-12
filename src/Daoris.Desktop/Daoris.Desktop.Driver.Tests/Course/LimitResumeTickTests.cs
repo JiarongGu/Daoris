@@ -14,8 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The stand-in agent takes its quest and is refused at its first turn by an account's limit (observation 4's sentence, the zone the
 /// test's); what a resumed or carried-on prompt meets is its mode's. The stand-in service is <c>SaidStandIn</c>, which keeps
 /// the ledger's limit flag and Daoris's words under their key. The clock and the zone are the roster's, the test's. The stub's own
-/// sign-in is the account that cools.
-/// </remarks>
+/// sign-in is the account that cools.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class LimitResumeTickTests : IDisposable
 {
@@ -36,12 +35,7 @@ public sealed class LimitResumeTickTests : IDisposable
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "limit@example.com");
-        Git("config", "user.name", "LIMITRESUME1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
+        GitSeed.StartingPoint(_repository, "limit@example.com", "LIMITRESUME1");
     }
 
     public void Dispose()
