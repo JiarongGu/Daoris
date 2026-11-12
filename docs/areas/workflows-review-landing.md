@@ -129,7 +129,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     their word itself, a step at a pass: each `quest.holds` waiting unchecked is passed, then the review waiting on its record is
     accepted, bound to the record standing, each saying *accepted on your words, "<quote>", kept on ask #…*. It does so only where no
     requirement of the run's quests departed or waits unmet, no other step waits on the person (a hold, an open look or opinion, a
-    go-ahead, a task, an approval, a choice), nothing is stopped, no word is kept and the person asked for no changes on that review;
+    go-ahead, a task, an approval, a choice), nothing is stopped, neither the ask nor a quest of its line is paused here, no word is
+    kept and the person asked for no changes on that review;
     else the run waits for them. A go-ahead is never passed on them. (D227, D228, D256, D273, D277)
 24. An entry's or an ask's one Accept keeps each part's word on the record the press drew for it and lands it at the pass; a part
     no `land` performs is held, said. It is not atomic: a moved part is refused alone, and the answer says which landed, accepted,
