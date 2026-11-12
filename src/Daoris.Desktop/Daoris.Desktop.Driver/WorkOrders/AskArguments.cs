@@ -26,6 +26,15 @@ public sealed record AskArguments
 
     public string? GoAhead { get; init; }
 
+    /// <summary><c>ask list</c>, handed on as <c>--list</c>, with its <c>--all</c>, <c>--open</c> and <c>--json</c> (<see cref="AskListCommand"/>).</summary>
+    public bool List { get; init; }
+
+    public bool All { get; init; }
+
+    public bool Open { get; init; }
+
+    public bool Json { get; init; }
+
     public string? Short { get; init; }
 
     public string? Review { get; init; }
@@ -69,6 +78,7 @@ public sealed record AskArguments
         "daoris ask --to <repo> … [--require \"<the person's words>\" \"<the check>\"]… [--through \"<the person's words>\"]",
         "daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…",
         "daoris ask through <id> \"<the person's words>\"|--clear",
+        "daoris ask list [--workspace <name>|--all] [--open] [--json]",
         "daoris ask close <id> --reason \"…\"",
         "daoris ask delete <id>",
         "daoris ask go-ahead <id> <n> approve|refuse [\"…\"]",
@@ -99,6 +109,18 @@ public sealed record AskArguments
             if (arg == "--clear")
             {
                 read = read with { ClearWorkflow = true };
+                continue;
+            }
+
+            if (arg is "--list" or "--all" or "--open" or "--json")
+            {
+                read = arg switch
+                {
+                    "--list" => read with { List = true },
+                    "--all" => read with { All = true },
+                    "--open" => read with { Open = true },
+                    _ => read with { Json = true },
+                };
                 continue;
             }
 
@@ -176,6 +198,9 @@ public sealed record AskArguments
     private static string? Combined(AskArguments read)
     {
         var act = read.Publish ?? read.Close ?? read.Delete ?? read.GoAhead ?? read.SetReview ?? read.SetThrough;
+        if (read.List) return AskListCommand.Combined(read, act ?? read.SetWorkflow);
+        if (read.All || read.Open || read.Json) return "--all, --open and --json go with `ask list`.";
+        if (act is null && read.SetWorkflow is null && AskListCommand.MeantVerb(read) is { } meant) return meant;
         if ((read.Review ?? read.ReviewWords) is not null && act is not null)
         {
             return "--review goes with a new ask's words; `ask review <id>` changes an ask's review choice.";

@@ -278,6 +278,20 @@ try
     // page is the other door. Reading a done's evidence again: the quest page's Check again is its door.
     if (args is ["quest", .. var questArgs])
     {
+        // A read of the quests this machine holds; it changes nothing.
+        if (QuestListCommand.Asks(questArgs))
+        {
+            if (QuestListCommand.Read(questArgs, out var listProblem) is not { } listed)
+            {
+                Console.Error.WriteLine($"daoris: {listProblem}");
+                Console.Error.WriteLine(QuestListCommand.Usage);
+                return 2;
+            }
+
+            using var listClient = ServiceClient.FromEnvironment();
+            return await QuestListCommand.RunAsync(listed, listClient, Console.Out);
+        }
+
         if (WorkCommand.Asks(WorkScope.Quest, questArgs))
         {
             return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Quest, questArgs, log);
@@ -352,7 +366,7 @@ try
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
-                "usage: daoris quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
+                "usage: daoris quest list [--repository <name>] [--workspace <name>] [--open] [--json]  ·  quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
                 + "quest reopen <id> [--note \"…\"]  ·  quest go-on <id>  ·  "
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
