@@ -44,6 +44,13 @@ internal sealed class WorkHearing(
 
             var (unit, attempt) = found;
 
+            // A renamed plugin's resync replays settled attempts under its new id: a replay, not a refusal.
+            if (attempt.State == AttemptStates.Settled && !string.Equals(each.Plugin, attempt.Plugin, StringComparison.Ordinal))
+            {
+                done.Add(new(unit, attempt.Node, PerformedWhat.Replay));
+                continue;
+            }
+
             // The rules are judged on the attempt the invocation names, before the one table sees the answer. The sender is the
             // process the frame is read from, the attempt's plugin's current one; a completion binds to its invocation, not its generation, so
             // a later process's replay of it is taken.
