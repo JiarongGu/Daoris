@@ -26,7 +26,7 @@ public sealed class HelpFocusTurnTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private HelpConversations Kept => new(_home);
+    private ConversationFacts Kept => new(_home);
 
     [Fact]
     public void The_line_says_the_change_the_widening_and_the_machine_exactly()

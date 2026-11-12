@@ -10,7 +10,6 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed class HelpRoutes(DriverContext context)
 {
-    /// <summary>What a history act changes: Ask Daoris's history, and the conversations the panel shows.</summary>
     private const StateScopes Kept = StateScopes.Sessions | StateScopes.Help;
 
     private readonly DriverContext _context = context;
@@ -53,10 +52,8 @@ public sealed class HelpRoutes(DriverContext context)
         return new { SessionId = id, place.Message, Starting = true, Workspace = circle, Focus = started };
     }
 
-    /// <summary>The workspace a start's press names, trimmed; null where it names none, which is <c>default</c>'s.</summary>
     private static string? WorkspaceAsked(string? workspace) => string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
 
-    /// <summary>The workspace as this machine spells it, or refused naming those it holds: <c>default</c> and each repository's.</summary>
     private static string HeldWorkspace(Snapshot snapshot, string circle)
     {
         var held = snapshot.Repositories.Select(known => known.Workspace).Append(RemoteTarget.DefaultWorkspace)
@@ -124,7 +121,6 @@ public sealed class HelpRoutes(DriverContext context)
         return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
     }
 
-    /// <summary>What <c>HELP_PUBLISHED</c> answers: <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
     public static object PublishedAnswer(string session, IReadOnlyList<HelpPublishedEntry> published) => new
     {
         Session = session,
@@ -203,47 +199,6 @@ public sealed class HelpRoutes(DriverContext context)
         var session = press.Session;
         var home = _loop.Home;
         return Task.Run<object?>(() => HelpWired.Answer(session, new HelpWired(home).Read(session)), cancellationToken);
-    }
-
-    // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again. A history act
-    // declares the history and the conversations the panel shows, as pinning and starting from one do.
-    [DriverRoute("HELP_RENAME", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("HELP_RENAME", Session = "id")]
-    [Timeless("HELP_RENAME", "a conversation's name")]
-    [Publishes("HELP_RENAME", Kept, Session = "id")]
-    private async Task<object?> HelpRenameAsync(HelpRename press, CancellationToken cancellationToken)
-    {
-        // `help rename <id> "…"` or `--clear`, said in the verb's words, a conversation that is not Ask Daoris's among them.
-        if (press.Said)
-        {
-            var renamed = new HelpVerbAsk("rename") { Id = press.Id, Text = press.Name, Clear = press.Name is null };
-            return await SessionsVerbs.HelpSaidAsync(_context, renamed, cancellationToken).ConfigureAwait(false);
-        }
-
-        var id = await HelpConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
-        var kept = new HelpConversations(_loop.Home);
-        kept.Rename(id, press.Name);
-        return new { Session = id, kept.Read(id).Name };
-    }
-
-    // Pin an Ask Daoris conversation to the top of its history, or unpin it.
-    [DriverRoute("HELP_PIN", PipeClass.Person, Drain = PipeDrain.Passes)]
-    [Owner("HELP_PIN", Session = "id")]
-    [Timeless("HELP_PIN", "a conversation's pin")]
-    [Publishes("HELP_PIN", Kept, Session = "id")]
-    private async Task<object?> HelpPinAsync(HelpPin press, CancellationToken cancellationToken)
-    {
-        // `help pin <id>` and `unpin`, said in the verb's words.
-        if (press.Said)
-        {
-            var pin = new HelpVerbAsk(press.Pinned ? "pin" : "unpin") { Id = press.Id };
-            return await SessionsVerbs.HelpSaidAsync(_context, pin, cancellationToken).ConfigureAwait(false);
-        }
-
-        var id = await HelpConversationOfAsync(press.Id, cancellationToken).ConfigureAwait(false);
-        var kept = new HelpConversations(_loop.Home);
-        kept.Pin(id, press.Pinned, DateTimeOffset.UtcNow);
-        return new { Session = id, kept.Read(id).Pinned };
     }
 
     // A new Ask Daoris conversation from an earlier one: opened as START_HELP opens one, on the helper's agent, its

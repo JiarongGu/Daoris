@@ -36,10 +36,10 @@ public sealed class HelpThroughInstanceTests
     /// <summary>Each verb, the ask it reads, the route it sends and the payload it sends it with, beside <c>said: true</c>.</summary>
     private static (HelpVerbAsk Ask, string Route, string Payload) Verb(string name) => name switch
     {
-        "rename" => (new("rename") { Id = Id, Text = "Workspaces" }, "HELP_RENAME", $$"""{"id":"{{Id}}","name":"Workspaces","said":true}"""),
-        "rename --clear" => (new("rename") { Id = Id, Clear = true }, "HELP_RENAME", $$"""{"id":"{{Id}}","said":true}"""),
-        "pin" => (new("pin") { Id = Id }, "HELP_PIN", $$"""{"id":"{{Id}}","pinned":true,"said":true}"""),
-        "unpin" => (new("unpin") { Id = Id }, "HELP_PIN", $$"""{"id":"{{Id}}","pinned":false,"said":true}"""),
+        "rename" => (new("rename") { Id = Id, Text = "Workspaces" }, "CONVERSATION_RENAME", $$"""{"id":"{{Id}}","name":"Workspaces","said":true}"""),
+        "rename --clear" => (new("rename") { Id = Id, Clear = true }, "CONVERSATION_RENAME", $$"""{"id":"{{Id}}","said":true}"""),
+        "pin" => (new("pin") { Id = Id }, "CONVERSATION_PIN", $$"""{"id":"{{Id}}","pinned":true,"said":true}"""),
+        "unpin" => (new("unpin") { Id = Id }, "CONVERSATION_PIN", $$"""{"id":"{{Id}}","pinned":false,"said":true}"""),
         "delete --yes" => (new("delete") { Id = Id, Yes = true }, "SESSION_DELETE", $$"""{"id":"{{Id}}","help":true,"said":true}"""),
         "list" => (new("list"), "HELP_CONVERSATIONS", """{"said":true}"""),
         "list --search --offset --limit --workspace --json" => (

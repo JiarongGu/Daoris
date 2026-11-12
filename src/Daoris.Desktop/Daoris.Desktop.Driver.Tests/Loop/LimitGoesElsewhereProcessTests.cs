@@ -241,7 +241,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
         Assert.Contains($"You continue session `{old}`", handed);
         Assert.Contains("Earlier answered exchange.", handed);
         await Poll.Until(() => ledger.Record("h2")["choice"]?.GetValue<string>() == "2", () => Seen(ledger, events, "h2"));
-        var kept = new HelpConversations(_home).Read("h2");
+        var kept = new ConversationFacts(_home).Read("h2");
         Assert.Equal((old, HelpConversations.Brief), (kept.From, kept.Handed));
 
         var went = Assert.Single(events.After(old, 0).Events.Select(Coded).OfType<NotePart>(), part => part.Code == "moved.on");

@@ -1233,7 +1233,7 @@ describe('Ask Daoris’s history', () => {
       .toHaveClass('wrap-anywhere');
   });
 
-  /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions' own, asked once. */
+  /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions'. */
   it('renames, pins and deletes from the history through the driver', async () => {
     withHistory([row({ session: EARLIER.id })]);
     show();
@@ -1247,7 +1247,7 @@ describe('Ask Daoris’s history', () => {
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Pin' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PIN', { payload: { id: EARLIER.id, pinned: true } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CONVERSATION_PIN', { payload: { id: EARLIER.id, pinned: true } }));
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Rename…' }));
@@ -1255,7 +1255,7 @@ describe('Ask Daoris’s history', () => {
     await user.clear(screen.getByRole('textbox', { name: 'Name' }));
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Workspaces');
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_RENAME', { payload: { id: EARLIER.id, name: 'Workspaces' } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CONVERSATION_RENAME', { payload: { id: EARLIER.id, name: 'Workspaces' } }));
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));

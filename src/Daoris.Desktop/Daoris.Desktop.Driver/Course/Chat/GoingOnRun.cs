@@ -43,7 +43,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
 
         // The person wrote to it, so it stays in view whatever comes of it, and an earlier mark of words it could
         // not take is past: these are taken up now.
-        new SessionArchive(_context.Home).Unarchive([sessionId]);
+        new ConversationArchive(_context.Home).Show(record);
         _context.Marks.Clear(sessionId);
 
         // 🔴 One its agent refused at the open, or whose opening passed its bound unopened, began no conversation, so it is never resumed: its go-on

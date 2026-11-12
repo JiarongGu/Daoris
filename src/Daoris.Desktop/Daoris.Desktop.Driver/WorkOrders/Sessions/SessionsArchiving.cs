@@ -16,12 +16,12 @@ internal static class SessionsArchiving
 
     private static async Task<int> ArchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
-        var answer = new SessionArchive(world.Home).Archive(
-            ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
-        var said = SessionArchive.ArchiveSaid(answer.Outcomes);
+        var parts = ConversationArchive.Parts(ids, await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false));
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, parts, ct).ConfigureAwait(false);
+        var answer = new ConversationArchive(world.Home).Archive(ids, SessionGroups.Read(look, parts), look.Records, DateTimeOffset.UtcNow);
+        var said = ConversationArchive.ArchiveSaid(answer.Outcomes);
         said.Print(output, output);
-        SessionArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), WorkplaceDoors.Terminal);
+        ConversationArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), WorkplaceDoors.Terminal);
         return said.Code;
     }
 
@@ -48,9 +48,9 @@ internal static class SessionsArchiving
             return 0;
         }
 
-        var answer = new SessionArchive(world.Home).Archive(ended, rows, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
+        var answer = new ConversationArchive(world.Home).Archive(ended, rows, look.Records, DateTimeOffset.UtcNow);
         var archived = answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived);
-        SessionArchive.Said(world.Log, archived, WorkplaceDoors.Terminal);
+        ConversationArchive.Said(world.Log, archived, WorkplaceDoors.Terminal);
         output.WriteLine(archived == ended.Count
             ? $"sessions: archived {Sessions(archived)} that ended; `--group archived` lists them, and `unarchive` brings one back."
             : $"sessions: archived {archived} of {ended.Count}; the rest changed since the list.");
@@ -61,14 +61,14 @@ internal static class SessionsArchiving
     internal static async Task<int> UnarchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
         world.Instance is { } instance
             ? await InstanceDoor.PressAsync(
-                PersonPresses.SessionArchive, new { ids, archived = false, said = true }, () => Task.FromResult(Unarchive(world, ids, output)),
+                PersonPresses.SessionArchive, new { ids, archived = false, said = true }, () => UnarchiveAloneAsync(world, ids, output, ct),
                 TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
-            : Unarchive(world, ids, output);
+            : await UnarchiveAloneAsync(world, ids, output, ct).ConfigureAwait(false);
 
-    private static int Unarchive(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output)
+    private static async Task<int> UnarchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
-        var back = new SessionArchive(world.Home).Unarchive(ids);
-        var said = SessionArchive.UnarchiveSaid(ids, back.NotArchived);
+        var back = new ConversationArchive(world.Home).Unarchive(ids, await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false));
+        var said = ConversationArchive.UnarchiveSaid(ids, back.NotArchived);
         said.Print(output, output);
         return said.Code;
     }

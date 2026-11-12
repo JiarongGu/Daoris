@@ -23,7 +23,7 @@ internal sealed class ResumeLedger(LoopContext context)
             // A record that does not read is said again: one line more, never none.
         }
 
-        if (!record.Parked) new SessionArchive(_context.Home).Unarchive([record.Session]);
+        if (!record.Parked) new ConversationArchive(_context.Home).Show(record);
         _context.Output?.Append(record.Session, line.Note);
         _context.Events.Keep(
             record.Session,

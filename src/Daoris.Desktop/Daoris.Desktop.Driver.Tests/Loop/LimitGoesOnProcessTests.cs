@@ -207,7 +207,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
         await Poll.Until(
             () => StubFile.Lines(Heard).Any(line => line.StartsWith("prompt[account-2]: ", StringComparison.Ordinal) && line.Contains("how do I drive a repository?")),
             () => Seen(ledger, events, "h2"));
-        var kept = new HelpConversations(_home).Read("h2");
+        var kept = new ConversationFacts(_home).Read("h2");
         Assert.Equal((old, HelpConversations.Brief), (kept.From, kept.Handed));
         Assert.Contains($"You continue session `{old}`", StubFile.Lines(Heard).Single(line => line.StartsWith("prompt[account-2]: ", StringComparison.Ordinal)));
 

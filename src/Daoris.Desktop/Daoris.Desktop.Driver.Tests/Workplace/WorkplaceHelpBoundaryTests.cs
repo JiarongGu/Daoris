@@ -95,17 +95,16 @@ public sealed class WorkplaceHelpBoundaryTests : IDisposable
 
     [Theory]
     [InlineData(null)]
-    [InlineData(".help.json")]
     [InlineData(".wired.json")]
     [InlineData(".published.json")]
     public void Literal_historical_files_keep_help_inventory_order_bytes_and_refusal_continuation(string? refused)
     {
         var sessions = DaorisHome.Entry(_home, HomeEntry.Sessions);
         Directory.CreateDirectory(sessions);
-        var suffixes = new[] { ".help.json", ".wired.json", ".published.json" };
-        var sizes = new[] { 3, 5, 7 };
+        var suffixes = new[] { ".wired.json", ".published.json" };
+        var sizes = new[] { 5, 7 };
         for (var index = 0; index < suffixes.Length; index++) File.WriteAllText(Path.Combine(sessions, "s1" + suffixes[index]), new string('x', sizes[index]));
-        var other = Path.Combine(sessions, "s2.help.json");
+        var other = Path.Combine(sessions, "s2.wired.json");
         File.WriteAllText(other, "another session");
         var conversation = Path.Combine(sessions, "s1.events.jsonl");
         File.WriteAllText(conversation, "abc");
@@ -118,13 +117,13 @@ public sealed class WorkplaceHelpBoundaryTests : IDisposable
                 throw refused == ".wired.json" ? new UnauthorizedAccessException("held") : new IOException("held");
             File.Delete(path);
         });
-        Assert.Equal((3L, 15L), (inventory.Size("s1").Conversations, inventory.Size("s1").Other));
+        Assert.Equal((3L, 12L), (inventory.Size("s1").Conversations, inventory.Size("s1").Other));
         var result = inventory.Remove(["s1"], null);
         Assert.Equal(new[] { conversation }.Concat(suffixes.Select(suffix => Path.Combine(sessions, "s1" + suffix))), calls);
         Assert.Equal(["conversation", "help"], result.Went["s1"]);
         Assert.Equal(refused is null ? Array.Empty<string>() : ["help"], result.Stayed["s1"]);
         Assert.Equal(refused is null ? Array.Empty<string>() : [Path.Combine(sessions, "s1" + refused)], result.Failed);
-        Assert.Equal(15 - (refused is null ? 0 : sizes[Array.IndexOf(suffixes, refused)]), result.Bytes["s1"].Other);
+        Assert.Equal(12 - (refused is null ? 0 : sizes[Array.IndexOf(suffixes, refused)]), result.Bytes["s1"].Other);
         Assert.Equal(3, result.Bytes["s1"].Conversations);
         Assert.Equal("another session", File.ReadAllText(other));
         foreach (var suffix in suffixes) Assert.Equal(suffix == refused, File.Exists(Path.Combine(sessions, "s1" + suffix)));

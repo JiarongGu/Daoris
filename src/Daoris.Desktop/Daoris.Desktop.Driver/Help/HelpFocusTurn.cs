@@ -38,7 +38,7 @@ public static class HelpFocusTurn
         string home, string session, string? workspace, IReadOnlyList<RepoView>? registry, SaidWordView? first = null)
     {
         HelpFocusChange? change = null;
-        new HelpConversations(home).Change(session, kept =>
+        new ConversationFacts(home).Change(session, kept =>
         {
             var held = HelpFoci.Of(kept, workspace);
             var wanted = held.FocusNext ?? held.Focus;
