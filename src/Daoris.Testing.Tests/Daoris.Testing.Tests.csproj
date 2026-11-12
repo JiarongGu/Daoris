@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Layers.props" />
+
+  <!--
+    The unit tier of the layered libraries: the fakes run through the contract cases a real adapter will run too, and the ports'
+    shape is held. It touches nothing real, which the banned-effects analyzer holds at compile time.
+  -->
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Daoris.Testing.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Testing\Daoris.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

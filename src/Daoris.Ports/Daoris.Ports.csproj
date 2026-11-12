@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Layers.props" />
+
+  <!--
+    The effect contracts the application depends on and the adapters implement, with their value records, one folder per port family.
+    It references the standard library alone, which is what lets the application, the service's policy and every adapter reference it
+    and reach nothing else through it. A package here would be a dependency of all of them.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Ports</RootNamespace>
+    <AssemblyName>Daoris.Ports</AssemblyName>
+    <Description>the effect contracts of the application: git, processes, the store's unit of work, the browser and the harness</Description>
+  </PropertyGroup>
+
+</Project>

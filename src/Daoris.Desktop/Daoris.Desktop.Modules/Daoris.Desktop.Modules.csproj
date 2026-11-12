@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+    <Using Include="Daoris.Ports.Browser" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Layers.props" />
+
+  <!--
+    Every fake of a port and the contract cases each port's fake and its real adapter must both pass, so a fake that drifts from the
+    real thing fails at its adapter's run and not in an application test months later. A test-only library: it references the ports
+    and the test framework and no adapter, and no shipping project references it.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Testing</RootNamespace>
+    <AssemblyName>Daoris.Testing</AssemblyName>
+    <Description>the fakes of the ports and the contract cases that hold each fake to its real adapter</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>

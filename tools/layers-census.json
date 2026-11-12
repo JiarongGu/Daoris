@@ -1,0 +1,27 @@
+{
+  "packages": {
+    "Daoris.Desktop.Driver.Tests": [
+      "Microsoft.CodeAnalysis.CSharp",
+      "Microsoft.DevTunnels.Ssh.Tcp"
+    ],
+    "Daoris.Desktop.Driver": [
+      "LibGit2Sharp",
+      "Lyntai.Core",
+      "Lyntai.Providers.Basic",
+      "Microsoft.Data.Sqlite",
+      "SQLitePCLRaw.bundle_e_sqlite3",
+      "System.Security.Cryptography.ProtectedData"
+    ],
+    "Daoris.Service.Core": [
+      "Lyntai.Core",
+      "Lyntai.Storage.Sqlite",
+      "Microsoft.Data.Sqlite",
+      "SQLitePCLRaw.bundle_e_sqlite3"
+    ],
+    "Daoris.Service.Http.Tests": [
+      "Microsoft.AspNetCore.Mvc.Testing"
+    ]
+  },
+  "ambient": {},
+  "slowTests": {}
+}
