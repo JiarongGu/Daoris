@@ -55,7 +55,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
         var scope = governed.Scope!;
         if (scope.AfterHanded.Contains(attempt.Node))
         {
-            return records.Read(governed.Unit.Id) is { } record ? LandedFrame(governed, record) : null;
+            return records.Read(governed.Unit.Id) is { } record ? LandedFrame(governed, record) ?? LandingSentFor.Frame(governed, attempt) : null;
         }
 
         var branch = scope.Branch?.Id == attempt.Call.Unit ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == attempt.Call.Unit);
@@ -92,18 +92,15 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
     }
 
     /// <summary>
-    /// The frame a run's plugin node is told under: one after <c>handed</c>, the landed branch at its landing's tip; an attempt waiting, the
-    /// branch it is sent for; any other, the branch its binding observes, else the run's branch. Null where none is found this pass, and it is
-    /// told nothing.
+    /// A run's plugin node's frame: after <c>handed</c>, the landing's, else its waiting call's (<see cref="LandingSentFor"/>); a waiting attempt,
+    /// its call's branch; any other, its binding's branch, else the run's. Null where none is found this pass, and it is told nothing.
     /// </summary>
     private WatchedUnit? RunFrame(GovernedUnit governed, NodeRecord record, string node, PassTips tips)
     {
         var scope = governed.Scope!;
-        if (scope.AfterHanded.Contains(node)) return LandedFrame(governed, record);
-        if (record.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown) is { } waiting)
-        {
-            return RunTold(governed, waiting, tips);
-        }
+        var waiting = record.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown);
+        if (scope.AfterHanded.Contains(node)) return LandedFrame(governed, record) ?? (waiting is null ? null : LandingSentFor.Frame(governed, waiting));
+        if (waiting is not null) return RunTold(governed, waiting, tips);
 
         var observes = record.Statuses.GetValueOrDefault(node)?.Binding?.Observes;
         var branch = observes is null || scope.Branch?.Id == observes ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == observes);

@@ -96,6 +96,18 @@ export async function standIn() {
         && each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
           && artifact.definitionReference.version.id === query('artifactVersionId'))) }];
     }
+    if (request.method === 'POST' && path === `${PROJECT}/release/releases`) {
+      const sent = JSON.parse(text);
+      const taken = api.definitions.find((each) => each.id === sent.definitionId);
+      const artifact = taken?.artifacts.find((each) => each.alias === sent.artifacts?.[0]?.alias);
+      if (!artifact) return [400, { message: 'no such release definition or artifact alias' }];
+      const id = Math.max(0, ...api.releases.map((each) => each.id)) + 1;
+      const made = { id, name: `Release-${id}`, releaseDefinition: { id: taken.id }, environments: structuredClone(taken.environments ?? []),
+        artifacts: [{ type: 'Build', alias: artifact.alias, sourceId: `${artifact.definitionReference.project.id}:${artifact.definitionReference.definition.id}`,
+          definitionReference: { version: { id: sent.artifacts[0].instanceReference.id } } }] };
+      api.releases.push(made);
+      return [200, made];
+    }
     const release = /^\/acme\/Proj\/_apis\/release\/releases\/(\d+)(?:\/environments\/(\d+))?$/.exec(path);
     const held = release ? api.releases.find((each) => each.id === Number(release[1])) : null;
     if (held && !release[2] && request.method === 'GET') return [200, held];

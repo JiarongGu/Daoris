@@ -151,12 +151,12 @@ public static partial class WorkInventory
 
     /// <summary>
     /// The quests that produced <paramref name="unit"/>, by what its landings name: a landing carrying it alone names
-    /// its own quest for it, and each session's work the record names this unit for names the quest that session served, the
-    /// landing's own falling back to the quest the landing names. Never a guess: work the record names no unit for links nothing.
+    /// the quest its own session served, as does each session's work the record names this unit for; the quest it is named for, a chain's
+    /// first and maybe another repository's, only where the record keeps none. Never a guess: work the record names no unit for links nothing.
     /// </summary>
     private static IEnumerable<string> QuestsOf(LandedBranch landing, string unit)
     {
-        if (landing.Quest is { Length: > 0 } named && landing.Units.Count <= 1) yield return named;
+        if ((landing.Served ?? landing.Quest) is { Length: > 0 } named && landing.Units.Count <= 1) yield return named;
         var work = landing.Work();
         for (var at = 0; at < work.Count; at++)
         {

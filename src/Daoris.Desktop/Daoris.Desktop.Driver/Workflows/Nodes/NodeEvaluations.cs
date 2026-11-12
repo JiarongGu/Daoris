@@ -66,6 +66,7 @@ internal static class NodeEvaluations
 
         var landed = Landed(governed, before);
         if (landed is { } on) units.TryAdd(on.Unit.Id, on.Unit);
+        var landedOn = LandedBranchKept.Of(governed.Graph, before);
         var subjects = new Dictionary<string, string?>(StringComparer.Ordinal);
         var own = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var node in scope.Tip is null ? nodes : [])
@@ -94,6 +95,12 @@ internal static class NodeEvaluations
                     break;
                 case RunSubject.Branch:
                 case RunSubject.Record:
+                    if (LandedBranchKept.Revision(before[node.Id], landedOn, scope.Branch?.Id) is { } kept)
+                    {
+                        (subjects[node.Id], own[node.Id]) = (landedOn, kept);
+                        break;
+                    }
+
                     subjects[node.Id] = scope.Branch?.Id;
                     // A branch whose tip is not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
                     // only a moved subject lapses it; one not bound yet takes the commit its session branch records the line holding, so work

@@ -85,8 +85,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (D190, D227, D232)
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests and carries the work on
     `work`; a `review` binds its review record (rule 22); the gates, landing and plugin nodes bind the run's branch at its tip, the
-    one its tree moved onto once the look learned it; a `go-ahead` binds the run's ask. A branch several runs made is each run's,
-    one shared with Current's work held, said; a plugin's event on it goes to the runs awaiting it at that commit, else to those
+    one its tree moved onto once the look learned it; a `go-ahead` binds the run's ask. Once its landing has reached, the steps bound to
+    the landed branch keep it whatever branch stands as the run's after (an earlier attempt's once the landed one is tidied away), so only
+    its chain coming back here or the person's word takes a landed run back (`LandedBranchKept`). A branch is the work of the quest its
+    session served, never of the chain's first quest a landing is named for, which may be another repository's. A branch several
+    runs made is each run's, one shared with Current's work held, said; a plugin's event on it goes to the runs awaiting it at that commit, else to those
     whose graph names the step. A node fed on a `data` wire binds that value, so a moved input rebinds only what it feeds; a
     target's tip, once read, rebinds only while nothing fed is active or reached. A node only a skipped producer feeds is skipped
     with it. An unbound step after a review, its tip unread, binds the commit the review accepted. A step's commits stay on
