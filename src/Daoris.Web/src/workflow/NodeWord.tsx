@@ -10,10 +10,10 @@ import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
-  'not-task', 'not-waiting', 'not-return',
+  'not-task', 'not-waiting', 'not-return', 'not-plugin-step',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'try-again', 'changes', ...TASK_ACTS, ...RETURN_ACTS];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -104,7 +104,24 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.goOn')}
             </Button>
           )}
+          {/* A failed plugin step is tried again, as a new attempt its plugin is sent. */}
+          {acts.includes('try-again') && (
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('try-again')}>
+              {t('workflow.run.node.tryAgain')}
+            </Button>
+          )}
         </div>
+      )}
+      {asking === 'try-again' && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.run.node.tryAgainTitle', { node })}
+          says={t('workflow.run.node.tryAgainSays', { node })}
+          meanIt={t('workflow.run.node.tryAgainMeanIt')}
+          onConfirm={(answered) => send('try-again', answered)}
+          onClose={close}
+        />
       )}
       {asking !== null && isTaskAct(asking) && (
         <TaskPress block act={asking} node={node} words={words} onWords={setWords} onConfirm={(answered) => send(asking, answered)} onClose={close} />

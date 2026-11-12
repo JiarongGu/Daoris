@@ -1,0 +1,44 @@
+{
+  "id": "daoris-dev-report",
+  "apiVersion": 1,
+  "name": "Development report",
+  "version": "1.0.0",
+  "changes": "First version: report files a titled report from a session, and inbox lists, reads and marks the reports, for the person's own development agent to read.",
+  "description": "A place for Daoris's sessions to report to the person's own development agent: a session files a titled report with its evidence, and the agent reads the inbox from a terminal. Nothing leaves the machine.",
+  "hooks": {
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["session/ended"]
+  },
+  "interfaces": {
+    "commands": [
+      {
+        "name": "report",
+        "title": { "en": "File a report", "zh": "提交报告" },
+        "about": { "en": "Files one report for the person's development agent: a title, a Markdown body and, where there is some, the evidence (paths, log lines). Answers the report's id.", "zh": "为用户的开发代理提交一份报告：标题、Markdown 正文，以及（如有）证据（路径、日志行）。返回报告的 id。" },
+        "tool": true,
+        "on": ["session", "run"],
+        "args": [
+          { "name": "title", "type": "text", "title": { "en": "Title", "zh": "标题" }, "required": true },
+          { "name": "body", "type": "text", "title": { "en": "Report (Markdown)", "zh": "报告（Markdown）" }, "required": true },
+          { "name": "evidence", "type": "text", "title": { "en": "Evidence: paths, log lines", "zh": "证据：路径、日志行" } },
+          { "name": "severity", "type": "choice", "title": { "en": "Severity", "zh": "严重程度" }, "choices": ["note", "defect", "blocking"] }
+        ]
+      },
+      {
+        "name": "inbox",
+        "title": { "en": "Read the reports", "zh": "查看报告" },
+        "about": { "en": "Lists the reports, unread first and then newest first; `read` prints one whole by its id or the tail of it, and `mark` marks it read.", "zh": "列出报告，未读的在前，其次按时间从新到旧；`read` 按 id 或其尾部打印一份完整报告，`mark` 将其标为已读。" },
+        "tool": true,
+        "args": [
+          { "name": "action", "type": "choice", "title": { "en": "What to do", "zh": "操作" }, "choices": ["list", "read", "mark"] },
+          { "name": "id", "type": "text", "title": { "en": "Report id, or its tail", "zh": "报告 id 或其尾部" } },
+          { "name": "unread", "type": "boolean", "title": { "en": "Only the unread", "zh": "只看未读" } }
+        ]
+      }
+    ],
+    "storage": { "for": "The reports, one record each." }
+  },
+  "tools": [
+    { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's plugin.mjs." }
+  ]
+}

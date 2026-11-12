@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## DEVLINK1: a plugin for sessions to report to the development agent (2026-11-12)
+
+> **DEVLINK1** (plugins, examples): Outcome: `examples/plugins/daoris-dev-report` 1.0.0 listens on `session/ended` alone (a manifest with interfaces needs a point) and declares two tool commands over its own private storage (the kit's `storage.mjs`, one record at a time under a lock): `report` (`title`, `body`, `evidence`, `severity` note, defect or blocking) files a record with an id, time, session and place and answers the id in `said` and `data`; `inbox` (`--unread`, `read <id>`, `mark <id>`) lists unread first, newest first. The development agent reads it with `daoris daoris-dev-report inbox`; its `node --test` cases and `PluginKitExampleTests` hold it.
+
+---
+
 ## PLUGINEXT1's refused step's `needs` (2026-11-12)
 
 > **PLUGINEXT1 a/c, a refused step's `needs`** (driver, web; D274): Outcome: a failed outcome (a completion, a reconcile, a step agent's `step_answer`) may carry `needs: "<command>"`, read by the work wire, kept on the node's status, cleared at the next start, and judged where a run is read (`RunNeeds`) against its plugin's declared commands; a declared one is the run step's `needs`, drawn as a door titled by the command that opens its round card (`askCommand`), any other ignored and said in the step's words; both catalogues; `WorkWireTests`, `NodeNeedsLifecycleTests`, `RunNeedsTests`, `WorkflowGraphRunTests`, `WorkflowRunView.needs.test.tsx`.

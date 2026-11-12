@@ -222,6 +222,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Offers:** `OFFERED_PLUGINS` in `tools/desktop-publish/lay.mjs` and `PluginOffers`.
 - **A shipped plugin's behaviour:** its folder in `examples/plugins/`, its version and `changes` line, its README's `## What it
   needs`. The kit's files change in every working example in the same commit (`PluginKitExampleTests`).
+- **A session's report to the development agent:** `examples/plugins/daoris-dev-report/`, whose only point is the observation `session/ended`, answered with nothing (`hooks` needs a point): `report` (a tool,
+  not marked `writes` since it changes nothing outside the plugin; `on` session and run: `title`, `body`, `evidence`, `severity` note, defect or blocking) files one record, id, time, the round's
+  session and place, into the plugin's private storage through the kit's `storage.mjs`, and answers the id in `said` and `data`;
+  `inbox` (a tool and a terminal verb: `--unread`, `read <id>`, `mark <id>`) lists unread first, newest first. The person's own
+  agent reads it with `daoris daoris-dev-report inbox` against the install's home.
 - **The page:** `src/Daoris.Web/src/plugins/`, chrome through both catalogues. **Steps and the work wire:** the workflows area.
 - **Tests:** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`, `HookTests`,
   `PluginSwitchesTests`, `PluginCommandRunTests`, `PluginToolsServerTests`, `WorkEventTellerTests`, `PluginSystemsTests`,

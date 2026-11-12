@@ -554,7 +554,7 @@ public sealed class NodeRuntime(
         {
             Keeping.KeepReviews(governed, run);
             await Keeping.AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
-            if (_holdsLease() && ThroughAccepts.Keep(records, governed, run, clock) is { } through) said.Add(through);
+            if (_holdsLease() && ThroughAccepts.Keep(records, governed, run, _config, clock) is { } through) said.Add(through);
             Keeping.StartDoors(governed, run);
             Keeping.KeepPullRequests(governed);
             await Keeping.EndAsync(governed, run, said, (commit, token) => git.OnLine(run.Root, run.Run.Binding.Repository, run.Run.Binding.Workspace, commit, token), ct)

@@ -130,6 +130,7 @@ public static class RuleProposals
             {
                 var rule = Rule(change);
                 var list = change.List ?? throw new DriverException("a rule goes in `allow`, `ask` or `deny`.");
+                if (PushProposals.Refusal(change) is { } push) throw new DriverException(push);
                 var sits = Sits(file, change, rule);
                 if (sits == list) return ChangeEffect.Nothing;
                 return list switch

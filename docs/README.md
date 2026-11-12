@@ -36,6 +36,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../examples/plugins/daoris-in-app-browser/README.md`|Browser connection plugin
 |`../examples/plugins/daoris-github/README.md`|Daoris's GitHub plugin
 |`../examples/plugins/daoris-azure-devops/README.md`|Daoris's Azure DevOps plugin
+|`../examples/plugins/daoris-dev-report/README.md`|Development report plugin
 |`../examples/plugins/local-preview/README.md`|Performed step plugin
 |`../tools/dsh-probes/README.md`|Protocol probes
 
