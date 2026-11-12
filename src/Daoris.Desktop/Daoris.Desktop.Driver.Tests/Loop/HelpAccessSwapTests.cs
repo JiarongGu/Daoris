@@ -50,11 +50,11 @@ public sealed class HelpAccessSwapTests : IDisposable
     /// <paramref name="settings"/> (none by default).
     /// </summary>
     private static Chat Running(
-        ChatRunner runner, string id, string mode, IReadOnlyList<string>? off = null)
+        ChatRunner runner, string id, string mode, IReadOnlyList<string>? off = null, Func<Task<bool>>? ready = null)
     {
         var chat = new Chat();
         chat.Turns = new ChatTurns(
-            ready: () => Task.FromResult(true),
+            ready: ready ?? (() => Task.FromResult(true)),
             take: (_, sent) =>
             {
                 sent();
@@ -91,6 +91,29 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(0, busy.Finished);
         busy.Turn.SetResult();
         await Poll.Until(() => busy.Finished == 1, () => "the turn's end never ended it");
+    }
+
+    /// <summary>
+    /// The person's first word, said while its agent still opens, is a turn under way: a focus chosen then ends the conversation at that
+    /// turn's end, never before its first answer, so the word is answered and kept.
+    /// </summary>
+    [Fact]
+    public async Task A_focus_chosen_before_the_first_answer_keeps_the_word_said_while_the_agent_opens()
+    {
+        var runner = Runner();
+        var opened = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var chat = Running(runner, "h1", HelpModes.Restricted, ready: () => opened.Task);
+        chat.Turns.Say(new ChatMessage("the ticket", []));
+
+        runner.HelpFocusChosen("h1", waiting: true);
+        await Task.Delay(200);
+        Assert.Equal(0, chat.Finished);
+
+        opened.SetResult(true);
+        await Poll.Until(() => chat.Turns.Running, () => "the first word's turn never started");
+        Assert.Equal(0, chat.Finished);
+        chat.Turn.SetResult();
+        await Poll.Until(() => chat.Finished == 1, () => "the first turn's end never ended it");
     }
 
     [Fact]

@@ -129,6 +129,25 @@ public sealed class HelpFocusTests : IDisposable
         Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
     }
 
+    /// <summary>
+    /// The person's first word, shown waiting while the agent opened ahead still opens, or held in its turns before any answer, is a
+    /// word said: a focus chosen then reopens nothing, so the conversation that holds the word is never ended for the change before it answers.
+    /// </summary>
+    [Fact]
+    public void A_focus_chosen_before_the_first_answer_reopens_nothing_that_holds_the_persons_word()
+    {
+        var record = Help("h1");
+        new HelpWired(_home).Keep("h1", new HelpReceipt { At = Monday, Door = "claude-code", Folder = "room", Focus = HelpFocus.OfWorkspace("Games") });
+        Choose(record, Engine);
+        Assert.True(HelpFocusAhead.Reopens(_home, "h1", Events));
+
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events, new ChatQueue(false, [new ChatMessage("the ticket", [])], Opening: true)));
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events, new ChatQueue(true, [])));
+
+        Events.Append("h1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "the ticket", Reaches = "turn-end", At = Monday });
+        Assert.False(HelpFocusAhead.Reopens(_home, "h1", Events));
+    }
+
     [Fact]
     public void A_change_after_words_waits_for_the_next_message_and_choosing_the_focus_again_clears_it()
     {

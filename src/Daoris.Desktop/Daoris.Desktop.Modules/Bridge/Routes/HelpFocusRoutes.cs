@@ -54,7 +54,7 @@ public sealed class HelpFocusRoutes(DriverContext context)
     private bool Swap(string session)
     {
         if (!SessionEventText.IsId(session)) return false;
-        var reopens = HelpFocusAhead.Reopens(_loop.Home, session, _loop.Events);
+        var reopens = HelpFocusAhead.Reopens(_loop.Home, session, _loop.Events, _loop.Chat?.Queue(session));
         _loop.Chat?.HelpFocusChosen(session, reopens || new HelpConversations(_loop.Home).Read(session).FocusNext is not null);
         return reopens;
     }

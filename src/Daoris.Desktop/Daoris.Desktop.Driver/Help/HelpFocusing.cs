@@ -64,7 +64,7 @@ public sealed class HelpFocusing(string home)
             return Refuse(session, Ended, $"`{session}` has ended and cannot go on, so its focus stays as it is.");
         }
 
-        var spoken = events.Openings([session]).GetValueOrDefault(session) is not null;
+        var spoken = HelpFocusAhead.Spoken(events, session);
         var kept = new HelpConversations(home);
         kept.Change(session, now => spoken
             ? now with { FocusNext = place.Equals(HelpFoci.Of(now, record.Workspace).Focus) ? null : place }
