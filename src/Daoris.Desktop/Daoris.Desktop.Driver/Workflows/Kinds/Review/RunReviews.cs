@@ -36,10 +36,6 @@ public static class RunReviews
         };
     }
 
-    /// <summary>
-    /// The steps an Accept of <paramref name="graph"/>'s review leads to, each as <paramref name="record"/> holds it; none where the graph holds
-    /// no review. Read from a run already found, so a reader of every run reads each once.
-    /// </summary>
     public static IReadOnlyList<RunReviewStep> Follows(NodeGraph graph, NodeRecord record) =>
         graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
             ? [.. Following(graph, review.Id).Select(each => Step(record, each.Node, each.Via))]

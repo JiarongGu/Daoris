@@ -28,7 +28,6 @@ internal static class LedgerChanges
     /// <summary>The topic each answer that names a family wakes (<see cref="ChangeTopics.Ledger"/> is this name): the change stream's own, so the service owns its spelling.</summary>
     public const string Topic = "ledger";
 
-    /// <summary>The quests' family, as the change stream spells it.</summary>
     public const string Quests = "quests";
 
     /// <summary>Whether a wake's <paramref name="subject"/>, the families an answer named, names <paramref name="family"/>.</summary>
