@@ -162,6 +162,8 @@
   "workflow.run.lineIn": "{{repository}}: {{says}}",
   "workflow.run.head": "{{repository}} · Current workflow, version {{version}}",
   "workflow.run.quoted": "“{{words}}”",
+  "workflow.run.through.accepted": "Accepted on your words: “{{quote}}”, kept on ask #{{ask}}",
+  "workflow.run.through.passed": "Passed on your words: “{{quote}}”, kept on ask #{{ask}}",
   "workflow.run.reading": "Reading where this work stands…",
   "workflow.run.none": "Nothing runs here yet: no quest of this work is published.",
   "workflow.run.noRun.no-session": "No session `{{id}}` is recorded here.",

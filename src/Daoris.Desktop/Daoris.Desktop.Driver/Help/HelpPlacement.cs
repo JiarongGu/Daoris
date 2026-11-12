@@ -45,8 +45,8 @@ internal static class HelpPlacement
             Reads = handed,
             CheckoutsOff = access.CheckoutsOff,
             OwnWithheld = OwnFamilies.Servers | OwnFamilies.Plugins | OwnFamilies.Chrome,
-            // In no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
-            Block = new StandingFacts { Workspace = circle },
+            // In no repository, its standing block is the workspace's part alone and its focus, which its shared room never says.
+            Block = new StandingFacts { Workspace = circle, Focus = HelpFocusTold.Words(null, workspace, focus ?? HelpFocus.Home(workspace)) },
         };
     }
 

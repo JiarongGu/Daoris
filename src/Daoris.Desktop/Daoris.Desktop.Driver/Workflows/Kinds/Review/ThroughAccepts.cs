@@ -11,7 +11,21 @@ namespace Daoris.Driver;
 public static class ThroughAccepts
 {
     /// <summary>The words each word kept on them says, naming the quote and the ask it is kept on.</summary>
-    public static string Words(string ask, string quote) => $"accepted on your words, \"{quote}\", kept on ask #{ask}";
+    public static string Words(string ask, string quote) => $"{Opening}{quote}{Closing}{ask}";
+
+    private const string Opening = "accepted on your words, \"";
+    private const string Closing = "\", kept on ask #";
+
+    /// <summary>The quote and ask of a step moved on through words, read back from what <see cref="Words"/> kept; null for any other word.</summary>
+    public static RunStepThrough? On(NodeStatus status)
+    {
+        if (status is not { State: NodeStates.Reached or NodeStates.Skipped, By: NodeSource.Person, Words: { } words }) return null;
+        if (!words.StartsWith(Opening, StringComparison.Ordinal)) return null;
+        var closing = words.LastIndexOf(Closing, StringComparison.Ordinal);
+        if (closing < Opening.Length) return null;
+        var ask = words[(closing + Closing.Length)..];
+        return ask.Length == 0 ? null : new RunStepThrough(ask, words[Opening.Length..closing]);
+    }
 
     /// <summary>The step the through words act on now, with the act, or null where the run waits for the person.</summary>
     public static (string Node, string Act)? Due(NodeGraph graph, NodeRecord record, IReadOnlyList<QuestView> quests)

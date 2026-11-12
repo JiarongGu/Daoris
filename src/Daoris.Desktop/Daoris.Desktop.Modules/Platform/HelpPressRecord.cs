@@ -21,6 +21,8 @@ public sealed record HelpPressNow(
 
     /// <summary>That it asked the person on a card in restricted mode rather than ran: the receipt's and Notifications' <i>Asked you</i>.</summary>
     public bool Asked { get; init; }
+
+    public HelpPressStep? Step { get; init; }
 }
 
 /// <summary>
@@ -71,6 +73,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
             Place = place?.Place.Wire(),
             Beyond = place?.Beyond ?? false,
             Asked = asked,
+            Step = scope == "run" ? HelpPressStep.Of(request) : null,
         };
         lock (_gate)
         {
@@ -134,9 +137,9 @@ public sealed class HelpPressRecord(TimeProvider clock)
         }
     }
 
-    private static readonly string[] s_scopes = ["quest", "ask", "repository", "session"];
+    private static readonly string[] s_scopes = ["quest", "ask", "repository", "session", "run"];
 
-    /// <summary>What the press named and the field that named it (<c>quest</c>, <c>ask</c>, <c>repository</c> or <c>session</c>), the first it carried.</summary>
+    /// <summary>What the press named and the field that named it (<c>quest</c>, <c>ask</c>, <c>repository</c>, <c>session</c> or <c>run</c>), the first it carried.</summary>
     internal static (string? Scope, string? Target) Subject(IpcRequest request)
     {
         foreach (var scope in s_scopes)
@@ -147,7 +150,7 @@ public sealed class HelpPressRecord(TimeProvider clock)
         return (null, null);
     }
 
-    private static string? Named(IpcRequest request, string field) =>
+    internal static string? Named(IpcRequest request, string field) =>
         request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty(field, out var value)
         && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text ? text : null;
 }

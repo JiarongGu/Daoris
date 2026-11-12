@@ -40,6 +40,7 @@ export type HelpPressNow = {
   beyond?: boolean;
   /** That it asked the person on a card in restricted mode rather than ran: Notifications' and the receipt's *Asked you*. */
   asked?: boolean;
+  step?: { node: string; act: string } | null;
 };
 
 /** The owner's own press that takes back an Ask Daoris press the window already sends: the work's resume, for a pause. */

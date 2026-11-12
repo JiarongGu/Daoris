@@ -250,7 +250,7 @@ of everything it handed, section by section.
     `START_HELP` places a conversation of its own, never handed one running or starting, so a new conversation's first word
     starts its own turn (`HelpStarting` holds the words of each starting conversation by its id). What they share is the
     workspace's room folder, whose files each open and go-on writes whole under the room's own gate (`HelpRoomWrites`),
-    never a turn's. The person never ends a conversation: the composer's one *Stop*, offered while a reply runs on any door,
+    never a turn's, and which name no conversation's focus. The person never ends a conversation: the composer's one *Stop*, offered while a reply runs on any door,
     stops that reply's whole process tree (`STOP_SESSION`), and every conversation shown, stopped, ended, failed or lost,
     keeps its composer and sends the next word to itself, which the driver continues (rules 13 and 14), said above the box
     (*Stopped. Your next word continues this conversation.*); a conversation opens ahead only under a blank panel. While a reply
@@ -265,10 +265,12 @@ of everything it handed, section by section.
     window opens (roles-and-supervision 55). A limit move opens it again in its room, under the same focus. Its room folder, history and the one running are
     its home workspace's own. What it is about, its focus, is the person's choice: this machine, a workspace or a repository
     (`HelpFocus`), its home's by default (`default`'s is this machine), kept on its file beside its name and pin with the one
-    waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for the focus
-    (`HelpRoomScope.Project` over a place): the whole machine, a workspace's projection, or a repository's workspace with that
-    repository's own first under *In focus*; its first lines name the focus and that it limits nothing, and its tools start at
-    the focus's workspace (`all` for this machine), which the start's receipt names beside the focus. It reads another
+    waiting, each one held, and each message that carried a change (`HelpFocusMark`). The room is written for its home
+    alone, saying that the focus is told in the conversation's first words; each conversation is told its own in the standing block
+    of its first message (`StandingFacts.Focus`, `HelpFocusTold`): the focus and that it limits nothing, where the focus is in
+    another workspace what the room lists, and a repository's own facts from its workspace's projection under *In focus*
+    (`HelpFocusGathered`); a go-on, the same conversation, is told only a change. Its tools start at the focus's workspace (`all`
+    for this machine), which the start's receipt names beside the focus. It reads another
     workspace by naming it, or every workspace with `all`, and presses, reads checkouts and presses with no card the families of acts the
     person granted (pauses, clean-up, discarding a session branch, the chosen settings: verbs of the `daoris` command, with
     no `housekeeping_*` or `settings_*` tool) in any workspace's repositories, each judged by its own judge and none refused
@@ -287,7 +289,9 @@ of everything it handed, section by section.
     breadcrumb marking a focus outside the window's workspace, a home that is not the window's, a change waiting and a place
     gone (`FocusCrumb.tsx`). A choice is sent at once (`HELP_FOCUS`). Chosen before its first words the focus is its first,
     carried by the start where none was opened ahead, and an agent opened ahead under another place ends at once so the page
-    opens it ahead again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or
+    opens it ahead again (`reopens`); a word of the person's shown waiting, or held in its turns while the agent still opens,
+    is a first word said (`HelpFocusAhead.Spoken`), so a choice then reopens nothing and the word is answered first.
+    Chosen after, it waits for the next words: a running agent ends at its turn's end, or
     now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
     in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
     which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of
@@ -377,8 +381,9 @@ of everything it handed, section by section.
   outliving its processes and its agent; a word kept before it is acknowledged; *Stop* ends the reply and holds what waits; the
   next word continues every end; agent and account switched between turns. Rows a (ASKCHAT1) to l in
   `docs/2026-11-12-conversation-foundation-design.md` §7.
-- **CHATUX1:** the conversation surfaces read and handle unlike a modern assistant's desktop app (list, column, streaming and Stop,
-  edit and retry, folded thinking and tools). Needs a design.
+- **CHATUX1:** the conversation surfaces lack a reading column, a composer that is one box with one primary press, per-message
+  handles (copy, retry, edit), in-field keys, a run that says what it did, and a session conversation's list by date, rename and pin.
+  Designed and proposed (`docs/2026-11-12-chat-ux-design.md`, D279 reserved); nothing built.
 - **ASKPUSH1:** a driven session's *Send now* on a door that cannot steer (a driven native run, started with no stdin) still waits
   for the turn's end; its stop-and-resume fallback is not built. The real-process proof of each harness against a stub model
   (`tools/steer-proof.mjs`) drives the harness as Daoris frames it, not through the driver.
