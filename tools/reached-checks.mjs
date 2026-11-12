@@ -15,7 +15,7 @@
  * real dependency runs only where a changed path is that dependency's code (`tiers` in `daoris.gates.json`); the others are
  * left to the nightly run, and said.
  *
- *   node tools/reached-checks.mjs [--plan] [--paths <path>[,<path>…]]
+ *   node tools/reached-checks.mjs [--plan] [--unbounded] [--paths <path>[,<path>…]]
  *
  * The changed paths are the checkout's against HEAD (what an open merge changes); `--paths` names them, `--plan` says what
  * would run and runs nothing. With nothing changed there is nothing reached, and it says so. The passes are kept in
@@ -47,7 +47,7 @@ export function changedPaths(root) {
 export const storeFile = (root) => process.env.DAORIS_REACHED_STORE || join(verdictsHome(root), 'local', 'reached-classes.json');
 
 /** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
-export function planFor(root, paths, store) {
+export function planFor(root, paths, store, { bounds = {} } = {}) {
   if (paths.length === 0) return { plan: reachedPlan([], paths), night: {}, keys: new Map() };
   const { files, read } = treeOf(root);
   const map = census(files, read);
@@ -60,7 +60,7 @@ export function planFor(root, paths, store) {
   const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
-  return { plan: reachedPlan(run, paths, { replayed: counts }), night, keys };
+  return { plan: reachedPlan(run, paths, { bounds, replayed: counts }), night, keys };
 }
 
 /** What a command of the plan ran, given the logger's file: the classes it saw pass, or every unit where it exited clean and logs none. */
@@ -77,7 +77,9 @@ async function main(argv) {
   const at = argv.indexOf('--paths');
   const paths = at >= 0 ? (argv[at + 1] ?? '').split(',').filter(Boolean) : changedPaths(root);
   const store = new PassedClasses(storeFile(root));
-  const { plan, night, keys } = planFor(root, paths, store);
+  // A store is warmed by running every class the paths reach, which no merge does: its bound is the suite's size.
+  const bounds = argv.includes('--unbounded') ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
+  const { plan, night, keys } = planFor(root, paths, store, { bounds });
   for (const line of [...reachedLines(plan), ...nightLines(night)]) console.log(line);
   const commands = reachedCommands(plan);
   if (argv.includes('--plan')) {

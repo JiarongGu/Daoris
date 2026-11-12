@@ -120,7 +120,10 @@ finishes first and the whole set runs once.
     the writer. Every lock (the verdict store's, the gate tree's, the CI watch's) is put in place complete (`locks.mjs` over
     `run-lock.mjs`), names its holder by pid and creation time, and is taken over only from a holder judged dead and still the one
     judged; a take-over ends only that holder's children. One run at a time holds a checkout's open merge
-    (`local/merge-run.lock`): a second is refused naming the holder's pid and start, never let to collide. New merge behaviour is typed
+    (`local/merge-run.lock`): a second is refused naming the holder's pid and start, never let to collide. A queue entry whose
+    process is gone is never left stuck: `--queue` names a candidate that says it runs while neither its run nor the runner is
+    alive, and `--queue --recheck` starts the runner, which resumes it, and clears a request or candidate whose tips main already
+    holds into the landed record. New merge behaviour is typed
     TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`, tested beside it by `node --test`),
     which `merge-branch.mjs` calls. (from D180, MERGEFLOW1)
 20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
@@ -137,7 +140,14 @@ finishes first and the whole set runs once.
     primed); a branch lands through the merge tool, never a plain `git merge`. The merge also runs the CLI's verify (`MERGE_SUITES`:
     the lists, records and documents no path places) and `reached` (`tools/reached-checks.mjs` runs the test units the census says
     the paths reach in the driver's, modules', service's, page's and tools' suites, nearest the change first, bounded per suite by
-    `tools/merge-branch/reached.mjs`, the rest counted), so a list, census or structure red never lands. The CI runs beside on
+    `tools/merge-branch/reached.mjs`, the rest counted), so a list, census or structure red never lands. `reached` reuses a pass
+    per class: a class's key is the digest of every tree file that reaches it (its own files, the source areas it names, the build
+    files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global
+    using` of a namespace, a comment, a group no file switches on) left out because the one build verifies it; a class whose key
+    passed (`local/reached-classes.json`) is replayed, so a change to a widely referenced project runs exactly the classes that
+    name it and a change no class reads runs none. A unit class runs when a changed path reaches it; a Process class, which
+    names its real dependency with a `Needs` trait, runs only where a changed path is that dependency's code (`tiers.needs` in
+    `daoris.gates.json`), and the summary names the count left to the nightly run (`--ci --night`) and the stage. The CI runs beside on
     main's tip, its reds fixed as small commits; the install is staged from the tree whose light lane and reached Process classes
     passed (`--stage --from-gated <commit> --light`, or `--passed --light`), the CI's rehearsals running on the staged commit
     after, and the full stage (`--ci --stage`) remains the one that owes every gate. A merge is fast and never blocked by a red that is
@@ -147,8 +157,8 @@ finishes first and the whole set runs once.
     is named as main's and does not fail the merge; a test project is built once per tree (later gates run `--no-build`); a gate's
     declared `regenerate` command makes a generated input current before the gates; a gate that ends abnormally is said so and the run
     goes on; what a gate left running is stopped by pid and creation time; and a gate past its budget (`timeoutMinutes`, else five minutes
-    in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, said in the summary) is killed and fails as
-    over-budget. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
+    in a merge and ten in the full set or the CI; `--no-timeout` for an investigation, taken by `--continue` and `--rerun` alike and
+    said in the summary) is killed and fails as over-budget. Each merge appends a record to `local/merge-record.jsonl` (each gate's time and slowest classes, first pass or not, reds
     set down as main's, what ran over budget), read by `tools/dev-metrics.mjs`. `TASKS.md` merges by its rows' ids
     (`tools/merge-backlog.mjs`; `.gitattributes`). Measured 2026-11-05 to 2026-11-11: 18 CI runs, median 240 minutes, each red in
     a gate a merge now runs, the last green on 2026-11-02.
