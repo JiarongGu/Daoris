@@ -27,8 +27,7 @@ import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { isIntake, sessionOrigin, sessionTitle } from '../identity';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
-import type { EntryPress } from '../review/EntryAccept';
+import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
 import { type HeadLink, linkRow } from './headRows';
@@ -114,9 +113,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
 export function SessionHead({
   session, quest, opening, brief, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
+  ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind, opinion, onOpenQuest, ask,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
+  question = null, parkBox = false, pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
 }: {
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
@@ -132,8 +131,6 @@ export function SessionHead({
    * and the door that opens *At work*. Absent where the frame holds no answer for it.
    */
   waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void } | null;
-  /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own. */
-  entry?: EntryPress | null;
   /**
    * Its pieces, the frame's: what it asked other agents to write, where each stands, the
    * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
@@ -217,8 +214,6 @@ export function SessionHead({
    * with where it is set, *Details*' rows. Absent or null where it is told none (no tree of its own here) or nothing answered.
    */
   process?: SessionProcess | null;
-  /** The landing plan shown is the previous one while the entered name's is read; the press waits. */
-  planning?: boolean;
   /**
    * The second opinion's gate where a level asks one: its findings beside their answers, where the frame read them,
    * and its presses. Drawn from the landing's plan's own `opinion`.
@@ -252,14 +247,12 @@ export function SessionHead({
    */
   landing?: LandingPlan | null;
   /**
-   * Land it: the review's Accept, told back to its ask, with the second opinion's token where the press answers what it showed
+   * The door to the review of the run whose Accept the work waits on: the head shows it where its Accept would be.
    * Absent where nothing can press it (a browser, a story).
    */
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  onReviewRun?: () => void;
   /** The press that says the rebase words where replaying conflicts; the frame holds the say door. */
   onSayRebase?: SayRebase;
-  /** The branch name typed in the land ask, so the frame asks the plan again with it; `''` when the ask is put down. */
-  onName?: (name: string) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account.
@@ -540,13 +533,9 @@ export function SessionHead({
         // Spaced as the head spaces its own.
         <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
           <Lands
-            key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent} entry={entry}
+            key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onReviewRun={onReviewRun} onSayRebase={onSayRebase}
+            review={review} behind={behind} opinion={opinion} toEvent={toEvent}
           />
-        </div>
-      ) : entry ? (
-        <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' ? SOUGHT : 'outline-none')}>
-          <EntryWork entry={entry} />
         </div>
       ) : discards ? (
         <div data-wait-section className="grid gap-2.5">

@@ -82,19 +82,13 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(onGoAhead).toHaveBeenCalledWith(2, true, undefined, { done: expect.any(Function), refused: expect.any(Function) });
   });
 
-  it('opens *Accept…* where the frame holds its ask, and holds it while a landing is on its way', async () => {
-    const onOpen = vi.fn();
-    const props = { session: session(), lands: LANDS, landing: PLAN, onLand: vi.fn(), onTop: vi.fn() };
-    const { rerender } = render(<WaitStrip {...props} workAsk={{ open: false, onOpen }} />);
+  it('opens the run’s review from the work’s line, which holds no Accept of its own', async () => {
+    const onReviewRun = vi.fn();
+    render(<WaitStrip session={session()} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} onTop={vi.fn()} />);
 
-    await userEvent.click(within(strip()).getByRole('button', { name: 'Accept…' }));
-    expect(onOpen).toHaveBeenCalledWith(true);
-
-    rerender(<WaitStrip {...props} workAsk={{ open: true, onOpen }} />);
-    expect(within(strip()).getByRole('group', { name: 'accept daoris/s-1a2b3c4' })).toBeInTheDocument();
-
-    rerender(<WaitStrip {...props} workAsk={{ open: false, onOpen }} workBusy />);
-    expect(within(strip()).getByRole('button', { name: 'Accept…' })).toBeDisabled();
+    expect(within(strip()).queryByRole('button', { name: 'Accept…' })).toBeNull();
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Review' }));
+    expect(onReviewRun).toHaveBeenCalledOnce();
   });
 
   it('presses the review\'s gate with the same acts the head has', async () => {
@@ -104,7 +98,7 @@ describe('the strip of what waits on the person, at the foot', () => {
         session={session()}
         lands={LANDS}
         landing={{ ...PLAN, review: { state: 'shown', environment: 'local', quest: STEP_SHOWN.id } }}
-        onLand={vi.fn()}
+        onReviewRun={vi.fn()}
         review={{ step: STEP_SHOWN, served: true, acts: { reviewed } }}
         onTop={vi.fn()}
       />,
@@ -142,7 +136,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     render(
       <WaitStrip
         session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()}
-        lands={LANDS} landing={PLAN} onLand={vi.fn()} toEvent={toEvent} onTop={vi.fn()}
+        lands={LANDS} landing={PLAN} onReviewRun={vi.fn()} toEvent={toEvent} onTop={vi.fn()}
       />,
     );
 
@@ -150,7 +144,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(toEvent.question).toHaveBeenCalledTimes(1);
     await userEvent.click(within(within(strip()).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
-    await userEvent.click(within(within(strip()).getByRole('button', { name: 'Accept…' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(within(within(strip()).getByRole('button', { name: 'Review' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.work).toHaveBeenCalledTimes(1);
   });
 
@@ -341,7 +335,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('stays while its own ask is open, though the head\'s waits came on screen', () => {
-    const props = { session: session(), lands: LANDS, landing: PLAN, onLand: vi.fn(), onTop: vi.fn() };
+    const props = { session: session(), lands: LANDS, landing: PLAN, onReviewRun: vi.fn(), onTop: vi.fn() };
     const { rerender } = render(<WaitStrip {...props} workAsk={{ open: true, onOpen: vi.fn() }} aside />);
     const ask = within(strip()).getByRole('group', { name: 'accept daoris/s-1a2b3c4' });
     expect(ask).toBeInTheDocument();

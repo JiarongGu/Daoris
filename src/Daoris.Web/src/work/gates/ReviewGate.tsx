@@ -28,8 +28,6 @@ export type ReviewGateActs = {
   showAgain?: () => void;
   /** The set-up step's own page, where the gate is not drawn on it. */
   open?: () => void;
-  /** *Accept without the look…*: a chat run's look node skipped with the person's words, then the work accepted. Offered where the run names that node. */
-  withoutLook?: (words: string | null, answered: Answered) => void;
 };
 
 
@@ -82,7 +80,7 @@ export function ReviewGate({
 }) {
   const { t } = useTranslation();
   const headingId = useId();
-  const [asking, setAsking] = useState<'notYet' | 'skip' | 'withoutLook' | null>(null);
+  const [asking, setAsking] = useState<'notYet' | 'skip' | null>(null);
   const [words, setWords] = useState('');
   const [pressing, setPressing] = useState<'reviewed' | 'setUp' | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -100,7 +98,6 @@ export function ReviewGate({
       case 'showAgain': return Boolean(acts.showAgain);
       case 'skip': return Boolean(acts.skip);
       case 'setUp': return Boolean(acts.setUp);
-      case 'withoutLook': return Boolean(acts.withoutLook);
     }
   });
   const waiting = busy || pressing !== null;
@@ -115,7 +112,7 @@ export function ReviewGate({
     if (which === 'reviewed' && ref) { setPressing('reviewed'); acts.reviewed?.(ref, told); }
     else if (which === 'setUp') { setPressing('setUp'); acts.setUp?.(environment, told); }
     else if (which === 'showAgain') acts.showAgain?.();
-    else if (which === 'notYet' || which === 'skip' || which === 'withoutLook') { setWords(''); setAsking(which); }
+    else if (which === 'notYet' || which === 'skip') { setWords(''); setAsking(which); }
   };
   const label = (which: ReviewPress) => {
     switch (which) {
@@ -124,7 +121,6 @@ export function ReviewGate({
       case 'showAgain': return t('review.act.showAgain');
       case 'skip': return t('review.act.skip');
       case 'setUp': return pressing === 'setUp' ? t('review.act.settingUp') : t('review.act.setUp', { environment });
-      case 'withoutLook': return t('review.act.withoutLook');
     }
   };
 
@@ -183,7 +179,7 @@ export function ReviewGate({
           {offered.map((which) => (
             <Button
               key={which}
-              variant={which === 'reviewed' || which === 'withoutLook' || (which === 'setUp' && !offered.includes('reviewed')) ? 'primary' : which === 'skip' ? 'ghost' : 'default'}
+              variant={which === 'reviewed' || (which === 'setUp' && !offered.includes('reviewed')) ? 'primary' : which === 'skip' ? 'ghost' : 'default'}
               disabled={waiting}
               onClick={() => press(which)}
             >
@@ -224,27 +220,6 @@ export function ReviewGate({
             value={words}
             onChange={(event) => setWords(event.target.value)}
             className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-          />
-        </InlineConfirm>
-      )}
-      {asking === 'withoutLook' && (
-        /* The person's skip of the look node a conversation's work waits on, then the one Accept: it asks once, and needs their words. */
-        <InlineConfirm
-          tone="primary"
-          label={t('review.ask.withoutLookTitle')}
-          says={t('review.ask.withoutLook')}
-          meanIt={t('review.ask.withoutLookMeanIt')}
-          busy={busy}
-          ready={words.trim().length > 0}
-          onConfirm={(answered) => acts.withoutLook?.(words.trim() || null, answered)}
-          onClose={() => { setAsking(null); setWords(''); }}
-        >
-          <input
-            aria-label={t('review.ask.withoutLookWords')}
-            placeholder={t('review.ask.withoutLookWords')}
-            value={words}
-            onChange={(event) => setWords(event.target.value)}
-            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
         </InlineConfirm>
       )}

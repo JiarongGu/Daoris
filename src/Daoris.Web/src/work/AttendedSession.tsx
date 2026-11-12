@@ -19,7 +19,6 @@ import { WorkMilestone } from './head/WorkMilestone';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './review/LandingSync';
 import type { SessionEntry } from './entries';
-import type { EntryPress } from './review/EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
 import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
@@ -74,8 +73,8 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, ask, opening, brief, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind,
+  opinion, continues, helps, heavy, process, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
   answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold, supervisorCourse,
   placeHold,
 }: {
@@ -131,11 +130,6 @@ export function AttendedSession({
     onShow: (session: string) => void;
   };
   /**
-   * The session's one Accept, where its parts offer work to land and the attended part has no work of its
-   * own or another has: the frame holds the plan and the press, drawn by the head's work line. Absent where the part's own is the head's.
-   */
-  entryAccept?: EntryPress;
-  /**
    * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them.
    * Its *Details* opens them with `onSession`.
    */
@@ -157,14 +151,10 @@ export function AttendedSession({
   onDiscardTree?: (answered: Answered) => void;
   /** And where accepting would put it, the review's own plan. */
   landing?: LandingPlan | null;
-  /** And its press, the review's Accept, told back to its ask, with the second opinion's token where it answers it. */
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** And the door to the review of the run whose Accept the work waits on, where the plan draws one. */
+  onReviewRun?: () => void;
   /** The press that says the rebase words where replaying conflicts. */
   onSayRebase?: SayRebase;
-  /** The plan shown is the previous name's while the entered one is read. */
-  planning?: boolean;
-  /** The branch name typed in the land ask. */
-  onName?: (name: string) => void;
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in, said in its head. */
   ownSignIn?: boolean;
   /**
@@ -317,10 +307,8 @@ export function AttendedSession({
         nameOf={nameOf}
         lands={lands}
         landing={landing}
-        onLand={onLand}
+        onReviewRun={onReviewRun}
         onSayRebase={onSayRebase}
-        planning={planning}
-        onName={onName}
         review={review}
         behind={behind}
         opinion={opinion}
@@ -343,12 +331,11 @@ export function AttendedSession({
         terminalHold={terminalHold}
         supervisorCourse={supervisorCourse}
         placeHold={placeHold}
-        entry={entryAccept}
       />
-      {/* Its parts as a flowchart, the strip its rail; Accept's plan, once read, is where they would land. Folded to one
-          line (the drawing alone is over the head's whole budget), keyed by the line of work, not the session: a press on
-          a part shows another session of it, and the flow being read stays open. */}
-      {parts && <PartsFold key={`parts:${parts.entry.entry}`} {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
+      {/* Its parts as a flowchart, the strip its rail. Folded to one line (the drawing alone is over the head's whole budget),
+          keyed by the line of work, not the session: a press on a part shows another session of it, and the flow being read
+          stays open. */}
+      {parts && <PartsFold key={`parts:${parts.entry.entry}`} {...parts} />}
       {/* Every stop a door: a session attends, a quest opens.
           One line of stops by default, since the whole strip stands 350 to 450px between the head and
           the conversation, saying the head's title again; whole on a press. */}

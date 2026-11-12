@@ -234,38 +234,6 @@ describe('the attended session', () => {
   });
 
   /**
-   * Accept's plan, read once its ask is open, is where the parts would land: a dashed node in
-   * the parts' flow beside the press, drawn from the same plan and not before it is open. The flow is the one the person opened;
-   * Accept's ask does not open it (a block opening under a press elsewhere would move the control just pressed).
-   */
-  it('draws the landing plan Accept read as a prospective node in the parts\' flow, once its ask is open', async () => {
-    const userEvent = (await import('@testing-library/user-event')).default;
-    const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
-    vi.useRealTimers();
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      const width = this.hasAttribute('data-flow-pane') ? 1200 : 0;
-      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
-    });
-    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
-    try {
-      const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((row) => [row.id, { session: row }]));
-      const plan = { entry: EVIDENCE_ENTRIES[0]!.entry, repository: 'app', form: 'branch', target: 'daoris/t-one', parts: [{ session: 'ap000001' }, { session: 'ap000002' }] };
-      const accept = { scope: 'entry' as const, offered: 2, open: false, onOpen: vi.fn(), plans: [plan], onLand: vi.fn() };
-      const parts = { entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow: vi.fn() };
-      const { rerender } = render(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={accept} />);
-      expect(screen.queryByText('Accept would land these on daoris/t-one')).toBeNull();
-
-      rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={parts} entryAccept={{ ...accept, open: true }} />);
-      expect(screen.queryByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeNull();
-      await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
-      expect(screen.getByRole('listitem', { name: /^Accept would land these on daoris\/t-one/ })).toBeInTheDocument();
-    } finally {
-      vi.restoreAllMocks();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  /**
    * One rule for where a parked session's note is shown, read by the column AND the dock. The
    * head shows it only where it can be answered here, so the dock must not hide the note of every
    * parked session, or another machine's parked note, on a wide window, is shown nowhere.

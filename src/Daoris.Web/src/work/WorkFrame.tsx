@@ -346,10 +346,10 @@ export function WorkFrame({
   const heavyPart = attended && attendedRuns ? heavyPartOf(heavySlot.data, attended.id) : null;
   useNow(grouping?.calling || heavyPart ? 15_000 : null);
   const work = useSessionLanding({
-    t, notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, runNodeWord,
+    notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, onReviewRun,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { entryAt, workAskAt } = work;
+  const { workAskAt } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
@@ -493,7 +493,6 @@ export function WorkFrame({
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
               workAsk={workAskAt('foot')}
-              entry={entryAt('foot')}
               ruleAsk={ruleAskAt('foot')}
               toEvent={toEvent}
               seek={seekAt('foot')}

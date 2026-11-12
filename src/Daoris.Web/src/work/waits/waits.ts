@@ -133,11 +133,10 @@ export type WaitFacts = {
   /** Its agent's own ask to hand it over as the driver's look left it, and the yes that answers it. */
   handOver?: { ask?: HandOverAskRow | null; onApprove?: unknown } | null;
   lands?: LandOffer | null;
-  /** The session's own press where its parts offer work: how many offer it. */
-  entry?: { offered: number } | null;
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
-  onLand?: unknown;
+  /** The door to the run's review, where the work's Accept is pressed. */
+  onReviewRun?: unknown;
   onSayRebase?: unknown;
   opinion?: { acts?: object } | null;
   review?: { acts?: object } | null;
@@ -190,12 +189,11 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   // whatever the session's state: one not read yet, one with their yes, taken or refused waits on none.
   const handing = facts.handOver?.ask;
   if (facts.handOver?.onApprove && handing && waitsOnHandOverWord(handing)) waits.push({ kind: 'handOver', id: handing.id });
-  // The session's work to land stands on its offer, any of its parts: its one press, whichever part is attended.
-  const entryStands = (facts.entry?.offered ?? 0) > 0;
+  // The session's work to land stands on its offer: its Accept waits on the review page its door opens.
   if (facts.lands) {
     const stands = landingStands({ lands: facts.lands, landing: facts.landing, behind: facts.behind });
-    if (entryStands || (facts.onLand && stands.acceptable && !stands.conflict)) waits.push({ kind: 'accept' });
-    if (facts.onLand && stands.conflict && facts.onSayRebase) waits.push({ kind: 'rebase' });
+    if (facts.onReviewRun && stands.acceptable && !stands.conflict) waits.push({ kind: 'accept' });
+    if (facts.onReviewRun && stands.conflict && facts.onSayRebase) waits.push({ kind: 'rebase' });
     if (stands.second && facts.opinion?.acts && opinionTone(opinionState(stands.second.state), { holds: stands.second.holds }) === 'open') {
       waits.push({ kind: 'opinion' });
     }
@@ -203,7 +201,6 @@ export function waitsOf(facts: WaitFacts): Wait[] {
       waits.push({ kind: 'review' });
     }
   } else {
-    if (entryStands) waits.push({ kind: 'accept' });
     if (facts.discards && heldDiscardable(facts.discards, facts.onDiscardTree as Parameters<typeof heldDiscardable>[1])) {
       waits.push({ kind: 'discard' });
     }

@@ -12,8 +12,7 @@ import { HelperAsks, type HelperWaits } from './HelperAsks';
 import { HandOverAgentAsk, type HandOverAskWait } from './HandOverAgentAsk';
 import type { Answered } from '../InlineConfirm';
 import type { SayRebase } from '../review/LandingSync';
-import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
-import type { EntryPress } from '../review/EntryAccept';
+import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import type { SessionGitAccessHold } from '../head/GitAccessFact';
@@ -91,13 +90,10 @@ export type WaitProps = {
    */
   handOver?: HandOverAskWait | null;
   lands?: LandOffer | null;
-  /** The session's own press, where its parts offer work: in the strip's place of *Accept…*. */
-  entry?: EntryPress | null;
   landing?: LandingPlan | null;
-  planning?: boolean;
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** The door to the review of the run whose Accept the work waits on. */
+  onReviewRun?: () => void;
   onSayRebase?: SayRebase;
-  onName?: (name: string) => void;
   review?: HeadReview | null;
   behind?: LineBehind | null;
   opinion?: HeadOpinion | null;
@@ -121,7 +117,7 @@ export type WaitProps = {
  * @remarks
  * **The head's molecules, not copies**: a go-ahead still open is `GoAheadList`'s where no box below answers the
  * park (where one does, the box draws it), a rule the session proposed
- * `ProposedRules`', the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
+ * `ProposedRules`', the work's line `Lands` with its door to the review, the rebase words and the gates, a discard the line
  * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no, a tool
  * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered, a third answer
  * alone the bound holds for them `AnswerAlone` with *Go on with this answer* and *Not now*, each
@@ -318,11 +314,6 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                 <HandOverAgentAsk {...props.handOver} />
               </div>
             )}
-            {work && !props.lands && props.entry && (
-              <div data-wait="work" tabIndex={-1} className={cn('grid gap-2', sought === 'work' ? SOUGHT : 'outline-none')}>
-                <EntryWork entry={props.entry} />
-              </div>
-            )}
             {work && props.lands && (
               <div
                 data-wait="work"
@@ -333,18 +324,13 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   session={session}
                   lands={props.lands}
                   landing={props.landing}
-                  planning={props.planning}
                   onReview={props.onReview}
-                  onLand={props.onLand}
+                  onReviewRun={props.onReviewRun}
                   onSayRebase={props.onSayRebase}
-                  onName={props.onName}
                   review={props.review}
                   behind={props.behind}
                   opinion={props.opinion}
-                  ask={workAsk}
-                  busy={props.workBusy}
                   toEvent={toEvent}
-                  entry={props.entry}
                 />
               </div>
             )}

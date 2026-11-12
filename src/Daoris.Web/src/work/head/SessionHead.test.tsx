@@ -595,107 +595,68 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * A session that ended with commits no branch of the person's holds offers its landing on its
-   * page, whatever its ending, with its branch and its tree said. *Accept…* asks once, under the line, saying where accepting
-   * puts the work by the repository's rule; for a session that did not finish, that only what it committed lands. The press
-   * is the review's own, told back to its ask.
+   * A session that ended with commits no branch of the person's holds says so on its page, whatever its ending, with its
+   * branch and its tree, and a door to its run's review, where the one Accept is.
    */
   describe('the landing a session left', () => {
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
     const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
 
-    it('offers no Accept where the review says nothing is beyond the line, and keeps Review (REVIEWBASE5)', () => {
+    // The head holds no Accept: where it would be, a door opens the run's review page, whose bar is the one Accept.
+    it('keeps the plain review where the review says nothing is beyond the line (REVIEWBASE5)', () => {
       const behind = { line: 'master', commits: 2, ahead: 0 };
-      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} onReview={vi.fn()} behind={behind} />);
+      const onReview = vi.fn();
+      const onReviewRun = vi.fn();
+      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} onReview={onReview} behind={behind} />);
 
-      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      expect(onReview).toHaveBeenCalledOnce();
+      expect(onReviewRun).not.toHaveBeenCalled();
     });
 
-    it('still offers Accept where the review has commits beyond the line, or uncommitted work (REVIEWBASE5)', () => {
+    it('opens the run’s review where the review has commits beyond the line, or uncommitted work (REVIEWBASE5)', () => {
+      const onReviewRun = vi.fn();
       const { rerender } = render(
-        <SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} behind={{ line: 'master', commits: 0, ahead: 1 }} />,
+        <SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} behind={{ line: 'master', commits: 0, ahead: 1 }} />,
       );
-      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      expect(onReviewRun).toHaveBeenCalledOnce();
 
       rerender(
-        <SessionHead session={session({ state: 'failed' })} lands={{ ...LANDS, uncommitted: 2 }} landing={PLAN} onLand={vi.fn()} behind={{ line: 'master', commits: 0, ahead: 0 }} />,
+        <SessionHead session={session({ state: 'failed' })} lands={{ ...LANDS, uncommitted: 2 }} landing={PLAN} onReviewRun={onReviewRun} behind={{ line: 'master', commits: 0, ahead: 0 }} />,
       );
-      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      expect(onReviewRun).toHaveBeenCalledTimes(2);
     });
 
-    it('offers a failed session’s commits to land, naming its branch and tree, and lands them on the second press', () => {
-      const onLand = vi.fn();
-      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={onLand} onReview={vi.fn()} />);
+    it('says a failed session’s commits to land, naming its branch and tree, with one door to the review and no Accept', () => {
+      const onReviewRun = vi.fn();
+      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={onReviewRun} onReview={vi.fn()} />);
 
       expect(screen.getByText('Its work')).toBeInTheDocument();
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
       expect(screen.getByText('daoris/s-4e6837ed')).toBeInTheDocument();
       expect(screen.getByText('in its tree s-4e6837ed')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-      expect(onLand).not.toHaveBeenCalled();
-      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-      expect(ask).toHaveTextContent(
-        'Accepting puts this work on a new branch, feature/delta-release, then the plugin azure-devops-pull-request pushes it and opens the pull request. Nothing is merged.');
-      expect(ask).toHaveTextContent('This session did not finish, so what lands is only what it committed before it ended.');
-      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-      expect(onLand).toHaveBeenCalledOnce();
-      act(() => (onLand.mock.calls[0]![0] as Answered).done());
-      expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      expect(onReviewRun).toHaveBeenCalledOnce();
     });
 
-    it('offers a session finished at a checkpoint its landing too, and says a refusal inside the ask', () => {
-      const onLand = vi.fn();
-      render(
-        <SessionHead
-          session={session({ state: 'completed', note: 'The person finished this at a checkpoint.' })}
-          lands={{ ...LANDS, commits: 2, uncommitted: 3 }}
-          landing={{ session: 's1a2b3c4', form: 'merge', target: 'master' }}
-          onLand={onLand}
-        />,
-      );
-
-      expect(screen.getByText('2 commits no branch of yours holds')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-      expect(ask).toHaveTextContent('Accepting merges this work into master, in the repository\'s own checkout.');
-      expect(ask).not.toHaveTextContent('did not finish');
-      expect(ask).toHaveTextContent('Its tree has 3 uncommitted paths, which a landing would leave behind: Accept carries its session on to commit them, or to restore them and say so, and lands the work once its tree is clean.');
-      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-      act(() => (onLand.mock.calls[0]![0] as Answered).refused('the checkout is not clean, so nothing was merged.'));
-      expect(within(ask).getByRole('alert')).toHaveTextContent('the checkout is not clean, so nothing was merged.');
-    });
-
-    it('says what a press would be refused with before it, and offers nothing where no commits wait or nothing can press', () => {
+    it('offers nothing where no commits wait or nothing can press', () => {
       const { rerender } = render(
-        <SessionHead
-          session={session({ state: 'stopped' })}
-          lands={LANDS}
-          landing={{ ...PLAN, problem: 'plugin `azure-devops-pull-request` is switched off on this machine.' }}
-          onLand={vi.fn()}
-        />,
-      );
-      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-      expect(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' }))
-        .toHaveTextContent('A press would be refused now: plugin azure-devops-pull-request is switched off on this machine.');
-
-      // No commits to land: the reader offers none, and the clean-up's line stands as it did.
-      rerender(
         <SessionHead
           session={session({ state: 'failed' })}
           branch={{ repository: 'engine', branch: 'daoris/s-43c14a70', kind: 'empty', where: 'main', commits: 0 } as SweepBranch}
-          onLand={vi.fn()}
+          onReviewRun={vi.fn()}
         />,
       );
-      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
       expect(screen.getByText('nothing beyond main')).toBeInTheDocument();
 
       // Nothing here can press it (a browser, a story): the work is said, with no press.
       rerender(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
     });
 
     // Where the person's Accept is kept on the session it carried on, the head says so and never shows finished work.
@@ -705,7 +666,7 @@ describe('the attended session\'s head', () => {
           session={session({ state: 'completed' })}
           lands={{ ...LANDS, uncommitted: 2 }}
           landing={{ ...PLAN, carried: { carries: 1, awaiting: true } }}
-          onLand={vi.fn()}
+          onReviewRun={vi.fn()}
         />,
       );
 
@@ -719,82 +680,58 @@ describe('the attended session\'s head', () => {
       }
     });
 
-    it('never carries an ask to accept one session’s work to another’s', () => {
-      const { rerender } = render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-      expect(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeInTheDocument();
-
-      rerender(
-        <SessionHead
-          session={session({ id: 's9f8e7d6', state: 'failed' })}
-          lands={{ ...LANDS, branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29' }}
-          landing={PLAN}
-          onLand={vi.fn()}
-        />,
-      );
-      expect(screen.queryByRole('group', { name: /^accept/ })).toBeNull();
-      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
-    });
-
     it('says it in Chinese', async () => {
       await i18n.changeLanguage('zh');
       try {
-        render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} onReview={vi.fn()} />);
+        render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onReviewRun={vi.fn()} onReview={vi.fn()} />);
         expect(screen.getByText('它的工作')).toBeInTheDocument();
         expect(screen.getByText('1 个提交不在你的任何分支上')).toBeInTheDocument();
         expect(screen.getByText('在它的工作树 s-4e6837ed 中')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: '采纳…' }));
-        const ask = screen.getByRole('group', { name: '采纳 daoris/s-4e6837ed' });
-        expect(ask).toHaveTextContent('这个会话没有完成，所以落地的只是它已提交的内容，它的审阅中列有这些提交。');
-        expect(within(ask).getByRole('button', { name: '采纳' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '审阅' })).toBeInTheDocument();
       } finally {
         await i18n.changeLanguage('en');
       }
     });
 
     /**
-     * The second opinion stands before the review's gate, and while it holds the
-     * work no *Accept…* is offered, except where *Accept…* answers it: then its ask says what it answers, and the press sends the
-     * gate's token back.
+     * The second opinion stands before the review's gate, and while it holds the work the door to the review is the plain review's:
+     * the Accept that answers a dispute is on the review page.
      */
-    it('draws the second opinion where a level asks one, and lets Accept… answer a dispute, sending its token', () => {
-      const onLand = vi.fn();
+    it('draws the second opinion where a level asks one, and opens the run’s review beside a dispute it answers', () => {
+      const onReviewRun = vi.fn();
       render(
         <SessionHead
           session={session({ state: 'completed' })}
           lands={LANDS}
           landing={{ ...PLAN, opinion: GATES.disputed }}
           opinion={{ detail: DETAIL }}
-          onLand={onLand}
+          onReviewRun={onReviewRun}
         />,
       );
 
       const gate = screen.getByRole('region', { name: 'Second opinion' });
       expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
-      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-      expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
-      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-
-      expect(onLand).toHaveBeenCalledWith(expect.objectContaining({ done: expect.any(Function) }), GATES.disputed.answers, null);
+      fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+      expect(onReviewRun).toHaveBeenCalledOnce();
     });
 
-    it('offers no Accept… while another agent still reads the work, nor while the rule requires one none could be had for', () => {
+    it('opens no run’s review while another agent still reads the work, nor while the rule requires one none could be had for', () => {
+      const onReviewRun = vi.fn();
       const { rerender } = render(
-        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.reading }} onLand={vi.fn()} />,
+        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.reading }} onReviewRun={onReviewRun} />,
       );
       expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('being read');
-      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
 
       rerender(
-        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailableRequired }} onLand={vi.fn()} />,
+        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailableRequired }} onReviewRun={onReviewRun} />,
       );
-      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
 
-      // Not required: said beside Accept…, which stands.
-      rerender(<SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailable }} onLand={vi.fn()} />);
+      // Not required: said beside the door, which stands.
+      rerender(<SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailable }} onReviewRun={onReviewRun} />);
       expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('The rule does not require one, so nothing waits for it.');
-      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
     });
   });
 
@@ -1241,7 +1178,7 @@ describe('the way from the head\'s waits to the conversation', () => {
     render(
       <SessionHead
         session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()}
-        lands={LANDS} landing={PLAN} onLand={vi.fn()} toEvent={toEvent}
+        lands={LANDS} landing={PLAN} onReviewRun={vi.fn()} toEvent={toEvent}
       />,
     );
 
@@ -1254,12 +1191,12 @@ describe('the way from the head\'s waits to the conversation', () => {
     await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
 
-    await userEvent.click(within(screen.getByRole('button', { name: 'Accept…' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(within(screen.getByRole('button', { name: 'Review' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.work).toHaveBeenCalledTimes(1);
   });
 
   it('has no such press where nothing was found', () => {
-    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
+    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} lands={LANDS} landing={PLAN} onReviewRun={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'In the conversation' })).toBeNull();
   });
 
@@ -1268,13 +1205,13 @@ describe('the way from the head\'s waits to the conversation', () => {
    * screen, where the strip stands aside, a raising block's *To the wait* leads here: the line takes the focus, outlined.
    */
   it('marks the sections its waits stand in, and shows the one a raising block leads to', () => {
-    const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onLand: vi.fn() };
+    const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onReviewRun: vi.fn() };
     const { container, rerender } = render(<SessionHead {...props} />);
     const sections = [...container.querySelectorAll('[data-wait-section]')];
     expect(sections).toHaveLength(3);
     expect(sections[0]).toHaveTextContent('This one is waiting on you');
     expect(sections[1]).toBe(screen.getByRole('region', { name: 'Go-aheads it asked' }));
-    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Accept…' }));
+    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Review' }));
 
     rerender(<SessionHead {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
     const second = within(sections[1] as HTMLElement).getAllByRole('listitem')[1]!;

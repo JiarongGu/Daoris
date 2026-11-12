@@ -277,7 +277,6 @@ export function SessionRail({
     return (
       <AskAccept
         ask={ask}
-        scope="ask"
         offered={offered}
         open={open}
         onOpen={(opened) => setAskAsking(opened ? ask : null)}

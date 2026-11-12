@@ -58,31 +58,31 @@ describe('the waits on the person', () => {
   });
 
   it('names the work to land where *Accept…* is offered, and not where nothing is beyond the line', () => {
-    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press })).toEqual([{ kind: 'accept' }]);
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onReviewRun: press })).toEqual([{ kind: 'accept' }]);
     expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN })).toEqual([]);
-    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, behind: { line: 'main', commits: 0, ahead: 0 } }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onReviewRun: press, behind: { line: 'main', commits: 0, ahead: 0 } }))
       .toEqual([]);
   });
 
   it('names the rebase words in Accept\'s place where replaying conflicts', () => {
     const landing = { ...PLAN, conflict: { says: 'CONFLICT (content)', words: 'Rebase your work onto `main`.' } };
-    expect(waitsOf({ session: session(), lands: LANDS, landing, onLand: press, onSayRebase: async () => true }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing, onReviewRun: press, onSayRebase: async () => true }))
       .toEqual([{ kind: 'rebase' }]);
   });
 
   it('names a second opinion in the person\'s hue, and not one an agent is reading', () => {
     const acts = { ask: press };
-    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.disputed }, onLand: press, opinion: { acts } }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.disputed }, onReviewRun: press, opinion: { acts } }))
       .toEqual([{ kind: 'accept' }, { kind: 'opinion' }]);
-    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.reading }, onLand: press, opinion: { acts } }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.reading }, onReviewRun: press, opinion: { acts } }))
       .toEqual([]);
   });
 
   it('names a review\'s gate waiting on the person\'s look, and not one being set up', () => {
     const review = { acts: { reviewed: press } };
-    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, review: { state: 'shown', environment: 'local' } }, onLand: press, review }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, review: { state: 'shown', environment: 'local' } }, onReviewRun: press, review }))
       .toEqual([{ kind: 'review' }]);
-    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, review: { state: 'being-set-up', environment: 'local' } }, onLand: press, review }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: { ...PLAN, review: { state: 'being-set-up', environment: 'local' } }, onReviewRun: press, review }))
       .toEqual([]);
   });
 
@@ -120,7 +120,7 @@ describe('the waits on the person', () => {
     const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
     expect(waitsOf({ session: parked, onResolve: press, answerBelow: true, goAheads: [goAhead(2, 'asked')], onGoAhead: press, rules }))
       .toEqual([{ kind: 'question', below: true }, { kind: 'goAhead', number: 2 }, { kind: 'rule', id: 'r1' }]);
-    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onReviewRun: press, rules }))
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'accept' }]);
   });
 
@@ -163,7 +163,7 @@ describe('the waits on the person', () => {
 
   it('stands after the rules and before the work', () => {
     const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
-    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules, helpers: { asks: [ask('a1')], onApprove: press } }))
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onReviewRun: press, rules, helpers: { asks: [ask('a1')], onApprove: press } }))
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }, { kind: 'accept' }]);
   });
 

@@ -29,31 +29,21 @@ export type EntryAcceptPart = {
   revision?: string | null;
 };
 
-/** The session's press as its hosts are handed it: the props of `EntryAccept`, the frame's. */
-export type EntryPress = Parameters<typeof EntryAccept>[0];
-
 /** Where an entry's parts would land: its one branch, or the line a merge goes into, and each part. */
 export type EntryAcceptPlan = { entry: string; repository: string; form: string; target: string; parts: EntryAcceptPart[] };
 
 /**
- * **One Accept for a line of work, or for an ask**: a press beside the Parts strip of an
- * entry whose parts' trees offer work, and under an ask's heading in Sessions' list by ask; its ask, the head's own Accept's, says
- * where the parts land in the order they ran, what each leaves out because the line holds it, which part a later one redid with the
- * person's choice to leave it out, and what holds a part. The move lands them; nothing is destroyed, so it wears the primary's hue.
+ * **One Accept for an ask's lines of work**: a press under an ask's heading in Sessions' list by ask; its ask says, for each
+ * repository, where the parts land in the order they ran, what each leaves out because the line holds it, which part a later one
+ * redid with the person's choice to leave it out, and what holds a part. The move lands them; nothing is destroyed, so it wears the
+ * primary's hue. A single run's Accept is its review page's alone.
  *
  * @remarks
  * **A molecule**: the plans arrive as props, read by the frame once the ask is open, and the press goes out with the parts left out.
  * - **A superseded part lands unless the person leaves it out**: the choice is theirs, never a default.
- * - **A gate holding any part of a line of work holds its landing**: the ask says which and offers no move. Under an
- *   ask, the gate holds only its own repository's entry, and the move lands the others.
+ * - **A gate holding any part of an entry holds its repository's landing**: the ask says which and the move lands the others.
  */
-export function EntryAccept({ scope, offered, open, onOpen, plans, reading = false, busy = false, held = false, draw, numberOf, onLand }: {
-  /** Its ask is open in another place (the head or the foot), so this press waits: one place at a time. */
-  held?: boolean;
-  /** Only the press, or only its ask, where the line of a host cannot hold the ask beside it; both where absent. */
-  draw?: 'press' | 'ask';
-  /** The entry's head, or the ask's heading in the list by ask. */
-  scope: 'entry' | 'ask';
+export function EntryAccept({ offered, open, onOpen, plans, reading = false, busy = false, numberOf, onLand }: {
   /** How many parts offer work to land: what the press says it accepts. */
   offered: number;
   open: boolean;
@@ -76,22 +66,18 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
     return n ? t('work.parts.number', { n }) : session;
   };
   if (!open) {
-    if (draw === 'ask') return null;
     return (
-      <Button variant="primary" className="px-2 py-0.5 text-small" disabled={busy || held} onClick={() => onOpen(true)}>
-        {t(scope === 'ask' ? 'work.accept.ask' : 'work.accept.entry', { count: offered })}
+      <Button variant="primary" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => onOpen(true)}>
+        {t('work.accept.ask', { count: offered })}
       </Button>
     );
   }
-  if (draw === 'press') return null;
 
   const read = !reading && plans ? plans : null;
-  // A gate on a kept part of a line of work holds all of it; under an ask, only its own repository's.
-  // A part that would be refused holds it the same way, unless the person leaves that part out.
+  // A gate on a kept part holds its repository's work; a part that would be refused holds it the same way, unless the person
+  // leaves that part out.
   const heldOf = (plan: EntryAcceptPlan) => plan.parts.some((part) => (part.held || part.problem) && !leaving.has(part.session));
   const gated = (plan: EntryAcceptPlan) => plan.parts.some((part) => part.held && !leaving.has(part.session));
-  const blocked = scope === 'entry' && read !== null && read.some(heldOf);
-  const blockedByGate = read !== null && read.some(gated);
   const toggle = (session: string) => setLeaving((now) => {
     const next = new Set(now);
     if (next.has(session)) next.delete(session); else next.add(session);
@@ -102,7 +88,7 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
     <InlineConfirm
       tone="primary"
       block
-      label={t(scope === 'ask' ? 'work.accept.title.ask' : 'work.accept.title.entry')}
+      label={t('work.accept.title.ask')}
       says={read === null ? <p className="m-0 text-small text-ink-soft">{t('work.accept.reading')}</p> : (
         <div className="grid gap-2">
           {read.map((plan) => (
@@ -110,20 +96,16 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
               key={plan.entry}
               t={t}
               plan={plan}
-              named={scope === 'ask'}
               name={name}
               leaving={leaving}
               onLeave={toggle}
-              held={scope === 'ask' && gated(plan)}
-              refused={scope === 'ask' && !gated(plan) && heldOf(plan)}
+              held={gated(plan)}
+              refused={!gated(plan) && heldOf(plan)}
             />
           ))}
-          {blocked && (
-            <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">{t(blockedByGate ? 'work.accept.heldAll' : 'work.accept.problemAll')}</p>
-          )}
         </div>
       )}
-      meanIt={blocked ? undefined : t('work.accept.meanIt')}
+      meanIt={t('work.accept.meanIt')}
       busy={busy}
       ready={read !== null}
       onConfirm={(answered) => onLand([...leaving], answered)}
@@ -133,11 +115,9 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
 }
 
 /** One entry's plan in words: where its parts land, then each part's own lines, a superseded part with its choice. */
-function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
+function PlanLines({ t, plan, name, leaving, onLeave, held, refused }: {
   t: TFunction;
   plan: EntryAcceptPlan;
-  /** Under an ask: its repository is said first. */
-  named: boolean;
   name: (session: string) => string;
   leaving: ReadonlySet<string>;
   onLeave: (session: string) => void;
@@ -150,7 +130,7 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
   const count = plan.parts.filter((part) => !part.sameTreeAs && !leaving.has(part.session)).length;
   return (
     <div className="grid gap-1 text-small text-ink-soft">
-      {named && <p className="m-0 font-semibold text-ink">{plan.repository}</p>}
+      <p className="m-0 font-semibold text-ink">{plan.repository}</p>
       <p className="m-0">
         <Inline text={plan.form === 'merge'
           ? t('work.accept.merges', { count, line: plan.target })
