@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workflow ends the trees it set apart: a new *End the tree* step after the landing (in the shipped development workflows, and in the editor) removes each tree whose work the line holds and keeps one holding uncommitted work or commits nothing else holds, saying why; the look also ends the trees of a run that finished or whose record is gone. `daoris tree list` names each tree's run and why it stays.
+
 - A review's *Accept* is one press on what you read: it names the review's revision, and work that moved after you read it is refused as moved rather than landed. At the terminal it is `daoris workflow accept <run> <node>`; `daoris tree land <session>` now only shows the plan (`--plan`), and the steward has no land act, so a supervisor no longer holds a steward's landing for its window.
 - A plugin's commands, tools, views, storage and each point it speaks on can be switched on or off per place: `daoris plugin switch <id> <what> on|off --place repository:<id>` (or `workspace:<name>`, or `machine`, the default), the nearest place's word deciding and everything on until switched off. A plugin's interfaces you had switched off are converted once into this machine's switches. An older build reads only whether a plugin is on, so a plugin switched off in one place runs there under it.
 - `daoris history clear --workspace <w> --yes` finishes a long history in one press: it sends the service a few units at a time, each answered within the client's bound, where one press naming months of runs stopped at `SERVICE_BUSY` with part cleared and needed several.
