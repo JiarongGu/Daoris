@@ -100,7 +100,7 @@ public sealed class HistoryClearingTests : IDisposable
         new LandedBranches(_home).Gone("engine", ["feature/q1-fix"]);
         new LandedBranches(_home).Record(new LandedBranch("engine", "default", "feature/q2-fix", "main", "def456", "o1", "q2", null, At));
         new LandedBranches(_home).Gone("engine", ["feature/q2-fix"]);
-        new SessionArchive(_home).Archive(["s2", "o1"], [new SessionGrouping("s2", SessionGroup.Done, "failed"), new SessionGrouping("o1", SessionGroup.Done, "completed")], ["s1", "s2", "o1"], At);
+        new ConversationFacts(_home).Archive(["s2", "o1"], At);
         File.WriteAllText(HeldWordsFile.PathOf(_home), """{ "held": [ { "session": "s1", "text": "words", "files": [], "door": "screen" } ] }""");
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q1", At, "screen", "not needed"));
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q2", At, "screen", "kept"));
@@ -138,7 +138,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.NotEmpty(KeptOf("o1"));
         Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"q2")));
         Assert.False(File.Exists(HeldWordsFile.PathOf(_home)));
-        Assert.Equal(["o1"], new SessionArchive(_home).Marks().Keys);
+        Assert.Equal(["o1"], new ConversationArchive(_home).Marks().Keys);
         Assert.Null(new LandedBranches(_home).Landing("s1"));
         Assert.NotNull(new LandedBranches(_home).Landing("o1"));
         Assert.Equal(["q2"], new AbandonRecord(_home).Entries().Select(entry => entry.Id));
@@ -167,14 +167,14 @@ public sealed class HistoryClearingTests : IDisposable
     [Fact]
     public async Task A_teammates_copy_goes_with_its_quest_and_takes_its_archive_mark()
     {
-        new SessionArchive(_home).Archive(["laptop/t1"], [new SessionGrouping("laptop/t1", SessionGroup.Done, "completed")], ["laptop/t1"], At);
+        new ConversationFacts(_home).Archive(["laptop/t1"], At);
         var service = new StandIn { Records = [Record("laptop/t1", "q1")], Quests = [Quest("q1")] };
         service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], teammates: ["laptop/t1"], forgotten: ["q1"])];
 
         var outcome = await HistoryClearing.ClearAsync(World(service), HistoryScope.Quest, "q1", [new HistoryUnitName("quest", "q1")], PluginEvents.Terminal);
 
         Assert.Equal((1, 1, 1), (outcome.Quests, outcome.Teammates, outcome.Forgotten));
-        Assert.Empty(new SessionArchive(_home).Marks());
+        Assert.Empty(new ConversationArchive(_home).Marks());
     }
 
     // ——— The service's word, said first.

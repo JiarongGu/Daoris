@@ -82,29 +82,30 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
     {
         var archive = press.Archived;
         var ids = Ids(press.Ids) ?? [];
-        var marks = new SessionArchive(_loop.Home);
+        var marks = new ConversationArchive(_loop.Home);
         // `sessions archive` and `unarchive` sent over the pipe ask for their words (`said: true`), the alone path's own, and a
         // terminal's lines; the page asks for none, and its answers keep their shape.
         var said = press.Said;
+        var records = await (_loop.Service ?? throw NotReady()).SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
 
         if (!archive)
         {
-            var back = marks.Unarchive(ids);
+            var back = marks.Unarchive(ids, records);
             var marked = back.Marks.Select(Mark).ToArray();
             return said
-                ? new { Archived = marked, back.NotArchived, Said = SessionArchive.UnarchiveSaid(ids, back.NotArchived).ToWire() }
+                ? new { Archived = marked, back.NotArchived, Said = ConversationArchive.UnarchiveSaid(ids, back.NotArchived).ToWire() }
                 : new { Archived = marked, back.NotArchived };
         }
 
-        var (look, grouped) = await GroupsAsync(ids, cancellationToken, walked: true).ConfigureAwait(false);
-        var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
+        var (look, grouped) = await GroupsAsync(ConversationArchive.Parts(ids, records), cancellationToken, walked: true).ConfigureAwait(false);
+        var answer = marks.Archive(ids, grouped, look.Records, DateTimeOffset.UtcNow);
         var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
         // counted in the machine log by the door it came in by: the screen's, or the terminal's over the pipe.
-        SessionArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PipeDoor.Now == PipeDoor.Terminal ? PluginEvents.Terminal : PluginEvents.Screen);
+        ConversationArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PipeDoor.Now == PipeDoor.Terminal ? PluginEvents.Terminal : PluginEvents.Screen);
         var archived = answer.Marks.Select(Mark).ToArray();
         var keptRows = kept.Select(outcome => new { outcome.Session, Code = CodeOf(outcome.Verdict), outcome.Group }).ToArray();
         // A terminal is told one kept in its own words and exit, as it says it alone, never thrown.
-        if (said) return new { Archived = archived, Kept = keptRows, Said = SessionArchive.ArchiveSaid(answer.Outcomes).ToWire() };
+        if (said) return new { Archived = archived, Kept = keptRows, Said = ConversationArchive.ArchiveSaid(answer.Outcomes).ToWire() };
         if (ids.Count == 1 && kept.Count == 1) throw Kept(kept[0]);
 
         return new { Archived = archived, Kept = keptRows };

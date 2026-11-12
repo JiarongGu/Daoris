@@ -109,7 +109,7 @@ public sealed class HelpGoOnTests : IDisposable
             () => events.After("h1", 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Why is not null),
             () => string.Join(" | ", events.After("h1", 0).Events.Select(e => $"{e.Kind}:{e.Text}")));
         Assert.Equal(2, ledger.Count);
-        Assert.Equal(("h1", HelpConversations.Brief), (new HelpConversations(_home).Read("h2").From, new HelpConversations(_home).Read("h2").Handed));
+        Assert.Equal(("h1", HelpConversations.Brief), (new ConversationFacts(_home).Read("h2").From, new ConversationFacts(_home).Read("h2").Handed));
         SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal(("h2", (string?)null), (asked.Identity[ChildMarks.SessionVariable], asked.Resume));

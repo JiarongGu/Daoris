@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class PipeGroundsCensusTests
 {
-    private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "HELP_RENAME", "HELP_PIN", "HELP_FOCUS"];
+    private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "CONVERSATION_RENAME", "CONVERSATION_PIN", "HELP_FOCUS"];
 
     [Fact]
     public void Only_what_deletes_moves_and_starts_nothing_is_timeless_and_each_says_why()

@@ -143,7 +143,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // goes, and a mark of words it could not take before is past, since these are taken up now.
         if (!park.Parked && park.WordsWaiting)
         {
-            new SessionArchive(home).Unarchive([park.Session]);
+            new ConversationArchive(home).Show(park);
             _context.Marks.Clear(park.Session);
         }
 

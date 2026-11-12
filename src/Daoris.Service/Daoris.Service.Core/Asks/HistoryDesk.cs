@@ -504,11 +504,24 @@ public sealed class HistoryDesk(
         var failed = look.Sessions
             .Where(session => string.Equals(session.Quest, quest.Id, StringComparison.OrdinalIgnoreCase) && session.State == SessionState.Failed)
             .ToList();
-        var own = failed.Where(session => session.Origin is null).ToList();
+        // A conversation is cleared whole or not at all: a failed part whose conversation holds a part that did not fail stays, said.
+        var notFailed = look.Sessions
+            .Where(session => session.Origin is null && session.State != SessionState.Failed)
+            .Select(session => session.Line ?? session.Id).ToHashSet(StringComparer.Ordinal);
+        var split = failed.Where(session => session.Origin is null && notFailed.Contains(session.Line ?? session.Id)).ToList();
+        var own = failed.Where(session => session.Origin is null && !split.Contains(session)).ToList();
         var unit = new HistoryUnit(HistoryUnitKind.Failed, quest.Id, quest.Workspace)
         {
             Sessions = [.. own.Select(session => session.Id)],
-            Kept = [.. failed.Where(session => session.Origin is not null).Select(session =>
+            Kept =
+            [
+                .. split.Select(session => new HistoryKept(
+                    HistoryRefusal.Open,
+                    $"Session `{session.Id}` stays: its conversation holds a part that did not fail, and a clear takes a conversation whole.")
+                {
+                    Session = session.Id,
+                }),
+                .. failed.Where(session => session.Origin is not null).Select(session =>
                 new HistoryKept(HistoryRefusal.NotOurs, $"Session `{session.Id}` ran on `{session.Origin}`; its record is theirs.")
                 {
                     Session = session.Id, Origin = session.Origin,

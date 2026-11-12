@@ -1,7 +1,7 @@
 
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { sentence } from '../locales/format';
-import { NO_TURNS, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
+import { NO_TURNS, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses, useHelpStartFrom, usePinConversation, useRenameConversation, useSendMessage, useStartHelp, useStopSession, useAccounts, useAccountUse, useStopWaiting } from '../bridge/shell';
 import { Prose, SESSION_ACTIVE } from '../design/ui';
 import { Composer } from '../work/conversation/Composer';
 import { useSessionReach } from '../bridge/sessions/conversation';
@@ -114,8 +114,8 @@ export function useAskConversation(
   const [tail, setTail] = useState<TailState | null>(null);
   // A conversation started from an earlier one, which says so until the person has spoken in it.
   const [startedFrom, setStartedFrom] = useState<{ session: string; title: string } | null>(null);
-  const rename = useRenameHelp();
-  const pin = usePinHelp();
+  const rename = useRenameConversation();
+  const pin = usePinConversation();
   const startFrom = useHelpStartFrom();
   const remove = useDeleteSession();
   // Not in the list yet is still opening, which is alive; one the list says ended can take no words.
