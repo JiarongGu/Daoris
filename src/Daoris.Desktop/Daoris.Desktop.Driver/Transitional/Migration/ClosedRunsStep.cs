@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
@@ -59,8 +58,7 @@ public sealed class ClosedRunsStep : IHomeMigrationStep
     private static (IReadOnlyList<QuestView> Quests, ILookup<string, string> Trees)? Read(string path)
     {
         if (!File.Exists(path)) return null;
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadOnly);
         using (var probe = connection.CreateCommand())
         {
             probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('quests', 'sessions')";

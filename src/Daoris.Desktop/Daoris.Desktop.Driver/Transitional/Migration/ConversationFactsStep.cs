@@ -139,8 +139,7 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
         if (!File.Exists(path)) return parts;
         try
         {
-            using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
-            connection.Open();
+            using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadOnly);
             using var probe = connection.CreateCommand();
             probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name IN ('id', 'line', 'created')";
             if (Convert.ToInt32(probe.ExecuteScalar(), CultureInfo.InvariantCulture) < 3) return parts;
@@ -149,7 +148,7 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
             using var reader = read.ExecuteReader();
             while (reader.Read()) parts[reader.GetString(0)] = (reader.GetString(1), reader.GetString(2));
         }
-        catch (SqliteException)
+        catch (DbException)
         {
             // A ledger that does not read gives no parts: each marked session is then its own conversation.
         }

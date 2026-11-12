@@ -176,7 +176,7 @@ public sealed class ConversationFacts(string home, Func<StoreSettled>? settled =
         }
     }
 
-    private static KeyValuePair<string, HelpKept> Row(SqliteDataReader row)
+    private static KeyValuePair<string, HelpKept> Row(DbDataReader row)
     {
         string? Text(int at) => row.IsDBNull(at) ? null : row.GetString(at);
         var kept = new HelpKept(Text(1), Moments.Read(Text(2)), Text(4), Text(5)) { Archived = Moments.Read(Text(3)) };

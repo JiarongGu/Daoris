@@ -50,19 +50,18 @@ public sealed class AbandonedRunsStep : IHomeMigrationStep
         var declined = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var closed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!File.Exists(path)) return (declined, closed);
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadWrite);
         Each(connection, "quests", "SELECT id FROM quests WHERE status = 'Declined'", declined);
         Each(connection, "asks", "SELECT id FROM asks WHERE state = 'Closed'", closed);
         return (declined, closed);
     }
 
-    private static void Each(SqliteConnection connection, string table, string sql, HashSet<string> into)
+    private static void Each(DbConnection connection, string table, string sql, HashSet<string> into)
     {
         using (var probe = connection.CreateCommand())
         {
             probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name";
-            probe.Parameters.AddWithValue("$name", table);
+            probe.Bind("$name", table);
             if (Convert.ToInt32(probe.ExecuteScalar(), CultureInfo.InvariantCulture) == 0) return;
         }
 

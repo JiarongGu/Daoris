@@ -18,8 +18,7 @@ public sealed class NoteRecordsStep : IHomeMigrationStep
         var path = DaorisHome.Entry(run.Home, HomeEntry.Knowledge);
         if (!File.Exists(path)) return;
         run.Keep(path);
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadWrite);
         using (var columns = connection.CreateCommand())
         {
             columns.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name IN ('state', 'note', 'note_parts')";

@@ -122,7 +122,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
 
     private const string RevisionsSql = "SELECT place, MAX(revision) FROM supervisor_rule_revisions GROUP BY place";
 
-    private static SupervisorRule RuleOf(SqliteDataReader row) =>
+    private static SupervisorRule RuleOf(DbDataReader row) =>
         new(row.GetString(0), row.GetString(2), row.GetString(3), row.GetInt32(4), row.GetString(5),
             row.IsDBNull(6) ? null : row.GetInt32(6), row.GetString(7),
             row.IsDBNull(1) ? null : JsonSerializer.Deserialize<string[]>(row.GetString(1)));

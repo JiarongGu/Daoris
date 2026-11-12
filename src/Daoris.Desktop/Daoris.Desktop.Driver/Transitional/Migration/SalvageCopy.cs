@@ -27,16 +27,5 @@ internal static class SalvageCopy
         return stream.Read(read, 0, read.Length) == read.Length && read.AsSpan().SequenceEqual(Header);
     }
 
-    private static void Backup(string source, string target)
-    {
-        using (var from = new SqliteConnection($"Data Source={source};Mode=ReadWrite;Pooling=False"))
-        using (var to = new SqliteConnection($"Data Source={target};Pooling=False"))
-        {
-            from.Open();
-            to.Open();
-            from.BackupDatabase(to);
-        }
-
-        SqliteConnection.ClearAllPools();
-    }
+    private static void Backup(string source, string target) => StoreEngineSource.Current.Backup(source, target);
 }

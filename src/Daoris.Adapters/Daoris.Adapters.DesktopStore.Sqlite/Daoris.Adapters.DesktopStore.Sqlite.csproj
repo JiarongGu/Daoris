@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The desktop store's SQLite adapter: the one project that names the engine's types. The application writes its SQL against the
+    standard library's connection and transaction and reaches this through the ports a root hands it. It sits under no tree's
+    Directory.Build.props, so its packages are versioned here, at the versions the desktop tree pins (Directory.Packages.props), and
+    adapter.json names the same two for the fingerprint.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodePage>65001</CodePage>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <RootNamespace>Daoris.Adapters.DesktopStore.Sqlite</RootNamespace>
+    <AssemblyName>Daoris.Adapters.DesktopStore.Sqlite</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Daoris.Ports\Daoris.Ports.csproj" />
+  </ItemGroup>
+
+</Project>

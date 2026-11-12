@@ -87,15 +87,11 @@ public sealed class GitDoorStartTests : IDisposable
         return sources;
     }
 
-    private static string Pinned(string package)
-    {
-        var props = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Directory.Packages.props"));
-        return Regex.Match(props, $"""<PackageVersion Include="{Regex.Escape(package)}" Version="([^"]+)" />""").Groups[1].Value;
-    }
-
     private const string Initializer = """
         using System.Runtime.CompilerServices;
+        using Daoris.Adapters.DesktopStore.Sqlite;
         using Daoris.Driver;
+        using Daoris.Ports.Ambient;
 
         internal static class StoreOpenedAtStart
         {
@@ -109,6 +105,7 @@ public sealed class GitDoorStartTests : IDisposable
             [MethodImpl(MethodImplOptions.NoInlining)]
             private static void Read(string path)
             {
+                AmbientPorts.Set(new PortSet { Clock = TimeProvider.System, Store = SqliteDesktopStores.Engines });
                 using var store = DesktopStoreReader.Open(path);
                 if (store is null) return;
                 _ = store.Version;
@@ -129,11 +126,14 @@ public sealed class GitDoorStartTests : IDisposable
         var packages = "";
         if (withStore)
         {
-            compile.AppendLine($"""    <Compile Include="{Path.Combine(DriverFolder, "Store", "DesktopStoreReader.cs")}" Link="DesktopStoreReader.cs" />""");
+            foreach (var linked in new[] { "DesktopStoreReader.cs", "StoreCommands.cs", "StoreEngineSource.cs" })
+                compile.AppendLine($"""    <Compile Include="{Path.Combine(DriverFolder, "Store", linked)}" Link="{linked}" />""");
+            // The reader asks the ports for its connection, and the program's root hands it the SQLite adapter's: the adapter brings the
+            // package and its native bundle, which are what this measures.
+            var adapter = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj");
             packages = $"""
                   <ItemGroup>
-                    <PackageReference Include="Microsoft.Data.Sqlite" Version="{Pinned("Microsoft.Data.Sqlite")}" />
-                    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="{Pinned("SQLitePCLRaw.bundle_e_sqlite3")}" />
+                    <ProjectReference Include="{adapter}" />
                   </ItemGroup>
                 """;
             // Found beside the project, as the SDK finds every source of a folder.

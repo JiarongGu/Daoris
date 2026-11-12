@@ -33,8 +33,7 @@ public sealed class WorkflowsStep : IHomeMigrationStep
     {
         var path = DaorisHome.Entry(home, HomeEntry.Knowledge);
         if (!File.Exists(path)) return [];
-        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
-        connection.Open();
+        using var connection = StoreEngineSource.Connect(path, DesktopOpen.ReadOnly);
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'registrations'";
         if (Convert.ToInt32(command.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture) == 0) return [];

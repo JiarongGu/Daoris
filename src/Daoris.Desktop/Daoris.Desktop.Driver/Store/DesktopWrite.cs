@@ -1,19 +1,17 @@
-using Microsoft.Data.Sqlite;
-
 namespace Daoris.Driver;
 
 /// <summary>
 /// The write transaction a <see cref="DesktopStore.Write{T}"/> hands its work: every statement it runs is
-/// inside the one transaction the store began with <c>BEGIN IMMEDIATE</c>, after it read the writer stamp under the write lock, so a read, a
+/// inside the one transaction the engine began with <c>BEGIN IMMEDIATE</c>, after it read the writer stamp under the write lock, so a read, a
 /// check and a write never interleave across processes. It lives as long as the work does, and the work awaits nothing in another process.
 /// </summary>
 public sealed class DesktopWrite
 {
-    private readonly SqliteConnection _connection;
+    private readonly DbConnection _connection;
 
-    private readonly SqliteTransaction _transaction;
+    private readonly DbTransaction _transaction;
 
-    internal DesktopWrite(SqliteConnection connection, SqliteTransaction transaction, int version = int.MaxValue)
+    internal DesktopWrite(DbConnection connection, DbTransaction transaction, int version = int.MaxValue)
     {
         _connection = connection;
         _transaction = transaction;
@@ -42,7 +40,7 @@ public sealed class DesktopWrite
     }
 
     /// <summary>Rows read by <paramref name="map"/>, one per row of the statement's answer.</summary>
-    public IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map, params (string Name, object? Value)[] values)
+    public IReadOnlyList<T> Query<T>(string sql, Func<DbDataReader, T> map, params (string Name, object? Value)[] values)
     {
         using var command = Command(sql, values);
         using var reader = command.ExecuteReader();
@@ -51,12 +49,12 @@ public sealed class DesktopWrite
         return rows;
     }
 
-    private SqliteCommand Command(string sql, (string Name, object? Value)[] values)
+    private DbCommand Command(string sql, (string Name, object? Value)[] values)
     {
         var command = _connection.CreateCommand();
         command.Transaction = _transaction;
         command.CommandText = sql;
-        foreach (var (name, value) in values) command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        command.Bind(values);
         return command;
     }
 }
