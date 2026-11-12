@@ -94,7 +94,7 @@ public sealed class TreeReleasesGitTests : LandedFixture
         Record("q1", ended: true);
         Record("q3", ended: false);
 
-        var swept = await new TreeReleases(Home).SweepAsync(root, "engine");
+        var swept = await new TreeReleases(Home).SweepAsync(root, "engine", null);
 
         Assert.Equal(new[] { ended, gone }.Order(), swept.Where(each => each.Gone).Select(each => each.Branch).Order());
         Assert.False(Directory.Exists(endedTree));
@@ -111,13 +111,54 @@ public sealed class TreeReleasesGitTests : LandedFixture
         var unowned = await trees.OpenAsync(root, "engine", "aurora");
         Record("q1", ended: true);
 
-        var swept = await new TreeReleases(Home).SweepAsync(root, "engine");
+        var swept = await new TreeReleases(Home).SweepAsync(root, "engine", null);
 
         var kept = Assert.Single(swept);
         Assert.Equal((branch, false), (kept.Branch, kept.Gone));
         Assert.True(Directory.Exists(tree));
         Assert.True(Directory.Exists(unowned.Path));
         Assert.Contains("has not taken", Entry(branch).Kept, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_look_leaves_a_live_runs_tree_to_its_run_and_ends_it_once_the_run_is_over_saying_so()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tree, branch) = await OwnedAsync(trees, root, "q1", "a.txt");
+        await MergeAsync(root, branch);
+        Record("q1", ended: false);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        static Task<IReadOnlySet<string>> None(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
+
+        var live = await trees.TidyEmptyAsync(root, "engine", "aurora", None);
+
+        Assert.Empty(live.Released);
+        Assert.DoesNotContain(live.Results, result => result.Removed);
+        Assert.True(Directory.Exists(tree));
+
+        Record("q1", ended: true);
+        var over = await trees.TidyEmptyAsync(root, "engine", "aurora", None);
+
+        var released = Assert.Single(over.Released);
+        Assert.Equal((branch, true), (released.Branch, released.Gone));
+        Assert.False(Directory.Exists(tree));
+    }
+
+    [Fact]
+    public async Task The_look_does_not_end_the_tree_of_a_run_while_a_session_still_runs_in_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tree, branch) = await OwnedAsync(trees, root, "q1", "a.txt");
+        await MergeAsync(root, branch);
+        Record("q1", ended: true);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string> { tree }));
+
+        Assert.Empty(pass.Released);
+        Assert.True(Directory.Exists(tree));
     }
 
     [Fact]

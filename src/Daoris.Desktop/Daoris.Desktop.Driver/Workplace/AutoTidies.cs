@@ -39,6 +39,12 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
 
     /// <summary>The recovery refs the look removed past their retention, each with the branch or tag that holds its commit.</summary>
     public IReadOnlyList<RecoveryGone> Recovered { get; init; } = [];
+
+    /// <summary>
+    /// The trees of runs that ended, or whose record is gone, which the look tried to end (<see cref="TreeReleases.SweepAsync"/>): each gone, or
+    /// kept with its reason.
+    /// </summary>
+    public IReadOnlyList<TreeReleased> Released { get; init; } = [];
 }
 
 /// <summary>
@@ -178,8 +184,9 @@ internal sealed class AutoTidies(
     {
         var space = RemoteTarget.Workspace(workspace);
         IReadOnlyList<RecoveryGone> recovered = [];
+        IReadOnlyList<TreeReleased> released = [];
         TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null, string? cause = null) =>
-            new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause, Recovered = recovered };
+            new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause, Recovered = recovered, Released = released };
 
         // A main checkout's `.git` is a folder; a linked worktree's is a file, and a folder inside a repository has none. Asked
         // before any git, so a root that cannot hold session branches costs nothing.
@@ -216,6 +223,10 @@ internal sealed class AutoTidies(
                     RecoveryKeeps.Recorded(context.Home, repository)).ConfigureAwait(false);
                 Retention(repository);
             }
+
+            // The trees of runs that ended or whose record is gone, ended behind the clean-up's proof: the way a run's tree goes where its
+            // graph holds no release, and for the runs a release did not reach. Only the lease's holder, with the sessions asked inside.
+            released = await new TreeReleases(context.Home).SweepAsync(root, repository, inUse, ct).ConfigureAwait(false);
         }
 
         var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);

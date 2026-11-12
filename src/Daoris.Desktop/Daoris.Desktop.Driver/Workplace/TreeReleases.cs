@@ -31,17 +31,43 @@ public sealed class TreeReleases(string home)
     /// The standing branches of <paramref name="repository"/> a run owns whose run is over for its tree, each ended behind the proof: the run's
     /// record ended with no attempt unsettled (<see cref="StepRefs.Releases"/>), or none kept here at all.
     /// </summary>
-    public async Task<IReadOnlyList<TreeReleased>> SweepAsync(string root, string repository, CancellationToken ct = default)
+    /// <param name="inUse">The trees sessions still run or wait in, which stay; null where none is known. Where it cannot be read nothing is ended.</param>
+    public async Task<IReadOnlyList<TreeReleased>> SweepAsync(
+        string root, string repository, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, CancellationToken ct = default)
     {
         var records = new NodeRecordFiles(home);
-        var done = new List<TreeReleased>();
+        var due = new List<GrownBranch>();
         foreach (var owned in new SessionBranches(home).All()
-                     .Where(entry => entry.Run is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-                     .ToList())
+                     .Where(entry => entry.Run is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)))
         {
             // A record that is not kept at all is a run whose record is gone; one that does not read is unknown, and ends nothing.
             var unit = RunUnits.IdOf(owned.Run!);
             if (File.Exists(NodeRecordFiles.PathOf(home, unit)) && !(records.Read(unit) is { } record && StepRefs.Releases(record))) continue;
+            due.Add(owned);
+        }
+
+        if (due.Count == 0) return [];
+        IReadOnlySet<string> busy = new HashSet<string>();
+        if (inUse is not null)
+        {
+            try
+            {
+                busy = await inUse(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            {
+                return [];
+            }
+        }
+
+        // No session starts in the repository's trees while they are ended; a start that holds them is tried again at the next look.
+        using var hold = TreeLock.TryReplaying(home, root, repository, TreeLock.Tidying);
+        if (hold is null) return [];
+        var trees = await TreeWorktrees.WorktreesAsync(root, ct).ConfigureAwait(false);
+        var done = new List<TreeReleased>();
+        foreach (var owned in due)
+        {
+            if (trees.GetValueOrDefault(owned.Branch) is { } tree && busy.Any(path => TreeGit.SamePath(path, tree))) continue;
             done.Add(await ReleaseAsync(root, repository, owned.Branch, ct).ConfigureAwait(false));
         }
 
