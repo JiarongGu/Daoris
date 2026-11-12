@@ -120,6 +120,14 @@ finishes first and the whole set runs once.
     the writer. Every lock (the verdict store's, the gate tree's, the CI watch's) is put in place complete (`locks.mjs` over
     `run-lock.mjs`), names its holder by pid and creation time, and is taken over only from a holder judged dead and still the one
     judged; a take-over ends only that holder's children. (from D180)
+20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
+    `ScratchFolders.New` under `TestHomes.Root` and goes with `ScratchFolders.Remove`; the service stood in over HTTP is a
+    `RoutedHandler`; a wait on a signal is `Poll`; the web's window over a mocked shell is `test/doubles/appShell.ts` and its service
+    over `fetch` is `test/doubles/fetchRoutes.ts`. The service's, the HTTP host's and the devkit's tests have their process's temporary folder at
+    `_fixtures/test-homes/temp` (`ScratchTemp`), so what they root at `Path.GetTempPath()` stays in the checkout's scratch; the
+    desktop's tests name `TestHomes.Root` and `TestHomesCensusTests` refuses the call. A golden holds one full render; each other
+    case is held against it section by section, the sentence that makes a section differ asserted and every other section equal.
+    (from TESTDIET1)
 
 ## Where a change goes
 

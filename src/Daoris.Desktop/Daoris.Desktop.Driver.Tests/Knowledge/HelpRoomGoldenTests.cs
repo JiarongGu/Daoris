@@ -251,15 +251,107 @@ public sealed class HelpRoomGoldenTests
         Console.Error.WriteLine($"{WriteSwitch}: wrote {path}");
     }
 
+    [Fact]
+    public void The_room_renders_the_text_it_rendered_before_its_sections_were_split()
+    {
+        Settle(GoldenPath("full.md"), HelpRoom.Render(Full), WriteRequested);
+    }
+
+    /// <summary>The sections a sparse or empty machine has no facts for.</summary>
+    private static readonly string[] Unfilled =
+        ["## Daoris's own plugins", "### Workspace `default`", "### Workspace `work`", "### Agents", "### Roles and their policies", "### Asks"];
+
+    /// <summary>
+    /// Each other machine's room against the full one: the sections it lacks and the ones only it has, and for each section that
+    /// differs the sentence that makes it differ. Every other section is the full room's, byte for byte.
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Gone, string[] Added, (string Section, string Says)[] Varies)> Variants = new()
+    {
+        ["full-access"] = ([], [],
+        [
+            ("# Ask Daoris", "This conversation runs with full access, as the person chose: you may act on this machine yourself"),
+            ("## What you may do", "You act on this machine as the person, as they chose: a shell, file edits and the plugins' servers below,"),
+        ]),
+        ["sparse"] = (Unfilled, [],
+        [
+            ("## What you may do", "You have no shell, no web fetch or search, and you read no checkout"),
+            ("## Done at a terminal", "Plugins that perform pull-request steps here: `example.github-pull-request`, `example.lands`."),
+            ("## This machine, now", "- The driver: no agent is set for quests."),
+            ("## Where work has got to", "The milestones were not read, so do not say where any work stands"),
+            ("## What waits on what", "No repository is registered on this machine yet."),
+        ]),
+        ["empty"] = (Unfilled, [],
+        [
+            ("## What you may do", "You have no shell, no web fetch or search, and you read no checkout"),
+            ("## Done at a terminal", "or the Plugins place), so never press a workflow naming one."),
+            ("## This machine, now", "- The driver: no agent is set for quests."),
+            ("## Where work has got to", "The milestones were not read, so do not say where any work stands"),
+            ("## What waits on what", "No repository is registered on this machine yet."),
+        ]),
+        ["scoped"] = (["## Daoris's own plugins", "### Workspace `default`", "### Workspace `work`", "### Roles and their policies"], ["### Workspace `alpha`"],
+        [
+            ("# Ask Daoris", "This conversation is workspace `alpha`'s: the person started it from a window on that workspace."),
+            ("## What you may do", "- `engine` (workspace `alpha`)\n- `console` (workspace `beta`)"),
+            ("## Done at a terminal", "or the Plugins place), so never press a workflow naming one."),
+            ("## This machine, now", "- The driver: quests run on `claude-code`, up to 3 sessions at once."),
+            ("## Where work has got to", "reached: every commit of it is on `main`"),
+            ("## What waits on what", "What each line waits on was not read, so do not say what any session waits on"),
+            ("### Agents", "- `claude-code` (Claude Code 2.1.0): account `account-1` signed in"),
+            ("### Asks", "- `#aa1` at `alpha`: “stream the tiles” (Proposed)"),
+        ]),
+    };
+
+    /// <summary>The room's sections in order, each heading line with the text up to the next: the title's own text first.</summary>
+    internal static List<(string Heading, string Text)> Sections(string room)
+    {
+        var sections = new List<(string, string)>();
+        var heading = "";
+        var text = new List<string>();
+        foreach (var line in room.Split('\n'))
+        {
+            if (line.StartsWith('#') && line.TrimStart('#').StartsWith(' '))
+            {
+                if (heading.Length > 0 || text.Count > 0) sections.Add((heading, string.Join('\n', text)));
+                (heading, text) = (line, []);
+            }
+            else text.Add(line);
+        }
+
+        sections.Add((heading, string.Join('\n', text)));
+        return sections;
+    }
+
     [Theory]
-    [InlineData("full")]
     [InlineData("full-access")]
     [InlineData("sparse")]
     [InlineData("empty")]
     [InlineData("scoped")]
-    public void The_room_renders_the_text_it_rendered_before_its_sections_were_split(string machine)
+    public void Another_machine_s_room_is_the_full_one_but_where_its_facts_differ(string machine)
     {
-        Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);
+        var (gone, added, varies) = Variants[machine];
+        var full = Sections(HelpRoom.Render(Full));
+        var room = Sections(HelpRoom.Render(Named(machine)));
+        var fullHeadings = full.Select(section => section.Heading).ToList();
+        var headings = room.Select(section => section.Heading).ToList();
+
+        Assert.Equal(gone, fullHeadings.Except(headings));
+        Assert.Equal(added, headings.Except(fullHeadings));
+        Assert.Equal(fullHeadings.Where(headings.Contains), headings.Where(fullHeadings.Contains));
+        foreach (var (heading, text) in room.Where(section => fullHeadings.Contains(section.Heading)))
+        {
+            var before = full.First(section => section.Heading == heading).Text;
+            var says = varies.Where(each => each.Section == heading).Select(each => each.Says).ToList();
+            if (says.Count == 0)
+            {
+                Assert.True(before == text, $"{machine}: `{heading}` differs from the full room's, and no sentence here says why");
+                continue;
+            }
+
+            Assert.Contains(says[0], text);
+            Assert.DoesNotContain(says[0], before);
+        }
+
+        Assert.All(varies, each => Assert.Contains(each.Section, headings));
     }
 
     /// <summary>The switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>

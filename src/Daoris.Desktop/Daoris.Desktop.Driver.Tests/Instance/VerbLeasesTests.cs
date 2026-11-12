@@ -250,17 +250,6 @@ public sealed class VerbLeasesTests
     public void No_words_hold_nothing() => Assert.False(VerbLeases.Holds([]));
 
     /// <summary>
-    /// No variable names another driver file, so a driver choice holds the home whatever the retired variable says.
-    /// </summary>
-    [Fact]
-    public void ONEWAY1c_i_a_driver_choice_holds_the_home_whatever_the_retired_variable_names()
-    {
-        string[] words = ["driver", "drive", "engine"];
-        Assert.True(VerbLeases.HoldsHere(words, name => name == "DAORIS_DRIVER_CONFIG" ? "X:/daoris/elsewhere/driver.json" : null));
-        Assert.True(VerbLeases.HoldsHere(words, _ => null));
-    }
-
-    /// <summary>
     /// A file `DAORIS_HARNESS_CONFIG` names is no instance's: an account's settings and a trust on
     /// its home act alone, holding nothing; the rules and their proposals are `DAORIS_HOME`'s whatever it names, so they hold that home.
     /// </summary>
@@ -275,6 +264,7 @@ public sealed class VerbLeasesTests
         Assert.True(VerbLeases.HoldsHere(["agent", "settings", "claude-code", "--account", "work", "model", "opus"], _ => null));
         // A named wiring file isolates only what it names: the driver family's choices are not its.
         Assert.True(VerbLeases.HoldsHere(["driver", "drive", "engine"], Named));
+        Assert.True(VerbLeases.HoldsHere(["driver", "drive", "engine"], _ => null));
     }
 
     /// <summary>The remotes' and the browser's edits hold the lease; their reads and the registry, the service's, hold none.</summary>

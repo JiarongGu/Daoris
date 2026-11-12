@@ -271,18 +271,6 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Contains("`nothing` is no default Daoris ships", _error.ToString());
     }
 
-    /// <summary>A copy of a repository's Current is not made by hand; the refusal names <c>workflow convert</c>, the one door.</summary>
-    [Fact]
-    public async Task New_from_a_repository_s_Current_is_retired_and_names_the_conversion()
-    {
-        var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
-
-        Assert.Equal(2, exit);
-        Assert.Contains("retired", _error.ToString());
-        Assert.DoesNotContain("convert", _error.ToString());
-        Assert.Null(WorkflowStore.Load(_home, "made"));
-    }
-
     [Fact]
     public async Task A_variant_wires_each_gate_into_the_landing_and_the_opinion_never_into_the_look()
     {

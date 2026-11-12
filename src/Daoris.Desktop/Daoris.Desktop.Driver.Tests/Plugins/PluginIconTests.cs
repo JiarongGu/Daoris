@@ -14,11 +14,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class PluginIconTests : IDisposable
 {
-    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-icon-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = ScratchFolders.New("daoris-plugin-icon-");
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        ScratchFolders.Remove(_home);
     }
 
     private string Plugin(string id, string? icon)

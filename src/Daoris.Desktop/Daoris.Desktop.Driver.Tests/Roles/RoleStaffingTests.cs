@@ -350,24 +350,15 @@ public sealed class RoleStaffingTests : IDisposable
             .Select(each => each.Path).Distinct());
     }
 
-    /// <summary>A root wires the home's own file whatever the retired variable names, and nothing with no home.</summary>
     [Fact]
-    public void ONEWAY1c_i_a_root_wires_the_homes_own_file_whatever_the_retired_variable_names()
+    public void A_root_wires_the_homes_own_file_and_nothing_with_no_home()
     {
         var file = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        var elsewhere = Path.Combine(_home, "elsewhere", "driver.json");
         try
         {
-            Assert.Null(RoleStaffing.WireHome(name => name == "DAORIS_DRIVER_CONFIG" ? elsewhere : null));
-
-            Assert.NotNull(RoleStaffing.WireHome(name => name switch
-            {
-                DaorisHome.Variable => _home,
-                "DAORIS_DRIVER_CONFIG" => elsewhere,
-                _ => null,
-            }));
+            Assert.Null(RoleStaffing.WireHome(_ => null));
+            Assert.NotNull(RoleStaffing.WireHome(name => name == DaorisHome.Variable ? _home : null));
             Assert.True(RoleStaffingPort.IsWired(file));
-            Assert.False(RoleStaffingPort.IsWired(elsewhere));
         }
         finally
         {

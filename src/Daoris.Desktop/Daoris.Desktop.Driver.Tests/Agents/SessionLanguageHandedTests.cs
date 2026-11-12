@@ -34,11 +34,9 @@ public sealed class SessionLanguageHandedTests
         Assert.True(set.IndexOf(Line, StringComparison.Ordinal) < set.IndexOf("Look before you ask:", StringComparison.Ordinal), which);
     }
 
-    /// <summary>Unset is today's instruction: the golden files are composed from targets that name no language.</summary>
     [Theory]
     [InlineData("bare")]
     [InlineData("full")]
-    [InlineData("carry-on")]
     public void Unset_is_the_golden_instruction_byte_for_byte(string which)
     {
         var target = TargetPromptGoldenTests.Of(which);

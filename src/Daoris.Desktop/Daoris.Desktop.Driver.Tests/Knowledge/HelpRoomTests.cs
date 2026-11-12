@@ -131,27 +131,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__registry", allowed);
         Assert.Contains("mcp__daoris-knowledge__knowledge_search", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
-        // It proposes, and the person applies — never a rule proposal, whose narrowing applies itself.
-        Assert.DoesNotContain("mcp__daoris-knowledge__setting_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__ask_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__setup_propose", allowed);
-        // The four further kinds, each a card the person applies.
-        Assert.DoesNotContain("mcp__daoris-knowledge__agent_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__delete_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__agent_settings_propose", allowed);
+        // The person presses or applies every change: no proposal tool of any kind is the room's own to call.
         Assert.DoesNotContain(allowed, rule => rule.EndsWith("_propose", StringComparison.Ordinal));
-        // Adding a landed plugin, or switching one, is pressed, never proposed.
-        Assert.DoesNotContain("mcp__daoris-knowledge__plugin_propose", allowed);
-        // A quest's yes and a landed branch's hand-off are the person's own presses, never a card.
-        Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
-        // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
-        Assert.DoesNotContain("mcp__daoris-knowledge__repository_propose", allowed);
-        // Archiving or unarchiving sessions, and pausing work, are pressed, never proposed.
-        Assert.DoesNotContain("mcp__daoris-knowledge__session_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__pause_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
-        Assert.DoesNotContain("mcp__daoris-knowledge__workflow_propose", allowed);
         Assert.Contains("Edit(./drafts/**)", allowed);
         Assert.True(Directory.Exists(Path.Combine(room, "drafts")));
         Assert.DoesNotContain(allowed, rule => (rule.StartsWith("Bash", StringComparison.Ordinal) && !HelpRoom.Verb.Contains(rule))
