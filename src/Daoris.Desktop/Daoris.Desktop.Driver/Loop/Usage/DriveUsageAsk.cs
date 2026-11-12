@@ -39,6 +39,11 @@ internal static class DriveUsageAsk
               say what kind of task an ask is and which workflow its work follows: a kind its workspace declares, a
               workflow saved here or current; the latest stands, and each run binds what is chosen at its first start.
               Yours alone: an agent proposes a kind, never sets one.
+          ask … --through "…"
+          ask through <id> "<the person's words>"|--clear
+              put the person's words asking for the work to be delivered on an ask, when it is made or after, or take
+              them back: each run of it then goes through its review to its pull request on them, and a departure
+              from a requirement still waits for the person.
           ask clear <id> [--yes]
               list what clearing one ask's work from this machine would take and keep; with --yes, clear it.
           ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all | --about <place>]

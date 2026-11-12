@@ -120,6 +120,9 @@ internal sealed record TransportProtocol(string Cwd)
     /// <summary>The connectors the session is offered, the plan its open reads.</summary>
     public ConnectorPlan? Connectors { get; init; }
 
+    /// <summary>How long a held session's open may take before it fails as <see cref="OpeningPastBound"/>; infinite holds none.</summary>
+    public TimeSpan OpenBound { get; init; } = Timeout.InfiniteTimeSpan;
+
     /// <summary>Where the run's wait says the timeout before its kill, handed the session once it is made.</summary>
     public AcpEnding? Ending { get; init; }
 

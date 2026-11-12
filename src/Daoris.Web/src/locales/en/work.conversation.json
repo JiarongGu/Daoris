@@ -29,6 +29,7 @@
   "work.conversation.working": "working…",
   "work.conversation.firstAnswer": "waiting for its first answer since {{time}} ({{elapsed}})",
   "work.conversation.calling": "running {{title}} for {{elapsed}}",
+  "work.conversation.longCall": "{{title}} has run {{elapsed}}",
   "work.conversation.callWaits": "waiting for your answer to {{title}} for {{elapsed}}",
   "work.conversation.callWaitsUnnamed": "waiting for your answer to a tool call for {{elapsed}}",
   "work.conversation.ended": "the turn ended: {{reason}}",

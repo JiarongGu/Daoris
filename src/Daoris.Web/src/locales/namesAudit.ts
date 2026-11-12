@@ -29,8 +29,12 @@ export const STRAY_AUDITED = [
   'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
   'settings.daoris.toolHome.absent:zh', 'settings.daoris.toolHome.caseFolded:zh', 'settings.daoris.toolHome.listWhy.inside-daoris:zh',
   'settings.daoris.toolHome.listWhy.unread:zh', 'settings.daoris.toolHome.what:zh',
+  // data/harnesses is a folder's literal name on disk, which the agent term does not rename.
+  'settings.daoris.space.whose.agents:en',
   'settings.rules.why:en',
   // A subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
   'work.atWork.child.finished:zh',
   'work.status.indexedTip:en',
+  // 结束 is a turn ending before it takes the words, which is no outcome and no done.
+  'work.steer.nowTip:zh',
 ];

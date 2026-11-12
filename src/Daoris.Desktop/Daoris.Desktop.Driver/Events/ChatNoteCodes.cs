@@ -49,6 +49,11 @@ public static class ChatNoteCodes
     public static readonly NoteCode ChatRestarted = new("chat.restarted", []);
     public static readonly NoteCode ChatCut = new("chat.cut", []);
 
+    // ——— An opening past its bound (ChatOpening): Ask Daoris's and any other conversation's, and the plugins' servers left out.
+    public static readonly NoteCode HelpNotUp = new("chat.help-not-up", ["what", "seconds"]);
+    public static readonly NoteCode ChatNotUp = new("chat.not-up", ["what", "seconds"]);
+    public static readonly NoteCode ServersLeftOut = new("chat.servers-left-out", ["seconds"]);
+
     // ——— A landing at the quest's done, under a rule that accepts automatically: said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
 

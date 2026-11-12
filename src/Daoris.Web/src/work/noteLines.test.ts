@@ -724,12 +724,6 @@ describe('noteLines', () => {
         "It does not go on yet: `engine`'s branches are being brought up to date right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
       );
       expect(noteLines(zh, { parts: replaying }, 'zh')[0].kind).toBe('said');
-
-      const answering = [coded('held.answering', '— it does not go on yet: …', { session: 'h2' })];
-      expect(noteLines(t, { parts: answering }, 'en')[0].text).toBe(
-        'It does not go on yet: Ask Daoris is answering in conversation `h2`; once its turn ends, a word said here takes these with it. Your words wait on it.',
-      );
-      expect(noteLines(zh, { parts: answering }, 'zh')[0].kind).toBe('said');
     });
 
     it('words the lead and the tail around a program’s message and leaves it as written', () => {

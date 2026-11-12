@@ -279,6 +279,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         set => Executors.Of<ChatHelp>().DescribeHelp = value;
     }
 
+    /// <summary>How long each phase of a conversation's opening may take (<see cref="ChatRun.OpeningBound"/>).</summary>
+    internal TimeSpan OpeningBound
+    {
+        get => _run.OpeningBound;
+        set => _run.OpeningBound = value;
+    }
+
     /// <summary>How long an Ask Daoris start waits for the machine's reading before the room as last written serves (<see cref="HelpStart.ReadBound"/>).</summary>
     internal TimeSpan HelpReadBound
     {
