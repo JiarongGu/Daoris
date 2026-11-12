@@ -40,5 +40,12 @@
   "work.parts.edge.carried-on": "承接",
   "work.parts.edge.handed-over": "转交",
   "work.parts.edge.moved": "另起",
-  "work.parts.edge.asked": "委托"
+  "work.parts.edge.asked": "委托",
+  "work.parts.line.part": "第 {{n}} 段{{state}}",
+  "work.parts.line.partUnnumbered": "另一段{{state}}",
+  "work.parts.line.reviewer": "它的评审者{{state}}",
+  "work.parts.line.partner": "它的搭档{{state}}",
+  "work.parts.line.helper": "它的助手{{state}}",
+  "work.parts.line.open": "打开",
+  "work.parts.line.tip": "这条工作线的状态，读自它的每一段和每位协作者"
 }

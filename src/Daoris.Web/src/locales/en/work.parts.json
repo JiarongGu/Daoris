@@ -40,5 +40,12 @@
   "work.parts.edge.carried-on": "carried on",
   "work.parts.edge.handed-over": "handed over",
   "work.parts.edge.moved": "moved on",
-  "work.parts.edge.asked": "asked"
+  "work.parts.edge.asked": "asked",
+  "work.parts.line.part": "{{state}} in part {{n}}",
+  "work.parts.line.partUnnumbered": "{{state}} in another part",
+  "work.parts.line.reviewer": "{{state}}: its reviewer",
+  "work.parts.line.partner": "{{state}}: its partner",
+  "work.parts.line.helper": "{{state}}: its helper",
+  "work.parts.line.open": "Open",
+  "work.parts.line.tip": "Its line's state, read from every part and co-worker of it"
 }

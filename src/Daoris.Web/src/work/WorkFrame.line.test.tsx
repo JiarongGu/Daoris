@@ -33,12 +33,21 @@ const note = (seq: number, code: string, values: Record<string, unknown> = {}) =
 });
 
 /** A record of the line, a conversation of the repository, in the order the driver lists them. */
-type Part = { id: string; state?: string; from?: string; fromWhy?: string; adapter?: string; kind?: string; began?: string; after?: string; shown?: string };
+type Part = {
+  id: string; state?: string; from?: string; fromWhy?: string; adapter?: string; kind?: string; began?: string; after?: string; shown?: string;
+  /** Its line's state as the reader answers it on its row. */
+  standing?: { state: string; group: string; reason: string; by: string; role: string };
+};
 
 /** The line as the driver answers it: the records, its entry's parts oldest first, and each part's events. */
 function answering(parts: Part[], events: Record<string, unknown[]>, entry: Part[] = parts) {
+  // Each record's conversation as the service sets it at the open: the line of the part it continues, else its own id.
+  const lineOf = (part: Part): string => {
+    const before = parts.find((each) => each.id === part.from);
+    return before ? lineOf(before) : part.id;
+  };
   SESSIONS = parts.map((part, index) => ({
-    ...CHAT, id: part.id, door: part.adapter ?? 'claude-code', kind: part.kind ?? 'chat', state: part.state ?? 'completed',
+    ...CHAT, id: part.id, door: part.adapter ?? 'claude-code', kind: part.kind ?? 'chat', state: part.state ?? 'completed', line: lineOf(part),
     ...(part.from ? { from: part.from, fromWhy: part.fromWhy ?? 'press' } : {}),
     created: `2026-10-25T0${index}:00:00Z`, updated: `2026-10-25T0${index}:30:00Z`,
   }));
@@ -52,7 +61,7 @@ function answering(parts: Part[], events: Record<string, unknown[]>, entry: Part
       return {
         sessions: parts.map((part) => ({
           session: part.id, group: part.state === 'working' ? 'working' : 'ended', shown: part.shown ?? part.state ?? 'completed',
-          archived: false, teammate: false,
+          archived: false, teammate: false, ...(part.standing ? { line: part.standing } : {}),
         })),
         entries: [{
           entry: 'session:c0000001/engine', origin: 'session:c0000001', repository: 'engine', group: 'ended', leading: entry.at(-1)!.id,
@@ -243,7 +252,7 @@ describe('a session’s page draws its line as one conversation', () => {
     expect(await screen.findByRole('button', { name: 'Back to bottom' })).toBeInTheDocument();
   });
 
-  it('hides the parts after an earlier one when it is pressed, and draws them again when the newest is', async () => {
+  it('opens the line\'s session at an earlier part pressed, every part still drawn, and at its newest when that is', async () => {
     answering(
       [{ id: 'c0000001' }, { id: 'c0000002', from: 'c0000001' }, { id: 'c0000003', from: 'c0000002' }],
       {
@@ -259,10 +268,11 @@ describe('a session’s page draws its line as one conversation', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
     await userEvent.click(strip().getAllByRole('button')[1]!);
-    // Part 2 attended: its own ancestry above it, and the third part not drawn.
-    await waitFor(() => expect(drawn()).toEqual(['c0000001']));
-    expect(screen.queryByText('Third part words.')).toBeNull();
-    expect(screen.getByText('Second part words.')).toBeInTheDocument();
+    // Part 2 opened: the line's one session, opened at it, the newest part still the one it heads.
+    await waitFor(() => expect(main().querySelector('[data-opened]')?.getAttribute('data-part')).toBe('c0000002'));
+    expect(drawn()).toEqual(['c0000001', 'c0000002']);
+    expect(screen.getByText('Third part words.')).toBeInTheDocument();
+    expect(main().querySelector('[data-attended]')?.getAttribute('data-part')).toBe('c0000003');
 
     await userEvent.click(strip().getAllByRole('button')[2]!);
     await waitFor(() => expect(drawn()).toEqual(['c0000001', 'c0000002']));
@@ -327,6 +337,34 @@ describe('a session’s page draws its line as one conversation', () => {
     await screen.findByText('The failed try.');
     expect(await screen.findAllByText('retried after part 1')).toHaveLength(1);
     expect(main().textContent).not.toMatch(/new session/i);
+  });
+
+  it('opens an earlier part whose record ended as its line\'s session, working in its newest part', async () => {
+    const working = { state: 'working', group: 'working', reason: 'working', by: 'c0000002', role: 'part' };
+    answering(
+      [{ id: 'c0000001', state: 'stopped', standing: working }, { id: 'c0000002', from: 'c0000001', state: 'working', standing: working }],
+      { c0000001: [asked(1, 'Fix the loader.'), said(2, 'First part words.')], c0000002: [said(1, 'Second part words.')] },
+    );
+    show('c0000001');
+    await screen.findByText('Second part words.');
+
+    expect(main().querySelector('[data-attended]')?.getAttribute('data-part')).toBe('c0000002');
+    expect(main().querySelector('[data-opened]')?.getAttribute('data-part')).toBe('c0000001');
+    expect(main().querySelector('header')?.textContent).toMatch(/working/i);
+  });
+
+  it('says a session whose helper works is working, naming the helper with a door to it', async () => {
+    const helper = { state: 'working', group: 'working', reason: 'working', by: 'h0000001', role: 'helper' };
+    answering([{ id: 'c0000001', state: 'completed', standing: helper }], { c0000001: [asked(1, 'Fix the loader.'), said(2, 'Asked a helper.')] });
+    const { onSelect } = show('c0000001');
+    await screen.findByText('Asked a helper.');
+
+    await waitFor(() => expect(main().querySelector('[data-line-state]')).not.toBeNull());
+    const lineState = main().querySelector<HTMLElement>('[data-line-state]')!;
+    expect(lineState.textContent).toMatch(/its helper/);
+    expect(main().querySelector('header')?.textContent).toMatch(/working/i);
+    await userEvent.click(within(lineState).getByRole('button', { name: 'Open' }));
+    expect(onSelect).toHaveBeenLastCalledWith('h0000001');
   });
 
   it('attends a part pressed in the strip and scrolls to it', async () => {

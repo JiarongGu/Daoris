@@ -110,6 +110,9 @@ export type LineStanding = NonNullable<SessionGrouping['line']>;
 export const lineOf = (row: SessionGrouping): LineStanding =>
   row.line ?? { state: row.state ?? (row.group === 'archived' ? 'done' : row.group), group: row.group, reason: row.reason ?? row.shown, by: row.session, role: 'part' };
 
+/** Where a row is listed: its line's group, so a part whose own record ended sits where its line works. */
+export const listedGroup = (row: SessionGrouping): SessionGroupName => lineOf(row).group;
+
 /** The characters a running call's head is said in at most, its ellipsis among them. */
 export const CALL_HEAD = 40;
 
@@ -234,8 +237,9 @@ export function sessionsByState(
     const record = held.get(row.session);
     if (!record || answered.has(row.session)) continue;
     answered.add(row.session);
-    if (row.group === 'archived' && !archived && row.session !== selected) continue;
-    rows.get(GROUP_ORDER.includes(row.group) ? row.group : provisional(record))!.push(record);
+    const group = listedGroup(row);
+    if (group === 'archived' && !archived && row.session !== selected) continue;
+    rows.get(GROUP_ORDER.includes(group) ? group : provisional(record))!.push(record);
   }
 
   const unanswered = sessions.filter((row) => !answered.has(row.id));
