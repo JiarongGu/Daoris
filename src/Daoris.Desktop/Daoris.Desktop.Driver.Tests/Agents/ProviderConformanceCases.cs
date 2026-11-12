@@ -608,10 +608,7 @@ internal static class ConformanceCases
         }
     }
 
-    /// <summary>
-    /// An ability as the one reading answers it: stated absent, or known with a source that says where it comes from, a measured one with
-    /// the versions it was taken at.
-    /// </summary>
+    /// <summary>An ability as the one reading answers it: absent, or known with its source, a measured one with its versions.</summary>
     private static Action<ConformanceRun> Ability(string ability) => run =>
     {
         var reading = AbilityReading.Of(run.TheDoor, ability);

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one reading of what a door can do: the value its provider states, with its source and the versions it was measured at, else
-/// the value its transport gives every door of it, said as a default that was not measured, else absent. The door's callers
+/// The one reading of what a door can do: the value its provider states, with its source and the versions of its measurement, else
+/// the value its transport gives every door of it, said as an unmeasured default, else absent. The door's callers
 /// (<see cref="DoorAbilities"/>) and the provider sheet both read it, so they cannot disagree.
 /// </summary>
 public static class AbilityReading

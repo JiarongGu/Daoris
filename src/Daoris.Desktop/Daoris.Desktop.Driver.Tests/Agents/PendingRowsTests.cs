@@ -105,7 +105,6 @@ public sealed class PendingRowsTests
         var kind = run is null ? (StartKind?)null : Enum.Parse<StartKind>(run);
         var lines = ConformancePending.Of(provider);
 
-        // A door with a recorded corpus passes the dialect case over it, so only its unknown-frame line is held.
         string[] cases = ProviderCorpus.Of(provider, door).Count > 0 ? ["frames.unknown-unread"] : ["frames.unknown-unread", "dialect.recorded-frames"];
         foreach (var @case in cases)
         {

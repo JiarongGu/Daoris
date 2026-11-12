@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door whose provider's settings file states what it takes: the models its agent's newest open listed, on either of its doors, else
-/// the file's alias list as a stamped fallback; the file's efforts and, where the door says its native session carries more, the efforts
-/// only a session carries (<c>max</c>). Where the provider states no file, what the door's open last listed.
+/// A door whose provider's settings file states what it takes: the models its agent's newest open listed on either door, else the file's
+/// stamped aliases; the file's efforts and, on a native door, the ones only a session carries (<c>max</c>).
 /// </summary>
 /// <param name="SessionOnlyEfforts">Whether a session on this door also carries the efforts a default in the file may not hold.</param>
 public sealed class SettingsOffers(bool SessionOnlyEfforts) : IDoorOffers

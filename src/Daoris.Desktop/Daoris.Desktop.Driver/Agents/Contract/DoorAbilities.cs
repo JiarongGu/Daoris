@@ -6,7 +6,6 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// Interactive is always the door's declaration, never the transport's: <c>dsh</c> declares none and is refused a conversation.
-/// The rest are the transport's; a door that states one of them is read as it states it once the part declares it.
 /// </remarks>
 /// <param name="Transport">The transport the door rides; read by the transports alone.</param>
 /// <param name="Interactive">It holds a conversation (the door's declaration).</param>

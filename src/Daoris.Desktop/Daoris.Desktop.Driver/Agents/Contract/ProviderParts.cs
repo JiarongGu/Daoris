@@ -94,7 +94,7 @@ public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full, string? Reading);
 
 /// <summary>
-/// What a door can do, a <see cref="Known{T}"/> each with its source and, where measured, the versions it was taken at. An ability a
+/// What a door can do, a <see cref="Known{T}"/> each with its source and, where measured, the versions of its measurement. An ability a
 /// door states nothing of reads as its transport's default or absent (<see cref="AbilityReading"/>); the transport's wiring
 /// (rules and servers on the wire, set at open, held on the wire, resumes by restart) is not an ability and is not stated here.
 /// </summary>

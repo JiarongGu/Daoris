@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The rows a held-pending case may name: the open rows of the backlog (<c>TASKS.md</c>), read as the file stands. A row is a task's id
-/// (<c>AGENTLYNTAI1e-ii</c>), or a bare letter naming a sub-row <c>AGENTPROVIDER1</c> still lists as left; a row the archive holds is no row.
+/// The rows a held-pending case may name: the open rows of the backlog, read as the file stands. A row is an open task's id, or a bare
+/// letter naming a sub-row its parent task still lists as left; a row the archive holds is no row.
 /// </summary>
 internal static partial class OpenBacklogRows
 {

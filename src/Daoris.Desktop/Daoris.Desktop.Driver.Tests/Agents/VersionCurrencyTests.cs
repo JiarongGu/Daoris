@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>What was measured or read at a version other than the one pinned is listed as such, so a moved pin shows what no longer applies.</summary>
+/// <summary>A measurement or offers reading from a version other than the one pinned is listed as such, so a moved pin shows what no longer applies.</summary>
 public sealed class VersionCurrencyTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "version-currency", Guid.NewGuid().ToString("N")[..8]);
@@ -19,7 +19,7 @@ public sealed class VersionCurrencyTests : IDisposable
 
         var lines = VersionCurrency.Of(_home, registry.Door("claude-code-acp"), pinned: "0.106.0");
 
-        Assert.Contains(lines, line => line.Contains("steering", StringComparison.OrdinalIgnoreCase) && line.Contains("measured at adapter 0.84.0", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("steering", StringComparison.OrdinalIgnoreCase) && line.Contains("measured at adapter version 0.84.0", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("offers", StringComparison.Ordinal) && line.Contains("read at 0.84.0", StringComparison.Ordinal));
     }
 

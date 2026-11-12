@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One recorded frame of a real door: the program and adapter versions it was taken at (<c>unrecorded</c> where its capture did not
-/// say), where it came from, the frame and the readings the door's reader is told to give it, each as <c>Kind</c> or <c>Kind/status</c>.
+/// One recorded frame of a real door: the program and adapter versions of its capture (<c>unrecorded</c> where the capture names none),
+/// its source, the frame and the readings the door's reader is told to give it, each as <c>kind</c> or <c>kind/status</c>.
 /// </summary>
 internal sealed record CorpusFrame(string Door, string Program, string? Adapter, string Source, JsonElement Frame, IReadOnlyList<string> Events);
 

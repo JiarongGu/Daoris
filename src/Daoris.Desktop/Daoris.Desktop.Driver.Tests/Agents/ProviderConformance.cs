@@ -267,9 +267,7 @@ internal static class ConformancePending
 {
     public const string FileName = "pending.json";
 
-    /// <summary>
-    /// The rows a case can wait for: the backlog's open rows, so a line on a row that is built fails the suite.
-    /// </summary>
+    /// <summary>The rows a case can wait for: the backlog's open rows.</summary>
     public static IReadOnlyList<string> Rows { get; } = OpenBacklogRows.Read();
 
     private static readonly string[] Fields = ["case", "door", "row", "why"];

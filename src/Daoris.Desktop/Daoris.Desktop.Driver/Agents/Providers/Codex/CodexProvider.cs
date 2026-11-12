@@ -42,7 +42,6 @@ internal static class CodexProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(false, Evidence),
-                // The shared transport's behaviour, kept; the adapter replaces its tracked prompt on a second, which no frame has measured.
                 WordsAtNextStep: Known<bool>.Declared(true, "the protocol transport's reading, not measured on this door")),
             // Its typed failure categories, marked only for a client that asks for them.
             new DoorTablesPart(CodexErrors.Words, null, Limits: CodexLimits.Words),

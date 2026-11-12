@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <param name="Efforts">The effort values.</param>
 public sealed record ChoicesOffered(IReadOnlyList<string> Models, IReadOnlyList<string> Efforts)
 {
-    /// <summary>Where the models are a stamped list and not an open's, the program version it was read at; null where an open listed them.</summary>
+    /// <summary>Where the models are a stamped list and not an open's, the program version of that list; null where an open listed them.</summary>
     public string? Stamped { get; init; }
 }
 

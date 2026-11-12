@@ -308,7 +308,6 @@ public sealed class RoleVerb : ChoiceVerb
         });
     }
 
-    /// <summary>What the agents' last opens say of a set role's models: hints, never refusals.</summary>
     private static IReadOnlyList<string> HintsOf(DriverChoicesWorld world, IReadOnlyList<ActorChoice>? choices) =>
         choices is { Count: > 0 } && Path.GetDirectoryName(world.ConfigPath) is { Length: > 0 } home ? ModelHints.Of(home, ProviderRegistry.Built(), choices) : [];
 

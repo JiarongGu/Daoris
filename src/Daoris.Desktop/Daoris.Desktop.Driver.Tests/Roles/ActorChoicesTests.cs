@@ -197,10 +197,7 @@ public sealed class ActorChoicesTests
         Assert.Empty(config.Actors);
     }
 
-    /// <summary>
-    /// A Claude door's session models are the newest open's list on either of the agent's doors, so a model id offered after one open is
-    /// choosable at once; with no open the stamped alias list is the fallback, and says it is.
-    /// </summary>
+    /// <summary>A model offered after one open is choosable at once on either Claude door; the alias list is only the stamped fallback.</summary>
     [Fact]
     public void A_new_model_is_offered_after_one_open_and_the_alias_list_is_only_the_stamped_fallback()
     {
@@ -223,7 +220,6 @@ public sealed class ActorChoicesTests
                 Assert.Null(after.Stamped);
             }
 
-            // The native door's efforts keep `max`, which only a native session carries.
             Assert.Contains("max", SessionChoices.Of(home, registry, "claude-code")!.Efforts);
         }
         finally

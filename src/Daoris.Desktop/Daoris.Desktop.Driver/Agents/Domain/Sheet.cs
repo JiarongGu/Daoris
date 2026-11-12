@@ -1,15 +1,8 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// A door's sheet read from the contract: each capability from the door's declaration,
-/// its transport's, an opening's negotiation or a measurement, in that order of strength, else absent with its fallback. Pure: it
-/// reads what it is handed and keeps nothing; the measurements table stays its own record.
-/// </summary>
+/// <summary>A door's sheet read from the one ability reading, a measurement outranking an opening's answer and a declaration; pure.</summary>
 public static class Sheet
 {
-    /// <summary>
-    /// One door's sheet.
-    /// </summary>
     /// <param name="provider">The provider the door belongs to.</param>
     /// <param name="door">The door.</param>
     /// <param name="negotiated">What an opening of the door answered, each ability by its sheet name; null where none is kept.</param>
@@ -17,7 +10,6 @@ public static class Sheet
     {
         var own = $"{door.Id.Value}'s declaration";
 
-        // A measured value outranks an opening's answer, which outranks a declaration and the transport's default.
         SheetRow Known(string capability, string ability, string fallback)
         {
             var stated = AbilityReading.Of(door, ability);

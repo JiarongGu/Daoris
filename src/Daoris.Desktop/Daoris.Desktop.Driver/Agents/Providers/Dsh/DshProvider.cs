@@ -34,7 +34,6 @@ internal static class DshProvider
                 Known<bool>.Declared(false, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(false, Evidence),
-                // The shared transport's behaviour, kept; no frame of this door has measured a word taken at the next step.
                 WordsAtNextStep: Known<bool>.Declared(true, "the protocol transport's reading, not measured on this door")),
             new DoorTablesPart(null, null), null, InstructionsPart.None);
 

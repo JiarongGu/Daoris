@@ -38,7 +38,6 @@ public sealed class ModelCoolingTests : IDisposable
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-1"));
         new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
-        // The families are the agent's own: the models its open listed.
         AgentOffers.Offered(_home, "fake", "1", "account-1", ["opus", "sonnet", "claude-opus-4-5", "claude-sonnet-4-5"], null, _now);
         return new(TestDoors.Registry(TestDoors.Door("fake", Present())), Settings) { Clock = () => _now, Zone = Zone };
     }

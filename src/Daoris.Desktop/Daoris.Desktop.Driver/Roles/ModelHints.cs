@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A hint on a role's choice: its model is not among what its agent's open listed. Never a refusal: the agent's own answer at an open decides
-/// (D205), and a list that is only the stamped fallback, or no list at all, says nothing.
+/// A hint on a role's choice: its model is not among what its agent's open listed. Never a refusal: the agent's own answer at an open decides,
+/// and a list that is only the stamped fallback, or no list at all, says nothing.
 /// </summary>
 public static class ModelHints
 {
-    /// <summary>The sentence for <paramref name="choice"/>, or null where its model is listed, named none, or nothing was listed to read it against.</summary>
+    /// <summary>The sentence for <paramref name="choice"/>, or null where its model is listed, names none, or no open has listed to read it against.</summary>
     public static string? Of(string home, ProviderRegistry registry, ActorChoice choice)
     {
         if (string.IsNullOrWhiteSpace(choice.Model)) return null;

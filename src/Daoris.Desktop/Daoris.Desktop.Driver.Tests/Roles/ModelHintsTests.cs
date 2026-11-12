@@ -3,9 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A role's model is judged as a word, so it is also read against what its agent's open listed, as a hint: a Claude alias on a Codex choice is
-/// said, never refused (the agent's own refusal at the open decides, D205).
-/// </summary>
+/// <summary>A Claude alias on a Codex choice is said against what its open listed, never refused: the agent's own answer decides.</summary>
 public sealed class ModelHintsTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "model-hints", Guid.NewGuid().ToString("N")[..8]);

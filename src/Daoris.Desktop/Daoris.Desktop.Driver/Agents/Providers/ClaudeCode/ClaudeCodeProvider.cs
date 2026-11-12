@@ -98,7 +98,6 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(true, Evidence),
-                // A second prompt reaching the turn at its next step, and the steering extension, measured on this adapter alone.
                 WordsAtNextStep: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
                 Steering: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt)),
             // Its own server's word that -32000 means authentication required, read before its provider's.
