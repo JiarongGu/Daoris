@@ -162,7 +162,7 @@
   "workflow.run.lineIn": "{{repository}}：{{says}}",
   "workflow.run.head": "{{repository}} · 现行工作流，版本 {{version}}",
   "workflow.run.quoted": "“{{words}}”",
-  "workflow.run.through.accepted": "已按你的原话接受：“{{quote}}”，留在需求 #{{ask}} 上",
+  "workflow.run.through.accepted": "已按你的原话采纳：“{{quote}}”，留在需求 #{{ask}} 上",
   "workflow.run.through.passed": "已按你的原话放行：“{{quote}}”，留在需求 #{{ask}} 上",
   "workflow.run.reading": "正在读取这项工作的进展……",
   "workflow.run.none": "这里还没有进展：这项工作还没有发布委托。",
