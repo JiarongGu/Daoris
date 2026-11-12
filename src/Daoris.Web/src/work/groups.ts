@@ -95,7 +95,20 @@ export type SessionGrouping = {
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
   waits?: { run: string; node: string; why: string; since?: string | null }[] | null;
+  /**
+   * The state of the line its record is a part of, or serves as a co-worker: the first of needs you, working and pending any part
+   * is in, needs you and working where a co-worker is, else as its newest part ended. `by` is the session it is read from and
+   * `role` whether that is a `part` or which co-worker (`reviewer`, `partner`, `helper`). The list, the head, What needs you and
+   * Notifications say it, never the record's own state. Absent from an older host.
+   */
+  line?: { state: SessionStateName; group: SessionGroupName; reason: string; by: string; role: string } | null;
 };
+
+/** A row's line's state: its `line`, else (an older host) its own row as the line's. */
+export type LineStanding = NonNullable<SessionGrouping['line']>;
+
+export const lineOf = (row: SessionGrouping): LineStanding =>
+  row.line ?? { state: row.state ?? (row.group === 'archived' ? 'done' : row.group), group: row.group, reason: row.reason ?? row.shown, by: row.session, role: 'part' };
 
 /** The characters a running call's head is said in at most, its ellipsis among them. */
 export const CALL_HEAD = 40;

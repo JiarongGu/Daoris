@@ -46,6 +46,7 @@ public static class AtWorkExchangeReading
             record => new PriorSession(record.Id, record.Tree, record.State, null, record.Repository)
             {
                 From = record.From, FromWhy = record.FromWhy, Line = record.Line, Quest = record.Quest, TookQuest = record.TookQuest,
+                Created = record.Created == DateTimeOffset.MinValue ? null : record.Created,
             },
             StringComparer.Ordinal);
 
