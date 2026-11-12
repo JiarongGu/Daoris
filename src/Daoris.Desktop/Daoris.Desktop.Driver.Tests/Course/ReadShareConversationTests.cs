@@ -226,19 +226,6 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— Ask Daoris's files.
 
-    /// <summary><see cref="HelpConversations.Read"/> reads what the person kept of a conversation while its move into place still holds it.</summary>
-    [Fact]
-    public void A_help_conversations_name_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var conversations = new HelpConversations(_home);
-        conversations.Rename("h1", "Port check");
-
-        var kept = Held(conversations.PathOf("h1"), () => conversations.Read("h1"));
-
-        Assert.Equal("Port check", kept.Name);
-    }
-
     /// <summary><see cref="HelpPublished.Read"/> (HelpPublished.Oldest) reads what an Apply published while its move into place still holds it.</summary>
     [Fact]
     public void A_help_conversations_published_list_is_read_while_its_move_into_place_still_holds_it()

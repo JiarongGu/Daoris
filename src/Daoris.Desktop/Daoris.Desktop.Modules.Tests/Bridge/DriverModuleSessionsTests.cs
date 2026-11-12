@@ -458,7 +458,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
     /// <summary>
     /// Asked with <c>said: true</c>, as <c>sessions archive</c> and <c>unarchive</c> ask it over the pipe, the archive answers
-    /// the terminal's words beside its fields, the alone path's own (<see cref="SessionArchive.ArchiveSaid"/>), and one session kept
+    /// the terminal's words beside its fields, the alone path's own (<see cref="ConversationArchive.ArchiveSaid"/>), and one session kept
     /// is said with its exit code rather than thrown, so the terminal prints what it prints alone.
     /// </summary>
     [Fact]
@@ -531,7 +531,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal("SESSION_ARCHIVE", shown.Route);
         Assert.Contains(new PipeConfirmationField("/ids/0", "string", "done1"), shown.Fields);
         Assert.Equal(Environment.ProcessId, shown.Asker.Pid);
-        Assert.False(File.Exists(new SessionArchive(Home).FilePath));
+        Assert.Empty(new ConversationArchive(Home).Marks());
 
         var confirmed = await AnswerAsync(module, "PERSON_CONFIRM", new { id = shown.Id, confirm = true });
         Assert.True(confirmed.GetProperty("answered").GetBoolean());
@@ -543,7 +543,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             @"\Asessions: waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris press result \k<id>` "
             + @"says how it ended, and `daoris press withdraw \k<id>` takes it back…\r?\n\z",
             error.ToString());
-        Assert.Contains("done1", new SessionArchive(Home).Marks().Keys);
+        Assert.Contains("done1", new ConversationArchive(Home).Marks().Keys);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
     }
 

@@ -184,7 +184,7 @@ public static class SessionGroups
         {
             var gathered = SessionLook.From(records, quests, considered, config.ForgivenAt) with
             {
-                Archived = new SessionArchive(home).Marks(),
+                Archived = new ConversationArchive(home).Marks(),
             };
             // What each quest's last session here, and the one its reopen names, could not go on with,
             // read as the planner's snapshot reads it.

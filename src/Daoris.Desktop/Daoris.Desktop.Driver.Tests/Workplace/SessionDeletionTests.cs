@@ -25,12 +25,51 @@ public sealed class SessionDeletionTests : IDisposable
     private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
     private static JsonObject Record(string id, string state = "completed", string kind = "chat", string repository = "engine",
-        string? quest = null, string? tree = null, string? ask = null, bool deletable = true) => new()
+        string? quest = null, string? tree = null, string? ask = null, bool deletable = true, string? line = null) => new()
         {
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest,
-            ["tree"] = tree, ["ask"] = ask, ["deletable"] = deletable,
+            ["tree"] = tree, ["ask"] = ask, ["deletable"] = deletable, ["line"] = line,
             ["created"] = "2026-10-03T09:00:00Z", ["updated"] = "2026-10-03T09:05:00Z",
         };
+
+    /// <summary>A delete takes every part of the conversation, says how many went, and takes the conversation's facts with the last.</summary>
+    [Fact]
+    public async Task A_delete_takes_every_part_of_the_conversation_and_its_facts()
+    {
+        Kept("p1");
+        Kept("p2");
+        Kept("o1");
+        new ConversationFacts(_home).Rename("p1", "Port work");
+        var ledger = new Ledger(Record("p1", line: "p1"), Record("p2", line: "p1"), Record("o1"));
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "p2", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Contains("1 other part of its conversation", outcome.Message);
+        Assert.Equal(["DELETE /api/sessions/p1", "DELETE /api/sessions/p2"], ledger.Deletes);
+        Assert.Equal(HelpKept.None, new ConversationFacts(_home).Read("p1"));
+        Assert.True(File.Exists(Path.Combine(Sessions, "o1.events.jsonl")));
+        Assert.False(File.Exists(Path.Combine(Sessions, "p1.events.jsonl")));
+    }
+
+    /// <summary>One part the ledger refuses keeps the whole conversation, said with which part and that nothing was deleted.</summary>
+    [Fact]
+    public async Task A_part_the_ledger_refuses_keeps_the_whole_conversation()
+    {
+        var ledger = new Ledger(Record("p1", line: "p1"), Record("p2", line: "p1"))
+        {
+            DeleteRefusal = new JsonObject { ["deletable"] = false, ["error"] = "it is running again", ["refusal"] = "live" },
+        };
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "p2", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Live, outcome.Verdict);
+        Assert.Contains("one of 2 parts of its conversation", outcome.Message);
+        Assert.Contains("Nothing was deleted", outcome.Message);
+        Assert.Empty(ledger.Deletes);
+    }
 
     /// <summary>Everything this machine keeps of a session: its words, its transcript, its files, its conversation id, its mark.</summary>
     private void Kept(string id)
@@ -40,13 +79,13 @@ public sealed class SessionDeletionTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Sessions, id, "files"));
         File.WriteAllText(Path.Combine(Sessions, id, "files", "shot.png"), "png");
         // Every id a test keeps files for is a known record, so one mark's write keeps the others'.
-        new SessionArchive(_home).Archive([id], [new SessionGrouping(id, SessionGroup.Done, "completed")], ["c1", "c2", id], DateTimeOffset.UtcNow);
+        new ConversationFacts(_home).Archive([id], DateTimeOffset.UtcNow);
     }
 
     private bool AnyKept(string id) =>
         File.Exists(Path.Combine(Sessions, $"{id}.events.jsonl")) || File.Exists(Path.Combine(Sessions, $"{id}.log"))
         || Directory.Exists(Path.Combine(Sessions, id))
-        || new SessionArchive(_home).Marks().ContainsKey(id);
+        || new ConversationArchive(_home).Marks().ContainsKey(id);
 
     [Fact]
     public async Task A_conversation_the_ledger_takes_goes_with_what_this_machine_kept_of_it_and_a_line_with_no_words()
@@ -63,7 +102,7 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Equal(["DELETE /api/sessions/c1"], ledger.Deletes);
         Assert.False(AnyKept("c1"));
         Assert.True(AnyKept("c2"));
-        Assert.Equal(["record", "conversation", "transcript", "files", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "facts"], outcome.Removed);
         var line = Assert.Single(log.Lines(), each => each.Contains("\"session.deleted\"", StringComparison.Ordinal));
         Assert.Contains("\"session\":\"c1\"", line);
         Assert.Contains("\"kind\":\"chat\"", line);
@@ -103,7 +142,7 @@ public sealed class SessionDeletionTests : IDisposable
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
-        Assert.Equal(["record", "conversation", "transcript", "files", "mark", "choice", "spawn", "held", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "mark", "choice", "spawn", "held", "facts"], outcome.Removed);
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + GoOnMarks.Suffix)));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + NewSessionChoices.Suffix)));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.mcp.json")));
@@ -151,7 +190,7 @@ public sealed class SessionDeletionTests : IDisposable
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
-        Assert.Equal(["record", "conversation", "transcript", "files", "hand-over", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "hand-over", "facts"], outcome.Removed);
         Assert.All(Boxes("c1"), file => Assert.False(File.Exists(file), file));
         Assert.All(Boxes("c2"), file => Assert.True(File.Exists(file), file));
     }
@@ -241,7 +280,7 @@ public sealed class SessionDeletionTests : IDisposable
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
         Assert.Equal(["DELETE /api/sessions/c1"], ledger.Deletes);
-        Assert.Equal(["record", "conversation", "files", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "files", "facts"], outcome.Removed);
         Assert.Equal(["transcript"], outcome.Stayed);
         Assert.True(File.Exists(transcript));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1.events.jsonl")));
@@ -319,7 +358,7 @@ public sealed class SessionDeletionTests : IDisposable
     {
         Kept("h1");
         Kept("h2");
-        var kept = new HelpConversations(_home);
+        var kept = new ConversationFacts(_home);
         kept.Rename("h1", "Landing");
         kept.Pin("h1", true, DateTimeOffset.UtcNow);
         kept.Rename("h2", "Workspaces");
@@ -328,8 +367,8 @@ public sealed class SessionDeletionTests : IDisposable
 
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "h1", PluginEvents.Screen, log: null);
 
-        Assert.Equal(["record", "conversation", "transcript", "files", "help"], outcome.Removed);
-        Assert.False(File.Exists(kept.PathOf("h1")));
+        Assert.Equal(["record", "conversation", "transcript", "files", "facts"], outcome.Removed);
+        Assert.Equal(HelpKept.None, kept.Read("h1"));
         Assert.Equal("Workspaces", kept.Read("h2").Name);
     }
 

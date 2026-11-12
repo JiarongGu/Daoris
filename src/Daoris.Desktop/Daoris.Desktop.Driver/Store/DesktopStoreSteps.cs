@@ -751,5 +751,20 @@ internal static class DesktopStoreSteps
             );
             CREATE UNIQUE INDEX tree_hand_offs_open ON tree_hand_offs (tree) WHERE closed IS NULL;
             """)),
+
+        // What the person keeps of a conversation, one row each, by its id: its name, pin and archive, the earlier conversation it
+        // started from, and the places it spoke under (JSON). A new table an older build never opens.
+        new(DesktopStore.ConversationFactsVersion, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE conversation_facts (
+              conversation TEXT PRIMARY KEY,
+              name         TEXT,
+              pinned       TEXT,
+              archived     TEXT,
+              from_start   TEXT,
+              handed       TEXT,
+              places       TEXT
+            );
+            """)),
     ];
 }

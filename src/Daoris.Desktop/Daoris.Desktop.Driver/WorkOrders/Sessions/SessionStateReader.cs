@@ -75,7 +75,7 @@ internal sealed class SessionStateReader
         // A failure an account's limit made is said limited, in whichever state it rests.
         var row = new SessionGrouping(record.Id, SessionGroup.Done, ShownState.Of(record))
         {
-            Archived = _look.Archived.ContainsKey(record.Id),
+            Archived = _look.Archived.ContainsKey(ConversationArchive.Of(record)),
             Teammate = record.Teammate,
             // The ledger's half, as the service answered it, and this machine's.
             Deletable = record.Deletable && !record.Live && !record.Teammate && !_look.Kept.Contains(record.Id),

@@ -239,7 +239,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     judgement (`closed-runs`, `ClosedRunEnds`), its ends counted by why in `home.migrated`'s `counts`; the records nothing reads
     removed uncopied: a tree's files record and install logs whose tree no longer stands (`tree-records`), a run's node record whose
     binding is gone (`unbound-records`), and the `bin` entry's old place (`old-bin`, rule 23); and `plugins.json`'s `off` lists as
-    the machine's words in `switches` (`plugin-switches`). The
+    the machine's words in `switches` (`plugin-switches`); and Ask Daoris's `<id>.help.json` files and the `archived.json` marks into the
+    conversations' facts (`conversation-facts`, `ConversationFactsStep`: a conversation archived where its newest part was marked). The
     next release that changes a shape replaces them. (from D232)
 ## Where a change goes
 

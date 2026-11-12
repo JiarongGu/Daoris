@@ -65,7 +65,7 @@ public sealed class HelpFocusing(string home)
         }
 
         var spoken = HelpFocusAhead.Spoken(events, session);
-        var kept = new HelpConversations(home);
+        var kept = new ConversationFacts(home);
         kept.Change(session, now => spoken
             ? now with { FocusNext = place.Equals(HelpFoci.Of(now, record.Workspace).Focus) ? null : place }
             : now with { Focus = place, FocusNext = null, Foci = [place] });
@@ -75,10 +75,10 @@ public sealed class HelpFocusing(string home)
 
     /// <summary>Keep a new conversation's first focus: the one its start asked for, or the earlier one's it starts from.</summary>
     public void Begin(string session, HelpFocus focus) =>
-        new HelpConversations(home).Change(session, kept => kept with { Focus = focus, FocusNext = null, Foci = [focus] });
+        new ConversationFacts(home).Change(session, kept => kept with { Focus = focus, FocusNext = null, Foci = [focus] });
 
     /// <summary>The applied focus of <paramref name="session"/>, homed in <paramref name="workspace"/>.</summary>
-    public HelpFocus Applied(string session, string? workspace) => HelpFoci.Of(new HelpConversations(home).Read(session), workspace).Focus;
+    public HelpFocus Applied(string session, string? workspace) => HelpFoci.Of(new ConversationFacts(home).Read(session), workspace).Focus;
 
     /// <summary>
     /// The place as the registry spells it now, or null where it holds none: a workspace is <c>default</c> or one a registered

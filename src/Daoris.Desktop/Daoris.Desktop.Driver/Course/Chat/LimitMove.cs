@@ -553,7 +553,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         if (placed is not { SessionId: { } id, Adapter: { } resolved, Selection: { } selection }) return new ChatStart(null, placed.Message);
         try
         {
-            new HelpConversations(context.Home).StartedFrom(id, prior.Session, HelpConversations.Brief);
+            new ConversationFacts(context.Home).StartedFrom(id, prior.Session, HelpConversations.Brief);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

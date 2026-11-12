@@ -52,13 +52,15 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Spawn = "spawn";
 
     /// <summary>
-    /// Ask Daoris's conversation's name, pin and start (<see cref="HelpConversations"/>), what each of its starts handed
-    /// (<see cref="HelpWired"/>), and what its Applies published (<see cref="HelpPublished"/>).
+    /// Ask Daoris's conversation's: what each of its starts handed (<see cref="HelpWired"/>), and what its Applies published
+    /// (<see cref="HelpPublished"/>).
     /// </summary>
     public const string Help = "help";
     public const string Held = "held";
     public const string Landing = "landing";
-    public const string Archived = "archived";
+
+    /// <summary>A conversation's row of <see cref="ConversationFacts"/>: its name, pin, archive mark and places.</summary>
+    public const string Facts = "facts";
 
     /// <summary>A chat run's binding, opinion gate and look, named by the record its key names, <c>chat-&lt;id&gt;</c>.</summary>
     public const string Run = "run";
@@ -110,7 +112,6 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     internal const string HandOverStateSuffix = ".hand-over-state.json";
     internal const string LimitMoveSuffix = ".limit-move.json";
 
-    internal const string HelpConversationsSuffix = ".help.json";
     internal const string HelpWiredSuffix = ".wired.json";
     internal const string HelpPublishedSuffix = ".published.json";
 
@@ -163,7 +164,6 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
         // The folder a standing block past what its first prompt carries went through, which its session read.
         new(Spawn, Place.Spawn, StandingFacts.FolderSuffix, true, Beside),
-        new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // What each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
         // The asks and quests its Applies published, Ask Daoris's too.
@@ -235,11 +235,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// <summary>
     /// Remove what the home keeps of each session, once its record is gone: each name that went, per id, in the inventory's
     /// order, and the bytes that went with them; what the disk would not let go of stays, named in what failed, and only what
-    /// went is counted. The held words, the closed automatic landings and the archive marks are each one file, written
-    /// once.
+    /// went is counted. The held words and the closed automatic landings are each one file, written once.
     /// </summary>
     /// <param name="events">The loop's record of conversations, so it forgets their numbering too; null removes the files alone.</param>
-    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, ISessionEventRemoval? events)
+    /// <param name="conversations">The conversations every part of which is among <paramref name="ids"/>: their rows of facts go with them.</param>
+    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, ISessionEventRemoval? events, IReadOnlyCollection<string>? conversations = null)
     {
         var removed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var stayed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -330,15 +330,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             }
         }
 
-        // Every id, a teammate's included: this machine marks their records archived too, by the record's id.
+        // A conversation's facts go with its last part; a teammate's record, archived here by its id, is its own conversation.
         var all = removed.Keys.ToList();
         if (all.Count > 0)
         {
-            Each(new SessionArchive(home).FilePath, all, () =>
-            {
-                var answer = new SessionArchive(home).Unarchive(all);
-                return all.Where(id => !answer.NotArchived.Contains(id, StringComparer.Ordinal)).ToList();
-            }, Archived);
+            Each(DesktopStore.LocationIn(home), all, () => new ConversationFacts(home).Forget(conversations ?? all).Where(all.Contains).ToList(), Facts);
         }
 
         return new SessionFilesRemoved(Listed(removed), bytes, failed, Listed(stayed));
@@ -360,10 +356,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
                     if (removed.TryGetValue(id, out var went)) went.Add(name);
                 }
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
             {
                 failed.Add(file);
-                // The file is shared, so what it held of each session asked of it stays.
+                // The store is shared, so what it held of each session asked of it stays.
                 foreach (var id in asked) Named(stayed[id], name);
             }
         }

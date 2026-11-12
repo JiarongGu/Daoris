@@ -247,8 +247,8 @@ public static class HelpCommand
             "list" => (OpenRoutes.HelpConversations, InstanceDoor.Said(
                 ("q", ask.Search), ("offset", ask.Offset == 0 ? null : ask.Offset), ("limit", ask.Limit), ("workspace", ask.Workspace),
                 ("all", ask.All ? true : null), ("about", HelpFocus.FromSaid(ask.About)?.Wire()), ("json", ask.Json ? true : null))),
-            "rename" => (PersonPresses.HelpRename, InstanceDoor.Said(("id", ask.Id), ("name", ask.Clear ? null : ask.Text))),
-            "pin" or "unpin" => (PersonPresses.HelpPin, InstanceDoor.Said(("id", ask.Id), ("pinned", ask.Verb == "pin"))),
+            "rename" => (PersonPresses.ConversationRename, InstanceDoor.Said(("id", ask.Id), ("name", ask.Clear ? null : ask.Text))),
+            "pin" or "unpin" => (PersonPresses.ConversationPin, InstanceDoor.Said(("id", ask.Id), ("pinned", ask.Verb == "pin"))),
             "focus" => (PersonPresses.HelpFocus, InstanceDoor.Said(("session", ask.Id), ("focus", HelpFocus.FromSaid(ask.Text)?.Wire()))),
             // SESSION_DELETE's own delete, asked to say it as `help delete` does: its checks first, then `sessions delete`'s words.
             "delete" when ask.Yes => (PersonPresses.SessionDelete, InstanceDoor.Said(("id", ask.Id), ("help", true))),
@@ -296,7 +296,7 @@ public static class HelpCommand
             return 1;
         }
 
-        var kept = new HelpConversations(world.Home);
+        var kept = new ConversationFacts(world.Home);
         switch (ask.Verb)
         {
             case "rename":

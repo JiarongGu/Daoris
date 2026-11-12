@@ -72,7 +72,7 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
         context.Handing[id] = new Handing(brief);
         try
         {
-            new HelpConversations(context.Home).StartedFrom(id, earlier, HelpConversations.Brief);
+            new ConversationFacts(context.Home).StartedFrom(id, earlier, HelpConversations.Brief);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

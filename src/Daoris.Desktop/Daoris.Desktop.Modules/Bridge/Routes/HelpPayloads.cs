@@ -10,11 +10,6 @@ public sealed record StartHelp(string? Workspace, JsonElement? Focus = null);
 /// <summary>The place a conversation is to be about, as `help/focus.ts` spells it.</summary>
 public sealed record HelpFocusPress(string Session, JsonElement? Focus, bool Said = false);
 
-/// <summary>No name clears it.</summary>
-public sealed record HelpRename(string Id, string? Name, bool Said = false);
-
-public sealed record HelpPin(string Id, bool Pinned, bool Said = false);
-
 /// <summary>A blank workspace is the default's.</summary>
 public sealed record HelpStartFrom(string Id, string? Workspace);
 

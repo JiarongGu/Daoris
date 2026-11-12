@@ -824,7 +824,7 @@ public sealed class SessionsCommandTests : IDisposable
         var (archived, said) = await RunAsync(Family(), ["archive", "d0ne0000"], log);
         Assert.Equal(0, archived);
         Assert.Contains("archived d0ne0000", said);
-        Assert.True(new SessionArchive(_home).Marks().ContainsKey("d0ne0000"));
+        Assert.True(new ConversationArchive(_home).Marks().ContainsKey("d0ne0000"));
 
         var (kept, keptSaid) = await RunAsync(Family(), ["archive", "w0rk1ng0", "p4rk3d00"], log);
         Assert.Equal(1, kept);
@@ -847,12 +847,12 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, listed);
         Assert.Contains("would archive 3 sessions that ended", list);
         Assert.Contains("kept in the list: 2 needing you", list);
-        Assert.Empty(new SessionArchive(_home).Marks());
+        Assert.Empty(new ConversationArchive(_home).Marks());
 
         var (yes, done) = await RunAsync(Family(), ["archive", "--ended", "--yes"]);
         Assert.Equal(0, yes);
         Assert.Contains("archived 3 sessions that ended", done);
-        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new SessionArchive(_home).Marks().Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["c0ffee11", "d0ne0000", "he1p0000"], new ConversationArchive(_home).Marks().Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -865,7 +865,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Contains("unarchived d0ne0000", said);
         Assert.Contains("c0ffee11 was not archived", said);
-        Assert.Empty(new SessionArchive(_home).Marks());
+        Assert.Empty(new ConversationArchive(_home).Marks());
     }
 
     /// <summary>Delete through the screen's owner: a conversation that served no quest goes, logged as the terminal's.</summary>

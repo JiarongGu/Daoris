@@ -23,9 +23,12 @@ public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From
     /// <summary>Each message that carried a change of focus, first to last (<see cref="HelpFocusMark"/>).</summary>
     public IReadOnlyList<HelpFocusMark> Marks { get; init; } = [];
 
+    /// <summary>When the person archived the conversation; null for one not archived.</summary>
+    public DateTimeOffset? Archived { get; init; }
+
     public bool Equals(HelpKept? other) =>
         other is not null && Name == other.Name && Pinned == other.Pinned && From == other.From && Handed == other.Handed
-        && Equals(Focus, other.Focus) && Equals(FocusNext, other.FocusNext)
+        && Archived == other.Archived && Equals(Focus, other.Focus) && Equals(FocusNext, other.FocusNext)
         && (Foci ?? []).SequenceEqual(other.Foci ?? []) && Marks.SequenceEqual(other.Marks);
 
     public override int GetHashCode() => HashCode.Combine(Name, Pinned, From, Handed, Focus, FocusNext);
@@ -120,25 +123,22 @@ public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, 
 }
 
 /// <summary>
-/// Ask Daoris's conversations, kept: each is a help record the host already keeps (its words this machine's own
-/// record of it), and what the person adds to it is <c>&lt;home&gt;/sessions/&lt;id&gt;.help.json</c> beside its other files.
+/// Ask Daoris's conversations, listed: each is a help record the host already keeps (its words this machine's own
+/// record of it), and what the person adds to it is its row of <see cref="ConversationFacts"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>This machine's, and the person's.</b> A help record keeps the workspace it started in, and no feed pushes it whatever
-/// that is (the sync skips it by its kind). Its words, its name and its pin are files under the home, never the
-/// record, which travels where a record does, and never a repository. A session's derived name makes hand-naming it
-/// unneeded; a conversation the person goes back to is named by them as a chat history is, and the name stays here.</para>
+/// that is (the sync skips it by its kind). Its words are files under the home and its name and pin the facts' row, never the
+/// record, which travels where a record does, and never a repository.</para>
 ///
 /// <para><b>Listed from the records and the words</b>: a record of Ask Daoris's of this machine's the person spoke in, or named,
 /// by its name or first question, when it is last spoken in, and the first line of its last answer. One opened ahead of the
 /// person and never spoken in is no conversation, so it is not listed.</para>
 ///
-/// <para><b>A file that does not read is nothing kept</b>, as the archive's marks are: the conversation lists by its question,
-/// and the next write starts the file again. A file holding nothing is removed.</para>
+/// <para><b>Facts that do not read are nothing kept</b>: the conversation lists by its question.</para>
 /// </remarks>
 public sealed class HelpConversations(string home)
 {
-    public const string Suffix = SessionHomeFiles.HelpConversationsSuffix;
 
     /// <summary>
     /// What a conversation started from an earlier one, or one that went on from it in a new part, is handed: Daoris's
@@ -152,9 +152,6 @@ public sealed class HelpConversations(string home)
     /// </summary>
     public const string NotOffered = "not-offered";
 
-    /// <summary>A name's longest: a title, not a note.</summary>
-    public const int NameLimit = 80;
-
     /// <summary>A page's most, and a page where none is asked for: every record is read, and a page is what is answered of them.</summary>
     public const int PageLimit = 200;
 
@@ -164,68 +161,7 @@ public sealed class HelpConversations(string home)
     /// </summary>
     public const int PreviewLimit = 1000;
 
-    // One writer at a time in this process: a rename and a pin pressed together would otherwise each drop the other's field.
-    private static readonly object Gate = new();
-
-    /// <summary>Where a conversation's file is kept, beside its transcript and its harness conversation's id.</summary>
-    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, Checked(session) + Suffix);
-
-    /// <summary>What the person keeps of a conversation; <see cref="HelpKept.None"/> for nothing, or a file that does not read.</summary>
-    public HelpKept Read(string session)
-    {
-        if (!SessionEventText.IsId(session)) return HelpKept.None;
-        try
-        {
-            var path = PathOf(session);
-            if (!File.Exists(path)) return HelpKept.None;
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return HelpKept.None;
-            return new HelpKept(
-                Json.NonEmpty(root, "name"), Time(root, "pinned"), Json.NonEmpty(root, "from"), Json.NonEmpty(root, "handed"))
-            {
-                Focus = Place(root, "focus"),
-                FocusNext = Place(root, "focusNext"),
-                Foci = root.TryGetProperty("foci", out var foci) && foci.ValueKind == JsonValueKind.Array
-                    ? foci.EnumerateArray().Select(HelpFocus.Read).OfType<HelpFocus>().Distinct().ToList() is { Count: > 0 } held ? held : null
-                    : null,
-                Marks = root.TryGetProperty("marks", out var marks) && marks.ValueKind == JsonValueKind.Array
-                    ? [.. marks.EnumerateArray().Select(HelpFocusMark.Read).OfType<HelpFocusMark>()]
-                    : [],
-            };
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return HelpKept.None;
-        }
-    }
-
-    /// <summary>Name a conversation, or clear its name with null or blank words: its first question is its title again.</summary>
-    /// <exception cref="DriverException">An id that names no session, or a name that is not one short line.</exception>
-    public void Rename(string session, string? name)
-    {
-        var named = name?.Trim() is { Length: > 0 } words ? words : null;
-        if (named is not null && (named.Contains('\n') || named.Contains('\r')))
-        {
-            throw new DriverException("a conversation's name is one line; it was not renamed.");
-        }
-
-        if (named is { Length: > NameLimit })
-        {
-            throw new DriverException($"a conversation's name is at most {NameLimit} characters; this one is {named.Length}, and it was not renamed.");
-        }
-
-        Change(session, kept => kept with { Name = named });
-    }
-
-    /// <summary>Pin a conversation to the top of the list, or unpin it, which puts it back among the rest.</summary>
-    /// <exception cref="DriverException">An id that names no session.</exception>
-    public void Pin(string session, bool pinned, DateTimeOffset now) =>
-        Change(session, kept => kept with { Pinned = pinned ? kept.Pinned ?? now : null });
-
-    /// <summary>Say that a conversation started from an earlier one, and what it is handed of it.</summary>
-    public void StartedFrom(string session, string from, string handed) =>
-        Change(session, kept => kept with { From = Checked(from), Handed = handed });
+    private readonly ConversationFacts _facts = new(home);
 
     /// <summary>
     /// A page of Ask Daoris's conversations among <paramref name="records"/>: pinned first, the newest pin first, then the newest
@@ -264,11 +200,13 @@ public sealed class HelpConversations(string home)
         limit = limit is < 1 or > PageLimit ? PageLimit : limit;
         var circle = string.IsNullOrWhiteSpace(workspace) ? null : RemoteTarget.Workspace(workspace);
 
-        var help = records
+        var rooms = records
             .Where(record => record.Repository == KnowledgeRoomIdentity.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
             .Where(record => circle is null || string.Equals(record.Workspace, circle, StringComparison.OrdinalIgnoreCase))
-            .Where(record => about is null || HelpFoci.About(about, record.Workspace, Read(record.Id)))
             .ToList();
+        var facts = _facts.Read([.. rooms.Select(record => record.Id)]);
+        HelpKept Read(string id) => facts.GetValueOrDefault(id) ?? HelpKept.None;
+        var help = rooms.Where(record => about is null || HelpFoci.About(about, record.Workspace, Read(record.Id))).ToList();
         var openings = events.Openings(help.Select(record => record.Id));
 
         // Fold continuations before ordering, searching and paging. A fresh start handed a transcript remains independent.
@@ -397,66 +335,4 @@ public sealed class HelpConversations(string home)
         return $"{(from > start ? "…" : "")}{text[from..to]}{(to < end ? "…" : "")}";
     }
 
-    /// <summary>Edit what is kept of a conversation under the one writer's gate; a file left holding nothing is removed.</summary>
-    internal void Change(string session, Func<HelpKept, HelpKept> edit)
-    {
-        var path = PathOf(session);
-        lock (Gate)
-        {
-            var next = edit(Read(session));
-            if (next == HelpKept.None)
-            {
-                if (File.Exists(path)) File.Delete(path);
-                return;
-            }
-
-            JsonFile.Write(path, writer => WriteKept(writer, next));
-        }
-    }
-
-    /// <summary>An id that names a session, or the refusal: nothing under the home is reached through any other.</summary>
-    private static string Checked(string session) =>
-        SessionEventText.IsId(session) ? session : throw new DriverException($"`{session}` is not a session id, so it names no conversation.");
-
-    /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static void WriteKept(Utf8JsonWriter writer, HelpKept kept)
-    {
-        writer.WriteStartObject();
-        if (kept.Name is { } name) writer.WriteString("name", name);
-        if (kept.Pinned is { } pinned) writer.WriteString("pinned", Moments.Write(pinned));
-        if (kept.From is { } from) writer.WriteString("from", from);
-        if (kept.Handed is { } handed) writer.WriteString("handed", handed);
-        if (kept.Focus is { } focus)
-        {
-            writer.WritePropertyName("focus");
-            focus.Write(writer);
-        }
-
-        if (kept.FocusNext is { } next)
-        {
-            writer.WritePropertyName("focusNext");
-            next.Write(writer);
-        }
-
-        if (kept.Foci is { Count: > 0 } foci)
-        {
-            writer.WriteStartArray("foci");
-            foreach (var place in foci) place.Write(writer);
-            writer.WriteEndArray();
-        }
-
-        if (kept.Marks.Count > 0)
-        {
-            writer.WriteStartArray("marks");
-            foreach (var mark in kept.Marks) mark.Write(writer);
-            writer.WriteEndArray();
-        }
-
-        writer.WriteEndObject();
-    }
-
-    private static DateTimeOffset? Time(JsonElement element, string name) => Moments.Read(element, name);
-
-    private static HelpFocus? Place(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var place) ? HelpFocus.Read(place) : null;
 }

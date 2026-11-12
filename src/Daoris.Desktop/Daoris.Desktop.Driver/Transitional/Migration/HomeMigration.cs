@@ -62,6 +62,7 @@ public static class HomeMigration
         new UnboundRecordsStep(),
         new OldBinStep(),
         new PluginSwitchesStep(),
+        new ConversationFactsStep(),
     ];
 
 

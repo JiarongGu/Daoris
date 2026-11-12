@@ -34,7 +34,7 @@ import { channelKey, usePostChannel } from '../sessions/asks';
 import { useAddFavorite, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks } from '../browser';
 import { useParkGoAhead } from '../sessions/conversation';
 import { useSetRole, useTrustFolder } from '../driver';
-import { HELP_HISTORY, useHelpStartFrom, usePinHelp, useRenameHelp, useStartHelp } from '../help';
+import { HELP_HISTORY, useHelpStartFrom, usePinConversation, useRenameConversation, useStartHelp } from '../help';
 import { useSetCommits, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion, useSetReview } from '../repositories/lines';
 import { useStateHub } from './stateHub';
 import { ALL_TOOLS, useToolDelete, useToolDownload, useToolLocation, useToolsLook, useToolUse } from '../agents/tools';
@@ -74,8 +74,8 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useSetBrowser', useSetBrowser, { browser: 'edge' }, [keys.browserSettings]],
   ['useSetLinks', useSetLinks, { links: 'daoris' }, [keys.browserSettings]],
   ['useStartHelp', useStartHelp, undefined, [keys.allSessions]],
-  ['useRenameHelp', useRenameHelp, { id: 'h1', name: 'Lines' }, [[...HELP_HISTORY, ''], keys.allSessions]],
-  ['usePinHelp', usePinHelp, { id: 'h1', pinned: true }, [[...HELP_HISTORY, ''], keys.allSessions]],
+  ['useRenameConversation', useRenameConversation, { id: 'h1', name: 'Lines' }, [[...HELP_HISTORY, ''], keys.allSessions]],
+  ['usePinConversation', usePinConversation, { id: 'h1', pinned: true }, [[...HELP_HISTORY, ''], keys.allSessions]],
   ['useHelpStartFrom', useHelpStartFrom, { id: 'h1', workspace: 'games' }, [[...HELP_HISTORY, '*', ''], keys.allSessions]],
 ];
 
