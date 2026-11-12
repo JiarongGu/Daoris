@@ -144,7 +144,8 @@ public static class AtWorkRead
             {
                 if (!priors.TryAdd(id, new PriorSession(id, Text(record, "tree"), Text(record, "state") ?? "", null, Text(record, "repository"))
                     {
-                        From = Text(record, "from"), FromWhy = Text(record, "fromWhy"), Quest = Text(record, "quest"), TookQuest = Text(record, "tookQuest"),
+                        From = Text(record, "from"), FromWhy = Text(record, "fromWhy"), Line = Text(record, "line"), Quest = Text(record, "quest"),
+                        TookQuest = Text(record, "tookQuest"),
                     }))
                 {
                     continue;

@@ -83,7 +83,10 @@ public sealed class AtWorkReadTests
             }.ToJsonString());
             // s2 continues s1 by a hand-over: the ask s1 made is the line's, and s2's head holds it.
             _records = new JsonObject { ["s1"] = Record("s1", "completed"), ["s2"] = Record("s2", "working") };
+            // The records carry their conversation's id as line.
             _records["s2"]!["from"] = "s1";
+            _records["s1"]!["line"] = "s1";
+            _records["s2"]!["line"] = "s1";
             var (groups, sessions, quests) = await JudgedAsync();
 
             var held = AtWorkRead.Compose("s2", groups, sessions, quests, _ => LineageReading.None, home: home);
