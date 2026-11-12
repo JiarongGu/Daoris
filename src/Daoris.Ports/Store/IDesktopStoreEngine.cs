@@ -21,7 +21,7 @@ public enum DesktopOpen
     ReadOnly,
 }
 
-/// <summary>The write lock stayed held past the engine's wait: another process is writing, and nothing was written.</summary>
+/// <summary>The write lock stayed held past the engine's wait: another process is writing, and nothing is written.</summary>
 public sealed class StoreLockBusyException(DbException inner) : Exception("the store's write lock stayed held past the wait", inner);
 
 /// <summary>The file's writer stamp is past this process's: it is read as it stands and written by no one here.</summary>
@@ -65,7 +65,7 @@ public interface IDesktopStoreEngine : IDesktopUnitOfWork, IDisposable
 
     /// <summary>
     /// One schema step in its own exclusive transaction, read again inside it: another process may have run it first. The stamp the step
-    /// leaves is never lower than the one the file holds. False where the step was already run or the file is stamped past this process.
+    /// leaves is never lower than the one the file holds. False where the step has already run or the file is stamped past this process.
     /// </summary>
     bool Apply(int version, int writer, Action<DbConnection, DbTransaction> step);
 }

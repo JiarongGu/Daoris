@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 /// The closed quests from before an id had twelve characters: a Done or Declined quest with a six-character id is finished
 /// history nothing reads, and the lookups that read it under either width are gone. Where a remote numbered one of its operations it may
 /// be held elsewhere, so its row goes and a <c>deleted</c> tombstone is appended to its log as the service's remover of a closed quest
-/// appends it, for the next sync to carry; any other goes with its whole log. An open or taken one stays, to close first, and so does a
-/// numbered one on a store with no machine row, which has nothing to stamp the tombstone with.
+/// appends it, for the next sync to carry; any other goes with its whole log. An open or taken one stays, and so does a numbered one on a store with no machine row.
 /// </summary>
 public sealed class ClosedQuestsStep : IHomeMigrationStep
 {

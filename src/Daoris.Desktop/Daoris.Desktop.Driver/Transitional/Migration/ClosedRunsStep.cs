@@ -23,7 +23,6 @@ public sealed class ClosedRunsStep : IHomeMigrationStep
             .Select(each => each.Unit!).ToHashSet(StringComparer.Ordinal);
         var context = new SessionTrees(run.Home).Context;
 
-        // The migration holds the home's lease while its steps run.
         var records = new NodeRecordFiles(run.Home, () => true);
         foreach (var bound in new GraphRuns(records).Read().Where(each => each.Ended is null && each.Line is null && !ChatRuns.IsChatRun(each.Run)))
         {

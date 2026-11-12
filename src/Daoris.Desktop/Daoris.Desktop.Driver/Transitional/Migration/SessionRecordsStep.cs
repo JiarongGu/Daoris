@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The session records in the service's store in the shape it reads: a record from before the list of the person's words holds
-/// its answer in the old column, which becomes the list's first word, keyed <c>answer</c> and said when the record last changed, as the
-/// service's own first write after it did; the old column is emptied on every record.
+/// its answer in the old column, which becomes the list's first word (keyed <c>answer</c>, said when the record last changed); the old column is emptied on every record.
 /// </summary>
 public sealed class SessionRecordsStep : IHomeMigrationStep
 {

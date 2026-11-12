@@ -189,7 +189,6 @@ public sealed class DesktopStoreTests : IDisposable
             Regex.Matches(driver, "ProjectReference Include=\"([^\"]+)").Select(m => m.Groups[1].Value));
         Assert.DoesNotContain("PackageReference Include=\"Daoris", driver);
 
-        // The adapter versions its packages itself, under no tree's props, at the pins the two trees hold.
         var adapter = File.ReadAllText(Path.Combine(
             WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj"));
         foreach (var package in new[] { "Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3" })

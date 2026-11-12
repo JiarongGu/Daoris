@@ -127,9 +127,10 @@ public sealed class GitDoorStartTests : IDisposable
         if (withStore)
         {
             foreach (var linked in new[] { "DesktopStoreReader.cs", "StoreCommands.cs", "StoreEngineSource.cs" })
+            {
                 compile.AppendLine($"""    <Compile Include="{Path.Combine(DriverFolder, "Store", linked)}" Link="{linked}" />""");
-            // The reader asks the ports for its connection, and the program's root hands it the SQLite adapter's: the adapter brings the
-            // package and its native bundle, which are what this measures.
+            }
+
             var adapter = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj");
             packages = $"""
                   <ItemGroup>

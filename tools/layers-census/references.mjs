@@ -2,7 +2,6 @@ import { ALLOWED_PACKAGE, readProjects } from './projects.mjs';
 
 const isAdapter = (name) => name.startsWith('Daoris.Adapters.');
 
-/** The packages a fake runs on because the fake is the real engine still: the store's fake is SQLite in memory (design §5.1). */
 const FAKE_ENGINES = ['Microsoft.Data.Sqlite', 'SQLitePCLRaw.bundle_e_sqlite3'];
 
 /**

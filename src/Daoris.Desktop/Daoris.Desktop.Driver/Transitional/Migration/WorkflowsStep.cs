@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The old workflow records as saved graphs (<see cref="WorkflowMigration"/>): the saved workflows and <c>driver.json</c> copied first,
-/// the repositories read from the service's registry table, since the service is not up at the first start, and the file written once with
-/// what the conversion left of it.
+/// the repositories read from the service's registry table, since the service is not up at the first start, and the file written once.
 /// </summary>
 public sealed class WorkflowsStep : IHomeMigrationStep
 {

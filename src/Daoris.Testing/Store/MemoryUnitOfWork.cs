@@ -41,7 +41,7 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
     /// <summary>The location of an in-memory store named <paramref name="name"/>.</summary>
     public static string MemoryPlace(string name) => MemoryPrefix + name;
 
-    /// <summary>Whether the readers of the in-memory store at <paramref name="location"/> were woken since it was made.</summary>
+    /// <summary>Whether the readers of the in-memory store at <paramref name="location"/> have been woken since it is made.</summary>
     public static bool Woken(string location) => Wakes.ContainsKey(location);
 
     /// <summary>Lets go the in-memory store at <paramref name="location"/>: its tables go with its last connection.</summary>

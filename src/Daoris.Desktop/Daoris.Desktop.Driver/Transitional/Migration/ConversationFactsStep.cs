@@ -115,7 +115,6 @@ public sealed class ConversationFactsStep : IHomeMigrationStep
         }
     }
 
-    /// <summary>Each conversation whose newest part carries a mark, with that mark's time.</summary>
     private static IEnumerable<(string Conversation, DateTimeOffset At)> Conversations(
         IReadOnlyDictionary<string, DateTimeOffset> marks, IReadOnlyDictionary<string, (string Line, string Created)> parts)
     {

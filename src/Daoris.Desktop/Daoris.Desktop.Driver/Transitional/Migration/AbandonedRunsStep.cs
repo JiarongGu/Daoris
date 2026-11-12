@@ -11,7 +11,6 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class AbandonedRunsStep : IHomeMigrationStep
 {
-    /// <summary>The words kept with the stop of a declined quest's run.</summary>
     public const string DeclinedWords = "Its quest was declined, so nothing of it is reviewed or landed.";
 
     /// <summary>The words kept with the stop of a closed ask's run.</summary>

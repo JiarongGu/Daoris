@@ -20,7 +20,7 @@ public abstract class UnitOfWorkContract : IDisposable
     /// <summary>The engine at <paramref name="place"/>.</summary>
     protected abstract IDesktopStoreEngine Open(string place, DesktopStoreEngineOptions options);
 
-    /// <summary>Whether the readers of the store at <paramref name="place"/> were woken since it was made.</summary>
+    /// <summary>Whether the readers of the store at <paramref name="place"/> have been woken since it is made.</summary>
     protected abstract bool Woken(string place);
 
     /// <summary>Lets go what the place held.</summary>

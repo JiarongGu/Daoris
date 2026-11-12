@@ -4,13 +4,11 @@ using Daoris.Ports.Store;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The desktop store opened read-only: a connection that creates nothing, migrates
-/// nothing and writes nothing, so a process that only reads a family's table (the git door, once its families move and its start passes
-/// the limit) never waits on a writer, which write-ahead logging promises, and never changes the file's stamp.
+/// The desktop store opened read-only: it creates, migrates and writes nothing, so a process that only reads a family's table (the git door,
+/// once its families move) never waits on a writer and never changes the file's stamp.
 /// </summary>
 /// <remarks>
-/// <para>The connection is the root's: <see cref="DesktopStoreEngines.Connect"/> opened read-only, so this names no engine's type. Nothing
-/// of the git door takes the store yet, and nothing links this file into it.</para>
+/// <para>The connection is the root's (<see cref="DesktopStoreEngines.Connect"/>, read-only), so this names no engine's type.</para>
 /// <para>It reads the tables the build knows from a store of any version: a store written by a newer Daoris is read as it stands, the
 /// refusal being a writer's (<see cref="DesktopStore"/>).</para>
 /// </remarks>
@@ -36,7 +34,6 @@ public sealed class DesktopStoreReader : IDisposable
     /// <summary>The oldest writer stamp that may write the store, or 0 where it holds none yet.</summary>
     public int Writer => Stamp().Writer;
 
-    /// <summary>Each family's revision, as the last writer left it.</summary>
     public IReadOnlyDictionary<string, long> Revisions()
     {
         var found = new Dictionary<string, long>(StringComparer.Ordinal);
@@ -48,7 +45,6 @@ public sealed class DesktopStoreReader : IDisposable
         return found;
     }
 
-    /// <summary>Rows read by <paramref name="map"/> from one statement; no parameter changes what the file holds.</summary>
     public IReadOnlyList<T> Query<T>(string sql, Func<DbDataReader, T> map, params (string Name, object? Value)[] values)
     {
         using var command = _connection.CreateCommand();

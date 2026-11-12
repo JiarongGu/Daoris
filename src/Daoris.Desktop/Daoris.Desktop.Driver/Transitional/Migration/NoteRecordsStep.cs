@@ -3,10 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// The finished session records from before notes carried codes (ONEWAY1ac): a record that ended with a note and no parts holds English
-/// only, which the page no longer reads out of its text, so the note is cleared. A record still in use is left as it is.
-/// </summary>
+/// <summary>The finished session records from before notes carried codes: one that ended with a note and no parts holds English only, which the page no longer reads, so the note is cleared; one in use is left.</summary>
 public sealed class NoteRecordsStep : IHomeMigrationStep
 {
     private static readonly string[] Finished = ["Completed", "Declined", "StoodDown", "Failed", "Stopped"];
