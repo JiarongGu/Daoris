@@ -44,7 +44,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs": 72081,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs": 42154,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs": 65315,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs": 64066,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs": 63847,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs": 50254,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/AbandonTests.cs": 46425,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/IntakeTests.cs": 62265,
