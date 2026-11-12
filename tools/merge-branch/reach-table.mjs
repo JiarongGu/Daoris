@@ -368,6 +368,11 @@ export const REACH = Object.freeze([
     gates: CLI_READERS,
     why: "the release rehearsal packs it, the family rehearsal and the page's end-to-end suite run it, the install carries it, and the driver's tests read its permissions",
   },
+  {
+    lane: 'layers',
+    gates: ['layers', ...DRIVER_READERS, 'service', 'service-process'],
+    why: "the ports, the fakes and the build settings the application's projects build with: the layers census and the fakes' own tests, the desktop's suites and the service's tests that reference them, and the shell the family rehearsal and the install run",
+  },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
   { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },
   {

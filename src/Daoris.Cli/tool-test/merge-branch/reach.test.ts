@@ -136,6 +136,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch-ci.test.ts', 'tools/merge/flow.ts'], [...BASE, 'tool-tests']],
+    ['the ports and the fakes', ['src/Daoris.Ports/Git/IGitRunner.cs', 'src/Layers.props'],
+      [...BASE, 'layers', 'driver', 'modules', 'driver-process', 'driver-process-git', 'driver-process-git-pinned', 'modules-process', 'rehearse-family', 'deployment', 'service', 'service-process']],
     ["the merge tool's typed module", ['tools/merge/flow.ts'], [...BASE, 'tool-tests']],
     ["the merge tool's Vitest configuration", ['tools/vitest.config.ts'], [...BASE, 'tool-tests']],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
