@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// sharing nothing, and an operation the layer's members do not carry refused before a write. Real node processes over the tests' provider.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LayerRunProcessTests : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("layer-run");

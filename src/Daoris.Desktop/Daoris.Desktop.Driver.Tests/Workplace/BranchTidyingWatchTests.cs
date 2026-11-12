@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<see cref="BranchTidyingFixture"/>).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class BranchTidyingWatchTests : BranchTidyingFixture
 {
     /// <summary>The watch's look runs the tidy beside it, and a later look's report says what went.</summary>

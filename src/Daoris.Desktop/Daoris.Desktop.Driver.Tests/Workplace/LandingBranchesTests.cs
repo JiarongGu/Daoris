@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its own lands as that branch stands. Real git, as the other tree tests.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandingBranchesTests : IDisposable
 {

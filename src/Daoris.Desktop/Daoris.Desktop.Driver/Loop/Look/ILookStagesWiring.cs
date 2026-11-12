@@ -18,6 +18,8 @@ internal interface ILookStagesWiring : ILookWiring
 
     DriverHelpers Helpers { get; }
 
+    DriverChecks Checks { get; }
+
     DriverPartners Partners { get; }
 
     DriverBrainstorms Brainstorms { get; }

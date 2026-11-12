@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// source-derived. The service is the stand-in <see cref="SaidStandIn"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class TransientRetryTickTests : IAsyncLifetime
 {
     /// <summary>The count the transient hold says once, read from the run's tries, which goes with the release as Daoris's word.</summary>

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// installed copy answered "this channel runs no commands" until it did.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PluginCommandProcessTests : IDisposable
 {
     private const string Plugin = "acme.tools";

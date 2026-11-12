@@ -117,8 +117,8 @@ internal sealed class RosterWalk(HarnessRoster roster)
             report = await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false);
         }
 
-        // The pin's version is the version this start runs, where the machine's look found none to name.
-        var version = pinPresent && report is { Present: false } ? pinnedVersion : report?.Version;
+        // The pin's install runs, so its version is recorded; the machine's look reads another copy.
+        var version = pinPresent ? pinnedVersion : report?.Version;
         if (!pinPresent && report is { Present: false })
         {
             var installs = toolchain.Program.Install is { Count: > 0 };

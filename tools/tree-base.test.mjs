@@ -36,7 +36,7 @@ const REASONS = {
   'no output': (site) => /homeEntry\(|homeBins\(|homePlaces\(|"usr", "bin"|managed, "bin"|new\("bin"|'cache', 'bin'|'home', 'bin'|"app", "bin"/.test(site.statement),
   referenced: (site, _text, entry) => referenced(site.file, entry.project),
   fixture: (site) => TEST.test(site.file),
-  'merge tool': (site) => /^tools\/merge-branch(?:\.mjs$|\/)/.test(site.file) && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
+  'merge tool': (site) => /^tools\/merge(?:-branch(?:\.mjs$|\/)|\/)/.test(site.file) && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
   text: (site) => /out\.push\(|new\(\$@"|\/--no-build\/|const string \w+ = "--no-build";/.test(site.statement),
 };
 
@@ -104,6 +104,9 @@ const CENSUS = [
     'tools/tree-base.test.mjs',
   ].map((file) => ({ file, text: '', why: 'fixture' })),
   { file: 'tools/merge-branch/plan.mjs', text: 'export const noBuildCommand', why: 'merge tool' },
+  { file: 'tools/merge/build-once.ts', text: 'const RUN_ONLY', why: 'merge tool' },
+  { file: 'tools/merge/build-once.ts', text: "else if (!word.includes('=')", why: 'merge tool' },
+  { file: 'tools/merge/build-once.ts', text: 'export const withoutBuild', why: 'merge tool' },
   { file: 'tools/merge-branch.mjs', text: 'export const rerunCommand', why: 'merge tool' },
   { file: 'tools/merge-branch.mjs', text: 'out.push(', why: 'text' },
   { file: 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Files/FileAnalysis.cs', text: '--no-build|', why: 'text' },

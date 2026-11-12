@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A Process case (node and git). The roster's doors are the test's, so no binary is asked its version.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HandOverAskTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-handask-tick-" + Guid.NewGuid().ToString("N")[..8]);

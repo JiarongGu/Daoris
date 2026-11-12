@@ -4,14 +4,34 @@ import { join } from 'node:path';
 /** The longest a unit test may take, in milliseconds. */
 export const BUDGET_MS = 1000;
 
+const MS = (duration) => {
+  const [h, m, s] = duration.split(':').map(Number);
+  return Math.round(((h * 60 + m) * 60 + s) * 1000);
+};
+
 /**
- * The duration records a unit gate writes: one JSON file per run under `dir`, each
- * `{ "gate": "<name>", "tier": "unit", "tests": [{ "class": "...", "test": "...", "ms": 12 }] }`.
- * A folder that does not exist is no records.
+ * One gate's trx as the record the budget reads: each result's test name split at the last dot before its parameters, and its
+ * duration in milliseconds. A trx whose gate name says Process is the process tier's, which has no second to keep.
  */
+export function parseTrx(text, gate) {
+  const tests = [];
+  for (const [, attributes] of text.matchAll(/<UnitTestResult\s([^>]*?)\/?>/g)) {
+    const name = /\stestName="([^"]*)"/.exec(` ${attributes}`)?.[1];
+    const duration = /\sduration="([^"]*)"/.exec(` ${attributes}`)?.[1];
+    if (!name || !duration) continue;
+    const bare = name.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    const cut = bare.indexOf('(') < 0 ? bare.length : bare.indexOf('(');
+    const dot = bare.lastIndexOf('.', cut);
+    tests.push({ class: bare.slice(0, dot), test: bare.slice(dot + 1), ms: MS(duration) });
+  }
+  return { gate, tier: /process/i.test(gate) ? 'process' : 'unit', tests };
+}
+
+/** The duration records the gates keep under `dir`: a trx per .NET gate. A folder that does not exist is no records. */
 export function readRecords(dir) {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir).filter((name) => name.endsWith('.json')).map((name) => JSON.parse(readFileSync(join(dir, name), 'utf8')));
+  return readdirSync(dir).filter((name) => name.endsWith('.trx'))
+    .map((name) => parseTrx(readFileSync(join(dir, name), 'utf8'), name.replace(/(\.logged-\d+)?\.trx$/, '')));
 }
 
 /** The slowest run of each unit-tier test across `records`, by `Class.test`, with the gate that ran it. */

@@ -28,6 +28,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// orphan sweep ends them (<see cref="DrivenMoveHarness.KillAsync"/>).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-crash");

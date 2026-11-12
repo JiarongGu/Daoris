@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// branch of Daoris's are looked at. Split from <see cref="TreeSyncTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeSyncLineTests : TreeSyncFixture
 {

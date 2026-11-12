@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="ProcessPath"/>'s collection.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 [Collection(ProcessPath.Name)]
 public sealed class HeavyToolsProcessTests : IDisposable
 {

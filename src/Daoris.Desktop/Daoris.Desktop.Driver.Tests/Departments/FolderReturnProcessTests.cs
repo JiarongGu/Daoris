@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// followed or read as a removal.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class FolderReturnProcessTests : IDisposable
 {
     private const string Unit = "run:r1";

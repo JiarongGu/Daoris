@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// confined to the layer path through the tests' provider's reader, failing it. Real node processes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LayerParityProcessTests : IDisposable
 {
     private const string Prompt = "the prompt";

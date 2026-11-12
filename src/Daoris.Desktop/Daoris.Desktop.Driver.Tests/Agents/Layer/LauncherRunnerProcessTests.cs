@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// processes over the tests' scenario program.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class LauncherRunnerProcessTests : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("layer-runner");
@@ -101,6 +102,27 @@ public sealed class LauncherRunnerProcessTests : IDisposable
         var lines = await All(Lines(runner, new { wait = 1500, after = new[] { "done" } }, window: TimeSpan.FromMilliseconds(200)));
 
         Assert.Equal(["done"], lines);
+    }
+
+    [Fact]
+    public async Task A_held_pause_is_honoured_so_a_request_held_for_the_person_waits_with_no_clock()
+    {
+        var runner = Turn();
+        Assert.True(((IProcessRunner)runner).CanPauseInactivity);
+        var command = LayerTestProvider.Scenario(_scratch, new { wait = 1200, after = new[] { "done" } });
+        var pause = new InactivityPause();
+        using var held = pause.Hold();
+
+        var lines = await All(((IProcessRunner)runner).ExchangeLinesAsync(
+            command[0], [.. command.Skip(1)], Silence(), pause, inactivityTimeout: TimeSpan.FromMilliseconds(200)));
+
+        Assert.Equal(["done"], lines);
+    }
+
+    private static async IAsyncEnumerable<string> Silence()
+    {
+        await Task.CompletedTask;
+        yield break;
     }
 
     [Fact]

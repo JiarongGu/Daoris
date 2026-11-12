@@ -4,8 +4,9 @@
 import { closeSync, openSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CENSUS = /^dotnet test (\S+) --filter Category=Census$/;
-const FAST_HALF = /^dotnet test (\S+) --filter Category!=Process$/;
+const TIMING = String.raw`(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?`;
+const CENSUS = new RegExp(String.raw`^dotnet test (\S+) --filter Category=Census${TIMING}$`);
+const FAST_HALF = new RegExp(String.raw`^dotnet test (\S+) --filter Category!=Process${TIMING}$`);
 
 const projectOf = (path) => path.replace(/^["']|["']$/g, '').split(/[\\/]+/).filter((part) => part && part !== '.').join('/');
 

@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// difference named. Real node processes.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ClaudeDrivenSpawnParityProcessTests : IDisposable
 {
     /// <summary>

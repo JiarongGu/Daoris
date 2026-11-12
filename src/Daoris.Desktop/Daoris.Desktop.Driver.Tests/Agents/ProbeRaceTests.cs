@@ -24,6 +24,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// never while a session of Daoris's runs on it.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ProbeRaceTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-probe-race-" + Guid.NewGuid().ToString("N")[..8]);

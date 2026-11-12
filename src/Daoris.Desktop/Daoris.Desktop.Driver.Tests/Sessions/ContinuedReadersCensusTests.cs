@@ -90,6 +90,10 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.NotOn, "Daoris's limit word before this record's own go-on: it exists to wake this record, whose go-on stands aside for a record that went on; at the head it would wait with nothing to take it off, so the wake ends with the service's sentence"),
         ],
+        ["DriverChecks.cs"] =
+        [
+            (How.NotOn, "a check's verdict said to the session that asked, under the check's key: a record the line left refuses it and the next look says it again, so no head is walked to"),
+        ],
         ["LimitWaits.cs"] =
         [
             (How.NotOn, "the live wake's limit word, kept for the run this process holds (`running`): it goes into that run's own turn in this process alone, as a word a host before the door would not keep"),

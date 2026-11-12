@@ -10,6 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// clean, or the bound (<see cref="LandCarry.Bound"/>) is met. Daoris commits nothing: any commit in the tree is the stand-in's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class TurnCarryTickTests : IDisposable
 {
     private const string Words = "Your quest is done, but your tree has 1 uncommitted path(s).";

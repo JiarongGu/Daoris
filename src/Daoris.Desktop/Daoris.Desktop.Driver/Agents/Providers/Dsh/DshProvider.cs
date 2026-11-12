@@ -33,7 +33,8 @@ internal static class DshProvider
             new AbilitiesPart(
                 Known<bool>.Declared(false, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
-                Known<bool>.Declared(false, Evidence)),
+                Known<bool>.Declared(false, Evidence),
+                WordsAtNextStep: Known<bool>.Declared(true, "the protocol transport's reading, not measured on this door")),
             new DoorTablesPart(null, null), null, InstructionsPart.None);
 
         return new Provider(

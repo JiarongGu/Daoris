@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// thing a fake cannot prove.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HookTests : IDisposable
 {
     private readonly string _home = Path.Combine(

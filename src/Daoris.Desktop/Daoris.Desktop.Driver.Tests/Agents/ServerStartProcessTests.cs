@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// here, never the network), with the log saying so, and every later start takes it from the toolchain.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ServerStartProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "server start", Guid.NewGuid().ToString("N")[..8]);

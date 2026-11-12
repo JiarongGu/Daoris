@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A real process, so the <c>Process</c> half. The protocol and the reading are <c>ClaudeUsageTests</c>, in process.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ClaudeUsageProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-claudeuse-run-" + Guid.NewGuid().ToString("N")[..8]);

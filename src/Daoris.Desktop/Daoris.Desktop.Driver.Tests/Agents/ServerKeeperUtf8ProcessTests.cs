@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Through real processes: a server's line whose multibyte character straddles two reads of its pipe reaches the chat whole.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ServerKeeperUtf8ProcessTests : IDisposable
 {
     private const string Said = "页面快照 — 好";

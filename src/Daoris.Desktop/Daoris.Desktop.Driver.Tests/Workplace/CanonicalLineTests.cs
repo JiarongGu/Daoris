@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that grows or lands work. Real git for the doors, as the other tree tests use it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class CanonicalLineTests : IDisposable
 {

@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answer; and a link inside the checkout leading out of it is refused, a junction on Windows, which needs no privilege.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HelpCheckoutsGitTests : IAsyncLifetime
 {

@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Alone: its claim is a bound on a real process's wall time, which the load of the classes beside it would move.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 [Collection(Alone.Name)]
 public sealed class AgentLaunchTimeTests(ITestOutputHelper output) : IDisposable
 {

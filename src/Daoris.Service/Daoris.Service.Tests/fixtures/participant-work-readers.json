@@ -587,6 +587,11 @@
       "row": "1q",
       "note": "judges who may be read or asked for an opinion by the record's marks, the desk's own guard (§2.3); a reviewer's `serves` is row 1v's"
     },
+    "Core/Sessions/CheckBox.cs": {
+      "reads": "tells",
+      "row": "1q",
+      "note": "judges who may ask a check by the asker's marks, the box's own guard (§2.3), the table's refusal of the same cells first"
+    },
     "Core/Sessions/HandOverAskBox.cs": {
       "reads": "tells",
       "row": "1q",

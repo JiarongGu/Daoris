@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real processes, and the host as built for the wrapper killed outright: the Process half's.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HeavyRunProcessTests : IDisposable
 {
     private readonly HeavyFixture _fixture = new("heavy-run");

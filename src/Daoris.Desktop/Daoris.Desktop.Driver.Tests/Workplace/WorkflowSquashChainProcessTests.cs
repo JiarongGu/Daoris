@@ -15,6 +15,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// offering none of them again.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>, IAsyncLifetime, IDisposable
 {
     private const string Token = "test-token-for-the-squash-chain";

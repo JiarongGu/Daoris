@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>The lock's git half, a prune included, is <c>SessionLocksTests</c>'.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SessionTreeLockTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

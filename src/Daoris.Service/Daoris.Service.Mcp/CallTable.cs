@@ -88,7 +88,7 @@ public static class CallTable
     /// </summary>
     private static readonly HashSet<string> Working = new(
     [
-        "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve",
+        "check_run", "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve",
     ], StringComparer.Ordinal);
 
     /// <summary>A system department's plan: served to a quest's session there beside its own, and to no work in a repository or a folder.</summary>
@@ -197,6 +197,8 @@ public static class CallTable
             ? Forbidden($"`system_plan` is refused to {who}: it works in no department of its own, so there is no system to plan against. Nothing was planned.")
         : name == "helper_ask"
             ? Forbidden($"`helper_ask` is refused to {who}: it works in no repository of its own, so there is no helper to ask. Nothing was done.")
+        : name == "check_run"
+            ? Forbidden($"`check_run` is refused to {who}: it works in no tree of its own, so there is nothing to run a check in. Nothing was asked.")
         : MemoryChanges.Contains(name)
             ? Forbidden($"`{name}` is refused to {who}: it works in no repository of its own, so it changes no repository's memory. Ask an "
                         + "entry's owner with memory_propose. Nothing was kept.")

@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// DIRECTORY; what lands inside it is the harness's own login flow's, and nothing here reads it.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HarnessProfileTests : Bridge
 {
     private DriverLoop Loop() => new(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0");

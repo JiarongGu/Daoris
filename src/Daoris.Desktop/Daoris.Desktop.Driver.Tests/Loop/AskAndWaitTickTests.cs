@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// loopback port, the shape <see cref="DrivenSessionInputTests"/> uses; no model and no account.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class AskAndWaitTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

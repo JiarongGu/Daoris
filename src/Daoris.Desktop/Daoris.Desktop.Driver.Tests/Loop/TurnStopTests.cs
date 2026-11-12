@@ -21,6 +21,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is <c>session/cancel</c>, answered by the prompt's own <c>cancelled</c>.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class TurnStopTests : IDisposable
 {
     private readonly string _home = Path.Combine(

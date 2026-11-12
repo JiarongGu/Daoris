@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the node without a change.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class SystemPlanToolProcessTests : IDisposable
 {
     private static readonly NodeDeclaration Apply = new(NodeKinds.Apply, NodeKinds.Apply, 1, NodeReach.Performed);

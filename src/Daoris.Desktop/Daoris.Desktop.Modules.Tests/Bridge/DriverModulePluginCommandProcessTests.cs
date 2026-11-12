@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// names none are refused before any process starts.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class DriverModulePluginCommandProcessTests : DriverModuleBridge
 {
     private const string Script = """

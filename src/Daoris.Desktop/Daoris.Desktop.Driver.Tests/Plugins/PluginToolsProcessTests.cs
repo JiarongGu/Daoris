@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// words coming back as the tool's text. Switched off at that place, the program lists nothing and refuses the call.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class PluginToolsProcessTests : IDisposable
 {
     private const string Plugin = "daoris-azure-devops";

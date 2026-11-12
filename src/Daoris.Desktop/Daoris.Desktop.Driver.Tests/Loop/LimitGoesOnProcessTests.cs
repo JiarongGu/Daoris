@@ -15,6 +15,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Claude Code's limit sentence, as the protocol door's JSON-RPC error carries it. No model, no account, no sign-in.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class LimitGoesOnProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-limit-proc-" + Guid.NewGuid().ToString("N")[..8]);

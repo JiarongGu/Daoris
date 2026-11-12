@@ -267,16 +267,8 @@ internal static class ConformancePending
 {
     public const string FileName = "pending.json";
 
-    /// <summary>
-    /// The rows a case can wait for; a row of the agent-layer work is named whole.
-    /// </summary>
-    public static IReadOnlyList<string> Rows { get; } =
-    [
-        "b", "c", "d", "e", "f", "g", "h", "j", "l", "m", "m-i", "m-ii", "n", "o", "p", "q", "r",
-        "s-i", "s-ii", "s-iii", "s-iv", "s-v", "s-vi", "s-vii", "s-viii", "s-ix", "t", "u",
-        "AGENTLYNTAI1b-ii", "AGENTLYNTAI1b-iii", "AGENTLYNTAI1c", "AGENTLYNTAI1d", "AGENTLYNTAI1e-i", "AGENTLYNTAI1e-ii", "AGENTLYNTAI1e-iii",
-        "AGENTLYNTAI1e-iv", "AGENTLYNTAI1f-i", "AGENTLYNTAI1f-ii",
-    ];
+    /// <summary>The rows a case can wait for: the backlog's open rows.</summary>
+    public static IReadOnlyList<string> Rows { get; } = OpenBacklogRows.Read();
 
     private static readonly string[] Fields = ["case", "door", "row", "why"];
 

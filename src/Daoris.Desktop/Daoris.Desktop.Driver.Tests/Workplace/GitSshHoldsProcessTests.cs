@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Alone: it sets the process's environment (the home <c>TreeRefs</c> resolves, the git variables above).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 [Collection(Alone.Name)]
 public sealed class GitSshHoldsProcessTests : IClassFixture<GitSshHost>, IDisposable
 {

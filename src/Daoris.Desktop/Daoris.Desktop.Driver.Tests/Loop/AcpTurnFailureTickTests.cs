@@ -10,6 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// "stood-down — someone else has it".
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AcpTurnFailureTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

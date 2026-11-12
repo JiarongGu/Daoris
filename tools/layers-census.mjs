@@ -7,7 +7,7 @@
  *
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
  * 2. The ambient ports' reads per subdomain, a ratchet that only tightens.
- * 3. The unit budget: a unit test over a second fails, read from the duration records under `_fixtures/test-timing/`
+ * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
  *    (`--records <dir>` reads another folder); with no records there is nothing to read and it says so.
  *
  * The compiler's check, the banned effects, is the build's: `src/BannedEffects.txt` through `src/Layers.props`.
@@ -17,10 +17,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
-import { BUDGET_MS, checkBudget, readRecords, slowTestsOf } from './layers-census/budget.mjs';
+import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 
-export { checkAmbient, checkBudget, checkReferences, scanAmbient, BUDGET_MS };
+export { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient, BUDGET_MS };
 
 const EMPTY = { packages: {}, ambient: {}, slowTests: {} };
 

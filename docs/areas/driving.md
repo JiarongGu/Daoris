@@ -53,7 +53,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
    take that its kept session goes on from. (D178)
 6. A quest nobody has started on may be deleted: what stands on it is judged again inside the delete's own write, and the delete
    travels as an operation. (D95)
-7. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
+7. A session that ended done has its handback read by Daoris from its tree once, beside the note it gave: the base against the
+    line and how far the line moved past it, the paths touched, the gates those paths reach (the landing's own selection, never a
+    list of the worker's) with the verdict each has at this tip. A reached gate with no verdict at
+    this tip is run by Daoris through the broker, never refused for; a red comes back to the session as a word. The reading is
+    a note on the session's record. A session's handback is the note it gave at done, ready or decline, written once in the same write as the move, kept with the
    session that wrote it, and read whole. (D219)
 
 ### Planning a look
@@ -163,7 +167,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 30. The loop looks at its pace (15 s by default), on a nudge and on a wake (a ledger change, a terminal's words, a session's end).
     A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on beside the look, reserved.
     A read costs no more as the home grows: the lists a pass reads are asked at once; the tidy reads a repository's refs, top and
-    trees once a look until one of its stages writes, and a branch's end judgement is three starts; a reader of the session or
+    trees once a look until one of its stages writes, a branch's end judgement is three starts, and a repository whose last pass did nothing and said nothing starts no git while the stamp of git's own
+    files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
     (`JudgedOnce`); a look reads the open records and every record once each; the overlaps read a running tree's changes only
     where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
@@ -201,8 +206,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 39. A park never resumes by itself. The person answers it, or an appointed supervisor's word the driver can attribute.
     (D83, D208, D229)
 40. Each end gets one class from its record: completed, failed, limited, transient-bound, access, stopped by the person, a role or
-    Daoris, refused-choice, awaits-helper, stood-down, or unknown. A limit outranks a good end or one Daoris made.
+    Daoris, refused-choice, awaits-helper, awaits-check, stood-down, or unknown. A limit outranks a good end or one Daoris made.
     (D173, D206, D210)
+40a. A session that asks the check broker (`check_run`, a file under the home's `checks` folder, run as the heavy run
+    `daoris gate run` makes) and ends its turn on it with no question to the person ends `completed` by `ended.awaits-check`,
+    holding its tree as a wait on its helper does; the verdict (reached, failed or stopped, a red's log tail) is Daoris's word
+    under the key `check/<id>`, which reopens it in the same conversation, so the wait spends no tokens. The broker runs one
+    check at a time on this machine, a hand-back's own checks before a worker's, each class first come, first served. (TEAMWORK1a)
 41. The sweep stops a record that says it runs with nothing running it, as interrupted. A shutdown kills each session's process
     tree and records the same. Both are carried on. (D104)
 42. One writer holds a home: an instance for its life, a verb for its act. (D104)
@@ -329,7 +339,8 @@ are roots that wire and grow by a one-line door at most.
 | a part of a quest's start | a stage of its own in its phase's folder of `Loop/Run/`, marked `[RunStage]`, reaching the driver on `IRunWiring`, sharing on `RunState` | `DriverRunPartsTests` |
 | a quest operation or its verb | a module in `Service/Quests/Operations/` marked `[QuestOperation(kind, Log)]`, its verbs on `QuestTx` | `QuestsPartsTests` |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `LookStagesTests`, `DriverWatchLookTests` |
-| what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `SessionReadsBenchProcessTests` |
+| what a read costs at a home's size | the read's own unit | `HomeSizeBenchProcessTests` over `BenchHome` (3,000 records, two dozen trees: the look 0 git starts and 2 record requests, the tidy 8 starts, a tree's walk 17), `LookWorkBenchProcessTests` (ten open trees: no git where nothing moved), `TidyHomeBenchProcessTests` (thirty repositories, forty-two
+trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests` |

@@ -58,6 +58,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'going-on': 'neutral',
   // Waiting on its own helper, nothing runs and nothing waits on the person: awaiting reply's twin.
   'awaiting-helper': 'neutral',
+  // Waiting on its own check, which runs on the machine in its turn: awaiting helper's twin.
+  'awaiting-check': 'neutral',
   // Ended by an account's limit, its line going on by itself: quiet, never the failure's red.
   'limited': 'neutral',
   // An ended record held for an account's reset, going on by itself: quiet, as *limited* is.
@@ -84,7 +86,7 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * is the driver's to say.
  */
 export type ShownState =
-  | SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited' | 'limit-waits' | 'not-started';
+  | SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'awaiting-check' | 'limited' | 'limit-waits' | 'not-started';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -96,6 +98,7 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'answered') return 'work.shown.answered';
   if (shown === 'going-on') return 'work.shown.goingOn';
   if (shown === 'awaiting-helper') return 'work.shown.awaitingHelper';
+  if (shown === 'awaiting-check') return 'work.shown.awaitingCheck';
   if (shown === 'limited') return 'work.limit.word';
   if (shown === 'limit-waits') return 'work.shown.limitWaits';
   if (shown === 'not-started') return 'work.notStarted.word';
@@ -198,6 +201,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'going-on': 'idle',
   // Waiting on its own helper, its own turn has ended and nothing waits on the person: quiet, as awaiting reply is.
   'awaiting-helper': 'idle',
+  // Waiting on its own check: its turn has ended and nothing waits on the person, as awaiting helper is.
+  'awaiting-check': 'idle',
   // Ended by an account's limit: an ended record, as failed is.
   'limited': 'ended',
   // Held for an account's reset: its words go on by itself, so nothing is over, as answered's and going on's are.

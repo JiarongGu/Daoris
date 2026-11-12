@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class ChangeWatchProcessTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-change-real-" + Guid.NewGuid().ToString("N")[..8]);

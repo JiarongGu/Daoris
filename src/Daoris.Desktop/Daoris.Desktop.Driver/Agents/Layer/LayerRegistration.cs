@@ -17,6 +17,9 @@ internal sealed record LayerRegistration(string Door, Action<LyntaiBuilder> Regi
     /// </summary>
     public Func<Lyntai.Agents.ToolCall, SessionEvent>? Steps { get; init; }
 
+    /// <summary>The door's words for its limit windows and Daoris's name for each; a window it names that is not here is kept as it said it.</summary>
+    public IReadOnlyDictionary<string, string>? Windows { get; init; }
+
     /// <summary>
     /// The streams the door's agent runs beside itself, as the door's native reader keeps them, over the run's streams and its
     /// console; null keeps none, so a child's words are the session's, as a dialect with no streams beside says them.

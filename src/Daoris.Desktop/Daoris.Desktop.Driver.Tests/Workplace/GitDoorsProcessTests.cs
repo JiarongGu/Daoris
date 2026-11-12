@@ -18,6 +18,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// toolchain pins (<see cref="PinnedMinGit"/>) named as the home's git, the doors' own proof on both gits.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public class GitDoorsProcessTests : IDisposable
 {
     /// <summary>Whether the doors are proved with the pinned MinGit rather than the runner's git.</summary>

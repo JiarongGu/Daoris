@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real git, so the class is in the real-process half's git classes, as <see cref="HelperCaptureProcessTests"/> is.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PieceKeepProcessTests : IDisposable
 {

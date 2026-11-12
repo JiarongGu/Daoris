@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a landing past its guard holds its tree, so a press binding it waits within its bound and binds nothing.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TogetherGuardsTests : TreeSyncFixture
 {

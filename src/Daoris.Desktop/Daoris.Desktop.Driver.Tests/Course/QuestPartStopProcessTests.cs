@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Real processes in a real job, so the class is in the real-process half, and a job is Windows': elsewhere the case returns at once.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class QuestPartStopProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-quest-stop-" + Guid.NewGuid().ToString("N")[..8]);

@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// concluded by its exit: a clean exit with its quest done is <c>completed</c>, a crash <c>failed</c>; never a cut-off.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class CaptureBoundProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "capture-bound", Guid.NewGuid().ToString("N")[..8]);

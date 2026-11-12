@@ -14,6 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that something on this machine runs the session, and asks rather than ending it as an orphan.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SessionRequestTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-request-tick-" + Guid.NewGuid().ToString("N")[..8]);

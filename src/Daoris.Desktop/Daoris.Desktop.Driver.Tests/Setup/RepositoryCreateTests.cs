@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repository's gitignored <c>_fixtures</c>; the registry, the identities and the quest door are stand-ins.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RepositoryCreateTests : IDisposable
 {

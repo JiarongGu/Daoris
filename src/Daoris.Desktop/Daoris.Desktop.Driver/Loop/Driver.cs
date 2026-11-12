@@ -218,6 +218,10 @@ public sealed class Driver(
 
     internal DriverHelpers Helpers => LazyInitializer.EnsureInitialized(ref _helpers, () => new DriverHelpers(Context, this));
 
+    private DriverChecks? _checks;
+
+    internal DriverChecks Checks => LazyInitializer.EnsureInitialized(ref _checks, () => new DriverChecks(Context, Helpers));
+
     internal DriverPartners Partners => LazyInitializer.EnsureInitialized(ref _partners, () => new DriverPartners(Context, this));
 
     internal DriverIntakes Intakes => LazyInitializer.EnsureInitialized(ref _intakes, () => new DriverIntakes(Context, this));
@@ -309,6 +313,11 @@ public sealed class Driver(
     internal Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
         Helpers.WaitsOnOwnHelperAsync(
             session, quest, Context.Events.LastHandedAt(session) is { } handed && handed > openedAt ? handed : openedAt, ct);
+
+    /// <summary>Whether a driven run that ends now holding its quest waits on its own check, counted from the same moment a helper's question is.</summary>
+    internal Task<bool> WaitsOnOwnCheckAsync(string session, DateTimeOffset openedAt, CancellationToken ct) =>
+        Checks.WaitsOnOwnCheckAsync(
+            session, Context.Events.LastHandedAt(session) is { } handed && handed > openedAt ? handed : openedAt, ct);
 
     public Task<OpinionPassRun> PassAsync(OpinionPassAsk ask, ReviewerChoice choice, CancellationToken ct = default) =>
         Opinions.PassAsync(ask, choice, ct);

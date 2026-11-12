@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A folder that is no git checkout takes none.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class PlaceHomeMarkerTests : IDisposable
 {

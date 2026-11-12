@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// folder, and the sweep the real one over a stand-in service.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class SessionProcessesProcessTests : IDisposable
 {
     private const string Session = "a1b2c3d4";

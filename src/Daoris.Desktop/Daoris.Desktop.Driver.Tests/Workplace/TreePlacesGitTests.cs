@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// moved outside both places is still refused by every door. The paths alone are <see cref="TreePlacesTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreePlacesGitTests : IDisposable
 {

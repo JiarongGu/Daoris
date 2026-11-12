@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// what cools is the stub's own sign-in. The clock and the zone are the roster's, the test's.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AccountLimitTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");

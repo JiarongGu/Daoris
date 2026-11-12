@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkAmbient, checkBudget, checkReferences, scanAmbient } from './layers-census.mjs';
+import { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -78,6 +78,18 @@ test('LAYERS1: a unit test over a second fails by name, a listed one may not slo
   assert.match(problems[0], /Slow\.b took 2100 ms in the unit gate driver, over the 1000 ms budget/);
   assert.match(checkBudget(records, { slowTests: { 'Listed.c': 1400, 'Slow.b': 2100 } })[0], /Listed\.c slowed from 1400 to 1500 ms/);
   assert.match(checkBudget(records, { slowTests: { 'Listed.c': 1500, 'Slow.b': 2100, 'Fast.a': 1100 } })[0], /Fast\.a is on the slow list at 1100 ms and ran in 12/);
+});
+
+test('LAYERS1: a gate\'s trx is read as its tests with their milliseconds, and a Process gate is the process tier\'s', () => {
+  const trx = `<TestRun><Results>
+    <UnitTestResult executionId="1" testId="a" testName="Ns.Fast.Does_it" computerName="x" duration="00:00:00.0120000" outcome="Passed" />
+    <UnitTestResult executionId="2" testId="b" testName="Ns.Theory.Row(a: &quot;x.y&quot;)" duration="00:00:02.5000000" outcome="Passed"></UnitTestResult>
+  </Results></TestRun>`;
+  const unit = parseTrx(trx, 'driver');
+  assert.equal(unit.tier, 'unit');
+  assert.deepEqual(unit.tests, [{ class: 'Ns.Fast', test: 'Does_it', ms: 12 }, { class: 'Ns.Theory', test: 'Row(a: "x.y")', ms: 2500 }]);
+  assert.equal(parseTrx(trx, 'driver-process-git').tier, 'process');
+  assert.match(checkBudget([unit], clean)[0], /Ns\.Theory\.Row/);
 });
 
 test('LAYERS1: no duration records is a clean run that says so', () => {

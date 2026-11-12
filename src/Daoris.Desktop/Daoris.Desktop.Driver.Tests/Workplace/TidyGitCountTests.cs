@@ -12,10 +12,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// home's lease alone.
 /// </summary>
 /// <remarks>
-/// Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> while a look runs, the second of two, as a running
+/// The measured look is a tidy of its own, since a first one's quiet repository is left alone (<see cref="TidyIdleness"/>). Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> while a look runs, the second of two, as a running
 /// driver's look reads at every pace after its first; the test's own git runs outside it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingFixture
 {
@@ -71,7 +73,7 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
             return System.Diagnostics.Process.Start(info);
         }))
         {
-            await tidying.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+            await new BranchTidying(_home) { Pace = TimeSpan.Zero }.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
         }
 
         return starts;

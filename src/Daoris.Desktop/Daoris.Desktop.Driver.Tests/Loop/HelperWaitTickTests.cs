@@ -16,6 +16,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// process is the asker's stand-in agent.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class HelperWaitTickTests : IDisposable
 {
     private const string AskId = "a1b2c3d4";

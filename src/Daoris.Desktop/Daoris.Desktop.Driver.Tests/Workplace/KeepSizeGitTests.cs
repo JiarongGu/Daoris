@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>WorkRecordStoreTests</c>' and <c>WorkRecordHostTests</c>'; the service not answering is <c>KeepingSlimTests</c>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class KeepSizeGitTests : KeepSizeFixture
 {

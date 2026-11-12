@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>cmd</c> running a script of this test's, never an agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class AgentStartsProcessTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-agent-starts-process-" + Guid.NewGuid().ToString("N")[..8]);

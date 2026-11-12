@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, a stand-in server that never answers, and the in-process ledger of <see cref="ChatGoOnTests"/>.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class AskDaorisFailedOpeningTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-ask-failed-" + Guid.NewGuid().ToString("N")[..8]);

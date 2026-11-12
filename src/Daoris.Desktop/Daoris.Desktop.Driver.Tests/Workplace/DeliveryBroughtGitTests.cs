@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// as <see cref="TogetherAcceptsTests"/> sets it up.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class DeliveryBroughtGitTests : LandedFixture
 {

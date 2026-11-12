@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// refused by git's own word; a second landing tip waits for the first request's outcome in the store. Nothing runs the integration.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class IntegrateNodeGitTests : LandedFixture
 {

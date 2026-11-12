@@ -77,6 +77,8 @@ public sealed class TestGitCeilingTests
 
 /// <summary>The proof against a real git: a command that would climb out of its fixture is refused.</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TestGitCeilingProcessTests : IDisposable
 {

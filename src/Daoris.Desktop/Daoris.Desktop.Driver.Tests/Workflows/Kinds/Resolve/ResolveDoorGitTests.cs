@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ask; a resolver's own commit and <c>rebase --continue</c>; an unnamed file refused; and the rebase's <c>back</c> way reading the resolution.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ResolveDoorGitTests : LandedFixture
 {

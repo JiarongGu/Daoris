@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in the file the driver writes, not in a list a test handed it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class SessionEventRecordTests : IDisposable
 {
     private readonly string _home = Path.Combine(

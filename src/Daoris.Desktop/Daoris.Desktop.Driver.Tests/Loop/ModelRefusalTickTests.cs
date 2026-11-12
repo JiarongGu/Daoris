@@ -15,6 +15,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// account at <c>session/set_config_option</c>, as Claude's door does; it writes down each open's account and
 /// each model set, and closes its quest on its first prompt.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ModelRefusalTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-model-refusal-" + Guid.NewGuid().ToString("N")[..8]);

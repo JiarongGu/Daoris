@@ -33,6 +33,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// case holds nothing. In the Process half, alone: it measures a wall clock the load of a neighbour would move.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class GitDoorStartTests : IDisposable
 {

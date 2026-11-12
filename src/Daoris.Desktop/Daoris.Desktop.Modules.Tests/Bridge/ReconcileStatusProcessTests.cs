@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// checkout's, on the <c>node</c> the PATH finds, as an install's program hands it the doctrine commands.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class ReconcileStatusProcessTests : DriverModuleBridge
 {
     private readonly SetupStandIn _world;

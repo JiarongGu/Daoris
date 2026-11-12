@@ -14,6 +14,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The ledger is <see cref="ChatLedger"/>, in-process. Every case has its own scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class ChatPendingProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "chat-pending", Guid.NewGuid().ToString("N")[..8]);

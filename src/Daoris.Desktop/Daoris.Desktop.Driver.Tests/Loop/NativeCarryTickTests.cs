@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// completed once the tree is clean, or when the bound (<see cref="TurnCarry.Bound"/>) is met. The words are the run's own prompt: no card,
 /// no say, no move record, and Daoris commits nothing (any commit in the tree is the stand-in's).</summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class NativeCarryTickTests : IDisposable
 {
     private const string Words = "Your quest is done, but your tree has 1 uncommitted path(s).";

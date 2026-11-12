@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// between its two askings (a merge or a ref update changes the answer), which the allowed list names; the count has a ceiling.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandGitCountTests : IDisposable
 {

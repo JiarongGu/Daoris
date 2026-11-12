@@ -163,15 +163,27 @@ public sealed class BranchTidying(string home)
         SessionTrees trees, RepoView row, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
         Action<IReadOnlyList<StrayResult>> strayed, CancellationToken ct)
     {
+        // A repository whose last pass did nothing and whose files are as they were starts no git (TidyIdleness).
+        var stamp = Idleness.Stamp(row.Root!, trees.TreesRoot, RemoteTarget.Workspace(row.Workspace), row.Repository);
+        if (Idleness.Skips(row.Root!, stamp)) return new TidyPass([]) { Repository = row.Repository, Workspace = RemoteTarget.Workspace(row.Workspace) };
+
+        Idleness.Forget(row.Root!);
         // Read at its first question and dropped by every write a stage makes; the stages' own judgements take their own.
         RefSnapshot.Take(row.Root!);
         // A session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
         await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
         // The folders under its trees that are no tree first, so a branch whose folder is one
         // goes in the same look rather than being kept as unreadable.
-        strayed(await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, inUse, Clock(), ct).ConfigureAwait(false));
-        return await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
+        var strays = await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, inUse, Clock(), ct).ConfigureAwait(false);
+        strayed(strays);
+        var pass = await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
+        Idleness.Remember(row.Root!, stamp, pass with { Strays = strays });
+        return pass;
     }
+
+    private TidyIdleness? _idleness;
+
+    private TidyIdleness Idleness => LazyInitializer.EnsureInitialized(ref _idleness, () => new TidyIdleness(home, Clock));
 
     public static Task<IReadOnlySet<string>> InUseAsync(
         string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct,

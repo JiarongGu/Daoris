@@ -19,6 +19,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// exit but 2 as a non-blocking error: a guard that failed by exiting would let the write through.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class TreeGuardTests : IDisposable
 {
     private readonly string _home = Path.Combine(

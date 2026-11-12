@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of the runtime judges the run's branch, and the door lands the tip the Accept covered; a later candidate reopens the same run.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ChatGraphRunTests : ReviewLandingFixture
 {

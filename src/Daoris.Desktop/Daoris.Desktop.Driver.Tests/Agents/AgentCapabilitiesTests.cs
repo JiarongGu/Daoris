@@ -58,14 +58,15 @@ public sealed class AgentCapabilitiesTests
         var door = Registry.Door("claude-code-acp");
         var negotiated = new Dictionary<string, bool> { [SheetCapability.Resume] = false, [SheetCapability.Steering] = false };
 
-        var sheet = Sheet.Of(provider, door, negotiated, Measurement.Table);
+        var sheet = Sheet.Of(provider, door, negotiated);
 
         Assert.Equal(SheetRow.Negotiated, sheet.Row(SheetCapability.Resume).Source);
         Assert.Equal(SheetRow.No, sheet.Row(SheetCapability.Resume).Value);
         Assert.Equal(SheetRow.Measured, sheet.Row(SheetCapability.Steering).Source);
 
-        // With no measurement the same steering reads as the opening answered it.
-        Assert.Equal(SheetRow.Negotiated, Sheet.Of(provider, door, negotiated, []).Row(SheetCapability.Steering).Source);
+        // With the measurement taken off the door, the same steering reads as the opening answered it.
+        var unmeasured = door with { Abilities = door.Abilities with { Steering = Known<bool>.Absent } };
+        Assert.Equal(SheetRow.Negotiated, Sheet.Of(provider, unmeasured, negotiated).Row(SheetCapability.Steering).Source);
     }
 
     [Fact]
@@ -91,15 +92,50 @@ public sealed class AgentCapabilitiesTests
     }
 
     [Fact]
-    public void The_measurements_table_names_registered_doors_sheet_capabilities_and_evidence_that_exists()
+    public void A_measured_ability_is_a_known_value_on_its_door_with_its_evidence_and_the_versions_it_was_taken_at()
     {
-        Assert.NotEmpty(Measurement.Table);
-        foreach (var row in Measurement.Table)
+        var abilities = Registry.Door("claude-code-acp").Abilities;
+        foreach (var measured in new[] { abilities.WordsAtNextStep, abilities.Steering })
         {
-            Assert.Contains(new DoorId(row.Door), Registry.Doors);
-            Assert.Contains(row.Capability, SheetCapability.All);
-            Assert.Contains(row.Outcome, new[] { SheetRow.Yes, SheetRow.No });
-            Assert.True(File.Exists(Path.Combine(GitSeed.RepoRoot(), row.Evidence)), $"{row.Evidence} is not in the repository");
+            Assert.Equal(KnownBy.Measured, measured.By);
+            Assert.True(measured.Required);
+            Assert.True(File.Exists(Path.Combine(GitSeed.RepoRoot(), measured.Evidence)), $"{measured.Evidence} is not in the repository");
+            Assert.Equal(new MeasuredAt("2.1.284", "0.84.0"), measured.At);
+        }
+    }
+
+    [Fact]
+    public void The_sheet_and_the_door_s_abilities_read_one_source_so_they_cannot_disagree()
+    {
+        foreach (var id in Registry.Doors)
+        {
+            var can = Registry.Door(id.Value).Can;
+            var sheet = SheetOf(id.Value);
+            Assert.Equal(can.WordsAtNextStep, sheet.Does(SheetCapability.WordsAtNextStep));
+            Assert.Equal(can.Resumes, sheet.Does(SheetCapability.Resume));
+            Assert.Equal(can.ServersOnWire, sheet.Does(SheetCapability.ServersOnWire));
+            Assert.Equal(can.Interactive, sheet.Does(SheetCapability.Conversation));
+            Assert.Equal(can.TakesSettings, sheet.Does(SheetCapability.TakesRules));
+        }
+    }
+
+    [Fact]
+    public void A_value_the_transport_supplies_says_it_is_a_default_and_not_measured()
+    {
+        var reading = AbilityReading.Of(Registry.Door("alt-acp-stub"), AbilityName.WordsAtNextStep);
+        Assert.True(reading.IsKnown);
+        Assert.Equal(AbilityReading.TransportDefault, reading.Evidence);
+        Assert.Equal(KnownBy.Declared, reading.By);
+    }
+
+    [Fact]
+    public void Codex_and_dsh_state_the_next_step_words_as_unmeasured_where_the_transport_gives_them()
+    {
+        foreach (var id in new[] { "codex-acp", "dsh" })
+        {
+            var stated = Registry.Door(id).Abilities.WordsAtNextStep;
+            Assert.Equal(KnownBy.Declared, stated.By);
+            Assert.Contains("not measured", stated.Evidence, StringComparison.Ordinal);
         }
     }
 

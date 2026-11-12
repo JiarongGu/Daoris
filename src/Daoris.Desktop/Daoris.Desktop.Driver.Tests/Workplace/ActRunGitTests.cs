@@ -15,6 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// read as dead; the reconciler is a journal of another run. Windows only, where the job is: elsewhere an act is refused, never run unheld.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ActRunGitTests : TreeSyncFixture
 {

@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Collection(Alone.Name)]
 public sealed class DependencyStoreTests : IDisposable
 {

@@ -17,6 +17,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>continued</c> naming that conversation, which keeps it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class HeadServiceProcessTests : IAsyncLifetime
 {
     private const string Key = "press/7a2e";

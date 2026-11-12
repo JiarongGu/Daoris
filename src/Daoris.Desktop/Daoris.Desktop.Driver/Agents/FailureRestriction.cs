@@ -37,8 +37,27 @@ public enum RecoveryBasis
     OwnerAction,
 }
 
+/// <summary>Which action a person takes when a restriction ends only by one, where the door's own field said.</summary>
+public enum OwnerNeed
+{
+    /// <summary>No field said which.</summary>
+    Unknown,
+
+    Refill,
+
+    SignIn,
+
+    Grant,
+
+    Configure,
+}
+
 /// <summary>How a restriction ends, and when where it is stated.</summary>
-public sealed record FailureRecovery(RecoveryBasis Basis, DateTimeOffset? At = null);
+public sealed record FailureRecovery(RecoveryBasis Basis, DateTimeOffset? At = null)
+{
+    /// <summary>The action an owner's recovery asks of the person; <see cref="OwnerNeed.Unknown"/> for every other basis.</summary>
+    public OwnerNeed Need { get; init; }
+}
 
 /// <summary>
 /// A normalized failure's restriction, on Daoris's own types: read by its subject and cause before its

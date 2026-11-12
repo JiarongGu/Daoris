@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// gate (<see cref="ProcessStarts.Within"/>), as <c>AgentSheetStartsTests</c> counts them.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class AgentsOpenStartsTests : DriverModuleBridge
 {
     private void Read(string agent, string account, TimeSpan age) =>

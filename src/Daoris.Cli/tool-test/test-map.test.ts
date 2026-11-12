@@ -90,7 +90,7 @@ test('every edge kind reaches its unit, and a member added to a glob or a scanne
 test("a unit's subject is the module its own file sits in", () => {
   assert.equal(tool.tsSubject('src/Daoris.Cli/test/doctrine/scan.test.ts'), 'src/Daoris.Cli/src/doctrine');
   assert.equal(tool.tsSubject('src/Daoris.Cli/test/words.test.ts'), 'src/Daoris.Cli');
-  assert.equal(tool.tsSubject('src/Daoris.Cli/tool-test/merge-branch.test.ts'), 'tools/merge-branch.mjs');
+  assert.equal(tool.tsSubject('src/Daoris.Cli/tool-test/merge-branch-ci.test.ts'), 'tools/merge-branch.mjs');
   assert.equal(tool.tsSubject('src/Daoris.Web/src/note/note.test.ts'), 'src/Daoris.Web/src/note');
   const project = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
   assert.deepEqual(tool.dotnetSubject(project, `${project}/Trees/LandTests.cs`), { subject: `${project}/Trees`, atRoot: false, declared: null });

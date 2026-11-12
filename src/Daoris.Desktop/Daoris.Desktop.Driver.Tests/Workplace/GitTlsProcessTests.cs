@@ -13,6 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a scratch home; the host's certificate is trusted by each command's own configuration variables alone.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
 {
     private readonly GitTlsHost _host;

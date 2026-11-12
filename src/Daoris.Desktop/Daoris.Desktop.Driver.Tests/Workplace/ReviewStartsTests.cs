@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// from git's own files, and the guess at the line starts git for <c>main</c> alone (G2), or none where origin's <c>HEAD</c> is set.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewStartsTests : LandedFixture
 {

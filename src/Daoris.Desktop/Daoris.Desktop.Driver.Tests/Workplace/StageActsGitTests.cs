@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a pull or a promotion holding the lock, an operation in progress and a session's tree.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class StageActsGitTests : TreeSyncFixture
 {

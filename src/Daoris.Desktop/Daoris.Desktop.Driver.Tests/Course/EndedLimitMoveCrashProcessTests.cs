@@ -18,6 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// turn's word, the moved word and the brief, written once by the dead shell or never.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Harness)]
 public sealed class EndedLimitMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly LiveLimitHarness _h = new("ended-limit-move-crash");

@@ -11,6 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and what keeps a branch is <see cref="LandedKeepTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class LandedBranchTests : LandedFixture
 {

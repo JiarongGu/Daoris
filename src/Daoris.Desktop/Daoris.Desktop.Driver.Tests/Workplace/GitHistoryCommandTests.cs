@@ -9,6 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// it runs the journal's act itself, refused from a session's terminal.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GitHistoryCommandTests : TreeSyncFixture
 {

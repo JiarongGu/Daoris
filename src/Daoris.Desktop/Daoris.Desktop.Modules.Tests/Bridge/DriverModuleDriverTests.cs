@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// the drivable set, holds, trees, notifications, strikes, the intake and helper agents, trust and *Sync now*.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Browser)]
 public sealed class DriverModuleDriverTests : DriverModuleBridge
 {
     [Fact]

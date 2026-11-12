@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>A real process (node, as every gate already needs), started in the folder and killed at the end.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HeldFilesProcessTests : IDisposable
 {
     private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-held-cwd-" + Guid.NewGuid().ToString("N")[..8]);

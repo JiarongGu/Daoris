@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <i>checking</i>; a member moving before it ends it stale; the line carried to a successor its own word opened, stale on another.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TogetherLookTests : IDisposable
 {

@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// itself — its refusal verbatim.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class StartWiringTests : IDisposable
 {
     private readonly string _home = Path.Combine(
