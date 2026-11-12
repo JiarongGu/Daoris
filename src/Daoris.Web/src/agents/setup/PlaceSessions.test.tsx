@@ -75,8 +75,8 @@ describe("a repository place's Workflow", () => {
     const landed = { start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED }, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() };
     drawWorkflow({ ...SETUP_OWN, landed });
 
-    expect(within(document.body).getAllByText('Accept for integration')).toHaveLength(1);
-    expect(screen.queryByText('Integration declaration')).toBeNull();
+    expect(within(document.body).getAllByRole('button', { name: 'Accept' })).toHaveLength(1);
+    expect(screen.queryByText('Checks the line declares')).toBeNull();
   });
 
   it('keeps the heavy gates in More, which the Sessions section no longer draws', async () => {
