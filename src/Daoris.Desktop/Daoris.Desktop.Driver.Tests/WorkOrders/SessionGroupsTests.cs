@@ -71,19 +71,25 @@ public sealed class SessionGroupsTests
         string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null,
         string[]? chats = null, (string Session, WordsHold Holds)[]? held = null, (string Session, RunningCall Call)[]? calls = null,
         string[]? between = null) =>
-        SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
+        Marked(SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)), archived ?? []) with
         {
             Between = new HashSet<string>(between ?? [], StringComparer.Ordinal),
             Calls = (calls ?? []).ToDictionary(each => each.Session, each => each.Call, StringComparer.OrdinalIgnoreCase),
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
-            Archived = (archived ?? []).ToDictionary(id => id, _ => T0, StringComparer.Ordinal),
-            Kept = new HashSet<string>(kept ?? [], StringComparer.Ordinal),
+            Kept =new HashSet<string>(kept ?? [], StringComparer.Ordinal),
             Unable = (unable ?? []).ToDictionary(
                 each => each.Session, each => new GoOnMark(each.Said, ContinueWhy.Refused, T0), StringComparer.Ordinal),
             Waits = waits ?? [],
             ChatsWaiting = new HashSet<string>(chats ?? [], StringComparer.Ordinal),
             Held = (held ?? []).ToDictionary(each => each.Session, each => each.Holds, StringComparer.Ordinal),
         };
+
+    /// <summary>The look with each named session's conversation archived, as the store holds the mark: one per conversation, a record's line or itself.</summary>
+    private static SessionLook Marked(SessionLook look, string[] archived) => look with
+    {
+        Archived = look.Records.Where(record => archived.Contains(record.Id)).Select(ConversationArchive.Of)
+            .Distinct(StringComparer.Ordinal).ToDictionary(conversation => conversation, _ => T0, StringComparer.Ordinal),
+    };
 
     /// <summary>The planner's start of a record the person's words wait on (<c>GoOn</c>): it goes on itself.</summary>
     private static Consideration GoesOn(QuestView quest) => Verdict(quest, StartVerdict.Start) with { GoesOn = true };
