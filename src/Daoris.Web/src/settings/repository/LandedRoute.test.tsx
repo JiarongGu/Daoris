@@ -22,7 +22,7 @@ describe("a repository's landed route on its Setup", () => {
 
     expect(screen.getByText('Verification of the work that lands')).toBeInTheDocument();
     expect(screen.getByText(/^Verify the line, as engine chooses\./)).toHaveTextContent(
-      "Verify the line, as engine chooses. Its gates run unasked as you accepted them, at blob 3b18e51 on main's tip aa11bb2.");
+      "Verify the line, as engine chooses. Its gates run unasked as you accepted them, from main.");
     expect(screen.getByText(code('daoris workflow use <id> --repository engine --landed'))).toBeInTheDocument();
   });
 
