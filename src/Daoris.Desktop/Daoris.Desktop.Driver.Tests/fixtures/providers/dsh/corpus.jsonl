@@ -1,0 +1,3 @@
+{"door":"dsh","program":"unrecorded","adapter":null,"source":"the evaluation's wire notes","frame":{"sessionUpdate":"tool_call","toolCallId":"t1","title":"read","kind":"other","status":"in_progress","rawInput":{"path":"a.txt"}},"events":["tool/in_progress"]}
+{"door":"dsh","program":"unrecorded","adapter":null,"source":"the evaluation's wire notes","frame":{"sessionUpdate":"tool_call_update","toolCallId":"t1","status":"completed","content":[{"type":"content","content":{"type":"text","text":"Created file"}}]},"events":["tool/completed"]}
+{"door":"dsh","program":"unrecorded","adapter":null,"source":"the evaluation's wire notes","frame":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"Done."}},"events":["message"]}

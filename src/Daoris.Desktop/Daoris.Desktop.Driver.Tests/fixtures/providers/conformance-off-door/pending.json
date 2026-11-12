@@ -1,5 +1,4 @@
 [
-  { "case": "admission.not-widened", "door": "*", "row": "u", "why": "Reach is read only by the plan's walk row u builds, so no admission is held to a provider's statement yet." },
   { "case": "containment.not-widened", "door": "*", "row": "h", "why": "A recipe is plain data the shell completes and Platform's launcher (AgentStarts.StartAsync, D201) alone starts and contains through the run; that the door's process is born in the agents' job and cannot leave it is proved only on the installed launcher." },
   { "case": "applicability.one-fact-differs", "door": "*", "row": "r", "why": "A measurement admits by the effective configuration COAGENT1e's sheet reads, built as the roster's answer at row r." },
   { "case": "applicability.other-opening", "door": "*", "row": "r", "why": "A negotiated reading kept per door, version and account is the sheet's, read from row r." },

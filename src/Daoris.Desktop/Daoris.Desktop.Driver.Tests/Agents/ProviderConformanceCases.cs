@@ -41,8 +41,6 @@ internal static class ConformanceCases
         OfDoor("tables.d210-precedence", "D210's precedence over its tables: a limit's sentence first, the source before any kind, access before transient, the unread fatal", D210Precedence),
         OfDoorAsync("run.unsupported-refused", "an operation the run's own evidence does not admit refused before a write, over TransportRun (O1-F16, m-i)", RunUnsupportedRefused),
         OfDoor("frames.unknown-unread", "unknown and malformed frames kept unread, never guessed", FramesUnknownUnread),
-        OfProvider("admission.not-widened", "a provider unable to widen admission",
-            _ => NotYet("the plan's walk reading each choice's provider's Reach before any context or credential is sent")),
         OfProvider("containment.not-widened", "a provider unable to widen containment",
             _ => NotYet("the installed launcher, on which a door's process is shown born in the agents' job and unable to leave it")),
         OfProvider("applicability.one-fact-differs", "a measurement equal to the run's effective configuration in all but one of its eight facts refused, for each one (C1-3.2, O1-F11)",
@@ -63,8 +61,8 @@ internal static class ConformanceCases
         OfDoor("ability.one-task-stopped", "one task stopped, stated or its fallback", Ability("OneTaskStopped")),
         OfDoor("ability.resume-fails-closed", "a resume that fails closed, stated or its fallback", Ability("ResumeFailsClosed")),
         OfDoor("ability.requests-held", "requests held for the person, stated or its fallback", Ability("RequestsHeld")),
-        OfDoor("ability.hands-servers", "hands servers: on the wire, by a file or not at all, a protocol door's on the wire (§2.6)", Ability("HandsServers")),
-        OfDoor("ability.servers-inherit-environment", "its servers inherit its environment, stated or its fallback", Ability("ServersInheritEnvironment")),
+        OfDoor("ability.hands-servers", "hands servers: on the wire, by a file or not at all, a protocol door's on the wire (§2.6)", Ability("ServersOnWire")),
+        OfDoor("ability.servers-inherit-environment", "its servers inherit its environment, stated or its fallback", Ability("ServersInherit")),
         OfDoor("ability.leaves-own-servers-out", "leaves its own servers out, stated or its fallback", Ability("LeavesOwnServersOut")),
         OfDoor("dialect.recorded-frames", "the dialect over its recorded frames giving the readings expected and emitting nothing it was not told; stated absent, plain lines and an end", DialectRecordedFrames),
         OfDoor("dialect.cross-fed", "each protocol dialect over the others' frames, reading only what its own dialect allows (C2-4.2)",
@@ -611,18 +609,34 @@ internal static class ConformanceCases
     }
 
     /// <summary>
-    /// An ability the contract does not hold yet as a door's <c>Known</c> part: the case asks the part for it, so it passes once the row that
-    /// states the ability lands, and the provider's line then goes.
+    /// An ability as the one reading answers it: stated absent, or known with a source that says where it comes from, a measured one with
+    /// the versions it was taken at.
     /// </summary>
-    private static Action<ConformanceRun> Ability(string part) => run =>
+    private static Action<ConformanceRun> Ability(string ability) => run =>
     {
-        if (typeof(AbilitiesPart).GetProperty(part) is not { } property) NotYet($"AbilitiesPart.{part}, the door's Known ability");
-        else Assert.NotNull(property.GetValue(run.TheDoor.Abilities));
+        var reading = AbilityReading.Of(run.TheDoor, ability);
+        if (!reading.IsKnown) return;
+
+        Assert.False(string.IsNullOrWhiteSpace(reading.Evidence), $"{ability} is stated with no source");
+        Assert.False(string.IsNullOrWhiteSpace(reading.Applies), $"{ability} is stated with no applies");
+        if (reading.By == KnownBy.Measured) Assert.NotNull(reading.At);
     };
 
     private static void DialectRecordedFrames(ConformanceRun run)
     {
         var (door, adapter) = (run.TheDoor, run.Adapter);
+        if (ProviderCorpus.Of(run.Provider.Id.Value, door.Id.Value) is { Count: > 0 } corpus)
+        {
+            foreach (var recorded in corpus)
+            {
+                Assert.False(string.IsNullOrWhiteSpace(recorded.Program), $"{door.Id.Value}: a frame names no program version");
+                Assert.False(string.IsNullOrWhiteSpace(recorded.Source), $"{door.Id.Value}: a frame names no source");
+                Assert.Equal(recorded.Events, ProviderCorpus.Read(adapter, recorded));
+            }
+
+            return;
+        }
+
         if (Protocol(door)) NotYet("the door's IProtocolDialect over its recorded frames under fixtures/providers/<id>/");
         if (door.Dialect.IsKnown || adapter.StructuredOutput() is not null) NotYet("the door's INativeDialect over its recorded frames under fixtures/providers/<id>/");
 

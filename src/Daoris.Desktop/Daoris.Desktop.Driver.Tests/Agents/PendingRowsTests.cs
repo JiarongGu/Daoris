@@ -40,8 +40,8 @@ public sealed class PendingRowsTests
               { "case": "frames.unknown-unread", "door": "claude-code", "run": "Sideways", "row": "AGENTLYNTAI1d", "why": "No such kind." },
               { "case": "dialect.recorded-frames", "door": "claude-code", "run": "Driven", "row": "AGENTLYNTAI1d", "why": "Driven." },
               { "case": "dialect.recorded-frames", "door": "claude-code", "row": "AGENTLYNTAI1d", "why": "Both, so the driven one twice." },
-              { "case": "ids.names-resolve", "door": "*", "run": "Driven", "row": "c", "why": "Driven." },
-              { "case": "ids.names-resolve", "door": "*", "run": "Conversation", "row": "c", "why": "A conversation, not twice." }
+              { "case": "ids.names-resolve", "door": "*", "run": "Driven", "row": "h", "why": "Driven." },
+              { "case": "ids.names-resolve", "door": "*", "run": "Conversation", "row": "h", "why": "A conversation, not twice." }
             ]
             """,
             "runs.json");
@@ -67,17 +67,21 @@ public sealed class PendingRowsTests
     }
 
     [Fact]
-    public void The_closed_list_holds_the_design_s_rows_and_no_longer_the_rows_it_re_cut()
+    public void The_rows_a_line_may_name_are_the_backlog_s_open_ones_and_no_built_row()
     {
-        string[] design =
+        var rows = OpenBacklogRows.Read(
         [
-            "AGENTLYNTAI1b-ii", "AGENTLYNTAI1b-iii", "AGENTLYNTAI1c", "AGENTLYNTAI1d", "AGENTLYNTAI1e-i", "AGENTLYNTAI1e-ii", "AGENTLYNTAI1e-iii",
-            "AGENTLYNTAI1e-iv", "AGENTLYNTAI1f-i", "AGENTLYNTAI1f-ii",
-        ];
+            "- [ ] **AGENTPROVIDER1 — one provider contract** (driver): left **h** containment; **r** the partner; **t** last.",
+            "- [ ] **AGENTPROVIDER1j ⚖ — each protocol door** (driver)",
+            "- [ ] **AGENTLYNTAI1e-ii ⚖ — codex** (driver)",
+            "- [x] **DONE1 — finished**",
+            "  - a continued line naming **g** is no row",
+        ]);
 
-        Assert.All(design, row => Assert.Contains(row, ConformancePending.Rows));
-        Assert.DoesNotContain("i", ConformancePending.Rows);
-        Assert.DoesNotContain("k", ConformancePending.Rows);
+        Assert.Equal(["AGENTPROVIDER1", "h", "r", "t", "AGENTPROVIDER1j", "j", "AGENTLYNTAI1e-ii"], rows);
+        Assert.DoesNotContain("g", ConformancePending.Rows);
+        Assert.DoesNotContain("u", ConformancePending.Rows);
+        Assert.Contains("AGENTLYNTAI1e-ii", ConformancePending.Rows);
     }
 
     public static TheoryData<string, string, string?, string> FramesLines => new()
@@ -101,7 +105,9 @@ public sealed class PendingRowsTests
         var kind = run is null ? (StartKind?)null : Enum.Parse<StartKind>(run);
         var lines = ConformancePending.Of(provider);
 
-        foreach (var @case in new[] { "frames.unknown-unread", "dialect.recorded-frames" })
+        // A door with a recorded corpus passes the dialect case over it, so only its unknown-frame line is held.
+        string[] cases = ProviderCorpus.Of(provider, door).Count > 0 ? ["frames.unknown-unread"] : ["frames.unknown-unread", "dialect.recorded-frames"];
+        foreach (var @case in cases)
         {
             var held = ConformancePending.Holding(lines, @case, door, kind);
             Assert.True(held is not null, $"{@case} on {door} is held");

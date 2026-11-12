@@ -24,6 +24,8 @@ internal static class ClaudeCodeProvider
     public const string Id = ConsoleProviderId.Value;
 
     private const string Evidence ="Claude Code's declaration";
+    private const string SteerEvidence = "docs/2026-10-03-steer-evidence.md";
+    private static readonly MeasuredAt SteerMeasuredAt = new("2.1.284", "0.84.0");
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
 
@@ -95,7 +97,10 @@ internal static class ClaudeCodeProvider
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
-                Known<bool>.Declared(true, Evidence)),
+                Known<bool>.Declared(true, Evidence),
+                // A second prompt reaching the turn at its next step, and the steering extension, measured on this adapter alone.
+                WordsAtNextStep: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
+                Steering: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt)),
             // Its own server's word that -32000 means authentication required, read before its provider's.
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 
