@@ -98,7 +98,7 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
                 // The help start's own read and bound, so a conversation going on waits for the machine exactly as one opening does.
                 var start = wiring.Of<HelpStart>();
                 var (read, late, waited) = await start.ReadAsync(describe, workspace, ct).ConfigureAwait(false);
-                if (read?.Within(workspace, FocusOf(sessionId, workspace)) is { } machine)
+                if (read?.Within(workspace) is { } machine)
                 {
                     var room = HelpRoom.Prepare(context.Home, machine);
                     if (machine.NotReadYet.Any) context.Note(sessionId, HelpStart.NotReadYet());

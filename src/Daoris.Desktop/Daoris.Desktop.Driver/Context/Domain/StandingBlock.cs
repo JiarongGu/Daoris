@@ -54,6 +54,12 @@ public static class StandingBlock
         var cuts = new List<HandedCut>();
 
         if (Where(facts, said, cuts) is { } where) text.Append("\n\n").Append(where);
+        if (facts.Focus is { Length: > 0 } focus)
+        {
+            text.Append("\n\n").Append(focus.TrimEnd());
+            said.Add("its focus");
+        }
+
         if (facts is { Routing: { } routing, Repository: { } routed })
         {
             text.Append("\n\n").Append(Routing(routing, facts.Lanes, routed));
