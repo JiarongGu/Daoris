@@ -71,10 +71,11 @@ internal static class DriveUsageSession
               question's fenced print, and the answer or the question left to the owner. No alone path.
           settings  ·  settings notify on|off  ·  settings cooloff <minutes>  ·  settings cap <n>  ·  settings quiet <minutes>
           settings manifest files|minutes|copy <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
-          settings handover …  ·  settings brainstorms …
+          settings handover …  ·  settings brainstorms …  ·  settings growth <workspace> [--repository <name>] [mode|asked|off]
               this machine's standing choices: whether a park or an end you did not ask for is said, how long an account
               cools, how long a silent session runs before it is looked in on, the cap, a folder's manifest bounds, whether a
-              terminal's press asks or acts, how long each kind is kept, a hand-over's and a brainstorm's rules; the agents each
+              terminal's press asks or acts, how long each kind is kept, a hand-over's and a brainstorm's rules, the growth
+              switch on opening repositories and rooms (the person's alone); the agents each
               kind of work runs on are `role set`'s. With no verb, each machine setting and its value; a setting's verb with no
               value says that one.
         """;

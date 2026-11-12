@@ -76,6 +76,7 @@ public sealed class LineStandingsTests
         var left = new QuestView("q1", "game", "engine", "The work of #q1", "A body.", "Done")
         {
             Answers = [new(1, "met", null, null), new(2, null, "the part is held", "their words")],
+            Held = true,
         };
         var newest = Record("5e55a001", "completed", 10, line: "5e55a000", from: "5e55a000", fromWhy: "press");
         newest["quest"] = "q1";
@@ -85,6 +86,24 @@ public sealed class LineStandingsTests
 
         Assert.Equal(SessionGroup.Done, earlier.State);
         Assert.Equal(new LineStanding(SessionGroup.NeedsYou, SessionGroup.NeedsYou, SessionReason.Left, "5e55a001", LineRole.Part), earlier.Line);
+        Assert.Equal(earlier.Line, Row(look, "5e55a001").Line);
+    }
+
+    /// <summary>The person's yes on the departure is their word on it: the line reads done, part left, and asks nothing.</summary>
+    [Fact]
+    public void A_line_whose_quest_the_person_accepted_a_departure_of_reads_done_part_left_on_every_part()
+    {
+        var left = new QuestView("q1", "game", "engine", "The work of #q1", "A body.", "Done")
+        {
+            Answers = [new(1, "met", null, null), new(2, null, "the part is held", "their words")],
+        };
+        var newest = Record("5e55a001", "completed", 10, line: "5e55a000", from: "5e55a000", fromWhy: "press");
+        newest["quest"] = "q1";
+        var look = SessionLook.From(new JsonArray(Record("5e55a000", "stopped", 0), newest).ToJsonString(), [left], [], _ => 0);
+
+        var earlier = Row(look, "5e55a000");
+
+        Assert.Equal(new LineStanding(SessionGroup.Done, SessionGroup.Done, SessionReason.PartLeft, "5e55a001", LineRole.Part), earlier.Line);
         Assert.Equal(earlier.Line, Row(look, "5e55a001").Line);
     }
 

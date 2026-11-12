@@ -322,8 +322,10 @@ public sealed class SessionsSuperviseTests : SuperviseHarness
         // The seeded rules are the person's, so each count says the rule it is held to, at the place it stands.
         Assert.StartsWith("- count:answers-alone=0 (exact): answers alone in a row, from its events; the person's rule for ", lines[at + 2], StringComparison.Ordinal);
         Assert.EndsWith("Daoris waits for the person after 2", lines[at + 2], StringComparison.Ordinal);
-        Assert.StartsWith("- count:failures=0 (exact): failed sessions on this quest, from the service's records; the person's rule for ", lines[at + 3], StringComparison.Ordinal);
-        Assert.EndsWith("Daoris waits for the person after 3", lines[at + 3], StringComparison.Ordinal);
+        Assert.StartsWith("- count:tries=0 (exact): tries its last part made while the service did not answer, from its last part's end; the person's rule for ", lines[at + 3], StringComparison.Ordinal);
+        Assert.EndsWith("Daoris waits for the person after 5", lines[at + 3], StringComparison.Ordinal);
+        // A conversation has no quest to fail, so the line has no failures count.
+        Assert.DoesNotContain(lines[at..end], line => line.StartsWith("- count:failures", StringComparison.Ordinal));
         Assert.Contains("- session s1: opened", lines[at..end]);
         Assert.True(Array.FindIndex(lines, line => line.StartsWith("<<< the branch's commits", StringComparison.Ordinal)) > end);
     }

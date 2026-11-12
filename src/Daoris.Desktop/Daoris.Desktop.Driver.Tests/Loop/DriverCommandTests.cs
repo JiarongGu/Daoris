@@ -520,7 +520,7 @@ public sealed class DriverCommandTests
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
         var check = program.IndexOf("QuestCheckCommand.Asks(questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest list ", StringComparison.Ordinal);
         Assert.True(check > log && questUsage > check, $"`quest check` asked for at {check}, the log opened at {log}, the quest's usage at {questUsage}");
         Assert.Contains("QuestCheckConsole.RunAsync(questArgs, log)", program);
         Assert.Contains("quest check <id> [--commit <sha>]", program[questUsage..]);
@@ -542,12 +542,12 @@ public sealed class DriverCommandTests
         // The person's reopen and go-on (QuestReopenCommandTests) are routed the same way, before the quest's usage.
         var reading = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var reopen = reading.IndexOf("QuestReopenCommand.Asks(questArgs)", StringComparison.Ordinal);
-        Assert.True(reopen > 0 && reading.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal) > reopen);
+        Assert.True(reopen > 0 && reading.IndexOf("usage: daoris quest list ", StringComparison.Ordinal) > reopen);
         Assert.Contains("QuestReopenCommand.PressAsync(reopenAsk, reopenClient,", reading);
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var done = program.IndexOf("QuestDoneCommand.Asks(questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest list ", StringComparison.Ordinal);
         Assert.True(done > 0 && questUsage > done, $"`quest done` asked for at {done}, the quest's usage at {questUsage}");
         Assert.Contains("QuestDoneCommand.Read(questArgs, out var doneProblem)", program);
         Assert.Contains("QuestDoneCommand.PressAsync(doneAsk, doneClient,", program);
@@ -579,7 +579,7 @@ public sealed class DriverCommandTests
         Assert.True(askClear > 0 && askWords > askClear, $"`ask --clear` asked for at {askClear}, an ask's words at {askWords}");
         Assert.Contains("HistoryConsole.RunAsync(WorkScope.Ask, clearArgs, log)", program);
         var questClear = program.IndexOf("HistoryCommand.Asks(WorkScope.Quest, questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest list ", StringComparison.Ordinal);
         Assert.True(questClear > 0 && questUsage > questClear, $"`quest clear` asked for at {questClear}, the quest's usage at {questUsage}");
         Assert.Contains("HistoryConsole.RunAsync(WorkScope.Quest, questArgs, log)", program);
         Assert.Contains("quest clear <id> [--failed] [--yes]", program[questUsage..]);
