@@ -104,8 +104,10 @@ finishes first and the whole set runs once.
 17. The tests' wall time is measured before it is cut, one gate or class alone on a quiet machine, since a full CI run shares the
     machine between three light gates and a Process lane, which turns a minute of work into ten; no figure taken beside other runs
     is a measure. The web's unit run uses `vmThreads` and keeps its transformed modules (`fsModuleCache`), and its setup loads no
-    Storybook; the driver's grid tests run eight wide through `GridRun`, and its two structure classes share one analysis
-    (`DriverTree.Shared`). The figures, by gate and by class, and the cuts tried are OPTIMIZE1d's in the archive. (from OPTIMIZE1d)
+    Storybook; the driver's grid tests run eight wide through `GridRun`, its two structure classes share one analysis
+    (`DriverTree.Shared`), and that analysis and the declarations' censuses read one compilation of each shipping desktop project a
+    run (`DesktopCompilations.Of`, counted by `SharedCompileTests`), each tree bound in one semantic model every census shares
+    (`SharedModels`). The figures, by gate and by class, and the cuts tried are OPTIMIZE1d's in the archive. (from OPTIMIZE1d)
 18. Every process Daoris's work runs is under the application in the system's tree, since Windows lists a process under its
     parent only while that parent runs. A terminal verb that starts heavy work (`daoris gate run`, a gate or a command of the
     caller's) asks the running Daoris, which runs it as its own child and the verb only waits; where none takes it the verb says
