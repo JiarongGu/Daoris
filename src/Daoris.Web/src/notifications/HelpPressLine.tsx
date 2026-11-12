@@ -13,13 +13,17 @@ function PressLine({ press, busy, onOpen, onReverse }: {
   onReverse: (press: HelpPressNow) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const act = t(routeKey(press.module, press.route), { defaultValue: press.route });
+  const act = press.step
+    ? t('notifications.helpPressed.step', {
+      act: t(`notifications.helpPressed.stepAct.${press.step.act}`, { defaultValue: press.step.act }), node: press.step.node, run: press.target ?? '',
+    })
+    : t(routeKey(press.module, press.route), { defaultValue: press.route });
   const reverse = press.asked ? null : helpReverse(press);
   return (
     <li data-help-press={press.id} className="flex flex-wrap items-center justify-between gap-2 text-small">
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
         <span className="text-ink">{act}</span>
-        {press.target && <span className="text-ink-soft">{press.target}</span>}
+        {press.target && !press.step && <span className="text-ink-soft">{press.target}</span>}
         {press.place && press.place.kind !== 'machine' && (
           <span data-help-place="" className="text-ink-soft">
             {t(press.beyond ? 'notifications.helpPressed.beyond' : 'notifications.helpPressed.in', {

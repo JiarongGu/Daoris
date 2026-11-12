@@ -85,6 +85,8 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>A check's newest attempt held unknown for the person, or settled by their stop; null on any other step.</summary>
     public WorkflowRunHeld? Held { get; init; }
 
+    public RunStepThrough? Through { get; init; }
+
     /// <summary>
     /// The requests the work's sessions made, on the work step only: the quests they published and the helpers they
     /// asked. Null where there are none.

@@ -284,7 +284,9 @@ of everything it handed, section by section.
     breadcrumb marking a focus outside the window's workspace, a home that is not the window's, a change waiting and a place
     gone (`FocusCrumb.tsx`). A choice is sent at once (`HELP_FOCUS`). Chosen before its first words the focus is its first,
     carried by the start where none was opened ahead, and an agent opened ahead under another place ends at once so the page
-    opens it ahead again (`reopens`); chosen after, it waits for the next words: a running agent ends at its turn's end, or
+    opens it ahead again (`reopens`); a word of the person's shown waiting, or held in its turns while the agent still opens,
+    is a first word said (`HelpFocusAhead.Spoken`), so a choice then reopens nothing and the word is answered first.
+    Chosen after, it waits for the next words: a running agent ends at its turn's end, or
     now if idle, as for an access change, and the words resume it under the new focus, a gone place widened, the agent told
     in one line ahead of them. A new conversation takes the window's workspace, this machine in a window on every workspace,
     which asks nothing; one from *New conversation* in the head takes the shown one's applied focus. A conversation of

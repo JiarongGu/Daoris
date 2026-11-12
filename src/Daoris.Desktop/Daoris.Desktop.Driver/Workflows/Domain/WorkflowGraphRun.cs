@@ -218,6 +218,7 @@ public static class WorkflowGraphRuns
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
                 Held = checkHeld?.Held,
+                Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
                 Wait = NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
