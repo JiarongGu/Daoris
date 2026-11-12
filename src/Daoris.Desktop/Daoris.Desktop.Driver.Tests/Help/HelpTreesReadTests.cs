@@ -265,13 +265,22 @@ public sealed class HelpTreesReadTests : IDisposable
         var root = await RepositoryAsync("engine");
         var sessionTrees = new SessionTrees(_home);
         var trees = new List<(string, int, int)>();
-        for (var i = 0; i < count; i++)
+        var opened = await TreeFarm.OpenAsync(sessionTrees, _home, root, "engine", "default", count);
+        // Four commits at once, each in a tree of its own: the width a git half's starts stop gaining past.
+        using var four = new SemaphoreSlim(4);
+        await Task.WhenAll(Enumerable.Range(0, count).Select(async i =>
         {
-            var tree = (await sessionTrees.OpenAsync(root, "engine", "default")).Path;
-            if (i % 3 == 0) await CommitAsync(tree, $"work-{i}.txt", $"work {i}");
+            var tree = opened[i];
+            if (i % 3 == 0)
+            {
+                await four.WaitAsync();
+                try { await CommitAsync(tree, $"work-{i}.txt", $"work {i}"); }
+                finally { four.Release(); }
+            }
+
             if (i % 5 == 0) await File.WriteAllTextAsync(Path.Combine(tree, "draft.txt"), "half done\n");
-            trees.Add((tree, i % 3 == 0 ? 1 : 0, i % 5 == 0 ? 1 : 0));
-        }
+        }));
+        for (var i = 0; i < count; i++) trees.Add((opened[i], i % 3 == 0 ? 1 : 0, i % 5 == 0 ? 1 : 0));
 
         return (root, Part([.. trees.Select(each => each.Item1)]), trees);
     }
