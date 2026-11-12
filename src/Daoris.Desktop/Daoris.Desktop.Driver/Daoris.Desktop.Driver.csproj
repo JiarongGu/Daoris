@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="../../Daoris.Ports/Daoris.Ports.csproj" />
     <Using Include="Daoris.Ports.Browser" />
+    <Using Include="Daoris.Ports.Clocks" />
   </ItemGroup>
 
   <!-- The desktop store's package and its native bundle (FOUNDATION1 z-i, D212 §13.2), pinned at the service's versions in

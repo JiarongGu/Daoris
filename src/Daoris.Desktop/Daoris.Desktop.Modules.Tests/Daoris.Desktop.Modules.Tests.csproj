@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
     <Using Include="Daoris.Ports.Browser" />
+    <Using Include="Daoris.Ports.Clocks" />
     <!-- The generator of the page's window routes, whose output is held to the marks it reads. -->
     <ProjectReference Include="..\..\..\tools\contracts\ContractsGen.csproj" />
   </ItemGroup>

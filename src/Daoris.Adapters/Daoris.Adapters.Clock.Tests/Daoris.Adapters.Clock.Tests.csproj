@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Layers.props" />
+
+  <!--
+    The dependency tests of the clock adapter: the contract cases run on the machine's clock, and its own. This is the package's real
+    side, so it waits on the machine and leaves the banned list to the application and the libraries.
+  -->
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Daoris.Adapters.Clock.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="$(MSBuildThisFileDirectory)..\..\BannedSymbols.Effects.txt" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Adapters.Clock\Daoris.Adapters.Clock.csproj" />
+    <ProjectReference Include="..\..\Daoris.Testing\Daoris.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

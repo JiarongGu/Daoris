@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkAmbient, checkBudget, checkReferences, parseTrx, scanAmbient } from './layers-census.mjs';
+import { checkAmbient, checkBudget, checkClock, checkReferences, parseTrx, scanAmbient, scanClock } from './layers-census.mjs';
+import { clockSites } from './layers-census/clock.mjs';
 
 const project = (refs = [], packages = []) => `<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>${packages.map((name) => `<PackageReference Include="${name}" />`).join('')}</ItemGroup>
@@ -15,7 +16,41 @@ const tree = (projects) => ({
   read: (path) => projects[path],
 });
 
-const clean = { packages: {}, ambient: {}, slowTests: {} };
+const clean = { packages: {}, ambient: {}, clock: {}, slowTests: {} };
+
+test('LAYERS1: the wall clock and a real wait are counted, a clock handed or an infinite wait is not, and a comment is not', () => {
+  const text = [
+    'var a = DateTime.UtcNow; var b = DateTimeOffset.Now;',
+    'Thread.Sleep(300);',
+    'await Task.Delay(50);',
+    'await Task.Delay(TimeSpan.FromSeconds(1), ct);',
+    'await Task.Delay(span, clock, ct);',
+    'await Task.Delay(Timeout.Infinite, ct);',
+    'var c = clock ?? TimeProvider.System;',
+    '// DateTime.UtcNow in a comment',
+    '/// Thread.Sleep(1) in a doc line',
+  ].join('\n');
+  assert.equal(clockSites(text), 6);
+});
+
+test('LAYERS1: an application or unit-test file over its clock allowance, or named by none, is a breach; one that fell is told to write the list', () => {
+  const found = tree({
+    [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
+    [at(DESKTOP, 'Daoris.Desktop.Modules')]: project(),
+    [`${DESKTOP}/Daoris.Desktop.Driver/Loop/A.cs`]: 'var a = DateTime.UtcNow;',
+    [`${DESKTOP}/Daoris.Desktop.Driver/Loop/B.cs`]: 'var a = 1;',
+    [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`]: 'Thread.Sleep(5); Thread.Sleep(5);',
+    [`${DESKTOP}/Daoris.Desktop.Modules/Loop/D.cs`]: 'var a = DateTime.UtcNow;',
+  });
+  const files = scanClock(found);
+  assert.deepEqual(Object.keys(files), [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`, `${DESKTOP}/Daoris.Desktop.Driver/Loop/A.cs`]);
+  const problems = checkClock(files, { [`${DESKTOP}/Daoris.Desktop.Driver.Tests/Loop/CTests.cs`]: 1, [`${DESKTOP}/Daoris.Desktop.Driver/Loop/B.cs`]: 1 });
+  assert.equal(problems.length, 3, problems.join('\n'));
+  assert.match(problems[0], /CTests\.cs reads the wall clock or waits for real 2 times, over its allowance of 1/);
+  assert.match(problems[1], /A\.cs reads the wall clock or waits for real 1 times, over its allowance of 0/);
+  assert.match(problems[2], /B\.cs fell to 0 from its allowance of 1/);
+});
 
 test('LAYERS1: an application or unit-test project that references an adapter is named, and a root may', () => {
   const found = tree({

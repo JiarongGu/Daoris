@@ -97,7 +97,14 @@ public sealed class DriverLoop(
     /// the same rule, and reachable only over this bridge. Watched from the first event for the call each
     /// session's agent is inside, which <c>SESSION_GROUPS</c> answers whether or not a window watched it begin.
     /// </summary>
-    public SessionEvents Events { get; } = RunningCalls.Watched(new SessionEvents(DaorisHome.Entry(HomeOfChoices(), HomeEntry.Sessions)));
+    public SessionEvents Events { get; } = Quiet(RunningCalls.Watched(new SessionEvents(DaorisHome.Entry(HomeOfChoices(), HomeEntry.Sessions))));
+
+    // The watcher counts quiet on the machine's clock, which stops while the machine sleeps.
+    private static SessionEvents Quiet(SessionEvents events)
+    {
+        SessionWatch.Of(events).Clock = Daoris.Adapters.Clock.MachineClock.Quiet;
+        return events;
+    }
 
     /// <summary>
     /// What sessions consumed: machine-local by the same rule as the console and the
