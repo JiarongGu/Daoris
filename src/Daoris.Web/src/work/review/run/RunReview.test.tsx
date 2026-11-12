@@ -39,6 +39,16 @@ describe('the run\'s review', () => {
     })));
   });
 
+  it('says a refused Accept in the driver\'s own sentence inside the ask, and changes nothing', async () => {
+    const refused = "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.";
+    const onWord = vi.fn((ask: NodeWordAsk): Promise<NodeWordAnswer> => Promise.resolve({ run: ask.run, node: ask.node, act: ask.act, done: false, message: refused }));
+    render(<RunReview answer={BRANCH_REVIEW} viewed={marks} onWord={onWord} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    expect(await screen.findByText(/not clean \(2 paths\)/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
+  });
+
   it('sends back with the person\'s words to the part they choose, as the changes word', async () => {
     const onWord = vi.fn(kept);
     render(<RunReview answer={BRANCH_REVIEW} viewed={marks} onWord={onWord} />);

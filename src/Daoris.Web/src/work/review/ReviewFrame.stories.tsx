@@ -4,12 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
-import { storyWidths } from '../../design/storyWidths';
 import { Button, EmptyState } from '../../design/ui';
-import { EntryAccept } from './EntryAccept';
 import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
-import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
+import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 // The review while git reads, as the side bar holds it at a usual width: loading at once, slow with how long,
 // each kind of refusal with its next move, loaded, and reading again behind the last answer — in light and dark, and
@@ -263,7 +261,6 @@ function NothingBeyond() {
         <EmptyState icon="check" headline={t('work.review.even.headline')} body={t('work.review.even.body', { line: 'main' })} />
       </div>
       <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
-        <NothingToLand line="main" />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="primary">{t('work.review.discard')}</Button>
         </div>
@@ -272,33 +269,7 @@ function NothingBeyond() {
   );
 }
 
-/**
- * The review's foot, where the person's reading stops, draws the session's *Accept all* in the part's
- * own *Accept*'s place, with *Discard tree* beside it, at the width the view is given.
- */
-function SessionAcceptAtTheFoot({ asking = false }: { asking?: boolean }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(asking);
-  return (
-    <footer className="grid w-full shrink-0 gap-2 border border-line bg-page px-3 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <EntryAccept scope="entry" offered={3} open={open} onOpen={setOpen} draw="press" onLand={() => {}} />
-        <Button>{t('work.review.discard')}</Button>
-      </div>
-      <EntryAccept scope="entry" offered={3} open={open} onOpen={setOpen} draw="ask" onLand={() => {}} />
-    </footer>
-  );
-}
-
-export const SessionAcceptAtTheFootWide: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.wide] };
-export const SessionAcceptAtTheFootHalf: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half] };
-export const SessionAcceptAtTheFootNarrow: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.narrow] };
-export const SessionAcceptAtTheFootChinese: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half, chinese] };
-export const SessionAcceptAtTheFootNarrowChinese: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.narrow, chinese] };
-export const SessionAcceptAtTheFootDark: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half, dark] };
-export const SessionAcceptAtTheFootAskingNarrowDark: Story = { render: () => <SessionAcceptAtTheFoot asking />, decorators: [storyWidths.narrow, dark] };
-
-/** Nothing beyond the line, where "Nothing landed" would be false, and nothing to land. */
+/** Nothing beyond the line, where "Nothing landed" would be false: the tree's discard leads. */
 export const NothingBeyondTheLine: Story = { render: () => <NothingBeyond /> };
 
 /** Nothing beyond the line, in dark. */

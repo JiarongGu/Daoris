@@ -112,16 +112,6 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
   );
 }
 
-/** What the review's foot says where *Accept* would be, for a tree holding nothing beyond its line. */
-export function NothingToLand({ line }: { line: string }) {
-  const { t } = useTranslation();
-  return (
-    <p className="m-0 text-small text-ink-soft">
-      <Inline text={t('work.review.nothingToLand', { line })} />
-    </p>
-  );
-}
-
 /**
  * What the review read: the count and how many the reader has viewed, the layout, every file in one scroll (a
  * multibuffer) and the host's bound, said as it said it. The reader's marks arrive as props: which file

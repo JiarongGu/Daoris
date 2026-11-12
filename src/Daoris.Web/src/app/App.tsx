@@ -373,12 +373,6 @@ export function App() {
               compose={compose}
               // The composer's quiet press: its draft in Quick Ask, for the person to send.
               onMakeTask={(text, focus) => askQuickly(text, true, focus)}
-              // Sending work back is publishing a request, which is the platform's own door — so
-              // this goes to the composer rather than growing a second one here.
-              onSendBack={(repository) => {
-                setOpening({ from: repository });
-                open('quests');
-              }}
               // A parked intake's answer is on its ask: the same door the band's ask rows use.
               onAnswerAsk={openAsk}
               // A quest on the chain, or one the session asked, opens where quests are read.

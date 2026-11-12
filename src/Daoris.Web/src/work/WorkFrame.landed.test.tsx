@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -833,17 +833,6 @@ describe('reviewing what a session landed', () => {
     expect(await screen.findByText(/work is not on this machine/)).toBeTruthy();
   });
 
-  /** A session that committed nothing changed nothing — an answer, not an empty list. */
-  it('says a session landed nothing rather than showing an empty diff', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) =>
-      (type === 'SESSION_DIFF' ? { ...DIFF, files: [] } : DRIVER_STATE));
-
-    show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
-
-    expect(await screen.findByText('Nothing landed')).toBeTruthy();
-  });
-
   /** A tree holding only uncommitted work shows it, and does not say nothing landed. */
   it('shows a session\'s uncommitted work where it committed nothing', async () => {
     const uncommitted = { files: [{ path: 'src/draft.ts', status: 'modified', added: 1, removed: 0, patch: '@@ -1 +1 @@\n-a\n+b' }], truncated: false };
@@ -895,42 +884,6 @@ describe('acting on what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     await screen.findByText('src/chunk.ts');
   };
-
-  /** The pane says where a press sends the work before it is pressed, in the driver's plan. */
-  it('says before the press that accepting puts the work on the branch the rule names', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', accept: ACC };
-      return DRIVER_STATE;
-    });
-
-    await review();
-
-    expect(await screen.findByText(/for you to push and open a pull request from/)).toBeTruthy();
-    expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
-  });
-
-  /** Who pushes it is said before the press — and what would refuse the press, where something would. */
-  it('says before the press which plugin pushes the branch, and what stands in its way', async () => {
-    let plan: Record<string, unknown> = {
-      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request', accept: ACC,
-    };
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LANDING') return plan;
-      return DRIVER_STATE;
-    });
-
-    await review();
-
-    expect(await screen.findByText(/pushes it and opens the pull request\. Nothing is merged/)).toBeTruthy();
-    expect(screen.getByText('github-pull-request', { selector: 'code' })).toBeTruthy();
-    cleanup();
-
-    plan = { ...plan, problem: 'plugin `github-pull-request` is switched off on this machine — `daoris plugin enable github-pull-request` switches it on.' };
-    await review();
-    expect(await screen.findByText(/switched off on this machine/)).toBeTruthy();
-  });
 
   /** The head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
   it('names the branch its tree left and whether its work landed, in the head', async () => {
@@ -1166,9 +1119,9 @@ describe('acting on what a session landed', () => {
 
   /**
    * While a line of work's one Accept lands it, the session's press in the head
-   * and in its review's foot waits, read by the entry the press names, and comes back once it answers.
+   * waits, read by the entry the press names, and comes back once it answers.
    */
-  it('holds the session’s Accept in the head and in its review while its line of work lands', async () => {
+  it('holds the session’s Accept in the head while its line of work lands, and draws none beside its changes', async () => {
     const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
     SESSIONS = [
       { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
@@ -1209,46 +1162,10 @@ describe('acting on what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
-    // The review's foot draws the session's press in the part's place, held while it lands.
-    expect(await review.findByRole('button', { name: 'Accept all 2 parts…' })).toBeDisabled();
+    // The session's changes draw no press of their own: accepting is the review page's.
+    expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
 
     await act(async () => landed({ entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] }));
-    await vi.waitFor(() => expect(review.getByRole('button', { name: 'Accept all 2 parts…' })).toBeEnabled());
-  });
-
-  /**
-   * A landing pressed in the head is not the head's alone: the review must not
-   * offer *Accept* while it runs. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
-   * waits, as it would for its own press, until the landing answers.
-   */
-  it('holds the review’s Accept as Awaiting its pass… while the head’s Accept is under way', async () => {
-    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-    let landed: (answer: unknown) => void = () => {};
-    invoke.mockImplementation((_module: string, type: string) => {
-      if (type === 'SESSION_GROUPS') {
-        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
-          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
-      }
-      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC });
-      if (type === 'WORKFLOW_NODE') return new Promise((resolve) => { landed = resolve; });
-      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
-      return Promise.resolve(DRIVER_STATE);
-    });
-
-    show('s1a2b3c4', vi.fn());
-    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
-    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
-    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
-    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
-    const review = within(await screen.findByRole('tabpanel'));
-    await review.findByText('src/chunk.ts');
-    expect(await review.findByRole('button', { name: 'Awaiting its pass…' })).toBeDisabled();
-    expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
-
-    await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
-    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Awaiting its pass…' })).toBeNull());
   });
 
   /**
@@ -1630,47 +1547,6 @@ describe('acting on what a session landed', () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('its work is on `main` by content (a squash merge)')));
   });
 
-  it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LANDING') return { accept: ACC };
-      if (type === 'WORKFLOW_NODE') {
-        return { session: 's1a2b3c4', done: true, message: 'merged `daoris/x` into `main` — 2 commit(s).' };
-      }
-      return DRIVER_STATE;
-    });
-
-    await review();
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
-
-    // A landing waits as long as one replay may take (`pressBound`).
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: ACC_PRESS, timeoutMs: 7 * 60_000 });
-    expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
-  });
-
-  /**
-   * A refusal is an ANSWER and its sentence is the contract — "the checkout is not clean" is the
-   * `reaching-in` guard speaking, and rewording it here would be a second copy of the reason.
-   */
-  it('renders a refused merge verbatim and changes nothing', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'LANDING') return { accept: ACC };
-      if (type === 'WORKFLOW_NODE') {
-        return {
-          session: 's1a2b3c4', done: false,
-          message: "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.",
-        };
-      }
-      return DRIVER_STATE;
-    });
-
-    await review();
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
-
-    expect(await screen.findByText(/not clean \(2 paths\)/)).toBeTruthy();
-  });
-
   /**
    * 🔴 The one that matters most: a first press NEVER forces. The unforced call is what produces the
    * sentence naming what would be lost, and only then is a destructive confirm offered.
@@ -1751,27 +1627,8 @@ describe('acting on what a session landed', () => {
     expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
   });
 
-  /** Sending it back is a door into the platform's own composer, never a second publish path. */
-  it('hands the repository to whoever opens the quest composer', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) =>
-      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
-    const onSendBack = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider>
-          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Send back…' }));
-
-    expect(onSendBack).toHaveBeenCalledWith('engine');
-  });
-
-  it('offers no send-back door where none was given', async () => {
+  /** Sending work back is the review page's, never the session's own changes. */
+  it('offers no send-back door beside a session’s own changes', async () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
 
@@ -1800,18 +1657,16 @@ describe('acting on what a session landed', () => {
   /**
    * A chat in the repository's OWN checkout names that checkout as its
    * tree, and Review must not offer to merge it or to discard it. The tree layer refuses both — a
-   * checkout is never a side effect's to delete — so they would be moves that could only refuse. The
-   * work can still be sent back as a quest: that is about the work, not the tree.
+   * checkout is never a side effect's to delete — so they would be moves that could only refuse.
    */
-  it('offers no tree acts on a session in the repository\u2019s own checkout, and still sends it back', async () => {
+  it('offers no tree acts on a session in the repository\u2019s own checkout', async () => {
     SESSIONS = [{ ...DRIVEN, tree: 'C:/somewhere/engine' }];
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
-    const onSendBack = vi.fn();
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <Tooltip.Provider>
-          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} />
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
@@ -1820,7 +1675,6 @@ describe('acting on what a session landed', () => {
 
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Send back…' }));
-    expect(onSendBack).toHaveBeenCalledWith('engine');
+    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
   });
 });
