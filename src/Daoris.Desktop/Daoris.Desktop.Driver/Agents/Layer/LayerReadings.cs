@@ -133,6 +133,7 @@ internal sealed class LayerReadings(
         PlanUpdated plan => [Said(new SessionEvent { Kind = SessionEventKind.Plan, Entries = [.. plan.Entries.Select(Entry)] })],
         UsageFinal usage => Counted(usage),
         UsageLive live => Report(() => _report.Held(live)),
+        AgentAllowanceReport allowance => LayerAllowance.Info(allowance) is { } info ? [new WireReading.WindowsSaid(info)] : [],
         AgentToolDenied denial => Report(() => _report.Denied(denial, _titles)),
         AgentModelUsage byModel => Report(() => _report.Split(byModel)),
         ContextReading figures when figures.UsedTokens is not null || figures.WindowTokens is not null => [LayerTurnReport.Figures(figures)],

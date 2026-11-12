@@ -7,9 +7,9 @@ namespace Daoris.Driver;
 /// <c>By</c>, the restriction and the delivery), translated once into Daoris's <see cref="NormalizedFailure"/>, the one place one is built.
 /// </summary>
 /// <remarks>
-/// <para>The layer's recovery keeps a kind and an instant it resolved, never how the reset is stated, so the instant reaches the cool-off
-/// bounds as <see cref="ResetPrecision.Resolved"/>, with no grace; the stated reset, its window, what is hit and an access failure's
-/// reason are the later parts'. The delivery is read from what the prompt's own turn
+/// <para>A reset the layer states reaches the cool-off bounds as it is stated (<see cref="LayerStatedReset"/>), an instant it only resolved
+/// as <see cref="ResetPrecision.Resolved"/>, with no grace; the restriction's window and scope name the window and what is hit, and an
+/// access failure's two readings stay apart. The delivery is read from what the prompt's own turn
 /// showed (<see cref="LayerDelivery"/>), the layer's own stamp standing only for a terminal that states no turn.</para>
 /// </remarks>
 internal static class LayerFailures
@@ -32,14 +32,15 @@ internal static class LayerFailures
         var restriction = failure.Restriction is { } held
             ? new FailureRestriction(CauseOf(held.Cause), SubjectOf(held.Subject), RecoveryOf(held.Recovery))
             : null;
-        var limit = kind == AgentErrorKind.Limit ? LimitOf(failure.By, restriction?.Recovery, seen, coolOff) : null;
+        var limit = kind == AgentErrorKind.Limit ? LimitOf(failure.By, failure.Restriction, restriction?.Recovery, seen, coolOff) : null;
+        var access = kind == AgentErrorKind.Access ? AccessOf(failure.AccessReadings) : null;
 
         return new NormalizedFailure(
             kind,
             new DoorFailure(door, null, kind.ToString().ToLowerInvariant(), null, words, where),
             by,
             limit,
-            Access: null,
+            access,
             restriction,
             LayerDelivery.Of(turn) ?? DeliveryOf(failure.Delivery));
     }
@@ -58,13 +59,41 @@ internal static class LayerFailures
     /// case, never a made-up date) or none, the default, not stated. What is hit is the entry that read it, as a limit read by its
     /// code is read.
     /// </summary>
-    private static LimitSeen LimitOf(string entry, FailureRecovery? recovery, DateTimeOffset seen, TimeSpan coolOff)
+    private static LimitSeen LimitOf(
+        string entry, AgentRestriction? held, FailureRecovery? recovery, DateTimeOffset seen, TimeSpan coolOff)
     {
-        var stated = recovery is { Basis: RecoveryBasis.ResetAt or RecoveryBasis.RetryNotBefore, At: { } at }
-            ? new StatedReset(at, ResetPrecision.Resolved, AssumedZone: false)
-            : null;
-        return ResetBounds.Limit(entry, window: null, stated, seen, coolOff);
+        var stated = LayerStatedReset.Of(held?.Recovery.Stated, recovery, seen);
+        var window = held?.Window is { Length: > 0 } word ? ClaudeWindows.Words.Windows.GetValueOrDefault(word, word) : null;
+        // A scope names what is hit, which is what a model family's cool-off reads it from.
+        return ResetBounds.Limit(held?.Scope is { Length: > 0 } scope ? scope : entry, window, stated, seen, coolOff);
     }
+
+    /// <summary>
+    /// The field's reading and the words' reading of an access failure, kept apart as the account readers each read their own; null where
+    /// the layer states neither.
+    /// </summary>
+    private static AccessEvidence? AccessOf(AgentAccessReadings? readings) => readings is null
+        ? null
+        : new AccessEvidence(
+            ReasonOf(readings.ByField),
+            WordsSignIn: readings.ByWords == Lyntai.Agents.AccessReason.SignInAgain,
+            WordsRefused: readings.ByWords == Lyntai.Agents.AccessReason.CredentialRefused);
+
+    private static Daoris.Driver.AccessReason? ReasonOf(Lyntai.Agents.AccessReason? reason) => reason switch
+    {
+        Lyntai.Agents.AccessReason.SignInAgain => Daoris.Driver.AccessReason.SignInAgain,
+        Lyntai.Agents.AccessReason.CredentialRefused => Daoris.Driver.AccessReason.CredentialRefused,
+        _ => null,
+    };
+
+    private static OwnerNeed NeedOf(OwnerActionReason reason) => reason switch
+    {
+        OwnerActionReason.Refill => OwnerNeed.Refill,
+        OwnerActionReason.SignIn => OwnerNeed.SignIn,
+        OwnerActionReason.Grant => OwnerNeed.Grant,
+        OwnerActionReason.Configure => OwnerNeed.Configure,
+        _ => OwnerNeed.Unknown,
+    };
 
     private static FailureCause CauseOf(RestrictionCause cause) => cause switch
     {
@@ -89,7 +118,7 @@ internal static class LayerFailures
     {
         RecoveryKind.ResetAt => new FailureRecovery(RecoveryBasis.ResetAt, recovery.At),
         RecoveryKind.RetryNotBefore => new FailureRecovery(RecoveryBasis.RetryNotBefore, recovery.At),
-        RecoveryKind.OwnerAction => new FailureRecovery(RecoveryBasis.OwnerAction),
+        RecoveryKind.OwnerAction => new FailureRecovery(RecoveryBasis.OwnerAction) { Need = NeedOf(recovery.Reason) },
         _ => new FailureRecovery(RecoveryBasis.Unknown),
     };
 
