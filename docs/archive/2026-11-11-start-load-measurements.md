@@ -2,7 +2,7 @@
 
 **Standing:** evidence. It reads the installed window's machine log for 2026-11-11 and its data folder's layout, both read only, and
 the service's and the desktop's stores from a copy in a gitignored scratch folder. The fixes it names are on STARTPERF1's branches;
-the [database design](2026-11-11-start-load-database-design.md) beside it is proposed. Times are from the process's start unless a
+the [database design](../2026-11-11-start-load-database-design.md) beside it is proposed. Times are from the process's start unless a
 line says otherwise.
 
 ## 1. What the data folder holds

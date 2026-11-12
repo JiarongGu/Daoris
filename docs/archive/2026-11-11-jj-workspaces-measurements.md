@@ -1,6 +1,6 @@
 # Evidence: jj workspaces as an isolation kind (PLACEWORK1i's measurement, 2026-11-11)
 
-The measurement the design's row 1i asks for before `JjIsolation` is built ([place-work design](2026-11-10-place-work-design.md) §4.4,
+The measurement the design's row 1i asks for before `JjIsolation` is built ([place-work design](../2026-11-10-place-work-design.md) §4.4,
 §4.5, §9): whether `jj` is installed or installable here, what a workspace per session costs on this machine, and how its changes come
 back. Nothing in the product changed. Everything below was run on 2026-11-11 with jj 0.46.0 and git 2.53 (Windows 11, NTFS, the
 repository's own volume) in a gitignored scratch folder, with `JJ_CONFIG`, `JJ_USER` and `JJ_EMAIL` set per command so no user

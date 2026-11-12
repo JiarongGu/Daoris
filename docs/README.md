@@ -68,7 +68,6 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-24-chat-flow-design.md`|Accepted design: chat runs workflow
 |`2026-10-24-event-hook-design.md`|Accepted design: events to outside agent
 |`2026-10-24-switch-context-design.md`|Proposed design: moves keep context
-|`2026-10-27-provider-infrastructure-design.md`|Accepted D213 amendment: AGENTINFRA1
 |`2026-10-26-tree-pool-design.md`|Proposed design: rooms first, with a kept-tree fallback (D214)
 |`2026-10-26-tree-pool-reads.md`|Evidence: TREEPOOL1 reads
 |`2026-10-28-integration-design.md`|Accepted design: integration run (D215)
@@ -94,22 +93,17 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-05-merge-tool-design.md`|Proposed design: MERGETOOL1 (D237)
 |`2026-11-06-terminal-conversation-design.md`|Proposed design: RPC1g (D238)
 |`2026-11-06-map-ux-design.md`|Proposed design: MAPUX1 (D239)
-|`2026-11-10-isolation-beyond-git-survey.md`|Survey: PLACEWORK1a, parallel work beyond git (D254)
 |`2026-11-10-place-work-design.md`|Proposed design: PLACEWORK1 (D254)
-|`2026-11-11-jj-workspaces-measurements.md`|Evidence: PLACEWORK1i, jj workspaces measured
-|`2026-11-11-start-load-measurements.md`|Evidence: STARTPERF1, a start to a full Sessions and Quests view measured
 |`2026-11-12-test-diet-census.md`|Census: TESTDIET1, the test code and fixtures measured, with the cut in the order of what it saves
 |`2026-11-11-start-load-database-design.md`|Proposed design: STARTPERF1, an index over the session events and a quests' change mark (D275)
 |`2026-11-06-event-channel-design.md`|Proposed design: EVENTHOOK1d/e, CHANNELJOIN1 (D244)
 |`2026-11-06-event-hook-measurements.md`|Evidence: EVENTHOOK1a measured
-|`2026-11-11-placework1g-clone-measurements.md`|Evidence: PLACEWORK1g, block clones on a Dev Drive measured
 |`2026-11-06-node-kit-design.md`|Proposed design: NODEKIT1 (D247)
 |`2026-11-06-lyntai-requests.md`|Quest text: needs of Lyntai's agent layer (D248)
 |`2026-11-08-supervisor-kinds-design.md`|Proposed design: SUPERVISOR2, supervisors of a kind (D233)
 |`2026-11-09-git-library-design.md`|Proposed design: GITLIB1, one managed git in .NET (round 4)
 |`2026-11-09-process-steps-design.md`|Proposed design, round 3: PROCSTEPS1, generic process steps; landing a composition
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
-|`2026-11-10-agent-free-census.md`|Census: AGENTFREE1, what a session narrows (D253 point 7)
 |`2026-11-11-agent-free-session-evidence.md`|Evidence: AGENTFREE1, a real session's abilities checked from inside
 |`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
 |`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)
@@ -136,7 +130,6 @@ Original dates, versions and measurement limits are kept.
 |`2026-09-21-dsh-evaluation.md`|Evidence: protocol evaluation
 |`2026-09-22-first-deployment-case-study.md`|Evidence: deployment defects
 |`2026-10-03-steer-evidence.md`|Evidence: steering
-|`2026-10-12-usage-read-evidence.md`|Evidence: usage read
 
 ## Records and generated indexes
 
