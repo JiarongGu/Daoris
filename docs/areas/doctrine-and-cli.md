@@ -278,8 +278,7 @@ as a pack.
 6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `Setup/PlaceCommand.cs`' mark and
    `WorkspaceSetupCommand.Forms` (`daoris place … --adoption`): the code reads right.
 7. `CommandWords.cs` (one name, `daoris`) vs the older `CHANGELOG.md` entries that still spell the retired `driver` group (no such
-   group): the code reads right. No comment, guide line or area sentence spells it (`RetiredDriverGroupCensusTests`), and no taught
-   word spells `daoris-driver`; it stays only as the program's file and folder (`app/daoris-driver/`), the ACP and instance hello's
+   group): the code reads right. No taught word spells `daoris-driver`; it stays only as the program's file and folder (`app/daoris-driver/`), the ACP and instance hello's
    client name, and the process an asker is named by. `DaorisDriverWordsTests` holds that, the page's catalogues and the canon's
    skills among its files.
 8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md`' "What is deliberately NOT implemented" (the

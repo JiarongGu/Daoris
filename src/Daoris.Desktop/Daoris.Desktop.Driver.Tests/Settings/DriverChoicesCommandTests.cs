@@ -69,17 +69,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(["engine"], DriverConfig.Load(Config).Drivable);
     }
 
-    [Fact]
-    public async Task Trees_is_no_verb_and_writes_nothing()
-    {
-        var exit = await DriverChoicesCommand.RunAsync(["trees", "engine", "on"], World(), CancellationToken.None);
-
-        Assert.Equal(2, exit);
-        Assert.Contains("`trees` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
-        Assert.DoesNotContain("trees", DriverChoicesCommand.Verbs);
-        Assert.False(File.Exists(Config));
-    }
-
     /// <summary>
     /// *Try again* alone judges from the planner's verdict over the service's snapshot: where the service cannot
     /// be read, nothing is guessed and nothing is written, and the words say how to give the count, as the CLI's did.
@@ -313,47 +302,9 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Contains(DriverChoicesCommand.Usage, _out.ToString(), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// The variable that once named a file no instance holds is read nowhere, so beside a running Daoris on this home a
-    /// change is its route whatever the variable says; nothing is written alone.
-    /// </summary>
-    [Fact]
-    public async Task ONEWAY1c_i_beside_the_running_Daoris_the_retired_variable_writes_nothing_alone()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        await using var running = new InstanceTestHome();
-        var standIn = running.Serve();
-        standIn.Confirming = true;
-        var instance = running.World("daoris");
-        var world = new DriverChoicesWorld
-        {
-            Verbs = DriverChoiceVerbs.All,
-            Instance = new InstanceWorld
-            {
-                Home = running.Home,
-                Environment = name => name == "DAORIS_DRIVER_CONFIG" ? Config : null,
-                BaseDirectory = instance.BaseDirectory,
-                Status = instance.Status,
-                Out = running.Out,
-                Error = running.Error,
-                Verb = "daoris",
-                Answer = instance.Answer,
-                Wait = instance.Wait,
-            },
-            ConfigPath = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig),
-        };
-
-        await DriverChoicesCommand.RunAsync(["hold", "engine"], world, CancellationToken.None);
-
-        Assert.Single(standIn.Presses);
-        Assert.False(File.Exists(Config), "the retired variable's file was written alone");
-    }
-
-    /// <summary>
-    /// Beside the running Daoris a person's press is its route, confirmed in its window, whatever the terminal's environment
-    /// says (the marker refuses, its absence grants nothing, and the window's Confirm is the person's): sent with its
-    /// payload, said in the verb's words from the answer, and this process writes nothing.
-    /// </summary>
+    /// <summary>Beside the running Daoris a person's press is its route, confirmed in its window, whatever the terminal's environment
+    /// says (the marker refuses, its absence grants nothing, the window's Confirm is the person's): sent with its payload, said in the
+    /// verb's words from the answer, and this process writes nothing.</summary>
     [Fact]
     public async Task Beside_the_running_Daoris_a_press_is_its_route_whatever_the_marker_says()
     {

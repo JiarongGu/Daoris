@@ -290,7 +290,32 @@ Rows 2, 5 and 8 each change a fixture or a test's proof and carry their own regr
 section assertions); rows 1, 4, 6, 7 and 9 change no assertion, only how its setting is built, and are measured by step 0's
 figures. Row 3's decision to clear scratch belongs to the owner (a deletion of data under a gitignored folder).
 
-## 9. Closing
+## 9. Results of steps 4 to 9
+
+Bytes are the tracked files under `src/` and `tools/` (the blobs' sizes) before and after each step's commit; lines are the
+commit's own. The wall times are the affected classes alone, after the step, each run bounded; no before-figure was taken for the
+steps that change only how a setting is built, and every class here runs in seconds, so the saving is the bytes and the ways.
+
+| Step | Done | Lines | Bytes | Affected classes alone, after |
+|---|---|---|---|---|
+| 4 | `ScratchFolders` (moved to the driver's tests, linked into the modules') names a home (`New`) beside its retrying `Remove`, and five plugin classes take it; the service's, the HTTP host's and the devkit's tests point the process's temporary folder at `_fixtures/test-homes/temp` as they load (`ScratchTemp`, a module initializer), so the 119 files that root scratch at `Path.GetTempPath()`, the service's own temporary files under test and the processes a test starts leave the OS temp folder with no file edited; `RoutedHandler` (linked) answers each named path, keeps every request and builds a registry body; the four modules stand-ins first moved onto it went back, since the comment gate holds each touched file's comment share and a 13-line handler cut to one line raises it | +184 −92 | +5,331 | 7 driver classes 0.8 s, 4 modules 2 m 4 s (one red on main, below), 5 service 74 s, HTTP 12 s, devkit 28 ms |
+| 5 | The help room keeps `full.md` and the quest instruction keeps `bare` and `full` with their accounts; the other 4 rooms and 15 starts are held section by section against the golden they grow from (the sections each lacks and only it has, the sentence that makes each differing section differ and that the golden's same section lacks, every other section byte for byte in order); the help room's goldens were stale on main and are rewritten from the render | +203 −4,313 | −350,330 | the two golden classes 0.7 s (1 s before, 51 cases to 36) |
+| 6 | `test/doubles/appShell.ts` (`appShellMock`: the window over a mocked shell) and `test/doubles/fetchRoutes.ts` (`stubFetch`, `routed`: fetch by URL prefix, an empty list for the rest), tested; `browserDoor` and `idle` take them | +88 −30 | +2,891 | 3 files 21.7 s |
+| 7 | Not done: the merge tool's end-to-end cases spend their minutes in the tool's own gate runs, and their repository is three git calls (`scratch()` in `merge-branch.test.ts`), so a shared seed saves a `git init` a case | | | |
+| 8 | Deleted: `RetiredDriverGroupCensusTests`, `OldSeamNamesCensusTests`, five `ONEWAY1c_i_*` cases (`RoleStaffingTests`' sixth keeps its live half as `A_root_wires_the_homes_own_file_and_nothing_with_no_home`; `VerbLeasesTests`' live line moves beside the named-wiring case), `Trees_is_no_verb_and_writes_nothing`, `Resume_is_no_verb_of_this_family`, `New_from_a_repository_s_Current_is_retired_and_names_the_conversion`, `The_merge_alone_is_no_route`, and 15 `_propose` absences that `HelpRoomTests`' `EndsWith("_propose")` assertion holds. Kept: `DaorisDriverWordsTests`, which holds a live rule (one command taught) | +9 −275 | −13,518 | 10 driver classes 6 s, `DriverModuleTreesTests` 0.6 s |
+| 9 | One `Poll.cs`: the modules', the service's and the HTTP host's copies go, each project links the driver's | +9 −36 | −1,387 | a Poll-using class each: service 17 s, HTTP 5 s, modules 1 s |
+
+Steps 4 to 9 together: 84 files, +493 −4,746 lines, −356,013 bytes. `DriverModuleGitTests.A_second_ask_is_remembered_by_the_module`
+fails on main with the class's own stand-in as well as with the routed one.
+
+Left, each with its builder in place: the 360 hand-rolled scratch deletes and 579 scratch-home lines (to `ScratchFolders.New` and
+`Remove`), the other stand-in handlers and the 17 `HttpListener` shells (no `LoopbackService` yet), the web's other 141 shell mocks and
+94 fetch stubs, the 23 private `UntilAsync` copies (to `Poll.Until`), one `MovedClock` (the driver's lacks the service's
+`GetTimestamp`, so linking it moves the driver tests' timestamps with `Advance`: a change of behaviour to look at first), the record
+builders (`Fixtures`) and the infra copies of group 9, and step 7. Each replacement is the same few lines in each file, so the rest is
+an edit counted by file rather than a design.
+
+## 10. Closing
 
 Reproduce the counts with `git ls-files` and the attribute and call patterns named in §0; the recorded times are in
 `local/scratch/ci-70da37d/status.json` and its logs and `.trx` files. A re-take of this census after the cut compares those
