@@ -28,6 +28,8 @@ internal sealed class LayerReadings(
 {
     private const string NoResult = "no-result-frame";
 
+    public IReadOnlyDictionary<string, string>? Windows { get; init; }
+
     private const string NoTerminal = "no-terminal-event";
 
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
@@ -133,6 +135,7 @@ internal sealed class LayerReadings(
         PlanUpdated plan => [Said(new SessionEvent { Kind = SessionEventKind.Plan, Entries = [.. plan.Entries.Select(Entry)] })],
         UsageFinal usage => Counted(usage),
         UsageLive live => Report(() => _report.Held(live)),
+        AgentAllowanceReport allowance => LayerAllowance.Info(allowance) is { } info ? [new WireReading.WindowsSaid(info)] : [],
         AgentToolDenied denial => Report(() => _report.Denied(denial, _titles)),
         AgentModelUsage byModel => Report(() => _report.Split(byModel)),
         ContextReading figures when figures.UsedTokens is not null || figures.WindowTokens is not null => [LayerTurnReport.Figures(figures)],
@@ -220,7 +223,7 @@ internal sealed class LayerReadings(
         {
             Failure = LayerFailures.Normalize(
                 ended.Failure ?? new AgentFailure(AgentFailureKind.Fatal, "no-failure-fields"), door, DoorWhere.Result, ended.Diagnostic,
-                clock.GetUtcNow(), coolOff, ended.Turn);
+                clock.GetUtcNow(), coolOff, ended.Turn, Windows);
             ModelRefused = _refusals.Refused(Failure, door, DoorWhere.Result, ranNothing: !_ran, stopped: false);
             failed.Add(new WireReading.Failed(Failure.Failure));
         }

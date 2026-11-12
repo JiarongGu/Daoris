@@ -1170,41 +1170,42 @@ tier no open row touches, a member a row grows additively read as absent until i
 used the certain ones (descriptor, events, failure, usage, the ACP door), as Lyntai's layer §4 asks; packed-build evidence (§7.3) lets Lyntai
 change a member before a release freezes it.
 
-**Note, 2026-11-07: which moves can start, read at Lyntai `master` `1ece575b`** (its local build `3.5.3-local.1ece575`; its `CHANGELOG.md`
-*Unreleased*, `TASKS.md` Part 446 and D244 to D249). Of quest `67b2b07e7e34`'s rows, AG25 to AG37, AG42's event half and AG43 are built.
-AG38 (a held request's wait for the person), AG39 (the kept run, a design with no code filed yet), AG40 (an owner action's reason and the
-access readings), AG41 (a limit's window and the reset as stated), AG42's rest (a report's use and its overage and credit state, held by
-Lyntai for a real frame), AG44 (the restriction rules over a snapshot) and AG45 (a host's line reader under the CLI turn) are not. A-LQ10
-is declined (its D249). Where each request went: A-LQ3 to AG37 (per-prompt delivery), AG38 and AG39 (the kept run and an open repeated
-alone); A-LQ4 to AG25 and AG28, its second half still waiting on 1s-ii; A-LQ5 to AG26 and AG28; A-LQ6 to AG27; A-LQ7 to AG30 to AG32 beside
-AG10 and AG18, its woken turn and its replay told from live to AG39; A-LQ8 to AG36; A-LQ9 to AG29; A-LQ11 to AG40; A-LQ12 to AG43 and
-AG44; A-LQ13 to AG45; A-LQ16 to AG41 and AG42; A-LQ17 to AG33 to AG35.
+**Note, 2026-11-12: which moves can start, read at Lyntai `master` `fa54381f`** (its local build `3.5.3-local.fa54381`, the one Daoris's
+local props name; its `CHANGELOG.md` *Unreleased*, D244 to D254). Every request of quest `67b2b07e7e34` was taken except A-LQ10 (declined,
+its D249), and every row Lyntai filed for them, AG25 to AG48, is built on `master`; its backlog holds no open row of the layer. **Nothing is
+released**: Lyntai's last release is 3.5.3 and its D235 keeps the agent layer unreleased until one carries it, so each label below reads
+*delivered on master, unreleased* except where marked partial, and D248 withdrew the wait for a release. Where each request went: A-LQ3 to
+AG37 (per-prompt delivery), AG38 (the wait for the person) and AG46 to AG48 (the kept run, `claude-agent-acp` only; the library repeats no
+open, the host opens a new run, D251); A-LQ4 to AG25 and AG28, its second half unfiled until 1s-ii measures; A-LQ5 to AG26 and AG28; A-LQ6
+to AG27; A-LQ7 to AG30 to AG32 beside AG10 and AG18, with the task events of D253 and D254; A-LQ8 to AG36; A-LQ9 to AG29; A-LQ11 to AG40;
+A-LQ12 to AG43 and AG44; A-LQ13 to AG45; A-LQ16 to AG41 and AG42; A-LQ17 to AG33 to AG35. What is partial: the kept run states `Unknown`
+on `codex-acp` and a generic agent, steering is `Unsupported` on every door, and the Claude CLI kept run with stdin held is not built.
 
-| Move | Waits on (its label, §9) | Landed | Can start |
+| Move | Needs (its label, §9) | On Lyntai's `master` | What it waits on now |
 |---|---|---|---|
-| 1b-iii, AG12's refused model | AG12 | yes | **yes** |
-| 1b-iii, LQ17's readings with the opening evidence | AG33 (denials, tokens by model with its context window), AG34 (a protocol door's context figures), AG35 (the announced start) | yes | **yes** |
-| 1b-iii, LQ3's per-prompt and opening observations | AG37; an open repeated alone (AG39) | AG37 alone | **the per-prompt half**; the opening half waits on AG39 |
-| 1b-iii, LQ16's reset, window, what was hit and reports, with the D125 note | AG41, AG42 whole | AG42's event half, its report carrying no use | no |
-| 1b-iii, LQ11's access evidence | AG40 | no | no |
-| 1d (R-d) | 1s-ii; 1b-iii's R-d parts; LQ4 to LQ6 (AG25 to AG27); LQ7's CLI half; AG10, AG12, AG18; LQ11's access half (AG40); LQ16 (AG41, AG42 whole); LQ17 (AG33, AG35) | all but AG40, AG41, AG42's rest, LQ7's woken turn (AG39) and 1s-ii's measurement | no |
-| 1e-i, dsh (R-e1) | m-ii; its 1b-iii part; LQ3's ACP half, per-prompt (AG37) and its raw open repeated (AG39); LQ7's ACP half where dsh's children are read (AG31); LQ17's context half (AG34) | all but the open repeated alone, which AG39 only designs | no |
-| 1e-ii to 1e-iv (R-e) | as 1e-i, and the wait for a person (AG38), AG11, AG12, AG19, LQ4's ACP half (AG28), LQ8 (AG36), LQ11's access half (AG40), LQ16 where a door's limits name a window or a reset (AG41) | AG11, AG12, AG19, AG28, AG31, AG34, AG36, AG37; not AG38, AG39, AG40, AG41 | no |
-| 1f-i (R-f) | m-ii; 1d; LQ3's CLI half, the kept run (AG39) with per-prompt delivery (AG37) | m-ii, AG37 | no |
-| 1f-ii (R-f with LQ13) | 1f-i; AG45 | no | no |
-| j (R-j) | AG15; 1e | AG15 | no: its Lyntai need has landed, and it follows 1e |
+| 1b-iii, AG12's refused model | AG12 | delivered | nothing: built |
+| 1b-iii, LQ17's readings with the opening evidence | AG33, AG34, AG35 | delivered | nothing: built |
+| 1b-iii, LQ3's per-prompt and opening observations | AG37; an open repeated | per-prompt delivered; the library repeats no open, the host opens a new run (D251) | per-prompt built; the opening half is Daoris's own, with 1e |
+| 1b-iii, LQ16's reset, window, what was hit and reports, with the D125 note | AG41, AG42 | delivered, with use, overage and credit state | nothing: built on the layer path |
+| 1b-iii, LQ11's access evidence | AG40 | delivered | nothing: built on the layer path |
+| 1d (R-d) | 1s-ii; 1b-iii's R-d parts; LQ4 to LQ6; LQ7's CLI half; AG10, AG12, AG18; AG40; AG41, AG42; AG33, AG35 | delivered; LQ7's woken turn and replay routed to the kept run | the owner: spend for 1s-ii, then acceptance and the installed proof |
+| 1e-i, dsh (R-e1) | m-ii; LQ3's ACP half; LQ7's ACP half; LQ17's context half | delivered except a dsh kept run, stated `Unknown` for want of a measured record | Lyntai's next request answered for the kept run, and Daoris's own dsh corpus |
+| 1e-ii (R-e) | as 1e-i, AG38, AG11, AG12, AG19, AG28, AG36, AG40, AG41 | delivered; `codex-acp`'s kept run and queued words `Unknown`; steering `Unsupported`; `thread_active_writer` unread | Lyntai's next request answered (steering, Codex's kept run and refused open), and Daoris's Codex records (STEER3, MSG1h, AUTONOMY1b3d: the owner's spend) |
+| 1e-iii (R-e) | as 1e-ii | delivered; keeping-stop and model re-ask `Unknown`; steering `Unsupported` | Lyntai's steering, which *Send now* loses without; Daoris's decision on `nativeSubagentSessions`; its runner's pause for a held request is built |
+| 1e-iv (R-e) | as 1e-iii | delivered as 1e-iii | Daoris's order after 1e-iii, and Lyntai's steering |
+| 1f-i (R-f) | m-ii; 1d; LQ3's CLI half | the Claude CLI kept run with stdin held is not built | Lyntai: that kept run, in the third request; and 1d's acceptance |
+| 1f-ii (R-f with LQ13) | 1f-i; AG45 | AG45 delivered | Daoris's order after 1f-i |
+| j (R-j) | AG15; 1e | AG15 delivered | Daoris's 1e |
 
-**What the parts that can start need first.** One local build carries all three, so they land as one part. (1) The changelog and the
-compare read since the local build the earlier moves took, for the members they compose, AG37's change to what a turn already did among
-them: a protocol session's start no longer counts toward `Taken`, and a protocol turn that stalls after its open resends where it resumed,
-which reaches 1b-i's retry table; at `1ece575` every layer and parity class passes unchanged, with and without the props. (2) The tests'
-provider (`LayerTestProvider`) speaking each new frame (a denial, tokens by model with the context window, a `usage_update`'s figures, an
-`init` beside a later frame carrying the id, a refused model), today's path's recorded cases beside it (`StructuredOutput`, `AcpMeasure`,
-`NativeInit`). (3) Lyntai's own labels read: AG33's denial `reason` is a guessed field, null in every shape it holds, and AG33's, AG34's and
-AG36's frames are SOURCE-DERIVED, not captures. **What would unblock the rest sooner.** AG42's rest waits for a real `rate_limit_event`
-frame with a use and the overage fields, the shape Daoris recorded on 2026-10-02 (`ClaudeWindows`, its use a fraction), which a quest can
-send. 1s-ii's measurement is Daoris's own and decides whether A-LQ4's second half is sent, which 1d waits on. 1c's Claude binding waits on
-Lyntai reading a model scope whose `id` is null (§9.2's 1c, measured 2026-11-07).
+**What the layer path reads now.** The ingress translates the access readings (a field's and the words', kept apart), the restriction's
+window, scope and stated reset into D125's bounds as stated (a moment dated, a wait counted from now, a time of day never graced), an owner
+action's reason, and an allowance report through the one reader of an agent's windows, each held by a test on events the tests make.
+The launcher's runner arms no inactivity clock and says it can pause one, so a request held for the person waits with no clock
+(ACCESS1 row c). Lyntai's own labels still apply: AG33's denial `reason` is a guessed field, null in every shape it holds, and AG33's,
+AG34's and AG36's frames are source-derived, not captures. **What would unblock the rest.** 1s-ii's measurement is the owner's spend and
+decides whether A-LQ4's second half is sent, which 1d waits on. The protocol doors wait on a third, short request to Lyntai (steering,
+Codex's kept run and refused open, the Claude CLI kept run, a release) and on Daoris's own records. 1c's Claude binding waits on Lyntai
+reading a model scope whose `id` is null (§9.2's 1c, measured 2026-11-07).
 
 ### 7.3 Building against changes not yet released
 

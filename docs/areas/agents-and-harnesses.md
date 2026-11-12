@@ -234,8 +234,12 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     `Layer/` and their tests name it (`LayerCensusTests`). There both usage questions are read through the layer
     (`LayerUsageRead`), and a native door's driven start is held on `LayerRun` (`DrivenRuns`, `LayerHold`), one turn per process
     through the same host steps; a supervisor's turn and a partner's piece stay on `TransportRun`. A layer door's failure enters as
-    a `NormalizedFailure` (`LayerFailures`), answered by `AgentErrors.OfNormalized` with no table read, which only tests call yet;
-    the parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
+    a `NormalizedFailure` (`LayerFailures`), answered by `AgentErrors.OfNormalized` with no table read, which only tests call yet: its
+    access readings stay apart (a field's and the words'), a limit's window, scope and stated reset reach D125's bounds as stated
+    (`LayerStatedReset`), and an allowance report is put in the rate-limit frame's shape for the one reader of an agent's windows
+    (`LayerAllowance`). `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
+    person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
+    The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
 48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`
     and the service stores' renames (`SessionColumnNames` and its kin), deleted with nocompat1's steps; a plugin's `session.ended`
     frame's `adapter`, renamed with the work-event grammar's next version; a machine-log line's `adapter`, until its file ages out.
@@ -296,10 +300,12 @@ An older word the code departs from, then what reads right.
 
 ## Open
 
-- **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t; j, each
-  protocol door reading its own agent's extensions.
-- **AGENTLYNTAI1**: d's installed proof and account readers; s-ii, the three tools a headless turn cannot answer (the owner's
-  yes); b-iii, the ingress's later translations.
+- **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t, after
+  every door has moved; j, each protocol door reading its own agent's extensions, after 1e. All Daoris's own.
+- **AGENTLYNTAI1**: the owner's, d's acceptance and installed proof and s-ii's spend (the three tools a headless turn cannot answer).
+  Lyntai's, held for a third request: steering, the kept runs of `codex-acp` and dsh, Codex's refused open, the Claude CLI kept
+  run (1f-i), and a release (every member is on its `master`, none released, so Daoris builds on its local build). Daoris's own: the
+  protocol doors' moves in order (1e), each after its records (STEER3, MSG1h, AUTONOMY1b3d), and a decision on `nativeSubagentSessions`.
 - **AGENTERRORS1** c and e: the native door's failure reads, the measured `--resume`, its live and one-turn tries.
 - **LIMITRESUME1**: one native session seen ending on a limit, and the owner's yes.
 - **CODEXTOOLS1**: the installed proof that a first Codex turn uses the connector.
