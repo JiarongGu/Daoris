@@ -4,9 +4,9 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// One page of <c>quest_list</c>'s answer: the quests in their order, each page filled to a budget of characters well inside an agent's
-/// tool limit, never fewer than one quest, under each repository's heading with its whole count. A list that fits is one page, said as
-/// it always was; a longer one says which page it is and which holds the next, since every closed quest of a workspace answered at once
-/// overflowed what the agent can read.
+/// tool limit, never fewer than one quest, under each repository's heading with its whole count. A list that fits is one page; a longer
+/// one says which page it is and which holds the next, since every closed quest of a workspace answered at once is more than an agent
+/// can read.
 /// </summary>
 public static class QuestListPage
 {

@@ -484,7 +484,6 @@ export const api = {
   // The person's review choice on an ask's page, or its intake's proposal applied: the latest stands.
   chooseAskReview: (id: string, choice: string, words?: string) =>
     send('ChooseAskReview', { id, choice, ...(words ? { words } : {}) }).then(({ answer }) => answer),
-  // The person's take-back of their through words: a choice with no words, the latest standing.
   takeBackAskThrough: (id: string) => send('ChooseAskThrough', { id }).then(({ answer }) => answer),
   // An intake's kind proposal applied: a post replaces the latest choice whole, so the workflow it
   // has is sent again. No words: the reason is the agent's quoting, not the person's act.

@@ -78,7 +78,6 @@ public static class RunNodeWords
     private static IPressed? TakenBy(string act) =>
         NodeKit.Built.Units.OfType<IPressed>().Append(PluginStepRetry.Unit).FirstOrDefault(pressed => pressed.Takes.Contains(act, StringComparer.Ordinal));
 
-    /// <summary>The word is <c>try-again</c>, which only a plugin's step takes.</summary>
     public const string NotPluginStep = "not-plugin-step";
 
     /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes.</summary>

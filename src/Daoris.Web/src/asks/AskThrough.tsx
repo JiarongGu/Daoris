@@ -11,7 +11,7 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
  * *Take back*, the person's press that stops them reaching any run from then on.
  *
  * @remarks
- * Nothing is drawn where none stand: none was given, or the latest is a take-back. A molecule: the ask and the press arrive as props.
+ * Nothing is drawn where none stand: none given, or the latest a take-back. A molecule: the ask and the press arrive as props.
  */
 export function AskThrough({ ask, busy = false, onTakeBack }: {
   ask: Ask;

@@ -5,8 +5,7 @@ namespace Daoris.Driver;
 /// the runtime applies as their word, never as a supervisor's. Step by step, each kept for the next pass as the person's door keeps it: a
 /// <c>quest.holds</c> waiting on an unchecked done is passed with them, then the <c>review</c> waiting on its record is accepted with them,
 /// bound to the record standing. Only where no requirement of the run's quests departed or waits unmet, no other step waits on the person
-/// (a hold, an open look or second opinion, a go-ahead, a task or approval, a choice), nothing is stopped, neither the ask nor a quest of
-/// its line is paused here, and no word is already kept;
+/// (a hold, an open look or second opinion, a go-ahead, a task or approval, a choice), nothing is stopped or paused and no word is kept;
 /// else the run waits for the person as it does with no words. What follows the review runs as the graph says.
 /// </summary>
 public static class ThroughAccepts
@@ -60,7 +59,6 @@ public static class ThroughAccepts
             : null;
     }
 
-    /// <summary>Whether the person paused the run's ask here, or any quest of its line on its own: then the words wait with the work.</summary>
     public static bool Paused(DriverConfig config, string ask, IReadOnlyList<QuestView> quests) =>
         config.PausedAsk(ask) is not null || quests.Any(quest => config.PausedQuest(quest.Id) is not null);
 
