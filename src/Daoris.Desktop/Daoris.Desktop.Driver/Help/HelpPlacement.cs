@@ -44,6 +44,7 @@ internal static class HelpPlacement
             Circle = circle,
             Reads = handed,
             CheckoutsOff = access.CheckoutsOff,
+            OwnWithheld = OwnFamilies.Servers | OwnFamilies.Plugins | OwnFamilies.Chrome,
             // In no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
             Block = new StandingFacts { Workspace = circle },
         };
@@ -53,8 +54,8 @@ internal static class HelpPlacement
     /// Ask Daoris's place under the access its start got. Restricted is the baseline place. Full
     /// asks nothing and allows nothing by list, its harness's mode doing neither; keeps every deny the person's rules compose; is
     /// handed every plugin server here, approved or not; and is handed no tree guard, which would keep its
-    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it. Its circle
-    /// stays its room's workspace, so its connector's searches default there though its shell reaches anything.
+    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it. Its circle and its readable
+    /// checkouts stay its room's, so its connector's searches default there though its shell reaches anything.
     /// </summary>
     internal static ChatPlace Under(ChatPlace place, HelpAccess access) => access is not { Full: true, Refusal: null }
         ? place
@@ -65,7 +66,6 @@ internal static class HelpPlacement
             PermissionMode = access.PermissionMode,
             EveryServer = true,
             Guarded = false,
-            Reads = [],
         };
 
     /// <summary>

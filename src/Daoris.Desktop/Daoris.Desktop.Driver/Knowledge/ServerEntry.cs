@@ -21,4 +21,11 @@ public sealed record ServerEntry(
     string Name,
     string Command,
     IReadOnlyList<string> Arguments,
-    IReadOnlyDictionary<string, string> Environment);
+    IReadOnlyDictionary<string, string> Environment)
+{
+    /// <summary>
+    /// The tools its plugin declares, its reads and writes, where it declares any: a kept server offers and calls only these
+    /// (<see cref="ServerKeeper"/>). Null where nothing is declared.
+    /// </summary>
+    public IReadOnlyList<string>? Tools { get; init; }
+}

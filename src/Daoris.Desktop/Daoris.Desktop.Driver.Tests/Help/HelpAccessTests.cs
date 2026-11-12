@@ -105,6 +105,8 @@ public sealed class HelpAccessTests : IDisposable
         Assert.Equal("!bypassPermissions", full.Posture);
         Assert.Equal((false, true), (full.Guarded, full.EveryServer));
         Assert.Equal((HelpRoom.Repository, PluginServerTo.Help, true), (full.Name, full.ServersTo, full.Keeps));
+        Assert.Equal(place.Reads, full.Reads);
+        Assert.Equal((OwnFamilies.Servers | OwnFamilies.Plugins | OwnFamilies.Chrome, place.OwnWithheld), (full.OwnWithheld, full.OwnWithheld));
 
         var native = HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, Adapter("claude-code")));
         Assert.Equal("bypassPermissions", native.PermissionMode);

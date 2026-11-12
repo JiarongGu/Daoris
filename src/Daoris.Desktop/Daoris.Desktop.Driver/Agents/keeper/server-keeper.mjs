@@ -1,11 +1,17 @@
 // Keeps a stdio MCP server's memory under a ceiling by starting it afresh when it has grown past it and no call is in
 // flight. The harness sees one server throughout: the client's initialize is replayed to the new one and its answer swallowed.
-//  node server-keeper.mjs <ceiling MB> <check every ms> <script> [arguments...]
+// It offers and calls only the tools named, where any are (the plugin's declaration), and ends a call past its bound.
+//  node server-keeper.mjs <ceiling MB> <check every ms> <call bound ms> <tools, comma-separated, or -> <script> [arguments...]
 // Newline-delimited JSON-RPC, as the MCP stdio transport writes it. Anything that is not a line of JSON passes through.
 import { spawn, execFileSync } from 'node:child_process';
 
-const [ceilingMb, everyMs, script, ...rest] = process.argv.slice(2);
+const [ceilingMb, everyMs, boundMs, toolList, script, ...rest] = process.argv.slice(2);
 const ceiling = Number(ceilingMb) * 1024 * 1024;
+const bound = Number(boundMs);
+const declared = toolList === '-' ? null : new Set(toolList.split(','));
+const listing = new Set();
+const timers = new Map();
+const ended = new Set();
 const REPLAY = 'server-keeper-initialize';
 const REFRESH = 'server-keeper-snapshot';
 const SNAPSHOT = 'browser_snapshot';
@@ -61,9 +67,47 @@ function fromServer(from, chunk) {
       answerRefreshed(message);
       continue;
     }
-    if (message && message.method === undefined && message.id !== undefined) inflight.delete(message.id);
+    if (message && message.method === undefined && message.id !== undefined) {
+      inflight.delete(message.id);
+      if (settle(message.id)) continue;
+      if (listing.delete(message.id) && declared && Array.isArray(message.result?.tools)) {
+        process.stdout.write(JSON.stringify({ ...message, result: { ...message.result, tools: message.result.tools.filter(tool => declared.has(tool.name)) } }) + '\n');
+        continue;
+      }
+    }
     process.stdout.write(line + '\n');
   }
+}
+
+function settle(id) {
+  clearTimeout(timers.get(id));
+  timers.delete(id);
+  return ended.delete(id);
+}
+
+function answer(id, text) {
+  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text }], isError: true } }) + '\n');
+}
+
+function admitted(message) {
+  if (message?.method !== 'tools/call' || message.id === undefined) return true;
+  const name = message.params?.name;
+  if (declared && !declared.has(name)) {
+    answer(message.id, `\`${name}\` is not among the tools this plugin declares, so Daoris does not hand it; nothing was done.`);
+    return false;
+  }
+  timers.set(message.id, setTimeout(() => endCall(message.id), bound));
+  return true;
+}
+
+function endCall(id) {
+  timers.delete(id);
+  if (!inflight.delete(id)) return;
+  ended.add(id);
+  const seconds = Math.round(bound / 100) / 10;
+  answer(id, `The call ran past its bound of ${seconds} seconds and was ended: nothing more of it is waited for, and what it did `
+    + 'before is not known. Never poll or wait inside one browser call; call again in short steps.');
+  if (!starting) child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: id, reason: 'past its bound' } }) + '\n');
 }
 
 function parse(line) {
@@ -78,7 +122,11 @@ function fromClient(line) {
   const message = parse(line);
   if (message?.method === 'initialize') initialize = line;
   else if (message?.method === 'notifications/initialized') initialized = line;
-  else if (message?.method === 'notifications/cancelled') inflight.delete(message.params?.requestId);
+  else if (message?.method === 'notifications/cancelled') {
+    inflight.delete(message.params?.requestId);
+    settle(message.params?.requestId);
+  } else if (message?.method === 'tools/list' && message.id !== undefined) listing.add(message.id);
+  if (!admitted(message)) return;
   if (message && message.method !== undefined && message.id !== undefined) inflight.add(message.id);
   if (starting) waiting.push(line);
   else toServer(line);
@@ -107,6 +155,7 @@ function answerRefreshed(message) {
   const original = refreshing.get(message.id);
   refreshing.delete(message.id);
   stale = false;
+  if (settle(original)) return;
   const snapshot = message.result?.content?.filter(part => part.type === 'text').map(part => part.text).join('\n');
   const text = snapshot
     ? `Nothing was done: the browser server restarted since that element reference was made, so the reference is out of date. The page now is below; choose the element again from it.\n\n${snapshot}`

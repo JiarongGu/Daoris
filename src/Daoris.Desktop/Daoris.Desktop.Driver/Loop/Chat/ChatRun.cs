@@ -118,10 +118,12 @@ internal sealed class ChatRun(
             // The skills plugins hand this conversation's destination, composed under the home and handed by the harness's own session-only
             // door; the protocol door carries them beside its rules below.
             IReadOnlyList<string> skillPlugins = [];
+            var machine = OwnTools.Machine(home, info);
+            var own = machine with { Families = machine.Families & ~place.OwnWithheld };
             if (place.Plugins)
             {
                 (skills, skillPlugins) = agent.HandSkills(
-                    info, home, sessionId, PluginCatalog.Load(home, ProviderRegistry.Built().Names), place.ServersTo);
+                    info, home, sessionId, PluginCatalog.Load(home, ProviderRegistry.Built().Names), place.ServersTo, own);
             }
 
             // What the conversation's agent may do, handed by each door's own way: a flag on the pipe, `session/new`'s `_meta` on the protocol
@@ -139,7 +141,6 @@ internal sealed class ChatRun(
                 if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
                 var guard = PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(home, workTree, place.Also) : null;
                 guarded = guard is not null;
-                var own = OwnTools.Machine(home, info);
                 rules = language.Write(home, sessionId, new HandedRules(
                     composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop.

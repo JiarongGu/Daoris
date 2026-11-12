@@ -171,14 +171,14 @@ public sealed class UpdateCommandTests : IDisposable
         Directory.CreateDirectory(scratch);
         Stage("b1");
 
-        var status = UpdateCommand.Run([], scratch, () => Now, null, out var said);
+        var status = UpdateCommand.Run([], scratch, () => Now, null, null, out var said);
         Assert.Equal(2, status);
         Assert.Contains("--install", said);
 
-        Assert.Equal(0, UpdateCommand.Run(["--now", "--install", Install], scratch, () => Now, null, out said));
+        Assert.Equal(0, UpdateCommand.Run(["--now", "--install", Install], scratch, () => Now, null, null, out said));
         Assert.Equal(new UpdateRequest(UpdateMode.Now, "b1", Now), InstallUpdate.Read(scratch));
 
-        Assert.Equal(0, UpdateCommand.Run(["--cancel"], scratch, () => Now, null, out said));
+        Assert.Equal(0, UpdateCommand.Run(["--cancel"], scratch, () => Now, null, null, out said));
         Assert.Equal(new UpdateRequest(UpdateMode.NotNow, null, Now), InstallUpdate.Read(scratch));
         Assert.Contains("whatever is staged", said);
     }
@@ -202,8 +202,23 @@ public sealed class UpdateCommandTests : IDisposable
 
     private (int Code, string Said) Run(MachineLog? log, params string[] args)
     {
-        var code = UpdateCommand.Run(args, Home, () => Now, log, out var said);
+        var code = UpdateCommand.Run(args, Home, () => Now, log, null, out var said);
         return (code, said);
+    }
+
+    [Theory]
+    [InlineData("--when-idle")]
+    [InlineData("--now")]
+    [InlineData("--cancel")]
+    public void A_verb_from_a_session_s_terminal_is_refused_writing_nothing(string verb)
+    {
+        Stage("b1");
+
+        Assert.Equal(1, UpdateCommand.Run([verb], Home, () => Now, null, "s-1", out var said));
+        Assert.Contains("DAORIS_SESSION_ID", said);
+        Assert.Null(InstallUpdate.Read(Home));
+        Assert.Equal(0, UpdateCommand.Run([], Home, () => Now, null, "s-1", out said));
+        Assert.Contains("b1", said);
     }
 
     /// <summary>The log's lines, read beside the writer that still holds its file, as a person tails it.</summary>

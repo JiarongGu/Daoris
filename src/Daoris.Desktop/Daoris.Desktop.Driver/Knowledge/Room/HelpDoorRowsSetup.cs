@@ -16,7 +16,8 @@ internal static class HelpDoorRowsSetup
         // A repository's own values are on its Setup; a workspace's are on its page.
         ("drive a repository, or stop", Setup + "Driving", "`daoris place drive|undrive <repository>`"),
         // A repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
-        ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris place hold|resume <repository>`"),
+        ("hold one, so nothing new starts there, or resume it", "Agents → Setup → the repository's place → *Hold*, *Resume* in its header",
+            "`daoris place hold|resume <repository>`"),
         // One door adopts a repository: one quest to its own session.
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",

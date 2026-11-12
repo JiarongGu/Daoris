@@ -50,8 +50,8 @@ internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
 
     /// <summary>The skills the plugins hand <paramref name="to"/> and the person's own tool home's, handed by the door's session-only way.</summary>
     public (string? Folder, IReadOnlyList<string> Plugins) HandSkills(
-        ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to) =>
-        SpawnSkills.Hand(adapters, adapter, info, home, sessionId, catalog, to, OwnTools.Machine(home, info));
+        ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to, OwnTools own) =>
+        SpawnSkills.Hand(adapters, adapter, info, home, sessionId, catalog, to, own);
 
     /// <summary>How its door takes a start's servers at its spawn, or null where they ride its wire or it takes none there.</summary>
     public IServerHanding? Servers => adapter.ServerHanding();

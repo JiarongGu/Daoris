@@ -81,6 +81,7 @@ import { STAGE, STAGED, buildId, promoteStage, recordedShellFiles, refusal, stag
 import { appPublishCommand, artifactsOf, driverPublishCommand, gitDoorPublishCommand, launcherPublishCommand, layGitDoors, layPieceStart, pieceStartPublishCommand, publishStages } from './desktop-publish/publish-commands.mjs';
 import { GATE_TREE, childArgs, gatedSource, gitIn, mainCheckout, recordStage, recordStaged, samePath, stageReport, stagedAdvice } from './desktop-publish/gate-tree.mjs';
 import { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
+import { sessionRefusal } from './desktop-publish/session.mjs';
 import { HOST_HOME, INSTALL_RID, LAUNCHER, MARKER, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, retiredPaths, servicePlan } from './desktop-publish/names.mjs';
 import { HOME, KEPT_LOCALES, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, layOffers, layResources } from './desktop-publish/lay.mjs';
 import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME } from './desktop-publish/launchers.mjs';
@@ -94,6 +95,7 @@ export { layCli } from './desktop-publish/cli.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
 export { GATE_COMMAND, insideFixtures, askGates, ungatedRefusal } from './desktop-publish/gates.mjs';
+export { SESSION_VARIABLE, sessionRefusal } from './desktop-publish/session.mjs';
 export { GATE_TREE, GATE_TREE_LOCK, GATE_TREE_RECORD, gatedSource, childArgs, recordStaged, stageReport, stagedAdvice, recordStage } from './desktop-publish/gate-tree.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -116,6 +118,11 @@ async function main() {
     process.exit(2);
   }
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
+  const sessions = sessionRefusal(to, repoRoot);
+  if (sessions) {
+    console.error(sessions);
+    process.exit(1);
+  }
   // Where every build of this publish goes, when told; each project's own folders otherwise.
   const { artifacts, refusal: artifactsRefused } = artifactsOf(argv);
   if (artifactsRefused) {

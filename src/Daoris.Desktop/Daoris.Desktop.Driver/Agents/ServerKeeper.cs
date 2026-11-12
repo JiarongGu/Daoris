@@ -23,6 +23,12 @@ public static class ServerKeeper
     /// <summary>How often the working set is read, in milliseconds.</summary>
     public const int EveryMs = 15_000;
 
+    /// <summary>
+    /// The longest one call runs, in milliseconds: past it the call is answered as ended, said in the conversation, and the server told to
+    /// cancel it. A poll written inside one call held a conversation 23 minutes; a page's navigation takes well under this.
+    /// </summary>
+    public const int CallBoundMs = 120_000;
+
     /// <summary>The script as shipped, from the assembly, with LF line endings.</summary>
     public static string Source { get; } = ReadSource();
 
@@ -39,10 +45,20 @@ public static class ServerKeeper
     }
 
     /// <summary>
-    /// <paramref name="server"/>, started by node as <c>node &lt;script&gt; …</c>, made the keeper's with that start after its limits.
+    /// <paramref name="server"/>, started by node as <c>node &lt;script&gt; …</c>, made the keeper's with that start after its limits: its
+    /// memory's ceiling, how often it is read, each call's bound, and the tools offered (<c>-</c> for every tool the server has).
     /// </summary>
-    public static ServerEntry Wrap(string home, ServerEntry server, int ceilingMb = CeilingMb, int everyMs = EveryMs) =>
-        server with { Arguments = [Install(home), ceilingMb.ToString(), everyMs.ToString(), .. server.Arguments] };
+    /// <param name="tools">The tools its plugin declares, the only ones listed or called; null offers every one.</param>
+    public static ServerEntry Wrap(
+        string home, ServerEntry server, int ceilingMb = CeilingMb, int everyMs = EveryMs, IReadOnlyList<string>? tools = null, int boundMs = CallBoundMs) =>
+        server with
+        {
+            Arguments =
+            [
+                Install(home), ceilingMb.ToString(), everyMs.ToString(), boundMs.ToString(), tools is { Count: > 0 } ? string.Join(',', tools) : "-",
+                .. server.Arguments,
+            ],
+        };
 
     private static string ReadSource()
     {

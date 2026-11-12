@@ -76,7 +76,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     server starts as node and its package's script, installed once into `cache/toolchain/<package>/<version>`; one that cannot
     start is not handed (`server.refused`). A server driving Daoris's browser runs under `keeper/server-keeper.mjs`, restarted
     past 512 MB with no call in flight, since Playwright MCP's memory grows with every request; a call naming a `ref` from before
-    the restart gets a fresh snapshot.
+    the restart gets a fresh snapshot. The keeper lists and calls only the tools the server's plugin declares (its reads and
+    writes), answering a call to another without reaching the server, and ends a call past two minutes, said in the conversation
+    and cancelled at the server; every mode alike, full access included.
 14. Plugin skills are `SkillSource` values laid out by the door's provider (`ISkillLayout`; Claude Code copies them per session
     under the home's spawn folder; a provider stating none is handed none) and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (D170, D230)
@@ -89,8 +91,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (`own-settings`); `CLAUDE.md` appended to the system prompt (`own-memory`). A Codex session gets the person's Codex home as
     `CODEX_CONFIG`: `config.toml` where the account's sets nothing (never provider, sign-in, approval, sandbox or trusted
     projects), `AGENTS.md`, skills and prompts in `developer_instructions`, and `mcp_servers` on the open, filtered alike
-    (`CodexOwnHome`). A pass held to Daoris's connector gets no own servers; nothing is handed in the person's own home, on a
-    plugin's door or under a scratch home. (D230, D253, D262, D266)
+    (`CodexOwnHome`). A pass held to Daoris's connector gets no own servers, and Ask Daoris no own servers, plugins or Chrome
+    switch; nothing is handed in the person's own home, on a plugin's door or under a scratch home. (D230, D253, D262, D266)
 16. The standing block is composed by the driver for every kind of session, handed at a start and at a move, never on a
     resume. The whole first prompt stays under `StandingBlock.Budget` (30,000 characters); past it the block goes in a file the
     prompt names. (D230)

@@ -570,7 +570,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// review's Stop (<see cref="ReviewStops"/>), answering `following`, `stopped`, `happened` and `stays`. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
-    [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("WORKFLOW_NODE", None = OwnerNone.NamesNothing)]
     [GroundWait("WORKFLOW_NODE", "workflow-node", "run", "node")]
     [Says("WORKFLOW_NODE", "run:quest", "act:form", "words:words")]

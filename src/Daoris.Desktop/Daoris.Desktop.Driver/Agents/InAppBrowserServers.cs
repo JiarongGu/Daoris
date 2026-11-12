@@ -139,6 +139,7 @@ public static class InAppBrowserServers
         var quoted = drivers.Select(name => $"`{name}`").ToList();
         var names = quoted.Count == 1 ? quoted[0] : $"{string.Join(", ", quoted.Take(quoted.Count - 1))} and {quoted[^1]}";
         var servers = drivers.Count == 1 ? $"the MCP server {names}" : $"the MCP servers {names}";
-        return $"Daoris has handed you its own browser as {servers}: it drives the browser window the person signs in to and watches, so use its tools for any web page, including one behind the person's sign-in.";
+        return $"Daoris has handed you its own browser as {servers}: it drives the browser window the person signs in to and watches, so use its tools for any web page, including one behind the person's sign-in. "
+            + $"Only the tools its plugin declares are there, and a call past {ServerKeeper.CallBoundMs / 60_000} minutes is ended: never poll or wait inside one call, call again in short steps.";
     }
 }

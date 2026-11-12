@@ -35,7 +35,7 @@ public enum PipeDrain
     /// </summary>
     Waits,
 
-    /// <summary>It stops, takes back, answers or records, and starts nothing the drain waits on: it goes on while the update drains.</summary>
+    /// <summary>It stops, takes back, answers, records or says a word, and starts no process: it goes on while the update drains.</summary>
     Passes,
 }
 

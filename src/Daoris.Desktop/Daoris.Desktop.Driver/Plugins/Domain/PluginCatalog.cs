@@ -124,7 +124,10 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     public IReadOnlyList<ServerEntry> ServersTo(string to) => Contributing
         .SelectMany(p => p.Manifest.Servers)
         .Where(s => s.HandedTo(to))
-        .Select(s => new ServerEntry(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
+        .Select(s => new ServerEntry(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment)
+        {
+            Tools = s.Allow.Count + s.Writes.Count > 0 ? [.. s.Allow, .. s.Writes] : null,
+        })
         .ToList();
 
     /// <summary>Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash.</summary>

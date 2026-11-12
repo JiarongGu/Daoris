@@ -491,6 +491,8 @@ public sealed class PipeCensusTests
     /// once, so that press waits too. A role's act waits until each act is classed.
     /// </summary>
     [Theory]
+    [InlineData("SESSION_INPUT", PipeDrain.Passes)]
+    [InlineData("WORKFLOW_NODE", PipeDrain.Passes)]
     [InlineData("SESSION_QUEUE_EDIT", PipeDrain.Passes)]
     [InlineData("STOP_SESSION", PipeDrain.Passes)]
     [InlineData("RESOLVE_SESSION", PipeDrain.Passes)]
@@ -508,7 +510,6 @@ public sealed class PipeCensusTests
     // holds of quests (a helper asked under `ask`, now `on`).
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
-    [InlineData("SESSION_INPUT", PipeDrain.Waits)]
     // A word moved to an ended head goes on with it at once, as one said there does.
     [InlineData("SESSION_QUEUE_MOVE", PipeDrain.Waits)]
     [InlineData("START_CHAT", PipeDrain.Waits)]
@@ -544,10 +545,10 @@ public sealed class PipeCensusTests
     /// quests, answered parks and intakes (<c>InstallUpdate.Drained</c>). So a press that can let the look start anything else waits:
     /// - helpers, which no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again;
     /// - a hand-over, a second opinion, a landing (its rule, its review, its line, the opinion's answer over the gate);
-    /// - a workflow node's next step or a run's gates;
+    /// - a run's gates;
     /// - the keeping pass's removals;
     /// - a start held for a folder's trust, or by a plugin.
-    /// One that changes only how later sessions run, or what they say, goes on.
+    /// One that changes only how later sessions run, or what they say, goes on; so does a workflow step's act, kept for the runtime.
     /// </summary>
     [Fact]
     public void A_press_that_can_release_work_the_drain_does_not_hold_waits_and_an_inert_setting_goes_on()
@@ -555,7 +556,7 @@ public sealed class PipeCensusTests
         string[] releases =
         [
             "SET_HELPERS", "SET_CAP", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
-            "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORK_RESUME",
             "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
         ];
         string[] inert =
@@ -565,6 +566,7 @@ public sealed class PipeCensusTests
             "SET_HELP_GRANT", "SET_NOTIFY", "SET_QUIET", "SET_MANIFEST","SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
             // An acceptance of a repository's integration declaration, a standing choice that starts nothing.
             "INTEGRATION_GATES",
+            "WORKFLOW_NODE",
         ];
 
         Assert.All(releases, route => Assert.Equal((route, PipeDrain.Waits), (route, PipeCensus.Daoris.DrainOf(DriverModule.Name, route))));
