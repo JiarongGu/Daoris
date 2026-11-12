@@ -135,9 +135,13 @@ public sealed class PipeTerminalTierTests : Bridge
     }
 
     [Theory]
-    [InlineData(StandingPlace.InAgentJob)]
-    [InlineData(StandingPlace.Untold)]
-    public async Task Under_act_a_process_inside_an_agent_s_job_or_one_the_pipe_cannot_place_is_asked_on_the_card(StandingPlace place)
+    [InlineData(StandingPlace.Outside, "WORK_PAUSE")]
+    [InlineData(StandingPlace.InAgentJob, "WORK_PAUSE")]
+    [InlineData(StandingPlace.Untold, "WORK_PAUSE")]
+    [InlineData(StandingPlace.Outside, "SESSION_INPUT")]
+    [InlineData(StandingPlace.InAgentJob, "SESSION_INPUT")]
+    [InlineData(StandingPlace.Untold, "SESSION_INPUT")]
+    public async Task Under_act_every_route_a_terminal_presses_runs_with_no_card_wherever_the_pipe_places_it(StandingPlace place, string route)
     {
         if (!OperatingSystem.IsWindows()) return;
         var (pipe, client, driver, services, log) = await ServeAsync(TerminalTiers.Act, place);
@@ -146,11 +150,11 @@ public sealed class PipeTerminalTierTests : Bridge
         using var ___ = pipe;
         await using var ____ = client;
 
-        await client.SendAsync(DriverModule.Name, "SESSION_ARCHIVE", Archive);
-        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, route, new { id = Archived, quest = "q1", text = "go on" }));
 
-        Assert.Equal(0, driver.Ran("SESSION_ARCHIVE"));
-        Assert.Empty(pipe.StandingConfirmation.Now().HelpPresses);
+        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+        Assert.Equal(1, driver.Ran(route));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
     }
 
     [Fact]

@@ -77,8 +77,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     retire, wire and import, a plugin's replace, a run's node acts, a git identity or access change): where Daoris runs it is
     the person's press of a `Person` route (rule 14), made by the in-process client that holds the key; with none running the
     verb acts alone or refuses. (from D156, D253)
-13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
-    refused. A refusal is a 403 with a code, never a 500. (from D156)
+13. Reads are open. An agent's doors are judged as an agent's, and are any caller's: an ask's close and delete, a quest's, a
+    session's and a lost take's bring-forward or dismissal ended its keyless refusal (D284), the key now only saying whose
+    press it is. The remaining person's doors (a verdict, a yes, a go-ahead's answer, an ask's or a quest's workflow and
+    review choice, their words, the registry's) need the key until they are workflow waits or opened in turn. An unclassed
+    write is refused. A refusal is a 403 with a code, never a 500. (from D156, D284)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the Confirm, default no, until answered or taken back (under the tier `act`,
     rule 15, with no row); a main window in front says it by a toast, and one heard out of focus is said once the window comes
@@ -94,8 +97,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     and grants its acts in the window; its press, proved by the role's key, makes them, each use logged and said on the
     steward's line in *Notifications*, and an act taken back asks from the next press. And the terminal's tier, a machine
     setting read at each press (`driver.json`'s `terminal`, `daoris settings terminal ask|act`): `ask`, the default, cards
-    every press; under `act` a person's press proving no session's key, from a process the pipe places outside every agent
-    Daoris runs, runs at once as the person's own, logged `terminal.pressed`, and any other asks. The verb alone, with no
+    every press; under `act` a person's press proving no session's key runs at once as the person's own, logged
+    `terminal.pressed`, whatever its route and wherever the pipe places its process, a steward's act that would ask the
+    person included (`SESSION_INPUT` too). The verb alone, with no
     Daoris running, writes `ask` and refuses `act`. `data/terminal-acts.json` keeps the newest 20 tier changes with the door
     each came by and the newest 100 presses under `act` with their ends; while the tier is `act` or a press is kept,
     *Notifications* heads the presses' group with who turned it on and when, and *Back to ask*. (from D201, D209, D271)
