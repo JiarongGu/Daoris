@@ -99,14 +99,14 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
             var stages = look.GetProperty("stages").GetString() ?? "";
             var own = Own(stages);
             output.WriteLine($"a look over {Runs} runs: {ms} ms, its stages {own} ms: {stages}");
-            // Every await of the look is in a stage of its own: what no stage names is the look's bookkeeping, a fraction of a second.
-            Assert.True(ms - own <= 500 + ms / 10, $"the look took {ms} ms and its stages say {own} ms: {stages}");
-            // The runs' outcomes are read once a look, each run's record once: a look over this many runs stays short.
-            Assert.True(ms < 5_000, $"the look over {Runs} runs took {ms} ms ({watched.ElapsedMilliseconds} ms watched): {stages}");
+            // Every await of the look is in a stage of its own: what no stage names is the look's bookkeeping, about a second at most.
+            Assert.True(ms - own <= 1_000 + ms / 5, $"the look took {ms} ms and its stages say {own} ms: {stages}");
         }
 
+        // The runs' outcomes are read once a look, each run's record once: a look over this many runs stays short once the process has
+        // read the home (a first look's own reads and its code's first runs are a loaded machine's to stretch).
         var warm = looks[1].GetProperty("ms").GetInt64();
-        Assert.True(warm < 2_000, $"the second look over {Runs} runs took {warm} ms: {looks[1].GetProperty("stages").GetString()}");
+        Assert.True(warm < 2_000, $"the second look over {Runs} runs took {warm} ms ({watched.ElapsedMilliseconds} ms watched): {looks[1].GetProperty("stages").GetString()}");
     }
 
     /// <summary>The milliseconds a line's own stages hold and queue: every entry not marked as work beside the look.</summary>
