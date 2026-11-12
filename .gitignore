@@ -50,6 +50,14 @@ src/Daoris.Desktop/**/bin/
 src/Daoris.Desktop/**/obj/
 src/Daoris.Contracts/bin/
 src/Daoris.Contracts/obj/
+src/Daoris.Ports/bin/
+src/Daoris.Ports/obj/
+src/Daoris.Testing/bin/
+src/Daoris.Testing/obj/
+src/Daoris.Testing.Tests/bin/
+src/Daoris.Testing.Tests/obj/
+src/Daoris.Adapters/**/bin/
+src/Daoris.Adapters/**/obj/
 tools/chromium-probe/bin/
 tools/chromium-probe/obj/
 tools/contracts/bin/

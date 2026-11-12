@@ -40,4 +40,14 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)Daoris.Desktop.Driver/BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 
+  <!--
+    The banned effects of the layers' census (process starts, sleeps, the wall clock, sockets: src/BannedSymbols.Effects.txt), which
+    an application or unit-test project takes by setting DaorisBannedEffects once its uses are each allowed by a section of the one
+    .editorconfig and the allowance only shrinks. Off, nothing here changes; the layered libraries (src/Layers.props) hold them already.
+  -->
+  <ItemGroup Condition="'$(DaorisBannedEffects)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" Condition="'$(IsTestProject)' == 'true'" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\BannedSymbols.Effects.txt" />
+  </ItemGroup>
+
 </Project>
