@@ -25,7 +25,7 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
 
         Assert.Empty(report.Problems);
         Assert.Equal(
-            [["web", "driver", "modules", "service", "cli", "tools", "docs"], ["records"]],
+            [["web", "driver", "modules", "service", "layers", "cli", "tools", "docs"], ["records"]],
             report.Groups.Select(group => group.ToArray()).ToArray());
     }
 

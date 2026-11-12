@@ -28,7 +28,7 @@ public sealed record GitAsk(
     string? Home = null);
 
 /// <summary>What one run of git answered.</summary>
-/// <param name="Exit">Its exit code, or null where it did not start or was ended before it exited.</param>
+/// <param name="Exit">Its exit code, or null where it did not start or its end came before its exit.</param>
 /// <param name="Output">What it wrote to its standard output.</param>
 /// <param name="Error">What it wrote to its standard error.</param>
 public sealed record GitAnswer(int? Exit, string Output, string Error)

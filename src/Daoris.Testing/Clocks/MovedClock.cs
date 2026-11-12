@@ -12,10 +12,7 @@ public sealed class MovedClock : TimeProvider
     private readonly TaskCompletionSource _timed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private DateTimeOffset _now = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
 
-    /// <summary>
-    /// Whether the timestamps, and so the elapsed times read from them, move with the clock. Off, they are the machine's, which a
-    /// test that measures a real span relies on.
-    /// </summary>
+    /// <summary>Whether timestamps, and elapsed times read from them, follow the clock; off, they are the machine's.</summary>
     public bool VirtualTimestamp { get; init; }
 
     /// <summary>Done once the code has made its first timer on this clock.</summary>
@@ -30,10 +27,7 @@ public sealed class MovedClock : TimeProvider
         }
     }
 
-    /// <summary>
-    /// When each timer made on this clock is due, earliest first, those not fired: what the code waits on, so a test moves the clock
-    /// to exactly the moment a wait it can name ends, never by a guess of its own.
-    /// </summary>
+    /// <summary>When each timer not yet fired is due, earliest first: what the code waits on.</summary>
     public IReadOnlyList<DateTimeOffset> Pending
     {
         get

@@ -27,6 +27,7 @@ internal sealed class StructureAnalysis
     private static readonly string[] ImplicitUsings =
     [
         "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks",
+        "Daoris.Ports.Browser",
     ];
 
     /// <summary>The base library the driver compiles against: the managed assemblies of the runtime this test host runs on.</summary>
@@ -57,6 +58,9 @@ internal sealed class StructureAnalysis
 
         // The contracts the driver names, the parts' kit and the routes' records among them.
         references.Add(MetadataReference.CreateFromFile(typeof(Daoris.Contracts.Parts.PartAttribute).Assembly.Location));
+
+        // The effect contracts the driver names, which the adapters implement.
+        references.Add(MetadataReference.CreateFromFile(typeof(Daoris.Ports.Browser.IInAppBrowser).Assembly.Location));
         return references;
     });
 
