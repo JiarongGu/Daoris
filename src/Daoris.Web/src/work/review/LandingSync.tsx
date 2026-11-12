@@ -5,7 +5,6 @@ import { Button, Inline } from '../../design/ui';
 // Declared here, structurally equal to bridge/sessions/trees.ts's shapes, so these molecules import no bridge domain.
 /** One commit a landing leaves out because the line already holds it: short id, subject, why, and the line's commit with the same patch. */
 export type LeftOutCommit = { commit: string; subject: string; why: string; on?: string | null };
-/** One commit a landing would replay onto the line. */
 export type LandsCommit = { commit: string; subject: string };
 /** A replay that conflicts with the line: git's lines, and the words its session is asked to rebase with. */
 export type LandingConflict = { says: string; words: string };
@@ -13,9 +12,8 @@ export type LandingConflict = { says: string; words: string };
 export type SayRebase = (words: string) => Promise<boolean>;
 
 /**
- * Where the review's Accept would be refused while replaying the work onto the line conflicts: git's lines, the words its session
- * is asked to rebase with, shown before the press, and the one press that says them through the say door (`useSay`), as the
- * person's own words. Accept is offered again once the tree changes, when the plan reads it again.
+ * Where replaying the work onto the line conflicts: git's lines, the words its session is asked to rebase with, and the one press
+ * that says them through the say door (`useSay`), as the person's own words.
  */
 export function RebaseAsk({ conflict, onSay }: { conflict: LandingConflict; onSay: SayRebase }) {
   const { t } = useTranslation();

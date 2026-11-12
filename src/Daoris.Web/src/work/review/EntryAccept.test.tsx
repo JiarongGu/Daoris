@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// One Accept for an ask's lines of work. The ask names each repository, says where its parts land in the order they ran, what each
-// leaves out, which part a later one superseded with the person's choice to leave it out, and what holds a part: a gate holding
-// a part holds its repository's work, and the others land. In both languages. A single run's Accept is its review page's.
+// One Accept for an ask's lines of work, in both languages; a single run's Accept is its review page's.
 
 import i18n from '../../locales/i18n';
 import { EntryAccept, type EntryAcceptPlan } from './EntryAccept';

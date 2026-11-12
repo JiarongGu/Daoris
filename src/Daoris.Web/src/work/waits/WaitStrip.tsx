@@ -37,9 +37,7 @@ export type WaitProps = {
    * Settles with a refusal's sentence, or nothing.
    */
   onAnswerSession?: (answer: string) => Promise<string | null> | void;
-  /** A press of its question's answer from the card, with the card's words, through the box's door. */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** The answer selected in its question, the frame's, shared by the box and the head's card. */
   answerPick?: AnswerPick;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
@@ -71,7 +69,6 @@ export type WaitProps = {
    * and its pending. Absent where nothing reads them (a browser).
    */
   gitAsks?: GitAskWaits | null;
-  /** What each running session holds of git access, handed to the head's *Details* alone; the strip draws none. */
   gitAccess?: SessionGitAccessHold | null;
   /**
    * The rules it proposed that the person still answers: the machine's proposals as the shell read them,
@@ -91,7 +88,6 @@ export type WaitProps = {
   handOver?: HandOverAskWait | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
-  /** The door to the review of the run whose Accept the work waits on. */
   onReviewRun?: () => void;
   onSayRebase?: SayRebase;
   review?: HeadReview | null;
@@ -100,7 +96,6 @@ export type WaitProps = {
   onReview?: () => void;
   discards?: DiscardOffer | null;
   onDiscardTree?: (answered: Answered) => void;
-  /** A landing or a discard of its work is on its way, pressed in either place. */
   workBusy?: boolean;
   /**
    * The way from each wait to the event in the conversation that raised it, where the conversation finds one:
@@ -125,8 +120,7 @@ export type WaitProps = {
  * question is named and not answered here: the box below is its answer's one door, and its *Finish…* and
  * *Decline…* stay its card's. A hand-over offer is the pinned page head's, already on screen.
  *
- * **One owner of each answer**: the frame holds the presses and their pending; the work's ask is open in one
- * place at a time (`workAsk`); a refusal is said where the press is made.
+ * **One owner of each answer**: the frame holds the presses and their pending; a refusal is said where the press is made.
  *
  * **One place at a time**: while the head's waits are wholly on screen (`aside`, the
  * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the

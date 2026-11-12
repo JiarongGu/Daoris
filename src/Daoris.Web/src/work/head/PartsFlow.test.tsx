@@ -90,7 +90,6 @@ describe('the parts flow, in the strip\'s place', () => {
     expect(node(/^Part 2/)).toHaveAttribute('aria-current', 'step');
     expect(node(/^Part 1/)).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Part 2 of 3')).toBeInTheDocument();
-    // The strip is the rail: not drawn beside the nodes it would repeat.
     expect(container.querySelector('nav ol')).toBeNull();
     expect(container.querySelector('svg[data-flow-ink]')).toHaveAttribute('aria-hidden', 'true');
   });

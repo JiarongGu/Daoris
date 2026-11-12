@@ -65,7 +65,6 @@ export function useRegionSurfaces({
   views: ReturnType<typeof useDockViews>;
   frame: ReturnType<typeof useFrameLayout>;
   boxState: ReturnType<typeof useAttendedBox>;
-  /** Opens `review/<run>` over the session followed. */
   onReviewRun: (run: string) => void;
   agentRoster: HandOverRoster;
   attend: (id: string) => void;
@@ -199,8 +198,7 @@ export function useRegionSurfaces({
       />
     ) : null;
     // Its second opinion's own gate under its step while the gate holds the work: *Go on
-    // anyway…* and every other press through the gate's one owner, never a second implementation. No *Accept…* is drawn beside
-    // it here, so *Go on anyway…* is offered where the session's page lists the dispute inside *Accept…*.
+    // anyway…* and every other press through the gate's one owner, never a second implementation.
     const opinionHeld = following && following.id === attended?.id && headOpinion ? opinionHolds(landing.data) : null;
     const opinionControl = opinionHeld && headOpinion && attended ? (
       <OpinionGate

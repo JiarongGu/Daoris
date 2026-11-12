@@ -26,7 +26,6 @@ export type ReviewGateActs = {
   setUp?: (environment: string, answered: Answered) => void;
   /** *Show it again*: the set-up's build served to its tab again, the tab brought forward. */
   showAgain?: () => void;
-  /** The set-up step's own page, where the gate is not drawn on it. */
   open?: () => void;
 };
 
@@ -34,7 +33,7 @@ export type ReviewGateActs = {
 /**
  * **Review in `<environment>`**: where a chain's
  * work waits for the person's look, what the gate says, what the set-up step showed and where, and the presses that answer it,
- * drawn where *Accept…* would be while the gate holds: the session's head, and a set-up step's page.
+ * drawn in the session's head and on a set-up step's page while the gate holds.
  *
  * @remarks
  * **Each state says itself in the reader's language**, from its code (a sentence the driver writes is
@@ -61,9 +60,7 @@ export function ReviewGate({
   state: ReviewState;
   /** The set-up step's record, where the frame holds it: what it showed, and the set-up a verdict names. */
   step?: Quest | null;
-  /** The set-up step's id where the frame names one and holds no record of it. */
   stepId?: string | null;
-  /** Whether Daoris still serves the newest set-up's tab here; null where no shell says. */
   served?: boolean | null;
   /** The driver's own sentence, said beneath where the page words none (an unread gate, a newer driver's state). */
   said?: string | null;

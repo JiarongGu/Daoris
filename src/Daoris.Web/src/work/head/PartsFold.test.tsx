@@ -63,7 +63,6 @@ describe('the parts, folded to one line', () => {
     const line = screen.getByRole('navigation', { name: 'Parts' });
     expect(line).toHaveTextContent('Part 2 of 3');
     expect(line).toHaveTextContent('newest: asked by db');
-    // Its one control is the press that opens it: no part is a door while it is folded, and no drawing is made.
     expect(within(line).getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Show the parts' })).toBeInTheDocument();
     expect(screen.queryByRole('list')).toBeNull();

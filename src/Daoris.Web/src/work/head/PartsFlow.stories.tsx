@@ -6,9 +6,9 @@ import type { EntryPart, SessionEntry } from '../entries';
 import { PartsFlow } from './PartsFlow';
 
 // A session's parts drawn as a flowchart: each part hung by what it followed and
-// labelled by how it began, an asked part from a faint node, the part the page is on lit, and where Accept would land them as a
-// dashed node. At the frame's widths, 300 px the side bar's floor (the parts strip, which is the flow's rail), 400 and 544
-// top to bottom, 1200 left to right. Parts are lineage, never a cause or a concurrency. The first decorator is the innermost.
+// labelled by how it began, an asked part from a faint node, the part the page is on lit. At the frame's widths, 300 px the side
+// bar's floor (the parts strip, the flow's rail), 400 and 544 top to bottom, 1200 left to right. Parts are lineage, never a cause or a
+// concurrency. The first decorator is the innermost.
 
 const meta: Meta<typeof PartsFlow> = {
   title: 'Work/PartsFlow',
@@ -26,7 +26,6 @@ const part = (session: string, quest: string | null, shown: string, group: Entry
   session, quest, shown, group, began, after: null, askedBy: null, ...over,
 });
 
-/** The install's line of work: a failed start, its retry, and a request the database repository sent back. */
 const RETRY = EVIDENCE_ENTRIES[0]!;
 const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));
 
@@ -52,7 +51,6 @@ const forkRows = Object.fromEntries(['p1', 'p2', 'p3'].map((id, index) => [id, {
 
 /** A failed start, its retry, and a request the database repository sent back: the parts' lineage by what each followed. */
 export const Retry: Story = { args: { entry: RETRY, attended: 'ap000002', rows }, decorators: light };
-/** The same in dark. */
 export const RetryDark: Story = { args: { entry: RETRY, attended: 'ap000002', rows }, decorators: [atWidths(), inDark] };
 /** The same in 中文. */
 export const RetryChinese: Story = { args: { entry: RETRY, attended: 'ap000002', rows }, decorators: [chinese, atWidths(), inLight] };

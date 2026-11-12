@@ -602,7 +602,6 @@ describe('the attended session\'s head', () => {
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
     const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
 
-    // The head holds no Accept: where it would be, a door opens the run's review page, whose bar is the one Accept.
     it('keeps the plain review where the review says nothing is beyond the line (REVIEWBASE5)', () => {
       const behind = { line: 'master', commits: 2, ahead: 0 };
       const onReview = vi.fn();
@@ -735,12 +734,7 @@ describe('the attended session\'s head', () => {
     });
   });
 
-  /**
-   * A session whose commits the line holds by content, a squash-merged pull request's,
-   * is offered no *Accept…*, since accepting would make a branch of work already there. Where *Accept…* would be, the head
-   * says the driver's sentence, in Discard's own clause, and offers the review's Discard unforced, asking once with the
-   * driver's sentence naming the ref the commits stay at. The press is told back to its ask.
-   */
+  /** A session whose commits the line holds by content is offered no door to land: the head says the driver's sentence and offers the review's Discard unforced, asking once. */
   describe('a session whose work the line holds by content', () => {
     const KEPT = 'refs/daoris/discarded/daoris/s-4e6837ed';
     const DISCARDS = {
@@ -850,7 +844,6 @@ describe('the attended session\'s head', () => {
     act(() => (onDiscardBranch.mock.calls[0]![0] as Answered).done());
     expect(screen.queryByRole('group', { name: 'discard daoris/s-43c14a70' })).toBeNull();
 
-    // The tree still here: the review's Discard is the door, so the head offers none.
     rerender(<SessionHead session={session({ state: 'failed' })} branch={{ ...gone, hasTree: true }} onDiscardBranch={onDiscardBranch} />);
     expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
     // Commits git could not judge are not offered, nor is anything where nothing can press it.
@@ -871,7 +864,6 @@ describe('the attended session\'s head', () => {
       kind: 'unlanded', commits: 2, removable: false, discardable: true,
     };
     let answered: Answered | undefined;
-    // The person's presses and the focus run on the page's own clock; nothing here reads the time.
     vi.useRealTimers();
     const user = userEvent.setup();
     render(
@@ -1186,7 +1178,6 @@ describe('the way from the head\'s waits to the conversation', () => {
     expect(toEvent.question).toHaveBeenCalledTimes(1);
 
     const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
-    // Go-ahead 1's call is not found: it has no such press.
     expect(within(first!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
     await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);

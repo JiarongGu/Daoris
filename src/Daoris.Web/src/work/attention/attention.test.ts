@@ -181,7 +181,6 @@ describe('what needs a person, worded', () => {
     const item = words(waiting);
     expect(item.title).toBe('A terminal asks to archive sessions on this machine, or bring them back.');
     expect(item.detail).toContain('Sent by daoris-driver, process 4242.');
-    // Its card is in Notifications, never at the top of the window.
     expect(item.detail).toContain('It runs only once you confirm it on its card in Notifications');
     expect(attentionActs(item)).toEqual([]);
     // Every route the census makes the person's is worded; one no catalogue words is named by its route.

@@ -260,7 +260,6 @@ export function WorkFrame({
   const [taken, setTaken] = useState<typeof intent>(null);
   // The run `review/<run>` opened, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null } | null>(null);
-  // A door by run: the run's review over the session followed, the way `review/<run>` opens it.
   const onReviewRun = (run: string) => {
     setReviewing({ run, over: following?.id ?? null });
     openView('review');

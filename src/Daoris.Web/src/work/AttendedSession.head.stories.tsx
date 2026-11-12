@@ -15,9 +15,8 @@ import { SessionPageHead } from './head/SessionPageHead';
 import { questName } from './identity';
 
 // The record head with every block it can carry, drawn in a real browser by `measured/head.spec.ts`: the pinned page head, the head, the parts folded to their line,
-// the one Accept, the chain folded to its line, the relations folded to theirs, the channel, the milestone
-// folded to its line and the trace folded, then the first lines of the conversation, which a marked box stands in for. The frame
-// is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
+// the chain folded to its line, the relations folded to theirs, the channel, the milestone folded to its line and the trace
+// folded, then the first lines of the conversation, which a marked box stands in for. The frame is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
 // `storyWidths` box is drawn around it.
 
 const nothing = () => {};

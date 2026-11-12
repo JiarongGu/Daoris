@@ -48,7 +48,6 @@ export function AttendedPane({
   heavy: Page['heavy'];
   partRows: NonNullable<Page['parts']>['rows'];
   onShowPart: (id: string) => void;
-  /** Opens *At work* at the request named. */
   openAtWork: (exchange: string) => void;
   attend: (id: string) => void;
   onOpenQuest?: (quest: string) => void;

@@ -53,8 +53,7 @@ export function landingStands({ lands, landing, behind }: {
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
 }) {
-  // While the review's gate holds the work, *Review in `<environment>`* stands where *Accept…*
-  // would, and no *Accept…* is offered: the landing door would refuse it.
+  // While the review's gate holds the work, *Review in `<environment>`* stands in the door's place.
   const review = reviewHolds(landing);
   const workflow = workflowHolds(landing);
   // The second opinion's gate comes first: while it holds, no *Accept…*, unless *Accept…*
@@ -65,8 +64,7 @@ export function landingStands({ lands, landing, behind }: {
   // Nothing beyond the line, committed or not, is nothing to land: the review's own condition.
   const nothingBeyond = behind?.ahead === 0 && !(typeof lands.uncommitted === 'number' && lands.uncommitted > 0);
   const acceptable = !workflow && !review && !nothingBeyond && (!opinionWaits || answers !== null);
-  // Where replaying the work onto the line conflicts, the words its session is asked to rebase with stand in *Accept…*'s
-  // place; *Accept…* comes back once the tree changes and the plan reads it again.
+  // Where replaying the work onto the line conflicts, the rebase words stand in the door's place until the tree changes.
   const conflict = acceptable ? landing?.conflict ?? null : null;
   return { review, workflow, second, opinionWaits, answers, acceptable, conflict };
 }

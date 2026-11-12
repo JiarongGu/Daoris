@@ -9,7 +9,7 @@ import { PART_BEGAN, partsFlow } from './partsLife';
 
 // A line of work's parts drawn as lineage. A part keeps no start,
 // no end and no agent, and its order is the ledger's, so the drawing hangs each part by `after` and says nothing of when a part ran
-// or whether two ran at once; the landing plan is where Accept *would* land them, a prospective node, never a join drawn as done.
+// or whether two ran at once.
 
 const t = i18n.t.bind(i18n);
 const APP = EVIDENCE_ENTRIES[0]!;
@@ -61,7 +61,6 @@ describe('the parts, hung by what each follows (§2.3)', () => {
 
   it('says every way a part began, held to the driver\'s words in both languages', () => {
     // The driver's `PartBegan`, read from its source (`.claude/knowledge/twins.md`): the page's list is a copy no test would hold else.
-    // By its name (`driverSource`), so the merge tool's page-reads scan sees the one file and its row reaches this gate.
     const source = driverSource('SessionEntries.cs');
     expect(source).toMatch(/static class PartBegan\b/);
     const block = /static class PartBegan\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
@@ -147,7 +146,6 @@ describe('what a part says of itself (§2.3)', () => {
 
     const bare = flowOf(entry([part('a1', 'opened', { shown: 'parked' }), part('b2', 'retried', { shown: 'paused', after: 'a1' })]));
     expect(bare.nodes.find((node) => node.id === 'a1')!.state).toEqual({ word: 'parked', tone: 'open' });
-    // A word this page does not know is shown as the driver said it.
     expect(bare.nodes.find((node) => node.id === 'b2')!.state).toEqual({ word: 'paused', tone: 'neutral' });
   });
 
@@ -157,7 +155,6 @@ describe('what a part says of itself (§2.3)', () => {
     expect(flow.nodes.find((node) => node.id === 'ap000002')!.actor).toMatch(/^claude-code, began /);
     expect(flow.nodes.find((node) => node.id === 'ap000001')!.actor).toBeUndefined();
     expect(flow.lines.ap000001).toContain('#q0000a');
-    // Nothing of a time on the edges or the unheld node: a part has no start, end or overlap.
     expect(JSON.stringify(flow.edges)).not.toMatch(/ago|began \d/);
   });
 

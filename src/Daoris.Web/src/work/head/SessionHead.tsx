@@ -87,23 +87,15 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  * beside it. A failed attempt's branch whose tree is
  * gone has *Discard branch…* too, asking once, since no clean-up takes it and the review has no tree to discard.
  *
- * **Commits its tree holds are offered to land, whatever its ending**: where the driver's reader
- * says what the tree offers (`lands`), the line names the commits, the branch and the tree, and *Accept…* asks once under it,
- * saying where accepting puts the work by the repository's rule, as the review's foot says it, and for a session that did
- * not finish that only what it committed lands. The press is the review's Accept; a refusal is said inside the ask.
+ * **Commits its tree holds are offered, whatever its ending**: where the driver's reader says what the tree offers (`lands`),
+ * the line names the commits, the branch and the tree, with a *Review* door to the run's review, where the Accept is pressed.
  *
- * **Commits the line holds by content are never offered to land again**: where a squash merge or
- * a cherry-pick put its work elsewhere (`discards`), accepting would make a branch of work already there, so no *Accept…*
- * stands. The driver's sentence says where the work is, in Discard's own clause, and *Discard branch…* asks once with the
- * driver's sentence naming the ref its commits stay at; the press is the review's Discard, unforced.
+ * **Commits the line holds by content are never offered again**: where a squash merge or a cherry-pick put its work elsewhere
+ * (`discards`), the line offers *Discard branch…* alone, asking once with the driver's sentence naming the ref its commits
+ * stay at; the press is the review's Discard, unforced.
  *
- * **Where a review's gate holds the work, it stands where *Accept…* would**: *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
- * and the verdict's presses, and no *Accept…*, which the landing door would refuse.
- *
- * **The second opinion stands before it**: wherever a level asks one,
- * *Second opinion* in its state, its findings beside their answers and its presses, before the review's gate as the gate's order
- * has it. While it holds the work *Accept…* is not offered, except where *Accept…* is the press that answers it (a dispute, or
- * commits nobody read): then its ask says what it answers, and the press sends the gate's token back.
+ * **Where a review's gate holds the work, it stands in the door's place**: *Review in `<environment>`* in the gate's state, with
+ * the set-up step's showing and the verdict's presses. *Second opinion*, wherever a level asks one, stands before it.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
@@ -182,7 +174,7 @@ export function SessionHead({
    */
   toEvent?: WaitEvents;
   /**
-   * Where the ask of its work's line (*Accept…*, *Discard branch…*) is open, the frame's, so it is open in the head or in the
+   * Where the ask of its work's line (*Discard branch…*) is open, the frame's, so it is open in the head or in the
    * foot's strip, never both. Absent, the line holds its own.
    */
   workAsk?: WorkAsk;

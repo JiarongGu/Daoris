@@ -1203,12 +1203,7 @@ describe('acting on what a session landed', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
   });
 
-  /**
-   * A session whose work a squash-merged pull request carried, its
-   * tree still standing, is not offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
-   * its page offers no *Accept…*: the driver's sentence says where the work is, and *Discard branch…* asks once with the
-   * driver's sentence naming the ref the commits stay at, then presses the review's Discard, unforced.
-   */
+  /** Where the line holds a session's commits by content, its page offers *Discard branch…* alone, asked once, pressing the review's Discard unforced. */
   it('offers a squash-merged session’s discard on its page, never its landing, and discards through the review’s door unforced', async () => {
     const kept = 'refs/daoris/discarded/daoris/s-4e6837ed';
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -1244,11 +1239,7 @@ describe('acting on what a session landed', () => {
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-4e6837ed' })).toBeNull());
   });
 
-  /**
-   * The review's own *Accept* must not be offered for that session, or the landing
-   * door would land a second copy. Its review offers no *Accept*: the driver's sentence stands in its place, and the head's
-   * *Discard branch…* asks once and presses the review's Discard unforced, through the head's own press.
-   */
+  /** Its review offers no *Accept* for that session: the driver's sentence stands in its place, and the head's own press discards unforced. */
   it('offers a squash-merged session’s discard in its review where Accept stood, through the head’s own press', async () => {
     const kept = 'refs/daoris/discarded/daoris/s-4e6837ed';
     SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];

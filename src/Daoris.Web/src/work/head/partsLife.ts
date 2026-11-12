@@ -9,7 +9,6 @@ import type { PartFacts } from './PartsStrip';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
-/** The ways the driver says a part began (`PartBegan`), held to its source by `partsLife.test.ts`. */
 export const PART_BEGAN = ['opened', 'retried', 'resumed', 'carried-on', 'handed-over', 'moved', 'asked'] as const;
 type Began = (typeof PART_BEGAN)[number];
 const isBegan = (word: string): word is Began => (PART_BEGAN as readonly string[]).includes(word);
@@ -20,9 +19,7 @@ const isBegan = (word: string): word is Began => (PART_BEGAN as readonly string[
  * earlier part is named by its number in the strip, and by its id where the strip does not hold it. A word a newer host adds reads
  * as a start rather than as nothing.
  *
- * **A move says from which agent, and why**: where the page holds both parts'
- * records and they ran on different agents, a move and a hand-over name the one it left, and a hand-over its why by its own
- * link (`fromWhy`, the hand-over's words); without those records the line names no agent, never a guess.
+ * **A move says from which agent, and why**: where the page holds both parts' records and they ran on different agents.
  */
 export function beganLine(t: Translate, part: EntryPart, parts: readonly EntryPart[], rows?: PartsFacts): string {
   const at = part.after ? parts.findIndex((other) => other.session === part.after) : -1;
@@ -72,7 +69,6 @@ export function spentLine(t: Translate, spent: PartSpent | null | undefined): st
 /** What the page holds of a part's session: its record and its place, by the part's id. */
 export type PartsFacts = Readonly<Record<string, PartFacts | undefined>>;
 
-/** What the parts' page draws: the flow's own props, and the plain lines inside each part's node beside its words. */
 export type PartsLife = {
   label: string;
   nodes: FlowNode[];
@@ -95,7 +91,6 @@ const START = 'start';
  * keeps none. A part with an `after` the page does not hold hangs from the start and says which it followed by its id.
  * - **What a part says of itself**: its word as the list shows it, and its quest. Its agent and when it began only where the page
  * holds that part's session record, since the part keeps neither (`SessionEntries.cs`).
- * - **What is lit**: the part the page is on, and a line says which part's record is the list's row.
  * - A way of beginning this page does not know is shown as recorded (trap 10), hung by what it follows.
  */
 export function partsFlow(

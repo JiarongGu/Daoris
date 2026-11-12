@@ -2,8 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Where replaying the work onto the line conflicts, the door to the run's review gives way to the words its session is asked to rebase
-// with, in both languages.
+// Where replaying the work onto the line conflicts, the review door gives way to the rebase words its session is asked to say, in both languages.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 

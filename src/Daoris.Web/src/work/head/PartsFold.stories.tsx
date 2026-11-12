@@ -31,7 +31,6 @@ export const Folded: Story = {};
 export const FoldedHalf: Story = { decorators: [storyWidths.half] };
 export const FoldedNarrow: Story = { decorators: [storyWidths.narrow] };
 
-/** The newest part is the one the page is on. */
 export const FoldedOnTheNewest: Story = { args: { attended: 'ap000003' } };
 
 /** In 中文, wide and at the floor. */

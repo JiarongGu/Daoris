@@ -199,7 +199,6 @@ describe('the strip of what waits on the person, at the foot', () => {
 
     await userEvent.click(within(items[0]!).getByRole('button', { name: 'Decline' }));
     expect(onAnswer).toHaveBeenCalledWith(RULE, false, { done: expect.any(Function), refused: expect.any(Function) });
-    // *Allow…* is open in one place at a time: the frame's.
     await userEvent.click(within(items[0]!).getByRole('button', { name: 'Allow…' }));
     expect(onOpen).toHaveBeenCalledWith('r1');
     rerender(<WaitStrip session={session()} rules={rules} ruleAsk={{ open: 'r1', onOpen }} onTop={vi.fn()} />);

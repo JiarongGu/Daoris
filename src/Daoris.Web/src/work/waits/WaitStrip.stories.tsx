@@ -109,12 +109,10 @@ export const InTheConversationChinese: Story = { ...InTheConversation, decorator
 /** The same in dark and 中文. */
 export const InTheConversationDarkChinese: Story = { ...InTheConversation, decorators: [chinese, dark] };
 
-/** A raising block's *To the wait* led here: go-ahead 2's line, outlined. */
 export const LedToFromTheConversation: Story = {
   args: { ...InTheConversation.args, seek: { wait: 'goAhead:2', n: 1 } },
 };
 
-/** Several, folded to one line naming them. */
 export const Folded: Story = {
   ...ParkedWithAGoAhead,
   play: async ({ canvasElement }) => {
@@ -135,17 +133,7 @@ export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [ch
  */
 export const AsideWhileTheHeadIsOnScreen: Story = { args: { ...ParkedWithAGoAhead.args, aside: true } };
 
-/** On screen or not, the strip stays up while *Accept…* is asking in it. */
-export const AsideButAsking: Story = {
-  args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing }, aside: true },
-};
-
-/** *Accept…* asking at the foot, the frame holding its ask here. */
-export const AcceptAsking: Story = {
-  args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing } },
-};
-
-/** A dispute *Accept…* answers, with its findings folded. */
+/** A dispute the review page answers, with its findings folded. */
 export const Disputed: Story = {
   args: {
     session: session(), lands: LANDS, landing: { ...PLAN, opinion: GATES.disputed }, onReviewRun: nothing, onReview: nothing,

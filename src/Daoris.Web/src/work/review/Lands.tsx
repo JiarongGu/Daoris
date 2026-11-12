@@ -148,8 +148,7 @@ export function Lands({ session, lands, landing, onReview, onReviewRun, onSayReb
  * the driver's sentence naming the ref the commits stay at; the press is the review's Discard, unforced, and its tree goes
  * with the branch. Open until the discard answers, a refusal said inside it. The driver's words are content here, as
  * the review's own sentence is (`DiffPane`'s `said`), so no catalogue words them again. The press and its ask are
- * `HeldDiscard`'s, which the review offers in *Accept*'s place too; the head and the foot's strip draw this line
- * alike, its ask open in one of them at a time.
+ * `HeldDiscard`'s, which the review offers too; the head and the foot's strip draw this line alike.
  */
 export function Discards({ discards, onReview, onDiscard, ask, busy = false }: {
   discards: DiscardOffer;

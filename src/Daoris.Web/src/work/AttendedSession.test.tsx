@@ -99,10 +99,8 @@ describe('the attended session', () => {
   });
 
   /**
-   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent, and React
-   * matches a new fold to the milestone's by that key: each draw of a running driven session must not mount a fresh fold and leave
-   * the last one in the page, never unmounted. A working session is drawn again at every change of its record, so its relations line
-   * must not stand many times over, and moving to another session must not leave the old ones behind.
+   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent: each draw of a
+   * running driven session must not mount a fresh fold and leave the last one in the page, and moving to another session must not leave the old ones behind.
    */
   it('keeps one line of who it worked with, however often a running session with a milestone is drawn again', async () => {
     vi.useRealTimers();

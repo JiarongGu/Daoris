@@ -30,7 +30,6 @@ export type RunDoors = {
   quest?: (id: string) => void;
   /** The ask's page, where its go-aheads are answered. */
   ask?: (id: string) => void;
-  /** A run's review (`review/<run>`), where its work is accepted. */
   review?: (run: string) => void;
   /** A landed branch's page in its repository, with how it landed. */
   branch?: (repository: string, branch: string) => void;

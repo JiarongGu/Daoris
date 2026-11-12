@@ -116,7 +116,6 @@ export type Attention = {
    * the session whose agent asked to hand it over.
    */
   session?: string | null;
-  /** A `review` row's run whose Accept waits, which its door opens the review of; null where the row names none. */
   run?: string | null;
   /** A `hand-over` row's agent, as the roster names it: whom its yes hands the session over to. */
   agent?: string;

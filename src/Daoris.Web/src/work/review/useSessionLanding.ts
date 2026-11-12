@@ -61,19 +61,15 @@ export function useSessionLanding({
     setRestsSince(turnEnded && attended ? { session: attended.id, at: Date.now() } : null);
   }, [attended?.id, turnEnded]);
   const endedAt = restsSince && restsSince.session === attended?.id ? restsSince.at : null;
-  // How the tree stands against its line, from the review's own answer: the same query the review reads, so the
-  // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered, or a
-  // conversation's turn has ended in a tree of its own, whose read is as fresh as that end.
+  // How the tree stands against its line, from the review's own query, asked only where something is offered or a conversation's turn has ended in its own tree.
   const reviewMoved = attended && endedAt !== null && endedAt > Date.parse(attended.updated) ? new Date(endedAt).toISOString() : attended?.updated;
   const reviewRead = useSessionDiff(driverOffers || turnEnded ? attended!.id : null, attended ? { updated: reviewMoved!, live: SESSION_ACTIVE.has(attended.state) } : null);
   const behind = reviewRead.data?.behind ?? null;
   const lands = driverOffers ?? conversationOffer({
     tree: talksInTree, turn: turnHeld, review: reviewRead.data, endedAt, readAt: reviewRead.dataUpdatedAt,
   });
-  // The branch a moved tree is on: the head names it where the clean-up lists no `daoris/<folder>` row for it.
   const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
   const landing = useLanding(lands ? attended!.id : null);
-  // The run whose review the plan draws, where the run holds one: the door to its page, where the one Accept is pressed.
   const drawn = landing.data?.accept ?? null;
   const acceptsNow = useAcceptUnderWay(drawn?.run ?? null);
   const reviewRun = drawn && attended && here ? () => onReviewRun(drawn.run) : undefined;
@@ -109,13 +105,10 @@ export function useSessionLanding({
   // Where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
-  // The run's Accept, its line of work's or its ask's, lands it too: the head's discard waits while any is under way.
   const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
   const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
   const landsNow = acceptsNow || lineLandsNow || askLandsNow;
   const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
-  // Its one press, for the head and, in Accept's place, the review: never forced from here, a refusal the
-  // driver's sentence inside the ask, and the review's Discard the door that asks twice.
   const discardHeld = discards && attended ? (answered: Answered) => discardTree.mutate({ id: attended.id }, {
     onSuccess: (result) => {
       if (!result.done) {
