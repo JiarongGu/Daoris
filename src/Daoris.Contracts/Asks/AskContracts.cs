@@ -26,10 +26,17 @@ public sealed record PostAsk(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
     string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
-    IReadOnlyList<string>? Paths = null) : IRoute<AskActionResponse>
+    IReadOnlyList<string>? Paths = null, IReadOnlyList<QuestRequirementWire>? Requirements = null, string? Through = null) : IRoute<AskActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/asks";
+}
+
+/// <summary>The person's through words on an ask, or their take-back with none: the latest stands.</summary>
+public sealed record ChooseAskThrough(string Id, string? Words = null) : IRoute<AskActionResponse>
+{
+    public static string Method => "POST";
+    public static string Path => "/api/asks/{id}/through";
 }
 
 /// <summary>The person's review choice on an ask's page, or its intake's proposal applied: the latest stands.</summary>
@@ -169,6 +176,7 @@ public sealed record DeleteAsk(string Id) : IRoute<DeletedResponse>
 [JsonSerializable(typeof(PostAsk))]
 [JsonSerializable(typeof(ChooseAskReview))]
 [JsonSerializable(typeof(ChooseAskWorkflow))]
+[JsonSerializable(typeof(ChooseAskThrough))]
 [JsonSerializable(typeof(ReadAsk))]
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(ReadAskChannel))]

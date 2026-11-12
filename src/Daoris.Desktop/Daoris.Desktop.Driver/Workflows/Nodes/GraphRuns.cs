@@ -214,6 +214,10 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
+    public string? Ask { get; init; }
+
+    public AskThroughView? Through { get; init; }
+
     /// <summary>The quests a session serving one of the run's work quests published (<see cref="WorkRequestsReading.Published"/>): what its
     /// <c>work.requests</c> observes. Every quest the runtime read is in view, so an empty list is none published.</summary>
     public IReadOnlyList<QuestView> Requests { get; init; } = [];

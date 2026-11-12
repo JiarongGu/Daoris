@@ -28,6 +28,8 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
         routes.Map<PostAsk, AskActionResponse>(AskAsync);
         routes.Map<ChooseAskReview, AskActionResponse>(async (request, http, ct) =>
             _answers.Moved(http, await Service.Asks.ChooseReviewAsync(request.Id, request.Choice, request.Words, DateTimeOffset.UtcNow, ct)));
+        routes.Map<ChooseAskThrough, AskActionResponse>(async (request, http, ct) =>
+            _answers.Moved(http, await Service.Asks.ChooseThroughAsync(request.Id, request.Words, DateTimeOffset.UtcNow, ct)));
         routes.Map<ChooseAskWorkflow, AskActionResponse>(async (request, http, ct) =>
             _answers.Moved(http, await Service.Asks.ChooseWorkflowAsync(request.Id, request.Kind, request.Workflow, request.Words, DateTimeOffset.UtcNow, ct)));
         routes.Map<ReadAsk, AskResponse>(async (request, http, ct) =>
@@ -88,6 +90,8 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
                 WorkflowWords = request.WorkflowWords,
                 Short = request.Short,
                 Paths = request.Paths ?? [],
+                Requirements = QuestAnswers.RequirementsOf(request.Requirements),
+                Through = request.Through,
             },
             DateTimeOffset.UtcNow, ct);
         return _answers.Moved(http, outcome);

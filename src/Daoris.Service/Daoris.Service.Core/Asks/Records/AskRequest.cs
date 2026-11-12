@@ -44,4 +44,9 @@ public sealed record AskRequest(string Workspace, string Sentence)
 
     /// <summary>The person's words with their kind and workflow, where they give any.</summary>
     public string? WorkflowWords { get; init; }
+
+    /// <summary>The person's requirements for the quest published at once to <see cref="To"/>, their quotes kept as words they said.</summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
+
+    public string? Through { get; init; }
 }

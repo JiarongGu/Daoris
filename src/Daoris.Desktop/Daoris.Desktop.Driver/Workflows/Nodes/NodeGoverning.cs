@@ -264,8 +264,10 @@ internal static class NodeGoverning
         // The go-aheads on its ask that a session serving one of its quests, or a request naming one, asked.
         var askId = binding.Ask ?? (newest is null ? null : AskWords.AskOf(newest.From));
         IReadOnlyList<GoAheadView>? goAheads = null;
+        AskThroughView? through = null;
         if (askId is not null && units.GetValueOrDefault(AskUnits.IdOf(askId))?.Records.Ask is { } ask)
         {
+            through = ask.Through;
             var named = work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var serving = work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
             goAheads = [.. (ask.GoAheads ?? []).Where(goAhead => goAhead.Asked.Any(asked => serving.Contains(asked.Session) || (asked.Quest is { } quest && named.Contains(quest))))];
@@ -285,6 +287,8 @@ internal static class NodeGoverning
             Attributed = read.Unread.Count == 0,
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
+            Ask = askId,
+            Through = through,
             Requests = WorkRequestsReading.Published(quests, sessions, work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
             Sessions = sessions,
             Root = root,

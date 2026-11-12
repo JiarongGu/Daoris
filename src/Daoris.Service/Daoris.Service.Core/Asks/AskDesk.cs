@@ -31,6 +31,7 @@ public sealed class AskDesk
     private readonly AskChoices choices;
     private readonly AskGoAheadAnswers goAheads;
     private readonly AskDeletes deletes;
+    private readonly AskThroughs throughs;
 
     public AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files, SessionStore? sessions = null)
     {
@@ -41,7 +42,12 @@ public sealed class AskDesk
         choices = new(asks, standings);
         goAheads = new(asks, standings);
         deletes = new(asks, exchange, askFiles, standings);
+        throughs = new(asks, standings);
     }
+
+    /// <summary>The person sets the ask's through words, or takes them back with none; see <see cref="AskThroughs.ChooseAsync"/>.</summary>
+    public Task<AskOutcome> ChooseThroughAsync(string id, string? words, DateTimeOffset now, CancellationToken ct = default) =>
+        throughs.ChooseAsync(id, words, now, ct);
 
     /// <summary>The sender every quest an ask becomes is published by.</summary>
     public static string SenderOf(string askId) => $"ask #{askId}";

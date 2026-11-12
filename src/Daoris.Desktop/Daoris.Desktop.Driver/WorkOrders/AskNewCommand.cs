@@ -5,7 +5,11 @@ namespace Daoris.Driver;
 /// <param name="Files">Files on this machine by their full paths, read when the ask is made.</param>
 public sealed record AskNew(
     string Workspace, string Sentence, string? To = null, IReadOnlyList<string>? Links = null, IReadOnlyList<string>? Files = null,
-    string? Review = null, string? ReviewWords = null, string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null);
+    string? Review = null, string? ReviewWords = null, string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null,
+    IReadOnlyList<Daoris.Contracts.Quests.QuestRequirementWire>? Requirements = null, string? Through = null)
+{
+    public AskCarried Carried => new(Requirements ?? [], string.IsNullOrWhiteSpace(Through) ? null : Through.Trim());
+}
 
 /// <summary>
 /// <c>daoris ask [--workspace &lt;name&gt;] … "…"</c>: an ask made at a workspace, through the service's ask door as the person's. The
@@ -20,7 +24,8 @@ public static class AskNewCommand
         InstanceDoor.ThroughAsync(instance, PersonPresses.AskNew, InstanceDoor.Said(
                 ("workspace", ask.Workspace), ("sentence", ask.Sentence), ("to", ask.To), ("links", Some(ask.Links)), ("files", Some(ask.Files)),
                 ("review", ask.Review), ("reviewWords", ask.ReviewWords), ("kind", ask.Kind), ("workflow", ask.Workflow),
-                ("workflowWords", ask.WorkflowWords), ("short", ask.Short)),
+                ("workflowWords", ask.WorkflowWords), ("short", ask.Short),
+                ("requirements", ask.Requirements is { Count: > 0 } required ? required : null), ("through", ask.Carried.Through)),
             () => RunAsync(ask, reviews, workflows, output, ct), output, ct);
 
     /// <summary>Make the ask and print the service's sentence, with the ask and the quest it names.</summary>
@@ -49,7 +54,7 @@ public static class AskNewCommand
         var review = AskReviewCommand.Compose(ask.Review, ask.ReviewWords, out _)!;
         var workflow = AskWorkflowCommand.Compose(ask.Kind, ask.Workflow, ask.WorkflowWords, out _)!;
         var answer = await reviews.Service.AskAsync(ask.Workspace, ask.Sentence.Trim(), ask.Links ?? [], read, ask.To, ct,
-            review: review.Choice, reviewWords: review.Words, workflow: workflow, shortTitle: ask.Short).ConfigureAwait(false);
+            review: review.Choice, reviewWords: review.Words, workflow: workflow, shortTitle: ask.Short, carried: ask.Carried).ConfigureAwait(false);
         output.WriteLine(answer.Message);
         if (answer.AskId is not null) output.WriteLine($"  ask    #{answer.AskId}");
         if (answer.QuestId is not null) output.WriteLine($"  quest  #{answer.QuestId}");

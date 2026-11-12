@@ -46,6 +46,12 @@ internal static class AskConsole
                 return await AskWorkflowCommand.PressAsync(set, workflows, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
             }
 
+            if (read.SetThrough is { } setThrough)
+            {
+                if (AskThroughCommand.Read(setThrough, read.Words, read.ClearWorkflow, out var throughProblem) is not { } through) return Usage(throughProblem!);
+                return await AskThroughCommand.PressAsync(through, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
+            }
+
             if (read.SetReview is { } setReview)
             {
                 if (AskReviewCommand.Read(setReview, read.Words, out var setProblem) is not { } chosen) return Usage(setProblem!);
@@ -74,7 +80,7 @@ internal static class AskConsole
 
             // Full paths, as this terminal names them: the press is read where Daoris runs, whose folder is its own.
             var ask = new AskNew(read.Workspace ?? "default", read.Sentence, read.To, read.Links, [.. read.Files.Select(Path.GetFullPath)],
-                read.Review, read.ReviewWords, read.Kind, read.Workflow, read.WorkflowWords, read.Short);
+                read.Review, read.ReviewWords, read.Kind, read.Workflow, read.WorkflowWords, read.Short, read.Requirements, read.Through);
             var registry = (await service.RegistryAsync().ConfigureAwait(false)).Select(row => (row.Repository, (string?)row.Workspace));
             if (AskNewCommand.Unfit(ask, reviews.Config(), workflows.Home, registry, out var usage) is { } unfit)
             {

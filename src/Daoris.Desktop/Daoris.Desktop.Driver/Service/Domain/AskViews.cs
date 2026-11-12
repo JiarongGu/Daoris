@@ -149,7 +149,17 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
 
     /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing; empty where they make none.</summary>
     public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
+
+    public IReadOnlyList<AskThroughView> ThroughWords { get; init; } = [];
+
+    public AskThroughView? Through => ThroughWords is [.., { Words: not null } latest] ? latest : null;
 }
+
+/// <summary>The person's through words on an ask, with when; null words are their take-back.</summary>
+public sealed record AskThroughView(string? Words, DateTimeOffset At);
+
+/// <summary>A new ask's requirements and through words, verified where the press is proved (<see cref="AskQuotes"/>).</summary>
+public sealed record AskCarried(IReadOnlyList<Daoris.Contracts.Quests.QuestRequirementWire> Requirements, string? Through);
 
 public static class Asks
 {

@@ -110,4 +110,10 @@ public sealed record Ask(
     /// reading, kept beside the person's choice and applied only by their press.
     /// </summary>
     public IReadOnlyList<AskWorkflowProposal> WorkflowProposals { get; init; } = [];
+
+    /// <summary>The person's through words on it, oldest first, each with when; the latest stands, and one with no words is their take-back.</summary>
+    public IReadOnlyList<AskThrough> ThroughWords { get; init; } = [];
+
+    /// <summary>The through words that stand, or null where none were given or the latest took them back.</summary>
+    public AskThrough? Through => ThroughWords is [.., { Words: not null } latest] ? latest : null;
 }

@@ -126,6 +126,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks", Person),
         ("POST", "/api/asks/{id}/review", Person),
         ("POST", "/api/asks/{id}/workflow", Person),
+        ("POST", "/api/asks/{id}/through", Person),
         // WORKFLOW1e2: a quest's own kind and workflow, where no ask published it; a local host's alone.
         ("POST", "/api/quests/{id}/workflow", Person),
         ("POST", "/api/asks/{id}/channel", Person),
@@ -199,7 +200,7 @@ public sealed class PersonDoorTableTests
         Assert.Equal(8, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(33, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(40, Routes.Count(route => route.Class == Person));
+        Assert.Equal(41, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

@@ -46,4 +46,10 @@ public enum AskRefusal
 
     /// <summary>A declared path that is no repository-relative glob, or too many.</summary>
     BadPaths,
+
+    /// <summary>A requirement on a new ask that names no receiver, or one not of its shape.</summary>
+    BadRequirement,
+
+    /// <summary>Through words past their bound.</summary>
+    BadThrough,
 }

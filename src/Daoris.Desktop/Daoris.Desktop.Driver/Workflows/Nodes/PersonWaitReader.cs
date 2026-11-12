@@ -32,7 +32,7 @@ public static class PersonWaitReader
         return Of(new GraphRuns(files).Read(), files.Read);
     }
 
-    private static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
+    internal static string? WhyOf(NodeDeclaration node, NodeStatus status) => status.State switch
     {
         NodeStates.Unknown => PersonWaits.Held,
         NodeStates.Active => NodeKit.Of(node.Kind) switch
