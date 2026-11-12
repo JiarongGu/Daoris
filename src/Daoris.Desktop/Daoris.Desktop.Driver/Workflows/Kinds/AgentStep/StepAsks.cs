@@ -22,6 +22,7 @@ public static class StepAsks
         {
             Outcomes = node.Outcomes,
             Outputs = node.Outputs,
+            Options = node.Options,
             Evidence = node.Evidence,
             Root = told.Root.Length > 0 ? told.Root : null,
             Landing = landing is null ? told.PullRequest : Landed(landing),

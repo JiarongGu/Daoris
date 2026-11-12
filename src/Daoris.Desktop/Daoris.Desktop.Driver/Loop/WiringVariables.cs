@@ -98,6 +98,7 @@ public static class WiringVariables
     {
         ["DAORIS_TARGET"] = "handed to a session by the driver: its target",
         ["DAORIS_GIT_IDENTITY"] = "set by the git remote helper on its transport alone: the identity an HTTPS act is carried as, which the credential door answers for",
+        ["DAORIS_BROWSER"] = "handed to the processes of a plugin that declares `hooks.browser`, by the driver, while the shell carries a browser: its loopback DevTools address",
         ["DAORIS_PLUGIN_PRIVATE"] = "handed to a plugin's own processes alone by the driver: the folder of that plugin's private storage, where it keeps its own credentials; never shown",
         // A secret, so never shown, its value or whether it is set: every Daoris process removes it at its entry.
         ["DAORIS_ROLE_KEY"] = "a role's holder key (STEWARDROLE1a-i: shared by every role its holder holds), handed only to the holder's tab of the terminal panel at the owner's appointment; a secret never shown, removed from every Daoris process at its entry and from every start",

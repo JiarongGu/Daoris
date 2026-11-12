@@ -442,7 +442,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                     return (PluginManifest.Empty(id), "`hooks` needs a `command` and the `points` it listens on.");
                 }
 
-                hooks = new PluginHooks(command, points);
+                hooks = new PluginHooks(command, points, spoken.TryGetProperty("browser", out var browser) && browser.ValueKind == JsonValueKind.True);
             }
 
             var servers = new List<PluginServer>();

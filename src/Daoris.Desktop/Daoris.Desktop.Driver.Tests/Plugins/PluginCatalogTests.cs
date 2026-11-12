@@ -79,6 +79,18 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(["quest/consider", "session/ended"], entry.Manifest.Hooks.Points);
     }
 
+    [Fact]
+    public void A_plugin_declares_the_browser_for_its_process_by_JSON_true_alone()
+    {
+        Plugin("yes", """{ "id": "yes", "hooks": { "command": ["node", "a.mjs"], "points": ["work/perform"], "browser": true } }""");
+        Plugin("no", """{ "id": "no", "hooks": { "command": ["node", "a.mjs"], "points": ["work/perform"] } }""");
+        Plugin("word", """{ "id": "word", "hooks": { "command": ["node", "a.mjs"], "points": ["work/perform"], "browser": "yes" } }""");
+
+        var hooks = PluginCatalog.Load(_home).Plugins.ToDictionary(entry => entry.Manifest.Id, entry => entry.Manifest.Hooks!.Browser);
+
+        Assert.Equal(new Dictionary<string, bool> { ["yes"] = true, ["no"] = false, ["word"] = false }, hooks);
+    }
+
     /// <summary>The version is read BEFORE anything else — a refused plugin contributes nothing.</summary>
     [Fact]
     public void A_newer_api_version_is_refused_naming_both_numbers_and_nothing_of_it_is_taken()

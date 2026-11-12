@@ -20,6 +20,9 @@ public sealed record StepAgentAsk(
     /// <summary>The step's evidence schema, which the answer's evidence is named under; null for none.</summary>
     public string? Evidence { get; init; }
 
+    /// <summary>The step's options as its graph writes them (each name with its JSON value's text), which the agent passes to the plugin's tools.</summary>
+    public IReadOnlyDictionary<string, string> Options { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
     public string? Root { get; init; }
 
     public string? Landing { get; init; }
@@ -37,6 +40,7 @@ public sealed record StepAgentAsk(
         $"- origin's address `{Origin ?? "(none read)"}`",
         $"- the line `{Line ?? "(none named)"}`",
         $"- the landing: {Landing ?? "(none yet)"}",
+        $"- the step's options: {OptionsTold()}",
         "",
         $"Use the plugin's tools (`{Plugin}_<command>`) for its platform, and nothing else outside Daoris. Finish by calling `step_answer` once:"
             + " `reached` with the evidence's address and a message where the goal is met"
@@ -44,6 +48,11 @@ public sealed record StepAgentAsk(
             + (Outputs.Count > 0 ? $" and the id of each output ({string.Join(", ", Outputs.Keys)})" : "")
             + ", or `failed` with a code and a message where it cannot be.",
     });
+
+    private string OptionsTold() =>
+        Options.Count == 0
+            ? "(none given)"
+            : "{" + string.Join(",", Options.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{JsonSerializer.Serialize(pair.Key)}:{pair.Value}")) + "}";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
