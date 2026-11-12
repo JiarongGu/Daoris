@@ -184,11 +184,11 @@ internal sealed class SessionStateReader
             }
         }
 
-        // A done with a departure on it is unfinished, accepted or not; its quest's newest session here stands for it.
+        // A done with a departure on it is never plain done: it needs the person until they accept the departure, which is their word on it.
         if (record.State == "completed" && record.Quest is { } closed && _quests.TryGetValue(closed, out var done) && QuestLeft.Has(done)
             && _look.LastRun.TryGetValue(closed, out var newest) && string.Equals(newest.Session, record.Id, StringComparison.Ordinal))
         {
-            return In(row, SessionGroup.NeedsYou, SessionReason.Left);
+            return QuestLeft.Waits(done) ? In(row, SessionGroup.NeedsYou, SessionReason.Left) : In(row, SessionGroup.Done, SessionReason.PartLeft);
         }
 
         return In(row, record.State is "failed" or "not-started" ? SessionGroup.Failed : SessionGroup.Done);
