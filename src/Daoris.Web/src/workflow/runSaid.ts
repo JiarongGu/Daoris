@@ -298,7 +298,6 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
   if (run.workflowGate?.holds) return t('workflow.run.short.workflowHeld');
   const at = standsAt(run);
   if (!at) {
-    // The release ends the tree after the work, so the run's words are those of the step before it.
     const last = [...run.steps].reverse().find((step) => step.state === 'done' && step.step.kind !== 'release');
     // A graph run's chain ends at its tidy, which only a merged request starts; an older steps version's ends at the pull request.
     if (last?.step.kind === 'pull-request' || last?.step.kind === 'tidy') return t('workflow.run.short.finished.merged');

@@ -308,7 +308,7 @@ public sealed class BranchTidying(string home)
                         + $"`{ContentHolds.Named(gone.Holder)}` holds its commit {TextBounds.ShortCommit(gone.Commit, 8)}."));
                 }
 
-                // A run's tree the look ended once its run was over, or kept with the reason it is kept for, said once while it lasts.
+                // A run's tree ended with its run over, or kept for its reason, said once while it lasts.
                 foreach (var each in pass.Released)
                 {
                     if (each.Gone) lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: ended `{each.Branch}`'s tree, its run being over: {each.Said}"));

@@ -108,7 +108,6 @@ internal static class TreesConsole
                           + (tree.Slimmed.Count == 0 ? "" : $"; its package folders went an hour after it moved: {string.Join(", ", tree.Slimmed)}")
                         : $"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
                     Console.WriteLine($"    {tree.Path}");
-                    // Whose it is and why it stays: the run that ends it, and what its release or the sweep kept it for.
                     if (tree.Run is { } owner) Console.WriteLine($"    run {owner}" + (tree.Reason is { } why ? $" — stays: {why}" : ""));
                 }
 

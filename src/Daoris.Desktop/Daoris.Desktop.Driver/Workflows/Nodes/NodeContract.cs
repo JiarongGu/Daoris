@@ -115,10 +115,7 @@ public static class NodeKinds
     /// </summary>
     public const string Tidy = "tidy";
 
-    /// <summary>
-    /// The end of a run's worktree once its work has landed: each tree the run owns ended behind the clean-up's proof, and one holding work
-    /// nothing else holds kept, with why. Reached either way.
-    /// </summary>
+    /// <summary>A run's trees ended once its work landed: each behind the clean-up's proof, one holding work kept, with why.</summary>
     public const string Release = "release";
 
     public const string Rebase = "rebase";

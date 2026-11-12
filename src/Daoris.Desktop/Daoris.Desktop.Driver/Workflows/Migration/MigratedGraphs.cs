@@ -134,8 +134,7 @@ public static class MigratedGraphs
 
     /// <summary>
     /// A graph's shape, by what a person means by it: its nodes' kinds with their written options, its wires between kinds, its entries' kinds.
-    /// Node ids, wire ids, reach and the end are no part of it, so a drawn graph matches the shipped copy that says the same. A <c>release</c>, which
-    /// only ends the work's trees, and the ways to it are no part of it either: a graph drawn without one is the shipped copy that holds one.
+    /// Node ids, wire ids, reach, the end and a <c>release</c> are no part of it, so a drawn graph matches the shipped copy that says the same.
     /// </summary>
     public static string Shape(JsonObject graph)
     {

@@ -53,8 +53,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         IEnumerable<string> Repositories(string workspace) =>
             Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
 
-        // Both places of the trees, each as found. The folders the look moved aside are no trees: git no
-        // longer knows them as such.
+        // Both places of the trees, each as found; the folders the look moved aside are no trees to git.
         var folders = (
             from root in context.TreesRoots.Where(Directory.Exists)
             from workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder)
@@ -69,7 +68,6 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         {
             var (code, branch) = branches.TryGetValue(tree, out var read) ? read : (1, SessionTree.NotATree);
             var named = code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)";
-            // Whose it is and why it stays, from the record the tree's branch is kept in (the run that owns it, what its release kept it for).
             var owner = grown.LastOrDefault(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, Path.GetFileName(repository), named));
             found.Add(new(tree, Path.GetFileName(workspace), Path.GetFileName(repository), named) { Run = owner?.Run, Reason = owner?.Kept });
         }

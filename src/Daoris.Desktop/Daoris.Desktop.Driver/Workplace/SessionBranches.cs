@@ -43,16 +43,10 @@ public sealed record GrownBranch(
     /// </summary>
     public TidyBlock? Blocked { get; init; }
 
-    /// <summary>
-    /// The workflow run whose work the branch's tree holds, written while the run is governed (<see cref="SessionBranches.Own"/>): who owns the
-    /// tree, and so who ends it (<see cref="TreeReleases"/>). Null for a tree no run is known to own, such as a conversation's. Additive.
-    /// </summary>
+    /// <summary>The workflow run that owns the tree (<see cref="SessionBranches.Own"/>), and so ends it (<see cref="TreeReleases"/>); null for none, such as a conversation's. Additive.</summary>
     public string? Run { get; init; }
 
-    /// <summary>
-    /// Why the tree stays after the run's <c>release</c> or the sweep tried to end it: the clean-up's refusal, in its words. Null until one
-    /// is kept, and dropped once the tree goes or is recorded again. Additive.
-    /// </summary>
+    /// <summary>Why the tree stays after its run's release or the sweep tried to end it: the clean-up's refusal; null until one is kept. Additive.</summary>
     public string? Kept { get; init; }
 
     /// <summary>A new unit's id: written once, where a tree opens.</summary>
@@ -128,10 +122,7 @@ public sealed class SessionBranches(string home)
             entry with { Unit = standing?.Unit ?? entry.Unit, Run = standing?.Run ?? entry.Run, Held = standing?.Held, GoneAt = null, Blocked = null, Kept = null }];
     });
 
-    /// <summary>
-    /// The workflow run <paramref name="run"/> owns the standing branch's tree: written where the entry names no run or another, so a pass
-    /// that finds it owned writes nothing.
-    /// </summary>
+    /// <summary>The workflow run <paramref name="run"/> owns the standing branch's tree; nothing is written where it already does.</summary>
     public void Own(string repository, string branch, string run)
     {
         if (Of(repository, branch) is not { } standing || standing.Run == run) return;

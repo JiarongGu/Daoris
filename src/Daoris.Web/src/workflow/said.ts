@@ -87,8 +87,7 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
       const plugin = textOf(step, 'plugin');
       return plugin ? t('workflow.set.pullRequest', { plugin }) : null;
     }
-    // A graph-only kind, said as the terminal says it (`WorkflowWords`): a value this page does not know reads
-    // as the owner's, no gates, back to its session, as the driver reads an absent or unrecognised one.
+    // A graph-only kind, said as the terminal says it (`WorkflowWords`); an unknown value reads as the driver reads it.
     case 'integrate': {
       const request = textOf(step, 'request');
       return t('workflow.set.integrate.says', {

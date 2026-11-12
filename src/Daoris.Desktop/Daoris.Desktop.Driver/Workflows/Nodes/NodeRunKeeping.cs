@@ -101,10 +101,7 @@ internal sealed class NodeRunKeeping(
               + ", so they stay as they are; it is judged again once its chain comes back here.");
     }
 
-    /// <summary>
-    /// The run named on the record of every branch its quests produced, so the tree each holds has an owner that ends it (<see cref="TreeReleases"/>);
-    /// a branch already naming the run writes nothing.
-    /// </summary>
+    /// <summary>The run named on the record of each branch its quests produced, so the tree has an owner that ends it (<see cref="TreeReleases"/>).</summary>
     public void OwnTrees(RunScope scope)
     {
         if (!holdsLease()) return;
