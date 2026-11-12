@@ -113,6 +113,14 @@ export const SHARED_PROJECTS = new Map([
 ]);
 
 /**
+ * The tools that start `dotnet test` themselves, with the components they build: the reached checks run the filtered
+ * classes of the desktop's and the service's test projects, so no other gate builds either beside them.
+ */
+export const TOOL_COMPONENTS = new Map([
+  ['tools/reached-checks.mjs', ['src/Daoris.Desktop', 'src/Daoris.Service']],
+]);
+
+/**
  * The .NET components a gate builds: its command's (`dotnetComponent`), and each one a root script it names
  * builds, read through the scripts those name in turn. The CLI's `npm run verify` ends in the devkit's universal gates
  * and `npm run test:web` builds the HTTP host, so each shares a component with a .NET gate, and no two gates that build
@@ -123,6 +131,10 @@ export function gateComponents(gate, scripts = {}) {
   const read = (command, seen) => {
     const own = dotnetComponent(command);
     if (own) found.add(own);
+    for (const component of TOOL_COMPONENTS.get(/^node (tools\/\S+\.mjs)/.exec(command.trim())?.[1]) ?? []) {
+      found.add(component);
+      for (const shared of SHARED_PROJECTS.get(component) ?? []) found.add(shared);
+    }
     for (const shared of SHARED_PROJECTS.get(own) ?? []) found.add(shared);
     const script = scriptNamed(command);
     if (!script || seen.has(script) || typeof scripts[script] !== 'string') return;

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tool } from '../support/merge-branch.ts';
+import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
+import { repoRoot, tool } from '../support/merge-branch.ts';
 
 // The units a merge's paths reach, as the census of test units answers (`unitsReached`): each with the path that reached it.
 const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
@@ -41,6 +43,15 @@ test('a suite reached past its bound runs the units nearest the change first and
   assert.match(tool.reachedLines(plan).join('\n'), /driver: 2 of 4 reached units run; 2 are left to the CI beside/);
 });
 
+test('past its bound a suite keeps first the units named for the change, then those in its folder, since a class reaches by area and an area is wide', () => {
+  const changed = ['src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BacklogMerge.cs'];
+  const at = (name: string, folder: string) => ({ ...dotnet('driver', name, changed[0]!), file: `${DRIVER}/${folder}/${name}.cs` });
+  const units = [at('ATests', 'Agents'), at('BTests', 'Workplace'), at('BacklogMergeTests', 'Review'), at('CTests', 'Agents')];
+  const plan = tool.reachedPlan(units, changed, { bounds: { dotnet: 2 } });
+  // The class named for the changed file, then the first of the changed file's own folder, then the census's order.
+  assert.deepEqual(plan.groups[0]!.units.map((unit) => unit.name), ['BacklogMergeTests', 'BTests']);
+});
+
 test('a .NET suite runs as one filtered command per test project, its fast half only, and a page or tool suite by its own runner from its own folder', () => {
   const modules = 'src/Daoris.Desktop/Daoris.Desktop.Modules.Tests';
   const units = [
@@ -68,4 +79,16 @@ test('a merge that changes nothing reaches nothing, and says the CI beside runs 
   const plan = tool.reachedPlan([], []);
   assert.deepEqual(plan.groups, []);
   assert.match(tool.reachedLines(plan).join('\n'), /no reached unit/);
+});
+
+test('the tool reads the census of this repository: a changed tool reaches the tool-test that holds it, --plan runs nothing, and a clean checkout reaches nothing', () => {
+  const run = (...args: string[]) => spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), ...args], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
+  const planned = run('--plan', '--paths', 'tools/merge-branch/reached.mjs');
+  assert.equal(planned.status, 0, planned.stderr);
+  assert.match(planned.stdout, /reached: tool-tests: \d+ reached units? run/);
+  assert.match(planned.stdout, /tool-tests: node --test .*tool-test\/merge-branch\/reached\.test\.ts/);
+  // No path changed, none reached.
+  const none = run('--plan', '--paths', '');
+  assert.equal(none.status, 0, none.stderr);
+  assert.match(none.stdout, /no reached unit/);
 });

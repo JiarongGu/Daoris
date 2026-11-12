@@ -17,24 +17,42 @@ const SUITES = Object.freeze({
 });
 
 /**
- * How many units of one suite a merge runs: a filter of a hundred and fifty classes is a command line a platform still
- * takes, and the page's and the tools' units are bounded by the minutes they cost (median of a CI run's gates: the page's unit
- * run 11, the tool-tests 22).
+ * How many units of one suite a merge runs, bounded by the minutes they cost (median of a CI run's gates, 2026-11-05 to
+ * 2026-11-11: the driver's 16, the modules' 7, the page's unit run 11, the tool-tests 22, each whole): a bound is a fraction of a
+ * suite's time, and what it leaves is counted in `left`.
  */
-export const REACHED_BOUNDS = Object.freeze({ dotnet: 150, vitest: 120, node: 80 });
+export const REACHED_BOUNDS = Object.freeze({ dotnet: 80, vitest: 80, node: 30 });
 
 const RUNNER_ORDER = ['dotnet', 'vitest', 'node'];
 const WEB = 'src/Daoris.Web';
 const CLI = 'src/Daoris.Cli';
 
+const stemOf = (path) => posix.basename(path).replace(/\.[^.]+$/, '').replace(/\.(test|spec)$/, '').replace(/(Tests?)$/, '');
+
 /**
- * Which units of `units` (the census's `unitsReached`) a merge runs. A suite over its bound keeps the units the change
- * itself is in first, then the census's order; `left` counts what each suite left out and `reached` every unit of the
- * suites a merge runs that the paths reach.
+ * How near a unit is to the change, for choosing among the units a bound leaves out: 3 where the change is in the unit's own
+ * file, 2 where the unit is named for a changed file, 1 where it is in a changed file's folder (a class reaches by area, and
+ * an area is wide), else 0.
+ */
+function nearness(unit, changed) {
+  let best = 0;
+  const own = stemOf(unit.file);
+  for (const path of changed) {
+    if (path === unit.file) return 3;
+    const stem = stemOf(path);
+    if (own.length >= 6 && stem.length >= 6 && (own.startsWith(stem) || stem.startsWith(own))) best = Math.max(best, 2);
+    else if (posix.basename(posix.dirname(path)) === posix.basename(posix.dirname(unit.file))) best = Math.max(best, 1);
+  }
+  return best;
+}
+
+/**
+ * Which units of `units` (the census's `unitsReached`) a merge runs. A suite over its bound keeps the units nearest the
+ * change first (`nearness`), then the census's order; `left` counts what each suite left out and `reached` every unit of
+ * the suites a merge runs that the paths reach.
  */
 export function reachedPlan(units, changed, { bounds = {} } = {}) {
   const limit = { ...REACHED_BOUNDS, ...bounds };
-  const own = new Set(changed);
   const bySuite = new Map();
   for (const unit of units) {
     if (!SUITES[unit.suite]) continue;
@@ -46,7 +64,8 @@ export function reachedPlan(units, changed, { bounds = {} } = {}) {
   for (const [suite, all] of bySuite) {
     reached += all.length;
     const runner = SUITES[suite];
-    const ordered = [...all.filter((unit) => own.has(unit.file)), ...all.filter((unit) => !own.has(unit.file))];
+    const ordered = all.map((unit, index) => ({ unit, index, near: nearness(unit, changed) }))
+      .sort((a, b) => b.near - a.near || a.index - b.index).map((entry) => entry.unit);
     const kept = ordered.slice(0, limit[runner]);
     if (kept.length < all.length) left[suite] = all.length - kept.length;
     if (runner === 'dotnet') {

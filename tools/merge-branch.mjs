@@ -45,9 +45,12 @@
  * declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
  * long-lived build server carried a broken environment into a publish, so that rehearsal started after
  * `dotnet build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
- * By default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- * census of test units), and each path check one of its paths reaches (`PATH_CHECKS`: the web
- * `tsc --noEmit` and the design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside".
+ * By default a merge runs the blocking checks (`BLOCKING`: the universal gates, the code map and the
+ * census of test units), the CLI's verify (`MERGE_SUITES`: the lists, records and documents no path places), and each
+ * path check one of its paths reaches (`PATH_CHECKS`: the web `tsc --noEmit` and the design and structure tests, the
+ * desktop's censuses, and the `reached` check, `tools/reached-checks.mjs`, which runs the test units the paths reach in
+ * the driver's, the modules', the service's, the page's and the tools' suites, bounded per suite); every other gate it
+ * reaches is listed and skipped, "in the CI beside".
  * `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  * merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  * places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -456,7 +459,7 @@ export {
   dotnetComponent, LIGHT_WIDTH, SHARED_PROJECTS, gateComponents, testBuild, noBuildCommand, reuseBuild, laneSchedule, slug, gateKind,
   workflowScripts, gatePlan, readDeclared, declaredIn, readPlan,
 } from './merge-branch/plan.mjs';
-export { BASELINE, BLOCKING, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
+export { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, ruleFor, selectGates, pathsReaching, selectionLines } from './merge-branch/reach.mjs';
 export { REACHED_BOUNDS, reachedPlan, reachedCommands, reachedLines } from './merge-branch/reached.mjs';
 export { REACH } from './merge-branch/reach-table.mjs';
 export { globToRegExp, laneMatcher } from './merge-branch/lanes-file.mjs';
