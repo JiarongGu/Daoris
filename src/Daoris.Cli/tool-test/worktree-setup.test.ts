@@ -69,16 +69,16 @@ test('a folder\'s dependencies are current by the stamp its install left or by n
   fx.cleanup();
 });
 
-test('the setup installs what is missing or stale from the lockfile, refuses a link, and always primes the index, the generated contracts and the restore', () => {
+test('the setup installs what is missing or stale from the lockfile, refuses a link, and always sets the merge drivers and primes the index, the generated contracts and the restore', () => {
   const commands = setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'stale' });
   assert.deepEqual(commands.map((each) => each.label), [
-    'install src/Daoris.Web', 'index', 'contracts', 'restore',
+    'install src/Daoris.Web', 'drivers', 'index', 'contracts', 'restore',
   ]);
   assert.equal(commands[0]!.command, 'npm ci --no-audit --no-fund');
   assert.equal(commands[0]!.cwd, 'src/Daoris.Web');
   assert.match(commands.find((each) => each.label === 'restore')!.command, /^dotnet restore src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\b/);
   assert.throws(() => setup.setupCommands({ '.': 'linked' }), /node_modules is a link/);
-  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }).map((each) => each.label), ['index', 'contracts', 'restore']);
+  assert.deepEqual(setup.setupCommands({ '.': 'current', 'src/Daoris.Web': 'current' }).map((each) => each.label), ['drivers', 'index', 'contracts', 'restore']);
 });
 
 test('the main checkout is never set up: the setup is a builder\'s worktree\'s', () => {

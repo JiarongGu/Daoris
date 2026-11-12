@@ -262,23 +262,25 @@ export function mergeRows(baseText, oursText, theirsText, { markerSize = 7 } = {
   return { text: lines.join(eol), conflicts };
 }
 
-/** Sets the driver in this repository's own configuration: 0 set or no git work tree here, 2 git failing. */
-export function install({ out, err, cwd, env }) {
+/** Sets a merge driver in this repository's own configuration, the rows' and the backlog's alike: 0 set or no git work tree here, 2 git failing. */
+export function installDriver({ key: driver, name, command, label }, { out, err, cwd, env }) {
   const inside = spawnGit(['rev-parse', '--is-inside-work-tree'], { cwd, env, encoding: 'utf8' });
   if (inside.status !== 0 || inside.stdout.trim() !== 'true') {
-    out('merge-rows: not a git work tree; nothing configured');
+    out(`${label}: not a git work tree; nothing configured`);
     return 0;
   }
-  for (const [key, value] of [['merge.rows.name', NAME], ['merge.rows.driver', DRIVER]]) {
+  for (const [key, value] of [[`merge.${driver}.name`, name], [`merge.${driver}.driver`, command]]) {
     const set = spawnGit(['config', '--local', key, value], { cwd, env, encoding: 'utf8' });
     if (set.status !== 0) {
-      err(`merge-rows: git config ${key} failed: ${set.stderr?.trim() ?? set.error?.message}`);
+      err(`${label}: git config ${key} failed: ${set.stderr?.trim() ?? set.error?.message}`);
       return 2;
     }
   }
-  out(`merge-rows: merge.rows.driver set to \`${DRIVER}\``);
+  out(`${label}: merge.${driver}.driver set to \`${command}\``);
   return 0;
 }
+
+export const install = (deps) => installDriver({ key: 'rows', name: NAME, command: DRIVER, label: 'merge-rows' }, deps);
 
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });

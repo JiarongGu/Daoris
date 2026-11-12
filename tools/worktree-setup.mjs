@@ -57,6 +57,7 @@ export function setupCommands(states, { build = false } = {}) {
     if (state === 'missing' || state === 'stale') commands.push({ label: `install ${folder}`, command: 'npm ci --no-audit --no-fund', cwd: folder });
   }
   commands.push(
+    { label: 'drivers', command: 'node tools/merge-rows.mjs --install && node tools/merge-backlog.mjs --install && node tools/index-hook.mjs --install', cwd: '.' },
     { label: 'index', command: 'node tools/orient-index.mjs', cwd: '.' },
     { label: 'contracts', command: 'node tools/contracts.mjs --if-stale', cwd: '.' },
     { label: 'restore', command: TEST_PROJECTS.map((project) => `dotnet restore ${project}`).join(' && '), cwd: '.' },
