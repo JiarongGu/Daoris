@@ -42,12 +42,13 @@ public sealed class AskDaorisFailedOpeningTests : IDisposable
 
     private string[] HeardLines() => StubFile.Lines(Heard);
 
-    [Fact(Skip = "ASKCHAT1: the go-on takes the fresh start now, but this home gives Ask Daoris no role order, so the start finds Ask Daoris off; seed its order with acp-stub")]
+    [Fact]
     public async Task A_start_failed_at_its_opening_is_continued_by_the_next_word()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = DriverConfig.Empty with
         {
+            Actors = StaffedRoles.On("acp-stub", helper: "acp-stub"),
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, Up] },
         };
         config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
