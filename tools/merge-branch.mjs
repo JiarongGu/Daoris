@@ -3677,7 +3677,6 @@ function passedOnly(root, { light = false } = {}) {
   for (const line of evidence.lines) console.log(line);
   // The smallest command that would pass it, which the publish's refusal names in turn. A stage with no
   // receipt, or a sweep overdue, needs the stage's own run in the gate tree, which also runs whatever the verdicts lack.
-  // The light stage's run is the plain `--ci`, which owes the rehearsals and runs the rest.
   const remedy = light && evidence.remedy ? { ...evidence.remedy, command: evidence.remedy.command.replace('--ci --stage', '--ci') } : evidence.remedy ?? stageRemedy(judged.gates);
   if (remedy) console.log(remedyLine(remedy));
   return passed ? 0 : 1;

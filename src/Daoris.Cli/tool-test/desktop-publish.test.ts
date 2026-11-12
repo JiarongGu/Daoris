@@ -176,7 +176,6 @@ test('a publish refuses a commit the full set has not passed, naming what is mis
   assert.equal(passed.refusal, null);
   assert.match(passed.note!, /the full set has passed/);
   assert.deepEqual(asked, [fx.root]);
-  // The light stage asks the light judgement: the install may be staged before the rehearsals the CI runs after it.
   let light: boolean | undefined;
   ungatedRefusal(to, fx.root, { light: true, ask: (root, options) => { light = options?.light; return { code: 0, out: 'merge-branch: the light stage has passed this checkout\n' }; } });
   assert.equal(light, true);
