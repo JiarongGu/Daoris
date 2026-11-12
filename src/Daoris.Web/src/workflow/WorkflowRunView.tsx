@@ -30,11 +30,14 @@ export type RunDoors = {
   quest?: (id: string) => void;
   /** The ask's page, where its go-aheads are answered. */
   ask?: (id: string) => void;
-  /** A session's review, where its work is accepted. */
-  review?: (session: string) => void;
+  /** A run's review (`review/<run>`), where its work is accepted. */
+  review?: (run: string) => void;
   /** A landed branch's page in its repository, with how it landed. */
   branch?: (repository: string, branch: string) => void;
 };
+
+/** The run its review is read by: its record's, a conversation's, else the first quest of the run. */
+const reviewRunOf = (run: WorkflowRun): string | null => run.graph?.run ?? run.chat?.run ?? run.quests[0] ?? null;
 
 /** The run as a chart's workflow: its Current, each step as the driver drew it, a step the work added among them. */
 export const runWorkflow = (run: WorkflowRun): CurrentWorkflow => ({
@@ -311,8 +314,9 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
     return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
   }
   // The gate holds the work on the person: its presses stand beside the review's Accept (`LANDING` answers it there).
-  if (kind === 'opinion' && step.state === 'waiting-on-you' && step.session && doors?.review) {
-    return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
+  const reviewed = reviewRunOf(run);
+  if (kind === 'opinion' && step.state === 'waiting-on-you' && reviewed && doors?.review) {
+    return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
     return { label: t('workflow.run.door.session'), open: () => doors.session?.(step.session!) };
@@ -320,8 +324,8 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   if (kind === 'look' && step.quest && doors?.quest) {
     return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
   }
-  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && step.session && doors?.review) {
-    return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
+  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && reviewed && doors?.review) {
+    return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   // Landed on a branch: its page draws how it landed. A landing into the line keeps no branch, so it has none.
   if (kind === 'landing' && step.state === 'done' && step.detail === 'branch' && step.branch && doors?.branch) {

@@ -260,13 +260,16 @@ export function WorkFrame({
   const [taken, setTaken] = useState<typeof intent>(null);
   // The run `review/<run>` opened, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null } | null>(null);
+  // A door by run: the run's review over the session followed, the way `review/<run>` opens it.
+  const onReviewRun = (run: string) => {
+    setReviewing({ run, over: following?.id ?? null });
+    openView('review');
+  };
   if (intent && intent !== taken) {
     setTaken(intent);
     const run = reviewOfIntent(intent);
-    if (run) {
-      setReviewing({ run, over: following?.id ?? null });
-      openView('review');
-    } else if (intent === 'start') newConversationPressed();
+    if (run) onReviewRun(run);
+    else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
     else if (intent === 'atWork') openView('atWork');
@@ -367,7 +370,7 @@ export function WorkFrame({
   const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;

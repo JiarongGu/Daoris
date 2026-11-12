@@ -656,7 +656,7 @@ describe('work to review, worded', () => {
       sessions: [session({ id: 'r3v13w00', quest: '7a82cc', state: 'completed' })], quests: [quest({ status: 'Done' })],
     })).toEqual({
       id: 'r3v13w00', kind: 'review', title: 'Expose a streaming budget on the chunk API', where: 'engine', since: '2026-09-21T11:00:00Z',
-      detail: '3 commits to review',
+      detail: '3 commits to review', run: null,
     });
     expect(words(row('review', 'r3v13w00', null, { where: '', placed }))).toMatchObject({ title: '#r3v13w00', where: '' });
   });

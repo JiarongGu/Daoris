@@ -25,7 +25,6 @@ import { reviewState } from '../gates/review';
 import { shownOf } from '../groups';
 import type { useAttendedRecord } from '../head/useAttendedRecord';
 import type { useAttendedSession } from '../head/useAttendedSession';
-import type { useHeadAsks } from '../head/useHeadAsks';
 import { SessionTimeline } from '../head/SessionTimeline';
 import { ownTree, sessionTitle } from '../identity';
 import { DiffPane } from '../review/DiffPane';
@@ -46,7 +45,7 @@ import type { useFrameLayout } from './useFrameLayout';
  */
 export function useRegionSurfaces({
   t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-  session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
+  session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
 }: {
   reviewRun?: string | null;
   t: TFunction;
@@ -66,7 +65,8 @@ export function useRegionSurfaces({
   views: ReturnType<typeof useDockViews>;
   frame: ReturnType<typeof useFrameLayout>;
   boxState: ReturnType<typeof useAttendedBox>;
-  asks: ReturnType<typeof useHeadAsks>;
+  /** Opens `review/<run>` over the session followed. */
+  onReviewRun: (run: string) => void;
   agentRoster: HandOverRoster;
   attend: (id: string) => void;
   runNodeWord: ReturnType<typeof useRunNodeWord>;
@@ -78,7 +78,6 @@ export function useRegionSurfaces({
   const { following, previewing, openPreview, openView, dock, panelView } = views;
   const { placed, collapsed, dockClosed, layout, closeDock } = frame;
   const { taking } = boxState;
-  const { doors } = asks;
   const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
 
@@ -236,7 +235,7 @@ export function useRegionSurfaces({
               session: (id) => { attend(id); if (elsewhere) onOpenSessions?.(); },
               ...(onOpenQuest ? { quest: onOpenQuest } : {}),
               ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
-              review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
+              review: (run) => { onReviewRun(run); if (elsewhere) onOpenSessions?.(); },
               ...(onOpenBranch ? { branch: onOpenBranch } : {}),
             }}
             controls={lookControl || opinionControl ? controls : undefined}
