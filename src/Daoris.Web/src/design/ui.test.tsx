@@ -724,7 +724,7 @@ describe('the session tone map', () => {
   // The nine the wire carries, the one the page shows a live chat between turns, the two words the
   // session list's reader derives from the session's quest, the park the person answered, a
   // record going on with their words, and a session waiting on its own helper.
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'limit-waits', 'not-started'];
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'awaiting-check', 'limited', 'limit-waits', 'not-started'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -756,6 +756,9 @@ describe('the session tone map', () => {
     // Waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
     expect(SESSION_TONE['awaiting-helper']).toBe('neutral');
     expect(SESSION_DOT['awaiting-helper']).toBe('idle');
+    // Waiting on its own check, the same: its turn has ended and nothing waits on the person.
+    expect(SESSION_TONE['awaiting-check']).toBe('neutral');
+    expect(SESSION_DOT['awaiting-check']).toBe('idle');
   });
 
   /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown`. */
