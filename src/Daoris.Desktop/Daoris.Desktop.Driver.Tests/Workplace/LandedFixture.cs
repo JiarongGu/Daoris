@@ -40,17 +40,20 @@ public abstract class LandedFixture : IDisposable
 
     protected static LandedItem Landed(SweepPlan plan, string branch) => plan.Landed.Single(item => item.Branch == branch);
 
+    /// <summary>The trees a test stocked for its landings (<see cref="FarmedTrees.StockAsync"/>); empty, each landing opens its own.</summary>
+    protected FarmedTrees Farmed { get; } = new();
+
     /// <summary>A session's tree, one commit, and the press — the branch form, so a landing makes and records a branch.</summary>
     protected async Task<TreeLanding> LandAsync(
         SessionTrees trees, string root, string file, string content, LandingSubject subject, string? from = null,
         (string File, string Content)? extra = null)
     {
-        var tree = await trees.OpenAsync(root, "engine", "aurora", from: from);
-        await File.WriteAllTextAsync(Path.Combine(tree.Path, file), content);
-        if (extra is { } more) await File.WriteAllTextAsync(Path.Combine(tree.Path, more.File), more.Content);
-        await GitAsync(tree.Path, "add", "-A");
-        await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", subject.Title ?? "work");
-        var landed = await trees.LandAsync(tree.Path, subject, gate: Lands);
+        var tree = from is null && Farmed.TryTake(out var ready) ? ready : (await trees.OpenAsync(root, "engine", "aurora", from: from)).Path;
+        await File.WriteAllTextAsync(Path.Combine(tree, file), content);
+        if (extra is { } more) await File.WriteAllTextAsync(Path.Combine(tree, more.File), more.Content);
+        await GitAsync(tree, "add", "-A");
+        await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", subject.Title ?? "work");
+        var landed = await trees.LandAsync(tree, subject, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         if (PullRequestPlugin is { } plugin) await OpenedPullRequestAsync(root, landed, plugin);
         return landed;

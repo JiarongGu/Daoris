@@ -68,8 +68,9 @@ public sealed class PullRequestStateTests : LandedFixture
     {
         var (root, origin) = await RepositoryWithOriginAsync("engine");
         var trees = Trees();
+        await Farmed.StockAsync(trees, Home, root, 5);
         var merged = await LandAsync(trees, root, "merged.txt", "merged\n", new LandingSubject("s1", "q1", "Merged"));
-        var open = await LandAsync(trees, root, "open.txt", "open\n", new LandingSubject("s2", "q2", "Open"));
+        var open =await LandAsync(trees, root, "open.txt", "open\n", new LandingSubject("s2", "q2", "Open"));
         var elsewhere = await LandAsync(trees, root, "elsewhere.txt", "elsewhere\n", new LandingSubject("s3", "q3", "Elsewhere"));
         var missing = await LandAsync(trees, root, "missing.txt", "missing\n", new LandingSubject("s4", "q4", "Missing"));
         var beyond = await LandAsync(trees, root, "beyond.txt", "beyond\n", new LandingSubject("s5", "q5", "Beyond"));

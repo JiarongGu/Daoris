@@ -43,16 +43,18 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Directory.CreateDirectory(_home);
         _ledger.Register(Repository, _root);
         var trees = new SessionTrees(_home);
+        // One tree is opened for real and the rest are its copies (opening one is ten git starts); each then commits its own part.
+        var opened = await TreeFarm.OpenAsync(trees, _home, _root, Repository, "default", TreeCount);
+        var baseCommit = (await GitAsync(opened[0], "rev-parse", "HEAD")).Trim();
         for (var at = 0; at < TreeCount; at++)
         {
-            var tree = await trees.OpenAsync(_root, Repository, "default");
-            var baseCommit = (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim();
-            await File.WriteAllTextAsync(Path.Combine(tree.Path, $"part-{at}.txt"), $"part {at}\n");
-            await GitAsync(tree.Path, "add", "-A");
-            await GitAsync(tree.Path, "commit", "--quiet", "-m", $"part {at}");
+            var tree = opened[at];
+            await File.WriteAllTextAsync(Path.Combine(tree, $"part-{at}.txt"), $"part {at}\n");
+            await GitAsync(tree, "add", "-A");
+            await GitAsync(tree, "commit", "--quiet", "-m", $"part {at}");
             _ledger.Publish($"r{at:D2}", Repository);
-            _ledger.Driven($"s{at}", $"r{at:D2}", tree.Path);
-            _trees.Add(($"s{at}", tree.Path, baseCommit));
+            _ledger.Driven($"s{at}", $"r{at:D2}", tree);
+            _trees.Add(($"s{at}", tree, baseCommit));
         }
     }
 
