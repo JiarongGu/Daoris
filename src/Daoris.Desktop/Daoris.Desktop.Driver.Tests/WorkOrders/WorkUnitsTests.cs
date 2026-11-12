@@ -213,6 +213,18 @@ public sealed class WorkUnitsTests : IDisposable
     }
 
     /// <summary>
+    /// A landing named for its chain's first quest, another repository's, while its session served a quest of its own repository, links its
+    /// unit to the quest it served alone: the first quest's run is another repository's, and never takes this branch for its work.
+    /// </summary>
+    [Fact]
+    public void A_landing_named_for_another_quest_links_its_unit_to_the_quest_its_session_served_alone()
+    {
+        var unit = Assert.Single(WorkInventory.Units(Facts(branches: [Grown()], landings: [Landed(["unit-a"], quest: "q1") with { Served = "q2" }])));
+
+        Assert.Equal([new WorkLink(WorkRelation.ProducedBy, "quest:q2")], unit.Links);
+    }
+
+    /// <summary>
     /// A landing carrying several units keeps each advance's quest and unit, so each unit is
     /// executed by its own sessions and produced by its own quest, read from the record alone, with no session records. A landing whose
     /// advances name no unit reads plainly: every session executes every unit it carries, and none is linked by it.
