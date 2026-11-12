@@ -257,6 +257,13 @@ only state.
 | `2026-11-09-repo-config-reads.md` | Reads: REPOCONFIG1 | Filed: no open row or area cites it |
 | `2026-11-11-cleanup-census.md` | Evidence: the superseded ways' remnants found, removed or kept with their end | Filed: no open row or area cites it |
 | `DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | Proposal, preserved; not adopted | Filed: no open row or area cites it |
+| `2026-10-12-usage-read-evidence.md` | Evidence: usage read | Filed: no open row or area cites it |
+| `2026-10-27-provider-infrastructure-design.md` | Accepted D213 amendment: AGENTINFRA1 | Filed: no open row or area cites it |
+| `2026-11-10-agent-free-census.md` | Census: AGENTFREE1, what a session narrows (D253 point 7) | Filed: no open row or area cites it |
+| `2026-11-10-isolation-beyond-git-survey.md` | Survey: PLACEWORK1a, parallel work beyond git (D254) | Filed: no open row or area cites it |
+| `2026-11-11-jj-workspaces-measurements.md` | Evidence: PLACEWORK1i, jj workspaces measured | Filed: no open row or area cites it |
+| `2026-11-11-placework1g-clone-measurements.md` | Evidence: PLACEWORK1g, block clones on a Dev Drive measured | Filed: no open row or area cites it |
+| `2026-11-11-start-load-measurements.md` | Evidence: STARTPERF1, a start to a full Sessions and Quests view measured | Filed: no open row or area cites it |
 
 Read `docs/archive/2026-08-04-daoris-design.md` for the contract, `docs/decisions/` for why, and
 `ROADMAP.md` for what is next.
