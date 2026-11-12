@@ -108,7 +108,8 @@ public sealed class LayerLimitReadingsTests
 
         var scoped = Read(Limit(recovery, window: "seven_day", scope: "opus")).Limit!;
         Assert.Equal("opus", scoped.Hit);
-        Assert.Equal("opus", ModelLimits.In(scoped, ClaudeWindows.Words.Models));
+        // The families come from what the agent offers (ModelFamilies); this reading's scope holds within any list that names it.
+        Assert.Equal("opus", ModelLimits.In(scoped, ["opus", "sonnet"]));
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

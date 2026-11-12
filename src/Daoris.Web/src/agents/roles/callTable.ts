@@ -23,8 +23,8 @@ const MEMORY_CHANGES = ['memory_end', 'memory_write'];
 const CORE = [
   ...READS, 'channel_post', 'channel_read', 'helper_ask', 'memory_propose', ...MEMORY_CHANGES, 'quest_publish', 'quest_respond',
 ];
-const CONVERSING = ['go_ahead_ask', 'handover_propose', 'opinion_answer', 'permission_propose'];
-const WORKING = [...CONVERSING, 'check_run', 'question_ask', 'review_ready', 'review_serve'];
+const CONVERSING = ['check_run', 'go_ahead_ask', 'handover_propose', 'opinion_answer', 'permission_propose'];
+const WORKING = [...CONVERSING, 'question_ask', 'review_ready', 'review_serve'];
 const without = (tools: readonly string[], left: readonly string[]) => tools.filter((tool) => !left.includes(tool));
 
 const COLUMNS: Record<string, Column> = {

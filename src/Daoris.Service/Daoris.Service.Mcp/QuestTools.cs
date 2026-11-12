@@ -393,17 +393,11 @@ public sealed class QuestTools(
 
     [McpServerTool(Name = "quest_respond")]
     [Description(
-        "Answer a quest addressed to the repository you are working in: take it, finish it, or decline "
-        + "it. Declining is a real answer and often the right one — it needs a reason, because a bare "
-        + "refusal gives the asker nothing to act on. Finishing a quest that carries the person's requirements "
-        + "answers each one (answers). When your work needs something another repository "
-        + "owns — a change there, or a fact about its code — publish the question to it with "
-        + "quest_publish, then WAIT on that question here (action wait, on the question's id) and end "
-        + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer. "
-        + "Where quest_list says its graph closes it, finish with ready instead of done: the same reason and answers, kept as "
-        + "your submission, and Daoris closes the quest at the work's end. The reason you finish, ready or decline with is your "
-        + "handback: the one record of the work whoever reads the quest later reads, never your messages. A reason that only points "
-        + "elsewhere (\"details are in my last message\", \"see the commit\") is refused.")]
+        "Answer a quest addressed to your repository: take it, finish it, or decline it with a reason (a real answer, often the "
+        + "right one). Finishing a quest with the person's requirements answers each (answers). Needing another repository's change "
+        + "or fact: quest_publish the question, then wait on its id here (action wait) and end your turn; the driver resumes you "
+        + "in the same tree with the answer. Where quest_list says its graph closes it, finish with ready, not done. Your reason "
+        + "is the handback, the one record later readers see: one that only points elsewhere (\"see my last message\") is refused.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
         [Description("take, done, ready, decline, or wait. ready finishes a quest its graph closes.")] string action,
