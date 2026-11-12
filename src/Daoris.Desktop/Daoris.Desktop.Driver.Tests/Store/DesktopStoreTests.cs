@@ -184,8 +184,19 @@ public sealed class DesktopStoreTests : IDisposable
 
         var driver = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.csproj"));
         Assert.Contains("""<PackageReference Include="Microsoft.Data.Sqlite" />""", driver);
-        Assert.Equal(["../../Daoris.Contracts/Daoris.Contracts.csproj"], Regex.Matches(driver, "ProjectReference Include=\"([^\"]+)").Select(m => m.Groups[1].Value));
+        Assert.Equal(
+            ["../../Daoris.Contracts/Daoris.Contracts.csproj", "../../Daoris.Ports/Daoris.Ports.csproj"],
+            Regex.Matches(driver, "ProjectReference Include=\"([^\"]+)").Select(m => m.Groups[1].Value));
         Assert.DoesNotContain("PackageReference Include=\"Daoris", driver);
+
+        // The adapter versions its packages itself, under no tree's props, at the pins the two trees hold.
+        var adapter = File.ReadAllText(Path.Combine(
+            WorkspaceRoot.Folder, "src", "Daoris.Adapters", "Daoris.Adapters.DesktopStore.Sqlite", "Daoris.Adapters.DesktopStore.Sqlite.csproj"));
+        foreach (var package in new[] { "Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3" })
+        {
+            var held = new Regex($"""<PackageVersion Include="{Regex.Escape(package)}" Version="([^"]+)" />""").Match(desktop).Groups[1].Value;
+            Assert.Contains($"""<PackageReference Include="{package}" Version="{held}" />""", adapter);
+        }
     }
 
     // ——— Step 4, the course's move record.

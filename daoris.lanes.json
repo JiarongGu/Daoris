@@ -116,14 +116,21 @@
         "src/Daoris.Ports/**",
         "src/Daoris.Testing/**",
         "src/Daoris.Testing.Tests/**",
+        "src/Daoris.Adapters/**",
         "src/Layers.props",
-        "src/BannedSymbols.Effects.txt"
+        "src/BannedSymbols.Effects.txt",
+        "src/BannedSymbols.Store.txt",
+        "daoris.adapters.lock",
+        "tools/merge/adapters.ts",
+        "tools/merge/adapters.test.ts"
       ],
       "builds": {
         "units": [
           "src/Daoris.Ports/Daoris.Ports.csproj",
           "src/Daoris.Testing/Daoris.Testing.csproj",
-          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj"
+          "src/Daoris.Testing.Tests/Daoris.Testing.Tests.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite/Daoris.Adapters.DesktopStore.Sqlite.csproj",
+          "src/Daoris.Adapters/Daoris.Adapters.DesktopStore.Sqlite.Tests/Daoris.Adapters.DesktopStore.Sqlite.Tests.csproj"
         ],
         "reads": ["Directory.Build.props"]
       }

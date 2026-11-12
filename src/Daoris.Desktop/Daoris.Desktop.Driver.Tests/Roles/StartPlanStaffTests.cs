@@ -100,7 +100,7 @@ public sealed class StartPlanStaffTests : IDisposable
 
     private IReadOnlyList<string> Rows() => Query("SELECT choice FROM role_starts ORDER BY rowid", row => StaffKey.Read(row.GetString(0))!.Value.Model!);
 
-    private IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map)
+    private IReadOnlyList<T> Query<T>(string sql, Func<System.Data.Common.DbDataReader, T> map)
     {
         using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(_home));
         return reader is null ? [] : reader.Query(sql, map);

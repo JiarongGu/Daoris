@@ -22,6 +22,8 @@
       "Microsoft.AspNetCore.Mvc.Testing"
     ]
   },
-  "ambient": {},
+  "ambient": {
+    "Daoris.Desktop.Driver/Store": 1
+  },
   "slowTests": {}
 }
