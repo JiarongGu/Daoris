@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // One Accept for an ask's lines of work, in both languages; a single run's Accept is its review page's.
@@ -49,14 +49,15 @@ describe("an ask's one Accept", () => {
   });
 
   it('lands a superseded part where the person chose nothing, and leaves it out where they chose to', async () => {
-    const { onLand } = ask();
-
+    const first = ask();
     await userEvent.click(screen.getByRole('button', { name: 'Accept all' }));
-    expect(onLand).toHaveBeenLastCalledWith([], expect.anything());
+    expect(first.onLand).toHaveBeenLastCalledWith([], expect.anything());
+    cleanup();
 
+    const second = ask();
     await userEvent.click(screen.getByRole('checkbox', { name: 'Leave s1 out' }));
     await userEvent.click(screen.getByRole('button', { name: 'Accept all' }));
-    expect(onLand).toHaveBeenLastCalledWith(['s1'], expect.anything());
+    expect(second.onLand).toHaveBeenLastCalledWith(['s1'], expect.anything());
   });
 
   it('keeps the other repositories pressable where one is held by a gate or would be refused', () => {

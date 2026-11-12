@@ -335,18 +335,14 @@ describe('the strip of what waits on the person, at the foot', () => {
 
   it('stays while its own ask is open, though the head\'s waits came on screen', () => {
     const props = { session: session(), lands: LANDS, landing: PLAN, onReviewRun: vi.fn(), onTop: vi.fn() };
-    const { rerender } = render(<WaitStrip {...props} workAsk={{ open: true, onOpen: vi.fn() }} aside />);
-    const ask = within(strip()).getByRole('group', { name: 'accept daoris/s-1a2b3c4' });
-    expect(ask).toBeInTheDocument();
+    const { rerender } = render(<WaitStrip {...props} rules={{ proposals: [RULE], onAnswer: vi.fn() }} ruleAsk={{ open: 'r1', onOpen: vi.fn() }} aside />);
+    const ask = within(strip()).getByRole('group', { name: 'Allow…' });
 
     // Put down with the focus in it, which says no blur as it goes: the strip reads the focus again.
     within(ask).getAllByRole('button')[0]!.focus();
     expect(ask).toContainElement(document.activeElement as HTMLElement);
-    rerender(<WaitStrip {...props} workAsk={{ open: false, onOpen: vi.fn() }} aside />);
+    rerender(<WaitStrip {...props} aside />);
     expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
-
-    rerender(<WaitStrip {...props} rules={{ proposals: [RULE], onAnswer: vi.fn() }} ruleAsk={{ open: 'r1', onOpen: vi.fn() }} aside />);
-    expect(within(strip()).getByRole('group', { name: 'Allow…' })).toBeInTheDocument();
   });
 
   it('stays while the person is in it, and stands aside once they leave', async () => {
