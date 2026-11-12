@@ -38,6 +38,8 @@ public sealed class ModelCoolingTests : IDisposable
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-1"));
         new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
+        // The families are the agent's own: the models its open listed.
+        AgentOffers.Offered(_home, "fake", "1", "account-1", ["opus", "sonnet", "claude-opus-4-5", "claude-sonnet-4-5"], null, _now);
         return new(TestDoors.Registry(TestDoors.Door("fake", Present())), Settings) { Clock = () => _now, Zone = Zone };
     }
 
@@ -81,6 +83,21 @@ public sealed class ModelCoolingTests : IDisposable
 
         Assert.Equal(Entry(model: null), (await roster.SelectAsync("fake", Config, null, null, model: "opus")).Cooling);
         Assert.Equal(Entry(model: null), (await roster.SelectAsync("fake", Config, null, null, model: "sonnet")).Cooling);
+    }
+
+    [Fact]
+    public async Task A_family_the_agent_offers_cools_by_its_own_scope_though_no_list_of_Daoris_named_it()
+    {
+        var roster = Roster();
+        AgentOffers.Offered(_home, "fake", "1", "account-2", ["claude-haiku-5-5", "claude-fable-5-2", "claude-sonnet-5-5"], null, _now);
+        var reset = Seen.AddDays(3);
+        roster.History("fake", "account-1", "fake", [Week("seven_day_fable", "fable", 1.0, reset)], ClaudeUsage.Source, ClaudeUsage.HistoryReader, _now, session: null);
+
+        Assert.NotNull((await roster.SelectAsync("fake", Config, null, null, model: "claude-fable-5-2")).Cooling);
+        Assert.Null((await roster.SelectAsync("fake", Config, null, null, model: "claude-haiku-5-5")).Cooling);
+
+        var limited = roster.Limited("fake", "account-1", $"You've hit your Haiku limit · resets Oct 3, 4pm ({Zone.Id})", "s1");
+        Assert.Equal("haiku", limited!.Value.Entry.Model);
     }
 
     [Fact]
